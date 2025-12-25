@@ -1,0 +1,43 @@
+{
+  "name": "@hafley/signals",
+  "version": "0.0.1",
+  "description": "RxJS-native reactive signals with proxy-based nested access",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/3_react.d.ts",
+      "import": "./dist/3_react.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "rxjs": "^7.8.2",
+    "lodash": "^4.17.21",
+    "immer": "^10.1.1"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.16",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.6"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "keywords": ["rxjs", "signals", "reactive", "state", "proxy"],
+  "license": "MIT"
+}

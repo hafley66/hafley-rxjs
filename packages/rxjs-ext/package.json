@@ -1,0 +1,28 @@
+{
+  "name": "@hafley/rxjs-ext",
+  "version": "0.0.1",
+  "description": "RxJS operator extensions - switchMapCached, repeatValue, and more",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.6"
+  },
+  "keywords": ["rxjs", "operators", "cache", "reactive"],
+  "license": "MIT"
+}
