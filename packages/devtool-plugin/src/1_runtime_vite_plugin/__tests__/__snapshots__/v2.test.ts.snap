@@ -9,7 +9,6 @@ import { pipeFromArray } from './util/pipe';
 import { config } from './config';
 import { isFunction } from './util/isFunction';
 import { errorContext } from './util/errorContext';
-
 export class Observable {
     constructor(subscribe) {
 const __id__ = __createId__();
@@ -102,6 +101,5 @@ function isObserver(value) {
 function isSubscriber(value) {
     return (value && value instanceof Subscriber) || (isObserver(value) && isSubscription(value));
 }
-//# sourceMappingURL=Observable.js.map
-"
+//# sourceMappingURL=Observable.js.map"
 `;

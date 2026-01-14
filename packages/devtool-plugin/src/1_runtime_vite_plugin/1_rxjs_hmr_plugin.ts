@@ -9,8 +9,8 @@
  */
 
 import path from "path"
-import type { Plugin, ResolvedConfig } from "rolldown-vite"
-import { rxjsDevtoolPatchPlugin, type RxjsDevtoolPatchOptions } from "./0_rxjs_devtool_patch_plugin"
+import type { PluginOption, ResolvedConfig } from "rolldown-vite"
+import { type RxjsDevtoolPatchOptions, rxjsDevtoolPatchPlugin } from "./0_rxjs_devtool_patch_plugin"
 import { shouldTransformUserCode, transformUserCode } from "./2_user_transform"
 
 type VitestConfig = ResolvedConfig & {
@@ -32,7 +32,7 @@ export interface RxjsHmrPluginOptions extends RxjsDevtoolPatchOptions {
   transformUserCode?: boolean
 }
 
-export function rxjsHmrPlugin(options: RxjsHmrPluginOptions = {}): Plugin {
+export function rxjsHmrPlugin(options: RxjsHmrPluginOptions = {}): PluginOption {
   const {
     debug = false,
     hmrModulePath,
@@ -60,7 +60,7 @@ export function rxjsHmrPlugin(options: RxjsHmrPluginOptions = {}): Plugin {
       config = resolvedConfig
       resolvedHmrModulePath = hmrModulePath ?? path.resolve(config.root, "src/tracking/v2/hmr/4_module-scope")
       // Delegate to devtool
-      devtool.configResolved?.(resolvedConfig)
+      devtool.configResolved?.call(this, resolvedConfig)
       log("configResolved:", { resolvedHmrModulePath })
     },
 
