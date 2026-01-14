@@ -27,7 +27,6 @@ export function setNow(time: number | null) {
 
 export const observableIdMap = new WeakMap<Observable<any>, string>()
 
-
 /*
     cycle.js
     2021-05-31

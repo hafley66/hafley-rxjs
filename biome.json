@@ -1,11 +1,11 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.0/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.3.11/schema.json",
   "vcs": {
     "enabled": false,
     "clientKind": "git",
     "useIgnoreFile": false
   },
-  "files": {"includes": ["src/**/*.*"]},
+  "files": { "includes": ["**/src/**/*.*"] },
   "linter": {
     "enabled": true,
     "rules": {
@@ -51,7 +51,7 @@
     }
   },
   "json": {
-    "formatter":{
+    "formatter": {
       "enabled": true,
       "indentStyle": "space"
     }

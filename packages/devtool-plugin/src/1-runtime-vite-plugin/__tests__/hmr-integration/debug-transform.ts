@@ -109,8 +109,7 @@ console.log("\n=== Checking isSubjectConstruction ===")
 walk(result.program, node => {
   if (node.type === "NewExpression") {
     const callee = node.callee
-    const isSubject =
-      callee?.type === "Identifier" && subjects.has(callee.name)
+    const isSubject = callee?.type === "Identifier" && subjects.has(callee.name)
     console.log("NewExpression callee:", callee?.name, "isSubject?", isSubject)
   }
 })
