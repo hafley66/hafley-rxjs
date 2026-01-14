@@ -2,11 +2,13 @@
 
 RxJS operators that should exist but don't.
 
+📚 **[Full API Documentation](https://hafley66.github.io/hafley-rxjs/)**
+
 ---
 
-## `repeatValue`
+## `renext`
 
-Re-emit current value on trigger.
+Re-emit current value on trigger. "renext" = re-emit next.
 
 ```
 source$:    --A---------B--------->
@@ -15,8 +17,31 @@ output:     --A---A--A--B---B----->
 ```
 
 ```ts
-userId$.pipe(
-  repeatValue(() => merge(interval(30000), windowFocus$, manualRefetch$))
+const trigger$ = merge(interval(30000), windowFocus$, manualRefetch$)
+userId$.pipe(renext(trigger$))
+
+// Factory form - conditional repeat
+userId$.pipe(renext((id) => id > 0 ? interval(30000) : NEVER))
+```
+
+---
+
+## `repeatExt` / `retryExt`
+
+Extended repeat/retry with access to last emitted value.
+
+```ts
+// repeatExt - repeat based on last value
+fetchUser(id).pipe(
+  repeatExt((user) => user.isActive ? timer(5000) : NEVER)
+)
+
+// retryExt - retry with error + last value
+fetchUser(id).pipe(
+  retryExt((error, lastUser) => {
+    if (error.status === 404) return EMPTY
+    return timer(1000 * 2 ** error.attempt)
+  })
 )
 ```
 
@@ -29,7 +54,7 @@ Creates a switchMap that caches. Reuses in-flight requests for same input.
 ```
 input$:     --A-----A-----B-----A-->
 fetch(A):   --====A       (reused)
-fetch(B):               --===B
+fetch(B):                  --===B
 output:     ------A---A-----B---A-->
 ```
 

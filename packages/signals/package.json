@@ -16,9 +16,10 @@
     }
   },
   "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest"
+    "build": "vite build",
+    "typecheck": "tsgo --noEmit",
+    "test": "vitest",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "rxjs": "^7.8.2",
@@ -28,7 +29,9 @@
   "devDependencies": {
     "@types/lodash": "^4.17.16",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.6"
+    "vitest": "^4.0.16",
+    "@vitest/ui": "^4.0.16",
+    "vite": "^7.3.0"
   },
   "peerDependencies": {
     "react": ">=18.0.0"

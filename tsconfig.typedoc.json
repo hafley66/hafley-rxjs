@@ -1,0 +1,10 @@
+{
+  "extends": "./packages/signals/tsconfig.json",
+  "include": [
+    "packages/*/src/**/*.ts"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "**/vitest.setup.ts"
+  ]
+}

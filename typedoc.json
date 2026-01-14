@@ -1,0 +1,18 @@
+{
+  "entryPoints": [
+    "packages/signals/src/index.ts",
+    "packages/rxjs-ext/src/index.ts"
+  ],
+  "out": "docs",
+  "readme": "none",
+  "hideGenerator": true,
+  "sort": ["source-order"],
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeExternals": true,
+  "includeVersion": true,
+  "exclude": ["**/*.test.ts", "**/*vitest*"],
+  "skipErrorChecking": true,
+  "tsconfig": "tsconfig.typedoc.json",
+  "name": "hafley-rxjs"
+}

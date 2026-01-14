@@ -1,7 +1,7 @@
 {
-  "name": "@hafley/rxjs-ext",
+  "name": "@hafley/rxjsx",
   "version": "0.0.1",
-  "description": "RxJS operator extensions - switchMapCached, repeatValue, and more",
+  "description": "Observable-based JSX runtime using Snabbdom virtual DOM",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./jsx-runtime": {
+      "types": "./dist/jsx-runtime.d.ts",
+      "import": "./dist/jsx-runtime.js"
     }
   },
   "scripts": {
@@ -18,18 +22,19 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
-    "debug": "^4.4.0",
-    "rxjs": "^7.8.2"
+    "@hafley/rxjs-ext": "workspace:*",
+    "snabbdom": "^3.6.2"
   },
   "peerDependencies": {
-    "@types/debug": "^4.1.12"
+    "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "typescript": "^5.7.3",
     "vitest": "^4.0.16",
     "@vitest/ui": "^4.0.16",
-    "vite": "^7.3.0"
+    "vite": "^7.3.0",
+    "jsdom": "^26.1.0"
   },
-  "keywords": ["rxjs", "operators", "cache", "reactive"],
+  "keywords": ["rxjs", "jsx", "reactive", "snabbdom", "vdom"],
   "license": "MIT"
 }
