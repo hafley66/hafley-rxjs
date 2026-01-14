@@ -1,0 +1,34 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`user-transform > transformUserCode > class this reference patterns > DOES wrap direct BehaviorSubject at module level 1`] = `
+{
+  "code": "import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr"
+import { BehaviorSubject } from 'rxjs'
+const __$ = _rxjs_debugger_module_start(import.meta.url)
+
+const state$ = __$("state$:new BehaviorSubject({count:0})", () => new BehaviorSubject({ count: 0 }))
+__$.end()
+if (import.meta.hot) {
+  import.meta.hot.accept()
+}
+",
+  "map": SourceMap {
+    "file": undefined,
+    "mappings": ";AAAA,MAAM,CAAC,CAAC,CAAC,eAAe,CAAC,CAAC,CAAC,IAAI,CAAC,CAAC,IAAI;;;AACrC,KAAK,CAAC,KAAK,CAAC,CAAC,CAAC,oDAAC,GAAG,CAAC,eAAe,CAAC,CAAC,CAAC,KAAK,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;",
+    "names": [],
+    "sources": [
+      "/app/test.ts",
+    ],
+    "sourcesContent": undefined,
+    "version": 3,
+  },
+}
+`;
+
+exports[`user-transform > transformUserCode > class this reference patterns > does NOT wrap extended Subject classes (runtime handles via constructor patch) 1`] = `null`;
+
+exports[`user-transform > transformUserCode > class this reference patterns > skips nested pipes in returned functions 1`] = `null`;
+
+exports[`user-transform > transformUserCode > class this reference patterns > skips this.pipe() inside class methods 1`] = `null`;
+
+exports[`user-transform > transformUserCode > class this reference patterns > skips this.subscribe() inside class methods 1`] = `null`;

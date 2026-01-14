@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  claude-code-dev:
+    build: .
+    container_name: rxjs-devtools-claude
+    working_dir: /workspace
+    volumes:
+      # Mount current directory as workspace
+      - ./:/workspace
+      # Persist Claude Code data (history, stats, etc.)
+      - claude-data:/root/.claude
+      # Optional: mount your host credentials to avoid re-authenticating
+      # - ~/.claude/.credentials.json:/root/.claude/.credentials.json:ro
+    environment:
+      # API key from .env file
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - NODE_ENV=development
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    # Optional: network mode for manual approval
+    # network_mode: none  # Uncomment for no network
+
+volumes:
+  # Named volume for persisting Claude Code data across container restarts
+  claude-data:
+    driver: local

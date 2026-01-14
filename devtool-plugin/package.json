@@ -1,0 +1,70 @@
+{
+  "name": "@hafley/rxjs-debugger",
+  "version": "0.1.0",
+  "description": "Observable tracking library with automatic memory leak detection",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./hmr": {
+      "types": "./src/tracking/v2/hmr/4_module-scope.ts",
+      "import": "./src/tracking/v2/hmr/4_module-scope.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "dev:test": "vite --config src/ui/__tests__/browser/vite.config.ts",
+    "build": "vite build",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:browser": "vitest --config vitest.browser.config.ts",
+    "typecheck": "tsgo --noEmit"
+  },
+  "keywords": [
+    "observable",
+    "rxjs",
+    "tracking",
+    "memory-leak",
+    "debugging"
+  ],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.26.2",
+  "dependencies": {
+    "d3": "^7.9.0",
+    "localforage": "^1.10.0",
+    "lodash": "^4.17.21",
+    "magic-string": "^0.30.21",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "rxjs": "^7.8.1",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.1",
+    "@types/d3": "^7.4.3",
+    "@types/lodash": "^4.17.21",
+    "@types/node": "^25.0.3",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@typescript/native-preview": "7.0.0-dev.20251226.1",
+    "@vitejs/plugin-react": "^5.1.2",
+    "@vitest/browser": "^4.0.16",
+    "@vitest/browser-playwright": "^4.0.16",
+    "@vitest/ui": "^4.0.16",
+    "oxc-parser": "^0.105.0",
+    "playwright": "^1.57.0",
+    "rolldown-vite": "^7.3.0",
+    "vitest": "^4.0.16"
+  }
+}

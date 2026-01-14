@@ -1,0 +1,8 @@
+{
+  "model": "sonnet",
+  "statusLine": {
+    "type": "command",
+    "command": "/root/.claude/statusline.sh",
+    "padding": 0
+  }
+}

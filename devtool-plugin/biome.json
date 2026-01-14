@@ -1,0 +1,59 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.3.0/schema.json",
+  "vcs": {
+    "enabled": false,
+    "clientKind": "git",
+    "useIgnoreFile": false
+  },
+  "files": {"includes": ["src/**/*.*"]},
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noUselessConstructor": "off",
+        "noForEach": "off",
+        "useLiteralKeys": "off",
+        "useArrowFunction": "off",
+        "noUselessFragments": "off",
+        "noStaticOnlyClass": "off",
+        "noBannedTypes": "info"
+      },
+      "style": {
+        "useNodejsImportProtocol": "off",
+        "useImportType": "off",
+        "noInferrableTypes": "off",
+        "noNonNullAssertion": "info",
+        "useConst": "info",
+        "noUnusedTemplateLiteral": "off",
+        "useTemplate": "info",
+        "useSingleVarDeclarator": "info",
+        "useSelfClosingElements": "off",
+        "noUselessElse": "off"
+      },
+      "suspicious": {
+        "noAssignInExpressions": "warn",
+        "noExplicitAny": "warn",
+        "noFallthroughSwitchClause": "off",
+        "noArrayIndexKey": "info"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "enabled": true,
+      "quoteStyle": "double",
+      "arrowParentheses": "asNeeded",
+      "semicolons": "asNeeded",
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineWidth": 120
+    }
+  },
+  "json": {
+    "formatter":{
+      "enabled": true,
+      "indentStyle": "space"
+    }
+  }
+}
