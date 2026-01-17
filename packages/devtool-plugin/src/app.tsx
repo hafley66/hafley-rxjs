@@ -1,23 +1,23 @@
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
-import { BehaviorSubject, EMPTY, of, Subject, throwError, timer } from "rxjs"
 import {
+  BehaviorSubject,
   catchError,
   debounceTime,
-  delay,
   distinctUntilChanged,
-  finalize,
+  from,
   map,
+  of,
   repeat,
   retry,
   share,
   switchMap,
-  take,
   tap,
-} from "rxjs/operators"
-import { state$, track } from "./tracking/v2/00.types"
+  timer,
+} from "rxjs"
+import { take } from "rxjs/operators"
+import { isEnabled$, state$ } from "./tracking/v2/00.types"
 import "./tracking/v2/03_scan-accumulator"
-import { proxy } from "./tracking/v2/04.operators"
 import { DebuggerGrid } from "./tracking/v2/ui/0_DebuggerGrid"
 
 // === Mock API ===
@@ -50,53 +50,47 @@ function mockFetch<T>(data: T, failRate = 0.1): Promise<ApiResponse<T>> {
 // === RxJS Patterns Demo ===
 
 // Pattern 1: Polling with repeat + delay returning observable
-const pollUsers$ = track(() =>
-  proxy.from(mockFetch(mockUsers, 0)).pipe(
-    proxy.map(res => res.data),
-    proxy.repeat({
-      delay: () => proxy.timer(3000), // This is the dynamic observable we want to visualize
-    }),
-    proxy.tap({
-      next: users => console.log("Polled users:", users.length),
-      error: err => console.error("Poll error:", err),
-    }),
-    proxy.share(),
-  ),
-) as ReturnType<typeof proxy.from>
+const pollUsers$ = from(mockFetch(mockUsers, 0)).pipe(
+  map(res => res.data),
+  repeat({
+    delay: () => timer(3000), // This is the dynamic observable we want to visualize
+  }),
+  tap({
+    next: users => console.log("Polled users:", users.length),
+    error: err => console.error("Poll error:", err),
+  }),
+  share(),
+)
 
 // Pattern 2: Search with debounce + switchMap
 const searchTerm$ = new BehaviorSubject("")
-const searchResults$ = track(() =>
-  proxy.from(searchTerm$).pipe(
-    proxy.debounceTime(300),
-    proxy.distinctUntilChanged(),
-    proxy.switchMap(term => {
-      if (!term) return proxy.of([])
-      const filtered = mockUsers.filter(
-        u => u.name.toLowerCase().includes(term.toLowerCase()) || u.email.toLowerCase().includes(term.toLowerCase()),
-      )
-      return proxy.from(mockFetch(filtered, 0.05)).pipe(proxy.map(res => res.data))
-    }),
-    proxy.tap(results => console.log("Search results:", results.length)),
-  ),
-) as ReturnType<typeof proxy.from>
+const searchResults$ = from(searchTerm$).pipe(
+  debounceTime(300),
+  distinctUntilChanged(),
+  switchMap(term => {
+    if (!term) return of([])
+    const filtered = mockUsers.filter(
+      u => u.name.toLowerCase().includes(term.toLowerCase()) || u.email.toLowerCase().includes(term.toLowerCase()),
+    )
+    return from(mockFetch(filtered, 0.05)).pipe(map(res => res.data))
+  }),
+  tap(results => console.log("Search results:", results.length)),
+)
 
 // Pattern 3: Create user with retry on failure
 function createUser(name: string, email: string) {
   const newUser = { id: Date.now(), name, email }
-  return track(() =>
-    proxy.from(mockFetch(newUser, 0.3)).pipe(
-      proxy.retry({ count: 2, delay: () => proxy.timer(500) }), // retry with delay observable
-      proxy.tap({
-        next: res => {
-          mockUsers = [...mockUsers, res.data]
-          console.log("Created user:", res.data)
-        },
-        error: err => console.error("Create failed after retries:", err),
-      }),
-      proxy.catchError(() => proxy.of(null)),
-    ),
-  ) as ReturnType<typeof proxy.from>
+  return from(mockFetch(newUser, 0.3)).pipe(
+    retry({ count: 2, delay: () => timer(500) }), // retry with delay observable
+    tap({
+      next: res => {
+        mockUsers = [...mockUsers, res.data]
+        console.log("Created user:", res.data)
+      },
+      error: err => console.error("Create failed after retries:", err),
+    }),
+    catchError(() => of(null)),
+  )
 }
 
 // Pattern 4: Delete with optimistic update + rollback
@@ -104,18 +98,16 @@ function deleteUser(id: number) {
   const backup = [...mockUsers]
   mockUsers = mockUsers.filter(u => u.id !== id)
 
-  return track(() =>
-    proxy.from(mockFetch({ deleted: id }, 0.2)).pipe(
-      proxy.tap({
-        next: () => console.log("Deleted user:", id),
-        error: () => {
-          mockUsers = backup // rollback
-          console.error("Delete failed, rolled back")
-        },
-      }),
-      proxy.catchError(() => proxy.of(null)),
-    ),
-  ) as ReturnType<typeof proxy.from>
+  return from(mockFetch({ deleted: id }, 0.2)).pipe(
+    tap({
+      next: () => console.log("Deleted user:", id),
+      error: () => {
+        mockUsers = backup // rollback
+        console.error("Delete failed, rolled back")
+      },
+    }),
+    catchError(() => of(null)),
+  )
 }
 
 // === React Components ===
@@ -133,7 +125,7 @@ function App() {
           <button
             type="button"
             onClick={() => {
-              state$.set({ isEnabled: true })
+              isEnabled$.next(true)
               const sub = pollUsers$.pipe(take(3)).subscribe()
               setTimeout(() => sub.unsubscribe(), 10000)
             }}
@@ -153,7 +145,7 @@ function App() {
           <button
             type="button"
             onClick={() => {
-              state$.set({ isEnabled: true })
+              isEnabled$.next(true)
               searchResults$.pipe(take(5)).subscribe()
             }}
           >
@@ -192,7 +184,7 @@ function App() {
             type="button"
             onClick={() => {
               state$.reset()
-              state$.set({ isEnabled: true })
+              isEnabled$.next(true)
             }}
           >
             Clear & Disable

@@ -1,6 +1,6 @@
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "rolldown-vite"
-import { rxjsHmrPlugin } from "./src/vite-plugin/1_rxjs_hmr_plugin"
+import { rxjsHmrPlugin } from "./src/1_runtime_vite_plugin/1_rxjs_hmr_plugin"
 
 export default defineConfig({
   build: {

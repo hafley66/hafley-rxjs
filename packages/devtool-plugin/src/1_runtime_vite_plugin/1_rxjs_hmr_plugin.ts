@@ -9,7 +9,7 @@
  */
 
 import path from "path"
-import type { PluginOption, ResolvedConfig } from "rolldown-vite"
+import type { Plugin, ResolvedConfig } from "vite"
 import { type RxjsDevtoolPatchOptions, rxjsDevtoolPatchPlugin } from "./0_rxjs_devtool_patch_plugin"
 import { shouldTransformUserCode, transformUserCode } from "./2_user_transform"
 
@@ -32,7 +32,7 @@ export interface RxjsHmrPluginOptions extends RxjsDevtoolPatchOptions {
   transformUserCode?: boolean
 }
 
-export function rxjsHmrPlugin(options: RxjsHmrPluginOptions = {}): PluginOption {
+export function rxjsHmrPlugin(options: RxjsHmrPluginOptions = {}): Plugin {
   const {
     debug = false,
     hmrModulePath,
