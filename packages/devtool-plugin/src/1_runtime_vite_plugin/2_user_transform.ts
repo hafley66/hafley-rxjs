@@ -18,15 +18,8 @@
  *   __$.end()
  */
 
-import MagicString from "magic-string"
-
-// Types
-interface OxcParseResult {
-  program: any
-  errors: any[]
-}
-
-type ParseSyncFn = (filename: string, code: string, options?: any) => OxcParseResult
+import MagicString, { SourceMap } from "magic-string"
+import { type Node, ParseResult, parseSync } from "oxc-parser"
 
 export interface UserTransformOptions {
   include?: RegExp
@@ -39,7 +32,7 @@ interface TransformTarget {
   varName?: string
   start: number
   end: number
-  node: any
+  node: Node
 }
 
 // Known RxJS creators (used to validate imports)
@@ -65,23 +58,18 @@ const KNOWN_RXJS_CREATORS = new Set([
 const KNOWN_SUBJECT_CLASSES = new Set(["Subject", "BehaviorSubject", "ReplaySubject", "AsyncSubject"])
 
 // Collect imports from rxjs modules
-function collectRxjsImports(ast: any): {
+function collectRxjsImports(ast: ParseResult["program"]): {
   creators: Set<string>
   subjects: Set<string>
   namespaces: Set<string>
-  lastImportEnd: number
 } {
   const creators = new Set<string>()
   const subjects = new Set<string>()
   const namespaces = new Set<string>()
-  let lastImportEnd = 0
 
   for (const stmt of ast.body || []) {
     if (stmt.type === "ImportDeclaration") {
       // Track last import position (handles interleaved imports)
-      if (stmt.end > lastImportEnd) {
-        lastImportEnd = stmt.end
-      }
 
       const source = stmt.source?.value
       if (!source || !source.startsWith("rxjs")) continue
@@ -90,7 +78,7 @@ function collectRxjsImports(ast: any): {
         if (spec.type === "ImportSpecifier") {
           // For aliased imports: import { of as createObs }
           // imported.name = "of", local.name = "createObs"
-          const importedName = spec.imported?.name
+          const importedName = spec.imported?.type === "Identifier" ? spec.imported.name : ""
           const localName = spec.local?.name || importedName
           if (KNOWN_RXJS_CREATORS.has(importedName)) {
             creators.add(localName)
@@ -106,12 +94,12 @@ function collectRxjsImports(ast: any): {
     }
   }
 
-  return { creators, subjects, namespaces, lastImportEnd }
+  return { creators, subjects, namespaces }
 }
 
 // Structural serialization - mirrors runtime's serializeValue
 // Produces keys like: of(1,2,3).map(fn).filter(fn)
-function serializeAstNode(node: any): string {
+function serializeAstNode(node: Node): string {
   if (!node) return "?"
 
   // Functions → "fn"
@@ -125,32 +113,34 @@ function serializeAstNode(node: any): string {
   }
 
   // Literals
-  if (node.type === "NumericLiteral" || (node.type === "Literal" && typeof node.value === "number")) {
+  if (node.type === "Literal" && typeof node.value === "number") {
     return String(node.value)
   }
-  if (node.type === "StringLiteral" || (node.type === "Literal" && typeof node.value === "string")) {
+  if (node.type === "Literal" && typeof node.value === "string") {
     return `"${node.value}"`
   }
-  if (node.type === "BooleanLiteral" || (node.type === "Literal" && typeof node.value === "boolean")) {
+  if (node.type === "Literal" && typeof node.value === "boolean") {
     return String(node.value)
   }
-  if (node.type === "NullLiteral" || (node.type === "Literal" && node.value === null)) {
+  if (node.type === "Literal" && node.value === null) {
     return "null"
   }
 
   // Array expressions
   if (node.type === "ArrayExpression") {
-    const elements = (node.elements || []).map((el: any) => serializeAstNode(el))
+    const elements = (node.elements || []).map(el => el && serializeAstNode(el))
     return `[${elements.join(",")}]`
   }
 
   // Object expressions
   if (node.type === "ObjectExpression") {
     const props = (node.properties || [])
-      .filter((p: any) => p.type === "Property" || p.type === "ObjectProperty")
-      .map((p: any) => {
+      .filter(p => p.type === "Property" || p.type === "SpreadElement")
+      .map(p => {
+        // @ts-expect-error too dynamic
         const key = p.key?.name || p.key?.value || "?"
-        return `${key}:${serializeAstNode(p.value)}`
+        // @ts-expect-error too dynamic
+        return `${key}:${serializeAstNode(p.value ?? "?")}`
       })
       .sort()
     return `{${props.join(",")}}`
@@ -158,20 +148,22 @@ function serializeAstNode(node: any): string {
 
   // New expressions (new Subject(), new BehaviorSubject(0))
   if (node.type === "NewExpression") {
+    // @ts-expect-error too dynamic
     const callee = node.callee?.name || node.callee?.property?.name || "?"
-    const args = (node.arguments || []).map((a: any) => serializeAstNode(a))
+    const args = (node.arguments || []).map(a => serializeAstNode(a))
     return `new ${callee}(${args.join(",")})`
   }
 
   // Call expressions - check for pipe pattern
   if (node.type === "CallExpression") {
     // Pipe call: source$.pipe(op1, op2) → source$.op1(...).op2(...)
+    // @ts-expect-error too dynamic
     if (node.callee?.type === "MemberExpression" && node.callee?.property?.name === "pipe") {
       const source = serializeAstNode(node.callee.object)
-      const operators = (node.arguments || []).map((op: any) => {
+      const operators = (node.arguments || []).map(op => {
         if (op.type === "CallExpression" && op.callee?.type === "Identifier") {
           const opName = op.callee.name
-          const opArgs = (op.arguments || []).map((a: any) => serializeAstNode(a))
+          const opArgs = (op.arguments || []).map(a => serializeAstNode(a))
           return `.${opName}(${opArgs.join(",")})`
         }
         return `.?(${serializeAstNode(op)})`
@@ -182,20 +174,23 @@ function serializeAstNode(node: any): string {
     // Member call: a$.subscribe(...) → a$.subscribe(...)
     if (node.callee?.type === "MemberExpression") {
       const obj = serializeAstNode(node.callee.object)
+      // @ts-expect-error too dynamic
       const prop = node.callee.property?.name || "?"
-      const args = (node.arguments || []).map((a: any) => serializeAstNode(a))
+      const args = (node.arguments || []).map(a => serializeAstNode(a))
       return `${obj}.${prop}(${args.join(",")})`
     }
 
     // Regular call: of(1, 2, 3)
+    // @ts-expect-error too dynamic
     const callee = node.callee?.name || "?"
-    const args = (node.arguments || []).map((a: any) => serializeAstNode(a))
+    const args = (node.arguments || []).map(a => serializeAstNode(a))
     return `${callee}(${args.join(",")})`
   }
 
   // Member expressions (for chained pipes like source$.pipe().pipe())
   if (node.type === "MemberExpression") {
     const obj = serializeAstNode(node.object)
+    // @ts-expect-error too dynamic
     const prop = node.property?.name || node.property?.value || "?"
     return `${obj}.${prop}`
   }
@@ -213,13 +208,13 @@ function serializeAstNode(node: any): string {
   return "?"
 }
 
-function generateStructuralKey(prefix: string, node: any): string {
+function generateStructuralKey(prefix: string, node: Node): string {
   const structure = serializeAstNode(node)
   return `${prefix}:${structure}`
 }
 
 // AST detection helpers - now take imported symbols as context
-function isRxjsCreatorCall(node: any, importedCreators: Set<string>, namespaces: Set<string>): boolean {
+function isRxjsCreatorCall(node: Node, importedCreators: Set<string>, namespaces: Set<string>): boolean {
   if (node.type !== "CallExpression") return false
   const callee = node.callee
 
@@ -242,20 +237,21 @@ function isRxjsCreatorCall(node: any, importedCreators: Set<string>, namespaces:
   return false
 }
 
-function isSubjectConstruction(node: any, importedSubjects: Set<string>, namespaces: Set<string>): boolean {
+function isSubjectConstruction(node: Node, importedSubjects: Set<string>, _namespaces: Set<string>): boolean {
   if (node.type !== "NewExpression") return false
   const callee = node.callee
 
-  // Direct: new Subject()
-  if (callee?.type === "Identifier" && importedSubjects.has(callee.name)) {
+  // Direct: new Subject() / new BehaviorSubject() / new EasierBS()
+  // Conservative match - if name matches known class OR was detected as subclass, wrap it
+  // Over-matching is harmless, missing is not
+  if (callee?.type === "Identifier" && (KNOWN_SUBJECT_CLASSES.has(callee.name) || importedSubjects.has(callee.name))) {
     return true
   }
 
-  // Namespace: new rx.Subject()
+  // Namespace/member: new rx.Subject() or new foo.CustomSubject()
+  // Match any member access where property name is a known subject class
   if (
     callee?.type === "MemberExpression" &&
-    callee.object?.type === "Identifier" &&
-    namespaces.has(callee.object.name) &&
     callee.property?.type === "Identifier" &&
     KNOWN_SUBJECT_CLASSES.has(callee.property.name)
   ) {
@@ -265,22 +261,66 @@ function isSubjectConstruction(node: any, importedSubjects: Set<string>, namespa
   return false
 }
 
-function isPipeCall(node: any): boolean {
+function isPipeCall(node: Node): boolean {
   if (node.type !== "CallExpression") return false
   const callee = node.callee
+  // @ts-expect-error too dynamic
   return callee?.type === "MemberExpression" && callee.property?.name === "pipe"
 }
 
-function isSubscribeCall(node: any): boolean {
+function isSubscribeCall(node: Node): boolean {
   if (node.type !== "CallExpression") return false
   const callee = node.callee
   if (callee?.type !== "MemberExpression") return false
+  // @ts-expect-error too dynamic
   const prop = callee.property?.name
   return prop === "subscribe" || prop === "forEach"
 }
 
+// Expand subjects set to include user-defined subclasses
+// class MySubject extends Subject {} -> MySubject added to subjects
+// Handles: direct extends, renamed imports, namespace access, and transitive inheritance
+function expandSubjectsWithSubclasses(
+  ast: ParseResult["program"],
+  subjects: Set<string>,
+  namespaces: Set<string>,
+): void {
+  // Fixed point iteration - keep expanding until no new subjects found
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const stmt of ast.body || []) {
+      if (stmt.type !== "ClassDeclaration" && stmt.type !== "ClassExpression") continue
+      const className = stmt.id?.name
+      if (!className || subjects.has(className)) continue
+
+      const superClass = stmt.superClass
+      if (!superClass) continue
+
+      // Direct extends: class Foo extends Subject (or renamed import)
+      if (superClass.type === "Identifier" && subjects.has(superClass.name)) {
+        subjects.add(className)
+        changed = true
+        continue
+      }
+
+      // Namespace extends: class Foo extends rx.Subject
+      if (
+        superClass.type === "MemberExpression" &&
+        superClass.object?.type === "Identifier" &&
+        namespaces.has(superClass.object.name) &&
+        superClass.property?.type === "Identifier" &&
+        KNOWN_SUBJECT_CLASSES.has(superClass.property.name)
+      ) {
+        subjects.add(className)
+        changed = true
+      }
+    }
+  }
+}
+
 function isObservableExpression(
-  node: any,
+  node: Node,
   creators: Set<string>,
   subjects: Set<string>,
   namespaces: Set<string>,
@@ -293,7 +333,7 @@ function isObservableExpression(
 }
 
 // Skip rules - don't transform inside these contexts
-function shouldSkip(ancestors: any[]): boolean {
+function shouldSkip(ancestors: Node[]): boolean {
   return ancestors.some(a => {
     // Already inside __$ wrapper
     if (a.type === "CallExpression" && a.callee?.type === "Identifier" && a.callee.name === "__$") {
@@ -308,7 +348,7 @@ function shouldSkip(ancestors: any[]): boolean {
 }
 
 // Walk AST with ancestor tracking
-function walkAst(node: any, visitor: (node: any, ancestors: any[]) => void, ancestors: any[] = []) {
+function walkAst(node: Node, visitor: (node: Node, ancestors: Node[]) => void, ancestors: Node[] = []) {
   if (!node || typeof node !== "object") return
 
   visitor(node, ancestors)
@@ -316,6 +356,7 @@ function walkAst(node: any, visitor: (node: any, ancestors: any[]) => void, ance
   const newAncestors = [...ancestors, node]
 
   for (const key of Object.keys(node)) {
+    // @ts-expect-error too dynamic
     const child = node[key]
     if (Array.isArray(child)) {
       for (const item of child) {
@@ -329,7 +370,7 @@ function walkAst(node: any, visitor: (node: any, ancestors: any[]) => void, ance
 
 // Collect all transform targets in a single pass
 function collectTargets(
-  ast: any,
+  ast: ParseResult["program"],
   creators: Set<string>,
   subjects: Set<string>,
   namespaces: Set<string>,
@@ -386,13 +427,7 @@ function collectTargets(
 }
 
 // Apply transforms using MagicString (reverse order)
-function applyTransforms(
-  ms: MagicString,
-  code: string,
-  targets: TransformTarget[],
-  insertPoint: number,
-  hmrImport: string,
-): void {
+function applyTransforms(ms: MagicString, code: string, targets: TransformTarget[], hmrImport: string): void {
   if (targets.length === 0) return
 
   // Apply in reverse order to preserve positions
@@ -431,12 +466,23 @@ export function shouldTransformUserCode(id: string, options: UserTransformOption
   const {
     include = /\.[tj]sx?$/,
     // Exclude: node_modules, .d.ts, tests, AND our own tracking code (avoid circular imports)
-    exclude = /node_modules|\.d\.ts|\.test\.|\.spec\.|\/tracking\/v2\//,
+    exclude = /node_modules|\.d\.ts|\/tracking\/v2\//,
   } = options
-
   const cleanId = id.split("?")[0] ?? id
-  if (!include.test(cleanId)) return false
-  if (exclude.test(cleanId)) return false
+
+  if (id.includes("tracking/v2") && id.includes(".test.")) {
+    // console.log("v2 testing include:", cleanId)
+    return true
+  }
+
+  if (!include.test(cleanId)) {
+    // console.log("Including:", cleanId)
+    return false
+  } else if (exclude.test(cleanId)) {
+    // console.log("Excluding:", cleanId)
+    return false
+  }
+  // console.log("Return:", cleanId)
   return true
 }
 
@@ -444,9 +490,8 @@ export function shouldTransformUserCode(id: string, options: UserTransformOption
 export function transformUserCode(
   code: string,
   id: string,
-  parseSync: ParseSyncFn,
   options: UserTransformOptions = {},
-): { code: string; map: any } | null {
+): { code: string; map: SourceMap } | null {
   const { hmrImport = "@hafley/rxjs-debugger/hmr" } = options
 
   // Skip if already instrumented
@@ -460,7 +505,7 @@ export function transformUserCode(
   }
 
   // Parse
-  let ast: any
+  let ast: ParseResult["program"]
   try {
     const result = parseSync(id, code, { sourceType: "module" })
     if (result.errors.length > 0) return null
@@ -470,7 +515,7 @@ export function transformUserCode(
   }
 
   // Collect RxJS imports - only wrap symbols actually imported from rxjs
-  const { creators, subjects, namespaces, lastImportEnd } = collectRxjsImports(ast)
+  const { creators, subjects, namespaces } = collectRxjsImports(ast)
 
   // If no rxjs imports found, nothing to transform
   if (creators.size === 0 && subjects.size === 0 && namespaces.size === 0) {
@@ -478,13 +523,17 @@ export function transformUserCode(
     // So we continue with empty sets for creators/subjects
   }
 
+  // Expand subjects to include user-defined subclasses
+  // class MySubject extends Subject {} -> new MySubject() gets wrapped
+  expandSubjectsWithSubclasses(ast, subjects, namespaces)
+
   // Collect targets using verified imports
   const targets = collectTargets(ast, creators, subjects, namespaces)
   if (targets.length === 0) return null
 
   // Apply transforms
   const ms = new MagicString(code)
-  applyTransforms(ms, code, targets, lastImportEnd, hmrImport)
+  applyTransforms(ms, code, targets, hmrImport)
 
   return {
     code: ms.toString(),

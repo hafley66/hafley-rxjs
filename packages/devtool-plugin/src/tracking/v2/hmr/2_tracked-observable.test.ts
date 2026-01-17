@@ -1,15 +1,14 @@
-import { Subject } from "rxjs"
+import { map, Subject } from "rxjs"
 import { describe, expect, it } from "vitest"
 import { state$ } from "../00.types"
 import "../03_scan-accumulator"
-import { proxy } from "../04.operators"
 import { useTrackingTestSetup } from "../0_test-utils"
 import { __$ } from "./0_runtime"
 import { findTrackByKey } from "./1_queries"
 import { trackedObservable } from "./2_tracked-observable"
 
 describe("trackedObservable", () => {
-  useTrackingTestSetup()
+  useTrackingTestSetup(true)
 
   it("subscribes to tracked observable and receives emissions", () => {
     const source$ = __$("app:source$", () => new Subject<number>())
@@ -101,7 +100,7 @@ describe("trackedObservable", () => {
 
   it("works with hot source and pipe", () => {
     const input$ = new Subject<number>()
-    __$("app:piped$", () => input$.pipe(proxy.map(x => x * 10)))
+    __$("app:piped$", () => input$.pipe(map(x => x * 10)))
     const trackId = findTrackByKey(state$.value, "app:piped$")!.id
 
     const tracked$ = trackedObservable<number>(trackId)

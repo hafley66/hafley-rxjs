@@ -48,16 +48,28 @@ const shouldEmit = (eventType: string): boolean => {
   // Untracked events always emit (regardless of enabled state)
   // This allows track-call/track-call-return during defer factory execution
   // where tracking is disabled to prevent subscribe-call cascades
-  if (UNTRACKED_EVENTS.has(eventType)) return true
+  if (UNTRACKED_EVENTS.has(eventType)) {
+    return true
+  }
   const enabled = _getIsEnabled?.() ?? false
-  if (!enabled) return false
+  if (!enabled) {
+    // console.log("Dropping: !enabled", eventType)
+    return false
+  }
   // Structured events require track context
   const trackStack = _getTrackStack?.() ?? []
-  return trackStack.length > 0
+  if (trackStack.length > 0) {
+    return true
+  } else {
+    // console.log("Dropping: !noTrack", eventType)
+    return false
+  }
 }
 
 export const emit = (event: ObservableEvent) => {
-  if (!shouldEmit(event.type)) return
+  if (!shouldEmit(event.type)) {
+    return
+  }
   if (_emit) {
     _emit(event)
   } else {
@@ -207,11 +219,12 @@ export function patchObservable(Observable: { prototype: any; create?: any }) {
     },
   })
 
-  // Patch subscribe
   const originalSubscribe = proto.subscribe
+  // console.log("patching subscribe")
   proto.subscribe = function patchedSubscribe(...args: any[]) {
-    // isEnabled controls instance creation - when false, subscription gets __id__ = ""
+    // console.log("GRRRRR")
     if (!isEnabled()) {
+      // console.log("oops")
       const sub = originalSubscribe.apply(this, args as any)
       ;(sub as any).__id__ = ""
       return sub
@@ -220,9 +233,8 @@ export function patchObservable(Observable: { prototype: any; create?: any }) {
     const obs_id = (this as any).__id__ as string | undefined
     const store = _getStore?.()
 
-    // Store-based tracking: observable must have truthy __id__ AND exist in store
-    // If not in store, this observable was created without __$ tracking - pass through
     if (!obs_id || !store?.observable[obs_id]) {
+      // console.log("ooops but again")
       const sub = originalSubscribe.apply(this, args as any)
       ;(sub as any).__id__ = ""
       return sub
@@ -230,7 +242,7 @@ export function patchObservable(Observable: { prototype: any; create?: any }) {
 
     const observable_id = obs_id
     const subscription_id = createId()
-
+    // console.log("So it should work?")
     emit({ observable_id, type: "subscribe-call", args, id: subscription_id, index: 0 })
 
     const observer = normalizeObserver(args)

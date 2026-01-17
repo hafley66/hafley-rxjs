@@ -24,10 +24,19 @@ export function useTrackingTestSetup(opts: TestSetupOptions | boolean = {}) {
     resetIdCounter()
     resetEventBuffer()
     setNow(0)
+    isEnabled$.next(false)
     state$.reset()
     isEnabled$.next(true)
     if (fakeTrack) {
-      state$.value.stack.hmr_track.push({ id: "test", created_at: 0 } as any)
+      state$.value.stack.hmr_track.push({
+        id: "test",
+        created_at: 0,
+        index: 0,
+        key: "test-utils.ts",
+        version: 0,
+        mutable_observable_id: "-1",
+        prev_observable_ids: [],
+      })
     }
   })
 

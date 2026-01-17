@@ -15,6 +15,7 @@ export function DebuggerGrid() {
   const store = state$.value.store
   const roots = getRootObservables(store)
   const subs = getTopLevelSubscriptions(store)
+  console.log({ store, subs })
   const subIds = subs.map(s => s.id)
 
   // Get all sends sorted chronologically

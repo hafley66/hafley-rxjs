@@ -1,7 +1,7 @@
-import { Subject, type Observable } from "rxjs"
+import { type Observable, Subject } from "rxjs"
 import { shareReplay } from "rxjs/operators"
-import { observableEventsEnabled$, type State, state$ } from "./00.types"
-import { now, observableIdMap, createId } from "./01_helpers"
+import { observableEventsEnabled$, state$ } from "./00.types"
+import { now, observableIdMap } from "./01_helpers"
 import { crawlArgs } from "./02_arg-crawler"
 
 // Structural serialization for HMR change detection
@@ -111,8 +111,7 @@ export const state$$ = observableEventsEnabled$.pipe(
         const parentSub = state.stack.subscription.at(-1)
         if (parentSub) {
           const isInternalPlumbing = Object.values(state.store.hmr_track).some(
-            t => t.stable_observable_id === parentSub.observable_id
-              && t.mutable_observable_id === event.observable_id,
+            t => t.stable_observable_id === parentSub.observable_id && t.mutable_observable_id === event.observable_id,
           )
           if (isInternalPlumbing) break // Skip tracking wrapper→inner subscription
         }

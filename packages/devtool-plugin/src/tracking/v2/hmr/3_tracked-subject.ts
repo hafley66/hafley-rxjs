@@ -39,10 +39,10 @@ export function trackedSubject<T>(trackId: string, initialMutableId?: string): S
     }
     innerSub = __withNoTrack(() =>
       inner.subscribe({
-        next: (v) => {
+        next: v => {
           if (!isForwarding) originalNext(v)
         },
-        error: (e) => {
+        error: e => {
           if (!isForwarding) originalError(e)
         },
         complete: () => {
@@ -55,9 +55,10 @@ export function trackedSubject<T>(trackId: string, initialMutableId?: string): S
   const getCurrentSubject = (storeSnapshot?: typeof state$.value.store): Subject<T> | undefined => {
     const store = storeSnapshot ?? state$.value.store
     // Lookup by id - O(1). Use passed initialMutableId on first call, then store
-    const entityId = lastEntityId === undefined && initialMutableId
-      ? initialMutableId
-      : store.hmr_track[trackId]?.mutable_observable_id
+    const entityId =
+      lastEntityId === undefined && initialMutableId
+        ? initialMutableId
+        : store.hmr_track[trackId]?.mutable_observable_id
     // Only proceed if observable is actually in store (may still be buffered)
     if (entityId && entityId !== lastEntityId && store.observable[entityId]) {
       lastEntityId = entityId
@@ -168,10 +169,10 @@ export function trackedBehaviorSubject<T>(
     }
     innerSub = __withNoTrack(() =>
       inner.subscribe({
-        next: (v) => {
+        next: v => {
           if (!isForwarding) originalNext(v)
         },
-        error: (e) => {
+        error: e => {
           if (!isForwarding) originalError(e)
         },
         complete: () => {
@@ -184,16 +185,15 @@ export function trackedBehaviorSubject<T>(
   const getCurrentSubject = (storeSnapshot?: typeof state$.value.store): BehaviorSubject<T> | undefined => {
     const store = storeSnapshot ?? state$.value.store
     // Lookup by id - O(1). Use passed initialMutableId on first call, then store
-    const entityId = lastEntityId === undefined && initialMutableId
-      ? initialMutableId
-      : store.hmr_track[trackId]?.mutable_observable_id
+    const entityId =
+      lastEntityId === undefined && initialMutableId
+        ? initialMutableId
+        : store.hmr_track[trackId]?.mutable_observable_id
     // Only proceed if observable is actually in store (may still be buffered)
     if (entityId && entityId !== lastEntityId && store.observable[entityId]) {
       lastEntityId = entityId
       const obsRecord = store.observable[entityId]
-      const newSubject = obsRecord?.obs_ref?.deref() as
-        | BehaviorSubject<T>
-        | undefined
+      const newSubject = obsRecord?.obs_ref?.deref() as BehaviorSubject<T> | undefined
       if (newSubject && newSubject !== currentSubject) {
         currentSubject = newSubject
         subscribeToInner(currentSubject)

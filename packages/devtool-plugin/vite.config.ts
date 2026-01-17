@@ -1,6 +1,7 @@
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "rolldown-vite"
 import { rxjsHmrPlugin } from "./src/1_runtime_vite_plugin/1_rxjs_hmr_plugin"
+import tsconfigPaths from 'vite-tsconfig-paths'
 
 export default defineConfig({
   build: {
@@ -16,8 +17,8 @@ export default defineConfig({
     sourcemap: true,
     target: "esnext",
   },
-  plugins: [react(), rxjsHmrPlugin({ debug: true })],
+  plugins: [react(), rxjsHmrPlugin({ debug: true }),tsconfigPaths()],
   optimizeDeps: {
-    exclude: ["rxjs"],
+    exclude: ["rxjs", "rxjs/operators"],
   },
 })

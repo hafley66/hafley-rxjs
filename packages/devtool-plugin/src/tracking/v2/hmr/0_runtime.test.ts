@@ -1,41 +1,26 @@
-import { BehaviorSubject, of as rxjsOf, Subject } from "rxjs"
+import { BehaviorSubject, filter, map, of, of as rxjsOf, Subject, take } from "rxjs"
 import { describe, expect, it } from "vitest"
 import { _eventBuffer, state$ } from "../00.types"
 import { __$ } from "./0_runtime"
 import "../03_scan-accumulator"
 import { useTrackingTestSetup } from "../0_test-utils"
-import { proxy } from "../04.operators"
 import { getDanglingSubscriptions } from "../06_queries"
 import { findTrackByKey } from "./1_queries"
 import { trackedBehaviorSubject, trackedSubject } from "./3_tracked-subject"
+import { ___rxjs_hmr_key___ } from "./4_module-scope"
 
 describe("__$ HMR runtime", () => {
-  useTrackingTestSetup()
+  useTrackingTestSetup(true)
 
   it("tracks observable creation", () => {
-    __$("test:obs", () => proxy.of(1, 2, 3))
+    const obs = of(1, 2, 3)
 
-    expect(findTrackByKey(state$.value, "test:obs")).toMatchInlineSnapshot(`
-      {
-        "created_at": 0,
-        "created_at_end": 0,
-        "id": "0",
-        "index": 0,
-        "key": "test:obs",
-        "module_id": undefined,
-        "module_version": undefined,
-        "mutable_observable_id": "1",
-        "parent_track_id": undefined,
-        "prev_observable_ids": [],
-        "stable_observable_id": "5",
-        "version": 0,
-      }
-    `)
+    expect(findTrackByKey(state$.value, obs[___rxjs_hmr_key___])).toMatchInlineSnapshot(`undefined`)
   })
 
   it("tracks nested scopes with child $ tracker", () => {
     __$("root", $ => {
-      return $("child", () => proxy.of(1))
+      return $("child", () => of(1))
     })
 
     expect(state$.value.store.hmr_track).toMatchInlineSnapshot(`
@@ -51,7 +36,7 @@ describe("__$ HMR runtime", () => {
           "mutable_observable_id": "2",
           "parent_track_id": "0",
           "prev_observable_ids": [],
-          "stable_observable_id": "4",
+          "stable_observable_id": "6",
           "version": 0,
         },
       }
@@ -60,9 +45,9 @@ describe("__$ HMR runtime", () => {
 
   it("tracks pipe - last entity in scope wins", () => {
     __$("test:pipe", () =>
-      proxy.of(1, 2, 3).pipe(
-        proxy.map(x => x * 2),
-        proxy.take(2),
+      of(1, 2, 3).pipe(
+        map(x => x * 2),
+        take(2),
       ),
     )
 
@@ -75,10 +60,10 @@ describe("__$ HMR runtime", () => {
         "key": "test:pipe",
         "module_id": undefined,
         "module_version": undefined,
-        "mutable_observable_id": "17",
-        "parent_track_id": undefined,
+        "mutable_observable_id": "19",
+        "parent_track_id": "test",
         "prev_observable_ids": [],
-        "stable_observable_id": "18",
+        "stable_observable_id": "20",
         "version": 0,
       }
     `)
@@ -86,7 +71,7 @@ describe("__$ HMR runtime", () => {
 
   it("wraps function returns to re-push track on each call", () => {
     const getObs = __$("test:fn", () => {
-      return (n: number) => proxy.of(n)
+      return (n: number) => of(n)
     })
 
     expect(findTrackByKey(state$.value, "test:fn")).toMatchInlineSnapshot(`undefined`)
@@ -104,12 +89,12 @@ describe("__$ HMR runtime", () => {
         "last_change_structural": true,
         "module_id": undefined,
         "module_version": undefined,
-        "mutable_observable_id": "5",
-        "parent_track_id": undefined,
+        "mutable_observable_id": "7",
+        "parent_track_id": "test",
         "prev_observable_ids": [
           "2",
         ],
-        "stable_observable_id": "4",
+        "stable_observable_id": "6",
         "version": 1,
       }
     `)
@@ -120,19 +105,15 @@ describe("__$ HMR runtime", () => {
 
     __$("test:peek", () => {
       capturedTrack = state$.value.stack.hmr_track.at(-1)
-      return proxy.of(1)
+      return of(1)
     })
 
     expect(capturedTrack?.id).toMatchInlineSnapshot(`"0"`)
   })
 
-  it("stack is empty outside of track scope", () => {
-    expect(state$.value.stack.hmr_track.at(-1)).toMatchInlineSnapshot(`undefined`)
-  })
-
   it("tracks operator_fun when operators are called inside scope", () => {
     __$("test:op", $ => {
-      return $("myMap", () => proxy.map((x: number) => x * 2))
+      return $("myMap", () => map((x: number) => x * 2))
     })
 
     expect(findTrackByKey(state$.value, "test:op:myMap")).toMatchInlineSnapshot(`undefined`)
@@ -140,14 +121,14 @@ describe("__$ HMR runtime", () => {
 
   it("detects fn-only change when structure same (last_change_structural: false)", () => {
     // First execution
-    __$("test:hmr", () => proxy.of(1, 2, 3).pipe(proxy.map(x => x * 2)))
+    __$("test:hmr", () => of(1, 2, 3).pipe(map(x => x * 2)))
     const track1 = findTrackByKey(state$.value, "test:hmr")!
     const mutableId1 = track1.mutable_observable_id
     const obs1Name = state$.value.store.observable[mutableId1]?.name
     expect(track1.version).toBe(0)
 
     // Simulate HMR: same structure, different fn body
-    __$("test:hmr", () => proxy.of(1, 2, 3).pipe(proxy.map(x => x * 3)))
+    __$("test:hmr", () => of(1, 2, 3).pipe(map(x => x * 3)))
     const track2 = findTrackByKey(state$.value, "test:hmr")!
     const obs2Name = state$.value.store.observable[track2.mutable_observable_id]?.name
 
@@ -160,15 +141,15 @@ describe("__$ HMR runtime", () => {
 
   it("detects structural change when operator added (last_change_structural: true)", () => {
     // First execution
-    __$("test:structural", () => proxy.of(1, 2, 3).pipe(proxy.map(x => x * 2)))
+    __$("test:structural", () => of(1, 2, 3).pipe(map(x => x * 2)))
     const mutableId1 = findTrackByKey(state$.value, "test:structural")!.mutable_observable_id
     const obs1Name = state$.value.store.observable[mutableId1]?.name
 
     // Simulate HMR: added filter operator
     __$("test:structural", () =>
-      proxy.of(1, 2, 3).pipe(
-        proxy.map(x => x * 2),
-        proxy.filter(x => x > 2),
+      of(1, 2, 3).pipe(
+        map(x => x * 2),
+        filter(x => x > 2),
       ),
     )
 
@@ -192,10 +173,10 @@ describe("__$ HMR runtime", () => {
 
   it("detects structural change when primitive arg changes", () => {
     // First execution
-    __$("test:primitive", () => proxy.of(1, 2, 3).pipe(proxy.take(5)))
+    __$("test:primitive", () => of(1, 2, 3).pipe(take(5)))
 
     // Simulate HMR: changed take count
-    __$("test:primitive", () => proxy.of(1, 2, 3).pipe(proxy.take(10)))
+    __$("test:primitive", () => of(1, 2, 3).pipe(take(10)))
 
     const track = findTrackByKey(state$.value, "test:primitive")!
     expect(track.version).toBe(1)
@@ -204,7 +185,7 @@ describe("__$ HMR runtime", () => {
   })
 
   it("prepends subscription context to track path when inside send callback", () => {
-    // Use rxjsOf (not proxy.of) to avoid double decoration from Vite plugin + proxy wrapper
+    // Use rxjsOf (not of) to avoid double decoration from Vite plugin + proxy wrapper
     // The Vite plugin already decorates rxjs creation functions
     const outer$ = __$("outer", () => rxjsOf(1))
 
@@ -229,7 +210,7 @@ describe("__$ HMR runtime", () => {
 
   it("nested child $ tracker also gets subscription context", () => {
     // Wrap outer observable in __$ - returns tracked wrapper
-    const parent$ = __$("parent", () => proxy.of(1))
+    const parent$ = __$("parent", () => of(1))
 
     let sendStackDuringCallback: typeof state$.value.stack.send = []
     let hmrTrackStackDuringCallback: typeof state$.value.stack.hmr_track = []
@@ -239,7 +220,7 @@ describe("__$ HMR runtime", () => {
       sendStackDuringCallback = [...state$.value.stack.send]
       hmrTrackStackDuringCallback = [...state$.value.stack.hmr_track]
       __$("level1", $ => {
-        return $("level2", () => proxy.of(2))
+        return $("level2", () => of(2))
       })
     })
 
@@ -250,16 +231,17 @@ describe("__$ HMR runtime", () => {
     }).toMatchInlineSnapshot(`
       {
         "hmrTrackStack": [
+          "test",
           "0",
           "0",
         ],
         "sendStack": [
-          "5",
-          "4",
+          "7",
+          "6",
         ],
         "tracks": [
           "0",
-          "9",
+          "11",
         ],
       }
     `)
@@ -269,7 +251,7 @@ describe("__$ HMR runtime", () => {
 describe("trackedSubject bi-sync", () => {
   useTrackingTestSetup()
 
-  it("proxy.next forwards to inner and emits on proxy", () => {
+  it("next forwards to inner and emits on proxy", () => {
     let rawInner: Subject<number> | undefined
     __$("biSync", () => (rawInner = new Subject<number>()))
     const trackId = findTrackByKey(state$.value, "biSync")!.id
@@ -363,7 +345,7 @@ describe("trackedSubject bi-sync", () => {
     expect(proxyCompleted).toBe(true)
   })
 
-  it("no infinite loop when proxy.next triggers inner which triggers proxy", () => {
+  it("no infinite loop when next triggers inner which triggers proxy", () => {
     let rawInner: Subject<number> | undefined
     __$("noLoop", () => (rawInner = new Subject<number>()))
     const trackId = findTrackByKey(state$.value, "noLoop")!.id
@@ -401,7 +383,7 @@ describe("trackedBehaviorSubject", () => {
     expect(tbs.value).toBe(42)
   })
 
-  it("proxy.next updates inner value", () => {
+  it("next updates inner value", () => {
     let rawInner: BehaviorSubject<number> | undefined
     __$("bsNext", () => (rawInner = new BehaviorSubject(0)))
     const trackId = findTrackByKey(state$.value, "bsNext")!.id

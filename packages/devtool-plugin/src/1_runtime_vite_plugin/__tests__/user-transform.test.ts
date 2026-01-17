@@ -4,17 +4,10 @@
  * Tests transformUserCode directly without full vite build.
  */
 
-import { beforeAll, describe, expect, it } from "vitest"
+import { describe, expect, it } from "vitest"
 import { shouldTransformUserCode, transformUserCode } from "../2_user_transform"
 
 describe("user-transform", () => {
-  let parseSync: any
-
-  beforeAll(async () => {
-    const oxc = await import("oxc-parser")
-    parseSync = oxc.parseSync
-  })
-
   describe("shouldTransformUserCode", () => {
     it("accepts .ts files", () => {
       expect(shouldTransformUserCode("/app/test.ts")).toBe(true)
@@ -36,18 +29,18 @@ describe("user-transform", () => {
       expect(shouldTransformUserCode("/app/types.d.ts")).toBe(false)
     })
 
-    it("rejects .test.ts files", () => {
-      expect(shouldTransformUserCode("/app/foo.test.ts")).toBe(false)
+    it("accepts .test.ts files", () => {
+      expect(shouldTransformUserCode("/app/foo.test.ts")).toBe(true)
     })
 
-    it("rejects .spec.ts files", () => {
-      expect(shouldTransformUserCode("/app/foo.spec.ts")).toBe(false)
+    it("accepts .spec.ts files", () => {
+      expect(shouldTransformUserCode("/app/foo.spec.ts")).toBe(true)
     })
   })
 
   describe("transformUserCode", () => {
     const transform = (code: string, id = "/app/test.ts") =>
-      transformUserCode(code, id, parseSync, {
+      transformUserCode(code, id, {
         hmrImport: "@hafley/rxjs-debugger/hmr",
       })
 

@@ -25,7 +25,31 @@ if (import.meta.hot) {
 }
 `;
 
-exports[`user-transform > transformUserCode > class this reference patterns > does NOT wrap extended Subject classes (runtime handles via constructor patch) 1`] = `null`;
+exports[`user-transform > transformUserCode > class this reference patterns > does NOT wrap extended Subject classes (runtime handles via constructor patch) 1`] = `
+{
+  "code": "
+import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+const __$ = _rxjs_debugger_module_start(import.meta.url);
+import { BehaviorSubject } from 'rxjs'
+class EasierBS<T> extends BehaviorSubject<T> {}
+const state$ = __$("state$:new EasierBS({count:0})", () => new EasierBS({ count: 0 }))
+__$.end()
+if (import.meta.hot) {
+  import.meta.hot.accept()
+}
+",
+  "map": SourceMap {
+    "file": undefined,
+    "mappings": ";;;AAAA,MAAM,CAAC,CAAC,CAAC,eAAe,CAAC,CAAC,CAAC,IAAI,CAAC,CAAC,IAAI;AACrC,KAAK,CAAC,QAAQ,CAAC,CAAC,CAAC,CAAC,OAAO,CAAC,eAAe,CAAC,CAAC,CAAC,CAAC,CAAC;AAC9C,KAAK,CAAC,KAAK,CAAC,CAAC,CAAC,6CAAC,GAAG,CAAC,QAAQ,CAAC,CAAC,CAAC,KAAK,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;",
+    "names": [],
+    "sources": [
+      "/app/test.ts",
+    ],
+    "sourcesContent": undefined,
+    "version": 3,
+  },
+}
+`;
 
 exports[`user-transform > transformUserCode > class this reference patterns > skips nested pipes in returned functions 1`] = `null`;
 

@@ -8,12 +8,13 @@
  * use vite plugin to force parsing and bundling rxjs with code manip using ast-grep on matching class expressions and add decorators or proxies inlined
  */
 
-import { useEffect, useState } from "react"
 import { BehaviorSubject } from "rxjs/internal/BehaviorSubject"
 import { Observable } from "rxjs/internal/Observable"
+import { filter } from "rxjs/internal/operators/filter"
+
 import { Subject } from "rxjs/internal/Subject"
 import { type Subscription } from "rxjs/internal/Subscription"
-import { filter, scan, startWith } from "rxjs/operators"
+import { EasierBS } from "../../lib/0_EasierBS"
 import { bootstrap } from "./01.patch-observable"
 
 // Separate untracked isEnabled state for tracking control
@@ -33,12 +34,14 @@ export function resetEventBuffer() {
 
 /** Temporarily disable tracking for internal operations */
 export function __withNoTrack<T>(fn: () => T): T {
+  // console.log("__withNoTrack", fn.toString())
   const prev = isEnabled$.value
   isEnabled$.next(false)
   try {
     return fn()
   } finally {
     isEnabled$.next(prev)
+    // console.log("__withNoTrack-Finally")
   }
 }
 
@@ -100,6 +103,7 @@ _observableEvents$.subscribe(e => _eventBuffer.push(e))
 
 // Bootstrap the late-bound emitter - must run synchronously so user module code
 // that calls _rxjs_debugger_module_start gets proper isEnabled state
+console.log("Bootstrapping")
 bootstrap(
   _observableEvents$,
   () => isEnabled$.value,
@@ -107,7 +111,7 @@ bootstrap(
   () => state$.value.store,
   () => state$.value.stack,
 )
-
+console.assert(isEnabled$.value, "Hmm")
 type Hmm = {
   // Unified observable entity (collapse Subject/BehaviorSubject/creation ops)
   observable: {
@@ -195,47 +199,6 @@ export type State = {
   rel: ({ [K in keyof Improved as `${K}_id`]: string } & { owner_id: string })[]
 }
 
-export function scanEager<Event, State>(acc: (sum: State, next: Event) => State, defaultValue: State) {
-  return (source$: Observable<Event>) => source$.pipe(scan(acc, defaultValue), startWith(defaultValue))
-}
-
-class EasierBS<T extends {}> extends BehaviorSubject<T> {
-  private _initialValue: T
-
-  constructor(initialValue: T) {
-    super(initialValue)
-    this._initialValue = initialValue
-  }
-
-  set(partial: Partial<T>) {
-    return this.next({
-      ...this.value,
-      ...partial,
-    })
-  }
-
-  reset() {
-    return this.next(structuredClone(this._initialValue))
-  }
-
-  scanEager<Next>(accumulator: (sum: T, next: Next) => T) {
-    return (source$: Observable<Next>) => {
-      return source$.pipe(scanEager((_sum, next) => accumulator(this.value, next), this.value))
-    }
-  }
-
-  use$(): T {
-    const [, forceUpdate] = useState(0)
-
-    useEffect(() => {
-      const sub = this.subscribe(() => forceUpdate(n => n + 1))
-      return () => sub.unsubscribe()
-    }, [])
-
-    return this.value
-  }
-}
-
 export const state$ = new EasierBS<State>({
   owner_id: "",
   rel: [],
@@ -265,7 +228,12 @@ export const state$ = new EasierBS<State>({
   },
 })
 
-export const observableEventsEnabled$ = _observableEvents$.pipe(filter(() => isEnabled$.value))
+// window.state$ = state$
+
+export const observableEventsEnabled$ = _observableEvents$.pipe(
+  filter(() => isEnabled$.value),
+  // tap(n => console.log("WHAT", n)),
+)
 
 type EntityKey = keyof Improved
 

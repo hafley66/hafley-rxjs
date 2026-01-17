@@ -15,6 +15,7 @@ import { isEnabled$ } from "../00.types"
 import { emit } from "../01.patch-observable"
 import { __$ as baseTrack } from "./0_runtime"
 
+export const ___rxjs_hmr_key___ = Symbol("___rxjs_hmr_key___")
 export interface ModuleScope {
   // Track observable/pipe creation - same as __$
   <T>(key: string, factory: () => T): T
@@ -54,9 +55,17 @@ export function _rxjs_debugger_module_start(url: string): ModuleScope {
         if (factory.length > 0) {
           // Factory takes a scope param - create child scope
           const childScope = createScope(fullKey)
-          return (factory as ($: ModuleScope) => T)(childScope)
+          const val = (factory as ($: ModuleScope) => T)(childScope)
+          if (val && typeof val === "object") {
+            val[___rxjs_hmr_key___] = fullKey
+          }
+          return val
         }
-        return (factory as () => T)()
+        const val = factory()
+        if (val && typeof val === "object") {
+          val[___rxjs_hmr_key___] = fullKey
+        }
+        return val
       })
     }) as ModuleScope
 

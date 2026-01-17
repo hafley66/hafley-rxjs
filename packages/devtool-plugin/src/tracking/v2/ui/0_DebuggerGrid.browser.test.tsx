@@ -3,9 +3,10 @@ import { describe, expect, it } from "vitest"
 import { page } from "vitest/browser"
 
 import "../03_scan-accumulator"
-import { proxy } from "../04.operators"
+import { filter, from, map, of, repeat, switchMap, tap } from "rxjs"
 import { useTrackingTestSetup } from "../0_test-utils"
-
+import { state$ } from "../00.types"
+import { setNow } from "../01_helpers"
 import { DebuggerGrid } from "./0_DebuggerGrid"
 
 describe("DebuggerGrid", () => {
@@ -13,9 +14,9 @@ describe("DebuggerGrid", () => {
 
   it("renders switchMap with dynamic observables", async () => {
     // Create observable chain
-    proxy
-      .of(5)
-      .pipe(proxy.switchMap((val, index) => proxy.of(index + "/" + val)))
+
+    of(5)
+      .pipe(switchMap((val, index) => of(index + "/" + val)))
       .subscribe()
     expect(state$.value.store).toMatchInlineSnapshot(`
       {
@@ -102,7 +103,7 @@ describe("DebuggerGrid", () => {
           },
           "7": {
             "created_at": 0,
-            "fn_source": "(val, index) => proxy.of(index + "/" + val)",
+            "fn_source": "(val, index) => of(index + "/" + val)",
             "id": "7",
             "is_function": true,
             "owner_id": "6",
@@ -298,8 +299,8 @@ describe("DebuggerGrid", () => {
   })
 
   it("renders multiple roots with subscriptions", async () => {
-    const a$ = proxy.of(1).pipe(proxy.map(x => x * 2))
-    const b$ = proxy.of(2).pipe(proxy.filter(x => x > 0))
+    const a$ = of(1).pipe(map(x => x * 2))
+    const b$ = of(2).pipe(filter(x => x > 0))
     a$.subscribe()
     b$.subscribe()
     const { container } = render(<DebuggerGrid />)
@@ -314,14 +315,14 @@ describe("DebuggerGrid", () => {
   it("renders repeat with sends", async () => {
     setNow(1000)
     let index = 0
-    proxy
-      .from([12, 15])
+
+    from([12, 15])
       .pipe(
-        proxy.repeat({
-          delay: () => proxy.of(true),
+        repeat({
+          delay: () => of(true),
           count: 2,
         }),
-        proxy.tap({
+        tap({
           next: () => setNow(++index * 1000),
           complete: () => setNow(++index * 1000),
           error: () => setNow(++index * 1000),
@@ -564,7 +565,7 @@ describe("DebuggerGrid", () => {
           },
           "9": {
             "created_at": 1000,
-            "fn_source": "() => proxy.of(true)",
+            "fn_source": "() => of(true)",
             "id": "9",
             "is_function": true,
             "owner_id": "8",
@@ -882,14 +883,14 @@ describe("DebuggerGrid", () => {
     // Use the repeat test data which has interesting subscription tree
     setNow(1000)
     let index = 0
-    proxy
-      .from([12, 15])
+
+    from([12, 15])
       .pipe(
-        proxy.repeat({
-          delay: () => proxy.of(true),
+        repeat({
+          delay: () => of(true),
           count: 2,
         }),
-        proxy.tap({
+        tap({
           next: () => setNow(++index * 1000),
           complete: () => setNow(++index * 1000),
           error: () => setNow(++index * 1000),

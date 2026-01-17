@@ -16,10 +16,14 @@ import {
   timer,
 } from "rxjs"
 import { take } from "rxjs/operators"
-import { isEnabled$, state$ } from "./tracking/v2/00.types"
+import { isEnabled$, observableEventsEnabled$, state$ } from "./tracking/v2/00.types"
 import "./tracking/v2/03_scan-accumulator"
 import { DebuggerGrid } from "./tracking/v2/ui/0_DebuggerGrid"
 
+console.log(";lol")
+observableEventsEnabled$.subscribe(n => console.log("EVENT: ", n))
+isEnabled$.next(true)
+isEnabled$.subscribe(n => console.log("Dude...", n))
 // === Mock API ===
 type User = { id: number; name: string; email: string }
 type ApiResponse<T> = { data: T; timestamp: number }
@@ -64,10 +68,11 @@ const pollUsers$ = from(mockFetch(mockUsers, 0)).pipe(
 
 // Pattern 2: Search with debounce + switchMap
 const searchTerm$ = new BehaviorSubject("")
-const searchResults$ = from(searchTerm$).pipe(
+const searchResults$ = searchTerm$.pipe(
   debounceTime(300),
   distinctUntilChanged(),
   switchMap(term => {
+    console.log("Wtfsss", term)
     if (!term) return of([])
     const filtered = mockUsers.filter(
       u => u.name.toLowerCase().includes(term.toLowerCase()) || u.email.toLowerCase().includes(term.toLowerCase()),
@@ -125,7 +130,6 @@ function App() {
           <button
             type="button"
             onClick={() => {
-              isEnabled$.next(true)
               const sub = pollUsers$.pipe(take(3)).subscribe()
               setTimeout(() => sub.unsubscribe(), 10000)
             }}
@@ -145,7 +149,6 @@ function App() {
           <button
             type="button"
             onClick={() => {
-              isEnabled$.next(true)
               searchResults$.pipe(take(5)).subscribe()
             }}
           >
@@ -184,14 +187,12 @@ function App() {
             type="button"
             onClick={() => {
               state$.reset()
-              isEnabled$.next(true)
             }}
           >
             Clear & Disable
           </button>
         </section>
       </div>
-
       <div style={{ flex: 2, borderLeft: "1px solid #ccc", paddingLeft: 20 }}>
         <h2>Debugger</h2>
         <DebuggerGrid />

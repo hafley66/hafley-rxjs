@@ -1,6 +1,6 @@
 import fs from "fs"
 import path from "path"
-import { chromium, type Browser, type Page } from "playwright"
+import { type Browser, chromium, type Page } from "playwright"
 import { createServer, type ViteDevServer } from "rolldown-vite"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
@@ -113,10 +113,7 @@ describe("HMR Integration", () => {
     })
 
     // Wait for value to propagate
-    await page.waitForFunction(
-      () => window.__test__.values.includes(20),
-      { timeout: 5000 },
-    )
+    await page.waitForFunction(() => window.__test__.values.includes(20), { timeout: 5000 })
 
     const testState = await page.evaluate(() => ({
       values: window.__test__.values,
@@ -134,10 +131,7 @@ describe("HMR Integration", () => {
     fs.writeFileSync(MAIN_TS_PATH, modifiedContent)
 
     // Wait for HMR to process - hmrCount should increment
-    await page.waitForFunction(
-      () => window.__test__?.hmrCount >= 2,
-      { timeout: 10000 },
-    )
+    await page.waitForFunction(() => window.__test__?.hmrCount >= 2, { timeout: 10000 })
 
     const hmrCountAfter = await page.evaluate(() => window.__test__.hmrCount)
     expect(hmrCountAfter).toBeGreaterThanOrEqual(2)
@@ -148,10 +142,7 @@ describe("HMR Integration", () => {
     })
 
     // Wait for value to propagate
-    await page.waitForFunction(
-      () => window.__test__.values.includes(30),
-      { timeout: 5000 },
-    )
+    await page.waitForFunction(() => window.__test__.values.includes(30), { timeout: 5000 })
 
     const finalState = await page.evaluate(() => ({
       values: window.__test__.values,
@@ -166,15 +157,10 @@ describe("HMR Integration", () => {
 
   it("subscription survives HMR - same subscription object", async () => {
     // Wait for test harness to be ready
-    await page.waitForFunction(
-      () => window.__test__?.subscription !== undefined,
-      { timeout: 5000 },
-    )
+    await page.waitForFunction(() => window.__test__?.subscription !== undefined, { timeout: 5000 })
 
     // The subscription should be the same object (not recreated)
-    const subscriptionClosed = await page.evaluate(() =>
-      window.__test__.subscription?.closed,
-    )
+    const subscriptionClosed = await page.evaluate(() => window.__test__.subscription?.closed)
     expect(subscriptionClosed).toBe(false)
   })
 })

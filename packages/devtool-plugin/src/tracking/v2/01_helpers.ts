@@ -1,6 +1,5 @@
 /** biome-ignore-all lint/correctness/noInnerDeclarations: fudge off */
 import type { Observable } from "rxjs"
-import { v7 } from "uuid"
 
 let _idCounter = 0
 let _mockNow: number | null = null
@@ -11,10 +10,10 @@ export function resetIdCounter() {
 }
 
 export function createId(): string {
-  if (isTest) {
-    return String(_idCounter++)
-  }
-  return v7()
+  // if (isTest) {
+  return String(_idCounter++)
+  // }
+  // return v7()
 }
 
 export function now(): number {

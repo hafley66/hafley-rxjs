@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "composite": true,
+
     // Language and Environment
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
@@ -9,9 +11,7 @@
 
     // Path Aliases (match vite.config.ts)
     "paths": {
-      "@/*": ["./src/*"],
-      "@ui/*": ["./src/ui/*"],
-      "@tracking/*": ["./src/tracking/*"]
+      "~/*": ["./src/*"]
     },
 
     // Emit
@@ -42,6 +42,6 @@
     // Testing
     "types": ["vitest/globals", "node"]
   },
-  "include": ["src/**/*"],
+  "include": ["./src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

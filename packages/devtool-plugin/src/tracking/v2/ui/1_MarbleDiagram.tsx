@@ -1,6 +1,6 @@
 import { state$ } from "../00.types"
 import { decycle } from "../01_helpers"
-import { flattenSubTree, getArgCallForObs, getSubTree, getTimeRange, type FlatSubRow } from "../06_queries"
+import { type FlatSubRow, flattenSubTree, getArgCallForObs, getSubTree, getTimeRange } from "../06_queries"
 
 type Props = {
   subId: string

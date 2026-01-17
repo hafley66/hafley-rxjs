@@ -1,6 +1,6 @@
 import { set } from "lodash"
 import { isObservable } from "rxjs"
-import { _observableEvents$, state$, type State } from "./00.types"
+import { _observableEvents$, type State, state$ } from "./00.types"
 import { createId, now, observableIdMap } from "./01_helpers"
 
 const MAX_DEPTH = 10

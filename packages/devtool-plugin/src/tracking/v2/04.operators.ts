@@ -173,34 +173,34 @@ export const raceWith = decorateOperatorFun(rx.raceWith)
 // =============================================================================
 
 export {
-  Observable,
-  Subject,
-  BehaviorSubject,
-  ReplaySubject,
+  // Errors
+  ArgumentOutOfRangeError,
   AsyncSubject,
-  Subscription,
-  Subscriber,
-  Notification,
-  EMPTY,
-  NEVER,
+  animationFrameScheduler,
   // Schedulers
   asapScheduler,
   asyncScheduler,
-  queueScheduler,
-  animationFrameScheduler,
-  // Utilities
-  pipe,
-  noop,
+  BehaviorSubject,
+  EMPTY,
+  EmptyError,
+  firstValueFrom,
   identity,
   isObservable,
   lastValueFrom,
-  firstValueFrom,
-  // Errors
-  ArgumentOutOfRangeError,
-  EmptyError,
+  NEVER,
   NotFoundError,
+  Notification,
+  noop,
   ObjectUnsubscribedError,
+  Observable,
+  // Utilities
+  pipe,
+  queueScheduler,
+  ReplaySubject,
   SequenceError,
+  Subject,
+  Subscriber,
+  Subscription,
   TimeoutError,
   UnsubscriptionError,
 } from "rxjs"

@@ -5,10 +5,9 @@
  * Focus: refCount, reset behaviors, connector factories.
  */
 
-import { ReplaySubject, Subject } from "rxjs"
+import { ReplaySubject, Subject, share, tap } from "rxjs"
 import { describe, expect, it } from "vitest"
 import "../03_scan-accumulator"
-import { proxy } from "../04.operators"
 import { useTrackingTestSetup } from "../0_test-utils"
 import { _rxjs_debugger_module_start } from "../hmr/4_module-scope"
 
@@ -21,8 +20,8 @@ describe("share", () => {
       const source$ = new Subject<number>()
 
       const shared$ = source$.pipe(
-        proxy.tap(() => sourceEmitCount++),
-        proxy.share(),
+        tap(() => sourceEmitCount++),
+        share(),
       )
 
       const values1: number[] = []
@@ -41,7 +40,7 @@ describe("share", () => {
 
     it("late subscriber misses past emissions (no replay)", () => {
       const source$ = new Subject<number>()
-      const shared$ = source$.pipe(proxy.share())
+      const shared$ = source$.pipe(share())
 
       const early: number[] = []
       const late: number[] = []
@@ -64,8 +63,8 @@ describe("share", () => {
 
       const source$ = new Subject<number>()
       const shared$ = source$.pipe(
-        proxy.tap({ subscribe: () => subscribeCount++ }),
-        proxy.share(), // resetOnRefCountZero defaults to true
+        tap({ subscribe: () => subscribeCount++ }),
+        share(), // resetOnRefCountZero defaults to true
       )
 
       const sub1 = shared$.subscribe()
@@ -84,10 +83,7 @@ describe("share", () => {
       let subscribeCount = 0
 
       const source$ = new Subject<number>()
-      const shared$ = source$.pipe(
-        proxy.tap({ subscribe: () => subscribeCount++ }),
-        proxy.share({ resetOnRefCountZero: false }),
-      )
+      const shared$ = source$.pipe(tap({ subscribe: () => subscribeCount++ }), share({ resetOnRefCountZero: false }))
 
       const sub1 = shared$.subscribe()
       expect(subscribeCount).toBe(1)
@@ -106,7 +102,7 @@ describe("share", () => {
   describe("resetOnComplete", () => {
     it("resetOnComplete:false (default) - stays completed", () => {
       const source$ = new Subject<number>()
-      const shared$ = source$.pipe(proxy.share())
+      const shared$ = source$.pipe(share())
 
       let completed = false
       shared$.subscribe({ complete: () => (completed = true) })
@@ -130,7 +126,7 @@ describe("share", () => {
 
     it("resetOnComplete:true - resets after complete", () => {
       const source$ = new Subject<number>()
-      const shared$ = source$.pipe(proxy.share({ resetOnComplete: true }))
+      const shared$ = source$.pipe(share({ resetOnComplete: true }))
 
       let earlyCompleted = false
       shared$.subscribe({ complete: () => (earlyCompleted = true) })
@@ -152,7 +148,7 @@ describe("share", () => {
   describe("resetOnError", () => {
     it("resetOnError:false (default) - stays errored", () => {
       const source$ = new Subject<number>()
-      const shared$ = source$.pipe(proxy.share())
+      const shared$ = source$.pipe(share())
 
       let error1: any
       shared$.subscribe({ error: e => (error1 = e) })
@@ -171,10 +167,7 @@ describe("share", () => {
     it("resetOnError:true - resets after error", () => {
       let subscribeCount = 0
       const source$ = new Subject<number>()
-      const shared$ = source$.pipe(
-        proxy.tap({ subscribe: () => subscribeCount++ }),
-        proxy.share({ resetOnError: true }),
-      )
+      const shared$ = source$.pipe(tap({ subscribe: () => subscribeCount++ }), share({ resetOnError: true }))
 
       let error1: any
       shared$.subscribe({ error: e => (error1 = e) })
@@ -193,7 +186,7 @@ describe("share", () => {
     it("connector with ReplaySubject gives replay behavior", () => {
       const source$ = new Subject<number>()
       const shared$ = source$.pipe(
-        proxy.share({
+        share({
           connector: () => new ReplaySubject(1),
         }),
       )
@@ -223,7 +216,7 @@ describe("share", () => {
 
       // Mirrors transform output: TWO separate tracked entities
       const source$ = __$("source$", () => new Subject<number>())
-      const shared$ = __$("shared$", () => source$.pipe(proxy.share()))
+      const shared$ = __$("shared$", () => source$.pipe(share()))
       __$.end()
 
       const values: number[] = []
@@ -235,7 +228,7 @@ describe("share", () => {
       // HMR swap - both wrappers re-run factories
       const __$2 = _rxjs_debugger_module_start("file:///share-hmr.ts")
       const source2$ = __$2("source$", () => new Subject<number>())
-      const shared2$ = __$2("shared$", () => source2$.pipe(proxy.share()))
+      const shared2$ = __$2("shared$", () => source2$.pipe(share()))
       __$2.end()
 
       // Wrappers are stable
@@ -251,7 +244,7 @@ describe("share", () => {
       const __$ = _rxjs_debugger_module_start("file:///share-refcount.ts")
 
       const source$ = __$("source$", () => new Subject<number>())
-      const shared$ = __$("shared$", () => source$.pipe(proxy.share()))
+      const shared$ = __$("shared$", () => source$.pipe(share()))
       __$.end()
 
       // Subscribe and unsubscribe
@@ -262,7 +255,7 @@ describe("share", () => {
       // HMR swap - creates fresh share with fresh refCount
       const __$2 = _rxjs_debugger_module_start("file:///share-refcount.ts")
       __$2("source$", () => new Subject<number>())
-      __$2("shared$", () => source$.pipe(proxy.share()))
+      __$2("shared$", () => source$.pipe(share()))
       __$2.end()
 
       // New subscriber works with fresh share

@@ -1,0 +1,9 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/devtool-plugin" },
+    { "path": "./packages/rxjs-ext" },
+    { "path": "./packages/rxjsx" },
+    { "path": "./packages/signals" }
+  ]
+}

@@ -1,20 +1,5 @@
-import {
-  BehaviorSubject,
-  Subject,
-  Observable,
-  of,
-  from,
-  defer,
-  merge,
-  combineLatest,
-} from "rxjs"
-import {
-  map,
-  filter,
-  switchMap,
-  share,
-  startWith,
-} from "rxjs/operators"
+import { BehaviorSubject, combineLatest, defer, from, merge, Observable, of, Subject } from "rxjs"
+import { filter, map, share, startWith, switchMap } from "rxjs/operators"
 
 // Kitchen sink test - exercises all common RxJS patterns
 
@@ -42,9 +27,7 @@ const piped$ = behaviorSubject$.pipe(
 )
 
 // === Operators that create observables ===
-const switched$ = of(1, 2).pipe(
-  switchMap(x => of(x * 100)),
-)
+const switched$ = of(1, 2).pipe(switchMap(x => of(x * 100)))
 
 // === Multicasting ===
 const shared$ = cold$.pipe(share())

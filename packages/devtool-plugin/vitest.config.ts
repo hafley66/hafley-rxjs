@@ -1,12 +1,14 @@
 import { defineConfig } from 'vitest/config';
 import {rxjsHmrPlugin} from './src/1_runtime_vite_plugin/1_rxjs_hmr_plugin'
+import tsconfigPaths from 'vite-tsconfig-paths'
 
 export default defineConfig({
   plugins: [
-    rxjsHmrPlugin({ debug: false }) as any,
+    rxjsHmrPlugin({ debug: true }) as any,
+    tsconfigPaths()
   ],
   optimizeDeps: {
-    exclude: ["rxjs"],
+    exclude: ["rxjs", "rxjs/operators"],
   },
   test: {
     globals: true,
