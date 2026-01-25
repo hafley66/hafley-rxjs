@@ -6,8 +6,7 @@
  */
 
 import { afterEach, beforeEach } from "vitest"
-import { isEnabled$, resetEventBuffer, state$ } from "./00.types"
-import { resetIdCounter, setNow } from "./01_helpers"
+import { main } from "./0_store"
 
 type TestSetupOptions = {
   fakeTrack?: boolean
@@ -19,34 +18,22 @@ type TestSetupOptions = {
  */
 export function useTrackingTestSetup(opts: TestSetupOptions | boolean = {}) {
   const { fakeTrack = false, cleanup } = typeof opts === "boolean" ? { fakeTrack: opts } : opts
-
+  let sub: any
   beforeEach(() => {
-    resetIdCounter()
-    resetEventBuffer()
-    setNow(0)
-    isEnabled$.next(false)
-    state$.reset()
-    isEnabled$.next(true)
+    sub = main.state$$.subscribe()
+    main.reset()
+    main.setNow(0)
+    expect(main.state$.value).toEqual(main.state$.initialValue)
+    main.emit({ type: "enable" })
     if (fakeTrack) {
-      state$.value.stack.hmr_track.push({
-        id: "test",
-        created_at: 0,
-        index: 0,
-        key: "test-utils.ts",
-        version: 0,
-        mutable_observable_id: "-1",
-        prev_observable_ids: [],
-      })
+      main.emit({ type: "hmr-module-call", url: "0_test-utils.ts", id: "test" })
     }
   })
 
   afterEach(() => {
-    if (fakeTrack) {
-      state$.value.stack.hmr_track.pop()
-    }
-    resetIdCounter()
-    setNow(null)
-    isEnabled$.next(false)
+    main.setNow(null)
+    main.state$.reset()
+    sub?.unsubcribe?.()
     cleanup?.()
   })
 }

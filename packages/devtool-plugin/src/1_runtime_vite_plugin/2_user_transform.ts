@@ -28,7 +28,7 @@ export interface UserTransformOptions {
 }
 
 interface TransformTarget {
-  type: "observable" | "subscription"
+  type: "observable" | "subscription" | "function"
   varName?: string
   start: number
   end: number
@@ -57,14 +57,19 @@ const KNOWN_RXJS_CREATORS = new Set([
 
 const KNOWN_SUBJECT_CLASSES = new Set(["Subject", "BehaviorSubject", "ReplaySubject", "AsyncSubject"])
 
+// Observable base class - tracked separately from Subjects
+const KNOWN_OBSERVABLE_CLASSES = new Set(["Observable"])
+
 // Collect imports from rxjs modules
 function collectRxjsImports(ast: ParseResult["program"]): {
   creators: Set<string>
   subjects: Set<string>
+  observables: Set<string>
   namespaces: Set<string>
 } {
   const creators = new Set<string>()
   const subjects = new Set<string>()
+  const observables = new Set<string>()
   const namespaces = new Set<string>()
 
   for (const stmt of ast.body || []) {
@@ -86,6 +91,9 @@ function collectRxjsImports(ast: ParseResult["program"]): {
           if (KNOWN_SUBJECT_CLASSES.has(importedName)) {
             subjects.add(localName)
           }
+          if (KNOWN_OBSERVABLE_CLASSES.has(importedName)) {
+            observables.add(localName)
+          }
         } else if (spec.type === "ImportNamespaceSpecifier") {
           // import * as rx from 'rxjs'
           namespaces.add(spec.local?.name)
@@ -94,7 +102,7 @@ function collectRxjsImports(ast: ParseResult["program"]): {
     }
   }
 
-  return { creators, subjects, namespaces }
+  return { creators, subjects, observables, namespaces }
 }
 
 // Structural serialization - mirrors runtime's serializeValue
@@ -261,6 +269,30 @@ function isSubjectConstruction(node: Node, importedSubjects: Set<string>, _names
   return false
 }
 
+function isObservableConstruction(node: Node, importedObservables: Set<string>, _namespaces: Set<string>): boolean {
+  if (node.type !== "NewExpression") return false
+  const callee = node.callee
+
+  // Direct: new Observable() / new MyObservable()
+  if (
+    callee?.type === "Identifier" &&
+    (KNOWN_OBSERVABLE_CLASSES.has(callee.name) || importedObservables.has(callee.name))
+  ) {
+    return true
+  }
+
+  // Namespace/member: new rx.Observable()
+  if (
+    callee?.type === "MemberExpression" &&
+    callee.property?.type === "Identifier" &&
+    KNOWN_OBSERVABLE_CLASSES.has(callee.property.name)
+  ) {
+    return true
+  }
+
+  return false
+}
+
 function isPipeCall(node: Node): boolean {
   if (node.type !== "CallExpression") return false
   const callee = node.callee
@@ -319,15 +351,60 @@ function expandSubjectsWithSubclasses(
   }
 }
 
+// Expand observables set to include user-defined subclasses (excluding Subjects)
+// class MyObservable extends Observable {} -> MyObservable added to observables
+// Does NOT include Subject subclasses - those are tracked separately
+function expandObservablesWithSubclasses(
+  ast: ParseResult["program"],
+  observables: Set<string>,
+  subjects: Set<string>,
+  namespaces: Set<string>,
+): void {
+  // Fixed point iteration - keep expanding until no new observables found
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const stmt of ast.body || []) {
+      if (stmt.type !== "ClassDeclaration" && stmt.type !== "ClassExpression") continue
+      const className = stmt.id?.name
+      if (!className || observables.has(className) || subjects.has(className)) continue
+
+      const superClass = stmt.superClass
+      if (!superClass) continue
+
+      // Direct extends: class Foo extends Observable (or renamed import)
+      if (superClass.type === "Identifier" && observables.has(superClass.name)) {
+        observables.add(className)
+        changed = true
+        continue
+      }
+
+      // Namespace extends: class Foo extends rx.Observable
+      if (
+        superClass.type === "MemberExpression" &&
+        superClass.object?.type === "Identifier" &&
+        namespaces.has(superClass.object.name) &&
+        superClass.property?.type === "Identifier" &&
+        KNOWN_OBSERVABLE_CLASSES.has(superClass.property.name)
+      ) {
+        observables.add(className)
+        changed = true
+      }
+    }
+  }
+}
+
 function isObservableExpression(
   node: Node,
   creators: Set<string>,
   subjects: Set<string>,
+  observables: Set<string>,
   namespaces: Set<string>,
 ): boolean {
   return (
     isRxjsCreatorCall(node, creators, namespaces) ||
     isSubjectConstruction(node, subjects, namespaces) ||
+    isObservableConstruction(node, observables, namespaces) ||
     isPipeCall(node)
   )
 }
@@ -336,7 +413,7 @@ function isObservableExpression(
 function shouldSkip(ancestors: Node[]): boolean {
   return ancestors.some(a => {
     // Already inside __$ wrapper
-    if (a.type === "CallExpression" && a.callee?.type === "Identifier" && a.callee.name === "__$") {
+    if (a.type === "CallExpression" && a.callee?.type === "Identifier" && a.callee.name.includes("__$")) {
       return true
     }
     // Inside function body (not top-level declarations)
@@ -373,6 +450,7 @@ function collectTargets(
   ast: ParseResult["program"],
   creators: Set<string>,
   subjects: Set<string>,
+  observables: Set<string>,
   namespaces: Set<string>,
 ): TransformTarget[] {
   const targets: TransformTarget[] = []
@@ -385,7 +463,7 @@ function collectTargets(
       node.type === "VariableDeclarator" &&
       node.id?.type === "Identifier" &&
       node.init &&
-      isObservableExpression(node.init, creators, subjects, namespaces)
+      isObservableExpression(node.init, creators, subjects, observables, namespaces)
     ) {
       targets.push({
         type: "observable",
@@ -401,7 +479,7 @@ function collectTargets(
       node.type === "PropertyDefinition" &&
       node.key?.type === "Identifier" &&
       node.value &&
-      isObservableExpression(node.value, creators, subjects, namespaces)
+      isObservableExpression(node.value, creators, subjects, observables, namespaces)
     ) {
       targets.push({
         type: "observable",
@@ -421,6 +499,33 @@ function collectTargets(
         node,
       })
     }
+
+    // Module-level function declarations: function foo() {}
+    if (node.type === "FunctionDeclaration" && node.id?.name && !node.id.name.includes("$Refresh")) {
+      targets.push({
+        type: "function",
+        varName: node.id.name,
+        start: node.start,
+        end: node.end,
+        node,
+      })
+    }
+
+    // Module-level function expressions: const foo = function() {} or const foo = () => {}
+    if (
+      node.type === "VariableDeclarator" &&
+      node.id?.type === "Identifier" &&
+      node.init &&
+      (node.init.type === "FunctionExpression" || node.init.type === "ArrowFunctionExpression")
+    ) {
+      targets.push({
+        type: "function",
+        varName: node.id.name,
+        start: node.init.start,
+        end: node.init.end,
+        node: node.init,
+      })
+    }
   })
 
   return targets
@@ -433,16 +538,33 @@ function applyTransforms(ms: MagicString, code: string, targets: TransformTarget
   // Apply in reverse order to preserve positions
   const sorted = [...targets].sort((a, b) => b.start - a.start)
 
-  for (const t of sorted) {
-    const key =
-      t.type === "observable" ? generateStructuralKey(t.varName!, t.node) : generateStructuralKey("sub", t.node)
+  // Counter for unique generated names
+  let fnCounter = 0
 
+  for (const t of sorted) {
     if (t.type === "observable") {
+      const key = generateStructuralKey(t.varName!, t.node)
       ms.prependLeft(t.start, `__$(${JSON.stringify(key)}, () => `)
       ms.appendRight(t.end, `)`)
-    } else {
+    } else if (t.type === "subscription") {
+      const key = generateStructuralKey("sub", t.node)
       ms.prependLeft(t.start, `__$.sub(${JSON.stringify(key)}, () => `)
       ms.appendRight(t.end, `)`)
+    } else if (t.type === "function") {
+      const key = `fn:${t.varName}`
+      if (t.node.type === "FunctionDeclaration") {
+        // Preserve hoisting: create const with unique name, keep function as proxy
+        // function foo() { ... } ->
+        // const __fn$0 = __$("fn:foo", function foo() { ... })
+        // function foo() { return __fn$0.apply(this, arguments) }
+        const implName = `__fn$${fnCounter++}`
+        ms.prependLeft(t.start, `const ${implName} = __$.fn(${JSON.stringify(key)}, `)
+        ms.appendRight(t.end, `)\nfunction ${t.varName}() { return ${implName}.apply(this, arguments) }`)
+      } else {
+        // Arrow or function expression - just wrap the expression
+        ms.prependLeft(t.start, `__$.fn(${JSON.stringify(key)}, `)
+        ms.appendRight(t.end, `)`)
+      }
     }
   }
 
@@ -462,16 +584,17 @@ const __$ = _rxjs_debugger_module_start(import.meta.url);
 }
 
 // File detection
-export function shouldTransformUserCode(id: string, options: UserTransformOptions = {}): boolean {
-  const {
-    include = /\.[tj]sx?$/,
-    // Exclude: node_modules, .d.ts, tests, AND our own tracking code (avoid circular imports)
-    exclude = /node_modules|\.d\.ts|\/tracking\/v2\//,
-  } = options
+export function shouldTransformUserCode(id: string, code?: string): boolean {
+  const include = /\.[tj]sx?$/
+  const exclude = /node_modules|\.d\.ts|\/tracking\/v2\/|1_runtime_vite_plugin/
   const cleanId = id.split("?")[0] ?? id
 
-  if (id.includes("tracking/v2") && id.includes(".test.")) {
-    // console.log("v2 testing include:", cleanId)
+  if (id.includes("1_runtime_vite_plugin/")) {
+    return false
+  }
+
+  if (code?.includes("autoTrackFile()")) {
+    console.log("v2 testing include:", cleanId)
     return true
   }
 
@@ -493,16 +616,9 @@ export function transformUserCode(
   options: UserTransformOptions = {},
 ): { code: string; map: SourceMap } | null {
   const { hmrImport = "@hafley/rxjs-debugger/hmr" } = options
-
-  // Skip if already instrumented
-  if (code.includes("_rxjs_debugger_module_start")) {
-    return null
-  }
-
-  // Quick check: does this look like it uses RxJS?
-  if (!code.includes("rxjs") && !code.includes("Subject") && !code.includes("pipe")) {
-    return null
-  }
+  const no = code.includes("// noRxjs()")
+  if (no) return null
+  const disableAutoCreateDecorate = id.match(/node_modules.*\/rxjs.*/gi)
 
   // Parse
   let ast: ParseResult["program"]
@@ -515,25 +631,27 @@ export function transformUserCode(
   }
 
   // Collect RxJS imports - only wrap symbols actually imported from rxjs
-  const { creators, subjects, namespaces } = collectRxjsImports(ast)
-
-  // If no rxjs imports found, nothing to transform
-  if (creators.size === 0 && subjects.size === 0 && namespaces.size === 0) {
-    // But we might still have .subscribe() calls - those don't need import verification
-    // So we continue with empty sets for creators/subjects
-  }
+  const { creators, subjects, observables, namespaces } = collectRxjsImports(ast)
 
   // Expand subjects to include user-defined subclasses
   // class MySubject extends Subject {} -> new MySubject() gets wrapped
   expandSubjectsWithSubclasses(ast, subjects, namespaces)
 
+  // Expand observables to include user-defined subclasses (excluding Subjects)
+  // class MyObservable extends Observable {} -> new MyObservable() gets wrapped
+  expandObservablesWithSubclasses(ast, observables, subjects, namespaces)
+
   // Collect targets using verified imports
-  const targets = collectTargets(ast, creators, subjects, namespaces)
+  const targets = collectTargets(ast, creators, subjects, observables, namespaces).filter(
+    it => it.type !== "function" || !disableAutoCreateDecorate,
+  )
   if (targets.length === 0) return null
 
   // Apply transforms
   const ms = new MagicString(code)
   applyTransforms(ms, code, targets, hmrImport)
+
+  console.log(id, ms.toString())
 
   return {
     code: ms.toString(),

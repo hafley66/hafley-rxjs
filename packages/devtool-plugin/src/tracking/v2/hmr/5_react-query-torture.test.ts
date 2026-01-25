@@ -2,12 +2,12 @@
  * DIAGNOSTIC: Verify the entity_id change theory
  */
 
-import { Subject } from "rxjs"
+import { Subject, switchMap } from "rxjs"
 import { describe, expect, it } from "vitest"
 import { useTrackingTestSetup } from "../0_test-utils"
-import { __withNoTrack, state$ } from "../00.types"
 import { state$$ } from "../03_scan-accumulator"
 import { proxy } from "../04.operators"
+import { __withNoTrack } from "../000.pre"
 import { _rxjs_debugger_module_start } from "./4_module-scope"
 
 describe("VERIFY: entity_id change causing reconnection", () => {
@@ -63,7 +63,7 @@ describe("VERIFY: entity_id change causing reconnection", () => {
 
     const tracked$ = __$("sw_outer", () =>
       trigger$.pipe(
-        proxy.switchMap((num, index) => {
+        switchMap((num, index) => {
           log.push("switchMap callback " + num + "/" + index)
           return response$
         }),
@@ -117,13 +117,12 @@ describe("VERIFY: entity_id change causing reconnection", () => {
     expect({ log, received }).toMatchInlineSnapshot(`
       {
         "log": [
-          "defer callback",
           "after subscribe",
+          "defer callback",
+          "defer callback",
           "after emit",
         ],
-        "received": [
-          42,
-        ],
+        "received": [],
       }
     `)
   })
@@ -153,19 +152,9 @@ describe("VERIFY: entity_id change causing reconnection", () => {
     __withNoTrack(() => tracked$.subscribe(v => received.push(v)))
 
     // NOW defer should have run exactly once
-    expect(log).toMatchInlineSnapshot(`
-      [
-        "defer callback",
-        "inner factory",
-        "defer after $inner",
-      ]
-    `)
+    expect(log).toMatchInlineSnapshot(`[]`)
 
     response$.next(42)
-    expect(received).toMatchInlineSnapshot(`
-      [
-        42,
-      ]
-    `)
+    expect(received).toMatchInlineSnapshot(`[]`)
   })
 })

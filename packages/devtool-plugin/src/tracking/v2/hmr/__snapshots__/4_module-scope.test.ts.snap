@@ -1,0 +1,56 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ModuleScope > _rxjs_debugger_module_start > increments version on HMR reload 1`] = `
+{
+  "owner_id": "",
+  "rel": [],
+  "stack": {
+    "arg": [],
+    "arg_call": [],
+    "hmr_module": [
+      {
+        "created_at": 0,
+        "id": "file:///version-test-1768745223597.ts",
+        "prev_keys": [],
+        "url": "file:///version-test-1768745223597.ts",
+        "version": 1,
+      },
+    ],
+    "hmr_track": [],
+    "observable": [],
+    "operator": [],
+    "operator_fun": [],
+    "pipe": [],
+    "send": [],
+    "subscription": [],
+  },
+  "store": {
+    "arg": {},
+    "arg_call": {},
+    "hmr_module": {
+      "file:///a.ts": {
+        "created_at": 0,
+        "created_at_end": 0,
+        "id": "file:///a.ts",
+        "prev_keys": [],
+        "url": "file:///a.ts",
+        "version": 1,
+      },
+      "file:///version-test-1768745223597.ts": {
+        "created_at": 0,
+        "id": "file:///version-test-1768745223597.ts",
+        "prev_keys": [],
+        "url": "file:///version-test-1768745223597.ts",
+        "version": 1,
+      },
+    },
+    "hmr_track": {},
+    "observable": {},
+    "operator": {},
+    "operator_fun": {},
+    "pipe": {},
+    "send": {},
+    "subscription": {},
+  },
+}
+`;

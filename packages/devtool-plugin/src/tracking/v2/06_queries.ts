@@ -1,4 +1,4 @@
-import type { State } from "./00.types"
+import type { State } from "./0.types"
 
 type Store = State["store"]
 
@@ -90,9 +90,7 @@ export function getArgCallForObs(store: Store, obsId: string) {
 // These are subscriptions to orphaned observables that won't receive HMR updates
 export function getDanglingSubscriptions(store: Store) {
   const liveObsIds = new Set(Object.values(store.hmr_track).map(t => t.entity_id))
-  return Object.values(store.subscription).filter(
-    s => !liveObsIds.has(s.observable_id) && !s.unsubscribed_at,
-  )
+  return Object.values(store.subscription).filter(s => !liveObsIds.has(s.observable_id) && !s.unsubscribed_at)
 }
 
 // === Marble Diagram Queries ===
@@ -118,7 +116,9 @@ export function getSubTree(store: Store, rootSubId: string): SubTreeNode | null 
   if (!sub) return null
 
   const sends = getSendsFor(store, rootSubId)
-  const children = getChildSubscriptions(store, rootSubId).map(child => getSubTree(store, child.id)!).filter(Boolean)
+  const children = getChildSubscriptions(store, rootSubId)
+    .map(child => getSubTree(store, child.id)!)
+    .filter(Boolean)
 
   return { sub, children, sends }
 }

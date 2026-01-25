@@ -227,29 +227,61 @@ data$.forEach(console.log)`
     })
 
     describe("skip rules", () => {
-      it("skips observables inside function bodies", () => {
+      it("skips observables inside function bodies but wraps the function for HMR", () => {
         const code = `import { of } from 'rxjs'
 function makeObs() {
   const inner$ = of(1)
   return inner$
 }`
 
-        const result = transform(code)
+        const result = transform(code)!
 
-        // Should not wrap inner$ since it's inside a function
-        expect(result).toBeNull()
+        // inner$ is NOT wrapped (inside function body)
+        // but the function itself IS wrapped for HMR, with hoisting preserved
+        expect(result.code).toMatchInlineSnapshot(`
+          "
+          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          const __$ = _rxjs_debugger_module_start(import.meta.url);
+          import { of } from 'rxjs'
+          const __fn$0 = __$.fn("fn:makeObs", function makeObs() {
+            const inner$ = of(1)
+            return inner$
+          })
+          function makeObs() { return __fn$0.apply(this, arguments) }
+          __$.end()
+          if (import.meta.hot) {
+            import.meta.hot.accept()
+          }
+          "
+        `)
       })
 
-      it("skips observables inside arrow functions", () => {
+      it("skips observables inside arrow functions but wraps the function for HMR", () => {
         const code = `import { of } from 'rxjs'
 const makeObs = () => {
   const inner$ = of(1)
   return inner$
 }`
 
-        const result = transform(code)
+        const result = transform(code)!
 
-        expect(result).toBeNull()
+        // inner$ is NOT wrapped (inside arrow function body)
+        // arrow function is wrapped directly (no hoisting concern)
+        expect(result.code).toMatchInlineSnapshot(`
+          "
+          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          const __$ = _rxjs_debugger_module_start(import.meta.url);
+          import { of } from 'rxjs'
+          const makeObs = __$.fn("fn:makeObs", () => {
+            const inner$ = of(1)
+            return inner$
+          })
+          __$.end()
+          if (import.meta.hot) {
+            import.meta.hot.accept()
+          }
+          "
+        `)
       })
 
       it("skips non-rxjs functions with same name", () => {
@@ -259,7 +291,30 @@ const data$ = of(1)`
         const result = transform(code)
 
         // 'of' is not imported from rxjs, should not wrap
-        expect(result).toBeNull()
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "code": "
+          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          const __$ = _rxjs_debugger_module_start(import.meta.url);
+          const of = __$.fn("fn:of", (x: number) => x * 2)
+          const data$ = of(1)
+          __$.end()
+          if (import.meta.hot) {
+            import.meta.hot.accept()
+          }
+          ",
+            "map": SourceMap {
+              "file": undefined,
+              "mappings": ";;;AAAA,KAAK,CAAC,EAAE,CAAC,CAAC,iBAAC,CAAC,CAAC,CAAC,CAAC,MAAM,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AAC9B,KAAK,CAAC,IAAI,CAAC,CAAC,CAAC,CAAC,EAAE,CAAC,CAAC;;;;;",
+              "names": [],
+              "sources": [
+                "/app/test.ts",
+              ],
+              "sourcesContent": undefined,
+              "version": 3,
+            },
+          }
+        `)
       })
 
       it("only wraps identifiers actually imported from rxjs", () => {
@@ -271,9 +326,32 @@ const b$ = from([1, 2])`
         const result = transform(code)
 
         // Should only wrap 'of', not 'from' since it's from my-utils
-        expect(result).not.toBeNull()
-        expect(result!.code).toContain('__$("a$:')
-        expect(result!.code).not.toContain('__$("b$:')
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "code": "
+          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          const __$ = _rxjs_debugger_module_start(import.meta.url);
+          import { of } from 'rxjs'
+          import { from } from './my-utils'
+          const a$ = __$("a$:of(1)", () => of(1))
+          const b$ = from([1, 2])
+          __$.end()
+          if (import.meta.hot) {
+            import.meta.hot.accept()
+          }
+          ",
+            "map": SourceMap {
+              "file": undefined,
+              "mappings": ";;;AAAA,MAAM,CAAC,CAAC,CAAC,EAAE,CAAC,CAAC,CAAC,IAAI,CAAC,CAAC,IAAI;AACxB,MAAM,CAAC,CAAC,CAAC,IAAI,CAAC,CAAC,CAAC,IAAI,CAAC,CAAC,CAAC,CAAC,EAAE,CAAC,KAAK;AAChC,KAAK,CAAC,CAAC,CAAC,CAAC,CAAC,uBAAC,EAAE,CAAC,CAAC;AACf,KAAK,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,IAAI,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;",
+              "names": [],
+              "sources": [
+                "/app/test.ts",
+              ],
+              "sourcesContent": undefined,
+              "version": 3,
+            },
+          }
+        `)
       })
     })
 
@@ -769,6 +847,141 @@ const state$ = new EasierBS({ count: 0 })`
 const state$ = new BehaviorSubject({ count: 0 })`
         const result = transform(code)
         expect(result).toMatchSnapshot()
+      })
+    })
+
+    describe("Observable subclass patterns", () => {
+      it("wraps new Observable() directly", () => {
+        const code = `import { Observable } from 'rxjs'
+const custom$ = new Observable(subscriber => {
+  subscriber.next(1)
+  subscriber.complete()
+})`
+        const result = transform(code)!
+        expect(result.code).toMatchInlineSnapshot(`
+          "
+          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          const __$ = _rxjs_debugger_module_start(import.meta.url);
+          import { Observable } from 'rxjs'
+          const custom$ = __$("custom$:new Observable(fn)", () => new Observable(subscriber => {
+            subscriber.next(1)
+            subscriber.complete()
+          }))
+          __$.end()
+          if (import.meta.hot) {
+            import.meta.hot.accept()
+          }
+          "
+        `)
+      })
+
+      it("wraps user-defined Observable subclass", () => {
+        const code = `import { Observable } from 'rxjs'
+class MyObservable<T> extends Observable<T> {}
+const custom$ = new MyObservable()`
+        const result = transform(code)!
+        // MyObservable extends Observable, so new MyObservable() should be wrapped
+        expect(result.code).toMatchInlineSnapshot(`
+          "
+          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          const __$ = _rxjs_debugger_module_start(import.meta.url);
+          import { Observable } from 'rxjs'
+          class MyObservable<T> extends Observable<T> {}
+          const custom$ = __$("custom$:new MyObservable()", () => new MyObservable())
+          __$.end()
+          if (import.meta.hot) {
+            import.meta.hot.accept()
+          }
+          "
+        `)
+      })
+
+      it("wraps transitive Observable subclass", () => {
+        const code = `import { Observable } from 'rxjs'
+class BaseObs<T> extends Observable<T> {}
+class DerivedObs<T> extends BaseObs<T> {}
+const custom$ = new DerivedObs()`
+        const result = transform(code)!
+        // DerivedObs extends BaseObs extends Observable
+        expect(result.code).toMatchInlineSnapshot(`
+          "
+          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          const __$ = _rxjs_debugger_module_start(import.meta.url);
+          import { Observable } from 'rxjs'
+          class BaseObs<T> extends Observable<T> {}
+          class DerivedObs<T> extends BaseObs<T> {}
+          const custom$ = __$("custom$:new DerivedObs()", () => new DerivedObs())
+          __$.end()
+          if (import.meta.hot) {
+            import.meta.hot.accept()
+          }
+          "
+        `)
+      })
+
+      it("does NOT include Subject subclasses in Observable tracking (they have their own)", () => {
+        const code = `import { Subject, Observable } from 'rxjs'
+class MySubject<T> extends Subject<T> {}
+const subj$ = new MySubject()`
+        const result = transform(code)!
+        // MySubject is tracked as a Subject, not Observable
+        // The wrapping still happens, but via subject path
+        expect(result.code).toMatchInlineSnapshot(`
+          "
+          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          const __$ = _rxjs_debugger_module_start(import.meta.url);
+          import { Subject, Observable } from 'rxjs'
+          class MySubject<T> extends Subject<T> {}
+          const subj$ = __$("subj$:new MySubject()", () => new MySubject())
+          __$.end()
+          if (import.meta.hot) {
+            import.meta.hot.accept()
+          }
+          "
+        `)
+      })
+
+      it("wraps namespace Observable construction", () => {
+        const code = `import * as rx from 'rxjs'
+const custom$ = new rx.Observable(sub => sub.next(1))`
+        const result = transform(code)!
+        expect(result.code).toMatchInlineSnapshot(`
+          "
+          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          const __$ = _rxjs_debugger_module_start(import.meta.url);
+          import * as rx from 'rxjs'
+          const custom$ = __$("custom$:new Observable(fn)", () => new rx.Observable(sub => sub.next(1)))
+          __$.end()
+          if (import.meta.hot) {
+            import.meta.hot.accept()
+          }
+          "
+        `)
+      })
+
+      it("wraps namespace Observable construction", () => {
+        const code = `import { BehaviorSubject, filter, map, of, of as rxjsOf, Subject, take } from "rxjs"
+import { describe, expect, it } from "vitest"
+import { _eventBuffer, state$ } from "../00.types"
+import { __$ } from "./0_runtime"
+import "../03_scan-accumulator"
+import { useTrackingTestSetup } from "../0_test-utils"
+import { getDanglingSubscriptions } from "../06_queries"
+import { findTrackByKey } from "./1_queries"
+import { trackedBehaviorSubject, trackedSubject } from "./3_tracked-subject"
+import { ___rxjs_hmr_key___ } from "./4_module-scope"
+
+describe("__$ HMR runtime", () => {
+  useTrackingTestSetup(true)
+
+  it("tracks observable creation", () => {
+    const obs = of(1, 2, 3)
+
+    expect(findTrackByKey(state$.value, obs[___rxjs_hmr_key___])).toMatchInlineSnapshot(\`undefined\`)
+  })
+})`
+        const result = transform(code, "/app/derp.ts")!
+        expect(result).toEqual(null)
       })
     })
   })

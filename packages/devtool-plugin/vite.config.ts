@@ -17,7 +17,7 @@ export default defineConfig({
     sourcemap: true,
     target: "esnext",
   },
-  plugins: [react(), rxjsHmrPlugin({ debug: true }),tsconfigPaths()],
+  plugins: [react(), rxjsHmrPlugin({ debug: false }),tsconfigPaths()],
   optimizeDeps: {
     exclude: ["rxjs", "rxjs/operators"],
   },

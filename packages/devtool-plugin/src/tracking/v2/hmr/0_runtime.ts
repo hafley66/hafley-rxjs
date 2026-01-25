@@ -8,31 +8,27 @@
  * seamlessly receive values from new inner observable after HMR swap.
  */
 
-import { BehaviorSubject, Observable, Subject } from "rxjs"
-import { state$, TRACKED_MARKER } from "../00.types"
-import { emit } from "../01.patch-observable"
-import { createId } from "../01_helpers"
+import { BehaviorSubject, isObservable, Subject } from "rxjs"
+import { getObsId, main, RxJSTracker } from "../0_store"
 import { findTrackByKey } from "./1_queries"
 import { trackedObservable } from "./2_tracked-observable"
-import { trackedBehaviorSubject, trackedSubject } from "./3_tracked-subject"
+import { trackedSubject } from "./3_tracked-subject"
 
 // Only treat direct Subject/BehaviorSubject instances as Subjects
 // AnonymousSubject (from .pipe()) should be treated as Observable
 // Also exclude our own tracked wrappers
 function isRealSubject(val: any): val is Subject<any> {
-  if (val == null) return false
-  if ((val as any)[TRACKED_MARKER]) return false // Already tracked
+  if (val == null || isTrackedWrapper(val)) return false
   return val.constructor === Subject || val.constructor === BehaviorSubject
 }
 
 function isRealBehaviorSubject(val: any): val is BehaviorSubject<any> {
-  if (val == null) return false
-  if ((val as any)[TRACKED_MARKER]) return false
+  if (val == null || isTrackedWrapper(val)) return false
   return val.constructor === BehaviorSubject
 }
 
 function isTrackedWrapper(val: any): boolean {
-  return val != null && !!(val as any)[TRACKED_MARKER]
+  return val != null && !!(val as any)[RxJSTracker.TRACKED_MARKER]
 }
 
 export type TrackContext = <T>(name: string, fn: ($: TrackContext) => T) => T
@@ -40,10 +36,10 @@ export type TrackContext = <T>(name: string, fn: ($: TrackContext) => T) => T
 export function __$<T>(location: string, fn: ($: TrackContext) => T): T {
   // Dynamic observable naming: prepend subscription context if inside send (callback) or subscription (factory)
   // Only add prefix if no track on stack already has subscription context (avoid double-prefix)
-  const send = state$.value.stack.send.at(-1)
-  const sub = state$.value.stack.subscription.at(-1)
+  const send = main.state$.value.stack.send.at(-1)
+  const sub = main.state$.value.stack.subscription.at(-1)
   try {
-    const hasSubscriptionPrefix = state$.value.stack.hmr_track.some(t => t.key.startsWith("$ref["))
+    const hasSubscriptionPrefix = main.state$.value.stack.hmr_track.some(t => t.key.startsWith("$ref["))
 
     // Use send context if in a callback, otherwise use subscription context if in a factory (like defer)
     const subscriptionContext = send?.subscription_id ?? sub?.id
@@ -54,10 +50,10 @@ export function __$<T>(location: string, fn: ($: TrackContext) => T): T {
         : location
 
     // Check for existing track (HMR re-execution) or generate new surrogate id
-    const existingTrack = findTrackByKey(state$.value, effectiveLocation)
-    const trackId = existingTrack?.id ?? createId()
+    const existingTrack = findTrackByKey(main.state$.value, effectiveLocation)
+    const trackId = existingTrack?.id ?? main.createId()
 
-    emit({ type: "track-call", id: trackId, key: effectiveLocation })
+    main.emit({ type: "track-call", id: trackId, key: effectiveLocation })
 
     const $: TrackContext = <V>(name: string, childFn: ($: TrackContext) => V): V => {
       return __$(`${effectiveLocation}:${name}`, childFn)
@@ -85,49 +81,38 @@ export function __$<T>(location: string, fn: ($: TrackContext) => T): T {
       }
 
       // If result is a BehaviorSubject, use trackedBehaviorSubject to preserve initial value
-      if (isRealBehaviorSubject(result)) {
-        mutableId = (result as any).__id__
-        const trackInStore = state$.value.store.hmr_track[trackId]
+      if (isRealBehaviorSubject(result) || isRealSubject(result) || isObservable(result)) {
+        mutableId = getObsId(result)
+        const trackInStore = main.state$.value.store.hmr_track[trackId]
         const existingStableId = trackInStore?.stable_observable_id
-        let stable = existingStableId ? state$.value.store.observable[existingStableId]?.obs_ref?.deref() : undefined
+        let stable = existingStableId
+          ? main.state$.value.store.observable[existingStableId]?.obs_ref?.deref()
+          : undefined
         if (!stable) {
-          stable = trackedBehaviorSubject(trackId, result.getValue(), mutableId)
+          stable = isRealSubject(result)
+            ? trackedSubject(
+                result instanceof BehaviorSubject ? BehaviorSubject : Subject,
+                trackId,
+                mutableId,
+                ...(result instanceof BehaviorSubject ? [result.getValue()] : []),
+              )
+            : trackedObservable(trackId, mutableId)
         }
-        stableId = (stable as any).__id__
-        return stable as T
-      }
-
-      // If result is a real Subject (not AnonymousSubject from .pipe()), return stable trackedSubject wrapper
-      if (isRealSubject(result)) {
-        mutableId = (result as any).__id__
-        const trackInStore = state$.value.store.hmr_track[trackId]
-        const existingStableId = trackInStore?.stable_observable_id
-        let stable = existingStableId ? state$.value.store.observable[existingStableId]?.obs_ref?.deref() : undefined
-        if (!stable) {
-          stable = trackedSubject(trackId, mutableId)
-        }
-        stableId = (stable as any).__id__
-        return stable as T
-      }
-
-      // If result is an Observable (cold), return stable trackedObservable wrapper
-      if (result instanceof Observable) {
-        mutableId = (result as any).__id__
-        const trackInStore = state$.value.store.hmr_track[trackId]
-        const existingStableId = trackInStore?.stable_observable_id
-        let stable = existingStableId ? state$.value.store.observable[existingStableId]?.obs_ref?.deref() : undefined
-        if (!stable) {
-          stable = trackedObservable(trackId, mutableId)
-        }
-        stableId = (stable as any).__id__
+        stableId = getObsId(stable)
         return stable as T
       }
 
       return result
     } finally {
-      emit({ type: "track-call-return", id: trackId, mutable_observable_id: mutableId, stable_observable_id: stableId })
+      main.emit({
+        type: "track-call-return",
+        id: trackId,
+        mutable_observable_id: mutableId,
+        stable_observable_id: stableId,
+      })
     }
-  } catch {
-    console.log(state$.value.stack.hmr_track)
+  } catch (e) {
+    console.log(main.state$.value.stack.hmr_track)
+    throw e
   }
 }

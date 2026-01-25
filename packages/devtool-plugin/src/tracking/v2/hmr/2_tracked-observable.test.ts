@@ -1,7 +1,6 @@
 import { map, Subject } from "rxjs"
 import { describe, expect, it } from "vitest"
-import { state$ } from "../00.types"
-import "../03_scan-accumulator"
+import { main } from "../0_store"
 import { useTrackingTestSetup } from "../0_test-utils"
 import { __$ } from "./0_runtime"
 import { findTrackByKey } from "./1_queries"
@@ -12,7 +11,7 @@ describe("trackedObservable", () => {
 
   it("subscribes to tracked observable and receives emissions", () => {
     const source$ = __$("app:source$", () => new Subject<number>())
-    const trackId = findTrackByKey(state$.value, "app:source$")!.id
+    const trackId = findTrackByKey(main.state$.value, "app:source$")!.id
 
     const tracked$ = trackedObservable<number>(trackId)
     const values: number[] = []
@@ -34,7 +33,7 @@ describe("trackedObservable", () => {
     let rawSource2$!: Subject<number>
 
     const wrapper1$ = __$("app:counter$", () => (rawSource1$ = new Subject<number>()))
-    const trackId = findTrackByKey(state$.value, "app:counter$")!.id
+    const trackId = findTrackByKey(main.state$.value, "app:counter$")!.id
 
     const tracked$ = trackedObservable<number>(trackId)
     const values: number[] = []
@@ -63,7 +62,7 @@ describe("trackedObservable", () => {
 
   it("subscription survives HMR swap", () => {
     const source1$ = __$("app:data$", () => new Subject<number>())
-    const trackId = findTrackByKey(state$.value, "app:data$")!.id
+    const trackId = findTrackByKey(main.state$.value, "app:data$")!.id
 
     const tracked$ = trackedObservable<number>(trackId)
     let completed = false
@@ -85,7 +84,7 @@ describe("trackedObservable", () => {
 
   it("cleans up inner subscription on unsubscribe", () => {
     const source$ = __$("app:stream$", () => new Subject<number>())
-    const trackId = findTrackByKey(state$.value, "app:stream$")!.id
+    const trackId = findTrackByKey(main.state$.value, "app:stream$")!.id
 
     const tracked$ = trackedObservable<number>(trackId)
     const values: number[] = []
@@ -101,7 +100,7 @@ describe("trackedObservable", () => {
   it("works with hot source and pipe", () => {
     const input$ = new Subject<number>()
     __$("app:piped$", () => input$.pipe(map(x => x * 10)))
-    const trackId = findTrackByKey(state$.value, "app:piped$")!.id
+    const trackId = findTrackByKey(main.state$.value, "app:piped$")!.id
 
     const tracked$ = trackedObservable<number>(trackId)
     const values: number[] = []
@@ -116,7 +115,7 @@ describe("trackedObservable", () => {
 
   it("forwards complete when no swap has occurred", () => {
     const source$ = __$("app:finite$", () => new Subject<number>())
-    const trackId = findTrackByKey(state$.value, "app:finite$")!.id
+    const trackId = findTrackByKey(main.state$.value, "app:finite$")!.id
 
     const tracked$ = trackedObservable<number>(trackId)
     let completed = false
@@ -134,7 +133,7 @@ describe("trackedObservable", () => {
 
   it("forwards complete after HMR swap - preserves RxJS semantics", () => {
     const source1$ = __$("app:hmr$", () => new Subject<number>())
-    const trackId = findTrackByKey(state$.value, "app:hmr$")!.id
+    const trackId = findTrackByKey(main.state$.value, "app:hmr$")!.id
 
     const tracked$ = trackedObservable<number>(trackId)
     let completed = false

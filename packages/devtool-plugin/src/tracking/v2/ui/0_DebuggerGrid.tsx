@@ -1,18 +1,18 @@
 import { useState } from "react"
-import { state$ } from "../00.types"
-import { decycle } from "../01_helpers"
+import { use$ } from "~/lib/1_use"
+import { main } from "../0_store"
 import { getAllSends, getRootObservables, getTopLevelSubscriptions } from "../06_queries"
 import { MarbleDiagram } from "./1_MarbleDiagram"
 
 export function DebuggerGrid() {
-  state$.use$()
+  use$(main.state$, main.state$.initialValue)
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null)
 
   if (selectedSubId) {
     return <MarbleDiagram subId={selectedSubId} onBack={() => setSelectedSubId(null)} />
   }
 
-  const store = state$.value.store
+  const store = main.state$.value.store
   const roots = getRootObservables(store)
   const subs = getTopLevelSubscriptions(store)
   console.log({ store, subs })
@@ -99,7 +99,7 @@ function SendRow({ send, subIds }: { send: ReturnType<typeof getAllSends>[number
             <span style={{ color: send.type === "error" ? "red" : send.type === "complete" ? "blue" : "green" }}>
               {send.type}
             </span>
-            {send.type === "next" && <span style={{ color: "#666" }}>: {JSON.stringify(decycle(send.value))}</span>}
+            {send.type === "next" && <span style={{ color: "#666" }}>: {JSON.stringify(send.value)}</span>}
           </div>
         )
       })}
@@ -108,7 +108,7 @@ function SendRow({ send, subIds }: { send: ReturnType<typeof getAllSends>[number
 }
 
 function RootRows({ obsId, subIds }: { obsId: string; subIds: string[] }) {
-  const store = state$.value.store
+  const store = main.state$.value.store
   const obs = store.observable[obsId]
   if (!obs) return null
 
@@ -134,7 +134,7 @@ function RootRows({ obsId, subIds }: { obsId: string; subIds: string[] }) {
 }
 
 function PipeRows({ pipeId, subIds, depth }: { pipeId: string; subIds: string[]; depth: number }) {
-  const store = state$.value.store
+  const store = main.state$.value.store
   const pipe = store.pipe[pipeId]
   if (!pipe) return null
 
@@ -169,7 +169,7 @@ function PipeRows({ pipeId, subIds, depth }: { pipeId: string; subIds: string[];
 }
 
 function OperatorRow({ opId, subIds, depth }: { opId: string; subIds: string[]; depth: number }) {
-  const store = state$.value.store
+  const store = main.state$.value.store
   const op = store.operator[opId]
   if (!op) return null
 
@@ -190,7 +190,7 @@ function OperatorRow({ opId, subIds, depth }: { opId: string; subIds: string[]; 
 }
 
 function SubCell({ obsId, subId }: { obsId: string; subId: string }) {
-  const store = state$.value.store
+  const store = main.state$.value.store
 
   // Check if this subscription is for this observable or a descendant
   const sub = store.subscription[subId]

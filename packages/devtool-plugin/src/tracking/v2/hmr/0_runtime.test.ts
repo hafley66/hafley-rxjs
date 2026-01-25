@@ -7,32 +7,59 @@ import { useTrackingTestSetup } from "../0_test-utils"
 import { getDanglingSubscriptions } from "../06_queries"
 import { findTrackByKey } from "./1_queries"
 import { trackedBehaviorSubject, trackedSubject } from "./3_tracked-subject"
-import { ___rxjs_hmr_key___ } from "./4_module-scope"
 
 describe("__$ HMR runtime", () => {
   useTrackingTestSetup(true)
 
   it("tracks observable creation", () => {
-    const obs = of(1, 2, 3)
+    const obs = __$("oof", () => of(1, 2, 3))
 
-    expect(findTrackByKey(state$.value, obs[___rxjs_hmr_key___])).toMatchInlineSnapshot(`undefined`)
+    expect(findTrackByKey(state$.value, "oof")).toMatchInlineSnapshot(`
+      {
+        "created_at": 0,
+        "created_at_end": 0,
+        "id": "0",
+        "index": 0,
+        "key": "oof",
+        "module_id": "test",
+        "module_version": 1,
+        "mutable_observable_id": "1",
+        "parent_track_id": undefined,
+        "prev_observable_ids": [],
+        "stable_observable_id": "11",
+        "version": 0,
+      }
+    `)
   })
 
   it("tracks nested scopes with child $ tracker", () => {
     __$("root", $ => {
       return $("child", () => of(1))
     })
-
     expect(state$.value.store.hmr_track).toMatchInlineSnapshot(`
       {
+        "0": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "0",
+          "index": 0,
+          "key": "oof",
+          "module_id": "test",
+          "module_version": 1,
+          "mutable_observable_id": "1",
+          "parent_track_id": undefined,
+          "prev_observable_ids": [],
+          "stable_observable_id": "11",
+          "version": 0,
+        },
         "1": {
           "created_at": 0,
           "created_at_end": 0,
           "id": "1",
           "index": 0,
           "key": "root:child",
-          "module_id": undefined,
-          "module_version": undefined,
+          "module_id": "test",
+          "module_version": 2,
           "mutable_observable_id": "2",
           "parent_track_id": "0",
           "prev_observable_ids": [],
@@ -51,20 +78,99 @@ describe("__$ HMR runtime", () => {
       ),
     )
 
-    expect(findTrackByKey(state$.value, "test:pipe")).toMatchInlineSnapshot(`
+    expect(state$.value.store.hmr_module).toMatchInlineSnapshot(`
       {
-        "created_at": 0,
-        "created_at_end": 0,
-        "id": "0",
-        "index": 0,
-        "key": "test:pipe",
-        "module_id": undefined,
-        "module_version": undefined,
-        "mutable_observable_id": "19",
-        "parent_track_id": "test",
-        "prev_observable_ids": [],
-        "stable_observable_id": "20",
-        "version": 0,
+        "test": {
+          "created_at": 0,
+          "id": "test",
+          "prev_keys": [
+            "oof",
+            "root:child",
+          ],
+          "url": "0_test-utils.ts",
+          "version": 3,
+        },
+      }
+    `)
+    expect(state$.value.store.hmr_track).toMatchInlineSnapshot(`
+      {
+        "0": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "0",
+          "index": 0,
+          "key": "oof",
+          "last_change_structural": true,
+          "module_id": "test",
+          "module_version": 3,
+          "mutable_observable_id": "19",
+          "parent_track_id": undefined,
+          "prev_observable_ids": [
+            "1",
+          ],
+          "stable_observable_id": "11",
+          "version": 1,
+        },
+        "1": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "1",
+          "index": 0,
+          "key": "root:child",
+          "module_id": "test",
+          "module_version": 2,
+          "mutable_observable_id": "2",
+          "parent_track_id": "0",
+          "prev_observable_ids": [],
+          "stable_observable_id": "6",
+          "version": 0,
+        },
+      }
+    `)
+    expect(state$.value.store.observable).toMatchInlineSnapshot(`
+      {
+        "1": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "1",
+          "name": "of(1,2,3)",
+          "obs_ref": WeakRef {},
+        },
+        "11": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "11",
+          "name": "new Observable",
+          "obs_ref": WeakRef {},
+        },
+        "17": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "17",
+          "name": "of(1,2,3).map(fn)",
+          "obs_ref": WeakRef {},
+        },
+        "19": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "19",
+          "name": "of(1,2,3).map(fn).take(2)",
+          "obs_ref": WeakRef {},
+        },
+        "2": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "2",
+          "name": "of(1)",
+          "obs_ref": WeakRef {},
+        },
+        "6": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "6",
+          "name": "new Observable",
+          "obs_ref": WeakRef {},
+        },
       }
     `)
   })
@@ -83,19 +189,16 @@ describe("__$ HMR runtime", () => {
       {
         "created_at": 0,
         "created_at_end": 0,
-        "id": "1",
+        "id": "6",
         "index": 0,
         "key": "test:fn",
-        "last_change_structural": true,
-        "module_id": undefined,
-        "module_version": undefined,
+        "module_id": "test",
+        "module_version": 4,
         "mutable_observable_id": "7",
-        "parent_track_id": "test",
-        "prev_observable_ids": [
-          "2",
-        ],
-        "stable_observable_id": "6",
-        "version": 1,
+        "parent_track_id": undefined,
+        "prev_observable_ids": [],
+        "stable_observable_id": "11",
+        "version": 0,
       }
     `)
   })
@@ -122,6 +225,66 @@ describe("__$ HMR runtime", () => {
   it("detects fn-only change when structure same (last_change_structural: false)", () => {
     // First execution
     __$("test:hmr", () => of(1, 2, 3).pipe(map(x => x * 2)))
+    expect(state$.value.store.observable).toMatchInlineSnapshot(`
+      {
+        "1": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "1",
+          "name": "of(1,2,3)",
+          "obs_ref": WeakRef {},
+        },
+        "11": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "11",
+          "name": "new Observable",
+          "obs_ref": WeakRef {},
+        },
+        "15": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "15",
+          "name": "of(1,2,3).map(fn)",
+          "obs_ref": WeakRef {},
+        },
+        "17": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "17",
+          "name": "of(1,2,3).map(fn)",
+          "obs_ref": WeakRef {},
+        },
+        "19": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "19",
+          "name": "of(1,2,3).map(fn).take(2)",
+          "obs_ref": WeakRef {},
+        },
+        "2": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "2",
+          "name": "of(1)",
+          "obs_ref": WeakRef {},
+        },
+        "6": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "6",
+          "name": "new Observable",
+          "obs_ref": WeakRef {},
+        },
+        "7": {
+          "created_at": 0,
+          "created_at_end": 0,
+          "id": "7",
+          "name": "of(2)",
+          "obs_ref": WeakRef {},
+        },
+      }
+    `)
     const track1 = findTrackByKey(state$.value, "test:hmr")!
     const mutableId1 = track1.mutable_observable_id
     const obs1Name = state$.value.store.observable[mutableId1]?.name
@@ -231,17 +394,21 @@ describe("__$ HMR runtime", () => {
     }).toMatchInlineSnapshot(`
       {
         "hmrTrackStack": [
-          "test",
-          "0",
+          "6",
+          "6",
           "0",
         ],
         "sendStack": [
-          "7",
           "6",
+          "5",
         ],
         "tracks": [
           "0",
-          "11",
+          "1",
+          "6",
+          "9",
+          "10",
+          "16",
         ],
       }
     `)
@@ -249,7 +416,7 @@ describe("__$ HMR runtime", () => {
 })
 
 describe("trackedSubject bi-sync", () => {
-  useTrackingTestSetup()
+  useTrackingTestSetup(true)
 
   it("next forwards to inner and emits on proxy", () => {
     let rawInner: Subject<number> | undefined
@@ -370,7 +537,7 @@ describe("trackedSubject bi-sync", () => {
 })
 
 describe("trackedBehaviorSubject", () => {
-  useTrackingTestSetup()
+  useTrackingTestSetup(true)
 
   it("getValue returns inner value", () => {
     let rawInner: BehaviorSubject<number> | undefined
@@ -386,6 +553,561 @@ describe("trackedBehaviorSubject", () => {
   it("next updates inner value", () => {
     let rawInner: BehaviorSubject<number> | undefined
     __$("bsNext", () => (rawInner = new BehaviorSubject(0)))
+    expect(state$.value.store).toMatchInlineSnapshot(`
+      {
+        "arg": {
+          "10": {
+            "created_at": 0,
+            "id": "10",
+            "is_function": false,
+            "observable_id": "1",
+            "owner_id": "1",
+            "path": "$args.2",
+            "value": 3,
+          },
+          "11": {
+            "created_at": 0,
+            "id": "11",
+            "is_function": false,
+            "observable_id": "10",
+            "owner_id": "10",
+            "path": "$args.0.0",
+            "value": 2,
+          },
+          "12": {
+            "created_at": 0,
+            "id": "12",
+            "is_function": false,
+            "observable_id": "11",
+            "owner_id": "11",
+            "path": "$args.0.0",
+            "value": 2,
+          },
+          "13": {
+            "created_at": 0,
+            "id": "13",
+            "is_function": false,
+            "observable_id": "11",
+            "owner_id": "11",
+            "path": "$args.0.0",
+            "value": 2,
+          },
+          "14": {
+            "created_at": 0,
+            "id": "14",
+            "is_function": false,
+            "observable_id": "11",
+            "owner_id": "11",
+            "path": "$args.0",
+            "value": 2,
+          },
+          "15": {
+            "created_at": 0,
+            "id": "15",
+            "is_function": false,
+            "owner_id": "14",
+            "path": "$args.0",
+            "value": 2,
+          },
+          "18": {
+            "created_at": 0,
+            "id": "18",
+            "is_function": false,
+            "observable_id": "17",
+            "owner_id": "17",
+            "path": "$args.0.0",
+            "value": 1,
+          },
+          "19": {
+            "created_at": 0,
+            "id": "19",
+            "is_function": false,
+            "observable_id": "17",
+            "owner_id": "17",
+            "path": "$args.0.1",
+            "value": 2,
+          },
+          "2": {
+            "created_at": 0,
+            "id": "2",
+            "is_function": false,
+            "observable_id": "1",
+            "owner_id": "1",
+            "path": "$args.0.0",
+            "value": 1,
+          },
+          "20": {
+            "created_at": 0,
+            "id": "20",
+            "is_function": false,
+            "observable_id": "17",
+            "owner_id": "17",
+            "path": "$args.0.2",
+            "value": 3,
+          },
+          "21": {
+            "created_at": 0,
+            "id": "21",
+            "is_function": false,
+            "observable_id": "17",
+            "owner_id": "17",
+            "path": "$args.0.0",
+            "value": 1,
+          },
+          "22": {
+            "created_at": 0,
+            "id": "22",
+            "is_function": false,
+            "observable_id": "17",
+            "owner_id": "17",
+            "path": "$args.0.1",
+            "value": 2,
+          },
+          "23": {
+            "created_at": 0,
+            "id": "23",
+            "is_function": false,
+            "observable_id": "17",
+            "owner_id": "17",
+            "path": "$args.0.2",
+            "value": 3,
+          },
+          "24": {
+            "created_at": 0,
+            "id": "24",
+            "is_function": false,
+            "observable_id": "17",
+            "owner_id": "17",
+            "path": "$args.0",
+            "value": 1,
+          },
+          "25": {
+            "created_at": 0,
+            "id": "25",
+            "is_function": false,
+            "observable_id": "17",
+            "owner_id": "17",
+            "path": "$args.1",
+            "value": 2,
+          },
+          "26": {
+            "created_at": 0,
+            "id": "26",
+            "is_function": false,
+            "observable_id": "17",
+            "owner_id": "17",
+            "path": "$args.2",
+            "value": 3,
+          },
+          "29": {
+            "created_at": 0,
+            "id": "29",
+            "is_function": false,
+            "owner_id": "28",
+            "path": "$args.0",
+            "value": 10,
+          },
+          "3": {
+            "created_at": 0,
+            "id": "3",
+            "is_function": false,
+            "observable_id": "1",
+            "owner_id": "1",
+            "path": "$args.0.0",
+            "value": 1,
+          },
+          "4": {
+            "created_at": 0,
+            "id": "4",
+            "is_function": false,
+            "observable_id": "1",
+            "owner_id": "1",
+            "path": "$args.0",
+            "value": 1,
+          },
+          "5": {
+            "created_at": 0,
+            "id": "5",
+            "is_function": false,
+            "observable_id": "1",
+            "owner_id": "1",
+            "path": "$args.0.0",
+            "value": 1,
+          },
+          "6": {
+            "created_at": 0,
+            "id": "6",
+            "is_function": false,
+            "observable_id": "1",
+            "owner_id": "1",
+            "path": "$args.0.1",
+            "value": 2,
+          },
+          "7": {
+            "created_at": 0,
+            "id": "7",
+            "is_function": false,
+            "observable_id": "1",
+            "owner_id": "1",
+            "path": "$args.0.2",
+            "value": 3,
+          },
+          "8": {
+            "created_at": 0,
+            "id": "8",
+            "is_function": false,
+            "observable_id": "1",
+            "owner_id": "1",
+            "path": "$args.0",
+            "value": 1,
+          },
+          "9": {
+            "created_at": 0,
+            "id": "9",
+            "is_function": false,
+            "observable_id": "1",
+            "owner_id": "1",
+            "path": "$args.1",
+            "value": 2,
+          },
+        },
+        "arg_call": {},
+        "hmr_module": {
+          "test": {
+            "created_at": 0,
+            "id": "test",
+            "prev_keys": [
+              "oof",
+              "root:child",
+              "test:fn",
+              "$ref[11]:subscription[5]:inner",
+              "$ref[11]:subscription[5]:level1:level2",
+              "test:primitive",
+            ],
+            "url": "0_test-utils.ts",
+            "version": 18,
+          },
+        },
+        "hmr_track": {
+          "0": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "0",
+            "index": 0,
+            "key": "oof",
+            "last_change_structural": true,
+            "module_id": "test",
+            "module_version": 18,
+            "mutable_observable_id": "1",
+            "parent_track_id": undefined,
+            "prev_observable_ids": [
+              "1",
+              "19",
+              "1",
+              "15",
+            ],
+            "stable_observable_id": "11",
+            "version": 4,
+          },
+          "1": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "1",
+            "index": 0,
+            "key": "root:child",
+            "module_id": "test",
+            "module_version": 4,
+            "mutable_observable_id": "2",
+            "parent_track_id": "0",
+            "prev_observable_ids": [],
+            "stable_observable_id": "6",
+            "version": 0,
+          },
+          "10": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "10",
+            "index": 0,
+            "key": "$ref[11]:subscription[5]:level1:level2",
+            "module_id": "test",
+            "module_version": 11,
+            "mutable_observable_id": "11",
+            "parent_track_id": "9",
+            "prev_observable_ids": [],
+            "stable_observable_id": "15",
+            "version": 0,
+          },
+          "16": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "16",
+            "index": 0,
+            "key": "test:primitive",
+            "module_id": "test",
+            "module_version": 9,
+            "mutable_observable_id": "31",
+            "parent_track_id": undefined,
+            "prev_observable_ids": [],
+            "stable_observable_id": "32",
+            "version": 0,
+          },
+          "6": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "6",
+            "index": 0,
+            "key": "test:fn",
+            "module_id": "test",
+            "module_version": 4,
+            "mutable_observable_id": "7",
+            "parent_track_id": undefined,
+            "prev_observable_ids": [],
+            "stable_observable_id": "11",
+            "version": 0,
+          },
+          "9": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "9",
+            "index": 0,
+            "key": "$ref[11]:subscription[5]:inner",
+            "module_id": "test",
+            "module_version": 10,
+            "mutable_observable_id": "10",
+            "parent_track_id": "0",
+            "prev_observable_ids": [],
+            "stable_observable_id": "14",
+            "version": 0,
+          },
+        },
+        "observable": {
+          "1": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "1",
+            "name": "new BehaviorSubject",
+            "obs_ref": WeakRef {},
+          },
+          "10": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "10",
+            "name": "of(2)",
+            "obs_ref": WeakRef {},
+          },
+          "11": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "11",
+            "name": "of(2)",
+            "obs_ref": WeakRef {},
+          },
+          "14": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "14",
+            "name": "new Observable",
+            "obs_ref": WeakRef {},
+          },
+          "15": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "15",
+            "name": "new Observable",
+            "obs_ref": WeakRef {},
+          },
+          "17": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "17",
+            "name": "of(1,2,3)",
+            "obs_ref": WeakRef {},
+          },
+          "19": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "19",
+            "name": "of(1,2,3).map(fn).take(2)",
+            "obs_ref": WeakRef {},
+          },
+          "2": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "2",
+            "name": "of(1)",
+            "obs_ref": WeakRef {},
+          },
+          "31": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "31",
+            "name": "of(1,2,3).take(10)",
+            "obs_ref": WeakRef {},
+          },
+          "32": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "32",
+            "name": "new Observable",
+            "obs_ref": WeakRef {},
+          },
+          "6": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "6",
+            "name": "new Observable",
+            "obs_ref": WeakRef {},
+          },
+          "7": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "7",
+            "name": "of(2)",
+            "obs_ref": WeakRef {},
+          },
+        },
+        "operator": {
+          "14": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "14",
+            "index": 0,
+            "operator_fun_id": "12",
+            "pipe_id": "11",
+            "source_observable_id": "1",
+            "target_observable_id": "15",
+          },
+          "16": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "16",
+            "index": 0,
+            "operator_fun_id": "12",
+            "pipe_id": "11",
+            "source_observable_id": "1",
+            "target_observable_id": "17",
+          },
+          "18": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "18",
+            "index": 1,
+            "operator_fun_id": "14",
+            "pipe_id": "11",
+            "source_observable_id": "17",
+            "target_observable_id": "19",
+          },
+          "30": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "30",
+            "index": 0,
+            "operator_fun_id": "28",
+            "pipe_id": "27",
+            "source_observable_id": "17",
+            "target_observable_id": "31",
+          },
+        },
+        "operator_fun": {
+          "12": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "12",
+            "name": "take(5)",
+          },
+          "14": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "14",
+            "name": "take(2)",
+          },
+          "2": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "2",
+            "name": "map(fn)",
+          },
+          "28": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "28",
+            "name": "take(10)",
+          },
+        },
+        "pipe": {
+          "11": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "11",
+            "observable_id": "15",
+            "parent_observable_id": "1",
+          },
+          "27": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "27",
+            "observable_id": "31",
+            "parent_observable_id": "17",
+          },
+        },
+        "send": {
+          "15": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "15",
+            "observable_id": "7",
+            "subscription_id": "6",
+            "type": "complete",
+          },
+          "16": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "16",
+            "observable_id": "7",
+            "subscription_id": "6",
+            "type": "complete",
+          },
+          "17": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "17",
+            "observable_id": "11",
+            "subscription_id": "5",
+            "type": "complete",
+          },
+          "7": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "7",
+            "observable_id": "7",
+            "subscription_id": "6",
+            "type": "next",
+            "value": 2,
+          },
+          "8": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "8",
+            "observable_id": "11",
+            "subscription_id": "5",
+            "type": "next",
+            "value": 2,
+          },
+        },
+        "subscription": {
+          "5": {
+            "created_at": 0,
+            "created_at_end": 0,
+            "id": "5",
+            "is_sync": false,
+            "module_id": "test",
+            "observable_id": "11",
+            "parent_subscription_id": undefined,
+            "sub_ref": WeakRef {},
+          },
+        },
+      }
+    `)
     const trackId = findTrackByKey(state$.value, "bsNext")!.id
 
     const tbs = trackedBehaviorSubject<number>(trackId, -1)

@@ -35,7 +35,7 @@ export interface RxjsDevtoolPatchOptions {
 }
 
 const IMPORT_PATCH = (patchPath: string) =>
-  `import { patchObservable as __patchObservable__, emit as __emit__, createId as __createId__, observableIdMap as __observableIdMap__, __isEnabled__ } from "${patchPath}";\n`
+  `import { patchObservable as __patchObservable__, main as __main__ } from "${patchPath}";\n`
 
 const IMPORT_DECORATE_OP = (patchPath: string) =>
   `import { decorateOperatorFun as __decorateOp__ } from "${patchPath}";\n`
@@ -44,9 +44,9 @@ const IMPORT_DECORATE_CREATE = (patchPath: string) =>
   `import { decorateCreate as __decorateCreate__ } from "${patchPath}";\n`
 
 // Conditionally create ID only when tracking is enabled
-// If disabled, __id__ = "" (falsy) so store checks fail gracefully
-const CONSTRUCTOR_START = `\nconst __id__ = __isEnabled__() ? __createId__() : "";\n`
-const CONSTRUCTOR_END = `\nthis.__id__ = __id__;\nif (__id__) { __observableIdMap__.set(this, __id__); __emit__({ type: "constructor-call-return", id: __id__, observable: this }); }\n`
+// If disabled, __oid__ = "" (falsy) so store checks fail gracefully
+const CONSTRUCTOR_START = `\nconst __oid__ = __main__.state$.value.isEnabled ? __main__.createId() : "";\n`
+const CONSTRUCTOR_END = `\nthis.__oid__ = __oid__;\nif (__oid__) {  __main__.emit({ type: "constructor-call-return", id: __oid__, observable: this }); }\n`
 const PATCH_CALL = `\n__patchObservable__(Observable);\n`
 
 // Regex patterns for matching constructor bodies across all formats
@@ -215,7 +215,7 @@ export function rxjsDevtoolPatchPlugin(options: RxjsDevtoolPatchOptions = {}): P
       config = resolvedConfig
       command = resolvedConfig.command
       env = loadEnv(resolvedConfig.mode, process.cwd(), "") // Use "" as the third argument to load all variables, not just those with the VITE_ prefix
-      resolvedPatchModulePath = patchModulePath ?? path.resolve(config.root, "src/tracking/v2/01.patch-observable")
+      resolvedPatchModulePath = patchModulePath ?? path.resolve(config.root, "src/tracking/v2/0_store")
       log("configResolved:", {
         command: config.command,
         isProduction: config.isProduction,
@@ -253,30 +253,27 @@ export function rxjsDevtoolPatchPlugin(options: RxjsDevtoolPatchOptions = {}): P
       const cleanId = id.split("?")[0] ?? id
 
       if (cleanId.includes("/rxjs/")) {
-        log("transform called for rxjs file:", cleanId)
+        // log("transform called for rxjs file:", cleanId)
       }
 
       // dist/esm5/internal/Observable.js - ES5 function style
       if (cleanId.includes("/rxjs/dist/esm5/") && cleanId.endsWith("/Observable.js")) {
-        log("MATCHED esm5 Observable.js")
         const result = patchEs5(code, resolvedPatchModulePath)
-        log("patchEs5 result:", result ? "SUCCESS" : "FAILED")
+        log("patchEs5 Observable:", result ? "SUCCESS" : "FAILED")
         return result
       }
 
       // dist/esm/internal/Observable.js - ES2015 class style
       if (cleanId.includes("/rxjs/dist/esm/") && cleanId.endsWith("/Observable.js")) {
-        log("MATCHED esm Observable.js")
         const result = patchEsm(code, resolvedPatchModulePath)
-        log("patchEsm result:", result ? "SUCCESS" : "FAILED")
+        log("patchEsm Observable:", result ? "SUCCESS" : "FAILED")
         return result
       }
 
       // src/internal/Observable.ts - TypeScript source
       if (cleanId.includes("/rxjs/src/internal/Observable.ts")) {
-        log("MATCHED src Observable.ts")
         const result = patchTs(code, resolvedPatchModulePath)
-        log("patchTs result:", result ? "SUCCESS" : "FAILED")
+        log("patchTs Observable:", result ? "SUCCESS" : "FAILED")
         return result
       }
 
@@ -288,9 +285,8 @@ export function rxjsDevtoolPatchPlugin(options: RxjsDevtoolPatchOptions = {}): P
         if (fileName === "index" || fileName === "OperatorSubscriber") {
           return null
         }
-        log("MATCHED operator:", fileName)
         const result = patchOperator(code, resolvedPatchModulePath, fileName)
-        if (result) log("patchOperator result: SUCCESS for", fileName)
+        log("patchOperator result:", result ? "SUCCESS" : "FAILED")
         return result
       }
 
@@ -303,9 +299,8 @@ export function rxjsDevtoolPatchPlugin(options: RxjsDevtoolPatchOptions = {}): P
           if (fileName === "index" || fileName === "ConnectableObservable") {
             return null
           }
-          log("MATCHED observable:", fileName)
           const result = patchCreationFn(code, resolvedPatchModulePath, fileName)
-          if (result) log("patchCreation result: SUCCESS for", fileName)
+          log("patchCreation result:", result ? "SUCCESS" : "FAILED")
           return result
         }
       }
@@ -316,9 +311,8 @@ export function rxjsDevtoolPatchPlugin(options: RxjsDevtoolPatchOptions = {}): P
         if (fileName === "index" || fileName === "OperatorSubscriber") {
           return null
         }
-        log("MATCHED TS operator:", fileName)
         const result = patchOperatorTs(code, resolvedPatchModulePath, fileName)
-        if (result) log("patchOperatorTs result: SUCCESS for", fileName)
+        log("patchOperatorTs result:", result ? "SUCCESS" : "FAILED")
         return result
       }
 
@@ -328,9 +322,8 @@ export function rxjsDevtoolPatchPlugin(options: RxjsDevtoolPatchOptions = {}): P
         if (fileName === "index" || fileName === "ConnectableObservable") {
           return null
         }
-        log("MATCHED TS observable:", fileName)
         const result = patchCreationTs(code, resolvedPatchModulePath, fileName)
-        if (result) log("patchCreationTs result: SUCCESS for", fileName)
+        log("patchCreationTs result:", result ? "SUCCESS" : "FAILED")
         return result
       }
 

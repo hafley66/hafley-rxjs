@@ -4,8 +4,8 @@ import { page } from "vitest/browser"
 
 import "../03_scan-accumulator"
 import { filter, from, map, of, repeat, switchMap, tap } from "rxjs"
+import { state$ } from "../0.types"
 import { useTrackingTestSetup } from "../0_test-utils"
-import { state$ } from "../00.types"
 import { setNow } from "../01_helpers"
 import { DebuggerGrid } from "./0_DebuggerGrid"
 

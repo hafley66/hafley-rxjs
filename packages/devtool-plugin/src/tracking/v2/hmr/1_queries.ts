@@ -2,7 +2,7 @@
  * HMR Track Queries
  */
 
-import type { State } from "../00.types"
+import type { State } from "../0.types"
 
 /**
  * Find hmr_track by key (location string like "outer" or "outer:inner")

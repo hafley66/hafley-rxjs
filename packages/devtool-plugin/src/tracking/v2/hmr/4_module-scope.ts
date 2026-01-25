@@ -11,8 +11,7 @@
  */
 
 import type { Subscription } from "rxjs"
-import { isEnabled$ } from "../00.types"
-import { emit } from "../01.patch-observable"
+import { decorateCreate, main } from "../0_store"
 import { __$ as baseTrack } from "./0_runtime"
 
 export const ___rxjs_hmr_key___ = Symbol("___rxjs_hmr_key___")
@@ -23,6 +22,8 @@ export interface ModuleScope {
 
   // Track subscription creation
   sub(key: string, factory: () => Subscription): Subscription
+
+  fn<T>(key: string, it: T): T
 
   // Signal module evaluation complete - triggers dangling cleanup
   end(): void
@@ -39,10 +40,10 @@ export function _rxjs_debugger_module_start(url: string): ModuleScope {
   const module_id = url
 
   // Enable tracking when a module starts
-  isEnabled$.next(true)
-
+  const prev = main.state$.value.isEnabled
+  main.emit({ type: "enable" })
   // Emit module start event - accumulator handles everything
-  emit({ type: "hmr-module-call", id: module_id, url })
+  main.emit({ type: "hmr-module-call", id: module_id, url })
 
   // Create callable function that wraps baseTrack with key prefixing
   const createScope = (parentKey: string): ModuleScope => {
@@ -79,7 +80,15 @@ export function _rxjs_debugger_module_start(url: string): ModuleScope {
 
     // Add .end() method - only valid on root scope
     scope.end = () => {
-      emit({ type: "hmr-module-call-return", id: module_id })
+      main.emit({ type: "hmr-module-call-return", id: module_id })
+      main.emit({ type: prev ? "enable" : "disable" })
+    }
+
+    scope.fn = <T>(key: string, it: T) => {
+      if (typeof it === "function") {
+        return decorateCreate(it, key)
+      }
+      return it
     }
 
     // Add readonly property

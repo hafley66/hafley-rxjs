@@ -6,6 +6,7 @@ import {
   debounceTime,
   distinctUntilChanged,
   from,
+  interval,
   map,
   of,
   repeat,
@@ -15,15 +16,20 @@ import {
   tap,
   timer,
 } from "rxjs"
-import { take } from "rxjs/operators"
-import { isEnabled$, observableEventsEnabled$, state$ } from "./tracking/v2/00.types"
+import { filter, scan, take } from "rxjs/operators"
+import { observableEventsEnabled$, state$ } from "./tracking/v2/0.types"
 import "./tracking/v2/03_scan-accumulator"
+import { TAG } from "@hafley/rxjs-ext"
+import { use$ } from "./lib/1_use"
+import { isEnabled$ } from "./tracking/v2/000.pre"
 import { DebuggerGrid } from "./tracking/v2/ui/0_DebuggerGrid"
 
 console.log(";lol")
 observableEventsEnabled$.subscribe(n => console.log("EVENT: ", n))
 isEnabled$.next(true)
 isEnabled$.subscribe(n => console.log("Dude...", n))
+
+const copy$ = state$.pipe(map(it => it))
 // === Mock API ===
 type User = { id: number; name: string; email: string }
 type ApiResponse<T> = { data: T; timestamp: number }
@@ -117,13 +123,21 @@ function deleteUser(id: number) {
 
 // === React Components ===
 
-function App() {
-  state$.use$()
+const derp = interval(1000).pipe(
+  map(it => it + 2),
+  filter(it => it % 8 !== 0),
+  scan((a, b) => a + b, 0),
+  TAG("derp"),
+)
 
+function App() {
+  console.log("lol")
+  const it = use$(copy$, state$.value)
+  const b = use$(derp, 0)
   return (
     <div style={{ fontFamily: "system-ui", padding: 20, display: "flex", gap: 20 }}>
       <div style={{ flex: 1, maxWidth: 400 }}>
-        <h2>Mock CRUD Demo</h2>
+        <h2>Mock CRUD Demo {b}</h2>
 
         <section style={{ marginBottom: 20 }}>
           <h3>Polling (repeat + delay)</h3>
@@ -202,9 +216,18 @@ function App() {
 }
 
 // Mount
-const root = createRoot(document.getElementById("root")!)
-root.render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+if (!window.____root) {
+  const root = createRoot(document.getElementById("root")!)
+  root.render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  )
+  window.____root = root
+} else {
+  window.____root.render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  )
+}

@@ -1,5 +1,5 @@
 import { set } from "lodash"
-import type { State } from "./00.types"
+import type { State } from "./0.types"
 
 type Store = State["store"]
 

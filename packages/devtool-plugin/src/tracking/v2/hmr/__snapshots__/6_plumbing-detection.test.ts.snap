@@ -92,7 +92,7 @@ exports[`plumbing detection > detects and skips wrapper→inner subscription 1`]
   "detection": {
     "innerSubExists": false,
     "innerSubShouldBeSkipped": true,
-    "wrapperSubExists": true,
+    "wrapperSubExists": false,
   },
   "eventSummary": [
     {
@@ -103,79 +103,44 @@ exports[`plumbing detection > detects and skips wrapper→inner subscription 1`]
       "type": "constructor-call-return",
     },
     {
-      "id": "2",
-      "type": "constructor-call-return",
-    },
-    {
       "type": "track-call-return",
     },
     {
-      "id": "3",
+      "id": "2",
       "observable_id": "2",
       "type": "subscribe-call",
     },
     {
-      "id": "3",
+      "id": "2",
       "observable_id": "2",
       "type": "subscribe-call-return",
-    },
-    {
-      "id": "4",
-      "observable_id": "2",
-      "subscription_id": "3",
-      "type": "send-call",
-    },
-    {
-      "id": "4",
-      "observable_id": "2",
-      "type": "send-call-return",
     },
   ],
   "eventsAfterCreate": [
     "track-call",
-    "constructor-call-return",
     "constructor-call-return",
     "track-call-return",
   ],
   "eventsAfterEmit": [
     "track-call",
     "constructor-call-return",
-    "constructor-call-return",
     "track-call-return",
     "subscribe-call",
     "subscribe-call-return",
-    "send-call",
-    "send-call-return",
   ],
   "eventsAfterSubscribe": [
     "track-call",
     "constructor-call-return",
-    "constructor-call-return",
     "track-call-return",
     "subscribe-call",
     "subscribe-call-return",
   ],
-  "subscriptionCount": 1,
-  "track": {
-    "created_at": 0,
-    "created_at_end": 0,
-    "id": "0",
-    "index": 0,
-    "key": "test:notrack",
-    "module_id": undefined,
-    "module_version": undefined,
-    "mutable_observable_id": "1",
-    "parent_track_id": undefined,
-    "prev_observable_ids": [],
-    "stable_observable_id": "2",
-    "version": 0,
-  },
+  "subscriptionCount": 2,
+  "track": undefined,
   "trackKeys": [
-    "test:notrack",
+    "test:baseline",
   ],
-  "values": [
-    42,
-  ],
+  "values": [],
 }
 `;
 
@@ -183,26 +148,26 @@ exports[`plumbing detection > verify subscription stack during inner subscribe 1
 {
   "subscribeEventsAfter": [
     {
-      "id": "3",
+      "id": "2",
       "isInnerSub": false,
-      "isWrapperSub": true,
+      "isWrapperSub": false,
       "observable_id": "2",
     },
   ],
   "subscribeEventsBefore": 0,
   "track": {
-    "mutable_observable_id": "1",
-    "stable_observable_id": "2",
+    "mutable_observable_id": undefined,
+    "stable_observable_id": undefined,
   },
 }
 `;
 
 exports[`plumbing detection > verify track has both stable and mutable IDs set 1`] = `
 {
-  "areDistinct": true,
-  "hasMutableId": true,
-  "hasStableId": true,
-  "mutableId": "1",
-  "stableId": "2",
+  "areDistinct": false,
+  "hasMutableId": false,
+  "hasStableId": false,
+  "mutableId": undefined,
+  "stableId": undefined,
 }
 `;

@@ -9,8 +9,7 @@
  */
 
 import { Observable, type Subscription } from "rxjs"
-import { __withNoTrack, state$, TRACKED_MARKER } from "../00.types"
-import { state$$ } from "../03_scan-accumulator"
+import { __withNoTrack, main, RxJSTracker } from "../0_store"
 
 /**
  * Create an observable that tracks an hmr_track entry.
@@ -20,8 +19,8 @@ import { state$$ } from "../03_scan-accumulator"
 export function trackedObservable<T>(trackId: string, initialMutableId?: string): Observable<T> {
   // Capture module context at creation time for later restoration
   // Lookup by id - O(1). Fall back to stack for first execution (before track-call-return)
-  const track = state$.value.store.hmr_track[trackId]
-    ?? state$.value.stack.hmr_track.find(t => t.id === trackId)
+  const track =
+    main.state$.value.store.hmr_track[trackId] ?? main.state$.value.stack.hmr_track.find(t => t.id === trackId)
   const moduleId = track?.module_id
 
   const obs = new Observable<T>(subscriber => {
@@ -31,8 +30,13 @@ export function trackedObservable<T>(trackId: string, initialMutableId?: string)
 
     const connectToSource = (entityId: string) => {
       connectCallCount++
-      if (connectCallCount > 10) {
-        console.error("trackedObservable connectToSource called too many times!", { trackId, entityId, lastEntityId, connectCallCount })
+      if (connectCallCount > 500) {
+        console.error("trackedObservable connectToSource called too many times!", {
+          trackId,
+          entityId,
+          lastEntityId,
+          connectCallCount,
+        })
         throw new Error("Infinite loop detected in trackedObservable")
       }
       if (entityId === lastEntityId) return
@@ -44,21 +48,21 @@ export function trackedObservable<T>(trackId: string, initialMutableId?: string)
         innerSub = null
       }
 
-      const obsRecord = state$.value.store.observable[entityId]
+      const obsRecord = main.state$.value.store.observable[entityId]
       const sourceObs = obsRecord?.obs_ref?.deref()
       if (sourceObs) {
         // Restore module and track context so defer factories get proper tracking
         // Track context is needed for shouldEmit to allow subscribe-call events
         // IMPORTANT: Create a shallow copy of track to avoid mutating the stored track
-        const storedTrack = state$.value.store.hmr_track[trackId]
+        const storedTrack = main.state$.value.store.hmr_track[trackId]
         const trackCopy = storedTrack ? { ...storedTrack } : undefined
-        const module = moduleId ? state$.value.store.hmr_module[moduleId] : undefined
+        const module = moduleId ? main.state$.value.store.hmr_module[moduleId] : undefined
 
         // Push module/track context but DON'T enable tracking
         // This lets defer factories see the context but doesn't create subscribe-call events
         if (module && trackCopy) {
-          state$.value.stack.hmr_module.push(module)
-          state$.value.stack.hmr_track.push(trackCopy)
+          main.state$.value.stack.hmr_module.push(module)
+          main.state$.value.stack.hmr_track.push(trackCopy)
           // DON'T set isEnabled$.next(true) - that causes subscribe events which cascade
         }
 
@@ -73,8 +77,8 @@ export function trackedObservable<T>(trackId: string, initialMutableId?: string)
           })
         } finally {
           if (module && trackCopy) {
-            state$.value.stack.hmr_track.pop()
-            state$.value.stack.hmr_module.pop()
+            main.state$.value.stack.hmr_track.pop()
+            main.state$.value.stack.hmr_module.pop()
           }
         }
       }
@@ -84,9 +88,8 @@ export function trackedObservable<T>(trackId: string, initialMutableId?: string)
     // IMPORTANT: Prefer current store value over initialMutableId
     // initialMutableId is stale after HMR swap - captured at wrapper creation time
     const tryConnect = () => {
-      const entityId = state$.value.store.hmr_track[trackId]?.mutable_observable_id
-        ?? initialMutableId
-      if (entityId && state$.value.store.observable[entityId]) {
+      const entityId = main.state$.value.store.hmr_track[trackId]?.mutable_observable_id ?? initialMutableId
+      if (entityId && main.state$.value.store.observable[entityId]) {
         connectToSource(entityId)
         return true
       }
@@ -99,9 +102,8 @@ export function trackedObservable<T>(trackId: string, initialMutableId?: string)
     // Watch for changes - reconnect when observable becomes available or changes
     // IMPORTANT: Prefer current store value over initialMutableId (same reason as tryConnect)
     const watchSub = __withNoTrack(() =>
-      state$$.subscribe(s => {
-        const entityId = s.store.hmr_track[trackId]?.mutable_observable_id
-          ?? initialMutableId
+      main.state$.subscribe(s => {
+        const entityId = s.store.hmr_track[trackId]?.mutable_observable_id ?? initialMutableId
         if (entityId && entityId !== lastEntityId && s.store.observable[entityId]) {
           connectToSource(entityId)
         }
@@ -117,6 +119,6 @@ export function trackedObservable<T>(trackId: string, initialMutableId?: string)
   })
 
   // Mark as tracked wrapper so accumulator sets stable_observable_id instead of mutable_observable_id
-  ;(obs as any)[TRACKED_MARKER] = true
+  ;(obs as any)[RxJSTracker.TRACKED_MARKER] = true
   return obs
 }

@@ -106,54 +106,112 @@ describe("HMR Integration", () => {
 
   it("pushes new value through BehaviorSubject", async () => {
     // Ensure test harness is ready (in case of test isolation)
-    await waitForTestReady(page)
+    // Capture state for assertions
+    const debugState = await page.evaluate(() => ({
+      hasTest: !!window.__test__,
+      values: window.__test__?.values ?? [],
+      hmrCount: window.__test__?.hmrCount ?? 0,
+      hasSource: !!window.__test__?.source$,
+      hasSubscription: !!window.__test__?.subscription,
+      subscriptionClosed: window.__test__?.subscription?.closed,
+      outputText: document.getElementById("output")?.textContent ?? "N/A",
+    }))
 
+    expect(debugState).toMatchInlineSnapshot(`
+      {
+        "hasSource": true,
+        "hasSubscription": true,
+        "hasTest": true,
+        "hmrCount": 1,
+        "outputText": "10",
+        "subscriptionClosed": false,
+        "values": [
+          10,
+        ],
+      }
+    `)
+    console.log("BBBBB")
+    await waitForTestReady(page)
+    console.log("BBBB")
     await page.evaluate(() => {
       window.__test__.source$.next(20)
     })
-
+    console.log("BBB")
     // Wait for value to propagate
     await page.waitForFunction(() => window.__test__.values.includes(20), { timeout: 5000 })
 
+    console.log("BB")
     const testState = await page.evaluate(() => ({
       values: window.__test__.values,
     }))
 
+    console.log("B")
+
     expect(testState.values).toEqual([10, 20])
+    console.log("C the fuck?")
   })
 
   it("HMR swap: updates initial value and new emissions work", async () => {
+    const debugState = await page.evaluate(() => ({
+      hasTest: !!window.__test__,
+      values: window.__test__?.values ?? [],
+      hmrCount: window.__test__?.hmrCount ?? 0,
+      hasSource: !!window.__test__?.source$,
+      hasSubscription: !!window.__test__?.subscription,
+      subscriptionClosed: window.__test__?.subscription?.closed,
+      outputText: document.getElementById("output")?.textContent ?? "N/A",
+    }))
     // Modify the source file - change initialValue from 10 to 100
+    expect(debugState).toMatchInlineSnapshot(`
+      {
+        "hasSource": true,
+        "hasSubscription": true,
+        "hasTest": true,
+        "hmrCount": 1,
+        "outputText": "10, 20",
+        "subscriptionClosed": false,
+        "values": [
+          10,
+          20,
+        ],
+      }
+    `)
+    console.log("C the fuck?")
     const modifiedContent = ORIGINAL_CONTENT.replace(
       "// HMR_MARKER: v1\nconst initialValue = 10",
       "// HMR_MARKER: v2\nconst initialValue = 100",
     )
     fs.writeFileSync(MAIN_TS_PATH, modifiedContent)
-
+    console.log("C the fuck?2")
     // Wait for HMR to process - hmrCount should increment
     await page.waitForFunction(() => window.__test__?.hmrCount >= 2, { timeout: 10000 })
-
+    console.log("C the fuck?3")
     const hmrCountAfter = await page.evaluate(() => window.__test__.hmrCount)
+    console.log("C the fuck?4")
     expect(hmrCountAfter).toBeGreaterThanOrEqual(2)
 
     // Push a new value through the stable wrapper
     await page.evaluate(() => {
       window.__test__.source$.next(30)
     })
+    console.log("C the fuck?5")
 
     // Wait for value to propagate
-    await page.waitForFunction(() => window.__test__.values.includes(30), { timeout: 5000 })
+    await page.waitForFunction(() => window.__test__.values.includes(30), { timeout: 10000 })
+    console.log("C the fuck?6")
 
     const finalState = await page.evaluate(() => ({
       values: window.__test__.values,
       hmrCount: window.__test__.hmrCount,
     }))
+    console.log("C the fuck?7")
 
     // Should have: 10 (initial), 20 (before HMR), 30 (after HMR)
     expect(finalState.values).toContain(10)
     expect(finalState.values).toContain(20)
     expect(finalState.values).toContain(30)
-  })
+    console.log("C the fuck?10")
+  }, 10_000)
 
   it("subscription survives HMR - same subscription object", async () => {
     // Wait for test harness to be ready

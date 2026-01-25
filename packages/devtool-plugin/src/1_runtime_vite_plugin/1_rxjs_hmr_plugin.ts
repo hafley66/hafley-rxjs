@@ -28,7 +28,7 @@ export interface RxjsHmrPluginOptions extends RxjsDevtoolPatchOptions {
 
 export function rxjsHmrPlugin(options: RxjsHmrPluginOptions = {}): Plugin {
   const {
-    debug = true,
+    debug = false,
     hmrModulePath,
     transformUserCode: enableUserTransform = true,
     patchModulePath,
@@ -75,7 +75,7 @@ export function rxjsHmrPlugin(options: RxjsHmrPluginOptions = {}): Plugin {
       }
 
       // Second: user code transform for HMR wrapping
-      if (enableUserTransform && shouldTransformUserCode(cleanId)) {
+      if (enableUserTransform && shouldTransformUserCode(cleanId, code)) {
         const result = transformUserCode(code, cleanId, {
           hmrImport: resolvedHmrModulePath,
         })
@@ -83,6 +83,8 @@ export function rxjsHmrPlugin(options: RxjsHmrPluginOptions = {}): Plugin {
           log("USER CODE transformed:", cleanId)
           return result
         }
+      } else {
+        log("No transform: ", cleanId)
       }
 
       return null

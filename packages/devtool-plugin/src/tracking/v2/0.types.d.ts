@@ -8,62 +8,13 @@
  * use vite plugin to force parsing and bundling rxjs with code manip using ast-grep on matching class expressions and add decorators or proxies inlined
  */
 
-import { BehaviorSubject } from "rxjs/internal/BehaviorSubject"
-import { Observable } from "rxjs/internal/Observable"
-import { filter } from "rxjs/internal/operators/filter"
-
-import { Subject } from "rxjs/internal/Subject"
-import { type Subscription } from "rxjs/internal/Subscription"
-import { EasierBS } from "../../lib/0_EasierBS"
-import { bootstrap } from "./01.patch-observable"
-
-// Separate untracked isEnabled state for tracking control
-export const isEnabled$ = new BehaviorSubject(false)
-
-// Marker to identify tracked observable wrappers (for HMR)
-export const TRACKED_MARKER = Symbol("rxjs-debugger-tracked")
-
-// Flag to suppress send events (for trackedObservable internal subscriptions)
-export const suppressSend$ = new BehaviorSubject(false)
-
-// Debug buffer for capturing all events (reset in test setup)
-export const _eventBuffer: ObservableEvent[] = []
-export function resetEventBuffer() {
-  _eventBuffer.length = 0
-}
-
-/** Temporarily disable tracking for internal operations */
-export function __withNoTrack<T>(fn: () => T): T {
-  // console.log("__withNoTrack", fn.toString())
-  const prev = isEnabled$.value
-  isEnabled$.next(false)
-  try {
-    return fn()
-  } finally {
-    isEnabled$.next(prev)
-    // console.log("__withNoTrack-Finally")
-  }
-}
-
-/** Temporarily suppress send events while keeping track events enabled */
-export function __withNoSend<T>(fn: () => T): T {
-  const prev = suppressSend$.value
-  suppressSend$.next(true)
-  try {
-    return fn()
-  } finally {
-    suppressSend$.next(prev)
-  }
-}
+import type { Observable } from "rxjs/internal/Observable"
+import type { Subscription } from "rxjs/internal/Subscription"
 
 type Prettify<T> = { [K in keyof T]: T[K] } & NonNullable<unknown>
 
-export type ObservableRef = {
-  observable_id: string
-  path: string // lodash-style: "args.0.delay.$return"
-}
-
 export type ObservableEvent =
+  | { type: "enable" | "disable" | "reset" }
   | (
       | { type: "operator-fun-call"; id: string; name: string; args: any[] }
       | { type: "operator-fun-call-return"; id: string }
@@ -96,22 +47,17 @@ export type ObservableEvent =
   | { type: "hmr-module-call"; id: string; url: string }
   | { type: "hmr-module-call-return"; id: string }
 
-export const _observableEvents$ = new Subject<ObservableEvent>()
-
-// Capture all events to debug buffer (useful for test debugging)
-_observableEvents$.subscribe(e => _eventBuffer.push(e))
-
 // Bootstrap the late-bound emitter - must run synchronously so user module code
 // that calls _rxjs_debugger_module_start gets proper isEnabled state
 console.log("Bootstrapping")
-bootstrap(
-  _observableEvents$,
-  () => isEnabled$.value,
-  () => state$.value.stack.hmr_track,
-  () => state$.value.store,
-  () => state$.value.stack,
-)
-console.assert(isEnabled$.value, "Hmm")
+// bootstrap(
+//   _observableEvents$,
+//   () => isEnabled$.value,
+//   () => state$.value.stack.hmr_track,
+//   () => state$.value.store,
+//   () => state$.value.stack,
+// )
+
 type Hmm = {
   // Unified observable entity (collapse Subject/BehaviorSubject/creation ops)
   observable: {
@@ -193,74 +139,12 @@ type Improved = {
 }
 
 export type State = {
-  owner_id: string
+  isEnabled: boolean
   stack: { [K in keyof Improved]: Improved[K][] }
   store: { [K in keyof Improved]: Record<string, Improved[K]> }
-  rel: ({ [K in keyof Improved as `${K}_id`]: string } & { owner_id: string })[]
 }
 
-export const state$ = new EasierBS<State>({
-  owner_id: "",
-  rel: [],
-  stack: {
-    observable: [],
-    operator_fun: [],
-    operator: [],
-    pipe: [],
-    subscription: [],
-    arg: [],
-    arg_call: [],
-    send: [],
-    hmr_track: [],
-    hmr_module: [],
-  },
-  store: {
-    observable: {},
-    operator_fun: {},
-    operator: {},
-    pipe: {},
-    subscription: {},
-    arg: {},
-    arg_call: {},
-    send: {},
-    hmr_track: {},
-    hmr_module: {},
-  },
-})
-
-// window.state$ = state$
-
-export const observableEventsEnabled$ = _observableEvents$.pipe(
-  filter(() => isEnabled$.value),
-  // tap(n => console.log("WHAT", n)),
-)
-
-type EntityKey = keyof Improved
-
-export function leftJoin<
-  L extends EntityKey,
-  R extends EntityKey,
-  LKey extends keyof Improved[L] & string,
-  RKey extends keyof Improved[R] & string,
->(
-  left: { table: L; key: LKey },
-  right: { table: R; key: RKey },
-  state: State = state$.value,
-): (Improved[L] & { [K in R]?: Improved[R] })[] {
-  const leftRecords = Object.values(state.store[left.table]) as Improved[L][]
-  const rightStore = state.store[right.table] as Record<string, Improved[R]>
-
-  const rightIndex = new Map<unknown, Improved[R]>()
-  for (const record of Object.values(rightStore)) {
-    rightIndex.set(record[right.key as keyof Improved[R]], record)
-  }
-
-  return leftRecords.map(leftRow => {
-    const leftVal = leftRow[left.key as keyof Improved[L]]
-    const rightRow = rightIndex.get(leftVal)
-    return {
-      ...leftRow,
-      [right.table]: rightRow,
-    } as Improved[L] & { [K in R]?: Improved[R] }
-  })
+export type ObservableRef = {
+  observable_id: string
+  path: string // lodash-style: "args.0.delay.$return"
 }

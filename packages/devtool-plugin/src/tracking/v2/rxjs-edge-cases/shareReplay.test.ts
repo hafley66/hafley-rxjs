@@ -5,14 +5,11 @@
  * Focus: buffer management, refCount, late subscribers, HMR swap.
  */
 
-import { BehaviorSubject, interval, Subject } from "rxjs"
-import { take } from "rxjs/operators"
+import { Subject } from "rxjs"
 import { describe, expect, it } from "vitest"
-import { state$ } from "../00.types"
 import "../03_scan-accumulator"
-import { proxy } from "../04.operators"
 import { useTrackingTestSetup } from "../0_test-utils"
-import { __$ } from "../hmr/0_runtime"
+import { proxy } from "../04.operators"
 import { _rxjs_debugger_module_start } from "../hmr/4_module-scope"
 
 describe("shareReplay", () => {
@@ -59,7 +56,7 @@ describe("shareReplay", () => {
 
     it("bufferSize(1) with refCount:false keeps source subscribed forever", () => {
       let sourceSubCount = 0
-      let sourceUnsubCount = 0
+      const sourceUnsubCount = 0
 
       const source$ = new Subject<number>()
       const tracked$ = new Subject<number>()
@@ -89,12 +86,10 @@ describe("shareReplay", () => {
     })
 
     it("bufferSize(1) with refCount:true unsubscribes on zero subscribers", () => {
-      let unsubscribed = false
+      const unsubscribed = false
 
       const source$ = new Subject<number>()
-      const shared$ = source$.pipe(
-        proxy.shareReplay({ bufferSize: 1, refCount: true }),
-      )
+      const shared$ = source$.pipe(proxy.shareReplay({ bufferSize: 1, refCount: true }))
 
       const sub = shared$.subscribe()
       sub.unsubscribe()

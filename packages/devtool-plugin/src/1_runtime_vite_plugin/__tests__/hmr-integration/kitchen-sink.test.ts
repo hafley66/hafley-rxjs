@@ -1,5 +1,5 @@
 import path from "path"
-import { chromium, type Browser, type Page } from "playwright"
+import { type Browser, chromium, type Page } from "playwright"
 import { createServer, type ViteDevServer } from "rolldown-vite"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
@@ -55,9 +55,7 @@ describe("Kitchen Sink - All RxJS Patterns", () => {
     await new Promise(r => setTimeout(r, 1000))
 
     // Debug: check what's on window
-    const windowKeys = await page.evaluate(() =>
-      Object.keys(window).filter(k => k.startsWith("__"))
-    )
+    const windowKeys = await page.evaluate(() => Object.keys(window).filter(k => k.startsWith("__")))
     console.log("Window keys:", windowKeys)
     console.log("Page errors:", errors)
 
@@ -130,12 +128,8 @@ describe("Kitchen Sink - All RxJS Patterns", () => {
 
     await new Promise(r => setTimeout(r, 100))
 
-    const pipedValues = await page.evaluate(
-      () => window.__kitchen_sink__.values.piped,
-    )
-    const nestedValues = await page.evaluate(
-      () => window.__kitchen_sink__.values.nested,
-    )
+    const pipedValues = await page.evaluate(() => window.__kitchen_sink__.values.piped)
+    const nestedValues = await page.evaluate(() => window.__kitchen_sink__.values.nested)
 
     // piped: 1*10=10, then 5*10=50
     expect(pipedValues).toEqual([10, 50])
