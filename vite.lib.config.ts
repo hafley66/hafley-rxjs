@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'rolldown-vite'
 import { resolve } from 'path'
 import { readFileSync } from 'fs'
 import { join } from 'path'
@@ -44,11 +44,16 @@ export function createLibConfig(packageDir: string, rootDir: string = resolve(pa
           preserveModules: true,
           preserveModulesRoot: 'src',
           entryFileNames: '[name].js',
+          minify: false,
+          keepNames: true,
+          minifyInternalExports: false,
         },
+        preserveEntrySignatures: 'strict'
       },
       outDir: resolve(packageDir, 'dist'),
       emptyOutDir: true,
       sourcemap: true,
+      minify: false,
     },
     test: {
       globals: true,

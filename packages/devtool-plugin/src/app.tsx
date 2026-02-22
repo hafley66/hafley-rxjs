@@ -1,3 +1,4 @@
+import { TAG } from "@hafley/rxjs-ext"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import {
@@ -17,19 +18,15 @@ import {
   timer,
 } from "rxjs"
 import { filter, scan, take } from "rxjs/operators"
-import { observableEventsEnabled$, state$ } from "./tracking/v2/0.types"
-import "./tracking/v2/03_scan-accumulator"
-import { TAG } from "@hafley/rxjs-ext"
+import { main } from "./0_runtime/0_store"
+import { DebuggerGrid } from "./2_ui/0_DebuggerGrid"
 import { use$ } from "./lib/1_use"
-import { isEnabled$ } from "./tracking/v2/000.pre"
-import { DebuggerGrid } from "./tracking/v2/ui/0_DebuggerGrid"
 
-console.log(";lol")
-observableEventsEnabled$.subscribe(n => console.log("EVENT: ", n))
-isEnabled$.next(true)
-isEnabled$.subscribe(n => console.log("Dude...", n))
+// main.event$.subscribe(n => console.log("EVENT: ", n))
+main.state$.set({ isEnabled: true })
+// main.state$.subscribe(n => console.log("Dude...", n.isEnabled))
 
-const copy$ = state$.pipe(map(it => it))
+const copy$ = main.state$.pipe()
 // === Mock API ===
 type User = { id: number; name: string; email: string }
 type ApiResponse<T> = { data: T; timestamp: number }
@@ -73,6 +70,8 @@ const pollUsers$ = from(mockFetch(mockUsers, 0)).pipe(
 )
 
 // Pattern 2: Search with debounce + switchMap
+const searchTerm$2 = new BehaviorSubject(1)
+
 const searchTerm$ = new BehaviorSubject("")
 const searchResults$ = searchTerm$.pipe(
   debounceTime(300),
@@ -123,7 +122,7 @@ function deleteUser(id: number) {
 
 // === React Components ===
 
-const derp = interval(1000).pipe(
+const derp = interval(5000).pipe(
   map(it => it + 2),
   filter(it => it % 8 !== 0),
   scan((a, b) => a + b, 0),
@@ -131,9 +130,9 @@ const derp = interval(1000).pipe(
 )
 
 function App() {
-  console.log("lol")
-  const it = use$(copy$, state$.value)
+  const it = use$(copy$, main.state$.value)
   const b = use$(derp, 0)
+  const bb = use$(derp, 0)
   return (
     <div style={{ fontFamily: "system-ui", padding: 20, display: "flex", gap: 20 }}>
       <div style={{ flex: 1, maxWidth: 400 }}>
@@ -200,7 +199,7 @@ function App() {
           <button
             type="button"
             onClick={() => {
-              state$.reset()
+              main.state$.reset()
             }}
           >
             Clear & Disable

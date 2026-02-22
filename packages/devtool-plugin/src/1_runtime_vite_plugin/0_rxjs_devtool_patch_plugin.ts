@@ -215,7 +215,7 @@ export function rxjsDevtoolPatchPlugin(options: RxjsDevtoolPatchOptions = {}): P
       config = resolvedConfig
       command = resolvedConfig.command
       env = loadEnv(resolvedConfig.mode, process.cwd(), "") // Use "" as the third argument to load all variables, not just those with the VITE_ prefix
-      resolvedPatchModulePath = patchModulePath ?? path.resolve(config.root, "src/tracking/v2/0_store")
+      resolvedPatchModulePath = patchModulePath ?? path.resolve(config.root, "src/0_runtime/0_store")
       log("configResolved:", {
         command: config.command,
         isProduction: config.isProduction,

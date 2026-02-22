@@ -1,0 +1,4 @@
+- [x] refactored into flatter
+- [] how to parse node modules when they contain rxjs, do i just de op and parse all node modules?? need TAP to get reverse parsed at runtime or else we will have to wrap every pipe arg adnsadsiodasoijdsioajdsa i dont want to do that idea again lmao
+- [] handle actual HMR like react refresh does on module change (did keys change then prop, else swap is fine)
+- 

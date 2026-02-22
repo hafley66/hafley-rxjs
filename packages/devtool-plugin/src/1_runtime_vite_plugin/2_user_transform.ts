@@ -18,6 +18,7 @@
  *   __$.end()
  */
 
+import { compact } from "lodash"
 import MagicString, { SourceMap } from "magic-string"
 import { type Node, ParseResult, parseSync } from "oxc-parser"
 
@@ -33,6 +34,7 @@ interface TransformTarget {
   start: number
   end: number
   node: Node
+  isExport?: boolean
 }
 
 // Known RxJS creators (used to validate imports)
@@ -457,6 +459,10 @@ function collectTargets(
 
   walkAst(ast, (node, ancestors) => {
     if (shouldSkip(ancestors)) return
+    const parent = node.parent
+    const isExport = parent?.type === "ExportDefaultDeclaration" || parent?.type === "ExportNamedDeclaration"
+    const start = node.start
+    const end = node.end
 
     // Observable declarations: const x$ = of(1)
     if (
@@ -471,6 +477,7 @@ function collectTargets(
         start: node.init.start,
         end: node.init.end,
         node: node.init,
+        isExport,
       })
     }
 
@@ -487,6 +494,7 @@ function collectTargets(
         start: node.value.start,
         end: node.value.end,
         node: node.value,
+        isExport,
       })
     }
 
@@ -494,9 +502,10 @@ function collectTargets(
     if (isSubscribeCall(node)) {
       targets.push({
         type: "subscription",
-        start: node.start,
-        end: node.end,
+        start,
+        end,
         node,
+        isExport,
       })
     }
 
@@ -505,9 +514,10 @@ function collectTargets(
       targets.push({
         type: "function",
         varName: node.id.name,
-        start: node.start,
-        end: node.end,
+        start,
+        end,
         node,
+        isExport,
       })
     }
 
@@ -524,6 +534,7 @@ function collectTargets(
         start: node.init.start,
         end: node.init.end,
         node: node.init,
+        isExport,
       })
     }
   })
@@ -546,24 +557,41 @@ function applyTransforms(ms: MagicString, code: string, targets: TransformTarget
       const key = generateStructuralKey(t.varName!, t.node)
       ms.prependLeft(t.start, `__$(${JSON.stringify(key)}, () => `)
       ms.appendRight(t.end, `)`)
+      if (t.isExport) {
+        ms.prependLeft(t.start, "export ")
+      }
     } else if (t.type === "subscription") {
       const key = generateStructuralKey("sub", t.node)
       ms.prependLeft(t.start, `__$.sub(${JSON.stringify(key)}, () => `)
       ms.appendRight(t.end, `)`)
+      if (t.isExport) {
+        ms.prependLeft(t.start, "export ")
+      }
     } else if (t.type === "function") {
       const key = `fn:${t.varName}`
       if (t.node.type === "FunctionDeclaration") {
         // Preserve hoisting: create const with unique name, keep function as proxy
+        // export function A() {}
+        // export
+
         // function foo() { ... } ->
         // const __fn$0 = __$("fn:foo", function foo() { ... })
         // function foo() { return __fn$0.apply(this, arguments) }
         const implName = `__fn$${fnCounter++}`
-        ms.prependLeft(t.start, `const ${implName} = __$.fn(${JSON.stringify(key)}, `)
-        ms.appendRight(t.end, `)\nfunction ${t.varName}() { return ${implName}.apply(this, arguments) }`)
+        if (!t.node.body) continue
+        ms.overwrite(
+          t.node.start,
+          t.node.end,
+          `function ${t.varName}() { return ${implName}.apply(this, arguments) };
+const ${implName} = __$.fn(${JSON.stringify(key)}, ${ms.slice(t.node.start, t.node.end).toString()});`,
+        )
       } else {
         // Arrow or function expression - just wrap the expression
         ms.prependLeft(t.start, `__$.fn(${JSON.stringify(key)}, `)
         ms.appendRight(t.end, `)`)
+        if (t.isExport) {
+          ms.prependLeft(t.start, "export ")
+        }
       }
     }
   }
@@ -586,10 +614,10 @@ const __$ = _rxjs_debugger_module_start(import.meta.url);
 // File detection
 export function shouldTransformUserCode(id: string, code?: string): boolean {
   const include = /\.[tj]sx?$/
-  const exclude = /node_modules|\.d\.ts|\/tracking\/v2\/|1_runtime_vite_plugin/
+  const exclude = /node_modules|\.d\.ts|\/0_runtime|\/0_runtime_hmr|\/1_runtime_vite_plugin/
   const cleanId = id.split("?")[0] ?? id
 
-  if (id.includes("1_runtime_vite_plugin/")) {
+  if (id.includes("1_runtime_vite_plugin/") || id.includes("0_runtime/") || id.includes("0_runtime_hmr/")) {
     return false
   }
 
@@ -651,10 +679,13 @@ export function transformUserCode(
   const ms = new MagicString(code)
   applyTransforms(ms, code, targets, hmrImport)
 
-  console.log(id, ms.toString())
+  console.log(id, code, ms.toString())
 
   return {
     code: ms.toString(),
     map: ms.generateMap({ hires: "boundary", source: id }),
   }
 }
+
+// ExportNamedDeclaration
+// ExportDefaultDeclaration

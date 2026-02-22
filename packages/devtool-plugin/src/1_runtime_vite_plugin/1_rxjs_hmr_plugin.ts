@@ -42,7 +42,7 @@ export function rxjsHmrPlugin(options: RxjsHmrPluginOptions = {}): Plugin {
   let resolvedHmrModulePath: string
 
   const log = (...args: unknown[]) => {
-    if (debug) console.log("[rxjs-hmr]", ...args)
+    console.log("[rxjs-hmr]", ...args)
   }
 
   return {
@@ -51,7 +51,7 @@ export function rxjsHmrPlugin(options: RxjsHmrPluginOptions = {}): Plugin {
 
     configResolved(resolvedConfig) {
       config = resolvedConfig
-      resolvedHmrModulePath = hmrModulePath ?? path.resolve(config.root, "src/tracking/v2/hmr/4_module-scope")
+      resolvedHmrModulePath = hmrModulePath ?? path.resolve(config.root, "src/0_runtime_hmr/4_module-scope")
       // Delegate to devtool
       // @ts-expect-error idk
       devtool.configResolved?.call(this, resolvedConfig)
@@ -76,11 +76,11 @@ export function rxjsHmrPlugin(options: RxjsHmrPluginOptions = {}): Plugin {
 
       // Second: user code transform for HMR wrapping
       if (enableUserTransform && shouldTransformUserCode(cleanId, code)) {
+        log("USER CODE transformed:", cleanId)
         const result = transformUserCode(code, cleanId, {
           hmrImport: resolvedHmrModulePath,
         })
         if (result) {
-          log("USER CODE transformed:", cleanId)
           return result
         }
       } else {

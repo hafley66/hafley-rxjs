@@ -106,13 +106,13 @@ export class DietSubject<T> extends DietObservable<T> {
       },
       unsubscribe: () => {
         if (closed) {
-          console.log(new Error().stack)
+          // console.log(new Error().stack)
           console.log("already closed")
 
           return
         }
-        console.log(new Error().stack)
-        console.log("Closing")
+        // console.log(new Error().stack)
+        // console.log("Closing")
         closed = true
         this.observers.delete(wrappedObserver)
       },

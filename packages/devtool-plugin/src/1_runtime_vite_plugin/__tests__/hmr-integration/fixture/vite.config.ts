@@ -8,8 +8,8 @@ export default defineConfig({
     rxjsHmrPlugin({
       debug: true,
       // Point to actual module paths relative to project root
-      patchModulePath: path.resolve(__dirname, "../../../../tracking/v2/0_store"),
-      hmrModulePath: path.resolve(__dirname, "../../../../tracking/v2/hmr/4_module-scope"),
+      patchModulePath: path.resolve(__dirname, "../../../../0_runtime/0_store"),
+      hmrModulePath: path.resolve(__dirname, "../../../../0_runtime_hmr/4_module-scope"),
     }),
   ],
   optimizeDeps: {
