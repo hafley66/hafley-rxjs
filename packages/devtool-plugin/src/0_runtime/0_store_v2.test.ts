@@ -1,21 +1,18 @@
 import { expect, test } from "vitest"
 import { Tracer } from "./0_store_v2"
 
-// noRxjs
 class Hey<T> {
   subscribe(props: { next: (somethin: T) => void }) {
     props.next(1)
     props.next(2)
   }
   pipe(...fns: Function[]) {
-    return fns.reduce((prev: any, fn: Function) => {
-      return fn(prev)
-    }, this as any)
+    return fns.reduce((prev: any, fn: Function) => fn(prev), this as any)
   }
 }
 
-const A = (lol: any) => {
-  return (loll: any) => {
+const A = function A(lol: any) {
+  return function (loll: any) {
     return 5
   }
 }
@@ -27,33 +24,37 @@ test("Tracer", () => {
   const ok = new Heyy()
   expect(hi.state$.value).toMatchInlineSnapshot(`
     {
-      "arg": {},
+      "arg": {
+        "Hey/constructor/0/$": {
+          "id": "Hey/constructor/0/$",
+          "ref": WeakRef {},
+        },
+      },
       "call": {
-        "Hey#0": {
+        "Hey/constructor/0": {
+          "arg_ids": [],
           "fun_id": "Hey",
-          "id": "Hey#0",
-          "index": 0,
-          "left": 2,
-          "right": 3,
+          "id": "Hey/constructor/0",
+          "left": 0,
+          "parent_call_id": undefined,
+          "return_id": "Hey/constructor/0/$",
+          "right": 1,
         },
       },
       "fun": {
-        "A": {
-          "id": "A",
-          "left": 1,
-          "name": "A",
-          "path": "A",
+        "A2": {
+          "call_ids": [],
+          "id": "A2",
+          "name": "A2",
           "ref": WeakRef {},
         },
         "Hey": {
+          "call_ids": [],
           "id": "Hey",
-          "left": 0,
           "name": "Hey",
-          "path": "Hey",
           "ref": WeakRef {},
         },
       },
-      "obs": {},
     }
   `)
   const w = AA("jackpot")
@@ -61,190 +62,280 @@ test("Tracer", () => {
   expect(hi.state$.value).toMatchInlineSnapshot(`
     {
       "arg": {
-        "A#0/0": {
-          "call_id": "A#0",
-          "id": "A#0/0",
-          "value": "jackpot",
+        "A2/0/$": {
+          "fun_id": "A2/0/$/",
+          "id": "A2/0/$",
         },
-        "A#0/return": {
-          "call_id": "A#0",
-          "fun_id": "A#0/return/",
-          "id": "A#0/return",
+        "A2/0/$//0/$": {
+          "id": "A2/0/$//0/$",
+          "value": 5,
         },
-        "A#0/return/#0/0": {
-          "call_id": "A#0/return/#0",
-          "id": "A#0/return/#0/0",
+        "A2/0/$//0/0": {
+          "id": "A2/0/$//0/0",
           "value": "any",
         },
-        "A#0/return/#0/return": {
-          "call_id": "A#0/return/#0",
-          "id": "A#0/return/#0/return",
-          "value": 5,
+        "A2/0/0": {
+          "id": "A2/0/0",
+          "value": "jackpot",
+        },
+        "Hey/constructor/0/$": {
+          "id": "Hey/constructor/0/$",
+          "ref": WeakRef {},
         },
       },
       "call": {
-        "A#0": {
-          "fun_id": "A",
-          "id": "A#0",
-          "index": 0,
+        "A2/0": {
+          "arg_ids": [],
+          "fun_id": "A2",
+          "id": "A2/0",
+          "left": 2,
+          "parent_call_id": undefined,
+          "return_id": "A2/0/$",
+          "right": 3,
+        },
+        "A2/0/$//0": {
+          "arg_ids": [],
+          "fun_id": "A2/0/$/",
+          "id": "A2/0/$//0",
           "left": 4,
+          "parent_call_id": undefined,
+          "return_id": "A2/0/$//0/$",
           "right": 5,
         },
-        "A#0/return/#0": {
-          "fun_id": "A#0/return/",
-          "id": "A#0/return/#0",
-          "index": 0,
-          "left": 7,
-          "right": 8,
-        },
-        "Hey#0": {
+        "Hey/constructor/0": {
+          "arg_ids": [],
           "fun_id": "Hey",
-          "id": "Hey#0",
-          "index": 0,
-          "left": 2,
-          "right": 3,
+          "id": "Hey/constructor/0",
+          "left": 0,
+          "parent_call_id": undefined,
+          "return_id": "Hey/constructor/0/$",
+          "right": 1,
         },
       },
       "fun": {
-        "A": {
-          "id": "A",
-          "left": 1,
-          "name": "A",
-          "path": "A",
+        "A2": {
+          "call_ids": [],
+          "id": "A2",
+          "name": "A2",
           "ref": WeakRef {},
         },
-        "A#0/return/": {
-          "id": "A#0/return/",
-          "left": 6,
+        "A2/0/$/": {
+          "call_ids": [],
+          "id": "A2/0/$/",
           "name": "",
-          "path": "A#0/return/",
           "ref": WeakRef {},
         },
         "Hey": {
+          "call_ids": [],
           "id": "Hey",
-          "left": 0,
           "name": "Hey",
-          "path": "Hey",
           "ref": WeakRef {},
         },
       },
-      "obs": {},
     }
   `)
   ok.pipe(w)
   expect(hi.state$.value).toMatchInlineSnapshot(`
     {
       "arg": {
-        "A#0/0": {
-          "call_id": "A#0",
-          "id": "A#0/0",
-          "value": "jackpot",
+        "A2/0/$": {
+          "fun_id": "A2/0/$/",
+          "id": "A2/0/$",
         },
-        "A#0/return": {
-          "call_id": "A#0",
-          "fun_id": "A#0/return/",
-          "id": "A#0/return",
+        "A2/0/$//0/$": {
+          "id": "A2/0/$//0/$",
+          "value": 5,
         },
-        "A#0/return/#0/0": {
-          "call_id": "A#0/return/#0",
-          "id": "A#0/return/#0/0",
+        "A2/0/$//0/0": {
+          "id": "A2/0/$//0/0",
           "value": "any",
         },
-        "A#0/return/#0/return": {
-          "call_id": "A#0/return/#0",
-          "id": "A#0/return/#0/return",
+        "A2/0/$//1/$": {
+          "id": "A2/0/$//1/$",
           "value": 5,
         },
-        "A#0/return/#1/0.pipe": {
-          "call_id": "A#0/return/#1",
-          "fun_id": "Hey#0/pipe",
-          "id": "A#0/return/#1/0.pipe",
+        "A2/0/$//1/0": {
+          "id": "A2/0/$//1/0",
+          "ref": WeakRef {},
         },
-        "A#0/return/#1/return": {
-          "call_id": "A#0/return/#1",
-          "id": "A#0/return/#1/return",
+        "A2/0/0": {
+          "id": "A2/0/0",
+          "value": "jackpot",
+        },
+        "Hey/constructor/0/$": {
+          "id": "Hey/constructor/0/$",
+          "ref": WeakRef {},
+        },
+        "Hey/constructor/0/pipe/0/$": {
+          "id": "Hey/constructor/0/pipe/0/$",
           "value": 5,
         },
-        "Hey#0/pipe#0/0": {
-          "call_id": "Hey#0/pipe#0",
-          "fun_id": "A#0/return/",
-          "id": "Hey#0/pipe#0/0",
+        "Hey/constructor/0/pipe/0/0": {
+          "fun_id": "A2/0/$/",
+          "id": "Hey/constructor/0/pipe/0/0",
         },
-        "Hey#0/pipe#0/return": {
-          "call_id": "Hey#0/pipe#0",
-          "id": "Hey#0/pipe#0/return",
+      },
+      "call": {
+        "A2/0": {
+          "arg_ids": [],
+          "fun_id": "A2",
+          "id": "A2/0",
+          "left": 2,
+          "parent_call_id": undefined,
+          "return_id": "A2/0/$",
+          "right": 3,
+        },
+        "A2/0/$//0": {
+          "arg_ids": [],
+          "fun_id": "A2/0/$/",
+          "id": "A2/0/$//0",
+          "left": 4,
+          "parent_call_id": undefined,
+          "return_id": "A2/0/$//0/$",
+          "right": 5,
+        },
+        "A2/0/$//1": {
+          "arg_ids": [],
+          "fun_id": "A2/0/$/",
+          "id": "A2/0/$//1",
+          "left": 7,
+          "parent_call_id": "Hey/constructor/0/pipe/0",
+          "return_id": "A2/0/$//1/$",
+          "right": 8,
+        },
+        "Hey/constructor/0": {
+          "arg_ids": [],
+          "fun_id": "Hey",
+          "id": "Hey/constructor/0",
+          "left": 0,
+          "parent_call_id": undefined,
+          "return_id": "Hey/constructor/0/$",
+          "right": 1,
+        },
+        "Hey/constructor/0/pipe/0": {
+          "arg_ids": [],
+          "fun_id": "Hey/constructor/0/pipe",
+          "id": "Hey/constructor/0/pipe/0",
+          "left": 6,
+          "parent_call_id": undefined,
+          "return_id": "Hey/constructor/0/pipe/0/$",
+          "right": 9,
+        },
+      },
+      "fun": {
+        "A2": {
+          "call_ids": [],
+          "id": "A2",
+          "name": "A2",
+          "ref": WeakRef {},
+        },
+        "A2/0/$/": {
+          "call_ids": [],
+          "id": "A2/0/$/",
+          "name": "",
+          "ref": WeakRef {},
+        },
+        "Hey": {
+          "call_ids": [],
+          "id": "Hey",
+          "name": "Hey",
+          "ref": WeakRef {},
+        },
+        "Hey/constructor/0/pipe": {
+          "call_ids": [],
+          "id": "Hey/constructor/0/pipe",
+          "name": "pipe",
+          "ref": WeakRef {},
+        },
+      },
+    }
+  `)
+})
+
+test("arg traversal: primitive", () => {
+  const tracer = new Tracer()
+  const Double = tracer.decoratoPatronus(function Double(n: number) {
+    return n * 2
+  })
+  Double(5)
+
+  expect(tracer.state$.value).toMatchInlineSnapshot(`
+    {
+      "arg": {
+        "Double2/0/$": {
+          "id": "Double2/0/$",
+          "value": 10,
+        },
+        "Double2/0/0": {
+          "id": "Double2/0/0",
           "value": 5,
         },
       },
       "call": {
-        "A#0": {
-          "fun_id": "A",
-          "id": "A#0",
-          "index": 0,
-          "left": 4,
-          "right": 5,
-        },
-        "A#0/return/#0": {
-          "fun_id": "A#0/return/",
-          "id": "A#0/return/#0",
-          "index": 0,
-          "left": 7,
-          "right": 8,
-        },
-        "A#0/return/#1": {
-          "fun_id": "A#0/return/",
-          "id": "A#0/return/#1",
-          "index": 1,
-          "left": 11,
-          "parent_call_id": "Hey#0/pipe#0",
-          "right": 12,
-        },
-        "Hey#0": {
-          "fun_id": "Hey",
-          "id": "Hey#0",
-          "index": 0,
-          "left": 2,
-          "right": 3,
-        },
-        "Hey#0/pipe#0": {
-          "fun_id": "Hey#0/pipe",
-          "id": "Hey#0/pipe#0",
-          "index": 0,
-          "left": 10,
-          "right": 13,
+        "Double2/0": {
+          "arg_ids": [],
+          "fun_id": "Double2",
+          "id": "Double2/0",
+          "left": 0,
+          "parent_call_id": undefined,
+          "return_id": "Double2/0/$",
+          "right": 1,
         },
       },
       "fun": {
-        "A": {
-          "id": "A",
-          "left": 1,
-          "name": "A",
-          "path": "A",
-          "ref": WeakRef {},
-        },
-        "A#0/return/": {
-          "id": "A#0/return/",
-          "left": 6,
-          "name": "",
-          "path": "A#0/return/",
-          "ref": WeakRef {},
-        },
-        "Hey": {
-          "id": "Hey",
-          "left": 0,
-          "name": "Hey",
-          "path": "Hey",
-          "ref": WeakRef {},
-        },
-        "Hey#0/pipe": {
-          "id": "Hey#0/pipe",
-          "left": 9,
-          "name": "pipe",
-          "path": "Hey#0/pipe",
+        "Double2": {
+          "call_ids": [],
+          "id": "Double2",
+          "name": "Double2",
           "ref": WeakRef {},
         },
       },
-      "obs": {},
+    }
+  `)
+})
+
+test("arg traversal: POJO with nested props", () => {
+  const tracer = new Tracer()
+  const GetNested = tracer.decoratoPatronus(function GetNested(obj: any) {
+    return obj.a.b
+  })
+  GetNested({ a: { b: 42, c: "hello" } })
+
+  expect(tracer.state$.value).toMatchInlineSnapshot(`
+    {
+      "arg": {
+        "GetNested2/0/$": {
+          "id": "GetNested2/0/$",
+          "value": 42,
+        },
+        "GetNested2/0/0.a.b": {
+          "id": "GetNested2/0/0.a.b",
+          "value": 42,
+        },
+        "GetNested2/0/0.a.c": {
+          "id": "GetNested2/0/0.a.c",
+          "value": "hello",
+        },
+      },
+      "call": {
+        "GetNested2/0": {
+          "arg_ids": [],
+          "fun_id": "GetNested2",
+          "id": "GetNested2/0",
+          "left": 0,
+          "parent_call_id": undefined,
+          "return_id": "GetNested2/0/$",
+          "right": 1,
+        },
+      },
+      "fun": {
+        "GetNested2": {
+          "call_ids": [],
+          "id": "GetNested2",
+          "name": "GetNested2",
+          "ref": WeakRef {},
+        },
+      },
     }
   `)
 })

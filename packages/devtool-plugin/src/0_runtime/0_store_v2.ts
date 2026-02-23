@@ -1,87 +1,67 @@
-import { isFunction, isObject, omit, set, values } from "lodash"
-import type { Observable } from "rxjs"
+import { isFunction, isObject, isPlainObject, omit, set, values } from "lodash"
 import { DietBehaviorSubject, DietSubject } from "~/lib/2_diet_rxjs"
-import { getObsId } from "./0_store"
 
-type Life<T> = T & {
+type Fun = {
+  id: string
+  name: string
+  ref?: WeakRef<Function>
+  call_ids: string[]
+}
+
+type Call = {
+  id: string
+  fun_id: string
+  parent_call_id?: string
+  arg_ids: string[]
+  return_id?: string
   left: number
   right: number
 }
 
-type Exists<T> = T & {
-  left: number
+type Arg = {
+  id: string
+  value?: any
+  ref?: WeakRef<object>
+  fun_id?: string
 }
 
-type JesusChristSheWasHotAsFuck = {
-  fun: Exists<{
-    id: string
-    name: string
-    path: string
-    // fn_source: string
-    ref: WeakRef<Function>
-  }>
-  call: Life<{
-    id: string
-    index: number
-    fun_id: string
-    parent_call_id?: string
-  }>
-  arg: {
-    id: string
-    call_id: string
-    fun_id?: string
-    obs_id?: string
-    value?: any
-  }
-  obs: Exists<{
-    id: string
-    name: string
-    ref: WeakRef<Observable<any>>
-  }>
-  // sub: Life<{
-  //   id: string
-  //   index: number
-  //   obs_id: string
-  //   ref: WeakRef<Subscription>
-  // }>
+type Store = {
+  fun: Record<string, Fun>
+  call: Record<string, Call>
+  arg: Record<string, Arg>
 }
 
 type Events =
-  | ({
+  | {
       type: "fun"
-    } & JesusChristSheWasHotAsFuck["fun"])
+      id: string
+      name: string
+      ref?: WeakRef<Function>
+    }
   | {
       type: "call"
       id: string
-      index: number
       fun_id: string
     }
   | {
       type: "callcall"
       id: string
+      return_id?: string
     }
-  | ({
+  | {
       type: "arg"
-    } & Arg)
-  | ({
-      type: "obs"
-    } & JesusChristSheWasHotAsFuck["obs"])
-
-type Arg = JesusChristSheWasHotAsFuck["arg"]
-
-type Store = {
-  obs: Record<string, JesusChristSheWasHotAsFuck["obs"]>
-  fun: Record<string, JesusChristSheWasHotAsFuck["fun"]>
-  call: Record<string, JesusChristSheWasHotAsFuck["call"]>
-  arg: Record<string, JesusChristSheWasHotAsFuck["arg"]>
-}
+      id: string
+      value?: any
+      ref_arg_id?: string
+      ref?: WeakRef<object>
+      fun_id?: string
+    }
 
 export class Tracer {
   meth = new DietSubject<Events>()
   state$ = new DietBehaviorSubject<Store>({
     arg: {},
     fun: {},
-    obs: {},
     call: {},
   })
 
@@ -92,36 +72,46 @@ export class Tracer {
     const S = this.state$.value
     switch (it.type) {
       case "fun": {
-        S.fun[it.id] = omit(it, "type")
+        S.fun[it.id] = {
+          id: it.id,
+          name: it.name,
+          ref: it.ref,
+          call_ids: [],
+        }
         break
       }
       case "call": {
         const parent = this.callStack.at(-1)
         S.call[it.id] = {
-          ...omit(it, "type"),
+          id: it.id,
+          fun_id: it.fun_id,
+          parent_call_id: parent,
+          arg_ids: [],
           left: this.now(),
           right: 0,
-          ...(parent ? { parent_call_id: parent } : {}),
         }
         this.callStack.push(it.id)
         break
       }
       case "arg": {
         S.arg[it.id] = omit(it, "type")
+        const call_id = arg_get_call_id(it.id)
+        const C = S.call[call_id]
+        if (C) {
+          if (!it.id.endsWith("/$")) {
+            C.arg_ids.push(it.id)
+          } else {
+            C.return_id = it.id
+          }
+        }
         break
       }
       case "callcall": {
-        S.call[it.id]!.right = this.now()
-        this.callStack.pop()
-        break
-      }
-      case "obs": {
-        S.obs[it.id] = omit(it, "type")
-        const instance = S.obs[it.id]!
-        const currCallId = this.callStack.at(-1)
-        if (currCallId && !instance.name) {
-          instance.name = currCallId
+        if (S.call[it.id]) {
+          S.call[it.id]!.right = this.now()
+          S.call[it.id]!.return_id = it.return_id
         }
+        this.callStack.pop()
         break
       }
     }
@@ -134,29 +124,25 @@ export class Tracer {
     let callIndex = 0
     const alreadyDecorated = Tracer.getPath(literallyAnything)
     if (alreadyDecorated) return literallyAnything
-    const path = `${parent ? `${parent}/` : ""}${literallyAnything.name}`
+    const fun_path = `${parent ? `${parent}/` : ""}${literallyAnything.name}`
     this.next({
-      id: path,
+      id: fun_path,
       type: "fun",
       name: literallyAnything.name,
-      path,
-      left: this.now(),
       ref: new WeakRef(literallyAnything),
-      // fn_source: literallyAnything.toString(),
     })
 
     const that = this
 
     const out = new Proxy(literallyAnything, {
       construct(target, args) {
-        const callId = `${path}#${callIndex}`
-        const index = callIndex++
+        const callId = `${fun_path}/constructor/${callIndex}`
+        callIndex++
         try {
           const toReturn = that.iso_funk(
             args,
             callId,
-            path,
-            index,
+            fun_path,
             (...modArgs: any[]) => new (target as { new (...args: any[]): any })(...modArgs),
           )
           return new Proxy(toReturn, {
@@ -177,28 +163,25 @@ export class Tracer {
         }
       },
       apply(target, thisArg, args) {
-        const index = callIndex++
-        const callId = `${path}#${index}`
+        const callId = `${fun_path}/${callIndex}`
+        callIndex++
         try {
-          return that.iso_funk(args, callId, path, index, (...modArgs: any[]) =>
-            Reflect.apply(target, thisArg, modArgs),
-          )
+          return that.iso_funk(args, callId, fun_path, (...modArgs: any[]) => Reflect.apply(target, thisArg, modArgs))
         } catch (e) {
           throw e
         }
       },
     })
 
-    Tracer.setPath(out, path)
+    Tracer.setPath(out, fun_path)
     return out
   }
 
-  iso_funk = (args: any[], id: string, fun_id: string, index: number, yields: Function) => {
+  iso_funk = (args: any[], id: string, fun_id: string, yields: Function) => {
     const modArgs = this.argsDo(args, id)
     this.next({
       type: "call",
       id,
-      index,
       fun_id,
     })
     const toReturn = yields(...modArgs)
@@ -206,9 +189,9 @@ export class Tracer {
       type: "callcall",
       id,
     })
-    const getReturn = { return: toReturn }
-    this.argRipper(toReturn, id, `return`, getReturn)
-    return getReturn.return
+    const getReturn = { $: toReturn }
+    this.argRipper(toReturn, id, `$`, getReturn)
+    return getReturn.$
   }
 
   argsDo = (rawArgs: any[], parentPath: string): any[] => {
@@ -224,20 +207,7 @@ export class Tracer {
     if (isFunction(value)) {
       const deco = this.decoratoPatronus(value, id)
       set(next, path, deco)
-      this.next({ type: "arg", id, call_id, fun_id: (deco as any)["@@path"] })
-      return
-    }
-
-    if (getObsId(value)) {
-      const observable_id = getObsId(value)
-      if (observable_id) {
-        this.next({
-          type: "arg",
-          id,
-          call_id,
-          obs_id: getObsId(value),
-        })
-      }
+      this.next({ type: "arg", id, fun_id: Tracer.getPath(deco) })
       return
     }
 
@@ -249,11 +219,22 @@ export class Tracer {
       return
     }
 
-    if (isObject(value)) {
+    if (isPlainObject(value)) {
       set(next, path, value)
-      for (const [key, val] of Object.entries(value)) {
+      for (const [key, val] of Object.entries(value as {})) {
         this.argRipper(val, call_id, `${path}.${key}`, next)
       }
+      return
+    }
+
+    if (isObject(value)) {
+      set(next, path, value)
+      this.next({
+        type: "arg",
+        id,
+        ref: new WeakRef(value),
+        ...(Tracer.getPath(value) ? { ref_arg_id: Tracer.getPath(value) } : {}),
+      })
       return
     }
 
@@ -261,7 +242,6 @@ export class Tracer {
     this.next({
       type: "arg",
       id,
-      call_id,
       value,
     })
   }
@@ -282,11 +262,19 @@ export class Tracer {
     root_calls: () => {
       return values(this._.call).filter(it => !it.parent_call_id)
     },
-    root_obs: () => {
-      return values(this._.obs).filter(it => it)
+    calls_by_fun: (fun_id: string) => {
+      return values(this._.call).filter(it => it.fun_id === fun_id)
     },
-    pipes: () => {
-      return values(this._.call).filter(it => it)
+    children_of_call: (call_id: string) => {
+      return values(this._.call).filter(it => it.parent_call_id === call_id)
     },
   }
+}
+
+export const arg_get_call_id = (arg_id: string) => {
+  return arg_id.slice(0, arg_id.lastIndexOf("/"))
+}
+
+export const arg_is_return = (arg_id: string) => {
+  return arg_id.endsWith("/$")
 }
