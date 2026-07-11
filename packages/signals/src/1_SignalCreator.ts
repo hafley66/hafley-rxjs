@@ -8,11 +8,13 @@ import {
   Subject,
   tap,
 } from "rxjs"
-import { get, set, isEqual } from "lodash"
+import lodash from "lodash"
 import { Draft, produce, isDraftable } from "immer"
 import type { Signal, Signal$, SignalEvent, SignalCreatorOptions } from "./0_types.js"
 
 type ValidDraftReturn<T> = T | void | undefined
+
+const { get, set, isEqual } = lodash
 
 /**
  * Global dispatch for signal events. Used by Signal.memo() to track dependencies.
