@@ -25,11 +25,11 @@ import type { Signal, Signal$ } from "./0_types.js"
 /**
  * Internal: wraps a function to track signal reads during execution.
  */
-function memoWrap<T>(fun: (...args: unknown[]) => T) {
+function memoWrap<A extends unknown[], T>(fun: (...args: A) => T) {
   const start = new Subject<void>()
   const end = new Subject<void>()
 
-  const watchFun = (...args: unknown[]) => {
+  const watchFun = (...args: A) => {
     start.next()
     try {
       return fun(...args)
@@ -100,7 +100,7 @@ export function SignalReact<P extends object>(
     const [, forceRender] = React.useState(0)
 
     const watcher = React.useMemo(() => {
-      const memo = memoWrap(Component as (props: P) => React.ReactNode)
+      const memo = memoWrap<[P], ReturnType<React.FC<P>>>(Component)
       return {
         ...memo,
         sub: memo.watcher$
@@ -162,6 +162,15 @@ export function useSignal<T>(signal$: Signal$<T>): T {
 }
 
 // Re-export everything from main + react-specific
-export * from "./0_types.js"
+export type {
+  Act,
+  DepthLimit,
+  GetNestedValue,
+  IsNullish,
+  IsRecursive,
+  Signal$,
+  SignalCreatorOptions,
+  SignalEvent,
+} from "./0_types.js"
 export * from "./1_SignalCreator.js"
 export * from "./2_Signal.js"

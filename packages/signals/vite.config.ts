@@ -1,3 +1,12 @@
 import { createLibConfig } from '../../vite.lib.config'
+import { resolve } from 'path'
 
-export default createLibConfig(__dirname)
+const config = createLibConfig(__dirname)
+if (config.build?.lib) {
+  config.build.lib.entry = {
+    index: resolve(__dirname, 'src/index.ts'),
+    '3_react': resolve(__dirname, 'src/3_react.ts'),
+  }
+}
+
+export default config

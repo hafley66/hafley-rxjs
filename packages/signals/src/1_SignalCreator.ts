@@ -117,7 +117,7 @@ export function SignalCreator<T, Base extends object = object>(
             let toReturn: unknown = undefined
             const next = produce(context, (draft) => {
               const funcName = path[path.length - 1]
-              toReturn = (draft as Record<string, (...a: unknown[]) => unknown>)[funcName](...args)
+              toReturn = (draft as unknown as Record<string, (...a: unknown[]) => unknown>)[funcName](...args)
             })
 
             if (!isEqual(next, context)) {
@@ -174,7 +174,7 @@ export function SignalCreator<T, Base extends object = object>(
         }
 
         // Cache hit
-        if (p in target) return (target as Record<string | symbol, unknown>)[p]
+        if (p in target) return (target as unknown as Record<string | symbol, unknown>)[p]
 
         // Lazy match BehaviorSubject/Observable methods
         if (p in root$) {
@@ -212,12 +212,12 @@ export function SignalCreator<T, Base extends object = object>(
           }
 
           // Cache and return
-          return ((target as Record<string | symbol, unknown>)[p] ??= it)
+          return ((target as unknown as Record<string | symbol, unknown>)[p] ??= it)
         }
 
         // ID getter/setter
         if (p === "id") {
-          return ((target as Record<string | symbol, unknown>)[p] ??= (setId?: string) => {
+          return ((target as unknown as Record<string | symbol, unknown>)[p] ??= (setId?: string) => {
             if (setId) {
               ID = setId
               return proxy
@@ -228,7 +228,7 @@ export function SignalCreator<T, Base extends object = object>(
 
         // use() hook - placeholder, gets added by /react
         if (p === "use") {
-          return (target as Record<string | symbol, unknown>)[p]
+          return (target as unknown as Record<string | symbol, unknown>)[p]
         }
 
         return undefined
