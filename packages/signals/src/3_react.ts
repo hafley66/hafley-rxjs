@@ -90,7 +90,7 @@ let SIGNAL_REACT_DISPLAY_ID = 0
  * state.count.$(1)
  * ```
  */
-export function SignalReactMemo<P extends object>(
+export function SignalReact<P extends object>(
   Component: React.FC<P>
 ): React.FC<P> {
   const id = SIGNAL_REACT_DISPLAY_ID++
@@ -127,6 +127,9 @@ export function SignalReactMemo<P extends object>(
   MemoizedComponent.displayName = displayName
   return MemoizedComponent
 }
+
+/** @deprecated Use SignalReact. */
+export const SignalReactMemo = SignalReact
 
 /**
  * Hook to subscribe to a signal in a React component.

@@ -2,6 +2,7 @@ import {
   BehaviorSubject,
   filter,
   map,
+  merge,
   Observable,
   shareReplay,
   Subject,
@@ -18,6 +19,13 @@ type ValidDraftReturn<T> = T | void | undefined
  */
 export const signalDispatch = new Subject<SignalEvent<unknown>>()
 
+// Memo dependency tracking is stack-scoped rather than derived from the global
+// debug stream. With nested memos, only the innermost active computation owns
+// reads of its primitive dependencies; the outer memo depends on the inner memo
+// itself. A global subscription would make the outer computation accidentally
+// collect both layers and can create duplicate cascades.
+const dependencyCollectors: Array<(signal: Signal<unknown>) => void> = []
+
 /**
  * Creates a signal tree with proxy-based nested access.
  *
@@ -32,23 +40,28 @@ export const signalDispatch = new Subject<SignalEvent<unknown>>()
 export function SignalCreator<T, Base extends object = object>(
   options: SignalCreatorOptions<T, Base>
 ): Signal<T, Base> {
-  const { initialState, observable, createBase } = options
+  const { initialState, observable, event = false, read, createBase } = options
 
-  const state$ = new BehaviorSubject(initialState as T)
+  const state$ = event || (observable && initialState === undefined)
+    ? new Subject<T>()
+    : new BehaviorSubject(initialState as T)
+  let latest = initialState as T
+
+  const pushState = (next: T) => {
+    latest = next
+    state$.next(next)
+  }
 
   // If an observable source is provided, pipe it into the state
   const root$ = !observable
     ? state$
-    : observable.pipe(
-        tap({
-          next: (n) => {
-            state$.next(n)
-          },
-        }),
-        shareReplay({
-          refCount: true,
-          bufferSize: 1,
-        }),
+    : merge(
+        state$,
+        observable.pipe(
+          tap({ next: (next) => { latest = next } }),
+        ),
+      ).pipe(
+        shareReplay({ refCount: true, bufferSize: 1 }),
       )
 
   // Track active subscriptions for debugging/cleanup
@@ -64,7 +77,7 @@ export function SignalCreator<T, Base extends object = object>(
 
     // Immer-based setter for complex mutations
     const setterImmer = (recipe: (draft: Draft<T>) => ValidDraftReturn<Draft<T>>) => {
-      const curr = get(state$.value, path)
+      const curr = get(latest, path)
       if (isDraftable(curr)) {
         const next = produce(curr as Draft<T>, recipe)
         return setter(next as T)
@@ -74,20 +87,20 @@ export function SignalCreator<T, Base extends object = object>(
     // Direct setter - handles both root and nested paths
     const setter = (n: T) => {
       if (!depth) {
-        return state$.next(n)
+        return pushState(n)
       }
 
       // Deep set with lodash on an immer draft
-      const next = produce((state$.value || {}) as object, (draft: Draft<object>) => {
+      const next = produce((latest || {}) as object, (draft: Draft<object>) => {
         set(draft, path, n)
       })
 
-      return state$.next(next as T)
+      return pushState(next as T)
     }
 
     // Getter - handles root, nested, and function values
     const getter = (): T => {
-      const root = state$.value
+      const root = read ? read() : latest
       if (!depth) {
         return root
       }
@@ -137,6 +150,7 @@ export function SignalCreator<T, Base extends object = object>(
           type: "get",
           value: { signal: proxy as Signal<unknown>, path },
         })
+        dependencyCollectors.at(-1)?.(proxy as Signal<unknown>)
         return getter()
       },
     }[selfFnName]
@@ -257,4 +271,125 @@ export function SignalCreator<T, Base extends object = object>(
   const rootProxy = createProxy([], createBase?.(undefined as unknown as Signal<T, Base>, []))
 
   return rootProxy
+}
+
+/**
+ * Creates the Observable + synchronous reader used by Signal(fn).
+ *
+ * A computation discovers dependencies from synchronous signal `get` events.
+ * Dependencies are replaced after every run, so conditional branches behave
+ * like Solid's createMemo rather than a static combineLatest. The computation
+ * is lazy, shared across readers, and keeps its last successful value when a
+ * transient computation throws.
+ */
+export function createComputedSignal<T>(compute: () => T): Signal<T> {
+  let dirty = true
+  let hasValue = false
+  let value: T
+  let running = false
+  let lastRunFailed = false
+  let subscriberCount = 0
+  let readPinned = false
+
+  const observers = new Set<{ next(value: T): void }>()
+  let dependencySubs: Array<{ unsubscribe(): void }> = []
+
+  const clearDependencies = () => {
+    for (const sub of dependencySubs) sub.unsubscribe()
+    dependencySubs = []
+  }
+
+  const recompute = (): T => {
+    if (running) return value
+    running = true
+
+    const dependencies = new Set<Signal<unknown>>()
+    dependencyCollectors.push((dependency) => dependencies.add(dependency))
+
+    let next: T
+    try {
+      next = compute()
+    } catch (error) {
+      dependencyCollectors.pop()
+      running = false
+      dirty = true
+      lastRunFailed = true
+
+      // Preserve the dependencies read before the throw so a later change can
+      // recover the memo. A failed recomputation is not an Observable error:
+      // it must not permanently terminate this or any composed memo.
+      clearDependencies()
+      for (const dependency of dependencies) {
+        let initializing = true
+        const sub = dependency.$.subscribe(() => {
+          if (!initializing) invalidate()
+        })
+        initializing = false
+        dependencySubs.push(sub)
+      }
+
+      if (hasValue) return value
+      throw error
+    }
+
+    dependencyCollectors.pop()
+    running = false
+    value = next
+    hasValue = true
+    dirty = false
+    lastRunFailed = false
+
+    clearDependencies()
+    for (const dependency of dependencies) {
+      let initializing = true
+      const sub = dependency.$.subscribe(() => {
+        if (!initializing) invalidate()
+      })
+      initializing = false
+      dependencySubs.push(sub)
+    }
+
+    return value
+  }
+
+  const invalidate = () => {
+    dirty = true
+    if (!subscriberCount || running) return
+
+    const next = recompute()
+    // Downstream recomputation may unsubscribe and resubscribe while handling
+    // this emission. Iterate a snapshot so a newly added observer is not visited
+    // again in the same Set iteration (an infinite nested-memo cascade).
+    if (!lastRunFailed) for (const observer of [...observers]) observer.next(next)
+  }
+
+  const readMemo = () => {
+    readPinned = true
+    return dirty || !hasValue ? recompute() : value
+  }
+
+  const observable = new Observable<T>((subscriber) => {
+    subscriberCount++
+    observers.add(subscriber)
+
+    try {
+      subscriber.next(dirty || !hasValue ? recompute() : value)
+    } catch (error) {
+      observers.delete(subscriber)
+      subscriberCount--
+      subscriber.error(error)
+      return undefined
+    }
+
+    return () => {
+      observers.delete(subscriber)
+      subscriberCount--
+      if (!subscriberCount && !readPinned) {
+        clearDependencies()
+        dirty = true
+      }
+    }
+  })
+
+  return SignalCreator({ observable, read: readMemo })
 }

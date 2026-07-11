@@ -32,7 +32,7 @@ describe('Signal', () => {
       let emissionCount = 0
 
       trackSubscription(
-        count.$().subscribe(() => {
+        count.$.subscribe(() => {
           emissionCount++
           if (emissionCount === 2) {
             resolve()

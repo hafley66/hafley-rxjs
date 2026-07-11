@@ -133,6 +133,10 @@ export type SignalEvent<T, Base extends object = object> =
 export type SignalCreatorOptions<T, Base extends object = object> = {
   initialState?: T
   observable?: Observable<T>
+  /** Subject semantics: no initial emission and no replay. */
+  event?: boolean
+  /** Override synchronous reads (used by lazily evaluated memo signals). */
+  read?: () => T
   /** Factory to create Base extension for each node */
   createBase?: (root: Signal<T, Base>, path: string[]) => Base
 }
