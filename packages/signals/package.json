@@ -1,5 +1,5 @@
 {
-  "name": "@hafley/signals",
+  "name": "@hafley66/signals",
   "version": "0.0.1",
   "description": "RxJS-native reactive signals with proxy-based nested access",
   "type": "module",
