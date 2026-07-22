@@ -69,6 +69,48 @@ describe('TypeSpec Rx type-flow experiments', () => {
     `)
   })
 
+  test('records the unavailable typed Flow field-reference grammar', async () => {
+    expect(await diagnostics('9_typed_flow_refs.tsp')).toMatchInlineSnapshot(`
+      [
+        {
+          "code": "experimental-feature",
+          "message": "Function declarations are an experimental feature that may change in the future. Use with caution and consider providing feedback to the TypeSpec team.",
+          "severity": "warning",
+        },
+        {
+          "code": "experimental-feature",
+          "message": "Function declarations are an experimental feature that may change in the future. Use with caution and consider providing feedback to the TypeSpec team.",
+          "severity": "warning",
+        },
+        {
+          "code": "experimental-feature",
+          "message": "Function declarations are an experimental feature that may change in the future. Use with caution and consider providing feedback to the TypeSpec team.",
+          "severity": "warning",
+        },
+        {
+          "code": "experimental-feature",
+          "message": "Function declarations are an experimental feature that may change in the future. Use with caution and consider providing feedback to the TypeSpec team.",
+          "severity": "warning",
+        },
+        {
+          "code": "invalid-ref",
+          "message": "Model doesn't have meta property body",
+          "severity": "error",
+        },
+        {
+          "code": "invalid-ref",
+          "message": "Model doesn't have meta property body",
+          "severity": "error",
+        },
+        {
+          "code": "function-return",
+          "message": "Implementation of 'fn multiply' returned type 'JsonRxExperiment.Flow<JsonRxExperiment.Reading>', which is not assignable to the declared return type 'int32'.",
+          "severity": "error",
+        },
+      ]
+    `)
+  })
+
   test('closes a host flow over a reusable signal expression', async () => {
     const module = await import(new URL('../../experiments/0_typesystem/8_observable_constructor.js', import.meta.url).href) as {
       graphs: WeakMap<object, Array<{ kind: string; inputs: unknown[]; config: unknown }>>
