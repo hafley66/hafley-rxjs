@@ -3,7 +3,14 @@ import { createStateSymbol } from './0_library'
 
 export type AutomationMetadata = { id: string; pageHost: string }
 export type SourceMetadata = { id: string; requestUrl: string; methods: string[] }
-export type FlowMetadata = { id: string; source: string; from: string; fields: Record<string, string> }
+export type MapFlowMetadata = { kind: 'map'; id: string; source: string; from: string; fields: Record<string, string> }
+export type LogicFlowMetadata = {
+  kind: 'logic'
+  id: string
+  expression: unknown
+  references: Array<{ name: string; kind: 'source' | 'flow'; ref: string }>
+}
+export type FlowMetadata = MapFlowMetadata | LogicFlowMetadata
 export type OutputMetadata = { flow: string; stream: string }
 
 export const automationKey = createStateSymbol('automations')
@@ -20,7 +27,7 @@ export function $source(context: DecoratorContext, target: Operation, id: string
 }
 
 export function $flow(context: DecoratorContext, target: Operation, id: string, source: string, from: string, fields: Record<string, string>) {
-  context.program.stateMap(flowKey).set(target, { id, source, from, fields } satisfies FlowMetadata)
+  context.program.stateMap(flowKey).set(target, { kind: 'map', id, source, from, fields } satisfies MapFlowMetadata)
 }
 
 export function $output(context: DecoratorContext, target: Operation, flow: string, stream: string) {

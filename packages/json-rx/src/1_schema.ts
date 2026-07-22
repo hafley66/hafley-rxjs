@@ -5,6 +5,9 @@ const reference = (kind: 'source' | 'reducer') => z.strictObject({
 })
 const sourceRef = reference('source')
 const reducerRef = reference('reducer')
+const flowInputRef = z.strictObject({ kind: z.literal('flow'), $ref: z.string().min(1) })
+const sourceInputRef = z.strictObject({ kind: z.literal('source'), $ref: z.string().min(1) })
+const logicInputRef = z.union([sourceInputRef, flowInputRef])
 const parameters = z.strictObject({
   path: z.record(z.string(), z.unknown()).optional(),
   query: z.record(z.string(), z.unknown()).optional(),
@@ -20,7 +23,8 @@ const mergeStep = z.strictObject({ node: z.string().min(1), merge: z.strictObjec
 const mapStep = z.strictObject({ node: z.string().min(1), map: z.strictObject({ from: z.string(), language: z.literal('jsonata').default('jsonata'), fields: z.record(z.string(), z.string()).default({}) }) }).meta({ title: 'JSONata map' })
 const scanStep = z.strictObject({ node: z.string().min(1), scan: z.strictObject({ reducer: reducerRef }) }).meta({ title: 'Scan reducer' })
 const shareStep = z.strictObject({ node: z.string().min(1), shareReplay: z.strictObject({ bufferSize: z.literal(1), refCount: z.literal(true) }) }).meta({ title: 'Share replay' })
-export const PipeStepSchema = z.union([sourceStep, mergeStep, mapStep, scanStep, shareStep])
+const logicStep = z.strictObject({ node: z.string().min(1), logic: z.strictObject({ language: z.literal('json-logic'), expression: z.unknown(), inputs: z.record(z.string(), logicInputRef) }) }).meta({ title: 'JSONLogic expression' })
+export const PipeStepSchema = z.union([sourceStep, mergeStep, mapStep, scanStep, shareStep, logicStep])
 export type PipeStep = z.infer<typeof PipeStepSchema>
 
 const nestedSource = z.strictObject({ node: z.string().min(1), source: sourceRef }).meta({ title: 'Source' })
@@ -30,6 +34,7 @@ const NestedExpressionSchema: z.ZodType<NestedExpression> = z.lazy(() => z.union
   z.strictObject({ node: z.string().min(1), merge: z.strictObject({ inputs: z.array(NestedExpressionSchema).min(1) }) }),
   z.strictObject({ node: z.string().min(1), scan: scanStep.shape.scan.extend({ input: NestedExpressionSchema }) }),
   z.strictObject({ node: z.string().min(1), shareReplay: shareStep.shape.shareReplay.extend({ input: NestedExpressionSchema }) }),
+  logicStep,
 ]))
 export type NestedExpression =
   | z.infer<typeof nestedSource>
@@ -37,6 +42,7 @@ export type NestedExpression =
   | { node: string; merge: { inputs: NestedExpression[] } }
   | { node: string; scan: z.infer<typeof scanStep>['scan'] & { input: NestedExpression } }
   | { node: string; shareReplay: z.infer<typeof shareStep>['shareReplay'] & { input: NestedExpression } }
+  | z.infer<typeof logicStep>
 
 const flow = z.strictObject({
   parameters: parameters.optional(),
@@ -70,6 +76,7 @@ export const AutomationSchema = z.strictObject({
     nodes.add(id)
   }
   const source = (value: string) => { if (!sources.has(value)) context.addIssue({ code: 'custom', path: ['circuit'], message: `unknown source: ${value}` }) }
+  const flow = (value: string) => { if (!flows.has(value)) context.addIssue({ code: 'custom', path: ['circuit'], message: `unknown flow: ${value}` }) }
   const reducer = (value: string) => { if (!reducers.has(value)) context.addIssue({ code: 'custom', path: ['circuit'], message: `unknown reducer: ${value}` }) }
   const visit = (value: NestedExpression): void => {
     node(value.node)
@@ -78,6 +85,7 @@ export const AutomationSchema = z.strictObject({
     if ('map' in value) visit(value.map.input)
     if ('scan' in value) { reducer(value.scan.reducer.$ref); visit(value.scan.input) }
     if ('shareReplay' in value) visit(value.shareReplay.input)
+    if ('logic' in value) Object.values(value.logic.inputs).forEach((input) => input.kind === 'source' ? source(input.$ref) : flow(input.$ref))
   }
   for (const definition of Object.values(automation.circuit.flows)) {
     if (definition.expression) visit(definition.expression)
@@ -86,9 +94,10 @@ export const AutomationSchema = z.strictObject({
       if ('source' in step) source(step.source.$ref)
       if ('merge' in step) step.merge.sources.forEach((entry) => source(entry.$ref))
       if ('scan' in step) reducer(step.scan.reducer.$ref)
+      if ('logic' in step) Object.values(step.logic.inputs).forEach((input) => input.kind === 'source' ? source(input.$ref) : flow(input.$ref))
     }
     const first = definition.pipe?.[0]
-    if (first && !('source' in first) && !('merge' in first)) context.addIssue({ code: 'custom', path: ['circuit', 'flows'], message: 'pipe must start with source or merge' })
+    if (first && !('source' in first) && !('merge' in first) && !('logic' in first)) context.addIssue({ code: 'custom', path: ['circuit', 'flows'], message: 'pipe must start with source, merge, or logic' })
   }
   for (const binding of Object.keys(automation.bindings.sources)) source(binding)
   for (const value of sources) if (!(value in automation.bindings.sources)) context.addIssue({ code: 'custom', path: ['bindings', 'sources'], message: `source has no host binding: ${value}` })

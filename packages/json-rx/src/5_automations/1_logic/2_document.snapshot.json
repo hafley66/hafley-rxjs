@@ -1,0 +1,83 @@
+{
+  "$schema": "./node_modules/@hafley66/json-rx/automation.schema.json",
+  "version": "automation.v1",
+  "profile": "rxjs-7.8",
+  "id": "logic.total",
+  "enabled": true,
+  "bindings": {
+    "sources": {
+      "catalog.price": {
+        "kind": "http.event",
+        "page": {
+          "host": "example.test"
+        },
+        "request": {
+          "methods": [
+            "GET"
+          ],
+          "url": "/price"
+        }
+      },
+      "catalog.quantity": {
+        "kind": "http.event",
+        "page": {
+          "host": "example.test"
+        },
+        "request": {
+          "methods": [
+            "GET"
+          ],
+          "url": "/quantity"
+        }
+      }
+    }
+  },
+  "circuit": {
+    "sources": {
+      "catalog.price": {},
+      "catalog.quantity": {}
+    },
+    "reducers": {},
+    "flows": {
+      "total": {
+        "expression": {
+          "node": "total.logic",
+          "logic": {
+            "language": "json-logic",
+            "expression": {
+              "*": [
+                {
+                  "var": "price"
+                },
+                {
+                  "var": "quantity"
+                }
+              ]
+            },
+            "inputs": {
+              "price": {
+                "kind": "source",
+                "$ref": "catalog.price"
+              },
+              "quantity": {
+                "kind": "source",
+                "$ref": "catalog.quantity"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "outputs": [
+    {
+      "kind": "host.emit",
+      "flow": "total",
+      "stream": "logic.total",
+      "schema": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    }
+  ]
+}

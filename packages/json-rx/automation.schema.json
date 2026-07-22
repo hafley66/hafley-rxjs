@@ -25,7 +25,7 @@
       "$ref": "#/$defs/__schema7"
     },
     "outputs": {
-      "$ref": "#/$defs/__schema33"
+      "$ref": "#/$defs/__schema36"
     }
   },
   "required": [
@@ -222,7 +222,7 @@
                 "$ref": "#/$defs/__schema12"
               },
               "expression": {
-                "$ref": "#/$defs/__schema30"
+                "$ref": "#/$defs/__schema33"
               }
             },
             "additionalProperties": false
@@ -364,6 +364,9 @@
           ],
           "additionalProperties": false,
           "title": "Share replay"
+        },
+        {
+          "$ref": "#/$defs/__schema30"
         }
       ]
     },
@@ -508,15 +511,98 @@
       "const": true
     },
     "__schema30": {
-      "$ref": "#/$defs/__schema31"
+      "type": "object",
+      "properties": {
+        "node": {
+          "$ref": "#/$defs/__schema31"
+        },
+        "logic": {
+          "$ref": "#/$defs/__schema32"
+        }
+      },
+      "required": [
+        "node",
+        "logic"
+      ],
+      "additionalProperties": false,
+      "title": "JSONLogic expression"
     },
     "__schema31": {
+      "type": "string",
+      "minLength": 1
+    },
+    "__schema32": {
+      "type": "object",
+      "properties": {
+        "language": {
+          "type": "string",
+          "const": "json-logic"
+        },
+        "expression": {},
+        "inputs": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "source"
+                  },
+                  "$ref": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "kind",
+                  "$ref"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "flow"
+                  },
+                  "$ref": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "kind",
+                  "$ref"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "language",
+        "expression",
+        "inputs"
+      ],
+      "additionalProperties": false
+    },
+    "__schema33": {
+      "$ref": "#/$defs/__schema34"
+    },
+    "__schema34": {
       "anyOf": [
         {
           "type": "object",
           "properties": {
             "node": {
-              "$ref": "#/$defs/__schema32"
+              "$ref": "#/$defs/__schema35"
             },
             "source": {
               "$ref": "#/$defs/__schema15"
@@ -549,7 +635,7 @@
                   "$ref": "#/$defs/__schema22"
                 },
                 "input": {
-                  "$ref": "#/$defs/__schema31"
+                  "$ref": "#/$defs/__schema34"
                 }
               },
               "required": [
@@ -581,7 +667,7 @@
                   "minItems": 1,
                   "type": "array",
                   "items": {
-                    "$ref": "#/$defs/__schema31"
+                    "$ref": "#/$defs/__schema34"
                   }
                 }
               },
@@ -611,7 +697,7 @@
                   "$ref": "#/$defs/__schema25"
                 },
                 "input": {
-                  "$ref": "#/$defs/__schema31"
+                  "$ref": "#/$defs/__schema34"
                 }
               },
               "required": [
@@ -644,7 +730,7 @@
                   "$ref": "#/$defs/__schema29"
                 },
                 "input": {
-                  "$ref": "#/$defs/__schema31"
+                  "$ref": "#/$defs/__schema34"
                 }
               },
               "required": [
@@ -660,21 +746,24 @@
             "shareReplay"
           ],
           "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/__schema30"
         }
       ]
     },
-    "__schema32": {
+    "__schema35": {
       "type": "string",
       "minLength": 1
     },
-    "__schema33": {
+    "__schema36": {
       "minItems": 1,
       "type": "array",
       "items": {
-        "$ref": "#/$defs/__schema34"
+        "$ref": "#/$defs/__schema37"
       }
     },
-    "__schema34": {
+    "__schema37": {
       "type": "object",
       "properties": {
         "kind": {

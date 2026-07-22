@@ -1,7 +1,7 @@
 import { navigateProgram, type Interface, type Operation, type Program } from '@typespec/compiler'
 import type { Automation } from '../1_schema'
 import { automationKey, flowKey, outputKey, sourceKey, type AutomationMetadata, type FlowMetadata, type OutputMetadata, type SourceMetadata } from './1_decorators'
-import { aliasAutomationGraphs } from './4a_aliasFunctions'
+import { resolveAliasGraph } from './4a_aliasFunctions'
 
 export type JsonRxSymbolKind = 'source' | 'flow' | 'output'
 export type JsonRxSymbol = { kind: JsonRxSymbolKind; address: string; title: string }
@@ -14,7 +14,7 @@ export type JsonRxGraph = {
 }
 
 export function collectJsonRxGraph(program: Program): JsonRxGraph {
-  const aliasGraph = aliasAutomationGraphs.get(program)
+  const aliasGraph = resolveAliasGraph(program)
   if (aliasGraph?.automation.id) {
     const symbols = new Map<string, JsonRxSymbol>()
     for (const source of aliasGraph.sources) symbols.set(source.id, { kind: 'source', address: source.id, title: source.id })
@@ -56,13 +56,24 @@ export function emitAutomationDocument(graph: JsonRxGraph): Automation {
     request: { methods: source.methods, url: source.requestUrl },
   }])
   const circuitSources = graph.sources.map((source) => [source.id, {}])
-  const circuitFlows = graph.flows.map((flow) => [flow.id, {
-    pipe: [
-      { node: `${flow.id}.source`, source: { $ref: flow.source } },
-      { node: `${flow.id}.map`, map: { from: flow.from, language: 'jsonata' as const, fields: flow.fields } },
-      { node: `${flow.id}.share`, shareReplay: { bufferSize: 1 as const, refCount: true as const } },
-    ],
-  }])
+  const circuitFlows = graph.flows.map((flow) => flow.kind === 'map'
+    ? [flow.id, {
+      pipe: [
+        { node: `${flow.id}.source`, source: { $ref: flow.source } },
+        { node: `${flow.id}.map`, map: { from: flow.from, language: 'jsonata' as const, fields: flow.fields } },
+        { node: `${flow.id}.share`, shareReplay: { bufferSize: 1 as const, refCount: true as const } },
+      ],
+    }]
+    : [flow.id, {
+      expression: {
+        node: `${flow.id}.logic`,
+        logic: {
+          language: 'json-logic' as const,
+          expression: flow.expression,
+          inputs: Object.fromEntries(flow.references.map((reference) => [reference.name, { kind: reference.kind, $ref: reference.ref }])),
+        },
+      },
+    }])
   return {
     $schema: './node_modules/@hafley66/json-rx/automation.schema.json',
     version: 'automation.v1',
