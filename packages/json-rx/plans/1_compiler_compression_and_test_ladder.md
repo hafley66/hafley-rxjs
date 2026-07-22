@@ -109,7 +109,7 @@ generate the same fields and reducer timeline.
 
 ### Rust generation and runtime
 
-Use the existing `hafley66/hafley-tsp` package `@hafley/alloy-rs` for Rust
+Use the existing `hafley66/hafley-tsp` package `@hafley66/alloy-rs` for Rust
 generation. It already provides:
 
 - TypeSpec `Program` to neutral Rust type extraction
@@ -328,7 +328,7 @@ op double(input: DoubleInput): DoubleOutput | DoubleFailure;
 Generate:
 
 - a discriminated TypeScript request/result union
-- a serde-tagged Rust request/result enum through `@hafley/alloy-rs`
+- a serde-tagged Rust request/result enum through `@hafley66/alloy-rs`
 - one TypeScript encoder/decoder
 - one Rust encoder/decoder
 - one generated Axum handler trait and route

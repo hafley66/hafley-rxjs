@@ -1,8 +1,8 @@
 import { compile, NodeHost } from '@typespec/compiler'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { programToTypeDefs } from '@hafley/alloy-rs/adapters'
-import { emitCrate } from '@hafley/alloy-rs/emitter'
+import { programToTypeDefs } from '@hafley66/alloy-rs/adapters'
+import { emitCrate } from '@hafley66/alloy-rs/emitter'
 
 const directory = import.meta.dirname
 const output = resolve(directory, 'rust/generated')
