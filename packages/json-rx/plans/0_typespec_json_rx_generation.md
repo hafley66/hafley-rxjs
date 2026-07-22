@@ -197,6 +197,55 @@ Source syntax lowers to semantic axes before generator selection:
 The normalized form preserves RxJS terminology in authoring and diagnostics
 while giving non-RxJS targets explicit semantic requirements to match.
 
+### Current values, keyed events, and reducer state
+
+The normalized plan keeps these three graph shapes distinct:
+
+```text
+current-value derivation
+  latest input values -> projection -> derived value
+
+keyed event fan-in
+  named input emission -> { key, value }
+
+state reduction
+  prior accumulator + { key, value } -> next accumulator
+```
+
+`mergeByKey` lowers a record of named inputs to the tagged event form. Its
+event identity remains available to routing and reducer code.
+
+`mergeByKeyScan` is a linear record reducer. Given a seed record, each event
+replaces only the accumulator slot with the same key:
+
+```ts
+(state, event) => ({ ...state, [event.key]: event.value })
+```
+
+`latestByKey` is the partial-current-value specialization. For inputs
+`Record<string, Flow<T>>`, it produces a record of `Option<T>` values, seeded
+with `None` for every key. `Some(value)` represents an observed input emission;
+it remains distinct from `Some(null)` and `Some(undefined)`. A complete
+current-value node can filter or prove all slots `Some`, then project their
+unwrapped values. That node has `combineLatest`-style first-emission behavior.
+
+General scan reducers own the state transition. Their semantic signature is:
+
+```ts
+reduce(previous: State, event: TaggedEvent): State
+```
+
+One event creates one pure reducer transaction. Draft-style writes may read and
+write multiple state fields and commit one next state. The TypeScript scheme
+may emit an Immer `produce` call; the Rust scheme mutates an owned transition
+value before emitting it. Reducer blocks do not infer current-value flow
+dependencies.
+
+Candidate inferred-current-value syntax, including `$ { ... }`, belongs only
+to the current-value derivation shape. It remains deferred until its capture,
+initial-value, completion/error, equality, sharing, and provenance rules are
+specified.
+
 ### Resource regions
 
 A resource region groups graph nodes that jointly describe keyed state:
