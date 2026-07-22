@@ -17,6 +17,23 @@ Signals motivate the ergonomics: a derivation reads named values without a
 dependency array. The JSON-RX IR and first runtime lowering use direct RxJS
 operators. No serialized `Signal` node exists.
 
+## Serialized expression language boundary
+
+Expression language is explicit in JSON. A document never infers an evaluator
+from whether an expression is an object or a string.
+
+```ts
+type Expression =
+  | { language: "json-logic"; expression: JsonLogicValue }
+  | { language: "jsonata"; expression: string };
+```
+
+The initial reactive compiler implements `json-logic`. `jsonata` remains an
+explicit serialized language variant until its evaluator and cross-target
+fixtures land. Adding, removing, or changing an expression language is a
+document schema version change. That change updates the generated JSON Schema,
+TypeSpec authoring surface, IR discriminant, and cross-target fixture set.
+
 ## Authoring form
 
 ```typespec
