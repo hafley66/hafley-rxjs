@@ -1,5 +1,6 @@
 import { firstValueFrom, of } from "rxjs";
 import { describe, expect, test } from "vitest";
+import timeline from "../../../examples/5_cross_language_logic/0_timeline.json";
 import { compileAutomation } from "../../2_runtime";
 import { logicAutomation, logicCatalog } from "./1_document.auto";
 import documentSnapshot from "./2_document.snapshot.json";
@@ -10,6 +11,7 @@ describe("TypeSpec-authored JSONLogic flow", () => {
       "catalog.price": of({ method: "GET", pageUrl: "https://example.test", requestUrl: "https://example.test/price", status: 200, ts: 1, body: 3 }),
       "catalog.quantity": of({ method: "GET", pageUrl: "https://example.test", requestUrl: "https://example.test/quantity", status: 200, ts: 2, body: 2 }),
     });
+    expect(logicAutomation.circuit.flows.total.expression?.logic.expression).toEqual(timeline.logic);
 
     expect({
       document: logicAutomation,
@@ -65,10 +67,10 @@ describe("TypeSpec-authored JSONLogic flow", () => {
                     "expression": {
                       "*": [
                         {
-                          "var": "price",
+                          "var": "price.body",
                         },
                         {
-                          "var": "quantity",
+                          "var": "quantity.body",
                         },
                       ],
                     },
@@ -122,7 +124,7 @@ describe("TypeSpec-authored JSONLogic flow", () => {
             "type": "object",
           },
           "stream": "logic.total",
-          "value": NaN,
+          "value": 6,
         },
         "snapshot": {
           "$schema": "./node_modules/@hafley66/json-rx/automation.schema.json",
@@ -162,10 +164,10 @@ describe("TypeSpec-authored JSONLogic flow", () => {
                     "expression": {
                       "*": [
                         {
-                          "var": "price",
+                          "var": "price.body",
                         },
                         {
-                          "var": "quantity",
+                          "var": "quantity.body",
                         },
                       ],
                     },

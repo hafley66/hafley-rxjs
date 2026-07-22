@@ -53,10 +53,10 @@ export const logicAutomation = {
             "expression": {
               "*": [
                 {
-                  "var": "price"
+                  "var": "price.body"
                 },
                 {
-                  "var": "quantity"
+                  "var": "quantity.body"
                 }
               ]
             },
