@@ -1,0 +1,55 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`JsonRxForm > renders the generated schema form and submits a typed document 2`] = `
+{
+  "$schema": "./node_modules/@hafley66/json-rx/automation.schema.json",
+  "bindings": {
+    "sources": {
+      "jsonrx://test/source": {
+        "kind": "host.event",
+        "operation": "test/read",
+      },
+    },
+  },
+  "circuit": {
+    "flows": {
+      "jsonrx://test/flow": {
+        "pipe": [
+          {
+            "node": "source",
+            "source": {
+              "$ref": "jsonrx://test/source",
+            },
+          },
+          {
+            "map": {
+              "fields": {},
+              "from": "body",
+              "language": "jsonata",
+            },
+            "node": "map",
+          },
+        ],
+      },
+    },
+    "reducers": {},
+    "sources": {
+      "jsonrx://test/source": {},
+    },
+  },
+  "enabled": true,
+  "id": "jsonrx://test/automation",
+  "outputs": [
+    {
+      "flow": "jsonrx://test/flow",
+      "kind": "host.emit",
+      "schema": {
+        "type": "object",
+      },
+      "stream": "test",
+    },
+  ],
+  "profile": "rxjs-7.8",
+  "version": "automation.v1",
+}
+`;

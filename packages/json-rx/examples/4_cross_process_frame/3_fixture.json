@@ -1,0 +1,10 @@
+{
+  "request": {
+    "operation": "activate",
+    "request_id": "req-42"
+  },
+  "response": {
+    "request_id": "req-42",
+    "accepted": true
+  }
+}

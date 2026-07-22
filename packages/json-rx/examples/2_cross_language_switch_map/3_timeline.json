@@ -1,0 +1,10 @@
+{
+  "events": [
+    { "at": 0, "value": { "id": "A", "delayTicks": 20 } },
+    { "at": 2, "value": { "id": "B", "delayTicks": 5 } }
+  ],
+  "settleAt": 7,
+  "states": ["B"],
+  "cancellations": 1,
+  "active": 0
+}

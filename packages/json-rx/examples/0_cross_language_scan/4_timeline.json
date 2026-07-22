@@ -1,0 +1,12 @@
+{
+  "events": [
+    { "source": "snapshot", "value": { "fiveHour": 10, "sevenDay": 20 } },
+    { "source": "update", "value": { "fiveHour": 35 } },
+    { "source": "update", "value": { "sevenDay": 70 } }
+  ],
+  "states": [
+    { "fiveHour": 10, "sevenDay": 20 },
+    { "fiveHour": 35, "sevenDay": 20 },
+    { "fiveHour": 35, "sevenDay": 70 }
+  ]
+}

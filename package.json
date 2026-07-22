@@ -3,6 +3,9 @@
   "private": true,
   "scripts": {
     "build": "pnpm -r build",
+    "check:json-rx": "pnpm --filter @hafley66/json-rx check",
+    "generate": "pnpm --filter @hafley66/json-rx generate",
+    "generate:check": "pnpm --filter @hafley66/json-rx generate:check",
     "test": "pnpm -r test",
     "test:ui": "pnpm -r test:ui",
     "typecheck": "pnpm -r typecheck",

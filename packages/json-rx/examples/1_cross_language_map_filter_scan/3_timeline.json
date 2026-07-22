@@ -1,0 +1,9 @@
+{
+  "events": [
+    { "value": 1 },
+    { "value": 2, "state": 4 },
+    { "value": 3, "state": 10 },
+    { "value": 4, "state": 18 }
+  ],
+  "states": [4, 10, 18]
+}

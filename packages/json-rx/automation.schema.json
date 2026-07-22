@@ -1,0 +1,709 @@
+{
+  "$id": "https://unpkg.com/@hafley66/json-rx/automation.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "$ref": "#/$defs/__schema0"
+    },
+    "version": {
+      "$ref": "#/$defs/__schema1"
+    },
+    "profile": {
+      "$ref": "#/$defs/__schema2"
+    },
+    "id": {
+      "$ref": "#/$defs/__schema3"
+    },
+    "enabled": {
+      "$ref": "#/$defs/__schema4"
+    },
+    "bindings": {
+      "$ref": "#/$defs/__schema5"
+    },
+    "circuit": {
+      "$ref": "#/$defs/__schema7"
+    },
+    "outputs": {
+      "$ref": "#/$defs/__schema33"
+    }
+  },
+  "required": [
+    "$schema",
+    "version",
+    "profile",
+    "id",
+    "enabled",
+    "bindings",
+    "circuit",
+    "outputs"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "__schema0": {
+      "default": "./node_modules/@hafley66/json-rx/automation.schema.json",
+      "type": "string"
+    },
+    "__schema1": {
+      "type": "string",
+      "const": "automation.v1"
+    },
+    "__schema2": {
+      "type": "string",
+      "const": "rxjs-7.8"
+    },
+    "__schema3": {
+      "type": "string",
+      "minLength": 1
+    },
+    "__schema4": {
+      "default": true,
+      "type": "boolean"
+    },
+    "__schema5": {
+      "type": "object",
+      "properties": {
+        "sources": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "http.event"
+                  },
+                  "page": {
+                    "type": "object",
+                    "properties": {
+                      "host": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "host"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "request": {
+                    "type": "object",
+                    "properties": {
+                      "methods": {
+                        "minItems": 1,
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/$defs/__schema6"
+                        }
+                      },
+                      "url": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "methods",
+                      "url"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "kind",
+                  "page",
+                  "request"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "host.event"
+                  },
+                  "operation": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "kind",
+                  "operation"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "sources"
+      ],
+      "additionalProperties": false
+    },
+    "__schema6": {
+      "type": "string"
+    },
+    "__schema7": {
+      "type": "object",
+      "properties": {
+        "sources": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "parameters": {
+                "$ref": "#/$defs/__schema8"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "reducers": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "seed": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              "cases": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "replace": {
+                      "$ref": "#/$defs/__schema9"
+                    },
+                    "patch": {
+                      "$ref": "#/$defs/__schema10"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "seed",
+              "cases"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "flows": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "parameters": {
+                "$ref": "#/$defs/__schema11"
+              },
+              "pipe": {
+                "$ref": "#/$defs/__schema12"
+              },
+              "expression": {
+                "$ref": "#/$defs/__schema30"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "sources",
+        "reducers",
+        "flows"
+      ],
+      "additionalProperties": false
+    },
+    "__schema8": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        },
+        "query": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        }
+      },
+      "additionalProperties": false
+    },
+    "__schema9": {
+      "type": "string"
+    },
+    "__schema10": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "__schema11": {
+      "$ref": "#/$defs/__schema8"
+    },
+    "__schema12": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/__schema13"
+      }
+    },
+    "__schema13": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "node": {
+              "$ref": "#/$defs/__schema14"
+            },
+            "source": {
+              "$ref": "#/$defs/__schema15"
+            }
+          },
+          "required": [
+            "node",
+            "source"
+          ],
+          "additionalProperties": false,
+          "title": "Source"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "node": {
+              "$ref": "#/$defs/__schema16"
+            },
+            "merge": {
+              "$ref": "#/$defs/__schema17"
+            }
+          },
+          "required": [
+            "node",
+            "merge"
+          ],
+          "additionalProperties": false,
+          "title": "Merge sources"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "node": {
+              "$ref": "#/$defs/__schema18"
+            },
+            "map": {
+              "$ref": "#/$defs/__schema19"
+            }
+          },
+          "required": [
+            "node",
+            "map"
+          ],
+          "additionalProperties": false,
+          "title": "JSONata map"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "node": {
+              "$ref": "#/$defs/__schema23"
+            },
+            "scan": {
+              "$ref": "#/$defs/__schema24"
+            }
+          },
+          "required": [
+            "node",
+            "scan"
+          ],
+          "additionalProperties": false,
+          "title": "Scan reducer"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "node": {
+              "$ref": "#/$defs/__schema26"
+            },
+            "shareReplay": {
+              "$ref": "#/$defs/__schema27"
+            }
+          },
+          "required": [
+            "node",
+            "shareReplay"
+          ],
+          "additionalProperties": false,
+          "title": "Share replay"
+        }
+      ]
+    },
+    "__schema14": {
+      "type": "string",
+      "minLength": 1
+    },
+    "__schema15": {
+      "type": "object",
+      "properties": {
+        "$ref": {
+          "type": "string",
+          "minLength": 1,
+          "title": "source reference",
+          "x-json-rx-ref": "source"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "additionalProperties": false
+    },
+    "__schema16": {
+      "type": "string",
+      "minLength": 1
+    },
+    "__schema17": {
+      "type": "object",
+      "properties": {
+        "sources": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema15"
+          }
+        }
+      },
+      "required": [
+        "sources"
+      ],
+      "additionalProperties": false
+    },
+    "__schema18": {
+      "type": "string",
+      "minLength": 1
+    },
+    "__schema19": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/__schema20"
+        },
+        "language": {
+          "$ref": "#/$defs/__schema21"
+        },
+        "fields": {
+          "$ref": "#/$defs/__schema22"
+        }
+      },
+      "required": [
+        "from",
+        "language",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "__schema20": {
+      "type": "string"
+    },
+    "__schema21": {
+      "default": "jsonata",
+      "type": "string",
+      "const": "jsonata"
+    },
+    "__schema22": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "__schema23": {
+      "type": "string",
+      "minLength": 1
+    },
+    "__schema24": {
+      "type": "object",
+      "properties": {
+        "reducer": {
+          "$ref": "#/$defs/__schema25"
+        }
+      },
+      "required": [
+        "reducer"
+      ],
+      "additionalProperties": false
+    },
+    "__schema25": {
+      "type": "object",
+      "properties": {
+        "$ref": {
+          "type": "string",
+          "minLength": 1,
+          "title": "reducer reference",
+          "x-json-rx-ref": "reducer"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "additionalProperties": false
+    },
+    "__schema26": {
+      "type": "string",
+      "minLength": 1
+    },
+    "__schema27": {
+      "type": "object",
+      "properties": {
+        "bufferSize": {
+          "$ref": "#/$defs/__schema28"
+        },
+        "refCount": {
+          "$ref": "#/$defs/__schema29"
+        }
+      },
+      "required": [
+        "bufferSize",
+        "refCount"
+      ],
+      "additionalProperties": false
+    },
+    "__schema28": {
+      "type": "number",
+      "const": 1
+    },
+    "__schema29": {
+      "type": "boolean",
+      "const": true
+    },
+    "__schema30": {
+      "$ref": "#/$defs/__schema31"
+    },
+    "__schema31": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "node": {
+              "$ref": "#/$defs/__schema32"
+            },
+            "source": {
+              "$ref": "#/$defs/__schema15"
+            }
+          },
+          "required": [
+            "node",
+            "source"
+          ],
+          "additionalProperties": false,
+          "title": "Source"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "node": {
+              "type": "string",
+              "minLength": 1
+            },
+            "map": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "$ref": "#/$defs/__schema20"
+                },
+                "language": {
+                  "$ref": "#/$defs/__schema21"
+                },
+                "fields": {
+                  "$ref": "#/$defs/__schema22"
+                },
+                "input": {
+                  "$ref": "#/$defs/__schema31"
+                }
+              },
+              "required": [
+                "from",
+                "language",
+                "fields",
+                "input"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "node",
+            "map"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "node": {
+              "type": "string",
+              "minLength": 1
+            },
+            "merge": {
+              "type": "object",
+              "properties": {
+                "inputs": {
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/__schema31"
+                  }
+                }
+              },
+              "required": [
+                "inputs"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "node",
+            "merge"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "node": {
+              "type": "string",
+              "minLength": 1
+            },
+            "scan": {
+              "type": "object",
+              "properties": {
+                "reducer": {
+                  "$ref": "#/$defs/__schema25"
+                },
+                "input": {
+                  "$ref": "#/$defs/__schema31"
+                }
+              },
+              "required": [
+                "reducer",
+                "input"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "node",
+            "scan"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "node": {
+              "type": "string",
+              "minLength": 1
+            },
+            "shareReplay": {
+              "type": "object",
+              "properties": {
+                "bufferSize": {
+                  "$ref": "#/$defs/__schema28"
+                },
+                "refCount": {
+                  "$ref": "#/$defs/__schema29"
+                },
+                "input": {
+                  "$ref": "#/$defs/__schema31"
+                }
+              },
+              "required": [
+                "bufferSize",
+                "refCount",
+                "input"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "node",
+            "shareReplay"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "__schema32": {
+      "type": "string",
+      "minLength": 1
+    },
+    "__schema33": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/__schema34"
+      }
+    },
+    "__schema34": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "host.emit"
+        },
+        "flow": {
+          "type": "string",
+          "title": "flow reference",
+          "x-json-rx-ref": "flow"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "schema": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "kind",
+        "flow",
+        "stream",
+        "schema"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "name": "@hafley66/json-rx",
+  "version": "0.1.2",
+  "description": "JSON Schema-defined RxJS automation documents and generated React editor",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "automation.schema.json",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./automation.schema.json": "./automation.schema.json"
+  },
+  "scripts": {
+    "build": "vite build && node scripts/0_writeSchema.mjs",
+    "check": "npm run typespec:check && npm run generate:check && npm run typecheck && npm run test && npm run build",
+    "cross-language:generate": "tsx examples/0_cross_language_scan/1_generate.ts && tsx examples/1_cross_language_map_filter_scan/2_generate.ts && tsx examples/2_cross_language_switch_map/2_generate.ts && tsx examples/3_cross_language_reactive_state/2_generate.ts && tsx examples/4_cross_process_frame/1_generate.ts",
+    "cross-language:check": "npm run cross-language:generate -- --check && vitest run --config examples/0_cross_language_scan/vitest.config.ts && vitest run --config examples/5_cross_language_logic/2_vitest.config.ts && cargo test --manifest-path examples/0_cross_language_scan/rust/Cargo.toml && cargo test --manifest-path examples/1_cross_language_map_filter_scan/rust/Cargo.toml && cargo test --manifest-path examples/2_cross_language_switch_map/rust/Cargo.toml && cargo test --manifest-path examples/3_cross_language_reactive_state/rust/Cargo.toml && cargo test --manifest-path examples/4_cross_process_frame/rust/Cargo.toml && cargo test --manifest-path examples/5_cross_language_logic/rust/Cargo.toml",
+    "performance:bench": "vitest bench examples/1_cross_language_map_filter_scan/7_pipeline.bench.ts",
+    "performance:rust": "cargo bench --manifest-path examples/1_cross_language_map_filter_scan/rust/Cargo.toml",
+    "generate": "tsx scripts/1_generateAutomations.ts",
+    "generate:check": "tsx scripts/1_generateAutomations.ts --check && node scripts/2_checkGeneratedHeaders.mjs",
+    "typespec:check": "tsp compile spec/0_main.tsp --no-emit",
+    "typecheck": "tsgo --noEmit",
+    "test": "vitest run && vitest run --config vitest.browser.config.ts",
+    "test:ui": "vitest --ui",
+    "test:browser": "vitest --config vitest.browser.config.ts"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@hafley66/signals": "^0.0.2",
+    "@mui/icons-material": "^7.3.6",
+    "@mui/material": "^7.3.6",
+    "@rjsf/core": "^6.7.0",
+    "@rjsf/mui": "^6.7.0",
+    "@rjsf/utils": "^6.7.0",
+    "@rjsf/validator-ajv8": "^6.7.0",
+    "json-logic-js": "^2.0.5",
+    "jsonata": "^2.2.0",
+    "zod": "^4.4.3"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "rxjs": "^7.8.0"
+  },
+  "devDependencies": {
+    "@hafley66/alloy-rs": "^0.1.0",
+    "@types/json-logic-js": "^2.0.8",
+    "@types/node": "^25.0.8",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@typespec/compiler": "^1.14.0",
+    "@typespec/http": "^1.14.0",
+    "@typespec/json-schema": "^1.14.0",
+    "@typespec/openapi3": "^1.14.0",
+    "@vitejs/plugin-react": "^5.1.2",
+    "@vitest/browser-playwright": "4.0.16",
+    "ajv": "^8.20.0",
+    "json-schema-to-zod": "^2.8.1",
+    "playwright": "^1.57.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "rxjs": "^7.8.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.7.3",
+    "vite": "^7.3.0",
+    "vitest": "^4.0.16"
+  },
+  "license": "MIT"
+}
