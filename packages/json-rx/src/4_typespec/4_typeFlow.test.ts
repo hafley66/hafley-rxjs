@@ -82,31 +82,6 @@ describe('TypeSpec Rx type-flow experiments', () => {
           "message": "Function declarations are an experimental feature that may change in the future. Use with caution and consider providing feedback to the TypeSpec team.",
           "severity": "warning",
         },
-        {
-          "code": "experimental-feature",
-          "message": "Function declarations are an experimental feature that may change in the future. Use with caution and consider providing feedback to the TypeSpec team.",
-          "severity": "warning",
-        },
-        {
-          "code": "experimental-feature",
-          "message": "Function declarations are an experimental feature that may change in the future. Use with caution and consider providing feedback to the TypeSpec team.",
-          "severity": "warning",
-        },
-        {
-          "code": "invalid-ref",
-          "message": "Model doesn't have meta property body",
-          "severity": "error",
-        },
-        {
-          "code": "invalid-ref",
-          "message": "Model doesn't have meta property body",
-          "severity": "error",
-        },
-        {
-          "code": "function-return",
-          "message": "Implementation of 'fn multiply' returned type 'JsonRxExperiment.Flow<JsonRxExperiment.Reading>', which is not assignable to the declared return type 'int32'.",
-          "severity": "error",
-        },
       ]
     `)
   })
