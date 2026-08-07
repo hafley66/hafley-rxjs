@@ -1,6 +1,6 @@
 {
   "name": "@hafley66/react-dock-and-flow",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Dockview and React Flow workspace driven by RxJS and Hafley signals",
   "type": "module",
   "main": "./dist/index.js",
