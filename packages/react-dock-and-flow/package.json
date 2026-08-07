@@ -1,0 +1,55 @@
+{
+  "name": "@hafley/react-dock-and-flow",
+  "version": "0.0.1",
+  "description": "Dockview and React Flow workspace driven by RxJS and Hafley signals",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "engines": {
+    "node": ">=24"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsgo --noEmit",
+    "check": "biome check src && tsgo --noEmit",
+    "test": "vitest run src",
+    "test:perf": "playwright test -c e2e/0_perfLab.config.ts",
+    "test:ui": "vitest --ui"
+  },
+  "dependencies": {
+    "@hafley/rxjs-ext": "workspace:*",
+    "@hafley66/signals": "workspace:*"
+  },
+  "peerDependencies": {
+    "@xyflow/react": ">=12.0.0",
+    "dockview": ">=6.0.0",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "rxjs": ">=7.8.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.11",
+    "@playwright/test": "^1.61.1",
+    "@typescript/native-preview": "7.0.0-dev.20251226.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@xyflow/react": "^12.11.2",
+    "dockview": "^6.6.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "rxjs": "^7.8.2",
+    "vite": "^8.0.0",
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^4.0.16"
+  },
+  "keywords": ["dockview", "react-flow", "rxjs", "signals"],
+  "license": "MIT"
+}
