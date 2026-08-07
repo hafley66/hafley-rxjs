@@ -224,9 +224,6 @@ importers:
 
   packages/react-dock-and-flow:
     dependencies:
-      '@hafley/rxjs-ext':
-        specifier: workspace:*
-        version: link:../rxjs-ext
       '@hafley66/signals':
         specifier: workspace:*
         version: link:../signals

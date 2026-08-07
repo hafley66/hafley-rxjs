@@ -1,5 +1,5 @@
 {
-  "name": "@hafley/react-dock-and-flow",
+  "name": "@hafley66/react-dock-and-flow",
   "version": "0.0.1",
   "description": "Dockview and React Flow workspace driven by RxJS and Hafley signals",
   "type": "module",
@@ -25,7 +25,6 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
-    "@hafley/rxjs-ext": "workspace:*",
     "@hafley66/signals": "workspace:*"
   },
   "peerDependencies": {
