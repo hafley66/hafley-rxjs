@@ -1,0 +1,44 @@
+{
+  "name": "@hafley66/grid",
+  "version": "0.0.1",
+  "description": "Signal-driven TanStack v9 grid for hafley-rxjs",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/3_react.d.ts",
+      "import": "./dist/3_react.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsgo --noEmit",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@hafley66/signals": "workspace:*",
+    "@tanstack/react-table": "^9.1.0",
+    "lodash": "^4.17.21"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true }
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.16",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.16",
+    "vite": "^7.3.0"
+  },
+  "keywords": ["rxjs", "signals", "tanstack", "table", "grid", "reactive"],
+  "license": "MIT"
+}
