@@ -1,7 +1,15 @@
 import { SignalReact } from "@hafley66/signals/react"
-import { Background, Controls, MiniMap, type NodeChange, ReactFlow } from "@xyflow/react"
+import {
+  Background,
+  Controls,
+  MiniMap,
+  type NodeChange,
+  type NodeProps,
+  type OnNodesChange,
+  ReactFlow,
+} from "@xyflow/react"
 import { DockviewReact, type DockviewReadyEvent, type IDockviewPanelProps, themeDark } from "dockview"
-import { createElement, type FunctionComponent, useCallback, useRef } from "react"
+import { createElement, type FunctionComponent, useCallback, useEffect, useId, useMemo, useRef } from "react"
 import type { DockFlowNode, DockFlowNodeComponent } from "./0_types.js"
 import type { DockAndFlowModel } from "./1_model.js"
 import "./3_style.css"
@@ -13,27 +21,50 @@ export type DockAndFlowProps = {
   className?: string
 }
 
-type CanvasParams = {
+type DockAndFlowContextValue = {
   model: DockAndFlowModel
   node: DockFlowNodeComponent
-}
-
-type DetailsParams = {
   details: FunctionComponent<IDockviewPanelProps>
 }
 
-const CanvasPanel = SignalReact(function CanvasPanel({ params }: IDockviewPanelProps<CanvasParams>) {
-  const nodes = params.model.state.nodes.$()
+type WorkspaceParams = { workspaceId: string }
+
+const workspaces = new Map<string, DockAndFlowContextValue>()
+
+function workspace(workspaceId: string): DockAndFlowContextValue {
+  const value = workspaces.get(workspaceId)
+  if (!value) throw new Error(`DockAndFlow workspace ${workspaceId} is not registered`)
+  return value
+}
+
+const CanvasPanel = SignalReact(function CanvasPanel({ params }: IDockviewPanelProps<WorkspaceParams>) {
+  const { model, node: NodeView } = workspace(params.workspaceId)
+  const nodes = model.state.nodes.$()
+  const renderNodes = useMemo(
+    () =>
+      nodes.map(node => ({
+        ...node,
+        type: "default",
+        data: {
+          ...node.data,
+          label: createElement(NodeView, { id: node.id, data: node.data } as NodeProps<DockFlowNode>),
+        },
+      })),
+    [NodeView, nodes],
+  )
   const changed = useCallback(
-    (changes: NodeChange<DockFlowNode>[]) => params.model.events.$({ type: "nodes-changed", changes }),
-    [params.model.events.$],
+    (changes: NodeChange<DockFlowNode>[]) => {
+      const controlled = changes.filter(change => change.type !== "dimensions")
+      if (controlled.length) model.events.$({ type: "nodes-changed", changes: controlled })
+    },
+    [model.events.$],
   )
   return (
     <ReactFlow
-      nodes={nodes}
+      nodes={renderNodes}
       edges={[]}
-      nodeTypes={{ dockFlowPanel: params.node }}
-      onNodesChange={changed}
+      onNodesChange={changed as OnNodesChange}
+      fitView
       onlyRenderVisibleElements
     >
       <Background />
@@ -43,8 +74,8 @@ const CanvasPanel = SignalReact(function CanvasPanel({ params }: IDockviewPanelP
   )
 })
 
-function DetailsPanel({ params }: IDockviewPanelProps<DetailsParams>) {
-  return createElement(params.details)
+function DetailsPanel({ params }: IDockviewPanelProps<WorkspaceParams>) {
+  return createElement(workspace(params.workspaceId).details)
 }
 
 const components = { canvas: CanvasPanel, details: DetailsPanel }
@@ -53,7 +84,10 @@ const DefaultDetails = () => <div className="react-dock-and-flow__details">Selec
 
 export function DockAndFlow({ model, node, details, className = "react-dock-and-flow" }: DockAndFlowProps) {
   const initialized = useRef(false)
+  const workspaceId = useId()
   const NodeDetails = details ?? DefaultDetails
+  workspaces.set(workspaceId, { model, node, details: NodeDetails })
+  useEffect(() => () => void workspaces.delete(workspaceId), [workspaceId])
   const ready = useCallback(
     (event: DockviewReadyEvent) => {
       if (initialized.current) return
@@ -62,18 +96,18 @@ export function DockAndFlow({ model, node, details, className = "react-dock-and-
         id: "canvas",
         component: "canvas",
         title: "Canvas",
-        params: { model, node },
+        params: { workspaceId },
       })
       event.api.addPanel({
         id: "details",
         component: "details",
         title: "Details",
-        params: { details: NodeDetails },
+        params: { workspaceId },
         position: { referencePanel: canvas, direction: "right" },
       })
       model.events.$({ type: "layout-created", dockPanels: event.api.panels.length })
     },
-    [model, node, NodeDetails],
+    [model, workspaceId],
   )
   return <DockviewReact className={className} theme={themeDark} components={components} onReady={ready} />
 }
