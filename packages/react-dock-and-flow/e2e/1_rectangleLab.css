@@ -1,0 +1,4 @@
+html, body, #root { width: 100%; height: 100%; margin: 0; }
+.rectangle-lab { display: grid; grid-template-rows: 38px 1fr; width: 100%; height: 100%; background: #0d1016; }
+.rectangle-lab nav { display: flex; gap: 6px; align-items: center; padding: 0 8px; border-bottom: 1px solid #343c4d; }
+.rectangle-lab button { color: #eee; background: #272e3c; border: 1px solid #58647d; padding: 4px 10px; }

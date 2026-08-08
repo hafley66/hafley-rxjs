@@ -5,7 +5,7 @@ Dockview and React Flow composition driven by RxJS and `@hafley66/signals`.
 ## Install
 
 ```sh
-npm install @hafley66/react-dock-and-flow dockview @xyflow/react react react-dom rxjs
+npm install @hafley66/react-dock-and-flow dockview @xyflow/react cytoscape react react-dom rxjs
 ```
 
 Import the package stylesheet once:
@@ -73,6 +73,50 @@ Additional event observables can be merged into the model:
 const model = createDockAndFlowModel(100, [externalEvents$])
 ```
 
+## Rectangle journal
+
+`RectangleCanvas` projects renderer-neutral rectangle state into React Flow. Its
+graph content adapter mounts Cytoscape inside a rectangle while session content
+stays ordinary DOM.
+
+```tsx
+import { createRectangleModel, RectangleCanvas } from "@hafley66/react-dock-and-flow"
+
+const model = createRectangleModel([
+  {
+    id: "session",
+    title: "Agent session",
+    position: { x: 20, y: 20 },
+    size: { width: 320, height: 220 },
+    z: 1,
+    content: { kind: "session", lines: ["src/index.ts", "README.md"] },
+  },
+  {
+    id: "graph",
+    title: "Query graph",
+    position: { x: 400, y: 20 },
+    size: { width: 480, height: 300 },
+    z: 2,
+    content: {
+      kind: "graph",
+      nodes: ["source", "compile", "run"],
+      edges: [["source", "compile"], ["compile", "run"]],
+    },
+  },
+])
+
+export function Canvas() {
+  return <RectangleCanvas model={model} />
+}
+
+model.events.$({ type: "undo" })
+model.events.$({ type: "redo" })
+```
+
+The canonical history is `{ events, cursor }`. Undo and redo move the cursor;
+adding an event after undo truncates the abandoned future. React Flow and
+Cytoscape remain projections of the replayed rectangle state.
+
 ## Verification
 
 ```sh
@@ -82,7 +126,9 @@ pnpm --filter @hafley66/react-dock-and-flow build
 pnpm --filter @hafley66/react-dock-and-flow test:perf
 ```
 
-The Playwright receipt exercises 500 logical React Flow nodes, verifies viewport culling, and verifies panel state retention.
+The Playwright receipts exercise 500 logical React Flow nodes, verify viewport
+culling and panel state retention, and compose DOM plus Cytoscape rectangle
+content with movement and undo.
 
 ## License
 

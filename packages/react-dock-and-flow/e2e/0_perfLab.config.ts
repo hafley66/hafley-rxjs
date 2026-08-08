@@ -5,7 +5,7 @@ const port = 4241
 
 export default defineConfig({
   testDir: ".",
-  testMatch: "0_perfLab.spec.ts",
+  testMatch: ["0_perfLab.spec.ts", "1_rectangleLab.spec.ts"],
   reporter: [["html", { open: "never", outputFolder: "../playwright-report" }], ["list"]],
   use: { baseURL: `http://127.0.0.1:${port}`, trace: "retain-on-failure", ...devices["Desktop Chrome"] },
   webServer: {

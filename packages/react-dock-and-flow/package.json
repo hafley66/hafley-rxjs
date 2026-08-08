@@ -1,6 +1,6 @@
 {
   "name": "@hafley66/react-dock-and-flow",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Dockview and React Flow workspace driven by RxJS and Hafley signals",
   "type": "module",
   "main": "./dist/index.js",
@@ -29,6 +29,7 @@
   },
   "peerDependencies": {
     "@xyflow/react": ">=12.0.0",
+    "cytoscape": ">=3.33.0",
     "dockview": ">=6.0.0",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
@@ -42,6 +43,8 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@xyflow/react": "^12.11.2",
+    "@types/cytoscape": "^3.21.9",
+    "cytoscape": "^3.33.1",
     "dockview": "^6.6.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
