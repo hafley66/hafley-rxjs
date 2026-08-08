@@ -1,3 +1,5 @@
+import type { z } from "zod"
+import type { ObjectPathsOf } from "@hafley66/path"
 import type {
   ColumnDef,
   OnChangeFn,
@@ -19,15 +21,22 @@ export type GridEvent =
   | { type: "sort"; sorting: SortingState }
   | { type: "page"; pagination: PaginationState }
 
+export type ColumnSpec = {
+  header?: string
+  visible?: boolean
+}
+
 export type GridConfig<TData extends RowData> = {
+  schema: z.ZodType<TData>
   rows: Signal<TData[]>
-  columns: ColumnDef<GridFeatures, TData>[]
+  columns?: Partial<Record<ObjectPathsOf<TData> & string, ColumnSpec>>
   getRowId: (row: TData) => string
   mode: GridMode
   state?: Signal<GridState>
 }
 
 export type Grid<TData extends RowData> = {
+  schema: z.ZodType<TData>
   state: Signal<GridState>
   events: Signal<GridEvent | undefined>
   rows: Signal<TData[]>
