@@ -1,0 +1,23 @@
+{
+  "name": "@hafley66/path",
+  "version": "0.0.1",
+  "description": "Typed path templates and path value access",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "pnpm run build && node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
