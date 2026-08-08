@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "./packages/devtool-plugin" },
+    { "path": "./packages/grid" },
     { "path": "./packages/rxjs-ext" },
     { "path": "./packages/rxjsx" },
     { "path": "./packages/signals" }

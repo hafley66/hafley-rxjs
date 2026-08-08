@@ -2,6 +2,8 @@ import { isObservable, Observable } from "rxjs"
 import { createComputedSignal, SignalCreator } from "./1_SignalCreator.js"
 import type { Signal as SignalType } from "./0_types.js"
 
+export type Signal<T, Base extends object = object, Depth extends number = 5> = SignalType<T, Base, Depth>
+
 export type SignalSource<T> = SignalType<T> | Observable<T> | (() => T) | T
 
 export function isSignal<T>(value: unknown): value is SignalType<T> {
