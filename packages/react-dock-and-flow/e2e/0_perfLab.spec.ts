@@ -5,9 +5,10 @@ test("the package culls 500 nodes and retains DOM-sourced panel state", async ({
   await expect(page.locator(".dv-tab")).toHaveCount(2)
   await expect(page.getByTestId("details-panel")).toBeVisible()
 
-  const input = page.getByLabel("Panel 1 input")
+  const input = page.getByTestId("live-panel").first().getByRole("textbox")
+  const panelId = decodeURIComponent((await input.getAttribute("id"))!.split("/")[3])
   await input.fill("retained through package state")
-  await expect.poll(() => page.evaluate(() => window.__dockFlowPerf.state.$().values["panel-0"]))
+  await expect.poll(() => page.evaluate(id => window.__dockFlowPerf.state.$().values[id], panelId))
     .toBe("retained through package state")
 
   await page.getByRole("button", { name: "500 nodes" }).click()
@@ -21,4 +22,3 @@ test("the package culls 500 nodes and retains DOM-sourced panel state", async ({
   })
   await page.screenshot({ path: "test-results/react-dock-and-flow-perf.png", fullPage: true })
 })
-

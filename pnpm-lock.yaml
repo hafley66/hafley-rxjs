@@ -71,7 +71,7 @@ importers:
         version: 13.0.0
       vite-tsconfig-paths:
         specifier: ^6.0.4
-        version: 6.0.4(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(typescript@5.9.3)
+        version: 6.0.4(typescript@5.9.3)(vite@8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))
     devDependencies:
       '@testing-library/dom':
         specifier: ^10.4.1
@@ -96,13 +96,13 @@ importers:
         version: 19.2.3(@types/react@19.2.8)
       '@vitejs/plugin-react':
         specifier: ^5.1.2
-        version: 5.1.2(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))
+        version: 5.1.2(vite@8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))
       '@vitest/browser':
         specifier: ^4.0.16
-        version: 4.0.17(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)
+        version: 4.0.17(vite@8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)
       '@vitest/browser-playwright':
         specifier: ^4.0.16
-        version: 4.0.17(playwright@1.57.0)(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)
+        version: 4.0.17(playwright@1.57.0)(vite@8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)
       '@vitest/ui':
         specifier: ^4.0.16
         version: 4.0.16(vitest@4.0.16)
@@ -225,12 +225,15 @@ importers:
   packages/react-dock-and-flow:
     dependencies:
       '@hafley66/signals':
-        specifier: workspace:*
-        version: link:../signals
+        specifier: 0.0.2
+        version: 0.0.2(react@19.2.8)
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.3.11
         version: 2.3.11
+      '@hafley/rxjs-ext':
+        specifier: workspace:*
+        version: link:../rxjs-ext
       '@playwright/test':
         specifier: ^1.61.1
         version: 1.62.1
@@ -4198,6 +4201,14 @@ snapshots:
     optionalDependencies:
       react: 19.2.3
 
+  '@hafley66/signals@0.0.2(react@19.2.8)':
+    dependencies:
+      immer: 10.2.0
+      lodash: 4.18.1
+      rxjs: 7.8.2
+    optionalDependencies:
+      react: 19.2.8
+
   '@inquirer/ansi@2.0.7': {}
 
   '@inquirer/checkbox@5.2.1(@types/node@25.0.8)':
@@ -5135,18 +5146,6 @@ snapshots:
       '@typespec/compiler': 1.14.0(@types/node@25.0.8)
       '@typespec/http': 1.14.0(@typespec/compiler@1.14.0(@types/node@25.0.8))
 
-  '@vitejs/plugin-react@5.1.2(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))':
-    dependencies:
-      '@babel/core': 7.28.6
-      '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.6)
-      '@babel/plugin-transform-react-jsx-source': 7.27.1(@babel/core@7.28.6)
-      '@rolldown/pluginutils': 1.0.0-beta.53
-      '@types/babel__core': 7.20.5
-      react-refresh: 0.18.0
-      vite: rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0)
-    transitivePeerDependencies:
-      - supports-color
-
   '@vitejs/plugin-react@5.1.2(vite@7.3.0(@types/node@25.0.8)(lightningcss@1.33.0)(tsx@4.23.1)(yaml@2.9.0))':
     dependencies:
       '@babel/core': 7.28.6
@@ -5156,6 +5155,18 @@ snapshots:
       '@types/babel__core': 7.20.5
       react-refresh: 0.18.0
       vite: 7.3.0(@types/node@25.0.8)(lightningcss@1.33.0)(tsx@4.23.1)(yaml@2.9.0)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@vitejs/plugin-react@5.1.2(vite@8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))':
+    dependencies:
+      '@babel/core': 7.28.6
+      '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.6)
+      '@babel/plugin-transform-react-jsx-source': 7.27.1(@babel/core@7.28.6)
+      '@rolldown/pluginutils': 1.0.0-beta.53
+      '@types/babel__core': 7.20.5
+      react-refresh: 0.18.0
+      vite: 8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -5172,10 +5183,10 @@ snapshots:
       - utf-8-validate
       - vite
 
-  '@vitest/browser-playwright@4.0.16(playwright@1.62.1)(vite@8.2.1(@types/node@25.0.8)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)':
+  '@vitest/browser-playwright@4.0.16(playwright@1.62.1)(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)':
     dependencies:
-      '@vitest/browser': 4.0.16(vite@8.2.1(@types/node@25.0.8)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)
-      '@vitest/mocker': 4.0.16(vite@8.2.1(@types/node@25.0.8)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))
+      '@vitest/browser': 4.0.16(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)
+      '@vitest/mocker': 4.0.16(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))
       playwright: 1.62.1
       tinyrainbow: 3.0.3
       vitest: 4.0.16(@types/node@25.0.8)(@vitest/browser-playwright@4.0.16)(@vitest/ui@4.0.16)(jsdom@26.1.0)(lightningcss@1.33.0)(tsx@4.23.1)(yaml@2.9.0)
@@ -5186,10 +5197,10 @@ snapshots:
       - vite
     optional: true
 
-  '@vitest/browser-playwright@4.0.17(playwright@1.57.0)(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)':
+  '@vitest/browser-playwright@4.0.17(playwright@1.57.0)(vite@8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)':
     dependencies:
-      '@vitest/browser': 4.0.17(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)
-      '@vitest/mocker': 4.0.17(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))
+      '@vitest/browser': 4.0.17(vite@8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)
+      '@vitest/mocker': 4.0.17(vite@8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))
       playwright: 1.57.0
       tinyrainbow: 3.0.3
       vitest: 4.0.16(@types/node@25.0.8)(@vitest/browser-playwright@4.0.17)(@vitest/ui@4.0.16)(jsdom@26.1.0)(lightningcss@1.33.0)(tsx@4.23.1)(yaml@2.9.0)
@@ -5198,6 +5209,24 @@ snapshots:
       - msw
       - utf-8-validate
       - vite
+
+  '@vitest/browser@4.0.16(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)':
+    dependencies:
+      '@vitest/mocker': 4.0.16(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))
+      '@vitest/utils': 4.0.16
+      magic-string: 0.30.21
+      pixelmatch: 7.1.0
+      pngjs: 7.0.0
+      sirv: 3.0.2
+      tinyrainbow: 3.0.3
+      vitest: 4.0.16(@types/node@25.0.8)(@vitest/browser-playwright@4.0.16)(@vitest/ui@4.0.16)(jsdom@26.1.0)(lightningcss@1.33.0)(tsx@4.23.1)(yaml@2.9.0)
+      ws: 8.19.0
+    transitivePeerDependencies:
+      - bufferutil
+      - msw
+      - utf-8-validate
+      - vite
+    optional: true
 
   '@vitest/browser@4.0.16(vite@7.3.0(@types/node@25.0.8)(lightningcss@1.33.0)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)':
     dependencies:
@@ -5216,27 +5245,9 @@ snapshots:
       - utf-8-validate
       - vite
 
-  '@vitest/browser@4.0.16(vite@8.2.1(@types/node@25.0.8)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)':
+  '@vitest/browser@4.0.17(vite@8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)':
     dependencies:
-      '@vitest/mocker': 4.0.16(vite@8.2.1(@types/node@25.0.8)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))
-      '@vitest/utils': 4.0.16
-      magic-string: 0.30.21
-      pixelmatch: 7.1.0
-      pngjs: 7.0.0
-      sirv: 3.0.2
-      tinyrainbow: 3.0.3
-      vitest: 4.0.16(@types/node@25.0.8)(@vitest/browser-playwright@4.0.16)(@vitest/ui@4.0.16)(jsdom@26.1.0)(lightningcss@1.33.0)(tsx@4.23.1)(yaml@2.9.0)
-      ws: 8.19.0
-    transitivePeerDependencies:
-      - bufferutil
-      - msw
-      - utf-8-validate
-      - vite
-    optional: true
-
-  '@vitest/browser@4.0.17(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)':
-    dependencies:
-      '@vitest/mocker': 4.0.17(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))
+      '@vitest/mocker': 4.0.17(vite@8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))
       '@vitest/utils': 4.0.17
       magic-string: 0.30.21
       pixelmatch: 7.1.0
@@ -5260,6 +5271,15 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.0.3
 
+  '@vitest/mocker@4.0.16(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))':
+    dependencies:
+      '@vitest/spy': 4.0.16
+      estree-walker: 3.0.3
+      magic-string: 0.30.21
+    optionalDependencies:
+      vite: rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0)
+    optional: true
+
   '@vitest/mocker@4.0.16(vite@7.3.0(@types/node@25.0.8)(lightningcss@1.33.0)(tsx@4.23.1)(yaml@2.9.0))':
     dependencies:
       '@vitest/spy': 4.0.16
@@ -5268,22 +5288,13 @@ snapshots:
     optionalDependencies:
       vite: 7.3.0(@types/node@25.0.8)(lightningcss@1.33.0)(tsx@4.23.1)(yaml@2.9.0)
 
-  '@vitest/mocker@4.0.16(vite@8.2.1(@types/node@25.0.8)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))':
-    dependencies:
-      '@vitest/spy': 4.0.16
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      vite: 8.2.1(@types/node@25.0.8)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0)
-    optional: true
-
-  '@vitest/mocker@4.0.17(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))':
+  '@vitest/mocker@4.0.17(vite@8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))':
     dependencies:
       '@vitest/spy': 4.0.17
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0)
+      vite: 8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0)
 
   '@vitest/pretty-format@4.0.16':
     dependencies:
@@ -6685,13 +6696,13 @@ snapshots:
       - rollup
       - supports-color
 
-  vite-tsconfig-paths@6.0.4(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(typescript@5.9.3):
+  vite-tsconfig-paths@6.0.4(typescript@5.9.3)(vite@8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0)):
     dependencies:
       debug: 4.4.3
       globrex: 0.1.2
       tsconfck: 3.1.6(typescript@5.9.3)
     optionalDependencies:
-      vite: rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0)
+      vite: 8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0)
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -6708,6 +6719,20 @@ snapshots:
       '@types/node': 25.0.8
       fsevents: 2.3.3
       lightningcss: 1.33.0
+      tsx: 4.23.1
+      yaml: 2.9.0
+
+  vite@8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0):
+    dependencies:
+      lightningcss: 1.33.0
+      picomatch: 4.0.5
+      postcss: 8.5.26
+      rolldown: 1.2.3
+      tinyglobby: 0.2.17
+    optionalDependencies:
+      '@types/node': 25.0.8
+      esbuild: 0.27.2
+      fsevents: 2.3.3
       tsx: 4.23.1
       yaml: 2.9.0
 
@@ -6749,7 +6774,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 25.0.8
-      '@vitest/browser-playwright': 4.0.16(playwright@1.62.1)(vite@8.2.1(@types/node@25.0.8)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)
+      '@vitest/browser-playwright': 4.0.16(playwright@1.62.1)(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)
       '@vitest/ui': 4.0.16(vitest@4.0.16)
       jsdom: 26.1.0
     transitivePeerDependencies:
@@ -6789,7 +6814,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 25.0.8
-      '@vitest/browser-playwright': 4.0.17(playwright@1.57.0)(rolldown-vite@7.3.0(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)
+      '@vitest/browser-playwright': 4.0.17(playwright@1.57.0)(vite@8.2.1(@types/node@25.0.8)(esbuild@0.27.2)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.0.16)
       '@vitest/ui': 4.0.16(vitest@4.0.16)
       jsdom: 26.1.0
     transitivePeerDependencies:
