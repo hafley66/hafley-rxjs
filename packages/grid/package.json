@@ -24,7 +24,9 @@
   "dependencies": {
     "@hafley66/signals": "workspace:*",
     "@tanstack/react-table": "^9.1.0",
-    "lodash": "^4.17.21"
+    "@hafley66/path": "workspace:*",
+    "lodash": "^4.17.21",
+    "zod": "^3.25.0"
   },
   "peerDependencies": {
     "react": ">=18.0.0"
