@@ -43,7 +43,6 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@xyflow/react": "^12.11.2",
-    "@types/cytoscape": "^3.21.9",
     "cytoscape": "^3.33.1",
     "dockview": "^6.6.1",
     "react": "^19.2.7",
