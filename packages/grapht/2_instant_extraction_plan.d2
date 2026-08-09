@@ -1,0 +1,232 @@
+direction: right
+
+title: |md
+  # Instant extraction plan
+
+  Move reusable graph, trace, Markdown, and live-probe mechanics from Instant into
+  `@hafley66/grapht`. Instant remains a host adapter and fixture application.
+|
+
+network: {
+  label: "0. Session network and trace viewer"
+
+  current: {
+    label: |md
+      ## Current Instant seams
+
+      - `src/plugins/harnessTrace/InTabStrip.tsx` selects table or network mode.
+      - `src/plugins/harnessTrace/4_Waterfall.tsx` renders the network-style timeline.
+      - `src/plugins/harnessTrace/0_types.ts` defines session, parent, strip, and waterfall rows.
+      - `src/plugins/harnessTrace/0_tree.ts` resolves subagent and dispatch ancestry.
+      - `src/plugins/harnessTrace/0_strip.ts` selects the terminal-local session tree.
+      - `src/plugins/harnessTrace/2_join.ts` joins sessions, mail legs, and terminal ownership.
+      - `e2e/waterfall.spec.ts` verifies table/network parity and active/history scopes.
+      - `e2e/harness-trace.spec.ts` verifies nested subagent and dispatch relationships.
+    |
+    shape: document
+  }
+
+  model: {
+    label: ||md
+      ```ts
+      export interface NetworkDocument<Row, Event> {
+        rows: readonly Row[]
+        graph: ProjectionGraph
+        trace: readonly Event[]
+        clock: TraceClock
+      }
+
+      export interface NetworkViewState {
+        mode: "grid" | "graph" | "waterfall" | "sequence"
+        scope: "active" | "history" | "all"
+        selected: EntityId[]
+        expanded: EntityId[]
+        camera?: Camera
+      }
+
+      export interface NetworkProjection<Row, Event> {
+        grid(input: NetworkDocument<Row, Event>): GridProjection<Row>
+        graph(input: NetworkDocument<Row, Event>): ProjectionGraph
+        waterfall(input: NetworkDocument<Row, Event>): WaterfallProjection
+        sequence(input: NetworkDocument<Row, Event>, density: SequenceDensity): SequenceModel
+        marble(input: NetworkDocument<Row, Event>, event: Event): TraceRoute
+      }
+      ```
+    ||
+    shape: document
+  }
+
+  grid: {
+    label: |md
+      ## Canonical row view
+
+      Network entities and trace events use `@hafley66/grid`. The grid owns sorting,
+      filtering, expansion, selection, virtualization, and keyboard navigation. Graph,
+      waterfall, and sequence views consume the same selected row set and stable entity IDs.
+      Switching projection does not rebuild the underlying session/trace model.
+    |
+    shape: document
+  }
+
+  capabilities: {
+    label: |md
+      ## Existing dependency capabilities to record
+
+      - `@hafley66/grid`: row projection and virtualization.
+      - Cytoscape: mutable graph projection, compound nodes, layouts, animation, selection.
+      - XYFlow: React node projection, measured rectangles, custom nodes and edges, viewport.
+      - D2: authored graph/sequence source and SVG geometry carrier.
+      - Browser SVG APIs: transforms, bounds, path length, and sampled points.
+      - RxJS/signals: trace clock, active projection, selection, and derived row state.
+
+      The extraction lane records dependency, API, data-shape, and runtime costs without a
+      qualitative build-versus-buy verdict.
+    |
+    shape: document
+  }
+}
+
+markdown: {
+  label: "1. Markdown document viewer"
+
+  current: {
+    label: |md
+      ## Current Instant seams
+
+      - `src/mdview/model.ts` is the pure section parser and source-slice model.
+      - `src/mdview/ports.ts` is the existing host boundary.
+      - `src/mdview/signals.ts` owns document cache and per-path state.
+      - `src/mdview/MdPanel.tsx` renders the document panel.
+      - `src/mdview/MdExplorer.tsx` renders Markdown file navigation.
+      - `src/mdview/d2.ts` renders D2 fences.
+      - `src/mdview/0_DiagramLightbox.tsx` opens rendered diagrams.
+      - `src/0_markdownTree.ts` adapts parsed headings into the canonical tree grid.
+      - `src/main.ts` installs the host and registers the panel.
+      - `e2e/mdzoom.spec.ts` covers zoom, links, and code-block behavior.
+    |
+    shape: document
+  }
+
+  model: {
+    label: ||md
+      ```ts
+      export interface MarkdownDocument {
+        artifact: ArtifactRevision
+        graph: EntityGraph
+        sections: MarkdownSection[]
+        links: ResolvedLink[]
+        diagrams: EmbeddedDiagram[]
+        diagnostics: Diagnostic[]
+      }
+
+      export interface MarkdownSection {
+        id: EntityId
+        depth: number
+        title: string
+        span: SourceSpan
+        children: EntityId[]
+      }
+
+      export interface EmbeddedDiagram {
+        id: EntityId
+        language: "d2" | "mermaid"
+        source: SourceSpan
+        artifactId: ArtifactId
+        revisionId: RevisionId
+      }
+
+      export interface MarkdownHost {
+        read(source: SourceRef): Promise<string>
+        watch(source: SourceRef): AsyncIterable<ArtifactRevision>
+        open(target: ResolvedLink): void
+        reveal(span: SourceSpan): void
+      }
+      ```
+    ||
+    shape: document
+  }
+
+  boundary: {
+    label: |md
+      ## Package split
+
+      `grapht` owns Markdown parsing, section identity, source spans, links, embedded diagram
+      capture, revision diffs, and framework-free document state. A React adapter may own the
+      first rendered document component. Instant owns filesystem access, Dockview panel
+      registration, native open/reveal behavior, persisted host preferences, and application
+      styling.
+    |
+    shape: document
+  }
+}
+
+probe: {
+  label: "2. Whole-app live probe"
+
+  model: {
+    label: ||md
+      ```ts
+      export type ProbeEvent =
+        | { type: "react.render"; component: string; instance: string; at: number }
+        | { type: "dom.sample"; root: string; nodes: number; at: number }
+        | { type: "artifact.parse"; revisionId: RevisionId; durationMs: number; entities: number }
+        | { type: "diagram.render"; revisionId: RevisionId; durationMs: number; svgNodes: number }
+        | { type: "projection.update"; viewId: ViewId; durationMs: number; changed: number }
+        | { type: "trace.frame"; traceId: TraceId; time: number; active: number }
+
+      export interface ProbeLog {
+        append(event: ProbeEvent): void
+        read(query?: ProbeQuery): readonly ProbeEvent[]
+        subscribe(listener: (events: readonly ProbeEvent[]) => void): () => void
+      }
+
+      export interface ProbeDisplayState {
+        domNodes: number
+        rendersByComponent: ReadonlyMap<string, number>
+        latestDurations: ReadonlyMap<ProbeEvent["type"], number>
+        recent: readonly ProbeEvent[]
+      }
+      ```
+    ||
+    shape: document
+  }
+
+  placement: {
+    label: |md
+      ## Initial display
+
+      Mount a collapsible debugger strip at the bottom of the media viewer. Count DOM nodes
+      within the active tab or explicit probe root. Count committed component renders by
+      stable component/instance identity. The display reads a structured in-memory log and
+      excludes its own rendering from observed component totals. The same display later
+      mounts in Markdown, network, graph, and sequence viewers.
+    |
+    shape: document
+  }
+}
+
+sequence: {
+  label: "3. Extraction order"
+  s0: { label: "0_live probe\nland in Instant, retain reusable boundary" }
+  s1: { label: "1_markdown model\npure parser + sections + links + spans" }
+  s2: { label: "2_diagram embeds\nD2/Mermaid revisions + geometry" }
+  s3: { label: "3_network model\nsessions + relations + trace events" }
+  s4: { label: "4_grid projection\ncanonical rows over network model" }
+  s5: { label: "5_graph projections\nD2/SVG/Cytoscape/XYFlow" }
+  s6: { label: "6_compact sequence\nfolds + density + summaries" }
+  s7: { label: "7_marble playback\ntrace clock + route geometry" }
+  s8: { label: "8_instant adapters\nfilesystem + Dockview + native host" }
+  s0 -> s1 -> s2 -> s3 -> s4 -> s5 -> s6 -> s7 -> s8
+}
+
+network.current -> network.model
+network.model -> network.grid
+network.capabilities -> network.model
+markdown.current -> markdown.model
+markdown.model -> markdown.boundary
+network.model -> probe.model
+markdown.model -> probe.model
+probe.model -> probe.placement
+probe.placement -> sequence.s0
+markdown.boundary -> sequence.s1
+network.grid -> sequence.s4
