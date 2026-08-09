@@ -86,6 +86,60 @@ network: {
   }
 }
 
+rxjs_devtool: {
+  label: "Future consumer: RxJS debugger and devtool"
+
+  model: {
+    label: ||md
+      ```ts
+      export interface ReactiveNetworkDocument extends NetworkDocument<ReactiveRow, ReactiveEvent> {
+        observables: ObservableEntity[]
+        subscriptions: SubscriptionEntity[]
+        operators: OperatorEntity[]
+        schedulers: SchedulerEntity[]
+      }
+
+      export type ReactiveEvent =
+        | { type: "subscribe"; subscription: EntityId; at: number }
+        | { type: "next"; subscription: EntityId; value: unknown; at: number }
+        | { type: "error"; subscription: EntityId; error: unknown; at: number }
+        | { type: "complete"; subscription: EntityId; at: number }
+        | { type: "unsubscribe"; subscription: EntityId; at: number }
+        | { type: "schedule"; scheduler: EntityId; task: EntityId; at: number }
+      ```
+    ||
+    shape: document
+  }
+
+  projections: {
+    label: |md
+      The same network document and stable entity IDs later project RxJS runtime data as:
+
+      - canonical grid rows for observables, subscriptions, operators, and events;
+      - operator/subscription topology in Cytoscape or XYFlow;
+      - subscription lifetimes and emissions in the waterfall;
+      - compact sequence diagrams for subscribe/next/error/complete/unsubscribe ordering;
+      - marble traces moving through operator and subscription edges;
+      - D2 snapshots for saved, diffable debugger states.
+
+      RxJS instrumentation and debugger capture remain outside the initial Instant extraction.
+      `grapht` supplies the network, trace, geometry, revision, and projection vocabulary.
+    |
+    shape: document
+  }
+
+  context: {
+    label: |md
+      Existing adjacent plans:
+
+      - `packages/devtool-plugin/PLAN-2026-07-25-debugger-core.md`
+      - `packages/devtool-plugin/PLAN-2026-07-25-live-visualizer.md`
+      - `packages/devtool-plugin/PLAN-2026-07-26-debugger-core-v2.md`
+    |
+    shape: document
+  }
+}
+
 markdown: {
   label: "1. Markdown document viewer"
 
@@ -222,6 +276,9 @@ sequence: {
 network.current -> network.model
 network.model -> network.grid
 network.capabilities -> network.model
+network.model -> rxjs_devtool.model
+rxjs_devtool.model -> rxjs_devtool.projections
+rxjs_devtool.context -> rxjs_devtool.model
 markdown.current -> markdown.model
 markdown.model -> markdown.boundary
 network.model -> probe.model

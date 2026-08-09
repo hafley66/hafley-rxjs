@@ -683,6 +683,90 @@ storage: {
   }
 }
 
+camera_annotations: {
+  label: "16. Camera-aware organization and editable content"
+
+  model: {
+    label: ||md
+      ```ts
+      export type AnnotationRole =
+        | "section-title"
+        | "section-toc"
+        | "node-label"
+        | "code-block"
+        | "sequence-phase"
+        | "sequence-participant"
+
+      export interface CameraState {
+        world: Rect
+        screen: Rect
+        zoom: number
+      }
+
+      export interface SectionAnnotation {
+        entity: EntityId
+        role: "section-title" | "section-toc"
+        bounds: Rect
+        text: string
+        screenFontPx: number
+        anchor: "top-left" | "top-center"
+      }
+
+      export interface AnnotationPlacement {
+        entity: EntityId
+        screen: Point
+        visible: boolean
+        clampedTo: "section" | "viewport" | "section-and-viewport"
+      }
+
+      export interface EditableCodeBlock {
+        entity: EntityId
+        artifact: ArtifactId
+        revision: RevisionId
+        language?: string
+        sourceSpan?: SourceSpan
+      }
+
+      export interface SequenceCameraContext {
+        sequence: EntityId
+        visiblePhase?: EntityId
+        participants: readonly EntityId[]
+        participantColumns: ReadonlyMap<EntityId, Interval>
+        visibleTime: Interval
+      }
+
+      export interface SequenceAnnotationProjector {
+        projectParticipants(camera: CameraState, context: SequenceCameraContext):
+          readonly AnnotationPlacement[]
+        projectPhase(camera: CameraState, context: SequenceCameraContext):
+          AnnotationPlacement | undefined
+      }
+
+      export interface AnnotationProjector {
+        project(camera: CameraState, sections: readonly SectionAnnotation[]):
+          readonly AnnotationPlacement[]
+      }
+      ```
+
+      D2 classes or metadata identify organizational section titles. Their visual projection
+      uses constant screen-space font sizes and clamps headings to the intersection of each
+      section bounding box and the visible viewport. A section TOC is another projection over
+      the same identities and camera state.
+
+      Code blocks retain artifact and revision identity. Their editor surface can use Monaco
+      while D2, SVG, Canvas, and graph renderers display a projection. Editing creates a source
+      revision and re-enters the normal parse, render, geometry, and diff pipeline.
+
+      Large sequence projections keep participant names at a constant screen-space size and
+      pin them to the visible edge of their participant columns. Phase or section labels remain
+      pinned to the visible time interval while their source interval intersects the viewport.
+      The pinned labels are projections over participant, phase, and interval identities; the
+      authored sequence and its renderer geometry remain unchanged.
+    ||
+    shape: document
+  }
+}
+
 foundation.ids -> capture.types
 foundation.source -> capture.types
 capture.types -> structure.parser
@@ -717,3 +801,8 @@ interaction.commands -> runtime.app
 sprefa.boundary -> runtime.app
 runtime.app -> lifetimes.types
 runtime.app -> storage.rules
+render.geometry -> camera_annotations.model
+projection.types -> camera_annotations.model
+placement.types -> camera_annotations.model
+camera_annotations.model -> interaction.commands: "edit code source"
+sequence.model -> camera_annotations.model: "participants, phases, time intervals"
