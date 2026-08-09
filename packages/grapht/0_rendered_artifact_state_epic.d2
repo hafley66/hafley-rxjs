@@ -1,0 +1,512 @@
+direction: right
+
+title: |md
+  # Rendered artifact state epic
+
+  Parse Markdown and code-shaped AI output, retain addressable structure, render D2 or
+  Mermaid to SVG, project the same entities into Cytoscape or XYFlow, and track every
+  state through source revisions and human layout edits.
+|
+
+legend: {
+  label: "Legend / enforced schema"
+  shape: rectangle
+  style.fill: "#f8f5ec"
+  source: "authoritative or captured input"
+  state: "durable normalized state"
+  projection: "derived renderer input"
+  view: "interactive UI"
+  event: "ordered mutation"
+  cache: "rebuildable artifact"
+}
+
+goal: {
+  label: |md
+    ## Goal
+
+    Any Markdown, code, D2, Mermaid, SVG, table, or AI message can become an addressable
+    artifact graph. D2 file edits from Git are the first input fixture. The same mechanism
+    later accepts automatically captured D2 fences and structured overrides emitted in AI
+    messages.
+
+    Resource identity and placement identity remain separate. A node can retain its entity
+    identity while moving between Dockview, a rectangular grid, XYFlow, Cytoscape, an SVG
+    document, or a detached window.
+  |
+  shape: document
+  style.fill: "#e8f1ff"
+}
+
+inputs: {
+  label: "0. Inputs"
+  git: {
+    label: |md
+      ### Git revision fixture
+
+      - commit, tree, blob, path
+      - ordered D2 file revisions
+      - rename and deletion events
+      - timestamps are playback metadata
+      - content identity comes from hashes and parsed IDs
+    |
+    shape: document
+  }
+  scrape: {
+    label: |md
+      ### Captured code fences
+
+      Cache every scrapeable fenced block with message ID, ordinal, language, optional
+      fence name, source offsets, and content hash. Initial languages: `d2`, `mermaid`,
+      `svg`, `json`, and `jsoncanvas`.
+    |
+    shape: document
+  }
+  markdown: {
+    label: |md
+      ### Markdown and code-shaped output
+
+      Parse headings, lists, tables, links, code fences, symbols, file paths, and explicit
+      IDs. Preserve byte spans and source text so a generated graph always points back to
+      exact material.
+    |
+    shape: document
+  }
+  override_example: {
+    label: |md
+      ### Future structured override examples
+
+      ```json
+      {"op":"node.patch","artifact":"board:queue","entity":"worker.parse","set":{"label":"Parser"}}
+      {"op":"edge.patch","artifact":"board:queue","entity":"parse->render","set":{"class":"hot"}}
+      {"op":"placement.move","view":"canvas:main","entity":"worker.parse","x":840,"y":220}
+      ```
+
+      These examples reserve an addressable output shape. Message parsing and authority
+      rules are handled separately.
+    |
+    shape: code
+    style.fill: "#fff4dc"
+  }
+}
+
+capture: {
+  label: "1. Capture and identity"
+  artifact: {
+    label: |md
+      ### Artifact identity
+
+      ```ts
+      type ArtifactId = string
+      type RevisionId = string
+      type EntityId = string
+      type ViewId = string
+      ```
+
+      Artifact IDs address a logical board or document. Revision IDs address immutable
+      source states. Entity IDs survive revisions. View IDs address mutable placements.
+    |
+    shape: document
+  }
+  revision: {
+    label: |md
+      ### Revision record
+
+      ```ts
+      type ArtifactRevision = {
+        artifactId: ArtifactId
+        revisionId: RevisionId
+        parentRevisionIds: RevisionId[]
+        source: SourceRef
+        contentHash: string
+        capturedAt: string
+      }
+      ```
+    |
+    shape: document
+  }
+  address: {
+    label: |md
+      ### Structural address
+
+      Prefer explicit D2 dotted IDs or authored IDs. Fallback addresses combine structural
+      kind, ancestor heading path, fence name or ordinal, source span, and a content
+      fingerprint. Source spans locate text but do not serve as persistent identity.
+    |
+    shape: document
+  }
+}
+
+parse: {
+  label: "2. Parse inward"
+  d2: {
+    label: |md
+      ### D2
+
+      Preserve dotted IDs, containers, classes, labels, shapes, links, edges, and source
+      spans. Rendered SVG group classes currently carry base64-encoded dotted IDs.
+    |
+    shape: document
+  }
+  mermaid: {
+    label: |md
+      ### Mermaid
+
+      Preserve diagram kind, authored node IDs, subgraphs, edge endpoints, labels, classes,
+      and source spans. Normalize only after retaining the language-specific syntax tree.
+    |
+    shape: document
+  }
+  md_ast: {
+    label: |md
+      ### Markdown structural index
+
+      Build an AST index over headings, blocks, tables, list items, links, fences, symbols,
+      and byte spans. Convert explicit relations into graph edges. Tables can become nodes,
+      attributes, or relations according to a declared projection.
+    |
+    shape: document
+  }
+}
+
+model: {
+  label: "3. Durable normalized state"
+  entity: {
+    label: |md
+      ### Entity plane
+
+      ```ts
+      type Entity = {
+        id: EntityId
+        kind: string
+        label?: string
+        attrs: Record<string, unknown>
+        sourceSpans: SourceSpan[]
+      }
+      ```
+    |
+    shape: document
+  }
+  topology: {
+    label: |md
+      ### Topology plane
+
+      Nodes, typed edges, containment, groups, references, source provenance, and revision
+      membership. Parallel edges receive stable IDs independent of geometry.
+    |
+    shape: document
+  }
+  placement: {
+    label: |md
+      ### Placement plane
+
+      ```ts
+      type Placement = {
+        viewId: ViewId
+        entityId: EntityId
+        mode: PlacementMode
+        rect?: { x: number; y: number; width: number; height: number }
+        z?: number
+        parentViewId?: ViewId
+      }
+      ```
+
+      `PlacementMode` enumerates `dock`, `grid`, `canvas`, `window`, and `svg`.
+
+      Human movement writes placement events. It does not rewrite D2 topology unless an
+      explicit source-edit command requests that conversion.
+    |
+    shape: document
+  }
+  journal: {
+    label: |md
+      ### Event journal
+
+      Append source revisions, parsed entity diffs, placement changes, selection, camera,
+      panel composition, overrides, undo, and redo. Fold events into current state and retain
+      revision-addressable snapshots or checkpoints.
+    |
+    shape: stored_data
+  }
+}
+
+render: {
+  label: "4. Render outward"
+  language: {
+    label: |md
+      ### Language renderer
+
+      D2 or Mermaid source plus renderer version, layout engine, theme, fonts, and options.
+      Cache key: source hash plus every render-affecting option.
+    |
+    shape: rectangle
+  }
+  svg: {
+    label: |md
+      ### SVG artifact
+
+      Retain the complete SVG, `viewBox`, element transforms, paths, bounds, and source ID
+      mapping. SVG is both a display artifact and a geometry carrier.
+    |
+    shape: document
+  }
+  geometry: {
+    label: |md
+      ### Geometry extraction
+
+      Normalize nested transforms into world coordinates. Extract node rectangles, centers,
+      ports, label boxes, edge paths, path lengths, and container bounds. Map every geometry
+      record back to an entity ID.
+    |
+    shape: rectangle
+  }
+  projection: {
+    label: |md
+      ### Interactive projections
+
+      - SVG document viewer retains renderer output exactly.
+      - Cytoscape receives nodes, edges, and preset positions.
+      - XYFlow receives custom nodes, handles, edges, and viewport state.
+      - Dockview and rectangular grids host any of these views as panels.
+    |
+    shape: document
+  }
+}
+
+diff: {
+  label: "5. Diff and animate"
+  keyed: {
+    label: |md
+      ### Keyed entity diff
+
+      For revisions `R0 -> R1`, compute `keep`, `enter`, `exit`, and `update` by entity ID.
+      One diff feeds SVG, Cytoscape, XYFlow, tables, trees, and side panels. Coordinates are
+      observations and never keys.
+    |
+    shape: rectangle
+  }
+  node_motion: {
+    label: |md
+      ### Rectangular motion
+
+      Interpolate translation, size, opacity, color, and transform. CSS transitions, WAAPI,
+      Motion, or renderer-native animation cover matching numeric properties.
+    |
+    shape: rectangle
+  }
+  path_motion: {
+    label: |md
+      ### Path motion
+
+      CSS interpolates `d` only when command structure and point counts are compatible.
+      General edge morphing needs path normalization or resampling. Preserve edge identity,
+      sample both paths by arc length, align direction, then interpolate corresponding points.
+    |
+    shape: rectangle
+  }
+  enter_origin: {
+    label: |md
+      ### Enter and exit geometry
+
+      Derive entry origin from authored or inferred parent, predecessor, group centroid, or
+      nearest retained neighbor. Exit reverses the same rule. Final positions remain those
+      produced by D2/Mermaid or a user placement view.
+    |
+    shape: rectangle
+  }
+  debounce: {
+    label: |md
+      ### Human-time scheduling
+
+      Coalesce edits while the source is changing. Render after a configurable quiet window,
+      cancel superseded work, and retain only requested intermediate revisions. Git playback
+      can render ahead and cache. Interactive dragging updates placement without rerendering
+      source diagrams.
+    |
+    shape: rectangle
+  }
+}
+
+geometry_tools: {
+  label: "Geometry mechanics available from existing platforms and libraries"
+  browser: {
+    label: |md
+      ### Browser SVG APIs
+
+      `getBBox`, `getCTM`, `DOMMatrix`, `DOMPoint`, `getTotalLength`, and `getPointAtLength`
+      provide bounds, transform flattening, and arc-length sampling. `requestAnimationFrame`,
+      Web Animations API, and CSS transitions provide scheduling and interpolation.
+    |
+    shape: document
+  }
+  svg_libs: {
+    label: |md
+      ### SVG path geometry
+
+      `flubber` supplies shape/path interpolation. `d3-interpolate-path` extends paths to
+      compatible command sequences. `svg-path-properties` supplies length and point sampling
+      outside the browser. `svgpath` applies and normalizes path transforms.
+    |
+    shape: document
+  }
+  graph_layout: {
+    label: |md
+      ### Graph geometry
+
+      Cytoscape preset layout consumes extracted D2 positions. Cytoscape layouts and plugins
+      cover animated layout, fCoSE, ELK, Dagre, Cola, compound nodes, and viewport fitting.
+      XYFlow supplies measured node dimensions, coordinate conversion, viewport operations,
+      and custom edge paths.
+    |
+    shape: document
+  }
+  spatial: {
+    label: |md
+      ### Spatial indexing and collision
+
+      `RBush` indexes rectangles for hit testing and visible-region queries. `d3-quadtree`
+      covers point proximity. `d3-delaunay` supplies nearest-neighbor and Voronoi geometry.
+      ELK or Dagre covers layered placement; constraint or packing layouts can operate on a
+      placement view without changing the source graph.
+    |
+    shape: document
+  }
+}
+
+repositories: {
+  label: "Existing repository seams"
+  instant: {
+    label: |md
+      ### `instant`
+
+      Daily-driver shell, Dockview, terminal/file/media resources, D2/Mermaid preview,
+      persistence experiments, canvas/window algebra, source watching, and command bus.
+    |
+    shape: package
+  }
+  rxjs: {
+    label: |md
+      ### `hafley-rxjs`
+
+      Reusable signal-driven Dockview plus XYFlow composition, rectangle state, grid stack,
+      event folding, and viewport-culling receipts.
+    |
+    shape: package
+  }
+  anim: {
+    label: |md
+      ### `anim`
+
+      Atlas model, keyed graph transitions, tours, D2 ingestion, Cytoscape renderer,
+      synchronized side panels, SQLite row ingestion, and Git-to-frame machinery.
+    |
+    shape: package
+  }
+  sprefa: {
+    label: |md
+      ### `sprefa`
+
+      Stable relational identities, graph facts, VS Code flow panel, D2 emitters, graph
+      queries, source relations, and revision-aware analytical projections.
+    |
+    shape: package
+  }
+}
+
+documents: {
+  label: "Source documents"
+  recent: {
+    label: |md
+      ### Recent cluster
+
+      - `instant/docs/2026-08-06-agent-spatial-canvas-research.md`
+      - `instant/plans/2026-08-08-canvas-state-ideas.md`
+      - `instant/chat_log/20260808.1.instant-rectangle-window-graph.md`
+      - `sprefa/plans/2026-08-08-d2-svg-cytoscape-report.md`
+      - `sprefa/plans/2026-08-08-d2-git-time-animation.md`
+      - `anim/REPORT-D2ANIM-A.md`
+      - `hafley-rxjs/packages/react-dock-and-flow/README.md`
+    |
+    shape: document
+  }
+  history: {
+    label: |md
+      ### Historical seams
+
+      - `anim/atlas/DESIGN.md`
+      - `anim/atlas/CORE-README.md`
+      - `anim/DESIGN.md`
+      - `sprefa/plans/2026-06-06-graph-viz-atlas.md`
+      - `sprefa/plans/2026-05-18-pr-causal-map-animation.md`
+      - `anim/chat_log/20260612.0.sprefa-anim-deck-d2-file-shim.md`
+      - `anim/chat_log/20260614.0.anim-atlas-fold-and-sprefa-open-tasks.md`
+
+      Plans mention `sprefa/REPORT-D2ANIM-B.md`, which is absent. Its findings appear in
+      `sprefa/plans/2026-08-08-d2-svg-cytoscape-report.md`.
+    |
+    shape: document
+  }
+}
+
+timeline: {
+  label: "Example revision timeline"
+  r0: { label: "R0\nparse -> render -> extract -> project"; shape: hexagon }
+  r1: { label: "R1\nsource diff + keyed entity diff"; shape: hexagon }
+  r2: { label: "R2\nhuman moves projected nodes"; shape: hexagon }
+  r3: { label: "R3\nAI requests entity-specific patch"; shape: hexagon }
+  r4: { label: "R4\nnew source revision reconciles placement"; shape: hexagon }
+  r0 -> r1 -> r2 -> r3 -> r4
+}
+
+delivery: {
+  label: "Epic slices"
+  s0: { label: "0_fixture\nGit D2 revisions + expected entity diffs" }
+  s1: { label: "1_capture\nartifact/revision/entity IDs + fence cache" }
+  s2: { label: "2_d2\nparse + render + SVG ID/geometry extraction" }
+  s3: { label: "3_projection\nnormalized model -> Cytoscape/XYFlow" }
+  s4: { label: "4_transition\nkeep/enter/exit/update + geometry interpolation" }
+  s5: { label: "5_placement\nseparate human layout journal" }
+  s6: { label: "6_markdown\nAST structural index + graph projection" }
+  s7: { label: "7_override\nmessage-carried patches and authority rules" }
+  s0 -> s1 -> s2 -> s3 -> s4 -> s5 -> s6 -> s7
+}
+
+goal -> inputs.git
+goal -> inputs.scrape
+goal -> inputs.markdown
+inputs.git -> capture.revision
+inputs.scrape -> capture.revision
+inputs.markdown -> capture.revision
+inputs.override_example -> model.journal: "future event"
+capture.revision -> capture.artifact
+capture.artifact -> capture.address
+capture.address -> parse.d2
+capture.address -> parse.mermaid
+capture.address -> parse.md_ast
+parse.d2 -> model.entity
+parse.mermaid -> model.entity
+parse.md_ast -> model.entity
+model.entity -> model.topology
+model.topology -> model.journal
+model.placement -> model.journal
+model.topology -> render.language
+render.language -> render.svg
+render.svg -> render.geometry
+render.geometry -> render.projection
+model.topology -> render.projection
+model.placement -> render.projection
+model.journal -> diff.keyed
+diff.keyed -> diff.node_motion
+diff.keyed -> diff.path_motion
+diff.keyed -> diff.enter_origin
+diff.debounce -> render.language: "schedule/cancel"
+geometry_tools.browser -> render.geometry
+geometry_tools.svg_libs -> diff.path_motion
+geometry_tools.graph_layout -> render.projection
+geometry_tools.spatial -> model.placement
+repositories.sprefa -> model.topology: "facts + IDs"
+repositories.anim -> diff.keyed: "transition contract"
+repositories.rxjs -> render.projection: "reusable UI package"
+repositories.instant -> model.journal: "host + persistence"
+documents.recent -> goal
+documents.history -> repositories.anim
+timeline -> delivery

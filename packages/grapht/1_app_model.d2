@@ -1,0 +1,719 @@
+direction: right
+
+title: ||md
+  # `grapht` application model
+
+  Type-level plan for the framework-free graph document runtime, its parsers, revision
+  history, geometry, interactive projections, trace animation, and external adapters.
+||
+
+foundation: {
+  label: "0. Identity and source coordinates"
+
+  ids: {
+    label: ||md
+      ```ts
+      declare const artifactId: unique symbol
+      declare const revisionId: unique symbol
+      declare const entityId: unique symbol
+      declare const viewId: unique symbol
+      declare const traceId: unique symbol
+
+      export type ArtifactId = string & { readonly [artifactId]: true }
+      export type RevisionId = string & { readonly [revisionId]: true }
+      export type EntityId = string & { readonly [entityId]: true }
+      export type ViewId = string & { readonly [viewId]: true }
+      export type TraceId = string & { readonly [traceId]: true }
+      ```
+    ||
+    shape: document
+  }
+
+  source: {
+    label: ||md
+      ```ts
+      export type SourceRef =
+        | { kind: "file"; path: string; git?: GitObjectRef }
+        | { kind: "message"; messageId: string; block?: number }
+        | { kind: "memory"; name: string }
+
+      export interface SourceSpan {
+        source: SourceRef
+        byteStart: number
+        byteEnd: number
+        lineStart: number
+        columnStart: number
+        lineEnd: number
+        columnEnd: number
+      }
+
+      export interface GitObjectRef {
+        commit: string
+        tree?: string
+        blob: string
+        path: string
+      }
+      ```
+    ||
+    shape: document
+  }
+}
+
+capture: {
+  label: "1. Captured artifacts and immutable revisions"
+
+  types: {
+    label: ||md
+      ```ts
+      export type ArtifactLanguage =
+        | "markdown"
+        | "d2"
+        | "mermaid"
+        | "svg"
+        | "json-canvas"
+        | "typescript"
+        | "text"
+
+      export interface Artifact {
+        id: ArtifactId
+        language: ArtifactLanguage
+        logicalName?: string
+        head: RevisionId
+      }
+
+      export interface ArtifactRevision {
+        id: RevisionId
+        artifactId: ArtifactId
+        parents: RevisionId[]
+        source: SourceRef
+        contentHash: string
+        content: string
+        capturedAt: string
+      }
+
+      export interface ArtifactCapture {
+        capture(input: CaptureInput): Promise<ArtifactRevision>
+        watch(input: WatchInput): AsyncIterable<ArtifactRevision>
+        revisions(artifactId: ArtifactId): AsyncIterable<ArtifactRevision>
+      }
+      ```
+    ||
+    shape: document
+  }
+}
+
+structure: {
+  label: "2. Structural document model"
+
+  entities: {
+    label: ||md
+      ```ts
+      export type EntityKind =
+        | "document"
+        | "section"
+        | "paragraph"
+        | "list"
+        | "list-item"
+        | "table"
+        | "table-row"
+        | "code-fence"
+        | "symbol"
+        | "graph-node"
+        | "graph-edge"
+        | "group"
+        | "note"
+
+      export interface Entity<A = Record<string, unknown>> {
+        id: EntityId
+        kind: EntityKind
+        label?: string
+        attrs: A
+        spans: SourceSpan[]
+        classes: string[]
+      }
+
+      export interface Relation<A = Record<string, unknown>> {
+        id: EntityId
+        kind: string
+        from: EntityId
+        to: EntityId
+        attrs: A
+        spans: SourceSpan[]
+      }
+
+      export interface EntityGraph {
+        revisionId: RevisionId
+        entities: ReadonlyMap<EntityId, Entity>
+        relations: ReadonlyMap<EntityId, Relation>
+        roots: EntityId[]
+      }
+      ```
+    ||
+    shape: document
+  }
+
+  parser: {
+    label: ||md
+      ```ts
+      export interface StructuralParser<L extends ArtifactLanguage> {
+        readonly language: L
+        parse(revision: ArtifactRevision): ParseResult
+      }
+
+      export interface ParseResult {
+        graph: EntityGraph
+        diagnostics: Diagnostic[]
+        syntax?: unknown
+      }
+
+      export interface ParserRegistry {
+        register<L extends ArtifactLanguage>(parser: StructuralParser<L>): void
+        parse(revision: ArtifactRevision): ParseResult
+      }
+      ```
+    ||
+    shape: document
+  }
+}
+
+links: {
+  label: "3. Markdown links, approximate targets, and LSP completion"
+
+  types: {
+    label: ||md
+      ```ts
+      export interface LinkIntent {
+        id: EntityId
+        source: SourceSpan
+        text: string
+        destination: string
+        fragment?: string
+      }
+
+      export type ResolutionEvidence =
+        | { kind: "exact-uri"; uri: string }
+        | { kind: "exact-heading"; entityId: EntityId }
+        | { kind: "exact-symbol"; symbol: SymbolRef }
+        | { kind: "lsp-definition"; location: SourceSpan }
+        | { kind: "lsp-reference"; location: SourceSpan }
+        | { kind: "approximate-text"; entityId: EntityId; score: number }
+        | { kind: "unresolved"; reason: string }
+
+      export interface ResolvedLink {
+        intent: LinkIntent
+        candidates: ResolutionCandidate[]
+        selected?: ResolutionCandidate
+      }
+
+      export interface ResolutionCandidate {
+        target: EntityId | SourceSpan
+        evidence: ResolutionEvidence[]
+        confidence: number
+      }
+      ```
+    ||
+    shape: document
+  }
+
+  resolver: {
+    label: ||md
+      ```ts
+      export interface LinkResolver {
+        resolve(intent: LinkIntent, context: ResolveContext): Promise<ResolvedLink>
+      }
+
+      export interface ResolveContext {
+        graph: EntityGraph
+        workspace: WorkspaceIndex
+        languageServers: LanguageServerIndex
+      }
+
+      export interface LanguageServerIndex {
+        definition(position: SourceSpan): Promise<SourceSpan[]>
+        references(position: SourceSpan): Promise<SourceSpan[]>
+        symbols(query: string): Promise<SymbolRef[]>
+        documentLinks(source: SourceRef): Promise<ResolvedLink[]>
+      }
+      ```
+    ||
+    shape: document
+  }
+}
+
+d2_conventions: {
+  label: "4. D2 authoring conventions for AI and tools"
+
+  types: {
+    label: ||md
+      ```ts
+      export interface D2Convention {
+        id: string
+        description: string
+        requiredClasses?: string[]
+        allowedEntityKinds?: EntityKind[]
+        requiredAttrs?: string[]
+        validate(entity: Entity, graph: EntityGraph): Diagnostic[]
+      }
+
+      export interface D2ConventionSet {
+        version: string
+        conventions: D2Convention[]
+        classMeanings: ReadonlyMap<string, ClassMeaning>
+      }
+
+      export interface D2AuthoringProfile {
+        conventionSet: string
+        requiredIds: "all" | "interactive" | "none"
+        sequenceMode?: "full" | "compact" | "folded"
+        traceClasses?: string[]
+      }
+      ```
+
+      Example classes: `grapht.entity`, `grapht.section`, `grapht.sequence.actor`,
+      `grapht.sequence.message`, `grapht.trace.port`, `grapht.expandable`, and
+      `grapht.source-link`.
+    ||
+    shape: document
+  }
+}
+
+render: {
+  label: "5. Language rendering and geometry"
+
+  language: {
+    label: ||md
+      ```ts
+      export interface DiagramRenderer<L extends "d2" | "mermaid"> {
+        readonly language: L
+        readonly version: string
+        render(input: DiagramRenderInput<L>): Promise<RenderedDiagram>
+      }
+
+      export interface RenderedDiagram {
+        revisionId: RevisionId
+        svg: string
+        viewBox: Rect
+        entityElements: ReadonlyMap<EntityId, SvgElementRef[]>
+        diagnostics: Diagnostic[]
+        cacheKey: string
+      }
+      ```
+    ||
+    shape: document
+  }
+
+  geometry: {
+    label: ||md
+      ```ts
+      export interface GeometryExtractor {
+        extract(rendered: RenderedDiagram): GeometrySnapshot
+      }
+
+      export interface GeometrySnapshot {
+        revisionId: RevisionId
+        nodes: ReadonlyMap<EntityId, NodeGeometry>
+        edges: ReadonlyMap<EntityId, EdgeGeometry>
+        groups: ReadonlyMap<EntityId, GroupGeometry>
+      }
+
+      export interface NodeGeometry {
+        bounds: Rect
+        center: Point
+        ports: ReadonlyMap<string, Point>
+        transform: Matrix
+      }
+
+      export interface EdgeGeometry {
+        path: PathGeometry
+        source?: EntityId
+        target?: EntityId
+      }
+      ```
+    ||
+    shape: document
+  }
+}
+
+revision_diff: {
+  label: "6. Revision diffs and interpolation"
+
+  types: {
+    label: ||md
+      ```ts
+      export interface EntityDiff {
+        from: RevisionId
+        to: RevisionId
+        keep: EntityId[]
+        enter: EntityId[]
+        exit: EntityId[]
+        update: EntityUpdate[]
+      }
+
+      export interface GraphDiffer {
+        diff(previous: EntityGraph, next: EntityGraph): EntityDiff
+      }
+
+      export interface GeometryTransition {
+        diff: EntityDiff
+        from: GeometrySnapshot
+        to: GeometrySnapshot
+        tracks: ReadonlyMap<EntityId, AnimationTrack[]>
+      }
+
+      export interface TransitionPlanner {
+        plan(input: TransitionInput): GeometryTransition
+      }
+      ```
+    ||
+    shape: document
+  }
+}
+
+sequence: {
+  label: "7. Compact sequence views"
+
+  model: {
+    label: ||md
+      ```ts
+      export interface SequenceModel {
+        actors: SequenceActor[]
+        messages: SequenceMessage[]
+        spans: SequenceSpan[]
+        folds: SequenceFold[]
+      }
+
+      export interface SequenceMessage {
+        id: EntityId
+        from: EntityId
+        to: EntityId
+        label: string
+        order: number
+        traceMatch?: TracePredicate
+        source?: SourceSpan
+      }
+
+      export type SequenceDensity =
+        | { mode: "full" }
+        | { mode: "compact"; rowHeight: number; labelLimit: number }
+        | { mode: "folded"; open: EntityId[]; summarizeAfter: number }
+
+      export interface SequenceProjection {
+        project(model: SequenceModel, density: SequenceDensity): ProjectionGraph
+      }
+      ```
+    ||
+    shape: document
+  }
+}
+
+trace: {
+  label: "8. Trace and marble animation"
+
+  model: {
+    label: ||md
+      ```ts
+      export interface Trace {
+        id: TraceId
+        clock: TraceClock
+        events: TraceEvent[]
+      }
+
+      export interface TraceEvent<P = unknown> {
+        id: string
+        at: number
+        entityId?: EntityId
+        edgeId?: EntityId
+        kind: string
+        payload: P
+        source?: SourceSpan
+      }
+
+      export interface TraceRoute {
+        traceId: TraceId
+        eventId: string
+        segments: TraceSegment[]
+      }
+
+      export interface MarblePlayer {
+        load(trace: Trace, graph: EntityGraph): Promise<TraceProjection>
+        seek(time: number): void
+        play(options?: PlaybackOptions): void
+        pause(): void
+        state(): MarbleState
+      }
+      ```
+    ||
+    shape: document
+  }
+}
+
+placement: {
+  label: "9. Views and human placement"
+
+  types: {
+    label: ||md
+      ```ts
+      export type PlacementMode = "dock" | "grid" | "canvas" | "window" | "svg"
+
+      export interface Placement {
+        viewId: ViewId
+        entityId: EntityId
+        mode: PlacementMode
+        rect?: Rect
+        z?: number
+        parentViewId?: ViewId
+      }
+
+      export type PlacementEvent =
+        | { type: "place"; placement: Placement }
+        | { type: "move"; viewId: ViewId; entityId: EntityId; rect: Rect }
+        | { type: "raise"; viewId: ViewId; entityId: EntityId }
+        | { type: "remove"; viewId: ViewId; entityId: EntityId }
+        | { type: "camera"; viewId: ViewId; camera: Camera }
+
+      export interface PlacementJournal {
+        append(event: PlacementEvent): void
+        events(viewId: ViewId): readonly PlacementEvent[]
+        fold(viewId: ViewId, at?: number): PlacementState
+      }
+      ```
+    ||
+    shape: document
+  }
+}
+
+projection: {
+  label: "10. Framework-free projections and UI adapters"
+
+  types: {
+    label: ||md
+      ```ts
+      export interface ProjectionGraph {
+        nodes: ProjectionNode[]
+        edges: ProjectionEdge[]
+        groups: ProjectionGroup[]
+      }
+
+      export interface ProjectionAdapter<Output, State = unknown> {
+        project(input: ProjectionInput, previous?: State): ProjectionResult<Output, State>
+      }
+
+      export interface SvgProjection extends ProjectionAdapter<SvgDocumentModel> {}
+      export interface CytoscapeProjection extends ProjectionAdapter<CytoscapeElements> {}
+      export interface XyflowProjection extends ProjectionAdapter<XyflowElements> {}
+
+      export interface PanelHostAdapter<Handle = unknown> {
+        mount(view: ViewDefinition): Handle
+        update(handle: Handle, view: ViewDefinition): void
+        unmount(handle: Handle): void
+      }
+      ```
+    ||
+    shape: document
+  }
+}
+
+interaction: {
+  label: "11. Hover, expansion, selection, and source edits"
+
+  commands: {
+    label: ||md
+      ```ts
+      export type GraphtCommand =
+        | { type: "entity.select"; entityId: EntityId; viewId?: ViewId }
+        | { type: "entity.hover"; entityId: EntityId; viewId: ViewId }
+        | { type: "entity.expand"; entityId: EntityId; request: ExpansionRequest }
+        | { type: "entity.patch"; artifactId: ArtifactId; entityId: EntityId; patch: EntityPatch }
+        | { type: "source.patch"; revisionId: RevisionId; edits: TextEdit[] }
+        | { type: "view.focus"; viewId: ViewId; entityId: EntityId }
+        | { type: "trace.seek"; traceId: TraceId; time: number }
+
+      export interface ExpansionRequest {
+        prompt?: string
+        include: ExpansionContextSelector[]
+        placement?: ExpansionPlacement
+      }
+
+      export interface ExpansionResult {
+        artifact: ArtifactRevision
+        relations: Relation[]
+        suggestedPlacement?: Placement
+      }
+      ```
+    ||
+    shape: document
+  }
+}
+
+sprefa: {
+  label: "12. Standalone Rust CLI/library and Sprefa adapters"
+
+  boundary: {
+    label: ||md
+      ```ts
+      export interface GraphFactBatch {
+        artifact: ArtifactRevision
+        entities: EntityRow[]
+        relations: RelationRow[]
+        spans: SpanRow[]
+        links: LinkRow[]
+      }
+
+      export interface FactEmitter {
+        emit(graph: EntityGraph): GraphFactBatch
+      }
+
+      export interface FactSource {
+        snapshots(query: FactQuery): AsyncIterable<GraphFactBatch>
+      }
+
+      export interface SprefaAdapter {
+        load(batch: GraphFactBatch): Promise<void>
+        query(program: string, inputs?: GraphFactBatch): Promise<GraphFactBatch>
+        watch(program: string): AsyncIterable<GraphFactBatch>
+      }
+      ```
+
+      The Markdown parser and fact emitter are independently usable Rust library and CLI
+      boundaries. Shell pipelines and DL6 programs consume the same serialized fact batch.
+    ||
+    shape: document
+  }
+}
+
+runtime: {
+  label: "13. Composition root"
+
+  app: {
+    label: ||md
+      ```ts
+      export interface GraphtApp {
+        capture: ArtifactCapture
+        parsers: ParserRegistry
+        links: LinkResolver
+        renderers: RendererRegistry
+        geometry: GeometryExtractor
+        differ: GraphDiffer
+        transitions: TransitionPlanner
+        placements: PlacementJournal
+        traces: MarblePlayer
+        commands: CommandBus<GraphtCommand>
+        projections: ProjectionRegistry
+        facts: FactEmitter
+      }
+
+      export interface GraphtAppState {
+        artifacts: ReadonlyMap<ArtifactId, Artifact>
+        revisions: ReadonlyMap<RevisionId, ArtifactRevision>
+        graphs: ReadonlyMap<RevisionId, EntityGraph>
+        geometry: ReadonlyMap<RevisionId, GeometrySnapshot>
+        views: ReadonlyMap<ViewId, ViewState>
+        traces: ReadonlyMap<TraceId, Trace>
+      }
+
+      export declare function createGraphtApp(config: GraphtConfig): GraphtApp
+      ```
+    ||
+    shape: document
+  }
+}
+
+lifetimes: {
+  label: "14. Instance lifetimes"
+
+  types: {
+    label: ||md
+      ```ts
+      export interface GraphtLifetime {
+        process: GraphtApp
+        workspace: WorkspaceIndex
+        artifact: Artifact
+        revision: ArtifactRevision
+        view: ViewState
+        render: RenderJob
+        hover: HoverSession
+        tracePlayback: TracePlayback
+      }
+      ```
+
+      `GraphtApp`, registries, caches, and the command bus live for the host process.
+      Workspace indexes live until roots or language-server sessions change. Artifacts live
+      across revisions. Revisions, parsed graphs, and geometry snapshots are immutable.
+      Views live until closed and retain placement history. Render jobs are cancellable and
+      revision-scoped. Hover sessions are ephemeral. Trace playback retains a trace and owns
+      only playback position and scheduling.
+    ||
+    shape: document
+  }
+}
+
+storage: {
+  label: "15. Storage, reads, writes, and uniqueness"
+
+  rules: {
+    label: ||md
+      ```ts
+      export interface GraphtStore {
+        artifacts: ArtifactStore
+        revisions: RevisionStore
+        graphs: GraphSnapshotStore
+        renders: RenderCache
+        placements: PlacementEventStore
+        traces: TraceStore
+      }
+      ```
+
+      1. Capture reads source, hashes content, and writes an immutable revision once.
+      2. Parsing reads one revision and writes one graph snapshot keyed by parser version.
+      3. Resolution reads graph plus workspace/LSP indexes and writes evidence separately.
+      4. Rendering reads source plus render options and writes a content-addressed SVG.
+      5. Geometry extraction reads SVG and writes a snapshot keyed by render cache key.
+      6. Diff reads two immutable graph/geometry snapshots and writes no source state.
+      7. Human movement appends placement events keyed by view and entity.
+      8. Source patches create a new revision and never mutate the prior revision.
+      9. A selected approximate link requires explicit evidence selection before becoming an
+         authored relation.
+
+      Artifact identity is unique by logical source identity. Revision identity is unique by
+      artifact, content hash, parser-affecting capture metadata, and parent set. Explicit D2
+      IDs are unique within an artifact. Relation IDs include kind, endpoints, authored key,
+      and parallel-edge ordinal when required. Placement is unique by view plus entity.
+    ||
+    shape: document
+  }
+}
+
+foundation.ids -> capture.types
+foundation.source -> capture.types
+capture.types -> structure.parser
+structure.entities -> structure.parser
+structure.entities -> links.types
+structure.entities -> d2_conventions.types
+links.types -> links.resolver
+links.resolver -> revision_diff.types: "resolved relations"
+d2_conventions.types -> render.language
+structure.parser -> render.language
+render.language -> render.geometry
+structure.parser -> revision_diff.types
+render.geometry -> revision_diff.types
+revision_diff.types -> sequence.model
+revision_diff.types -> trace.model
+sequence.model -> projection.types
+trace.model -> projection.types
+placement.types -> projection.types
+projection.types -> interaction.commands
+interaction.commands -> capture.types: "source patch creates revision"
+structure.entities -> sprefa.boundary
+sprefa.boundary -> structure.entities: "derived fact graph"
+capture.types -> runtime.app
+links.resolver -> runtime.app
+d2_conventions.types -> runtime.app
+render.geometry -> runtime.app
+revision_diff.types -> runtime.app
+trace.model -> runtime.app
+placement.types -> runtime.app
+projection.types -> runtime.app
+interaction.commands -> runtime.app
+sprefa.boundary -> runtime.app
+runtime.app -> lifetimes.types
+runtime.app -> storage.rules
