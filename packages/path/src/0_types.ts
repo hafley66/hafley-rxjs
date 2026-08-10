@@ -171,6 +171,22 @@ export type PathConversion<RawValues, Values> = {
   print(values: Values): RawValues
 }
 
+// Per-param value codec: the RHS. One value type <-> its string form.
+// Composable: a ParamMap mounts one Param per name, yielding a typed Values.
+export type Param<T> = {
+  parse(raw: string): T | undefined
+  print(value: T): string
+}
+
+export type ParamMap<RawValues> = { [Key in keyof RawValues]?: Param<unknown> }
+
+// Retype ValuesOf's string slots via a ParamMap. Names without a Param stay string.
+export type ValuesWithParams<RawValues, Params> = Simplify<{
+  [Key in keyof RawValues]: Key extends keyof Params
+    ? Params[Key] extends Param<infer Value> ? Value : RawValues[Key]
+    : RawValues[Key]
+}>
+
 export type PathAllowedSets<RawValues> = {
   [PropertyName in keyof RawValues]?: string[]
 }
@@ -195,6 +211,11 @@ export interface IPathFactory<Syntax extends IPathSyntax> {
     Template,
     Syntax
   >
+
+  <Template extends string, const Params extends ParamMap<ValuesOf<Template, Syntax>>>(
+    template: Template,
+    configuration: { params: Params },
+  ): IPath<ValuesWithParams<ValuesOf<Template, Syntax>, Params>, Template, Syntax>
 
   <Values>(): IPath<Values, "", Syntax>
 }

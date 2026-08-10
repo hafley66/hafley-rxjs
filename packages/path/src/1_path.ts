@@ -3,7 +3,7 @@ import type {
   IPathSyntax, JoinedTemplate, PartsOf, PathMatch, PathPart, RouteMap,
   Simplify, SlashPathSyntax, DotPathSyntax, ValuesOf, ValuesWithAllowedSets,
   ReactRouterPattern, TanStackPattern, OpenApiPattern,
-  IPathFactory, PathConversion,
+  IPathFactory, PathConversion, Param, ParamMap, ValuesWithParams,
 } from "./0_types.js"
 
 function pathFactory<Syntax extends IPathSyntax>(
@@ -275,18 +275,57 @@ function buildPath(runtime: RuntimePath): IPath<any, any, any> {
   return result
 }
 
+// Synthesize a record-level PathConversion from a per-key ParamMap. Names with
+// a Param use its parse/print; names without pass through as string.
+function paramsToConversion(
+  params: Record<string, Param<unknown>>,
+): RawConfiguration<Record<string, string | undefined>, Record<string, unknown>> {
+  return {
+    parse(raw) {
+      const out: Record<string, unknown> = {}
+      for (const key of Object.keys(raw)) {
+        const param = params[key]
+        const rawValue = raw[key]
+        if (param && rawValue !== undefined) {
+          const parsed = param.parse(rawValue)
+          if (parsed === undefined) return undefined
+          out[key] = parsed
+        } else {
+          out[key] = rawValue
+        }
+      }
+      return out
+    },
+    print(values) {
+      const out: Record<string, string | undefined> = {}
+      for (const key of Object.keys(values)) {
+        const param = params[key]
+        const value = (values as Record<string, unknown>)[key]
+        out[key] = param && value !== undefined
+          ? param.print(value as never)
+          : value === undefined ? undefined : String(value)
+      }
+      return out
+    },
+  }
+}
+
 export function path<Syntax extends IPathSyntax, Template extends string>(syntax: Syntax, template: Template): IPath<ValuesOf<Template, Syntax>, Template, Syntax>
 export function path<Syntax extends IPathSyntax, Template extends string, ParsedValues>(syntax: Syntax, template: Template, configuration: RawConfiguration<ValuesOf<Template, Syntax>, ParsedValues>): IPath<ParsedValues, Template, Syntax>
 export function path<Syntax extends IPathSyntax, Template extends string, const AllowedSets extends { [PropertyName in keyof ValuesOf<Template, Syntax>]?: string[] }>(syntax: Syntax, template: Template, configuration: AllowedConfiguration<ValuesOf<Template, Syntax>, AllowedSets>): IPath<ValuesWithAllowedSets<ValuesOf<Template, Syntax>, AllowedSets>, Template, Syntax>
+export function path<Syntax extends IPathSyntax, Template extends string, const Params extends ParamMap<ValuesOf<Template, Syntax>>>(syntax: Syntax, template: Template, configuration: { params: Params }): IPath<ValuesWithParams<ValuesOf<Template, Syntax>, Params>, Template, Syntax>
 export function path<Values, Syntax extends IPathSyntax = SlashPathSyntax>(syntax: Syntax): IPath<Values, "", Syntax>
 export function path(syntax: IPathSyntax, template = "", configuration?: unknown): IPath<any, any, any> {
-  const config = configuration as { values?: Record<string, string[]>; parse?: RawConfiguration<any, any>["parse"]; print?: RawConfiguration<any, any>["print"] } | undefined
+  const config = configuration as { values?: Record<string, string[]>; parse?: RawConfiguration<any, any>["parse"]; print?: RawConfiguration<any, any>["print"]; params?: Record<string, Param<unknown>> } | undefined
+  const resolved = config?.parse && config.print
+    ? { parse: config.parse, print: config.print }
+    : config?.params ? paramsToConversion(config.params) : undefined
   return buildPath({
     template,
     syntax,
     parts: partsOf(template, syntax),
     allowed: config?.values,
-    configuration: config?.parse && config.print ? { parse: config.parse, print: config.print } : undefined,
+    configuration: resolved,
   })
 }
 
