@@ -28,6 +28,20 @@ export const signalDispatch = new Subject<SignalEvent<unknown>>()
 // collect both layers and can create duplicate cascades.
 const dependencyCollectors: Array<(signal: Signal<unknown>) => void> = []
 
+// Run `compute`, recording every `.$()` signal read into `sink`. Re-throws;
+// `sink` keeps deps observed before the throw so a caller can resubscribe.
+export function trackDependencies<T>(
+  compute: () => T,
+  sink: Set<Signal<unknown>>,
+): T {
+  dependencyCollectors.push((dep) => sink.add(dep))
+  try {
+    return compute()
+  } finally {
+    dependencyCollectors.pop()
+  }
+}
+
 /**
  * Creates a signal tree with proxy-based nested access.
  *
@@ -152,7 +166,9 @@ export function SignalCreator<T, Base extends object = object>(
           type: "get",
           value: { signal: proxy as Signal<unknown>, path },
         })
-        dependencyCollectors.at(-1)?.(proxy as Signal<unknown>)
+        // Event-mode signals (stateless Subjects) are imperative event sources,
+        // not derived state: don't register them as memo dependencies.
+        if (!event) dependencyCollectors.at(-1)?.(proxy as Signal<unknown>)
         return getter()
       },
     }[selfFnName]

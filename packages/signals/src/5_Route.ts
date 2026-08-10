@@ -1,4 +1,6 @@
 import { Observable, shareReplay } from "rxjs"
+import { slash } from "@hafley66/path"
+import type { PathPart } from "@hafley66/path"
 import { Signal } from "./2_Signal.js"
 import type { Signal as SignalType } from "./0_types.js"
 
@@ -23,25 +25,21 @@ export type RouteSignal<S extends string> = SignalType<RouteValue<S>> & {
   forward(): void
 }
 
-function compile(template: string) {
-  const keys: string[] = []
-  const pattern = template.split("/").map(segment => {
-    if (!segment.startsWith(":")) return segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-    keys.push(segment.slice(1))
-    return "([^/]+)"
-  }).join("/")
-  return { keys, regex: new RegExp(`^${pattern}/?$`) }
+// Param names of the template, derived from the typed path parts.
+function paramKeys(template: string): string[] {
+  return (slash(template).parts as readonly PathPart[])
+    .flatMap(part => part.kind === "literal" ? [] : [part.name])
 }
 
 export function Route<const S extends string>(template: S): RouteSignal<S> {
-  const { keys, regex } = compile(template)
+  const p = slash(template)
+  const keys = paramKeys(template)
+  const print = p.print as unknown as (values: Record<string, unknown>) => string
   const read = (): RouteValue<S> => {
-    const match = regex.exec(location.pathname)
+    const result = p.match(location.pathname)
     const query = Object.fromEntries(new URLSearchParams(location.search))
-    const path = match
-      ? Object.fromEntries(keys.map((key, index) => [key, decodeURIComponent(match[index + 1])]))
-      : {}
-    return { ...query, ...path, path: location.pathname, matched: Boolean(match) } as RouteValue<S>
+    const path = result.matched ? result.values : {}
+    return { ...query, ...path, path: location.pathname, matched: result.matched } as RouteValue<S>
   }
   const changes = new Observable<RouteValue<S>>(subscriber => {
     const emit = () => subscriber.next(read())
@@ -56,9 +54,7 @@ export function Route<const S extends string>(template: S): RouteSignal<S> {
   const signal = Signal(changes, read()) as RouteSignal<S>
   const href = (values: RouteNavigation<S>) => {
     const used = new Set(keys)
-    const pathname = template.split("/").map(segment =>
-      segment.startsWith(":") ? encodeURIComponent(String(values[segment.slice(1)])) : segment
-    ).join("/")
+    const pathname = print(values)
     const query = new URLSearchParams()
     for (const [key, value] of Object.entries(values)) {
       if (!used.has(key) && value != null) query.set(key, String(value))
