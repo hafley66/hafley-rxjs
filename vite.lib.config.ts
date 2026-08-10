@@ -4,7 +4,11 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 import dts from 'vite-plugin-dts'
 
-export function createLibConfig(packageDir: string, rootDir: string = resolve(packageDir, '../..')) {
+export function createLibConfig(
+  packageDir: string,
+  rootDir: string = resolve(packageDir, '../..'),
+  entries?: Record<string, string>,
+) {
   // Read package.json to get dependencies
   const pkgPath = join(packageDir, 'package.json')
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
@@ -14,6 +18,8 @@ export function createLibConfig(packageDir: string, rootDir: string = resolve(pa
     ...Object.keys(pkg.dependencies || {}),
     ...Object.keys(pkg.peerDependencies || {}),
   ]
+
+  const libEntry = entries ?? { index: resolve(packageDir, 'src/index.ts') }
 
   return defineConfig(({ command }) => ({
     plugins: [
@@ -29,9 +35,8 @@ export function createLibConfig(packageDir: string, rootDir: string = resolve(pa
     ],
     build: {
       lib: {
-        entry: resolve(packageDir, 'src/index.ts'),
+        entry: libEntry,
         formats: ['es'],
-        fileName: () => 'index.js',
       },
       rollupOptions: {
         // Mark all dependencies as external (won't be bundled)

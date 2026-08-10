@@ -440,9 +440,6 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
-      react:
-        specifier: '>=18.0.0'
-        version: 19.2.3
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2
@@ -453,9 +450,21 @@ importers:
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.8
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.8)
       '@vitest/ui':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
+      jsdom:
+        specifier: ^26.0.0
+        version: 26.1.0
+      react:
+        specifier: ^19.0.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.8(react@19.2.8)
       typescript:
         specifier: 7.0.2
         version: 7.0.2

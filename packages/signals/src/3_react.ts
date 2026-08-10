@@ -1,127 +1,66 @@
-/**
- * React integration for signals.
- *
- * Import from "@hafley/signals/react" to get:
- * - SignalReactMemo: auto-tracking component wrapper (like mobx observer)
- * - useSignal: hook to subscribe to a signal in a component
- */
+// React integration for signals.
+// SignalReact tracks reads per render and subscribes after commit.
 
 import React from "react"
 import {
-  exhaustMap,
-  filter,
-  map,
-  mergeMap,
-  scan,
-  shareReplay,
-  Subject,
-  takeUntil,
-  throttleTime,
   animationFrameScheduler,
+  merge,
+  skip,
+  throttleTime,
+  type Subscription,
 } from "rxjs"
 import { signalDispatch } from "./1_SignalCreator.js"
-import type { Signal, Signal$ } from "./0_types.js"
+import type { Signal$, Signal as SignalType } from "./0_types.js"
 
-/**
- * Internal: wraps a function to track signal reads during execution.
- */
-function memoWrap<A extends unknown[], T>(fun: (...args: A) => T) {
-  const start = new Subject<void>()
-  const end = new Subject<void>()
+// During a tracked render, every signal read routes here. null outside render.
+let activeCollector: ((signal: SignalType<unknown>) => void) | null = null
 
-  const watchFun = (...args: A) => {
-    start.next()
-    try {
-      return fun(...args)
-    } finally {
-      end.next()
-    }
+// One global route from signal get-events to whichever render is collecting.
+signalDispatch.subscribe((event) => {
+  if (event.type === "get" && activeCollector) {
+    activeCollector(event.value.signal as SignalType<unknown>)
   }
-
-  const watcher$ = start.pipe(
-    exhaustMap(() =>
-      signalDispatch.pipe(
-        filter((i) => i.type === "get"),
-        takeUntil(end),
-      )
-    ),
-    scan(
-      (found, next) => {
-        if (found.all.find((i) => i === next.value.signal)) {
-          return { all: found.all, next: null }
-        }
-        const all = found.all.concat([next.value.signal])
-        return { all, next: next.value.signal }
-      },
-      { next: null, all: [] } as { next: Signal<unknown> | null; all: Signal<unknown>[] }
-    ),
-    filter((i) => !!i.next),
-    mergeMap((i) =>
-      i.next!.$.pipe(
-        map((n, index) => ({
-          index,
-          value: n,
-          signal: i.next,
-        }))
-      )
-    ),
-    shareReplay({ bufferSize: 1, refCount: true }),
-  )
-
-  return { fun: watchFun, watcher$ }
-}
+})
 
 let SIGNAL_REACT_DISPLAY_ID = 0
 
-/**
- * Wrap a React component to auto-track signal dependencies.
- * Like mobx's `observer()` - reads to `.$()` during render
- * are tracked and trigger re-renders on change.
- *
- * @example
- * ```tsx
- * const state = Signal({ count: 0 })
- *
- * const Counter = SignalReactMemo((props) => {
- *   return <div>Count: {state.count.$()}</div>
- * })
- *
- * // Component re-renders when state.count changes
- * state.count.$(1)
- * ```
- */
-export function SignalReact<P extends object>(
-  Component: React.FC<P>
-): React.FC<P> {
+// Wrap a component to auto-track reads during render. Each render re-derives its
+// dep set; signals dropped on a later render are unsubscribed after commit.
+export function SignalReact<P extends object>(Component: React.FC<P>): React.FC<P> {
   const id = SIGNAL_REACT_DISPLAY_ID++
-  const displayName = `SignalReactMemo_${id}_${Component.name || "Anonymous"}`
+  const displayName = `SignalReact_${id}_${Component.name || "Anonymous"}`
 
   const MemoizedComponent: React.FC<P> = (props) => {
-    const [, forceRender] = React.useState(0)
+    const [, force] = React.useReducer((n: number) => n + 1, 0)
+    const subRef = React.useRef<Subscription | undefined>(undefined)
+    const collected = React.useRef<Set<Signal$<unknown>>>(new Set())
 
-    const watcher = React.useMemo(() => {
-      const memo = memoWrap<[P], ReturnType<React.FC<P>>>(Component)
-      return {
-        ...memo,
-        sub: memo.watcher$
-          .pipe(
-            throttleTime(16, animationFrameScheduler, { leading: true, trailing: true }),
-            map((_, index) => {
-              forceRender(index)
-              return index
-            }),
-          )
-          .subscribe(),
-      }
-    }, [])
+    // Collect this render's reads while running the component.
+    collected.current = new Set()
+    const previous = activeCollector
+    activeCollector = (signal) => collected.current.add((signal as unknown as { $: Signal$<unknown> }).$)
+    let tree: React.ReactElement
+    try {
+      tree = Component(props) as unknown as React.ReactElement
+    } finally {
+      activeCollector = previous
+    }
 
+    // After commit: adopt the freshly collected set and (re)subscribe.
     React.useEffect(() => {
+      subRef.current?.unsubscribe()
+      const deps = collected.current
+      if (deps.size === 0) return
+      // skip(1) per accessor: BehaviorSubject emits its current value on
+      // subscribe; that value is from the render just committed, not a change.
+      subRef.current = merge(...[...deps].map((d) => d.pipe(skip(1)))).subscribe(() => force())
       return () => {
-        watcher.sub.unsubscribe()
+        subRef.current?.unsubscribe()
+        subRef.current = undefined
       }
-    }, [watcher])
+    })
 
-    return watcher.fun(props) as React.ReactElement
+    return tree
   }
 
   MemoizedComponent.displayName = displayName
@@ -132,18 +71,8 @@ export function SignalReact<P extends object>(
 export const SignalReactMemo = SignalReact
 
 /**
- * Hook to subscribe to a signal in a React component.
- * Returns current value and re-renders on change.
- *
- * @example
- * ```tsx
- * const state = Signal({ name: "chris" })
- *
- * function MyComponent() {
- *   const name = useSignal(state.name.$)
- *   return <div>{name}</div>
- * }
- * ```
+ * Hook to subscribe to a signal in a component. Returns current value and
+ * re-renders on change.
  */
 export function useSignal<T>(signal$: Signal$<T>): T {
   const [value, setValue] = React.useState(() => signal$.value)

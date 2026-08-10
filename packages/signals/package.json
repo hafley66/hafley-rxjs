@@ -16,6 +16,18 @@
     "./react": {
       "types": "./dist/3_react.d.ts",
       "import": "./dist/3_react.js"
+    },
+    "./jsx-runtime": {
+      "types": "./dist/jsx-runtime.d.ts",
+      "import": "./dist/jsx-runtime.js"
+    },
+    "./jsx-dev-runtime": {
+      "types": "./dist/jsx-dev-runtime.d.ts",
+      "import": "./dist/jsx-dev-runtime.js"
+    },
+    "./vite": {
+      "types": "./dist/vite-plugin.d.ts",
+      "import": "./dist/vite-plugin.js"
     }
   },
   "scripts": {
@@ -31,10 +43,22 @@
     "lodash": "^4.17.21",
     "rxjs": "^7.8.2"
   },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@types/lodash": "^4.17.16",
     "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "@vitest/ui": "^4.1.10",
+    "jsdom": "^26.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "typescript": "7.0.2",
     "vite": "^8.2.1",
     "vitest": "^4.1.10"
