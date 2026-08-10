@@ -4,3 +4,5 @@ docs/
 *.log
 .DS_Store
 *.tsbuildinfo
+.worktrees/
+.vitest-attachments/
