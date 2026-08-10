@@ -1,0 +1,56 @@
+{
+  "name": "@hafley66/xdom",
+  "version": "0.0.1",
+  "description": "Routed DOM events + turnkey React containers for hafley-rxjs",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:browser": "vitest --config vitest.browser.config.ts"
+  },
+  "dependencies": {
+    "@hafley66/path": "workspace:*",
+    "rxjs": "^7.8.2"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.5",
+    "@vitest/browser": "^4.1.10",
+    "@vitest/browser-playwright": "^4.1.10",
+    "playwright": "^1.62.1",
+    "react-dom": "^19.2.8",
+    "typescript": "7.0.2",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
+  },
+  "keywords": [
+    "rxjs",
+    "dom",
+    "routing",
+    "react",
+    "delegation"
+  ],
+  "license": "MIT"
+}
