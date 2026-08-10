@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, type CSSProperties } from "react"
 import type { RowData } from "@tanstack/react-table"
 import { useGrid } from "./3_react"
 import type { Grid } from "./1_types"
@@ -60,7 +60,7 @@ export function GridTree<TData extends RowData & TreeLike>({
   indentUnit?: number
   rowHeight?: number
   label?: string
-  width?: number
+  width?: CSSProperties["width"]
 }) {
   const table = useGrid(grid)
   const rows = table.getRowModel().rows
