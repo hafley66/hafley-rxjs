@@ -4,8 +4,7 @@ import { gridFeatures } from "./0_features"
 import type { Grid } from "./1_types"
 
 export function useGrid<TData extends RowData>(grid: Grid<TData>) {
-  const sorting = useSignal(grid.state.sorting.$)
-  const pagination = useSignal(grid.state.pagination.$)
+  const state = useSignal(grid.state.$)
   const rows = useSignal(grid.rows.$)
 
   return useTable({
@@ -13,13 +12,27 @@ export function useGrid<TData extends RowData>(grid: Grid<TData>) {
     data: rows,
     columns: grid.columns,
     getRowId: grid.getRowId,
-    state: { sorting, pagination },
+    getSubRows: grid.getSubRows,
+    state,
     onSortingChange: grid.onSortingChange,
+    onColumnFiltersChange: grid.onColumnFiltersChange,
+    onGlobalFilterChange: grid.onGlobalFilterChange,
+    onColumnOrderChange: grid.onColumnOrderChange,
+    onColumnPinningChange: grid.onColumnPinningChange,
+    onColumnVisibilityChange: grid.onColumnVisibilityChange,
+    onColumnSizingChange: grid.onColumnSizingChange,
+    onRowPinningChange: grid.onRowPinningChange,
+    onRowSelectionChange: grid.onRowSelectionChange,
+    onExpandedChange: grid.onExpandedChange,
+    onGroupingChange: grid.onGroupingChange,
     onPaginationChange: grid.onPaginationChange,
     manualSorting: true,
+    manualFiltering: grid.mode === "server",
     manualPagination: grid.mode === "server",
   })
 }
 
 export * from "./1_types"
 export * from "./2_createGrid"
+export { GridTable, type RowDensity, type Align } from "./4_grid"
+export { GridTree } from "./6_tree"

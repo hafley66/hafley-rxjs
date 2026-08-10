@@ -8,5 +8,9 @@ if (config.build?.lib) {
     '3_react': resolve(__dirname, 'src/3_react.ts'),
   }
 }
+config.test = {
+  environment: "node",
+  exclude: ["**/node_modules/**", "**/dist/**", "**/*.browser.test.{ts,tsx}"],
+}
 
 export default config
