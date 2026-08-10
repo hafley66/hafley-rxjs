@@ -1,4 +1,4 @@
-import { defineConfig } from 'rolldown-vite'
+import { defineConfig } from 'vite'
 import { resolve } from 'path'
 import { readFileSync } from 'fs'
 import { join } from 'path'
@@ -15,13 +15,17 @@ export function createLibConfig(packageDir: string, rootDir: string = resolve(pa
     ...Object.keys(pkg.peerDependencies || {}),
   ]
 
-  return defineConfig({
+  return defineConfig(({ command }) => ({
     plugins: [
-      dts({
-        include: ['src/**/*.ts'],
-        exclude: ['src/**/*.test.ts'],
-        outDir: resolve(packageDir, 'dist'),
-      })
+      ...(command === "build"
+        ? [
+            dts({
+              include: ["src/**/*.ts"],
+              exclude: ["src/**/*.test.ts"],
+              outDir: resolve(packageDir, "dist"),
+            }),
+          ]
+        : []),
     ],
     build: {
       lib: {
@@ -61,5 +65,5 @@ export function createLibConfig(packageDir: string, rootDir: string = resolve(pa
       include: ['src/**/*.test.ts'],
       setupFiles: [resolve(rootDir, 'vitest.setup.ts')],
     },
-  })
+  }))
 }

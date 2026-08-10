@@ -17,7 +17,7 @@
   },
   "scripts": {
     "build": "vite build",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:ui": "vitest --ui"
   },
@@ -29,12 +29,18 @@
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
-    "typescript": "^5.7.3",
-    "vitest": "^4.0.16",
-    "@vitest/ui": "^4.0.16",
-    "vite": "^7.3.0",
+    "typescript": "7.0.2",
+    "vitest": "^4.1.10",
+    "@vitest/ui": "^4.1.10",
+    "vite": "^8.2.1",
     "jsdom": "^26.1.0"
   },
-  "keywords": ["rxjs", "jsx", "reactive", "snabbdom", "vdom"],
+  "keywords": [
+    "rxjs",
+    "jsx",
+    "reactive",
+    "snabbdom",
+    "vdom"
+  ],
   "license": "MIT"
 }

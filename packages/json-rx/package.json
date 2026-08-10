@@ -30,7 +30,7 @@
     "generate": "tsx scripts/1_generateAutomations.ts",
     "generate:check": "tsx scripts/1_generateAutomations.ts --check && node scripts/2_checkGeneratedHeaders.mjs",
     "typespec:check": "tsp compile spec/0_main.tsp --no-emit",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run && vitest run --config vitest.browser.config.ts",
     "test:ui": "vitest --ui",
     "test:browser": "vitest --config vitest.browser.config.ts"
@@ -63,18 +63,18 @@
     "@typespec/http": "^1.14.0",
     "@typespec/json-schema": "^1.14.0",
     "@typespec/openapi3": "^1.14.0",
-    "@vitejs/plugin-react": "^5.1.2",
-    "@vitest/browser-playwright": "4.0.16",
+    "@vitejs/plugin-react": "^6.0.5",
+    "@vitest/browser-playwright": "^4.1.10",
     "ajv": "^8.20.0",
     "json-schema-to-zod": "^2.8.1",
-    "playwright": "^1.57.0",
+    "playwright": "^1.62.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "rxjs": "^7.8.0",
     "tsx": "^4.20.6",
-    "typescript": "^5.7.3",
-    "vite": "^7.3.0",
-    "vitest": "^4.0.16"
+    "typescript": "7.0.2",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
   },
   "license": "MIT"
 }

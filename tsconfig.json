@@ -6,6 +6,7 @@
     { "path": "./packages/path" },
     { "path": "./packages/rxjs-ext" },
     { "path": "./packages/rxjsx" },
-    { "path": "./packages/signals" }
+    { "path": "./packages/signals" },
+    { "path": "./packages/xdom" }
   ]
 }
