@@ -116,11 +116,19 @@ export function GridTable<TData extends RowData>({
                             display: "inline-flex",
                             padding: 2,
                             color: C.faint,
-                            transform: row.getIsExpanded() ? "rotate(90deg)" : "none",
-                            transition: "transform 120ms ease",
                           }}
                         >
-                          <svg width="9" height="9" viewBox="0 0 9 9"><path d="M2.5 1 L7 4.5 L2.5 8 Z" fill="currentColor" /></svg>
+                          <svg
+                            width="9"
+                            height="9"
+                            viewBox="0 0 9 9"
+                            style={{
+                              display: "block",
+                              transform: row.getIsExpanded() ? "rotate(90deg)" : "none",
+                              transformOrigin: "50% 50%",
+                              transition: "transform 120ms ease",
+                            }}
+                          ><path d="M2.5 1 L7 4.5 L2.5 8 Z" fill="currentColor" /></svg>
                         </button>
                       ) : null}
                     </td>
