@@ -104,7 +104,7 @@ export function GridTable<TData extends RowData>({
               {row.getVisibleCells().map((cell) => {
                 if (cell.column.id === "__expand") {
                   return (
-                    <td key={cell.id} style={{ width: 44, padding: "0 12px", textAlign: "center" }}>
+                    <td key={cell.id} style={{ width: 44, padding: "0 8px", textAlign: "left", overflow: "visible" }}>
                       {row.getCanExpand() ? (
                         <button
                           data-testid="row-toggle"
@@ -115,6 +115,7 @@ export function GridTable<TData extends RowData>({
                             cursor: "pointer",
                             display: "inline-flex",
                             padding: 2,
+                            marginLeft: row.depth * 12,
                             color: C.faint,
                           }}
                         >
@@ -141,7 +142,7 @@ export function GridTable<TData extends RowData>({
                     key={cell.id}
                     style={{
                       padding: `${py}px 16px`,
-                      paddingLeft: indent ? indent : 16,
+                      paddingLeft: 16 + indent,
                       textAlign: align,
                       whiteSpace: "nowrap",
                     }}
