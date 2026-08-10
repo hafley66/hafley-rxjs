@@ -140,6 +140,83 @@ rxjs_devtool: {
   }
 }
 
+session_workspace: {
+  label: "Target Instant screen: tmux plus evolving session graph"
+
+  layout: {
+    label: ||md
+      ```ts
+      export interface SessionWorkspacePanel {
+        terminal: TmuxSessionView
+        graph: SessionGraphView
+        timeline: RevisionTimeline
+        selection: SessionSelection
+      }
+
+      export interface SessionSelection {
+        entity?: EntityId
+        terminalRange?: TerminalRange
+        revision?: RevisionId
+      }
+      ```
+
+      The normal interactive tmux terminal occupies the primary dock region. A graph panel on
+      the right displays a reduced representation of that same session. Selection is linked in
+      both directions: terminal ranges select graph entities, and graph entities reveal their
+      terminal evidence. A revision scrubber can inspect prior graph states without detaching
+      the live tmux session.
+    ||
+    shape: document
+  }
+
+  reduction: {
+    label: ||md
+      ```ts
+      export type SessionGraphEntity =
+        | TerminalCommandEntity
+        | ProcessEntity
+        | AgentEntity
+        | ToolCallEntity
+        | FileEntity
+        | ArtifactEntity
+        | MessageEntity
+
+      export interface SessionGraphRevision {
+        session: SessionId
+        revision: RevisionId
+        capturedAt: number
+        terminalRange: TerminalRange
+        entities: readonly SessionGraphEntity[]
+        relations: readonly SessionGraphRelation[]
+      }
+
+      export interface SessionGraphReducer {
+        append(events: readonly TerminalEvent[], previous?: SessionGraphRevision):
+          SessionGraphRevision
+      }
+      ```
+
+      Tmux output and bounded scrollback enter an incremental scanner. Recognized commands,
+      messages, files, agents, tool calls, processes, and artifacts become stable entities with
+      evidence spans. Each debounced append produces a revision, structural diff, retained
+      placement input, and transition plan for the graph panel.
+    ||
+    shape: document
+  }
+
+  projections: {
+    label: |md
+      The right panel can switch among network graph, compact sequence, marble trace,
+      agent/tool waterfall, grid, and saved D2 projections over the same session revisions.
+
+      Instant owns tmux capture and dock composition. `sprefa-extract` supplies recognized
+      spans and relations. `grapht` owns stable identities, revisions, diffs, placements,
+      transition plans, selection, and projections.
+    |
+    shape: document
+  }
+}
+
 markdown: {
   label: "1. Markdown document viewer"
 
@@ -279,6 +356,9 @@ network.capabilities -> network.model
 network.model -> rxjs_devtool.model
 rxjs_devtool.model -> rxjs_devtool.projections
 rxjs_devtool.context -> rxjs_devtool.model
+network.model -> session_workspace.reduction
+session_workspace.layout -> session_workspace.reduction
+session_workspace.reduction -> session_workspace.projections
 markdown.current -> markdown.model
 markdown.model -> markdown.boundary
 network.model -> probe.model
