@@ -26,8 +26,8 @@ export function createLibConfig(
       ...(command === "build"
         ? [
             dts({
-              include: ["src/**/*.ts"],
-              exclude: ["src/**/*.test.ts"],
+              include: ["src/**/*.ts", "src/**/*.tsx"],
+              exclude: ["src/**/*.test.ts", "src/**/*.test.tsx"],
               outDir: resolve(packageDir, "dist"),
             }),
           ]

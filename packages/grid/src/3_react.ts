@@ -29,6 +29,9 @@ export function useGrid<TData extends RowData>(grid: Grid<TData>) {
     manualSorting: true,
     manualFiltering: grid.mode === "server",
     manualPagination: grid.mode === "server",
+    // Signal-backed rows commonly emit new arrays while preserving row ids.
+    // TanStack's default reset collapses the tree after every such emission.
+    autoResetExpanded: false,
   })
 }
 

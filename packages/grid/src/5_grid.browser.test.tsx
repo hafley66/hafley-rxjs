@@ -126,9 +126,10 @@ const tableColumns: ColumnDef<GridFeatures, FSNode>[] = [
 
 describe("GridTable filesystem demo", () => {
   it("renders a collapsed tree, then expands src/", async () => {
+    const rows = Signal<FSNode[]>(fsTree)
     const grid = createGrid<FSNode>({
       schema: FS,
-      rows: Signal<FSNode[]>(fsTree),
+      rows,
       getRowId: (n) => n.id,
       getSubRows: (n) => n.children,
       columnDefs: tableColumns,
@@ -145,6 +146,15 @@ describe("GridTable filesystem demo", () => {
     await act(async () => { await page.getByTestId("row-toggle").first().click() })
 
     await expect(page.getByTestId("grid")).toMatchScreenshot("fs-expanded")
+
+    // Polling sources replace the array while retaining stable row ids. That
+    // update must preserve the user's expansion state.
+    await act(async () => rows.$([...fsTree]))
+    expect(grid.state.$().expanded).toMatchInlineSnapshot(`
+      {
+        "src": true,
+      }
+    `)
 
     root.unmount()
     host.remove()

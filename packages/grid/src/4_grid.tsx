@@ -8,13 +8,15 @@ export type Align = "left" | "right" | "center"
 
 const FONT = `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`
 const C = {
-  accent: "#3b82f6",
-  border: "#e5e7eb",
-  hair: "#f3f4f6",
-  head: "#f9fafb",
-  label: "#6b7280",
-  text: "#111827",
-  faint: "#9ca3af",
+  accent: "var(--grid-accent, #3b82f6)",
+  border: "var(--grid-border, #e5e7eb)",
+  hair: "var(--grid-hairline, #f3f4f6)",
+  head: "var(--grid-header-bg, #f9fafb)",
+  label: "var(--grid-muted-fg, #6b7280)",
+  text: "var(--grid-fg, #111827)",
+  faint: "var(--grid-faint-fg, #9ca3af)",
+  surface: "var(--grid-bg, #fff)",
+  alternate: "var(--grid-row-alternate-bg, #fafafa)",
 }
 
 // Never index the rows signal — numeric proxy keys lazy-instantiate.
@@ -39,7 +41,7 @@ export function GridTable<TData extends RowData>({
       style={{
         border: `1px solid ${C.border}`,
         borderRadius: 12,
-        background: "#fff",
+        background: C.surface,
         boxShadow: "0 1px 2px rgba(16,24,40,.04), 0 18px 36px -18px rgba(16,24,40,.18)",
         fontFamily: FONT,
         color: C.text,
@@ -97,7 +99,7 @@ export function GridTable<TData extends RowData>({
           {rows.map((row, i) => (
             <tr
               key={row.id}
-              style={{ height: h, background: i % 2 ? "#fafafa" : "#fff", borderBottom: `1px solid ${C.hair}` }}
+              style={{ height: h, background: i % 2 ? C.alternate : C.surface, borderBottom: `1px solid ${C.hair}` }}
             >
               {row.getVisibleCells().map((cell) => {
                 if (cell.column.id === "__expand") {
