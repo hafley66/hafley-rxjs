@@ -26,7 +26,6 @@ import { use$ } from "./lib/1_use"
 main.state$.set({ isEnabled: true })
 // main.state$.subscribe(n => console.log("Dude...", n.isEnabled))
 
-const copy$ = main.state$.pipe()
 // === Mock API ===
 type User = { id: number; name: string; email: string }
 type ApiResponse<T> = { data: T; timestamp: number }
@@ -70,8 +69,6 @@ const pollUsers$ = from(mockFetch(mockUsers, 0)).pipe(
 )
 
 // Pattern 2: Search with debounce + switchMap
-const searchTerm$2 = new BehaviorSubject(1)
-
 const searchTerm$ = new BehaviorSubject("")
 const searchResults$ = searchTerm$.pipe(
   debounceTime(300),
@@ -130,9 +127,7 @@ const derp = interval(5000).pipe(
 )
 
 function App() {
-  const it = use$(copy$, main.state$.value)
   const b = use$(derp, 0)
-  const bb = use$(derp, 0)
   return (
     <div style={{ fontFamily: "system-ui", padding: 20, display: "flex", gap: 20 }}>
       <div style={{ flex: 1, maxWidth: 400 }}>
@@ -215,6 +210,11 @@ function App() {
 }
 
 // Mount
+declare global {
+  interface Window {
+    ____root: ReturnType<typeof createRoot>
+  }
+}
 if (!window.____root) {
   const root = createRoot(document.getElementById("root")!)
   root.render(

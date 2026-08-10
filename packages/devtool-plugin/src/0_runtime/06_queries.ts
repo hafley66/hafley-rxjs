@@ -19,7 +19,7 @@ export function getRootObservables(store: Store) {
         !operatorTargets.has(obs.id) &&
         !runtimeObsIds.has(obs.id) &&
         !stableShadows.has(obs.id) &&
-        !obs.obs_ref?.deref()?.[RxJSTracker.TRACKED_MARKER],
+        !(obs.obs_ref?.deref() as Record<PropertyKey, unknown> | undefined)?.[RxJSTracker.TRACKED_MARKER],
     )
     .sort((a, b) => a.created_at - b.created_at)
 }

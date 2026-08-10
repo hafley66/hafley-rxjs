@@ -63,7 +63,7 @@ export class DietObservable<T> {
     op3: DietOperator<B, C>,
     op4: DietOperator<C, D>,
   ): DietObservable<D>
-  pipe(...ops: DietOperator<unknown, unknown>[]): DietObservable<unknown> {
+  pipe(...ops: DietOperator<any, any>[]): DietObservable<any> {
     if (ops.length === 1 && ops[0]) return ops[0](this)
     return ops.reduce((source, op) => op(source), this as DietObservable<unknown>)
   }

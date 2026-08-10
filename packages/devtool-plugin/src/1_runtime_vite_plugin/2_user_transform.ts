@@ -18,7 +18,6 @@
  *   __$.end()
  */
 
-import { compact } from "lodash"
 import MagicString, { SourceMap } from "magic-string"
 import { type Node, ParseResult, parseSync } from "oxc-parser"
 

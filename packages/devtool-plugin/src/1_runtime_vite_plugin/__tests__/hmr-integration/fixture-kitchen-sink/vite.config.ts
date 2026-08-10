@@ -1,5 +1,5 @@
 import path from "path"
-import { defineConfig } from "rolldown-vite"
+import { defineConfig } from "vite"
 import { rxjsHmrPlugin } from "../../../1_rxjs_hmr_plugin"
 
 export default defineConfig({

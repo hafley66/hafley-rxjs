@@ -740,7 +740,6 @@ function isFunction(value: unknown): value is Function {
 }
 
 type ArgEntity = State["store"]["arg"][string]
-type ArgEntity2 = State["store"]["arg2"][string]
 
 // Marker to identify patched subscriptions (avoid double-patching)
 

@@ -50,28 +50,27 @@ export function _rxjs_debugger_module_start(url: string): ModuleScope {
       const fullKey = parentKey ? `${parentKey}:${key}` : key
 
       // Call baseTrack which handles the actual tracking logic
-      return baseTrack(fullKey, $ => {
+      return baseTrack(fullKey, () => {
         // Check if factory wants a child scope
         if (factory.length > 0) {
           // Factory takes a scope param - create child scope
           const childScope = createScope(fullKey)
           const val = (factory as ($: ModuleScope) => T)(childScope)
           if (val && typeof val === "object") {
-            val[___rxjs_hmr_key___] = fullKey
+            ;(val as Record<PropertyKey, unknown>)[___rxjs_hmr_key___] = fullKey
           }
           return val
         }
-        const val = factory()
+        const val = (factory as () => T)()
         if (val && typeof val === "object") {
-          val[___rxjs_hmr_key___] = fullKey
+          ;(val as Record<PropertyKey, unknown>)[___rxjs_hmr_key___] = fullKey
         }
         return val
       })
     }) as ModuleScope
 
     // Add .sub() method for subscription tracking
-    scope.sub = (key: string, factory: () => Subscription): Subscription => {
-      const fullKey = parentKey ? `${parentKey}:${key}` : key
+    scope.sub = (_key: string, factory: () => Subscription): Subscription => {
       // Just call factory - subscribe-call event will be emitted by patched Observable
       // The accumulator will stamp module_id from stack
       return factory()

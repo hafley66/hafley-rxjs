@@ -1,7 +1,7 @@
 import fs from "fs"
 import path from "path"
 import { type Browser, chromium, type Page } from "playwright"
-import { createServer, type ViteDevServer } from "rolldown-vite"
+import { createServer, type ViteDevServer } from "vite"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 const FIXTURE_DIR = path.join(__dirname, "fixture")

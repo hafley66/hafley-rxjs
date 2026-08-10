@@ -123,7 +123,7 @@ function RootRows({ obsId, subIds }: { obsId: string; subIds: string[] }) {
     <>
       {/* Observable row */}
       <div style={{ padding: 4 }}>
-        {it ? `const ${it} =` : ""} {obs[___rxjs_hmr_key___] ?? obs.name ?? "Observable"} #{obs.id}
+        {it ? `const ${it} =` : ""} {String((obs as Record<PropertyKey, unknown>)[___rxjs_hmr_key___] ?? obs.name ?? "Observable")} #{obs.id}
       </div>
       {subIds.map(subId => (
         <SubCell key={subId} obsId={obsId} subId={subId} />

@@ -11,7 +11,7 @@
 
 import { createRequire } from "module"
 import path from "path"
-import type { Plugin, ResolvedConfig } from "rolldown-vite"
+import type { Plugin, ResolvedConfig } from "vite"
 
 const require = createRequire(import.meta.url)
 
@@ -186,8 +186,6 @@ function patchCreationTs(code: string, patchPath: string, operatorName: string) 
   return { code: result, map: null }
 }
 
-import { loadEnv } from "vite"
-
 export function rxjsDevtoolPatchPlugin(options: RxjsDevtoolPatchOptions = {}): Plugin {
   const { debug = false, patchModulePath, patchCreation: enablePatchCreation = true } = options
   let config: VitestConfig
@@ -196,7 +194,6 @@ export function rxjsDevtoolPatchPlugin(options: RxjsDevtoolPatchOptions = {}): P
   const log = (...args: unknown[]) => {
     if (debug) console.log("[rxjs-devtool]", ...args)
   }
-  let env: Record<string, string> = {}
   log("Plugin created with options:", options)
   let command = "serve"
   return {
@@ -214,7 +211,6 @@ export function rxjsDevtoolPatchPlugin(options: RxjsDevtoolPatchOptions = {}): P
     configResolved(resolvedConfig) {
       config = resolvedConfig
       command = resolvedConfig.command
-      env = loadEnv(resolvedConfig.mode, process.cwd(), "") // Use "" as the third argument to load all variables, not just those with the VITE_ prefix
       resolvedPatchModulePath = patchModulePath ?? path.resolve(config.root, "src/0_runtime/0_store")
       log("configResolved:", {
         command: config.command,

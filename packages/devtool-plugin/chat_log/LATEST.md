@@ -1,1 +1,1 @@
-2026-01-13.0.vite-plugin-move-fix.md
+2026-08-09.0.xdom-package-extraction.md

@@ -85,16 +85,16 @@ window.__kitchen_sink__ = {
 }
 
 // Subscribe to everything and collect values
-piped$.subscribe(v => window.__kitchen_sink__.values.piped.push(v))
-switched$.subscribe(v => window.__kitchen_sink__.values.switched.push(v))
-shared$.subscribe(v => window.__kitchen_sink__.values.shared.push(v))
-merged$.subscribe(v => window.__kitchen_sink__.values.merged.push(v))
-combined$.subscribe(v => window.__kitchen_sink__.values.combined.push(v))
-nested$.subscribe(v => window.__kitchen_sink__.values.nested.push(v))
-cold$.subscribe(v => window.__kitchen_sink__.values.cold.push(v))
-of$.subscribe(v => window.__kitchen_sink__.values.of.push(v))
-from$.subscribe(v => window.__kitchen_sink__.values.from.push(v))
-defer$.subscribe(v => window.__kitchen_sink__.values.defer.push(v))
+piped$.subscribe(v => window.__kitchen_sink__.values.piped!.push(v))
+switched$.subscribe(v => window.__kitchen_sink__.values.switched!.push(v))
+shared$.subscribe(v => window.__kitchen_sink__.values.shared!.push(v))
+merged$.subscribe(v => window.__kitchen_sink__.values.merged!.push(v))
+combined$.subscribe(v => window.__kitchen_sink__.values.combined!.push(v))
+nested$.subscribe(v => window.__kitchen_sink__.values.nested!.push(v))
+cold$.subscribe(v => window.__kitchen_sink__.values.cold!.push(v))
+of$.subscribe(v => window.__kitchen_sink__.values.of!.push(v))
+from$.subscribe(v => window.__kitchen_sink__.values.from!.push(v))
+defer$.subscribe(v => window.__kitchen_sink__.values.defer!.push(v))
 
 // Debug: check patching and IDs
 console.log("[kitchen-sink] Patching status:", {
