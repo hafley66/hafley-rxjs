@@ -52,7 +52,7 @@ Section 5 is that header, in full.
 One thing the previous plan got wrong that is worth naming, because it is the reason
 this document exists: it treated `v6/dl` as "one line of relevance: keep `0_runtime/**`
 free of DOM imports". That is not sufficient. Keeping DOM out of a directory does not
-make a package importable. `@hafley/rxjs-debugger`'s single entry point is a Node Vite
+make a package importable. `@hafley66/rxjs-debugger`'s single entry point is a Node Vite
 plugin (`src/index.ts`, one line), it declares `d3`, `localforage`, `uuid`, `lodash`,
 `react`, and `vite` in one manifest, and its published `exports["./hmr"]` points at a
 path that does not exist. A consumer cannot import a tracer out of it at any depth.
@@ -80,7 +80,7 @@ wins. That is correction one and it is not cosmetic: see 1.1.a.
 | TS7053 implicit-any symbol index | 4 | `4_module-scope.ts` (2), `0_DebuggerGrid.tsx` (1), `06_queries.ts` (1) |
 | TS2339 property does not exist | 3 | `app.tsx` (`window.____root`) |
 | TS2307 cannot find module | 3 | `0_DebuggerGrid.browser.test.tsx` |
-| TS7016 no declaration file | 1 | `app.tsx` (`@hafley/rxjs-ext`) |
+| TS7016 no declaration file | 1 | `app.tsx` (`@hafley66/rxjs-ext`) |
 | TS6196 unused type | 1 | `0_store.ts` (`ArgEntity2`, line 743) |
 | TS2554 wrong arg count | 1 | `4_module-scope.ts:64` |
 | TS2394 overload incompatible | 1 | `2_diet_rxjs.ts:57` |
@@ -113,7 +113,7 @@ to the root's compiler *raises* the error count. The same missing
 | 2 | Add `"**/__tests__/hmr-integration/fixture*/**"` to `tsconfig.json` `exclude`. Those are standalone fixture apps with their own `vite.config.ts`; they are not library sources. | 10 TS18048 | `pnpm typecheck 2>&1 \| grep -c TS18048` = 0 |
 | 3 | Delete the 7 unused bindings (`searchTerm$2`, `it`, `bb` in `app.tsx`; `$`, `fullKey` in `4_module-scope.ts`; `compact` in `2_user_transform.ts`; `env` in `0_rxjs_devtool_patch_plugin.ts`) and the unused type `ArgEntity2` (`0_store.ts:743`). | 7 TS6133 + 1 TS6196 | `grep -c "TS6133\|TS6196"` = 0 |
 | 4 | Declare the two globals once, in a new `src/globals.d.ts`: the `___rxjs_hmr_key___` unique symbol as an index-signature-bearing interface, and `interface Window { ____root?: unknown }`. | 4 TS7053 + 3 TS2339 | `grep -c "TS7053\|TS2339"` = 0 |
-| 5 | Add `"references": [{ "path": "../rxjs-ext" }]` to `packages/devtool-plugin/tsconfig.json` and build `rxjs-ext` first (`pnpm --filter @hafley/rxjs-ext build`). The package's `exports.types` points at `./dist/index.d.ts`, which does not exist until it is built. | 1 TS7016 | `pnpm --filter @hafley/rxjs-ext build && pnpm typecheck` |
+| 5 | Add `"references": [{ "path": "../rxjs-ext" }]` to `packages/devtool-plugin/tsconfig.json` and build `rxjs-ext` first (`pnpm --filter @hafley66/rxjs-ext build`). The package's `exports.types` points at `./dist/index.d.ts`, which does not exist until it is built. | 1 TS7016 | `pnpm --filter @hafley66/rxjs-ext build && pnpm typecheck` |
 | 6 | Fix `2_diet_rxjs.ts:57`: the `pipe` overload set (lines 56-65) is incompatible with the implementation signature `pipe(...ops: DietOperator<unknown, unknown>[])`. Widen the implementation to `pipe(...ops: DietOperator<any, any>[]): DietObservable<any>` or narrow the overloads. | 1 TS2394 | |
 | 7 | Fix `app.tsx:139`: the `unknown` value rendered as a child needs `String(...)` or a type guard. | 1 TS2322 | |
 | 8 | Remove `"typescript": "^5.9.3"` from `packages/devtool-plugin` `dependencies`. Let the workspace compiler apply. **Expect the count to move**, because TS 6.0.0-dev adds TS2882 for the side-effect imports and `noUncheckedIndexedAccess` interacts differently. Re-baseline after this step, not before. | n/a | `pnpm typecheck` exits 0 |
@@ -236,7 +236,7 @@ been observed to exit.
 
 ```bash
 cd packages/devtool-plugin
-pnpm --filter @hafley/rxjs-ext build   # unblocks TS7016
+pnpm --filter @hafley66/rxjs-ext build   # unblocks TS7016
 pnpm typecheck        # exit 0
 pnpm test:run         # exit 0
 pnpm build            # exit 0, dist/index.js exists
@@ -431,7 +431,7 @@ and nothing else.
 |---|---|---|---|---|
 | `packages/debug-core` | `@hafley/debug-core` | **none** | Node 20.19+, any browser, any worker | the data model, the recorder, the ring, the projector, the index, the in-page and BroadcastChannel transports |
 | `packages/debug-rxjs` | `@hafley/debug-rxjs` | none. `rxjs` is a **peerDependency** (`^7.8.0 \|\| ^8`) | anywhere rxjs runs | the `traced()` operator, `patchObservable`, `decorateCreate`, `decorateOperatorFun`, the `ObservableEvent -> TraceRecord` adapter |
-| `packages/devtool-plugin` | `@hafley/rxjs-debugger` (unchanged name) | `vite`, `oxc-parser`, `magic-string`, `lodash` | Node only | the Vite plugin, the source transform, the dev-server WebSocket transport |
+| `packages/devtool-plugin` | `@hafley66/rxjs-debugger` (unchanged name) | `vite`, `oxc-parser`, `magic-string`, `lodash` | Node only | the Vite plugin, the source transform, the dev-server WebSocket transport |
 | `packages/debug-ui` | `@hafley/debug-ui` | `react`, `react-dom`, and whatever §4 buys | browser only | the Network-tab panel |
 
 Dependency direction, and it is acyclic in one direction only:
@@ -548,7 +548,7 @@ Four deliberate choices in that manifest.
 
 `./hmr` is the fix for the broken `exports["./hmr"]` in the current manifest, which
 points at `./src/tracking/v2/hmr/4_module-scope.ts`, a path that does not exist, while
-`2_user_transform.ts:645` emits `"@hafley/rxjs-debugger/hmr"` as the default import
+`2_user_transform.ts:645` emits `"@hafley66/rxjs-debugger/hmr"` as the default import
 specifier. Any consumer outside this repository resolves that to nothing today. The
 transform's default specifier changes to `"@hafley/debug-rxjs/hmr"` in the same edit.
 
@@ -2901,7 +2901,7 @@ Quarantines the rest with `// BASELINE-RED 2026-07-25`.
 
 ```bash
 cd packages/devtool-plugin
-pnpm --filter @hafley/rxjs-ext build
+pnpm --filter @hafley66/rxjs-ext build
 pnpm typecheck                                     # exit 0
 pnpm test:run                                      # exit 0
 pnpm build && test -f dist/index.js                # exit 0
@@ -2973,7 +2973,7 @@ The previous plan's §7 is adopted **whole and unchanged**, including the
 `minify: "esbuild"` warning, the `rollupOptions` to `rolldownOptions` rename, and the
 `resolve.mainFields` risk to the rxjs dist-path guards. Added on top: `devtool-plugin`
 sheds everything that moved to `debug-rxjs`, its default HMR import specifier changes from
-`"@hafley/rxjs-debugger/hmr"` to `"@hafley/debug-rxjs/hmr"` (`2_user_transform.ts:645`),
+`"@hafley66/rxjs-debugger/hmr"` to `"@hafley/debug-rxjs/hmr"` (`2_user_transform.ts:645`),
 and the `/2_ui` and `/lib` exclusion plus the whole-package exclusions land in
 `shouldTransformUserCode` (§2.3, fix 1).
 

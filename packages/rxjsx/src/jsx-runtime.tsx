@@ -6,7 +6,7 @@ import {
   deferFrom,
   type HtmlEventIndex$,
   TAG,
-} from "@hafley/rxjs-ext"
+} from "@hafley66/rxjs-ext"
 import { isObservable, merge, Observable, of, Subscription } from "rxjs"
 import { filter, map, scan } from "rxjs/operators"
 import { fragment, h, VNode } from "snabbdom"

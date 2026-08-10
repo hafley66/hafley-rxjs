@@ -36,8 +36,8 @@ importers:
 
   packages/devtool-plugin:
     dependencies:
-      '@hafley/rxjs-ext':
-        specifier: link:../rxjs-ext
+      '@hafley66/rxjs-ext':
+        specifier: workspace:*
         version: link:../rxjs-ext
       d3:
         specifier: ^7.9.0
@@ -333,7 +333,7 @@ importers:
       '@biomejs/biome':
         specifier: ^2.3.11
         version: 2.3.11
-      '@hafley/rxjs-ext':
+      '@hafley66/rxjs-ext':
         specifier: workspace:*
         version: link:../rxjs-ext
       '@playwright/test':
@@ -400,7 +400,7 @@ importers:
 
   packages/rxjsx:
     dependencies:
-      '@hafley/rxjs-ext':
+      '@hafley66/rxjs-ext':
         specifier: workspace:*
         version: link:../rxjs-ext
       rxjs:

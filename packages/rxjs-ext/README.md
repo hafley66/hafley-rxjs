@@ -1,4 +1,4 @@
-# @hafley/rxjs-ext
+# @hafley66/rxjs-ext
 
 RxJS operators that should exist but don't.
 

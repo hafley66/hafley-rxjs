@@ -1,6 +1,6 @@
 {
   "name": "@hafley66/path",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Typed path templates and path value access",
   "type": "module",
   "main": "./dist/index.js",

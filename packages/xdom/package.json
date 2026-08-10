@@ -1,6 +1,6 @@
 {
   "name": "@hafley66/xdom",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Routed DOM events + turnkey React containers for hafley-rxjs",
   "type": "module",
   "main": "./dist/index.js",

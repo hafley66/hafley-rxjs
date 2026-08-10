@@ -1,5 +1,5 @@
 {
-  "name": "@hafley/rxjsx",
+  "name": "@hafley66/rxjsx",
   "version": "0.0.1",
   "description": "Observable-based JSX runtime using Snabbdom virtual DOM",
   "type": "module",
@@ -22,7 +22,7 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
-    "@hafley/rxjs-ext": "workspace:*",
+    "@hafley66/rxjs-ext": "workspace:*",
     "snabbdom": "^3.6.2"
   },
   "peerDependencies": {

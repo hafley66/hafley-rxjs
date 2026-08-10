@@ -3,7 +3,7 @@
 exports[`user-transform > transformUserCode > class this reference patterns > DOES wrap direct BehaviorSubject at module level 1`] = `
 {
   "code": "
-import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
 const __$ = _rxjs_debugger_module_start(import.meta.url);
 import { BehaviorSubject } from 'rxjs'
 const state$ = __$("state$:new BehaviorSubject({count:0})", () => new BehaviorSubject({ count: 0 }))
@@ -28,7 +28,7 @@ if (import.meta.hot) {
 exports[`user-transform > transformUserCode > class this reference patterns > does NOT wrap extended Subject classes (runtime handles via constructor patch) 1`] = `
 {
   "code": "
-import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
 const __$ = _rxjs_debugger_module_start(import.meta.url);
 import { BehaviorSubject } from 'rxjs'
 class EasierBS<T> extends BehaviorSubject<T> {}

@@ -14,7 +14,7 @@ import {
   deferFrom,
   TAG,
   debug$,
-} from "@hafley/rxjs-ext"
+} from "@hafley66/rxjs-ext"
 import type { RxJSXNode } from "./jsx-runtime.tsx"
 
 // Import Snabbdom modules

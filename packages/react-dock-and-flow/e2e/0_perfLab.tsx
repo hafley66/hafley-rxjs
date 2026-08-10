@@ -1,5 +1,5 @@
 import { SignalReact } from "@hafley66/signals/react"
-import { Dom } from "@hafley/rxjs-ext"
+import { Dom } from "@hafley66/rxjs-ext"
 import { createRoot } from "react-dom/client"
 import { filter, map, merge } from "rxjs"
 import "dockview/dist/styles/dockview.css"

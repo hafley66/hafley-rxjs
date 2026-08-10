@@ -139,7 +139,7 @@ body.
 | 2 | Add `**/__tests__/hmr-integration/fixture*/**` to `tsconfig.json` `exclude`. Those are standalone apps with their own `vite.config.ts` | 10 TS18048 | `pnpm typecheck 2>&1 \| grep -c TS18048` = 0 |
 | 3 | Delete the 7 unused bindings and the unused `ArgEntity2` type at `0_store.ts:743` | 7 TS6133 + 1 TS6196 | `grep -c "TS6133\|TS6196"` = 0 |
 | 4 | Declare the two globals once in a new `src/globals.d.ts`: the `___rxjs_hmr_key___` unique symbol as an index-signature interface, and `interface Window { ____root?: unknown }` | 4 TS7053 + 3 TS2339 | `grep -c "TS7053\|TS2339"` = 0 |
-| 5 | Add `"references": [{ "path": "../rxjs-ext" }]` and build `rxjs-ext` first. Its `exports.types` points at a `dist/index.d.ts` that does not exist until built | 1 TS7016 | `pnpm --filter @hafley/rxjs-ext build && pnpm typecheck` |
+| 5 | Add `"references": [{ "path": "../rxjs-ext" }]` and build `rxjs-ext` first. Its `exports.types` points at a `dist/index.d.ts` that does not exist until built | 1 TS7016 | `pnpm --filter @hafley66/rxjs-ext build && pnpm typecheck` |
 | 6 | `2_diet_rxjs.ts:57`: the `pipe` overload set is incompatible with the implementation signature | 1 TS2394 | |
 | 7 | `app.tsx:139`: an `unknown` rendered as a child | 1 TS2322 | |
 | 8 | Remove `"typescript": "^5.9.3"` from `devtool-plugin` `dependencies`. Re-baseline after this step | n/a | `pnpm typecheck` exits 0 |
@@ -246,7 +246,7 @@ investigation. `packages/json-rx` runs the same stack green today
 
 ```bash
 cd packages/devtool-plugin
-pnpm --filter @hafley/rxjs-ext build
+pnpm --filter @hafley66/rxjs-ext build
 pnpm typecheck                                      # exit 0
 pnpm test:run                                       # exit 0
 pnpm build && test -f dist/index.js                 # exit 0
@@ -1080,7 +1080,7 @@ The repo publishes under **`@hafley66`** (`@hafley66/signals@0.0.2`,
 |---|---|---|---|---|
 | `packages/debug-core` | `@hafley66/debug-core` | **none** | Node 20.19+, any browser, any worker | the model, recorder, ring, projector, index, filter, waterfall geometry, in-page and BroadcastChannel transports, the `TraceRecord` JSON Schema |
 | `packages/debug-rxjs` | `@hafley66/debug-rxjs` | none. `rxjs` is a peer (`^7.8.0 \|\| ^8`) | anywhere rxjs runs | `traced()`, the synchronous parent scope, `patchObservable`, `decorateCreate`, `decorateOperatorFun`, the `ObservableEvent -> TraceRecord` adapter |
-| `packages/devtool-plugin` | `@hafley/rxjs-debugger` (name unchanged) | `vite`, `oxc-parser`, `magic-string`, `lodash` | Node only | the Vite plugin, the source transform, the dev-server WebSocket transport, the fixture harness |
+| `packages/devtool-plugin` | `@hafley66/rxjs-debugger` (name unchanged) | `vite`, `oxc-parser`, `magic-string`, `lodash` | Node only | the Vite plugin, the source transform, the dev-server WebSocket transport, the fixture harness |
 | `packages/debug-ui` | `@hafley66/debug-ui` | `@hafley66/signals`, `react`, `react-dom`, and whatever §4 buys | browser only | the Network-tab panel |
 | `packages/json-rx` | `@hafley66/json-rx` (exists) | unchanged | anywhere | gains two **optional peers** and a `recorder` option. §3.9 |
 
@@ -1181,7 +1181,7 @@ feature-detects.
 
 `./hmr` fixes the broken `exports["./hmr"]` in the current manifest, which points at
 `./src/tracking/v2/hmr/4_module-scope.ts`, a path that does not exist, while
-`2_user_transform.ts:645` emits `"@hafley/rxjs-debugger/hmr"` as the default import
+`2_user_transform.ts:645` emits `"@hafley66/rxjs-debugger/hmr"` as the default import
 specifier. Any consumer outside this repository resolves that to nothing today. The
 transform's default specifier changes to `"@hafley66/debug-rxjs/hmr"` in the same edit.
 
@@ -2310,7 +2310,7 @@ integration tests. Concretely:
 
 - **The primary suite is `@playwright/test` driving real fixture Vite projects.** Each
   fixture is its own directory with its own `index.html`, `main.ts`, and `vite.config.ts`
-  that installs `@hafley/rxjs-debugger` exactly the way a user would. Playwright's
+  that installs `@hafley66/rxjs-debugger` exactly the way a user would. Playwright's
   `webServer` starts it. The test drives the app and captures goldens.
 - **`packages/debug-core` gets exactly six unit rails and no more**, listed in Phase 1.
   Core is a pure library with no page to run, and each of the six maps to a named defect in
@@ -2376,7 +2376,7 @@ for real. Quarantines the rest with `// BASELINE-RED 2026-07-26`.
 
 ```bash
 cd packages/devtool-plugin
-pnpm --filter @hafley/rxjs-ext build
+pnpm --filter @hafley66/rxjs-ext build
 pnpm typecheck                                      # exit 0
 pnpm test:run                                       # exit 0
 pnpm build && test -f dist/index.js                 # exit 0
@@ -2444,7 +2444,7 @@ Owns: all `package.json` files, `vite.config.ts`, `vitest.browser.config.ts`,
 The prior live-visualizer plan's §7 is adopted whole, including the `minify: "esbuild"`
 finding, the `rollupOptions` to `rolldownOptions` rename, and the `resolve.mainFields` risk
 to the rxjs dist-path guards. On top: `devtool-plugin` sheds what moved, its default HMR
-import specifier changes from `"@hafley/rxjs-debugger/hmr"` to
+import specifier changes from `"@hafley66/rxjs-debugger/hmr"` to
 `"@hafley66/debug-rxjs/hmr"` (`2_user_transform.ts:645`), and the `/2_ui`, `/lib`, and
 whole-package exclusions land in `shouldTransformUserCode`.
 

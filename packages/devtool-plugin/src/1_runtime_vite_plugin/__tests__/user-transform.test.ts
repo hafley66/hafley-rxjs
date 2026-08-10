@@ -41,7 +41,7 @@ describe("user-transform", () => {
   describe("transformUserCode", () => {
     const transform = (code: string, id = "/app/test.ts") =>
       transformUserCode(code, id, {
-        hmrImport: "@hafley/rxjs-debugger/hmr",
+        hmrImport: "@hafley66/rxjs-debugger/hmr",
       })
 
     it("returns null for files without rxjs patterns", () => {
@@ -51,7 +51,7 @@ describe("user-transform", () => {
 
     it("returns null for already instrumented files", () => {
       const code = `
-import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr"
+import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr"
 const __$ = _rxjs_debugger_module_start(import.meta.url)
 `
       const result = transform(code)
@@ -67,7 +67,7 @@ const data$ = of(1, 2, 3)`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           const data$ = __$("data$:of(1,2,3)", () => of(1, 2, 3))
@@ -87,7 +87,7 @@ const events$ = new Subject()`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { Subject } from 'rxjs'
           const events$ = __$("events$:new Subject()", () => new Subject())
@@ -107,7 +107,7 @@ const state$ = new BehaviorSubject(0)`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { BehaviorSubject } from 'rxjs'
           const state$ = __$("state$:new BehaviorSubject(0)", () => new BehaviorSubject(0))
@@ -128,7 +128,7 @@ const doubled$ = source$.pipe(map(x => x * 2))`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           import { map } from 'rxjs/operators'
@@ -150,7 +150,7 @@ const events$ = new Subject()`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of, Subject } from 'rxjs'
           const data$ = __$("data$:of(1)", () => of(1))
@@ -173,7 +173,7 @@ data$.subscribe(console.log)`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           __$.sub("sub:data$.subscribe(console.log)", () => data$.subscribe(console.log))
@@ -193,7 +193,7 @@ data$.subscribe({ next: console.log, error: console.error })`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           __$.sub("sub:data$.subscribe({error:console.error,next:console.log})", () => data$.subscribe({ next: console.log, error: console.error }))
@@ -213,7 +213,7 @@ data$.forEach(console.log)`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           __$.sub("sub:data$.forEach(console.log)", () => data$.forEach(console.log))
@@ -240,7 +240,7 @@ function makeObs() {
         // but the function itself IS wrapped for HMR, with hoisting preserved
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           const __fn$0 = __$.fn("fn:makeObs", function makeObs() {
@@ -269,7 +269,7 @@ const makeObs = () => {
         // arrow function is wrapped directly (no hoisting concern)
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           const makeObs = __$.fn("fn:makeObs", () => {
@@ -294,7 +294,7 @@ const data$ = of(1)`
         expect(result).toMatchInlineSnapshot(`
           {
             "code": "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           const of = __$.fn("fn:of", (x: number) => x * 2)
           const data$ = of(1)
@@ -329,7 +329,7 @@ const b$ = from([1, 2])`
         expect(result).toMatchInlineSnapshot(`
           {
             "code": "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           import { from } from './my-utils'
@@ -365,7 +365,7 @@ const data$ = of(1)`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           const x = 1
           import { of } from 'rxjs'
@@ -388,7 +388,7 @@ const data$ = of(1)`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { map } from 'rxjs/operators'
           const config = {}
@@ -417,7 +417,7 @@ const x$ = of(1, 2, 3)`
         // Same hash because whitespace is stripped from AST before hashing
         expect(result1.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           const x$ = __$("x$:of(1,2,3)", () => of(1,2,3))
@@ -429,7 +429,7 @@ const x$ = of(1, 2, 3)`
         `)
         expect(result2.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           const x$ = __$("x$:of(1,2,3)", () => of(1, 2, 3))
@@ -454,7 +454,7 @@ const x$ = of(2)`
         // Different values = different hashes
         expect(result1.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           const x$ = __$("x$:of(1)", () => of(1))
@@ -466,7 +466,7 @@ const x$ = of(2)`
         `)
         expect(result2.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           const x$ = __$("x$:of(2)", () => of(2))
@@ -488,7 +488,7 @@ const x$ = of(1)`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           const x$ = __$("x$:of(1)", () => of(1))
@@ -521,7 +521,7 @@ const x$ = createObs(1)`
         expect(result).not.toBeNull()
         expect(result!.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of as createObs } from 'rxjs'
           const x$ = __$("x$:createObs(1)", () => createObs(1))
@@ -542,7 +542,7 @@ const x$ = rx.of(1)`
         expect(result).not.toBeNull()
         expect(result!.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import * as rx from 'rxjs'
           const x$ = __$("x$:rx.of(1)", () => rx.of(1))
@@ -562,7 +562,7 @@ export const x$ = of(1)`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           export const x$ = __$("x$:of(1)", () => of(1))
@@ -585,7 +585,7 @@ class Store {
         expect(result).not.toBeNull()
         expect(result!.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           class Store {
@@ -607,7 +607,7 @@ let x$ = of(1)`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           let x$ = __$("x$:of(1)", () => of(1))
@@ -627,7 +627,7 @@ var x$ = of(1)`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           var x$ = __$("x$:of(1)", () => of(1))
@@ -648,7 +648,7 @@ const x$ = source$.pipe(map(x => x)).pipe(filter(x => x > 0))`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           import { map, filter } from 'rxjs/operators'
@@ -673,7 +673,7 @@ const b$ = of(1)`
         // Same content = same hash, but different var names make unique keys
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           const a$ = __$("a$:of(1)", () => of(1))
@@ -696,7 +696,7 @@ b$.subscribe(console.log)`
         // Both subs have same callback, need unique keys
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { of } from 'rxjs'
           __$.sub("sub:a$.subscribe(console.log)", () => a$.subscribe(console.log))
@@ -725,7 +725,7 @@ const shared$ = source$.pipe(shareReplay(1))`
         // shared$ wraps the pipe - and source$ inside is the STABLE wrapper
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { Subject } from 'rxjs'
           import { shareReplay } from 'rxjs/operators'
@@ -751,7 +751,7 @@ const shared$ = events$.pipe(share())`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { Subject } from 'rxjs'
           import { share } from 'rxjs/operators'
@@ -777,7 +777,7 @@ const processed$ = source$.pipe(map(x => x * 2), share(), filter(x => x > 0))`
 
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { Subject } from 'rxjs'
           import { map, share, filter } from 'rxjs/operators'
@@ -860,7 +860,7 @@ const custom$ = new Observable(subscriber => {
         const result = transform(code)!
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { Observable } from 'rxjs'
           const custom$ = __$("custom$:new Observable(fn)", () => new Observable(subscriber => {
@@ -883,7 +883,7 @@ const custom$ = new MyObservable()`
         // MyObservable extends Observable, so new MyObservable() should be wrapped
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { Observable } from 'rxjs'
           class MyObservable<T> extends Observable<T> {}
@@ -905,7 +905,7 @@ const custom$ = new DerivedObs()`
         // DerivedObs extends BaseObs extends Observable
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { Observable } from 'rxjs'
           class BaseObs<T> extends Observable<T> {}
@@ -928,7 +928,7 @@ const subj$ = new MySubject()`
         // The wrapping still happens, but via subject path
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import { Subject, Observable } from 'rxjs'
           class MySubject<T> extends Subject<T> {}
@@ -947,7 +947,7 @@ const custom$ = new rx.Observable(sub => sub.next(1))`
         const result = transform(code)!
         expect(result.code).toMatchInlineSnapshot(`
           "
-          import { _rxjs_debugger_module_start } from "@hafley/rxjs-debugger/hmr";
+          import { _rxjs_debugger_module_start } from "@hafley66/rxjs-debugger/hmr";
           const __$ = _rxjs_debugger_module_start(import.meta.url);
           import * as rx from 'rxjs'
           const custom$ = __$("custom$:new Observable(fn)", () => new rx.Observable(sub => sub.next(1)))

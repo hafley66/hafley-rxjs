@@ -1,4 +1,4 @@
-import { TAG } from "@hafley/rxjs-ext"
+import { TAG } from "@hafley66/rxjs-ext"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import {

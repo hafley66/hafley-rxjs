@@ -38,7 +38,7 @@
     "rxjs": ">=7.8.0"
   },
   "devDependencies": {
-    "@hafley/rxjs-ext": "workspace:*",
+    "@hafley66/rxjs-ext": "workspace:*",
     "@biomejs/biome": "^2.3.11",
     "@playwright/test": "^1.61.1",
     "@types/react": "^19.0.0",

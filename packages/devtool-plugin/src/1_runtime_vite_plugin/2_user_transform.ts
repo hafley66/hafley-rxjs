@@ -642,7 +642,7 @@ export function transformUserCode(
   id: string,
   options: UserTransformOptions = {},
 ): { code: string; map: SourceMap } | null {
-  const { hmrImport = "@hafley/rxjs-debugger/hmr" } = options
+  const { hmrImport = "@hafley66/rxjs-debugger/hmr" } = options
   const no = code.includes("// noRxjs()")
   if (no) return null
   const disableAutoCreateDecorate = id.match(/node_modules.*\/rxjs.*/gi)

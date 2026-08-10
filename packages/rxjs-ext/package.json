@@ -1,5 +1,5 @@
 {
-  "name": "@hafley/rxjs-ext",
+  "name": "@hafley66/rxjs-ext",
   "version": "0.0.1",
   "description": "RxJS operator extensions - switchMapCached, repeatValue, and more",
   "type": "module",

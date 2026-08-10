@@ -1,5 +1,5 @@
 {
-  "name": "@hafley/rxjs-debugger",
+  "name": "@hafley66/rxjs-debugger",
   "version": "0.1.0",
   "description": "Observable tracking library with automatic memory leak detection",
   "type": "module",
@@ -40,7 +40,7 @@
   "license": "MIT",
   "packageManager": "pnpm@10.26.2",
   "dependencies": {
-    "@hafley/rxjs-ext": "link:../rxjs-ext",
+    "@hafley66/rxjs-ext": "workspace:*",
     "d3": "^7.9.0",
     "localforage": "^1.10.0",
     "lodash": "^4.17.21",
