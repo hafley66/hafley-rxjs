@@ -1,11 +1,12 @@
 import type { Plugin } from "vite"
 
 // Redirect JSX-compiled react/jsx-runtime imports to the signals runtime, which
-// wraps each function component in SignalReact. Works for esbuild and plugin-react.
+// wraps each function component in SignalReact. Runs post-transform so the import
+// the JSX compiler emitted is already present in the code string.
 export function signalsJsx(): Plugin {
   return {
     name: "@hafley66/signals-jsx",
-    enforce: "pre",
+    enforce: "post",
     transform(code, id) {
       if (!/\.[cm]?[tj]sx$/.test(id)) return null
       let out = code

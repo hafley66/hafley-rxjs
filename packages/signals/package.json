@@ -34,6 +34,7 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
+    "test:jsx-e2e": "vitest --config vitest.jsx-e2e.config.ts",
     "test:ui": "vitest --ui"
   },
   "dependencies": {
