@@ -13,6 +13,7 @@ export function useGrid<TData extends RowData>(grid: Grid<TData>) {
     columns: grid.columns,
     getRowId: grid.getRowId,
     getSubRows: grid.getSubRows,
+    getRowCanExpand: grid.getRowCanExpand ? (row) => grid.getRowCanExpand?.(row.original) ?? false : undefined,
     state,
     onSortingChange: grid.onSortingChange,
     onColumnFiltersChange: grid.onColumnFiltersChange,

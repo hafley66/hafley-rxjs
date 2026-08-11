@@ -99,6 +99,7 @@ export function createGrid<TData extends RowData>(config: GridConfig<TData>): Gr
     mode: config.mode,
     getRowId: config.getRowId,
     getSubRows: config.getSubRows,
+    getRowCanExpand: config.getRowCanExpand,
     onSortingChange: on("sorting"),
     onColumnFiltersChange: on("columnFilters"),
     onGlobalFilterChange: on("globalFilter"),

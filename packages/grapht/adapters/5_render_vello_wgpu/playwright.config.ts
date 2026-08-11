@@ -7,6 +7,8 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:4185",
     browserName: "chromium",
     channel: "chrome",
+    viewport: { width: 800, height: 600 },
+    deviceScaleFactor: 1,
     launchOptions: { args: ["--enable-unsafe-webgpu", "--enable-unsafe-swiftshader"] },
     screenshot: "only-on-failure",
     trace: "retain-on-failure",

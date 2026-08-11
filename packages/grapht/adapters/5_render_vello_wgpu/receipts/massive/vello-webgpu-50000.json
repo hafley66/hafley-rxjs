@@ -1,0 +1,749 @@
+{
+  "nodes": 50000,
+  "visualReadyMs": 279.93316700000014,
+  "implementation": "vello-wasm-webgpu",
+  "status": "healthy",
+  "fixture": "grid-50000",
+  "nodeCount": 50000,
+  "edgeCount": 99552,
+  "fixtureSource": {
+    "url": "/common-fixtures/grid-50000.json",
+    "bytes": 3051154,
+    "sha256": "f6c647115412a80623d3cd0b43571e077c49c2ae24c1e01c3de4556e8b9a4672"
+  },
+  "wasm": {
+    "target": "wasm32-unknown-unknown",
+    "batchedFixtureLoad": true,
+    "bridge": "wasm-bindgen"
+  },
+  "webgpu": {
+    "context": "webgpu",
+    "surfaceFormat": "rgba8unorm-or-bgra8unorm",
+    "presentedFrames": 1
+  },
+  "visualValidity": {
+    "canvasWidth": 1024,
+    "canvasHeight": 768,
+    "pixelProbeBytes": 124062,
+    "sceneUnits": 2944182,
+    "drawnNodeCount": 50000,
+    "drawnEdgeCount": 99552,
+    "valid": true
+  },
+  "scenarios": [
+    {
+      "scenario": "camera-pan",
+      "args": {
+        "dx": 12,
+        "dy": -8,
+        "frames": 3
+      },
+      "sample": {
+        "scenario": "camera-pan",
+        "support": "supported",
+        "operationLatencyMs": 17.299999952316284,
+        "frameP50Ms": 7.400000000000034,
+        "frameP95Ms": 9.300000000000011,
+        "frameMaxMs": 9.300000000000011,
+        "droppedFrames": 0,
+        "jsHeapUsedBytes": 20929474,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": 0,
+        "drawCount": 2944182,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "camera-wheel-zoom",
+      "args": {
+        "deltaY": -120,
+        "anchorX": 256,
+        "anchorY": 192,
+        "frames": 3
+      },
+      "sample": {
+        "scenario": "camera-wheel-zoom",
+        "support": "supported",
+        "operationLatencyMs": 16.299999952316284,
+        "frameP50Ms": 8.199999999999989,
+        "frameP95Ms": 8.399999999999977,
+        "frameMaxMs": 8.399999999999977,
+        "droppedFrames": 0,
+        "jsHeapUsedBytes": 20929474,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": 0,
+        "drawCount": 2944182,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "camera-pinch-zoom",
+      "args": {
+        "scale": 1.1,
+        "anchorX": 256,
+        "anchorY": 192,
+        "frames": 3
+      },
+      "sample": {
+        "scenario": "camera-pinch-zoom",
+        "support": "unsupported",
+        "reason": "pinch gesture synthesis is not implemented",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "style-update",
+      "args": {
+        "nodeCount": 64,
+        "color": 16753467
+      },
+      "sample": {
+        "scenario": "style-update",
+        "support": "supported",
+        "operationLatencyMs": 16.600000143051147,
+        "frameP50Ms": 0,
+        "frameP95Ms": 8.300000000000011,
+        "frameMaxMs": 8.300000000000011,
+        "droppedFrames": 0,
+        "jsHeapUsedBytes": 21089126,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": 256,
+        "drawCount": 2944182,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "position-update",
+      "args": {
+        "nodeCount": 64,
+        "dx": 0.25,
+        "dy": -0.125
+      },
+      "sample": {
+        "scenario": "position-update",
+        "support": "supported",
+        "operationLatencyMs": 16.40000009536743,
+        "frameP50Ms": 0,
+        "frameP95Ms": 8.399999999999977,
+        "frameMaxMs": 8.399999999999977,
+        "droppedFrames": 0,
+        "jsHeapUsedBytes": 21089126,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": 512,
+        "drawCount": 2944182,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "viewport-resize",
+      "args": {
+        "width": 960,
+        "height": 640
+      },
+      "sample": {
+        "scenario": "viewport-resize",
+        "support": "supported",
+        "operationLatencyMs": 16.200000047683716,
+        "frameP50Ms": 0,
+        "frameP95Ms": 8.400000000000034,
+        "frameMaxMs": 8.400000000000034,
+        "droppedFrames": 0,
+        "jsHeapUsedBytes": 21089126,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": 0,
+        "drawCount": 2944182,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "device-pixel-ratio-change",
+      "args": {
+        "pixelRatio": 2
+      },
+      "sample": {
+        "scenario": "device-pixel-ratio-change",
+        "support": "unsupported",
+        "reason": "device pixel ratio is browser-owned",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "group-collapse",
+      "args": {
+        "groupIds": [
+          0,
+          1
+        ]
+      },
+      "sample": {
+        "scenario": "group-collapse",
+        "support": "unsupported",
+        "reason": "compound groups are outside the Vello fixture model",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "group-expand",
+      "args": {
+        "groupIds": [
+          0,
+          1
+        ]
+      },
+      "sample": {
+        "scenario": "group-expand",
+        "support": "unsupported",
+        "reason": "compound groups are outside the Vello fixture model",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "node-insert",
+      "args": {
+        "count": 2
+      },
+      "sample": {
+        "scenario": "node-insert",
+        "support": "unsupported",
+        "reason": "node insertion is outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "node-delete",
+      "args": {
+        "count": 2
+      },
+      "sample": {
+        "scenario": "node-delete",
+        "support": "unsupported",
+        "reason": "node deletion is outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "edge-insert",
+      "args": {
+        "count": 2
+      },
+      "sample": {
+        "scenario": "edge-insert",
+        "support": "unsupported",
+        "reason": "edge insertion is outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "edge-delete",
+      "args": {
+        "count": 2
+      },
+      "sample": {
+        "scenario": "edge-delete",
+        "support": "unsupported",
+        "reason": "edge deletion is outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "visibility-hide",
+      "args": {
+        "nodeCount": 2,
+        "edgeCount": 2
+      },
+      "sample": {
+        "scenario": "visibility-hide",
+        "support": "unsupported",
+        "reason": "visibility mutation is outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "visibility-show",
+      "args": {
+        "nodeCount": 2,
+        "edgeCount": 2
+      },
+      "sample": {
+        "scenario": "visibility-show",
+        "support": "unsupported",
+        "reason": "visibility mutation is outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "layout-apply",
+      "args": {
+        "positionCount": 64
+      },
+      "sample": {
+        "scenario": "layout-apply",
+        "support": "supported",
+        "operationLatencyMs": 16.600000143051147,
+        "frameP50Ms": 0,
+        "frameP95Ms": 8.300000000000011,
+        "frameMaxMs": 8.300000000000011,
+        "droppedFrames": 0,
+        "jsHeapUsedBytes": 21258298,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": 512,
+        "drawCount": 2944182,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "layout-run",
+      "args": {
+        "algorithm": "grid",
+        "iterations": 10
+      },
+      "sample": {
+        "scenario": "layout-run",
+        "support": "unsupported",
+        "reason": "layout execution is outside the browser renderer adapter",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "position-animation",
+      "args": {
+        "nodeCount": 64,
+        "frames": 3,
+        "durationMs": 50
+      },
+      "sample": {
+        "scenario": "position-animation",
+        "support": "supported",
+        "operationLatencyMs": 49,
+        "frameP50Ms": 8.299999999999955,
+        "frameP95Ms": 8.300000000000068,
+        "frameMaxMs": 8.300000000000068,
+        "droppedFrames": 0,
+        "jsHeapUsedBytes": 21383158,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": 512,
+        "drawCount": 2944182,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "style-animation",
+      "args": {
+        "nodeCount": 64,
+        "frames": 3,
+        "durationMs": 50
+      },
+      "sample": {
+        "scenario": "style-animation",
+        "support": "unsupported",
+        "reason": "style animation is outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "node-click",
+      "args": {
+        "nodeIndex": 0
+      },
+      "sample": {
+        "scenario": "node-click",
+        "support": "unsupported",
+        "reason": "input event synthesis is outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "box-select",
+      "args": {
+        "x": 0,
+        "y": 0,
+        "width": 32,
+        "height": 32
+      },
+      "sample": {
+        "scenario": "box-select",
+        "support": "unsupported",
+        "reason": "input event synthesis is outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "node-hover",
+      "args": {
+        "nodeIndex": 0
+      },
+      "sample": {
+        "scenario": "node-hover",
+        "support": "unsupported",
+        "reason": "input event synthesis is outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "node-pick",
+      "args": {
+        "x": 0,
+        "y": 0
+      },
+      "sample": {
+        "scenario": "node-pick",
+        "support": "unsupported",
+        "reason": "input event synthesis is outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "graph-load",
+      "args": {
+        "fixture": "grid-1k"
+      },
+      "sample": {
+        "scenario": "graph-load",
+        "support": "unsupported",
+        "reason": "initial graph load is setup",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "graph-clear",
+      "args": {},
+      "sample": {
+        "scenario": "graph-clear",
+        "support": "unsupported",
+        "reason": "graph clear is outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 50000,
+        "visibleEdgeCount": 99552
+      }
+    },
+    {
+      "scenario": "graph-replace",
+      "args": {
+        "fixture": "grid-1k"
+      },
+      "sample": {
+        "scenario": "graph-replace",
+        "support": "supported",
+        "operationLatencyMs": 1.5,
+        "frameP50Ms": 4.599999904632568,
+        "frameP95Ms": 8.299999999999955,
+        "frameMaxMs": 8.299999999999955,
+        "droppedFrames": 0,
+        "jsHeapUsedBytes": 21383158,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": 49739,
+        "drawCount": 58174,
+        "visibleNodeCount": 1000,
+        "visibleEdgeCount": 1936
+      }
+    },
+    {
+      "scenario": "graph-dispose",
+      "args": {},
+      "sample": {
+        "scenario": "graph-dispose",
+        "support": "supported",
+        "operationLatencyMs": 0.09999990463256836,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": 0,
+        "jsHeapUsedBytes": 21383158,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": 0,
+        "drawCount": null,
+        "visibleNodeCount": 0,
+        "visibleEdgeCount": 0
+      }
+    },
+    {
+      "scenario": "graph-reload",
+      "args": {
+        "fixture": "grid-1k"
+      },
+      "sample": {
+        "scenario": "graph-reload",
+        "support": "unsupported",
+        "reason": "graph reload is outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 0,
+        "visibleEdgeCount": 0
+      }
+    },
+    {
+      "scenario": "labels-none",
+      "args": {},
+      "sample": {
+        "scenario": "labels-none",
+        "support": "unsupported",
+        "reason": "labels are outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 0,
+        "visibleEdgeCount": 0
+      }
+    },
+    {
+      "scenario": "labels-visible",
+      "args": {},
+      "sample": {
+        "scenario": "labels-visible",
+        "support": "unsupported",
+        "reason": "labels are outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 0,
+        "visibleEdgeCount": 0
+      }
+    },
+    {
+      "scenario": "labels-fixed-count",
+      "args": {
+        "count": 16
+      },
+      "sample": {
+        "scenario": "labels-fixed-count",
+        "support": "unsupported",
+        "reason": "labels are outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 0,
+        "visibleEdgeCount": 0
+      }
+    },
+    {
+      "scenario": "labels-dense",
+      "args": {},
+      "sample": {
+        "scenario": "labels-dense",
+        "support": "unsupported",
+        "reason": "labels are outside the initial scenario slice",
+        "operationLatencyMs": 0,
+        "frameP50Ms": null,
+        "frameP95Ms": null,
+        "frameMaxMs": null,
+        "droppedFrames": null,
+        "jsHeapUsedBytes": null,
+        "processRssBytes": null,
+        "uploadedBytesEstimate": null,
+        "drawCount": null,
+        "visibleNodeCount": 0,
+        "visibleEdgeCount": 0
+      }
+    }
+  ]
+}

@@ -55,6 +55,7 @@ export type GridConfig<TData extends RowData> = {
   columnDefs?: ColumnDef<GridFeatures, TData>[]
   getRowId: (row: TData) => string
   getSubRows?: (row: TData, index: number) => TData[] | undefined
+  getRowCanExpand?: (row: TData) => boolean
   mode: GridMode
   state?: Signal<GridState>
   sync?: GridSync
@@ -84,4 +85,5 @@ export type Grid<TData extends RowData> = {
   mode: GridMode
   getRowId: (row: TData) => string
   getSubRows?: (row: TData, index: number) => TData[] | undefined
+  getRowCanExpand?: (row: TData) => boolean
 } & GridChangeHandlers

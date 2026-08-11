@@ -1,6 +1,6 @@
 {
   "name": "@hafley66/grid",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Signal-driven TanStack v9 grid for hafley-rxjs",
   "type": "module",
   "main": "./dist/index.js",

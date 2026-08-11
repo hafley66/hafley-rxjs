@@ -1,6 +1,6 @@
 :root { color-scheme: dark; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #11151b; color: #d7deea; }
-body { margin: 0; min-width: 1040px; background: #11151b; }
-main { width: 1024px; margin: 20px auto; }
+body { margin: 0; min-width: 800px; background: #11151b; }
+main { width: 800px; margin: 0 auto; }
 h1 { font-size: 18px; font-weight: 600; }
-#graph { display: block; width: 1024px; height: 768px; border: 1px solid #39465d; background: #12151b; }
+#graph { display: block; width: 800px; height: 600px; border: 1px solid #39465d; background: #12151b; }
 #receipt { min-height: 120px; white-space: pre-wrap; color: #9bb8dd; }
