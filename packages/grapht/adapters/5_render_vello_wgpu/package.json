@@ -1,0 +1,21 @@
+{
+  "name": "@hafley66/grapht-render-vello-chromium",
+  "version": "0.1.0",
+  "description": "Vello Rust/WASM WebGPU browser projection adapter for Grapht",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "wasm:build": "cargo build --release --target wasm32-unknown-unknown --lib && mkdir -p wasm/pkg && wasm-bindgen target/wasm32-unknown-unknown/release/grapht_render_vello_wgpu.wasm --target web --out-dir wasm/pkg --no-typescript",
+    "build": "pnpm run wasm:build && vite build",
+    "typecheck": "tsc --noEmit",
+    "lab": "node ../../scripts/0_generate_renderer_fixture.mjs 1000 && pnpm run wasm:build && playwright test -c playwright.config.ts",
+    "check": "pnpm run typecheck && cargo test && cargo check --target wasm32-unknown-unknown"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@types/node": "^25.0.8",
+    "typescript": "7.0.2",
+    "vite": "^8.2.1",
+    "zod": "^4.4.3"
+  }
+}

@@ -6,6 +6,16 @@ check:
     cargo test
     cargo check --target wasm32-unknown-unknown
 
+wasm-build:
+    cargo build --release --target wasm32-unknown-unknown --lib
+    mkdir -p wasm/pkg
+    wasm-bindgen target/wasm32-unknown-unknown/release/grapht_render_vello_wgpu.wasm --target web --out-dir wasm/pkg --no-typescript
+
+chromium: wasm-build
+    node ../../scripts/0_generate_renderer_fixture.mjs 1000
+    mkdir -p receipts/chromium
+    pnpm exec playwright test -c playwright.config.ts
+
 bench fixture="grid-1k":
     echo '{"protocol":"grapht-bench/0","runId":"vello-{{fixture}}","fixture":"{{fixture}}","operation":"render","outputDirectory":"receipts/generated"}' | cargo run --bin 1_protocol_adapter
 
