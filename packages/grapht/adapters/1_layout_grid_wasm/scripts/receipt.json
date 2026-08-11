@@ -1,0 +1,37 @@
+{
+  "adapter": "layout-grid-wasm",
+  "command": "JSONL stdin -> worker_threads -> WebAssembly.instantiate -> geometry manifest",
+  "exitCode": 0,
+  "sampleCount": 6,
+  "result": {
+    "protocol": "grapht-bench/0",
+    "type": "result",
+    "runId": "receipt-wasm",
+    "implementation": "layout-grid-wasm",
+    "operation": "layout",
+    "artifact": "geometry.manifest.json",
+    "artifactHash": "007b52f8c529c6dff05a6f0d294776e4a6847a6d4181cf4fcd8564998e9fd7d1",
+    "counters": {
+      "nodes": 1000,
+      "edges": 1500,
+      "parseNs": 1627333,
+      "spawnNs": 845000,
+      "loadNs": 345083,
+      "instantiateNs": 264208,
+      "transferNs": 17172833,
+      "layoutNs": 231917,
+      "serializeNs": 1574291,
+      "totalNs": 21518458
+    }
+  },
+  "stderr": "",
+  "manifest": {
+    "protocol": "grapht-geometry/0",
+    "nodeIds": "nodeIds.txt",
+    "positions": "positions.f32",
+    "edges": "edges.u32",
+    "nodeCount": 1000,
+    "edgeCount": 1500,
+    "scalar": "f32-le"
+  }
+}

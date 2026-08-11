@@ -1,0 +1,9 @@
+{
+  "edgeCount": 9940,
+  "edges": "edges.json",
+  "nodeCount": 5041,
+  "nodeIds": "nodeIds.json",
+  "positions": "positions.f32le.bin",
+  "protocol": "grapht-geometry/0",
+  "scalar": "f32-le"
+}

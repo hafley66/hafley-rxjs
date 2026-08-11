@@ -1,0 +1,62 @@
+direction: right
+
+title: Grapht baseline receipts {
+  shape: text
+  near: top-center
+  style.font-size: 28
+}
+
+layout: Layout receipt, n = 1 {
+  direction: down
+
+  total: Total milliseconds {
+    direction: right
+    js: "JS worker  41.509 ms" {
+      width: 415
+      style.fill: "#d97706"
+    }
+    wasm: "Rust/Wasm  21.518 ms" {
+      width: 215
+      style.fill: "#2563eb"
+    }
+  }
+
+  transfer: Transfer milliseconds {
+    direction: right
+    js: "JS worker  31.359 ms" {
+      width: 313
+      style.fill: "#d97706"
+    }
+    wasm: "Rust/Wasm  17.173 ms" {
+      width: 171
+      style.fill: "#2563eb"
+    }
+  }
+
+  compute: Layout milliseconds {
+    direction: right
+    js: "JS worker  1.176 ms" {
+      width: 235
+      style.fill: "#d97706"
+    }
+    wasm: "Rust/Wasm  0.232 ms" {
+      width: 46
+      style.fill: "#2563eb"
+    }
+  }
+
+  parity: "artifact hash: identical" {
+    shape: text
+    style.font-color: "#16a34a"
+  }
+}
+
+renderers: Renderer dataset status {
+  direction: down
+  cytoscape: "Cytoscape | fixtures 1k / 5k / 10k | timing distribution absent"
+  canvaskit: "CanvasKit | fixtures 1k / 5k / 10k | timing distribution absent"
+  sigma: "Sigma | fixtures 1k / 5k / 10k | timing distribution absent"
+  vello: "Vello/WGPU | fixtures 1k / 5k / 10k | timing distribution absent"
+}
+
+layout -> renderers: geometry artifact

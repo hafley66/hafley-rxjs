@@ -1,0 +1,7 @@
+{
+  "id": "grid-10k",
+  "kind": "grid",
+  "rows": 100,
+  "cols": 100,
+  "seed": 3
+}

@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+import { fixturesMain } from "../dist/9_fixturesCli.js"
+
+process.exitCode = await fixturesMain(process.argv.slice(2))

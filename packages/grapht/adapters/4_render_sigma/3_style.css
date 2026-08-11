@@ -1,0 +1,22 @@
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: #111827;
+  color: #e5e7eb;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+
+main {
+  padding: 16px;
+}
+
+#sigma-container {
+  height: 720px;
+  width: 100%;
+  background: #0b1020;
+  border: 1px solid #374151;
+}
+
+#receipt {
+  white-space: pre-wrap;
+}

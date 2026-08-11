@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+import { identityMain } from "../dist/7_identity.js"
+
+process.exitCode = await identityMain()

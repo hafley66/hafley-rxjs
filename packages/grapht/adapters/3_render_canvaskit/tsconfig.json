@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "types": ["node", "vitest/globals"],
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["*.ts", "*.spec.ts"]
+}

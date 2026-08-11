@@ -1,0 +1,29 @@
+import type { BenchInput } from "./0_protocol.js"
+import type { CompactGraph } from "./1_geometry.js"
+
+export type FixtureSpec = { name: string; nodes: number; edges: number; seed: number }
+export const FIXTURES: FixtureSpec[] = [
+  { name: "grid-1k", nodes: 1000, edges: 1500, seed: 0x9e3779b9 },
+  { name: "grid-5k", nodes: 5000, edges: 8000, seed: 0x85ebca6b },
+  { name: "grid-10k", nodes: 10000, edges: 18000, seed: 0xc2b2ae35 },
+]
+export function mulberry32(seed: number): () => number {
+  let value = seed >>> 0
+  return () => { value = (value + 0x6d2b79f5) | 0; let t = Math.imul(value ^ (value >>> 15), value | 1); t = (t + Math.imul(t ^ (t >>> 7), t | 61)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296 }
+}
+export function generateFixture(spec: FixtureSpec): CompactGraph {
+  const random = mulberry32(spec.seed)
+  const nodeIds = Array.from({ length: spec.nodes }, (_, index) => `n${index}`)
+  const edges: Array<[number, number]> = []
+  const seen = new Set<string>()
+  const add = (source: number, target: number) => { if (source === target) return; const key = source < target ? `${source}:${target}` : `${target}:${source}`; if (!seen.has(key)) { seen.add(key); edges.push([source, target]) } }
+  for (let index = 0; index < spec.nodes; index++) add(index, (index + 1) % spec.nodes)
+  while (edges.length < spec.edges) add(Math.floor(random() * spec.nodes), Math.floor(random() * spec.nodes))
+  return { nodeIds, edges }
+}
+export function resolveGraph(input: BenchInput): CompactGraph {
+  if (input.input?.trim()) return JSON.parse(input.input) as CompactGraph
+  const fixture = FIXTURES.find(({ name }) => name === input.fixture)
+  if (!fixture) throw new Error(`unknown fixture: ${input.fixture}`)
+  return generateFixture(fixture)
+}

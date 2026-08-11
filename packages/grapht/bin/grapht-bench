@@ -1,0 +1,32 @@
+#!/usr/bin/env node
+import { runBenchMain } from "../dist/5_bench.js"
+import { recordMain } from "../dist/6_record.js"
+
+const args = process.argv.slice(2)
+const command = args[0] ?? ""
+const rest = args.slice(1)
+
+let code = 1
+if (command === "run") {
+  code = await runBenchMain(rest)
+} else if (command === "record") {
+  const map = new Map()
+  for (let i = 0; i < rest.length; i++) {
+    const arg = rest[i]
+    if (arg.startsWith("--")) {
+      const key = arg.slice(2)
+      const next = rest[i + 1]
+      if (next !== undefined && !next.startsWith("--")) {
+        map.set(key, next)
+        i++
+      } else {
+        map.set(key, "")
+      }
+    }
+  }
+  code = await recordMain(map)
+} else {
+  process.stderr.write("usage: grapht-bench <run|record>\n")
+}
+
+process.exitCode = code

@@ -1,0 +1,28 @@
+{
+  "name": "@hafley66/grapht-layout-grid-worker",
+  "version": "0.1.0",
+  "description": "Deterministic grid layout adapter executed in a JavaScript worker thread",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "grapht-layout-grid-worker": "./bin/layout-grid-worker.mjs"
+  },
+  "files": ["dist", "bin", "src", "test", "scripts", "LEARNINGS.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "node --test test/*.test.mjs",
+    "receipt": "node scripts/receipt.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "7.0.2"
+  }
+}

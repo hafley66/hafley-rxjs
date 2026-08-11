@@ -1,0 +1,4 @@
+:root { color-scheme: dark; background: #12151b; color: #eef2f7; font: 14px system-ui, sans-serif; }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #12151b; }
+canvas { width: min(96vw, 1024px); height: min(86vh, 768px); border: 1px solid #465163; touch-action: none; }
+output { position: fixed; inset: 8px auto auto 8px; white-space: pre; }

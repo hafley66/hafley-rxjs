@@ -1,0 +1,9 @@
+{
+  "protocol": "grapht-sigma-receipt/0",
+  "implementation": "sigma",
+  "fixtures": ["grid-1k", "grid-5k", "grid-10k"],
+  "shell": "pnpm bench",
+  "browser": "pnpm lab",
+  "records": ["load", "import", "firstRender", "zoom", "pan", "pick", "cameraReadback", "visibleCount", "dispose"],
+  "artifacts": ["JSONL samples", "receipt JSON", "Playwright screenshot", "Playwright trace"]
+}

@@ -1,0 +1,9 @@
+{
+  "protocol": "grapht-vello-receipt/0",
+  "implementation": "vello-wgpu",
+  "fixtures": ["grid-1k", "grid-5k", "grid-10k"],
+  "wasmTarget": "wasm32-unknown-unknown",
+  "commands": ["cargo test", "cargo check --target wasm32-unknown-unknown", "cargo run --bin 2_gpu_probe", "cargo run --bin 3_render_probe"],
+  "records": ["wasmLoad", "adapterRequest", "deviceRequest", "pipelineInitialization", "sceneEncoding", "render", "cameraPan", "cameraZoom", "pick", "dispose"],
+  "capabilityFailures": "serialized as probe status instead of skipped"
+}

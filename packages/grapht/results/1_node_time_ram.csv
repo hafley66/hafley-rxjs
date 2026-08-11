@@ -1,0 +1,7 @@
+implementation,nodes,runs,wall_median_ms,wall_min_ms,wall_max_ms,rss_median_kb,rss_min_kb,rss_max_kb
+js-worker,1024,6,53,50,54,63984,63312,64224
+js-worker,5041,5,56,55,58,72912,71712,73200
+js-worker,10000,5,58,57,59,78496,78352,79664
+rust-wasm,1024,5,49,48,54,63536,63456,64000
+rust-wasm,5041,5,53,52,59,65696,65344,65856
+rust-wasm,10000,5,58,55,60,76480,74688,76880
