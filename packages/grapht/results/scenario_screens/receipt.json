@@ -3,7 +3,7 @@
   "renderer": "scenario",
   "status": "healthy",
   "setupValid": true,
-  "fixtureMs": 2.8000001907348633,
+  "fixtureMs": 4.799999952316284,
   "nodeCount": 1000,
   "edgeCount": 1936,
   "scenarioCount": 11,
@@ -85,5 +85,5 @@
     "positionSpanY": 310,
     "valid": true
   },
-  "screenshot": "/Users/chrishafley/projects/hafley-rxjs/.boop-worktrees/feature/grapht-flash-scenarios/packages/grapht/results/scenario_screens/canvaskit-scenarios-1000.png"
+  "screenshot": "/Users/chrishafley/projects/hafley-rxjs/packages/grapht/results/scenario_screens/canvaskit-scenarios-1000.png"
 }

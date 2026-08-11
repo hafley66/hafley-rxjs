@@ -34,6 +34,26 @@ scenario-sigma:
     node scripts/0_generate_renderer_fixture.mjs 1000
     pnpm --dir adapters/4_render_sigma run lab -- e2e/1_scenarios.spec.ts
 
+# run the PixiJS unit tests and typecheck
+test-pixijs:
+    pnpm --dir adapters/6_render_pixijs run check
+
+# run the PixiJS browser scenario lane (WebGL + WebGPU, retained + particles)
+# headless by default; writes PNG + JSON receipts into the lane
+browser-pixijs:
+    node scripts/0_generate_renderer_fixture.mjs 1000
+    node scripts/0_generate_renderer_fixture.mjs 5000
+    node scripts/0_generate_renderer_fixture.mjs 10000
+    pnpm --dir adapters/6_render_pixijs run lab
+
+# record a PixiJS shell-protocol receipt through the grapht-bench/0 adapter
+receipt-pixijs:
+    pnpm --dir adapters/6_render_pixijs run receipt
+
+# visibly drive Chromium through the PixiJS lane; headed only through this recipe
+headed-pixijs:
+    pnpm --dir adapters/6_render_pixijs exec playwright test --headed
+
 # list the checked-in fixtures with node/edge counts
 fixtures: build
     @grapht-fixtures list

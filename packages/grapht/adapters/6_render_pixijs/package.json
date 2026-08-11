@@ -1,0 +1,28 @@
+{
+  "name": "@hafley66/grapht-render-pixijs",
+  "version": "0.1.0",
+  "description": "PixiJS v8 projection adapter for grapht-bench/0: WebGL and WebGPU graph import, render, camera interaction, picking, disposal receipt",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run -c vitest.config.ts",
+    "lab": "node ../../scripts/0_generate_renderer_fixture.mjs 1000 && node ../../scripts/0_generate_renderer_fixture.mjs 5000 && node ../../scripts/0_generate_renderer_fixture.mjs 10000 && playwright test -c playwright.config.ts",
+    "bench": "node --import tsx src/3_protocol_adapter.ts",
+    "receipt": "printf '%s\\n' '{\"protocol\":\"grapht-bench/0\",\"runId\":\"pixijs-receipt\",\"fixture\":\"grid-1k\",\"operation\":\"render\",\"outputDirectory\":\"receipts/generated\",\"parameters\":{\"renderer\":\"webgl\",\"representation\":\"retained\"}}' | node --import tsx src/3_protocol_adapter.ts",
+    "check": "tsc --noEmit && vitest run"
+  },
+  "dependencies": {
+    "pixi.js": "^8.9.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^25.0.8",
+    "tsx": "^4.19.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
+  },
+  "license": "MIT"
+}

@@ -3,3 +3,5 @@ dist/
 runs/
 .cache/
 *.tsbuildinfo
+target/
+test-results/

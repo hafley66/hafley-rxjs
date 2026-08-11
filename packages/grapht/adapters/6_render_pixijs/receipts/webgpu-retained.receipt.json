@@ -1,0 +1,22 @@
+{
+  "implementation": "pixijs",
+  "protocol": "grapht-pixijs-receipt/0",
+  "status": "webgpu-unavailable",
+  "renderer": "webgpu",
+  "representation": "retained",
+  "fixture": "grid-1000",
+  "nodeCount": 1000,
+  "edgeCount": 1936,
+  "fixtureSource": {
+    "url": "/common-fixtures/grid-1000.json",
+    "bytes": 49739,
+    "sha256": "170adfbbb6c4437c767b776154dbf1dc5d81c9d16f9f6a9f5cdf9dcd8ffdae9a"
+  },
+  "webgpuProbe": {
+    "available": false,
+    "reason": "requestAdapter returned null",
+    "deviceRequested": false
+  },
+  "scenarios": [],
+  "reason": "WebGPU not available in this browser: requestAdapter returned null"
+}
