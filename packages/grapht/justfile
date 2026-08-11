@@ -19,6 +19,21 @@ demo-screenshots:
 demo-headed:
     GRAPHT_BREAKPOINT_HEADED=1 pnpm --dir adapters/4_render_sigma run benchmark:breakpoints
 
+# run the deterministic core scenario contract tests
+scenario-tests:
+    pnpm run build
+    pnpm exec vitest run tests/1_scenarios.test.ts
+
+# run the Cytoscape scenario browser lane against the shared 1k JSON fixture
+scenario-cytoscape:
+    node scripts/0_generate_renderer_fixture.mjs 1000
+    pnpm --dir adapters/2_render_cytoscape run lab
+
+# run the Sigma scenario browser lane against the shared 1k JSON fixture
+scenario-sigma:
+    node scripts/0_generate_renderer_fixture.mjs 1000
+    pnpm --dir adapters/4_render_sigma run lab -- e2e/1_scenarios.spec.ts
+
 # list the checked-in fixtures with node/edge counts
 fixtures: build
     @grapht-fixtures list

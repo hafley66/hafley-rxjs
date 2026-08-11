@@ -13,7 +13,7 @@
     "receipt": "printf '%s\\n' '{\"protocol\":\"grapht-bench/0\",\"runId\":\"sigma-receipt\",\"fixture\":\"grid-1k\",\"operation\":\"render\",\"outputDirectory\":\"receipts/generated\",\"parameters\":{}}' | node --import tsx src/3_protocol_adapter.ts",
     "benchmark:breakpoints": "node 6_renderer_breakpoints.mjs",
     "demo:breakpoints": "GRAPHT_BREAKPOINT_SCREENSHOTS=1 node 6_renderer_breakpoints.mjs",
-    "lab": "playwright test -c playwright.config.ts",
+    "lab": "node ../../scripts/0_generate_renderer_fixture.mjs 1000 && node ../../scripts/0_generate_renderer_fixture.mjs 5000 && node ../../scripts/0_generate_renderer_fixture.mjs 10000 && playwright test -c playwright.config.ts",
     "check": "tsc --noEmit && vitest run"
   },
   "dependencies": {

@@ -82,9 +82,9 @@ const BENCH_SCENARIOS_ARE_EXHAUSTIVE: MissingBenchScenario extends never ? true 
 void BENCH_SCENARIOS_ARE_EXHAUSTIVE
 export const benchScenarioSchema = z.enum(BENCH_SCENARIOS)
 
-export type BenchScenarioEvent<S extends BenchScenario = BenchScenario> = S extends BenchScenario
-  ? { scenario: S; args: BenchScenarioArguments[S] }
-  : never
+export type BenchScenarioEvent<S extends BenchScenario = BenchScenario> = {
+  [K in S]: { scenario: K; args: BenchScenarioArguments[K] }
+}[S]
 
 export type BenchScenarioCases = {
   [S in BenchScenario]: readonly BenchScenarioEvent<S>[]
@@ -104,13 +104,47 @@ export type BenchScenarioHandlers<State, Sample = unknown> = {
   [S in BenchScenario]: BenchScenarioHandler<State, S, Sample>
 }
 
-export async function reduceBenchScenario<State, S extends BenchScenario, Sample>(
+export async function reduceBenchScenario<State, Sample>(
   state: State,
-  event: { scenario: S; args: BenchScenarioArguments[S] },
+  event: BenchScenarioEvent,
   handlers: BenchScenarioHandlers<State, Sample>,
 ): Promise<BenchScenarioResult<State, Sample>> {
-  const handler = handlers[event.scenario] as BenchScenarioHandler<State, S, Sample>
-  return handler(state, event.args)
+  switch (event.scenario) {
+    case "camera-pan": return handlers["camera-pan"](state, event.args)
+    case "camera-wheel-zoom": return handlers["camera-wheel-zoom"](state, event.args)
+    case "camera-pinch-zoom": return handlers["camera-pinch-zoom"](state, event.args)
+    case "style-update": return handlers["style-update"](state, event.args)
+    case "position-update": return handlers["position-update"](state, event.args)
+    case "viewport-resize": return handlers["viewport-resize"](state, event.args)
+    case "device-pixel-ratio-change": return handlers["device-pixel-ratio-change"](state, event.args)
+    case "group-collapse": return handlers["group-collapse"](state, event.args)
+    case "group-expand": return handlers["group-expand"](state, event.args)
+    case "node-insert": return handlers["node-insert"](state, event.args)
+    case "node-delete": return handlers["node-delete"](state, event.args)
+    case "edge-insert": return handlers["edge-insert"](state, event.args)
+    case "edge-delete": return handlers["edge-delete"](state, event.args)
+    case "visibility-hide": return handlers["visibility-hide"](state, event.args)
+    case "visibility-show": return handlers["visibility-show"](state, event.args)
+    case "layout-apply": return handlers["layout-apply"](state, event.args)
+    case "layout-run": return handlers["layout-run"](state, event.args)
+    case "position-animation": return handlers["position-animation"](state, event.args)
+    case "style-animation": return handlers["style-animation"](state, event.args)
+    case "node-click": return handlers["node-click"](state, event.args)
+    case "box-select": return handlers["box-select"](state, event.args)
+    case "node-hover": return handlers["node-hover"](state, event.args)
+    case "node-pick": return handlers["node-pick"](state, event.args)
+    case "graph-load": return handlers["graph-load"](state, event.args)
+    case "graph-clear": return handlers["graph-clear"](state, event.args)
+    case "graph-replace": return handlers["graph-replace"](state, event.args)
+    case "graph-dispose": return handlers["graph-dispose"](state, event.args)
+    case "graph-reload": return handlers["graph-reload"](state, event.args)
+    case "labels-none": return handlers["labels-none"](state, event.args)
+    case "labels-visible": return handlers["labels-visible"](state, event.args)
+    case "labels-fixed-count": return handlers["labels-fixed-count"](state, event.args)
+    case "labels-dense": return handlers["labels-dense"](state, event.args)
+  }
+  const exhaustive: never = event
+  return exhaustive
 }
 
 export const benchInputSchema = z.object({

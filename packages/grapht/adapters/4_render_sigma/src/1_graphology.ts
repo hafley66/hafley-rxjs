@@ -3,6 +3,15 @@ import type { Geometry, GeometryManifest } from "./0_protocol.js"
 
 export const DEFAULT_SPACING = 10
 
+export function fixtureSize(name: string): number {
+  const match = /(?:grid[-_])?(\d+(?:\.\d+)?)(k|m)?$/i.exec(name)
+  if (!match) throw new Error(`unsupported fixture ${name}`)
+  const multiplier = match[2]?.toLowerCase() === "m" ? 1_000_000 : match[2] ? 1_000 : 1
+  const value = Math.round(Number(match[1]) * multiplier)
+  if (!Number.isSafeInteger(value) || value < 1) throw new Error(`invalid fixture size ${name}`)
+  return value
+}
+
 export type CommonFixture = {
   protocol: "grapht-render-fixture/0"
   id: string
