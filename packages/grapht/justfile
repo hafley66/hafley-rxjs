@@ -1,0 +1,38 @@
+# grapht protocol-lane recipes. Composes executable adapters only; never imports
+# their implementations. Renderer recipes (compare-layouts, cytoscape, canvaskit,
+# matrix) arrive with their lanes (4, 5, 5a).
+
+set shell := ["bash", "-uc"]
+set export := true
+export PATH := justfile_directory() + "/bin:" + env("PATH")
+
+default: build
+
+build:
+    pnpm run build
+
+# render the browser labs headlessly and write validated PNG receipts
+demo-screenshots:
+    pnpm --dir adapters/4_render_sigma run demo:breakpoints
+
+# visibly drive Chromium; headed mode occurs only through this explicit recipe
+demo-headed:
+    GRAPHT_BREAKPOINT_HEADED=1 pnpm --dir adapters/4_render_sigma run benchmark:breakpoints
+
+# list the checked-in fixtures with node/edge counts
+fixtures: build
+    @grapht-fixtures list
+
+# run one adapter against one fixture through the shell protocol
+bench fixture adapter: build
+    @grapht-fixtures emit {{fixture}} | grapht-bench run --adapter {{adapter}}
+
+# record a completed JSONL stream into a run directory
+record input output="runs/recorded": build
+    @mkdir -p {{output}}
+    @grapht-bench record --output {{output}} < {{input}}
+
+# tail a live JSONL stream into a run directory
+tail input output="runs/tailed": build
+    @mkdir -p {{output}}
+    @tail -F {{input}} | grapht-bench record --output {{output}}

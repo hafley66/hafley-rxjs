@@ -1,0 +1,62 @@
+[
+  {
+    "accounting": "struct sizes + Vec capacities + String capacities; excludes allocator metadata and runtime baseline",
+    "coordinateChecksum": 9900000,
+    "edgeCount": 19800,
+    "jsonBytes": 549305,
+    "nodeCount": 10000,
+    "packedRenderBytes": 278400,
+    "rustRetainedPayloadBytes": 844577,
+    "jsParsedHeapDeltaBytes": 2776176,
+    "jsTrials": [
+      2776176,
+      2776176,
+      2776176,
+      2776176,
+      2776176
+    ],
+    "jsToRustPayloadRatio": 3.2870608600518367,
+    "jsonToRustPayloadRatio": 0.6503906689384154,
+    "jsToPackedRatio": 9.971896551724138
+  },
+  {
+    "accounting": "struct sizes + Vec capacities + String capacities; excludes allocator metadata and runtime baseline",
+    "coordinateChecksum": 315104400,
+    "edgeCount": 199367,
+    "jsonBytes": 6207736,
+    "nodeCount": 100000,
+    "packedRenderBytes": 2794936,
+    "rustRetainedPayloadBytes": 7021972,
+    "jsParsedHeapDeltaBytes": 22355704,
+    "jsTrials": [
+      22355704,
+      22355704,
+      22355704,
+      22355704,
+      22355704
+    ],
+    "jsToRustPayloadRatio": 3.1836788867856494,
+    "jsonToRustPayloadRatio": 0.8840445390554107,
+    "jsToPackedRatio": 7.998646122845031
+  },
+  {
+    "accounting": "struct sizes + Vec capacities + String capacities; excludes allocator metadata and runtime baseline",
+    "coordinateChecksum": 9990000000,
+    "edgeCount": 1998000,
+    "jsonBytes": 67085012,
+    "nodeCount": 1000000,
+    "packedRenderBytes": 27984000,
+    "rustRetainedPayloadBytes": 58111795,
+    "jsParsedHeapDeltaBytes": 223857280,
+    "jsTrials": [
+      223857280,
+      223857280,
+      223857280,
+      223857280,
+      223857280
+    ],
+    "jsToRustPayloadRatio": 3.852183192758028,
+    "jsonToRustPayloadRatio": 1.1544130068603113,
+    "jsToPackedRatio": 7.999473985134363
+  }
+]

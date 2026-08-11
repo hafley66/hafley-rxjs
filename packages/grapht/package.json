@@ -1,0 +1,42 @@
+{
+  "name": "@hafley66/grapht",
+  "version": "0.1.0",
+  "description": "Implementation-agnostic graph benchmark protocol (grapht-bench/0): fixtures, shell harness, collector, and identity adapter",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "grapht-bench": "./bin/grapht-bench",
+    "grapht-fixtures": "./bin/grapht-fixtures",
+    "grapht-adapter-identity": "./bin/grapht-adapter-identity"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "fixtures",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "pnpm run build && vitest run tests",
+    "renderer-fixture": "node scripts/0_generate_renderer_fixture.mjs",
+    "bench:fixture-memory": "node scripts/2_compare_fixture_memory.mjs"
+  },
+  "dependencies": {
+    "string-argv": "0.3.2",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.8",
+    "typescript": "7.0.2",
+    "vitest": "^4.1.10"
+  },
+  "license": "MIT"
+}
