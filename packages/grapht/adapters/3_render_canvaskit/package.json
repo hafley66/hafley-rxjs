@@ -1,0 +1,29 @@
+{
+  "name": "@hafley66/grapht-render-canvaskit",
+  "version": "0.1.0",
+  "description": "CanvasKit projection adapter for the grapht-bench/0 shell protocol: Skia Wasm drawing, camera pan/zoom, picking/selection, and disposal",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.node.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "test": "pnpm run build && vitest run",
+    "bench:1k": "node bin/render-canvaskit < geometry/grid-1k.input.json",
+    "lab": "vitest run 8_lab.spec.ts",
+    "scenario:test": "vitest run 9_scenario.test.ts",
+    "scenario:shot": "node 12_scenario_shot.mjs",
+    "receipt": "node --experimental-strip-types bin/render-canvaskit.ts"
+  },
+  "dependencies": {
+    "canvaskit-wasm": "0.41.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@types/node": "^25.0.8",
+    "typescript": "7.0.2",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,46 @@
+fixtures:
+    cargo run --bin 0_generate_fixtures
+
+check:
+    cargo fmt --check
+    cargo test
+    cargo check --target wasm32-unknown-unknown
+
+bench fixture="grid-1k":
+    echo '{"protocol":"grapht-bench/0","runId":"vello-{{fixture}}","fixture":"{{fixture}}","operation":"render","outputDirectory":"receipts/generated"}' | cargo run --bin 1_protocol_adapter
+
+gpu:
+    cargo run --bin 2_gpu_probe
+
+render:
+    cargo run --bin 3_render_probe
+
+receipt: fixtures
+    just bench grid-1k
+    just gpu
+
+# run the 32-key scenario reducer through the native probe
+scenario-test:
+    cargo test --test 1_scenario
+
+scenario-fixture:
+    node ../../scripts/0_generate_renderer_fixture.mjs 1000 ../../.cache/render-fixtures
+
+scenario-list: scenario-fixture
+    cargo run --bin 6_scenario_probe -- ../../.cache/render-fixtures/grid-1000.json list
+
+scenario probe="camera-pan": scenario-fixture
+    printf '{"dx":12,"dy":-8,"frames":4}' | cargo run --bin 6_scenario_probe -- ../../.cache/render-fixtures/grid-1000.json {{probe}}
+
+# write a JSONL receipt for every supported scenario plus one unsupported key
+scenario-receipt: scenario-fixture
+    cargo build --bin 6_scenario_probe
+    rm -f receipts/scenarios.receipt.jsonl
+    for s in camera-pan camera-wheel-zoom style-update position-update viewport-resize group-collapse group-expand layout-apply position-animation graph-replace graph-dispose; do \
+        printf '{"dx":12,"dy":-8,"frames":4}' | ./target/debug/6_scenario_probe ../../.cache/render-fixtures/grid-1000.json "$$s" >> receipts/scenarios.receipt.jsonl; \
+    done
+    printf '{}' | ./target/debug/6_scenario_probe ../../.cache/render-fixtures/grid-1000.json labels-dense >> receipts/scenarios.receipt.jsonl
+
+scenario-all: scenario-fixture
+    just scenario-test
+    just scenario-list

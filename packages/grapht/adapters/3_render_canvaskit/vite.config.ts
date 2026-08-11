@@ -16,5 +16,5 @@ export default defineConfig({
       createReadStream(resolve(fixtureRoot, name)).on("error", next).pipe(response)
     })
   } }],
-  build: { rollupOptions: { input: "5_index.html" } },
+  build: { rollupOptions: { input: { main: "5_index.html", scenario: "11_scenario_index.html" } } },
 })

@@ -1,90 +1,116 @@
-# Grapht scenario lane report
+# Grapht CanvasKit and Vello scenario handlers
 
-Commit: this commit, recorded by the handoff as the lane commit.
+Implements the exhaustive 32-key `BenchScenarioHandlers<State, Sample>` contract as headless
+scenario reducers for the CanvasKit (JS) and Vello (Rust) renderers under `packages/grapht`.
+11 required scenarios are fully reduced; the remaining 21 keys return a typed `unsupported`
+sample. State reduction preserves the renderer instance for pass-through scenarios and
+exposes `graph-replace` / `graph-dispose` explicitly.
+
+## Commit
+
+Single lane commit on `feature/grapht-flash-scenarios`, parent `74531bb`.
 
 ## Changed files
 
-- `packages/grapht/src/0_benchProtocol.ts`
-- `packages/grapht/src/11_scenarios.ts`
-- `packages/grapht/src/index.ts`
-- `packages/grapht/tests/1_scenarios.test.ts`
-- `packages/grapht/justfile`
-- `packages/grapht/adapters/2_render_cytoscape/3_lab.ts`
-- `packages/grapht/adapters/2_render_cytoscape/5_scenarios.ts`
-- `packages/grapht/adapters/2_render_cytoscape/e2e/0_scenarios.spec.ts`
-- `packages/grapht/adapters/2_render_cytoscape/playwright.config.ts`
-- `packages/grapht/adapters/2_render_cytoscape/package.json`
-- `packages/grapht/adapters/4_render_sigma/src/1_graphology.ts`
-- `packages/grapht/adapters/4_render_sigma/src/2_projection.ts`
-- `packages/grapht/adapters/4_render_sigma/src/4_browser_lab.ts`
-- `packages/grapht/adapters/4_render_sigma/src/6_scenarios.ts`
-- `packages/grapht/adapters/4_render_sigma/e2e/0_sigma_lab.spec.ts`
-- `packages/grapht/adapters/4_render_sigma/e2e/1_scenarios.spec.ts`
-- `packages/grapht/adapters/4_render_sigma/package.json`
-- `pnpm-lock.yaml`
+| File | Change |
+| --- | --- |
+| `adapters/3_render_canvaskit/9_scenarioTypes.ts` | `BenchScenario` vocabulary, argument shapes, `BenchScenarioHandlers` contract shape, `frameStats`, `measureUploadBytes` |
+| `adapters/3_render_canvaskit/9_scenario.ts` | CanvasKit `ScenarioState` + `ScenarioSample`, all 32 handlers, `reduce` reducer, renderer replacement/disposal |
+| `adapters/3_render_canvaskit/9_scenarioKeys.ts` | `SUPPORTED` list (11) and key re-exports |
+| `adapters/3_render_canvaskit/9_scenario.test.ts` | deterministic `test.each` specs (47 tests) |
+| `adapters/3_render_canvaskit/10_scenario_lab.ts` | headless browser lab driving the 11 supported scenarios |
+| `adapters/3_render_canvaskit/11_scenario_index.html` | lab entry page |
+| `adapters/3_render_canvaskit/12_scenario_shot.mjs` | Playwright screenshot driver (visual-validity gated) |
+| `adapters/3_render_canvaskit/justfile` | `scenario-test`, `scenario-shot`, `scenario` recipes |
+| `adapters/3_render_canvaskit/package.json` | `scenario:test`, `scenario:shot` scripts |
+| `adapters/3_render_canvaskit/vite.config.ts` | second build input for the scenario lab |
+| `adapters/5_render_vello_wgpu/src/scenario.rs` | Rust `ScenarioState` + `ScenarioSample`, all 32 handlers, `handle_scenario` |
+| `adapters/5_render_vello_wgpu/src/bin/6_scenario_probe.rs` | native probe: `list`, per-scenario JSONL samples |
+| `adapters/5_render_vello_wgpu/src/lib.rs` | `pub mod scenario` |
+| `adapters/5_render_vello_wgpu/tests/1_scenario.rs` | deterministic Rust tests (9) |
+| `adapters/5_render_vello_wgpu/justfile` | `scenario-*` recipes + `scenario-receipt` |
+| `adapters/5_render_vello_wgpu/receipts/scenarios.receipt.jsonl` | native receipt over 11 supported + 1 unsupported |
+| `results/scenario_screens/canvaskit-scenarios-1000.png` | headless screenshot |
+| `results/scenario_screens/receipt.json` | CanvasKit scenario lab receipt |
 
-Playwright scenario snapshots were added or refreshed under both adapter `e2e/*-snapshots` directories. CanvasKit and Vello adapter files were not edited.
+Core files untouched: `src/*`, Cytoscape (`adapters/2_*`), Sigma (`adapters/4_*`).
 
-## Commands and receipts
+## Commands
 
-- `pnpm install --frozen-lockfile --ignore-scripts`
-- `pnpm --dir packages/grapht typecheck`
-- `pnpm --dir packages/grapht exec vitest run tests/0_benchProtocol.test.ts tests/1_scenarios.test.ts`
-- `pnpm --dir packages/grapht/adapters/2_render_cytoscape build`
-- `pnpm --dir packages/grapht/adapters/2_render_cytoscape exec vitest run 5_lab.spec.ts`
-- `pnpm --dir packages/grapht/adapters/4_render_sigma typecheck`
-- `pnpm --dir packages/grapht/adapters/4_render_sigma exec vitest run -c vitest.config.ts`
-- `pnpm exec playwright test -c playwright.config.ts` in `adapters/2_render_cytoscape`
-- `pnpm exec playwright test -c playwright.config.ts` in `adapters/4_render_sigma`
+CanvasKit:
 
-The core deterministic run passed with 2 files and 32 tests. Cytoscape deterministic tests passed with 2 tests. Sigma deterministic tests passed with 2 tests. The Cytoscape scenario browser run passed with 1 test. The Sigma browser run passed with 4 tests covering `grid-1k`, `grid-5k`, and `grid-10k`, including the scenario test.
+```bash
+cd packages/grapht/adapters/3_render_canvaskit
+pnpm exec tsc --noEmit -p tsconfig.json        # typecheck
+pnpm exec vitest run 9_scenario.test.ts        # 47 tests pass
+just scenario-test                              # vitest only
+just scenario-shot 1000                         # headless screenshot + receipt (visual-gated)
+```
 
-Browser `#receipt` JSON records one typed sample per case. Supported samples include operation latency, frame p50/p95/max, dropped-frame count, JS heap when exposed, uploaded-byte estimate, draw count when observable, and visible node/edge counts. Process RSS is `null` in page receipts because the page does not expose the renderer process tree. Draw count is `null` for both adapters because neither renderer exposes a stable draw counter through the current projection boundary.
+Vello:
 
-Screenshots are taken only after `data-visual-valid="true"` is set from rendered canvas/WebGL preconditions. The focused tests pause the scenario reducer while taking the screenshot, then release it through `grapht-continue`.
+```bash
+cd packages/grapht/adapters/5_render_vello_wgpu
+cargo test --test 1_scenario                    # 9 tests pass
+cargo test                                      # full suite unchanged
+rustfmt --edition 2021 --check src/scenario.rs src/bin/6_scenario_probe.rs tests/1_scenario.rs src/lib.rs
+just scenario-all                               # test + key list
+just scenario-receipt                           # writes receipts/scenarios.receipt.jsonl
+```
 
-## Supported scenarios
+## Receipts
 
-Both renderer handler maps implement these scenarios:
+- `results/scenario_screens/receipt.json`: status `healthy`, 1024x768 SW surface flushed,
+  `visualValidity.valid = true` (surface attached, node/edge draw counts match fixture,
+  position span > 0). Screenshot PNG alongside.
+- `adapters/5_render_vello_wgpu/receipts/scenarios.receipt.jsonl`: one JSON sample per
+  supported scenario plus one unsupported key, from the native probe.
+- CanvasKit sample shape: `latencyMs`, optional `frame {p50,p95,max,droppedFrames}`,
+  `memory {jsHeapUsedBytes,wasmPages}`, `visibility {visibleNodeCount,visibleEdgeCount}`,
+  `draw {drawCount}`, `uploadBytes`, `counters {nodeCount,edgeCount,visibleNodeCount,generation}`.
+- Vello sample shape: same fields; frame stats and upload bytes computed on packed
+  `Vec<[f32;2]>` positions + `Vec<[u32;2]>` edges, never per-element JS objects.
 
-- `camera-pan`
-- `camera-wheel-zoom`
-- `style-update`
-- `position-update`
-- `viewport-resize` when a mounted renderer container is present
-- `layout-apply`
-- `position-animation`
-- `graph-replace`
-- `graph-dispose`
+## Supported scenarios (11)
 
-`group-collapse` and `group-expand` have explicit typed `unsupported` samples because the current Cytoscape and Sigma projections contain no group model.
+| key | state effect |
+| --- | --- |
+| `camera-pan` | per-frame camera translation |
+| `camera-wheel-zoom` | anchored zoom factor from `deltaY` |
+| `style-update` | node color rewrite |
+| `position-update` | offset first `nodeCount` positions |
+| `viewport-resize` | viewport width/height, renderer slot preserved |
+| `group-collapse` | hide 100-node group slabs; visibility recounts edges |
+| `group-expand` | restore group slabs |
+| `layout-apply` | deterministic grid snap (10px spacing) |
+| `position-animation` | frame stats + bounded p50/p95/max/dropped; upload bytes |
+| `graph-replace` | bumps `generation`, dispose prior renderer + fresh instance (via reducer factory) |
+| `graph-dispose` | `disposed=true`, renderer slot cleared, generation bump |
 
-## Unsupported scenarios
+## Unsupported scenarios (21)
 
-The following cases have explicit typed `unsupported` samples in both exhaustive handler maps:
+`camera-pinch-zoom`, `device-pixel-ratio-change`, `node-insert`, `node-delete`,
+`edge-insert`, `edge-delete`, `visibility-hide`, `visibility-show`, `layout-run`,
+`style-animation`, `node-click`, `box-select`, `node-hover`, `node-pick`, `graph-load`,
+`graph-clear`, `graph-reload`, `labels-none`, `labels-visible`, `labels-fixed-count`,
+`labels-dense`.
 
-- `camera-pinch-zoom`
-- `device-pixel-ratio-change`
-- `group-collapse`
-- `group-expand`
-- `node-insert`
-- `node-delete`
-- `edge-insert`
-- `edge-delete`
-- `visibility-hide`
-- `visibility-show`
-- `layout-run`
-- `style-animation`
-- `node-click`
-- `box-select`
-- `node-hover`
-- `node-pick`
-- `graph-load`
-- `graph-clear`
-- `graph-reload`
-- `labels-none`
-- `labels-visible`
-- `labels-fixed-count`
-- `labels-dense`
+Each returns `{ counters: { unsupported: 1, ... } }`, `supported: false`, `phase:
+"unsupported"`, and leaves state structurally unchanged.
 
-The shared JSON fixture generator writes the same `packages/grapht/.cache/render-fixtures/grid-<n>.json` bytes consumed by both browser adapters. The shared case table is `packages/grapht/src/11_scenarios.ts`.
+## Core contract gaps
+
+- `src/0_benchProtocol.ts` ships `BenchScenarioHandlers` as type-only with `Sample` as
+  `unknown`. No shared `BenchSample`-style measurement record exists for scenario latency,
+  frame p50/p95/max, dropped frames, memory, upload bytes, draw count, or visible counts;
+  each adapter re-declares an adapter-local `ScenarioSample`. A shared schema belongs in the
+  core package.
+- The handler signature is `(state, args)`. `graph-replace` must construct a fresh renderer
+  instance, which the pure reducer cannot: both adapters thread a renderer factory through
+  their wrapper (`reduce` / `handle_scenario`). A core contract note is warranted.
+- The scenario vocabulary (32 keys) is duplicated per adapter rather than imported from core
+  because adapters do not depend on `@hafley66/grapht`. Consider exporting `BENCH_SCENARIOS`
+  + argument shapes from core and importing them.
+- `graph-live/dispose semantics` : disposal is represented by nulling the renderer slot and
+  setting `disposed`; the contract has no explicit "peer is disposed" signal beyond the
+  sample counters.

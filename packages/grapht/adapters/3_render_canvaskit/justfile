@@ -1,0 +1,13 @@
+# CanvasKit scenario handlers: headless screenshot + deterministic reducer checks
+set shell := ["bash", "-uc"]
+
+scenario-test:
+    pnpm exec vitest run 9_scenario.test.ts
+
+# run the 11 supported scenarios headlessly and write a validated PNG receipt
+scenario-shot nodes="1000":
+    GRAPHT_SCENARIO_NODES={{nodes}} node 12_scenario_shot.mjs
+
+scenario:
+    just scenario-test
+    just scenario-shot 1000

@@ -1,0 +1,89 @@
+{
+  "implementation": "canvaskit",
+  "renderer": "scenario",
+  "status": "healthy",
+  "setupValid": true,
+  "fixtureMs": 2.8000001907348633,
+  "nodeCount": 1000,
+  "edgeCount": 1936,
+  "scenarioCount": 11,
+  "supportedCount": 11,
+  "unsupportedCount": 21,
+  "supportedScenarios": [
+    "camera-pan",
+    "camera-wheel-zoom",
+    "style-update",
+    "position-update",
+    "viewport-resize",
+    "group-collapse",
+    "group-expand",
+    "layout-apply",
+    "position-animation",
+    "graph-replace",
+    "graph-dispose"
+  ],
+  "unsupportedScenarios": [
+    "camera-pinch-zoom",
+    "device-pixel-ratio-change",
+    "node-insert",
+    "node-delete",
+    "edge-insert",
+    "edge-delete",
+    "visibility-hide",
+    "visibility-show",
+    "layout-run",
+    "style-animation",
+    "node-click",
+    "box-select",
+    "node-hover",
+    "node-pick",
+    "graph-load",
+    "graph-clear",
+    "graph-reload",
+    "labels-none",
+    "labels-visible",
+    "labels-fixed-count",
+    "labels-dense"
+  ],
+  "lastSample": {
+    "scenario": "graph-dispose",
+    "supported": true,
+    "phase": "dispose",
+    "latencyMs": 0,
+    "frame": {
+      "count": 24,
+      "p50Ms": 18.666666666666668,
+      "p95Ms": 20.666666666666668,
+      "maxMs": 20.666666666666668,
+      "droppedFrames": 19
+    },
+    "memory": {
+      "jsHeapUsedBytes": 10000000,
+      "wasmPages": 0
+    },
+    "visibility": {
+      "visibleNodeCount": 1000,
+      "visibleEdgeCount": 1936
+    },
+    "draw": {
+      "drawCount": 0
+    },
+    "uploadBytes": null,
+    "counters": {
+      "nodeCount": 1000,
+      "edgeCount": 1936,
+      "visibleNodeCount": 1000,
+      "generation": 2
+    }
+  },
+  "visualValidity": {
+    "surfaceAttached": true,
+    "sceneHasRendered": true,
+    "drawnNodeCount": 1000,
+    "drawnEdgeCount": 1936,
+    "positionSpanX": 310,
+    "positionSpanY": 310,
+    "valid": true
+  },
+  "screenshot": "/Users/chrishafley/projects/hafley-rxjs/.boop-worktrees/feature/grapht-flash-scenarios/packages/grapht/results/scenario_screens/canvaskit-scenarios-1000.png"
+}
