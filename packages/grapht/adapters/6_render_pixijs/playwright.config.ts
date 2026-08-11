@@ -2,6 +2,7 @@ import { defineConfig } from "@playwright/test"
 
 export default defineConfig({
   testDir: "e2e",
+  testIgnore: process.env.GRAPHT_MASSIVE === "1" ? [] : "**/2_massive.spec.ts",
   timeout: 60_000,
   use: {
     baseURL: "http://127.0.0.1:4180",
