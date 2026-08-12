@@ -1,20 +1,26 @@
 import { flexRender } from "@tanstack/react-table"
 import { useGrid } from "@hafley66/grid/react"
 import { SignalReact } from "@hafley66/signals/react"
-import { useRef } from "react"
+import { useMemo, useRef } from "react"
 import type { EventFilter } from "./0_types"
-import { WaterfallCanvas } from "./1a_WaterfallCanvas"
+import { reduceTimeViewport, type TimelineMark } from "./0a_TimeViewport"
+import { WaterfallPixi } from "./1a_WaterfallPixi"
+import { TimeNavigatorPixi } from "./1b_TimeNavigatorPixi"
 import type { Marbler } from "./1_model"
 import "./2_marbler.css"
 
 const FILTERS: EventFilter[] = ["all", "request", "result", "tool", "note"]
-const TICKS = [0, 500, 1000, 1500, 2000, 2500]
-
 function MarblerView({ model }: { model: Marbler }) {
   const table = useGrid(model.grid)
   const scrollerRef = useRef<HTMLDivElement>(null)
   const selected = model.source.$().find((row) => row.id === model.selectedId.$()) ?? null
+  const hovered = model.source.$().find((row) => row.id === model.hoveredId.$()) ?? null
   const rows = table.getRowModel().rows
+  const events = useMemo(() => rows.map((row) => row.original), [rows])
+  const timelineEvents = model.rows.$()
+  const marks = useMemo<TimelineMark[]>(() => timelineEvents.map((event, lane) => ({ id: event.id, kind: "span", start: event.start, end: event.start + event.duration, lane: lane % 5 })), [timelineEvents])
+  const viewport = model.viewport.$()
+  const ticks = Array.from({ length: 6 }, (_, index) => viewport.visible[0] + (viewport.visible[1] - viewport.visible[0]) * index / 5)
   return <main className="app-shell" data-testid="marbler">
     <section className="network-panel">
       <header className="toolbar">
@@ -23,20 +29,40 @@ function MarblerView({ model }: { model: Marbler }) {
         <span className="divider" />
         <label className="filter-input"><span>⌕</span><input placeholder="Filter" /></label>
         <button className="chip active">All</button><button className="chip">Fetch/XHR</button><button className="chip">Doc</button><button className="chip">JS</button><button className="chip">CSS</button>
-        <span className="toolbar-spacer" /><span className="summary">{rows.length} events</span>
+        <span className="toolbar-spacer" />{hovered && <span className="hovered-event" data-testid="hovered-event">{hovered.name} · {hovered.duration} ms</span>}<span className="summary">{rows.length} events</span>
       </header>
       <div className="subtoolbar">
         {FILTERS.map((filter) => <button key={filter} className={model.filter.$() === filter ? "kind active" : "kind"} onClick={() => model.filter.$(filter)}>{filter}</button>)}
         <span className="legend"><i className="phase-send" />send <i className="phase-wait" />wait <i className="phase-receive" />receive <i className="phase-work" />work</span>
       </div>
+      <TimeNavigatorPixi
+        marks={marks}
+        viewport={viewport}
+        highlightedId={model.hoveredId.$()}
+        onMarkHover={(id) => model.hoveredId.$(id)}
+        onGesture={(gesture) => model.viewport.$(reduceTimeViewport(model.viewport.$(), gesture))}
+      />
       <div className="grid-scroller" ref={scrollerRef}>
         <div className="grid-header grid-row">
           {table.getHeaderGroups()[0].headers.map((header) => <div key={header.id} className={`cell col-${header.column.id}`} onClick={header.column.getToggleSortingHandler()}>{flexRender(header.column.columnDef.header, header.getContext())}</div>)}
         </div>
-        <div className="timeline grid-row"><span className="timeline-gutter" />{TICKS.map((tick) => <span key={tick} style={{ left: `calc(640px + ${tick / 30}%)` }}>{tick === 0 ? "0" : `${(tick / 1000).toFixed(1)} s`}</span>)}</div>
+        <div className="timeline grid-row"><span className="timeline-gutter" />{ticks.map((tick, index) => <span key={index} style={{ left: `calc(690px + ${index * 20}%)` }}>{`${(tick / 1000).toFixed(2)} s`}</span>)}</div>
         <div className="grid-body">
-          <WaterfallCanvas rows={rows.map((row) => row.original)} scroller={scrollerRef} />
-          {rows.map((row) => <div key={row.id} className={model.selectedId.$() === row.id ? "grid-row selected" : "grid-row"} onClick={() => model.selectedId.$(row.id)}>
+          <WaterfallPixi
+            rows={events}
+            scroller={scrollerRef}
+            domain={viewport.visible}
+            onEventHover={(event) => model.hoveredId.$(event?.id ?? null)}
+            onEventSelect={(event) => model.selectedId.$(event.id)}
+          />
+          {rows.map((row) => <div
+            key={row.id}
+            data-event-id={row.id}
+            className={`${model.selectedId.$() === row.id ? "grid-row selected" : "grid-row"}${model.hoveredId.$() === row.id ? " hovered" : ""}`}
+            onMouseEnter={() => model.hoveredId.$(row.id)}
+            onMouseLeave={() => model.hoveredId.$(null)}
+            onClick={() => model.selectedId.$(row.id)}
+          >
             <div className="cell col-name"><span className={`method method-${row.original.method.toLowerCase()}`}>{row.original.method}</span><span className="name-stack"><b>{row.original.name}</b><small>{row.original.preview}</small></span></div>
             <div className={`cell col-status status-${Math.floor(row.original.status / 100)}`}>{row.original.status}</div>
             <div className="cell col-type">{row.original.type}</div>

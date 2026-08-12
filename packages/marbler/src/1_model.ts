@@ -1,11 +1,14 @@
 import { createGrid } from "@hafley66/grid"
 import { Signal } from "@hafley66/signals"
 import { MarbleEventSchema, type EventFilter, type MarbleEvent } from "./0_types"
+import { createTimeViewport, eventRange } from "./0a_TimeViewport"
 
 export function createMarbler(seed: MarbleEvent[]) {
   const source = Signal(seed)
   const filter = Signal<EventFilter>("all")
   const selectedId = Signal<string | null>(seed[0]?.id ?? null)
+  const hoveredId = Signal<string | null>(null)
+  const viewport = Signal(createTimeViewport(eventRange(seed)))
   const rows = Signal(() => filter.$() === "all" ? source.$() : source.$().filter((row) => row.type === filter.$()))
   const grid = createGrid<MarbleEvent>({
     schema: MarbleEventSchema,
@@ -22,7 +25,7 @@ export function createMarbler(seed: MarbleEvent[]) {
       { id: "waterfall", header: "Waterfall" },
     ],
   })
-  return { source, filter, selectedId, rows, grid }
+  return { source, filter, selectedId, hoveredId, viewport, rows, grid }
 }
 
 export type Marbler = ReturnType<typeof createMarbler>

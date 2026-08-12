@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client"
 import { describe, expect, it } from "vitest"
 import { page } from "vitest/browser"
 import type { MarbleEvent } from "./0_types"
+import { createTimeViewport, eventRange } from "./0a_TimeViewport"
 import { createMarbler } from "./1_model"
 import { MarblerPanel } from "./2_Marbler"
 
@@ -52,20 +53,56 @@ describe("Marbler receipts", () => {
     document.body.append(host)
     const root = createRoot(host)
     await act(async () => root.render(<MarblerPanel model={model} />))
+    await expect.poll(() => document.querySelectorAll("canvas.waterfall-canvas").length).toBe(1)
+    await expect.poll(() => document.querySelectorAll("canvas[data-testid='time-navigator']").length).toBe(1)
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    const waterfall = page.getByTestId("waterfall-pixi")
 
     expect({
       canvases: document.querySelectorAll("canvas.waterfall-canvas").length,
+      pixiHosts: document.querySelectorAll(".waterfall-pixi").length,
       phaseNodes: document.querySelectorAll(".waterfall-cell .phase").length,
     }).toMatchInlineSnapshot(`
       {
         "canvases": 1,
         "phaseNodes": 0,
+        "pixiHosts": 1,
       }
     `)
+
+    await act(async () => {
+      const navigator = document.querySelector("canvas[data-testid='time-navigator']") as HTMLCanvasElement
+      const bounds = navigator.getBoundingClientRect()
+      const eventX = ((238 - 45) / (1514 - 45)) * bounds.width
+      navigator.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: bounds.left + eventX, clientY: bounds.top + 24 }))
+    })
+    expect(model.hoveredId.$()).toBe("m-a4c8")
+    await act(async () => model.hoveredId.$(null))
+
+    await act(async () => {
+      const canvas = document.querySelector("canvas.waterfall-canvas") as HTMLCanvasElement
+      const bounds = canvas.getBoundingClientRect()
+      canvas.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, clientX: bounds.left + 180, clientY: bounds.top + 110 }))
+    })
+    await expect(page.getByTestId("hovered-event")).toHaveTextContent("inspect @cloudflare/waterfall · 297 ms")
+    await act(async () => page.getByTestId("marbler").hover({ position: { x: 500, y: 12 } }))
+    await act(async () => page.getByText("search component candidates", { exact: true }).hover())
+    expect(model.hoveredId.$()).toBe("m-a4c8")
+    await expect(page.getByTestId("marbler")).toMatchScreenshot("2_row-hover-highlights-map")
+    await act(async () => page.getByTestId("marbler").hover({ position: { x: 500, y: 12 } }))
+    await act(async () => model.hoveredId.$(null))
 
     await expect(page.getByTestId("marbler")).toMatchScreenshot("0_network-grid")
     await act(async () => model.selectedId.$("m-91f2"))
     await expect(page.getByTestId("marbler")).toMatchScreenshot("1_event-details")
+
+    const appended = Array.from({ length: 100 }, (_, index) => event(`append-${index}`, `appended event ${index}`, "GET", "tool", `lane-${index % 5}`, 1600 + index * 12, 40 + index % 80, `Appended event ${index}`))
+    await act(async () => {
+      const next = [...events, ...appended]
+      model.source.$(next)
+      model.viewport.$(createTimeViewport(eventRange(next)))
+    })
+    await expect.poll(() => document.querySelector(".time-navigator")?.getAttribute("data-mark-count")).toBe("108")
 
     await act(async () => root.unmount())
     host.remove()

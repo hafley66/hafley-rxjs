@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     browser: {
       enabled: true,
-      provider: playwright(),
+      provider: playwright({ launchOptions: { args: ["--enable-precise-memory-info"] } }),
       instances: [{ browser: "chromium", viewport: { width: 1440, height: 900 } }],
       headless: true,
     },
