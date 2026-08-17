@@ -105,8 +105,9 @@ export function useExternalGridVirtualizer({
     enabled: enabled && metrics.owner === null,
   })
   const virtualizer = metrics.owner ? ancestorVirtualizer : documentVirtualizer
+  const scrollOffset = metrics.owner?.scrollTop ?? window.scrollY
   const localOffset = localVirtualOffset(
-    metrics.owner?.scrollTop ?? window.scrollY,
+    scrollOffset,
     metrics.scrollMargin,
     count * estimateSize,
   )
@@ -120,8 +121,10 @@ export function useExternalGridVirtualizer({
   })
   const visibleHeight = Math.max(0, metrics.viewportHeight - metrics.headerHeight - FOOTER_HEIGHT)
   const range = count ? {
-    start: virtualizer.getVirtualItemForOffset(localOffset)?.index ?? estimatedRange.start,
-    end: virtualizer.getVirtualItemForOffset(localOffset + visibleHeight)?.index ?? estimatedRange.end,
+    // TanStack stores measurement starts in scroll-owner coordinates when a
+    // scrollMargin is supplied. The fallback range remains grid-local.
+    start: virtualizer.getVirtualItemForOffset(scrollOffset)?.index ?? estimatedRange.start,
+    end: virtualizer.getVirtualItemForOffset(scrollOffset + visibleHeight)?.index ?? estimatedRange.end,
   } : estimatedRange
 
   return {
@@ -130,6 +133,9 @@ export function useExternalGridVirtualizer({
     virtualizer,
     virtual: enabled,
     totalSize: virtualizer.getTotalSize(),
+    estimatedSize: count * estimateSize,
+    scrollOwner: metrics.owner ? "ancestor" as const : "window" as const,
+    scrollMargin: metrics.scrollMargin,
     viewportHeight: metrics.viewportHeight,
     headerHeight: metrics.headerHeight,
     visibleStart: range.start,

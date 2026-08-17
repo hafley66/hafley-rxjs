@@ -62,11 +62,7 @@ export function GridTable<TData extends RowData>({
   const renderedRows = virtualizer.virtual
     ? virtualRows.map((item) => ({ row: rows[item.index]!, index: item.index, measure: item }))
     : rows.map((row, index) => ({ row, index, measure: null }))
-  const topSpace = virtualizer.virtual ? (virtualRows[0]?.start ?? 0) : 0
   const virtualRowsHeight = virtualizer.virtual ? virtualizer.totalSize : estimatedRowsHeight
-  const bottomSpace = virtualizer.virtual
-    ? Math.max(0, virtualRowsHeight - (virtualRows.at(-1)?.end ?? 0))
-    : 0
   const layoutHeight = virtualRowsHeight + virtualizer.headerHeight + virtualizer.footerHeight
 
   const renderRow = (row: typeof rows[number], index: number, measure: typeof virtualRows[number] | null) => (
@@ -133,12 +129,167 @@ export function GridTable<TData extends RowData>({
     </tr>
   )
 
+  // Short grids retain the original table/card structure. The external spacer
+  // and sticky live viewport begin once estimated rows exceed 100dvh.
+  if (!virtualizer.virtual) {
+    return (
+      <div
+        data-testid="grid"
+        data-scroll-mode={scrollMode}
+        data-visible-start={0}
+        data-visible-end={Math.max(-1, rows.length - 1)}
+        data-virtual-total-size={estimatedRowsHeight}
+        data-virtual-estimate-size={estimatedRowsHeight}
+        data-scroll-owner={virtualizer.scrollOwner}
+        data-scroll-margin={virtualizer.scrollMargin}
+        ref={virtualizer.rootRef}
+        style={{
+          border: `1px solid ${C.border}`,
+          borderRadius: 12,
+          background: C.surface,
+          boxShadow: "0 1px 2px rgba(16,24,40,.04), 0 18px 36px -18px rgba(16,24,40,.18)",
+          fontFamily: FONT,
+          color: C.text,
+          fontSize: 13,
+          maxHeight: scrollMode === "internal" ? maxHeight : undefined,
+          overflowY: "auto",
+        }}
+      >
+        <table style={{ borderCollapse: "collapse", width: "100%", fontVariantNumeric: "tabular-nums" }}>
+          <thead>
+            {table.getHeaderGroups().map((hg) => (
+              <tr key={hg.id}>
+                {hg.headers.map((hd) => {
+                  const sorted = hd.column.getIsSorted()
+                  const align = (hd.column.columnDef.meta as { align?: Align } | undefined)?.align ?? "left"
+                  return (
+                    <th
+                      key={hd.id}
+                      onClick={hd.column.getToggleSortingHandler()}
+                      style={{
+                        position: "sticky",
+                        top: 0,
+                        zIndex: 1,
+                        background: C.head,
+                        borderBottom: `1px solid ${C.border}`,
+                        textAlign: align,
+                        padding: `${py + 2}px 16px`,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        letterSpacing: ".045em",
+                        textTransform: "uppercase",
+                        color: C.label,
+                        cursor: hd.column.getCanSort() ? "pointer" : "default",
+                        userSelect: "none",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {hd.isPlaceholder ? null : (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          {flexRender(hd.column.columnDef.header, hd.getContext())}
+                          {sorted ? (
+                            <svg width="9" height="9" viewBox="0 0 9 9" style={{ color: C.accent, transform: sorted === "asc" ? "none" : "rotate(180deg)" }}>
+                              <path d="M4.5 1.5 L8 6.5 L1 6.5 Z" fill="currentColor" />
+                            </svg>
+                          ) : null}
+                        </span>
+                      )}
+                    </th>
+                  )
+                })}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {rows.map((row, i) => (
+              <tr
+                key={row.id}
+                style={{ height: h, background: i % 2 ? C.alternate : C.surface, borderBottom: `1px solid ${C.hair}` }}
+              >
+                {row.getVisibleCells().map((cell) => {
+                  if (cell.column.id === "__expand") {
+                    return (
+                      <td key={cell.id} style={{ width: 44, padding: "0 8px", textAlign: "left", overflow: "visible" }}>
+                        {row.getCanExpand() ? (
+                          <button
+                            data-testid="row-toggle"
+                            onClick={row.getToggleExpandedHandler()}
+                            style={{
+                              border: "none",
+                              background: "transparent",
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              padding: 2,
+                              marginLeft: row.depth * 12,
+                              color: C.faint,
+                            }}
+                          >
+                            <svg
+                              width="9"
+                              height="9"
+                              viewBox="0 0 9 9"
+                              style={{
+                                display: "block",
+                                transform: row.getIsExpanded() ? "rotate(90deg)" : "none",
+                                transformOrigin: "50% 50%",
+                                transition: "transform 120ms ease",
+                              }}
+                            ><path d="M2.5 1 L7 4.5 L2.5 8 Z" fill="currentColor" /></svg>
+                          </button>
+                        ) : null}
+                      </td>
+                    )
+                  }
+                  const align = (cell.column.columnDef.meta as { align?: Align } | undefined)?.align ?? "left"
+                  const indent = cell.column.id === "name" ? row.depth * 18 : 0
+                  return (
+                    <td
+                      key={cell.id}
+                      style={{
+                        padding: `${py}px 16px`,
+                        paddingLeft: 16 + indent,
+                        textAlign: align,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {cell.column.columnDef.cell
+                        ? flexRender(cell.column.columnDef.cell, cell.getContext())
+                        : String(cell.getValue() ?? "")}
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div
+          style={{
+            borderTop: `1px solid ${C.hair}`,
+            padding: "8px 16px",
+            fontSize: 11,
+            color: C.faint,
+            display: "flex",
+            justifyContent: "space-between",
+            letterSpacing: ".02em",
+          }}
+        >
+          <span>{rows.length} {rows.length === 1 ? "row" : "rows"}</span>
+          <span>{density}</span>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       data-testid="grid"
       data-scroll-mode={scrollMode}
       data-visible-start={virtualizer.virtual ? virtualizer.visibleStart : 0}
       data-visible-end={virtualizer.virtual ? virtualizer.visibleEnd : Math.max(-1, rows.length - 1)}
+      data-virtual-total-size={virtualRowsHeight}
+      data-virtual-estimate-size={virtualizer.estimatedSize}
+      data-scroll-owner={virtualizer.scrollOwner}
+      data-scroll-margin={virtualizer.scrollMargin}
       ref={virtualizer.rootRef}
       style={{
         fontFamily: FONT,
@@ -225,9 +376,10 @@ export function GridTable<TData extends RowData>({
           ))}
         </thead>
         <tbody>
-          {topSpace ? <tr aria-hidden="true" style={{ height: topSpace }}><td colSpan={table.getVisibleLeafColumns().length} style={{ padding: 0 }} /></tr> : null}
+          {/* The outer grid supplies the measured full extent to the scroll
+              owner. Spacer rows would place this live window below its own
+              clipped viewport, so the table contains only mounted rows. */}
           {renderedRows.map(({ row, index, measure }) => renderRow(row, index, measure))}
-          {bottomSpace ? <tr aria-hidden="true" style={{ height: bottomSpace }}><td colSpan={table.getVisibleLeafColumns().length} style={{ padding: 0 }} /></tr> : null}
         </tbody>
       </table>
       <div

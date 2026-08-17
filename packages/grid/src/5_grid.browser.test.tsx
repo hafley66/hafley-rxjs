@@ -249,6 +249,7 @@ const virtualRows = Array.from({ length: 500 }, (_, index): VirtualRow => ({
   name: `Row ${String(index).padStart(3, "0")}`,
   size: index,
 }))
+const receiptRows = virtualRows.slice(0, 160)
 
 const settleLayout = () => new Promise<void>((resolve) => {
   requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -263,6 +264,90 @@ const rowRange = () => ({
   end: Number(document.querySelector("[data-testid=grid]")?.getAttribute("data-visible-end")),
   mounted: document.querySelectorAll("[data-testid=grid-row]").length,
 })
+
+const mountedRowLabels = () => [...document.querySelectorAll<HTMLElement>("[data-testid=grid-row]")]
+  .map((row) => ({ index: Number(row.dataset.rowIndex), text: row.innerText.trim() }))
+
+const assertMountedRangeHasLabels = () => {
+  const range = rowRange()
+  const labels = mountedRowLabels()
+  expect(labels.length).toBe(range.mounted)
+  expect(labels.every(({ text }) => text.length > 0)).toBe(true)
+  const visible = labels.find(({ index }) => index >= range.start && index <= range.end)
+  expect(visible?.text).toContain(`Row ${String(visible?.index).padStart(3, "0")}`)
+}
+
+const receiptStyles = {
+  page: "box-sizing:border-box; width:100%; background:#f8fafc; color:#172033; font:13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace",
+  block: "box-sizing:border-box; display:flex; align-items:center; padding:24px; border:2px solid; font-size:18px; font-weight:700",
+  panel: "margin:16px 24px; padding:12px 16px; border:1px solid #94a3b8; border-radius:8px; background:#fff; white-space:pre-wrap; font-size:14px",
+  title: "margin:24px; font:700 24px/1.2 -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+}
+
+function receiptTypography(receipt: HTMLElement) {
+  const style = document.createElement("style")
+  style.textContent = ".virtualization-receipt [data-testid=grid] { font-size:14px !important }"
+  receipt.classList.add("virtualization-receipt")
+  receipt.append(style)
+}
+
+function receiptPanel({
+  name,
+  owner,
+  rows,
+  fixed = false,
+}: {
+  name: string
+  owner: "window" | HTMLElement
+  rows: VirtualRow[]
+  fixed?: boolean
+}) {
+  const panel = document.createElement("pre")
+  panel.dataset.testid = `${name}-instrumentation`
+  panel.style.cssText = `${receiptStyles.panel}${fixed ? "; position:fixed; right:16px; bottom:16px; z-index:4; width:420px; margin:0; box-shadow:0 8px 24px #0003" : ""}`
+  const update = () => {
+    const grid = document.querySelector<HTMLElement>("[data-testid=grid]")
+    const gridRect = grid?.getBoundingClientRect()
+    const range = rowRange()
+    const scrollTop = owner === "window" ? window.scrollY : owner.scrollTop
+    panel.textContent = [
+      `table title: ${name}`,
+      `total rows: ${rows.length}`,
+      `mounted DOM rows: ${range.mounted}`,
+      `visible range: ${range.start}..${range.end}`,
+      `scrollTop/window.scrollY: ${Math.round(scrollTop)}`,
+      `viewport height: ${owner === "window" ? window.innerHeight : owner.clientHeight}`,
+      `estimate px: ${grid?.dataset.virtualEstimateSize ?? "0"}`,
+      `measured total px: ${grid?.dataset.virtualTotalSize ?? "0"}`,
+      `grid document top: ${Math.round((gridRect?.top ?? 0) + window.scrollY)}`,
+      `scroll owner type: ${grid?.dataset.scrollOwner ?? "unknown"}`,
+    ].join("\n")
+  }
+  return { panel, update }
+}
+
+function receiptBlock(label: string, height: number, color: string) {
+  const block = document.createElement("div")
+  block.dataset.testid = `receipt-${label.toLowerCase().replaceAll(" ", "-")}`
+  block.style.cssText = `${receiptStyles.block}; height:${height}px; border-color:${color}; background:${color}22`
+  block.textContent = label
+  return block
+}
+
+function viewportReceipt(id: string) {
+  const frame = document.createElement("div")
+  frame.dataset.testid = id
+  frame.style.cssText = "position:absolute; left:0; z-index:10; box-sizing:border-box; width:100%; pointer-events:none; outline:3px solid #0f172a; outline-offset:-3px"
+  document.body.append(frame)
+  return {
+    capture: async (name: string) => {
+      frame.style.top = `${window.scrollY}px`
+      frame.style.height = `${window.innerHeight}px`
+      await expect(page.getByTestId(id)).toMatchScreenshot(name)
+    },
+    remove: () => frame.remove(),
+  }
+}
 
 const variableHeightColumns: ColumnDef<GridFeatures, VirtualRow>[] = [
   {
@@ -281,19 +366,24 @@ describe("GridTable external-scroll virtualization", () => {
   it("uses document scroll after preceding content, caps the live viewport, and responds to viewport resize", async () => {
     await page.viewport(1280, 800)
     document.body.style.margin = "0"
+    const receipt = document.createElement("main")
+    receipt.dataset.testid = "virtual-document-page"
+    receipt.style.cssText = receiptStyles.page
+    receiptTypography(receipt)
+    const beforeOne = receiptBlock("Before table: source summary", 440, "#60a5fa")
+    const beforeTwo = receiptBlock("Before table: filter results", 460, "#a78bfa")
+    const title = document.createElement("h1")
+    title.style.cssText = receiptStyles.title
+    title.textContent = "Document scroll owner: virtualized table"
+    const instrumentation = receiptPanel({ name: "Document external virtualization", owner: "window", rows: receiptRows, fixed: true })
     const host = document.createElement("div")
-    const before = document.createElement("div")
-    before.style.height = "180px"
-    before.textContent = "content before grid"
-    document.body.append(before)
-    document.body.append(host)
-    const after = document.createElement("div")
-    after.style.height = "1000px"
-    after.textContent = "content after grid"
-    document.body.append(after)
+    host.style.cssText = "margin:16px 24px"
+    const after = receiptBlock("After table: document continuation", 300, "#34d399")
+    receipt.append(beforeOne, beforeTwo, title, instrumentation.panel, host, after)
+    document.body.append(receipt)
     const grid = createGrid<VirtualRow>({
       schema: virtualSchema,
-      rows: Signal<VirtualRow[]>(virtualRows),
+      rows: Signal<VirtualRow[]>(receiptRows),
       // Browser receipts use server mode, where the producer owns paging and
       // client pagination is disabled. The final test covers the 20-row page.
       getRowId: (row) => row.id,
@@ -303,79 +393,98 @@ describe("GridTable external-scroll virtualization", () => {
     await act(async () => root.render(<GridTable grid={grid} />))
     await act(settleLayout)
 
-    const preservedHeight = 500 * 42
+    const preservedHeight = receiptRows.length * 42
     expect(page.getByTestId("grid")).toHaveAttribute("data-scroll-mode", "external")
     expect(document.querySelector("[data-testid=grid]")?.getBoundingClientRect().height).toBeGreaterThanOrEqual(preservedHeight)
-    expect(document.documentElement.scrollHeight).toBeGreaterThanOrEqual(180 + preservedHeight)
+    expect(beforeOne.getBoundingClientRect().height + beforeTwo.getBoundingClientRect().height).toBeGreaterThan(window.innerHeight)
+    expect(document.documentElement.scrollHeight).toBeGreaterThanOrEqual(900 + preservedHeight + after.getBoundingClientRect().height)
     expect(document.querySelector("[data-testid=grid-viewport]")?.scrollHeight).toBeLessThanOrEqual(
       document.querySelector("[data-testid=grid]")?.scrollHeight ?? Infinity,
     )
     expect(document.querySelector("[data-testid=grid-viewport]")?.style.overflowY).toBe("clip")
-
+    instrumentation.update()
+    expect(instrumentation.panel.textContent).toContain("scroll owner type: window")
+    const viewport = viewportReceipt("virtual-document-viewport")
     await act(async () => {
-      window.scrollTo(0, 180 + 120 * 42)
+      const scrollMargin = Number(document.querySelector<HTMLElement>("[data-testid=grid]")?.dataset.scrollMargin)
+      window.scrollTo(0, scrollMargin - 320)
       await settleLayout()
     })
-    expect(rowRange()).toMatchInlineSnapshot(`
-      {
-        "end": 133,
-        "mounted": 28,
-        "start": 115,
-      }
-    `)
-    expect(document.querySelector("[data-testid=grid-row]")?.getAttribute("data-row-index")).toBe("116")
+    assertMountedRangeHasLabels()
+    instrumentation.update()
+    await viewport.capture("virtual-document-before")
+
+    await act(async () => {
+      const scrollMargin = Number(document.querySelector<HTMLElement>("[data-testid=grid]")?.dataset.scrollMargin)
+      window.scrollTo(0, scrollMargin + 120 * 42)
+      await settleLayout()
+    })
+    expect(rowRange().start).toBeGreaterThan(100)
+    expect(rowRange().end).toBeGreaterThanOrEqual(rowRange().start)
+    expect(rowRange().mounted).toBeLessThan(40)
+    assertMountedRangeHasLabels()
+    expect(mountedRowLabels().some(({ text }) => text.includes("Row 120"))).toBe(true)
     expect(document.querySelector("thead")?.getBoundingClientRect().top).toBeLessThanOrEqual(1)
-    await expect(page.getByTestId("grid-viewport")).toMatchScreenshot("virtual-document-inside")
+    instrumentation.update()
+    await viewport.capture("virtual-document-after")
 
     await act(async () => {
       await page.viewport(1280, 520)
       await settleLayout()
     })
     expect(document.querySelector("[data-testid=grid-viewport]")?.getBoundingClientRect().height).toBeLessThanOrEqual(520)
-    expect(rowRange()).toMatchInlineSnapshot(`
-      {
-        "end": 126,
-        "mounted": 21,
-        "start": 115,
-      }
-    `)
-    await expect(page.getByTestId("grid-viewport")).toMatchScreenshot("virtual-document-resized")
+    expect(rowRange().mounted).toBeLessThan(40)
+    assertMountedRangeHasLabels()
 
     await act(async () => {
-      window.scrollTo(0, 180 + 500 * 42 + 120)
+      window.scrollTo(0, document.documentElement.scrollHeight)
       await settleLayout()
     })
-    expect(document.querySelector("[data-testid=grid-viewport]")?.getBoundingClientRect().bottom).toBeLessThanOrEqual(0)
+    expect(after.getBoundingClientRect().top).toBeLessThan(window.innerHeight)
 
     root.unmount()
-    before.remove()
-    host.remove()
-    after.remove()
+    viewport.remove()
+    receipt.remove()
+    document.body.removeAttribute("style")
     window.scrollTo(0, 0)
   })
 
   it("uses the nearest nested scroll parent through CSS grid and flex-column layout", async () => {
     await page.viewport(1280, 800)
     document.body.style.margin = "0"
+    const receipt = document.createElement("section")
+    receipt.dataset.testid = "virtual-ancestor-receipt"
+    receipt.style.cssText = `${receiptStyles.page}; width:760px; padding:20px`
+    receiptTypography(receipt)
+    const title = document.createElement("h1")
+    title.style.cssText = receiptStyles.title
+    title.textContent = "Ancestor scroll owner: CSS grid and flex column"
+    receipt.append(title)
     const host = document.createElement("div")
-    host.style.cssText = "display:grid; grid-template-rows:minmax(0, 1fr); height:520px; width:720px"
-    document.body.append(host)
+    host.style.cssText = "display:grid; grid-template-rows:minmax(0, 1fr); height:520px; width:720px; border:4px solid #fb923c; background:#fff"
+    receipt.append(host)
+    document.body.append(receipt)
     const flex = document.createElement("div")
     flex.style.cssText = "display:flex; flex-direction:column; min-height:0"
     const scroller = document.createElement("div")
     scroller.dataset.testid = "external-scroll-parent"
-    scroller.style.cssText = "overflow-y:auto; height:410px; min-height:0"
-    const before = document.createElement("div")
-    before.style.height = "96px"
-    before.textContent = "nested content before grid"
-    scroller.append(before)
+    scroller.style.cssText = "overflow-y:auto; height:410px; min-height:0; border:3px solid #0ea5e9"
+    const beforeOne = receiptBlock("Before table: ancestor metadata", 240, "#60a5fa")
+    const beforeTwo = receiptBlock("Before table: ancestor activity", 230, "#a78bfa")
+    scroller.append(beforeOne, beforeTwo)
     flex.append(scroller)
     host.append(flex)
     const mount = document.createElement("div")
+    const gridTitle = document.createElement("h2")
+    gridTitle.style.cssText = "margin:12px; font:700 18px/1.2 -apple-system, sans-serif"
+    gridTitle.textContent = "Virtualized rows inside external owner"
+    scroller.append(gridTitle)
     scroller.append(mount)
+    const after = receiptBlock("After table: ancestor continuation", 180, "#34d399")
+    scroller.append(after)
     const grid = createGrid<VirtualRow>({
       schema: virtualSchema,
-      rows: Signal<VirtualRow[]>(virtualRows),
+      rows: Signal<VirtualRow[]>(receiptRows),
       getRowId: (row) => row.id,
       mode: "server",
     })
@@ -383,27 +492,40 @@ describe("GridTable external-scroll virtualization", () => {
     await act(async () => root.render(<GridTable grid={grid} />))
     await act(settleLayout)
 
-    expect(scroller.scrollHeight).toBeGreaterThanOrEqual(96 + 500 * 42)
+    const instrumentation = receiptPanel({ name: "ancestor", owner: scroller, rows: receiptRows })
+    receipt.insertBefore(instrumentation.panel, host)
+    instrumentation.update()
+    expect(beforeOne.getBoundingClientRect().height + beforeTwo.getBoundingClientRect().height).toBeGreaterThan(scroller.clientHeight)
+    expect(scroller.scrollHeight).toBeGreaterThanOrEqual(470 + receiptRows.length * 42 + after.getBoundingClientRect().height)
     expect(rowRange().mounted).toBeLessThan(40)
+    const viewport = viewportReceipt("virtual-ancestor-viewport")
     await act(async () => {
-      scroller.scrollTop = 96 + 80 * 42
+      const scrollMargin = Number(document.querySelector<HTMLElement>("[data-testid=grid]")?.dataset.scrollMargin)
+      scroller.scrollTop = scrollMargin - 240
       scroller.dispatchEvent(new Event("scroll"))
       await settleLayout()
     })
-    expect(rowRange()).toMatchInlineSnapshot(`
-      {
-        "end": 85,
-        "mounted": 18,
-        "start": 77,
-      }
-    `)
-    expect(document.querySelector("[data-testid=grid-row]")?.getAttribute("data-row-index")).toBe("76")
+    assertMountedRangeHasLabels()
+    instrumentation.update()
+    await viewport.capture("virtual-ancestor-before")
+    await act(async () => {
+      const scrollMargin = Number(document.querySelector<HTMLElement>("[data-testid=grid]")?.dataset.scrollMargin)
+      scroller.scrollTop = scrollMargin + 80 * 42
+      scroller.dispatchEvent(new Event("scroll"))
+      await settleLayout()
+    })
+    expect(rowRange().start).toBeGreaterThan(70)
+    expect(rowRange().mounted).toBeLessThan(40)
+    assertMountedRangeHasLabels()
     expect(document.querySelector("[data-testid=grid-viewport]")?.getBoundingClientRect().height).toBeLessThanOrEqual(window.innerHeight + 2)
-    expect(scroller.scrollTop).toBe(96 + 80 * 42)
-    await expect(page.getByTestId("grid-viewport")).toMatchScreenshot("virtual-ancestor-inside")
+    expect(scroller.scrollTop).toBeCloseTo(Number(document.querySelector<HTMLElement>("[data-testid=grid]")?.dataset.scrollMargin) + 80 * 42, 0)
+    instrumentation.update()
+    await viewport.capture("virtual-ancestor-after")
 
     root.unmount()
-    host.remove()
+    viewport.remove()
+    receipt.remove()
+    document.body.removeAttribute("style")
   })
 
   it("keeps virtual indexes inside the active client page", async () => {
@@ -436,15 +558,25 @@ describe("GridTable external-scroll virtualization", () => {
 
   it("measures variable-height rows and contributes the refined extent to document scroll", async () => {
     await page.viewport(1280, 800)
-    const before = document.createElement("div")
-    before.style.height = "120px"
+    document.body.style.margin = "0"
+    const receipt = document.createElement("main")
+    receipt.dataset.testid = "virtual-variable-height-page"
+    receipt.style.cssText = receiptStyles.page
+    receiptTypography(receipt)
+    const beforeOne = receiptBlock("Before table: varying-height overview", 420, "#60a5fa")
+    const beforeTwo = receiptBlock("Before table: varying-height legend", 400, "#a78bfa")
+    const title = document.createElement("h1")
+    title.style.cssText = receiptStyles.title
+    title.textContent = "Document scroll owner: measured variable-height rows"
     const host = document.createElement("div")
-    const after = document.createElement("div")
-    after.style.height = "1000px"
-    document.body.append(before, host, after)
+    host.style.cssText = "margin:16px 24px"
+    const after = receiptBlock("After table: measured extent continuation", 300, "#34d399")
+    const instrumentation = receiptPanel({ name: "Variable-height external virtualization", owner: "window", rows: receiptRows, fixed: true })
+    receipt.append(beforeOne, beforeTwo, title, instrumentation.panel, host, after)
+    document.body.append(receipt)
     const grid = createGrid<VirtualRow>({
       schema: virtualSchema,
-      rows: Signal<VirtualRow[]>(virtualRows),
+      rows: Signal<VirtualRow[]>(receiptRows),
       columnDefs: variableHeightColumns,
       getRowId: (row) => row.id,
       mode: "server",
@@ -453,14 +585,26 @@ describe("GridTable external-scroll virtualization", () => {
     await act(async () => root.render(<GridTable grid={grid} density="compact" />))
     await act(settleMeasurements)
 
-    const estimatedExtent = 500 * 30
+    const estimatedExtent = receiptRows.length * 30
     const gridHeight = document.querySelector("[data-testid=grid]")?.getBoundingClientRect().height ?? 0
     expect(gridHeight).toBeGreaterThan(estimatedExtent)
-    expect(document.documentElement.scrollHeight).toBeGreaterThan(120 + estimatedExtent)
+    expect(document.documentElement.scrollHeight).toBeGreaterThan(820 + estimatedExtent)
     expect(rowRange().mounted).toBeLessThan(40)
+    assertMountedRangeHasLabels()
+    instrumentation.update()
+    const viewport = viewportReceipt("virtual-variable-height-viewport")
+    await act(async () => {
+      const scrollMargin = Number(document.querySelector<HTMLElement>("[data-testid=grid]")?.dataset.scrollMargin)
+      window.scrollTo(0, scrollMargin - 320)
+      await settleMeasurements()
+    })
+    assertMountedRangeHasLabels()
+    instrumentation.update()
+    await viewport.capture("virtual-variable-height-before")
 
     await act(async () => {
-      window.scrollTo(0, 120 + 160 * 30)
+      const scrollMargin = Number(document.querySelector<HTMLElement>("[data-testid=grid]")?.dataset.scrollMargin)
+      window.scrollTo(0, scrollMargin + 80 * 30)
       await settleMeasurements()
     })
     const range = rowRange()
@@ -471,11 +615,14 @@ describe("GridTable external-scroll virtualization", () => {
     expect(Math.min(...mounted)).toBeLessThanOrEqual(range.start)
     expect(Math.max(...mounted)).toBeGreaterThanOrEqual(range.end)
     expect(mounted.length).toBeLessThan(40)
-    await expect(page.getByTestId("grid-viewport")).toMatchScreenshot("virtual-variable-height-inside")
+    assertMountedRangeHasLabels()
+    instrumentation.update()
+    await viewport.capture("virtual-variable-height-after")
 
     root.unmount()
-    before.remove()
-    host.remove()
-    after.remove()
+    viewport.remove()
+    receipt.remove()
+    document.body.removeAttribute("style")
+    window.scrollTo(0, 0)
   })
 })

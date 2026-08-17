@@ -14,10 +14,6 @@ export function useGrid<TData extends RowData>(grid: Grid<TData>) {
     getRowId: grid.getRowId,
     getSubRows: grid.getSubRows,
     getRowCanExpand: grid.getRowCanExpand ? (row) => grid.getRowCanExpand?.(row.original) ?? false : undefined,
-    // TanStack v9 constructs feature atoms from initialState before it publishes
-    // controlled state after the first commit. Seed the same Grid state so a
-    // configured page size applies to the first virtual range.
-    initialState: state,
     state,
     onSortingChange: grid.onSortingChange,
     onColumnFiltersChange: grid.onColumnFiltersChange,
