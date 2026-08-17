@@ -110,7 +110,7 @@ export function useExternalGridVirtualizer({
     metrics.scrollMargin,
     count * estimateSize,
   )
-  const range = visibleVirtualRange({
+  const estimatedRange = visibleVirtualRange({
     count,
     estimateSize,
     offset: localOffset,
@@ -118,12 +118,18 @@ export function useExternalGridVirtualizer({
     leading: metrics.headerHeight,
     trailing: FOOTER_HEIGHT,
   })
+  const visibleHeight = Math.max(0, metrics.viewportHeight - metrics.headerHeight - FOOTER_HEIGHT)
+  const range = count ? {
+    start: virtualizer.getVirtualItemForOffset(localOffset)?.index ?? estimatedRange.start,
+    end: virtualizer.getVirtualItemForOffset(localOffset + visibleHeight)?.index ?? estimatedRange.end,
+  } : estimatedRange
 
   return {
     rootRef,
     headerRef,
     virtualizer,
     virtual: enabled,
+    totalSize: virtualizer.getTotalSize(),
     viewportHeight: metrics.viewportHeight,
     headerHeight: metrics.headerHeight,
     visibleStart: range.start,

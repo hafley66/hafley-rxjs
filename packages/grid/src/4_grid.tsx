@@ -1,3 +1,4 @@
+import { useCallback } from "react"
 import { flexRender } from "@tanstack/react-table"
 import type { RowData } from "@tanstack/react-table"
 import { useGrid } from "./3_react"
@@ -52,14 +53,21 @@ export function GridTable<TData extends RowData>({
     scrollElement,
   })
   const virtualRows = virtualizer.virtual ? virtualizer.virtualizer.getVirtualItems() : []
+  const measureRow = useCallback((node: HTMLTableRowElement | null) => {
+    if (!node) return
+    requestAnimationFrame(() => {
+      if (node.isConnected) virtualizer.virtualizer.measureElement(node)
+    })
+  }, [virtualizer.virtualizer])
   const renderedRows = virtualizer.virtual
     ? virtualRows.map((item) => ({ row: rows[item.index]!, index: item.index, measure: item }))
     : rows.map((row, index) => ({ row, index, measure: null }))
   const topSpace = virtualizer.virtual ? (virtualRows[0]?.start ?? 0) : 0
+  const virtualRowsHeight = virtualizer.virtual ? virtualizer.totalSize : estimatedRowsHeight
   const bottomSpace = virtualizer.virtual
-    ? Math.max(0, estimatedRowsHeight - (virtualRows.at(-1)?.end ?? 0))
+    ? Math.max(0, virtualRowsHeight - (virtualRows.at(-1)?.end ?? 0))
     : 0
-  const layoutHeight = estimatedRowsHeight + virtualizer.headerHeight + virtualizer.footerHeight
+  const layoutHeight = virtualRowsHeight + virtualizer.headerHeight + virtualizer.footerHeight
 
   const renderRow = (row: typeof rows[number], index: number, measure: typeof virtualRows[number] | null) => (
     <tr
@@ -67,6 +75,7 @@ export function GridTable<TData extends RowData>({
       data-testid="grid-row"
       data-row-index={index}
       data-index={measure?.index}
+      ref={measure ? measureRow : undefined}
       style={{ height: h, background: index % 2 ? C.alternate : C.surface, borderBottom: `1px solid ${C.hair}` }}
     >
       {row.getVisibleCells().map((cell) => {

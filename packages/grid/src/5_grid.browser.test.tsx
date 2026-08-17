@@ -254,11 +254,28 @@ const settleLayout = () => new Promise<void>((resolve) => {
   requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
 })
 
+const settleMeasurements = () => new Promise<void>((resolve) => {
+  requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+})
+
 const rowRange = () => ({
   start: Number(document.querySelector("[data-testid=grid]")?.getAttribute("data-visible-start")),
   end: Number(document.querySelector("[data-testid=grid]")?.getAttribute("data-visible-end")),
   mounted: document.querySelectorAll("[data-testid=grid-row]").length,
 })
+
+const variableHeightColumns: ColumnDef<GridFeatures, VirtualRow>[] = [
+  {
+    accessorKey: "name",
+    header: "Variable height",
+    cell: ({ getValue, row }) => (
+      <div style={{ height: row.index % 2 ? 72 : 54, display: "flex", alignItems: "center" }}>
+        {getValue() as string}
+      </div>
+    ),
+  },
+  { accessorKey: "size", header: "Size", meta: { align: "right" } },
+]
 
 describe("GridTable external-scroll virtualization", () => {
   it("uses document scroll after preceding content, caps the live viewport, and responds to viewport resize", async () => {
@@ -301,9 +318,9 @@ describe("GridTable external-scroll virtualization", () => {
     })
     expect(rowRange()).toMatchInlineSnapshot(`
       {
-        "end": 137,
+        "end": 133,
         "mounted": 28,
-        "start": 120,
+        "start": 115,
       }
     `)
     expect(document.querySelector("[data-testid=grid-row]")?.getAttribute("data-row-index")).toBe("116")
@@ -317,9 +334,9 @@ describe("GridTable external-scroll virtualization", () => {
     expect(document.querySelector("[data-testid=grid-viewport]")?.getBoundingClientRect().height).toBeLessThanOrEqual(520)
     expect(rowRange()).toMatchInlineSnapshot(`
       {
-        "end": 130,
+        "end": 126,
         "mounted": 21,
-        "start": 120,
+        "start": 115,
       }
     `)
     await expect(page.getByTestId("grid-viewport")).toMatchScreenshot("virtual-document-resized")
@@ -375,9 +392,9 @@ describe("GridTable external-scroll virtualization", () => {
     })
     expect(rowRange()).toMatchInlineSnapshot(`
       {
-        "end": 88,
+        "end": 85,
         "mounted": 18,
-        "start": 80,
+        "start": 77,
       }
     `)
     expect(document.querySelector("[data-testid=grid-row]")?.getAttribute("data-row-index")).toBe("76")
@@ -415,5 +432,50 @@ describe("GridTable external-scroll virtualization", () => {
 
     root.unmount()
     host.remove()
+  })
+
+  it("measures variable-height rows and contributes the refined extent to document scroll", async () => {
+    await page.viewport(1280, 800)
+    const before = document.createElement("div")
+    before.style.height = "120px"
+    const host = document.createElement("div")
+    const after = document.createElement("div")
+    after.style.height = "1000px"
+    document.body.append(before, host, after)
+    const grid = createGrid<VirtualRow>({
+      schema: virtualSchema,
+      rows: Signal<VirtualRow[]>(virtualRows),
+      columnDefs: variableHeightColumns,
+      getRowId: (row) => row.id,
+      mode: "server",
+    })
+    const root = createRoot(host)
+    await act(async () => root.render(<GridTable grid={grid} density="compact" />))
+    await act(settleMeasurements)
+
+    const estimatedExtent = 500 * 30
+    const gridHeight = document.querySelector("[data-testid=grid]")?.getBoundingClientRect().height ?? 0
+    expect(gridHeight).toBeGreaterThan(estimatedExtent)
+    expect(document.documentElement.scrollHeight).toBeGreaterThan(120 + estimatedExtent)
+    expect(rowRange().mounted).toBeLessThan(40)
+
+    await act(async () => {
+      window.scrollTo(0, 120 + 160 * 30)
+      await settleMeasurements()
+    })
+    const range = rowRange()
+    const mounted = [...document.querySelectorAll<HTMLElement>("[data-testid=grid-row]")]
+      .map((row) => Number(row.dataset.rowIndex))
+    expect(range.start).toBeGreaterThan(0)
+    expect(range.end).toBeGreaterThanOrEqual(range.start)
+    expect(Math.min(...mounted)).toBeLessThanOrEqual(range.start)
+    expect(Math.max(...mounted)).toBeGreaterThanOrEqual(range.end)
+    expect(mounted.length).toBeLessThan(40)
+    await expect(page.getByTestId("grid-viewport")).toMatchScreenshot("virtual-variable-height-inside")
+
+    root.unmount()
+    before.remove()
+    host.remove()
+    after.remove()
   })
 })
