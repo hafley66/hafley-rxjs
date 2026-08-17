@@ -151,6 +151,8 @@ describe("GridTable filesystem demo", () => {
 
     await act(async () => { await page.getByTestId("row-toggle").first().click() })
 
+    // The nonvirtual path retains the pre-external-scroll max-height cap.
+    expect(document.querySelector("[data-testid=grid]")?.getBoundingClientRect().height).toBe(602)
     await expect(page.getByTestId("grid")).toMatchScreenshot("fs-expanded")
 
     // Polling sources replace the array while retaining stable row ids. That

@@ -151,7 +151,7 @@ export function GridTable<TData extends RowData>({
           fontFamily: FONT,
           color: C.text,
           fontSize: 13,
-          maxHeight: scrollMode === "internal" ? maxHeight : undefined,
+          maxHeight,
           overflowY: "auto",
         }}
       >
