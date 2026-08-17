@@ -1,16 +1,22 @@
 import { act } from "react"
 import { createRoot } from "react-dom/client"
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it } from "vitest"
 import { page } from "vitest/browser"
 import type { ColumnDef } from "@tanstack/react-table"
 import { Signal } from "@hafley66/signals"
 import { z } from "zod"
-import { createGrid } from "./2_createGrid"
+import { createDefaultGridState, createGrid } from "./2_createGrid"
 import type { GridFeatures } from "./0_features"
 import { GridTable } from "./4_grid"
 import { GridTree } from "./6_tree"
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+
+afterEach(() => {
+  document.body.replaceChildren()
+  document.body.removeAttribute("style")
+  window.scrollTo(0, 0)
+})
 
 type FSNode = { id: string; name: string; kind: "folder" | "file"; size: number; children?: FSNode[] }
 
@@ -229,6 +235,183 @@ describe("GridTree explorer demo", () => {
 
     expect(document.querySelectorAll(".gt-row").length).toBe(13)
     await expect(page.getByTestId("grid-tree")).toMatchScreenshot("tree-expanded")
+
+    root.unmount()
+    host.remove()
+  })
+})
+
+type VirtualRow = { id: string; name: string; size: number }
+
+const virtualSchema = z.object({ id: z.string(), name: z.string(), size: z.number() })
+const virtualRows = Array.from({ length: 500 }, (_, index): VirtualRow => ({
+  id: `row-${index}`,
+  name: `Row ${String(index).padStart(3, "0")}`,
+  size: index,
+}))
+
+const settleLayout = () => new Promise<void>((resolve) => {
+  requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+})
+
+const rowRange = () => ({
+  start: Number(document.querySelector("[data-testid=grid]")?.getAttribute("data-visible-start")),
+  end: Number(document.querySelector("[data-testid=grid]")?.getAttribute("data-visible-end")),
+  mounted: document.querySelectorAll("[data-testid=grid-row]").length,
+})
+
+describe("GridTable external-scroll virtualization", () => {
+  it("uses document scroll after preceding content, caps the live viewport, and responds to viewport resize", async () => {
+    await page.viewport(1280, 800)
+    document.body.style.margin = "0"
+    const host = document.createElement("div")
+    const before = document.createElement("div")
+    before.style.height = "180px"
+    before.textContent = "content before grid"
+    document.body.append(before)
+    document.body.append(host)
+    const after = document.createElement("div")
+    after.style.height = "1000px"
+    after.textContent = "content after grid"
+    document.body.append(after)
+    const grid = createGrid<VirtualRow>({
+      schema: virtualSchema,
+      rows: Signal<VirtualRow[]>(virtualRows),
+      // Browser receipts use server mode, where the producer owns paging and
+      // client pagination is disabled. The final test covers the 20-row page.
+      getRowId: (row) => row.id,
+      mode: "server",
+    })
+    const root = createRoot(host)
+    await act(async () => root.render(<GridTable grid={grid} />))
+    await act(settleLayout)
+
+    const preservedHeight = 500 * 42
+    expect(page.getByTestId("grid")).toHaveAttribute("data-scroll-mode", "external")
+    expect(document.querySelector("[data-testid=grid]")?.getBoundingClientRect().height).toBeGreaterThanOrEqual(preservedHeight)
+    expect(document.documentElement.scrollHeight).toBeGreaterThanOrEqual(180 + preservedHeight)
+    expect(document.querySelector("[data-testid=grid-viewport]")?.scrollHeight).toBeLessThanOrEqual(
+      document.querySelector("[data-testid=grid]")?.scrollHeight ?? Infinity,
+    )
+    expect(document.querySelector("[data-testid=grid-viewport]")?.style.overflowY).toBe("clip")
+
+    await act(async () => {
+      window.scrollTo(0, 180 + 120 * 42)
+      await settleLayout()
+    })
+    expect(rowRange()).toMatchInlineSnapshot(`
+      {
+        "end": 137,
+        "mounted": 28,
+        "start": 120,
+      }
+    `)
+    expect(document.querySelector("[data-testid=grid-row]")?.getAttribute("data-row-index")).toBe("116")
+    expect(document.querySelector("thead")?.getBoundingClientRect().top).toBeLessThanOrEqual(1)
+    await expect(page.getByTestId("grid-viewport")).toMatchScreenshot("virtual-document-inside")
+
+    await act(async () => {
+      await page.viewport(1280, 520)
+      await settleLayout()
+    })
+    expect(document.querySelector("[data-testid=grid-viewport]")?.getBoundingClientRect().height).toBeLessThanOrEqual(520)
+    expect(rowRange()).toMatchInlineSnapshot(`
+      {
+        "end": 130,
+        "mounted": 21,
+        "start": 120,
+      }
+    `)
+    await expect(page.getByTestId("grid-viewport")).toMatchScreenshot("virtual-document-resized")
+
+    await act(async () => {
+      window.scrollTo(0, 180 + 500 * 42 + 120)
+      await settleLayout()
+    })
+    expect(document.querySelector("[data-testid=grid-viewport]")?.getBoundingClientRect().bottom).toBeLessThanOrEqual(0)
+
+    root.unmount()
+    before.remove()
+    host.remove()
+    after.remove()
+    window.scrollTo(0, 0)
+  })
+
+  it("uses the nearest nested scroll parent through CSS grid and flex-column layout", async () => {
+    await page.viewport(1280, 800)
+    document.body.style.margin = "0"
+    const host = document.createElement("div")
+    host.style.cssText = "display:grid; grid-template-rows:minmax(0, 1fr); height:520px; width:720px"
+    document.body.append(host)
+    const flex = document.createElement("div")
+    flex.style.cssText = "display:flex; flex-direction:column; min-height:0"
+    const scroller = document.createElement("div")
+    scroller.dataset.testid = "external-scroll-parent"
+    scroller.style.cssText = "overflow-y:auto; height:410px; min-height:0"
+    const before = document.createElement("div")
+    before.style.height = "96px"
+    before.textContent = "nested content before grid"
+    scroller.append(before)
+    flex.append(scroller)
+    host.append(flex)
+    const mount = document.createElement("div")
+    scroller.append(mount)
+    const grid = createGrid<VirtualRow>({
+      schema: virtualSchema,
+      rows: Signal<VirtualRow[]>(virtualRows),
+      getRowId: (row) => row.id,
+      mode: "server",
+    })
+    const root = createRoot(mount)
+    await act(async () => root.render(<GridTable grid={grid} />))
+    await act(settleLayout)
+
+    expect(scroller.scrollHeight).toBeGreaterThanOrEqual(96 + 500 * 42)
+    expect(rowRange().mounted).toBeLessThan(40)
+    await act(async () => {
+      scroller.scrollTop = 96 + 80 * 42
+      scroller.dispatchEvent(new Event("scroll"))
+      await settleLayout()
+    })
+    expect(rowRange()).toMatchInlineSnapshot(`
+      {
+        "end": 88,
+        "mounted": 18,
+        "start": 80,
+      }
+    `)
+    expect(document.querySelector("[data-testid=grid-row]")?.getAttribute("data-row-index")).toBe("76")
+    expect(document.querySelector("[data-testid=grid-viewport]")?.getBoundingClientRect().height).toBeLessThanOrEqual(window.innerHeight + 2)
+    expect(scroller.scrollTop).toBe(96 + 80 * 42)
+    await expect(page.getByTestId("grid-viewport")).toMatchScreenshot("virtual-ancestor-inside")
+
+    root.unmount()
+    host.remove()
+  })
+
+  it("keeps virtual indexes inside the active client page", async () => {
+    const host = document.createElement("div")
+    document.body.append(host)
+    const grid = createGrid<VirtualRow>({
+      schema: virtualSchema,
+      rows: Signal<VirtualRow[]>(virtualRows),
+      state: Signal(createDefaultGridState({ pagination: { pageIndex: 3, pageSize: 20 } })),
+      getRowId: (row) => row.id,
+      mode: "client",
+    })
+    const root = createRoot(host)
+    await act(async () => root.render(<GridTable grid={grid} />))
+    await act(settleLayout)
+
+    expect(rowRange()).toMatchInlineSnapshot(`
+      {
+        "end": 17,
+        "mounted": 20,
+        "start": 0,
+      }
+    `)
+    expect(document.querySelector("[data-testid=grid-row]")?.textContent).toContain("Row 060")
+    expect(document.querySelectorAll("[data-testid=grid-row]").length).toBe(20)
 
     root.unmount()
     host.remove()

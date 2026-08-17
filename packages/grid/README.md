@@ -153,14 +153,37 @@ the `filtered`, `grouped`, `expanded`, `faceted`, and `paginated` row models.
 ## GridTable
 
 ```tsx
-function GridTable<TData>({ grid, density?, maxHeight? }: ...)
+function GridTable<TData>({ grid, density?, maxHeight?, scrollMode?, scrollElement? }: ...)
 ```
 
 | prop | default | effect |
 | --- | --- | --- |
 | `grid` | — | a `Grid` from `createGrid` |
 | `density` | `"standard"` | `"compact"` 30px · `"standard"` 42px · `"cozy"` 52px rows |
-| `maxHeight` | `600` | card height; overflows scroll inside the body |
+| `maxHeight` | `600` | height for legacy `scrollMode="internal"` |
+| `scrollMode` | `"external"` | uses document or nearest overflow-y ancestor; `"internal"` retains the card scrollbar |
+| `scrollElement` | automatic | explicit external scroll owner override |
+
+When the current page's estimated rows exceed the owner viewport, external mode
+keeps the full estimated table height in parent/document flow and renders a
+sticky live window capped at `100dvh`. The window has `overflow: clip`; it does
+not take over ancestor scrolling. Client pagination runs before this layer, so
+virtual indexes always address the current page.
+
+### External-scroll platform receipt
+
+Chromium receipts cover document scroll with preceding content, a nested
+`overflow:auto` parent inside CSS grid + flex-column layout, viewport resize,
+and positions before, inside, and past the grid. `position: sticky` binds to
+the nearest scrolling ancestor, so Grid deliberately leaves external ancestors'
+overflow unchanged. `content-visibility:auto` and `contain-intrinsic-size` are
+not applied to the live table: they can substitute an intrinsic size while
+content is skipped, while this component needs its explicit estimated extent to
+remain the parent scroll contribution. `ResizeObserver` updates geometry; CSS
+`100dvh` applies the viewport cap; TanStack Virtual owns overscan and item
+measurement. The non-Grid geometry/range boundary is
+`src/4a_virtualizationBoundary.ts`, reserved for a future
+`@hafley66/virtualizations` extraction.
 
 Conventions the render layer honors:
 
