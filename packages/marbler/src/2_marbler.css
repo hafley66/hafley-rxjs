@@ -259,6 +259,10 @@ input {
 	grid-template-columns: 310px 62px 74px 94px 78px 72px minmax(520px, 1fr);
 	min-width: 1210px;
 }
+.grid-row.has-tree {
+	grid-template-columns: 20px 310px 62px 74px 94px 78px 72px minmax(520px, 1fr);
+	min-width: 1230px;
+}
 .grid-header {
 	position: sticky;
 	top: 0;
@@ -318,6 +322,19 @@ input {
 }
 .grid-body > .grid-row.selected {
 	background-color: #243752;
+}
+.col-__expand {
+	padding: 0;
+	justify-content: center;
+}
+.expand-toggle {
+	width: 16px;
+	height: 16px;
+	border: 0;
+	background: transparent;
+	color: #8a929e;
+	font-size: 10px;
+	cursor: pointer;
 }
 .col-name {
 	gap: 8px;
@@ -523,6 +540,50 @@ input {
 	font:
 		11px / 1.5 ui-monospace,
 		monospace;
+}
+.messages-table {
+	margin: 0 14px 18px;
+	width: calc(100% - 28px);
+	border-collapse: collapse;
+	font-size: 11px;
+}
+.messages-table th {
+	text-align: left;
+	padding: 4px 6px;
+	color: #828b97;
+	font-weight: 400;
+	border-bottom: 1px solid #30353e;
+}
+.messages-table td {
+	padding: 4px 6px;
+	border-bottom: 1px solid #22262d;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.frame-direction {
+	text-align: center;
+	width: 16px;
+}
+.frame-out .frame-direction {
+	color: #49a56b;
+}
+.frame-in .frame-direction {
+	color: #3f8dbd;
+}
+.frame-self .frame-direction {
+	color: #777f8b;
+}
+.frame-error .frame-direction {
+	color: #d05050;
+}
+.frame-repeat {
+	margin-left: 6px;
+	padding: 1px 5px;
+	border-radius: 8px;
+	background: #2a2f38;
+	color: #9da5b1;
+	font-size: 10px;
 }
 .timing-bars {
 	margin: 0 14px;
