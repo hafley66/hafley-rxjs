@@ -4,7 +4,7 @@ Render the agent tree over time as a Chromium-network-tab websocket list: one ro
 per agent session, a lifespan bar from open to close, message frames drawn on the
 bar and listed in a messages sub-panel, parent/child as tree indentation.
 
-Base sha `ea690cc39cf68dfbbfc3aeda324ba03cb98fabdb`.
+Base sha `4a6d6cff6543156e31f91831e13b58b88d81db11` (three commits ahead of `origin/main`, see section 1).
 
 ## Contents
 
@@ -26,6 +26,16 @@ Base sha `ea690cc39cf68dfbbfc3aeda324ba03cb98fabdb`.
 
 Every number below came from a command run 2026-08-17 against
 `~/.agent/boop.db` and from files at the base sha.
+
+Base note. `packages/boop-adapters` is NOT on `origin/main` at `ea690cc`. It
+arrived in three commits that sit on the local `main` and were never pushed:
+`ef27602` Correct Boop adapters to use native package contracts, `4e2f67e` Fix
+native package type exports, `4a6d6cf` Export Marbler model and panel. Every
+`packages/boop-adapters/...` citation below reads against `4a6d6cf`, which is
+also the base sha the implementation lanes take. Two lanes spawned against
+`ea690cc` died in 24 s with `rc=0` and this exact text: `rg: packages/boop-adapters:
+No such file or directory`.
+
 
 | fact | receipt |
 |---|---|
