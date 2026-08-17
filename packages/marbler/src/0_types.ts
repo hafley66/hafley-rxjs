@@ -2,8 +2,8 @@ import { z } from "zod"
 
 export const PhaseSchema = z.object({
   kind: z.enum(["queue", "send", "wait", "receive", "work"]),
-  start: z.number(),
-  end: z.number(),
+  start: z.number().nullable(),
+  end: z.number().nullable(),
 })
 
 export const MarbleEventSchema = z.object({
@@ -14,8 +14,8 @@ export const MarbleEventSchema = z.object({
   type: z.string(),
   initiator: z.string(),
   size: z.string(),
-  start: z.number(),
-  duration: z.number(),
+  start: z.number().nullable(),
+  duration: z.number().nullable(),
   from: z.string(),
   to: z.string(),
   preview: z.string(),

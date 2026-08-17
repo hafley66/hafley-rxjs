@@ -34,6 +34,31 @@ importers:
         specifier: ^4.1.10
         version: 4.1.10(@types/node@25.0.8)(@vitest/browser-playwright@4.1.10)(@vitest/ui@4.1.10)(jsdom@26.1.0)(vite@8.2.1(@types/node@25.0.8)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))
 
+  packages/boop-adapters:
+    dependencies:
+      '@hafley66/grapht':
+        specifier: workspace:*
+        version: link:../grapht
+      '@hafley66/grid':
+        specifier: workspace:*
+        version: link:../grid
+      '@hafley66/marbler':
+        specifier: workspace:*
+        version: link:../marbler
+      '@hafley66/path':
+        specifier: workspace:*
+        version: link:../path
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.10(@types/node@25.0.8)(@vitest/browser-playwright@4.1.10)(@vitest/ui@4.1.10)(jsdom@26.1.0)(vite@8.2.1(@types/node@25.0.8)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))
+
   packages/devtool-plugin:
     dependencies:
       '@hafley66/rxjs-ext':

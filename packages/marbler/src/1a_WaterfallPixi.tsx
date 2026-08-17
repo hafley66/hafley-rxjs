@@ -59,7 +59,7 @@ export function WaterfallPixi({
       if (!row) return null
       const currentDomain = domainRef.current
       const time = currentDomain[0] + ((event.clientX - bounds.left) / width) * (currentDomain[1] - currentDomain[0])
-      return time >= row.start && time <= row.start + row.duration ? row : null
+      return row.start !== null && row.duration !== null && time >= row.start && time <= row.start + row.duration ? row : null
     }
     const pointerMove = (event: MouseEvent) => {
       const row = hitTest(event)
@@ -99,6 +99,7 @@ export function WaterfallPixi({
       rowsRef.current.slice(first, last).forEach((event, visibleIndex) => {
         const y = (first + visibleIndex) * ROW_HEIGHT - scrollTop
         event.phases.forEach((phase) => {
+          if (phase.start === null || phase.end === null) return
           const left = x(phase.start)
           phasesGraphic?.rect(left, y + 16, Math.max(2, x(phase.end) - left), 12).fill({ color: PHASE_COLOR[phase.kind], alpha: 0.86 })
         })

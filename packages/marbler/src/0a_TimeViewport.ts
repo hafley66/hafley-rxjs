@@ -21,12 +21,13 @@ export type TimelineGesture =
 
 const MIN_SPAN_MS = 1
 
-export function eventRange(events: ReadonlyArray<{ start: number; duration: number }>): TimeRange {
-  if (events.length === 0) return [0, 1]
-  return events.reduce<TimeRange>((range, event) => [
+export function eventRange(events: ReadonlyArray<{ start: number | null; duration: number | null }>): TimeRange {
+  const timed = events.filter((event): event is { start: number; duration: number } => event.start !== null && event.duration !== null)
+  if (timed.length === 0) return [0, 1]
+  return timed.reduce<TimeRange>((range, event) => [
     Math.min(range[0], event.start),
     Math.max(range[1], event.start + event.duration),
-  ], [events[0].start, events[0].start + events[0].duration])
+  ], [timed[0].start, timed[0].start + timed[0].duration])
 }
 
 export function createTimeViewport(full: TimeRange): TimeViewport {

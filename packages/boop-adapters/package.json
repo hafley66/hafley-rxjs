@@ -1,0 +1,30 @@
+{
+  "name": "@hafley66/boop-adapters",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "pnpm run build && vitest run"
+  },
+  "dependencies": {
+    "@hafley66/grapht": "workspace:*",
+    "@hafley66/grid": "workspace:*",
+    "@hafley66/marbler": "workspace:*",
+    "@hafley66/path": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "^4.1.10"
+  }
+}
