@@ -22,7 +22,8 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
-    "test:browser": "vitest --config vitest.browser.config.ts"
+    "test:browser": "vitest --config vitest.browser.config.ts",
+    "playground": "vite --config vite.playground.config.ts --host 127.0.0.1 --port 4177"
   },
   "dependencies": {
     "@hafley66/path": "^0.1.0",

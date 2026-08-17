@@ -255,3 +255,16 @@ pnpm test        # vitest (node)
 pnpm test:browser # vitest browser (playwright chromium) + screenshot baselines
 pnpm build       # vite build
 ```
+
+## Playground
+
+Run the persistent browser playground from the package directory or workspace:
+
+```sh
+pnpm --filter @hafley66/grid playground
+```
+
+Open [http://127.0.0.1:4177/playground.html](http://127.0.0.1:4177/playground.html).
+It renders the real `createGrid` and `GridTable` seam with document and nested
+scroll owners, server/client paging, variable row measurement, and live DOM
+diagnostics. It does not use the Vitest browser lifecycle.
