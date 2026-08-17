@@ -138,3 +138,65 @@ export type AgentTreeProjection = (snapshot: BoopAgentSnapshot) => AgentTreeRow[
 export type AgentTreeGridConfig = Pick<GridConfig<AgentTreeRow>, "getRowId" | "getSubRows">
 export type AgentTimelineProjection = (snapshot: BoopAgentSnapshot) => AgentTimelineEvent[]
 export type AgentTopologyProjection = (snapshot: BoopAgentSnapshot) => AgentTopology
+
+export type BoopSessionRow = {
+  session: string
+  harness: string
+  nickname: string | null
+  cwd: string | null
+  branch: string | null
+  model: string | null
+  goal: string | null
+  parent: string | null
+  spawnedTs: number | null
+  openedTs: number | null
+  closedTs: number | null
+  firstTurnTs: number | null
+  lastTurnTs: number | null
+  turns: number
+}
+
+export type BoopFrameRow = {
+  session: string
+  ts: number
+  kind: string
+  peer: string | null
+  detail: string
+  repeat: number
+}
+
+export type AgentNetworkExport = { rows: BoopSessionRow[]; frames: BoopFrameRow[] }
+
+export type AgentNetworkProjection = (input: AgentNetworkExport) => MarbleEvent[]
+export type AgentNetworkTopologyProjection = (input: AgentNetworkExport) => Topology
+
+const boopSessionRowSchema = z.object({
+  session: z.string().min(1),
+  harness: z.string().min(1),
+  nickname: z.string().nullable(),
+  cwd: z.string().nullable(),
+  branch: z.string().nullable(),
+  model: z.string().nullable(),
+  goal: z.string().nullable(),
+  parent: z.string().nullable(),
+  spawnedTs: z.number().nullable(),
+  openedTs: z.number().nullable(),
+  closedTs: z.number().nullable(),
+  firstTurnTs: z.number().nullable(),
+  lastTurnTs: z.number().nullable(),
+  turns: z.number(),
+})
+
+const boopFrameRowSchema = z.object({
+  session: z.string().min(1),
+  ts: z.number(),
+  kind: z.string().min(1),
+  peer: z.string().nullable(),
+  detail: z.string(),
+  repeat: z.number(),
+})
+
+export const agentNetworkExportSchema = z.object({
+  rows: z.array(boopSessionRowSchema),
+  frames: z.array(boopFrameRowSchema),
+})
