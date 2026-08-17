@@ -65,8 +65,13 @@ export function GridTable<TData extends RowData>({
   const renderedRows = virtualizer.virtual
     ? liveVirtualRows.map((item) => ({ row: rows[item.index]!, index: item.index, measure: item }))
     : rows.map((row, index) => ({ row, index, measure: null }))
+  const liveRowsHeight = liveVirtualRows.reduce((height, item) => height + item.size, 0)
   const virtualRowsHeight = virtualizer.virtual ? virtualizer.totalSize : estimatedRowsHeight
   const layoutHeight = virtualRowsHeight + virtualizer.headerHeight + virtualizer.footerHeight
+  const liveViewportHeight = Math.min(
+    virtualizer.viewportHeight,
+    virtualizer.headerHeight + liveRowsHeight + virtualizer.footerHeight,
+  )
 
   const renderRow = (row: typeof rows[number], index: number, measure: typeof virtualRows[number] | null) => (
     <tr
@@ -265,6 +270,7 @@ export function GridTable<TData extends RowData>({
           </tbody>
         </table>
         <div
+          data-testid="grid-footer"
           style={{
             borderTop: `1px solid ${C.hair}`,
             padding: "8px 16px",
@@ -297,17 +303,10 @@ export function GridTable<TData extends RowData>({
         fontFamily: FONT,
         color: C.text,
         fontSize: 13,
-        ...(virtualizer.virtual
-          ? { height: layoutHeight, position: "relative" as const }
-          : {
-              border: `1px solid ${C.border}`,
-              borderRadius: 12,
-              background: C.surface,
-              boxShadow: "0 1px 2px rgba(16,24,40,.04), 0 18px 36px -18px rgba(16,24,40,.18)",
-              ...(external
-                ? { overflowY: "auto" as const }
-                : { maxHeight, overflowY: "auto" as const }),
-            }),
+        // The outer extent is the only contribution to the owning scroll
+        // flow. This branch executes only for external virtual grids.
+        height: layoutHeight,
+        position: "relative" as const,
       }}
     >
       <div
@@ -324,14 +323,20 @@ export function GridTable<TData extends RowData>({
                 // only the live row window and never creates a scrollbar.
                 position: "sticky" as const,
                 top: 0,
-                height: `min(100dvh, ${layoutHeight}px)`,
-                maxHeight: "100vh",
+                // A terminal range can contain fewer rows than the viewport.
+                // Keep that window intrinsic so the flow footer follows Row
+                // 099 immediately, while middle ranges still cap at 100dvh.
+                height: liveViewportHeight,
+                maxHeight: "100dvh",
                 boxSizing: "border-box",
                 overflow: "clip",
+                display: "grid",
+                gridTemplateRows: "minmax(0, 1fr) auto",
               }
             : { display: "contents" }),
         }}
       >
+      <div style={virtualizer.virtual ? { minHeight: 0, overflow: "clip" } : { display: "contents" }}>
       <table style={{ borderCollapse: "collapse", width: "100%", fontVariantNumeric: "tabular-nums" }}>
         <thead ref={virtualizer.headerRef}>
           {table.getHeaderGroups().map((hg) => (
@@ -384,7 +389,9 @@ export function GridTable<TData extends RowData>({
           {renderedRows.map(({ row, index, measure }) => renderRow(row, index, measure))}
         </tbody>
       </table>
+      </div>
       <div
+        data-testid="grid-footer"
         style={{
           borderTop: `1px solid ${C.hair}`,
           padding: "8px 16px",
@@ -393,7 +400,7 @@ export function GridTable<TData extends RowData>({
           display: "flex",
           justifyContent: "space-between",
           letterSpacing: ".02em",
-          ...(virtualizer.virtual ? { position: "absolute" as const, right: 0, bottom: 0, left: 0, background: C.surface } : {}),
+          ...(virtualizer.virtual ? { background: C.surface } : {}),
         }}
       >
         <span>{rows.length} {rows.length === 1 ? "row" : "rows"}</span>

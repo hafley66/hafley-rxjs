@@ -253,6 +253,11 @@ const virtualRows = Array.from({ length: 500 }, (_, index): VirtualRow => ({
   size: index,
 }))
 const receiptRows = virtualRows.slice(0, 160)
+const largeVirtualRows = Array.from({ length: 5000 }, (_, index): VirtualRow => ({
+  id: `large-row-${index}`,
+  name: `Row ${String(index).padStart(4, "0")}`,
+  size: index,
+}))
 
 const settleLayout = () => new Promise<void>((resolve) => {
   requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -284,6 +289,14 @@ const assertMountedRangeHasLabels = () => {
   expect(labels.every(({ text }) => text.length > 0)).toBe(true)
   const visible = labels.find(({ index }) => index >= range.start && index <= range.end)
   expect(visible?.text).toContain(`Row ${String(visible?.index).padStart(3, "0")}`)
+}
+
+const assertMountedRowsAreOnlyVisible = () => {
+  const range = rowRange()
+  const indexes = [...document.querySelectorAll<HTMLElement>("[data-testid=grid-row]")]
+    .map((row) => Number(row.dataset.rowIndex))
+  expect(indexes.length).toBeLessThan(50)
+  expect(indexes.every((index) => index >= range.start && index <= range.end)).toBe(true)
 }
 
 const receiptStyles = {
@@ -457,6 +470,130 @@ describe("GridTable external-scroll virtualization", () => {
     receipt.remove()
     document.body.removeAttribute("style")
     window.scrollTo(0, 0)
+  })
+
+  it("collapses the terminal external window directly from Row 099 into its footer", async () => {
+    await page.viewport(1280, 800)
+    document.body.style.margin = "0"
+    const receipt = document.createElement("main")
+    receipt.style.cssText = receiptStyles.page
+    receiptTypography(receipt)
+    const before = receiptBlock("Before table: terminal range", 280, "#60a5fa")
+    const host = document.createElement("div")
+    host.style.cssText = "margin:0 24px"
+    const after = receiptBlock("After table: terminal continuation", 220, "#34d399")
+    receipt.append(before, host, after)
+    document.body.append(receipt)
+    const grid = createGrid<VirtualRow>({
+      schema: virtualSchema,
+      rows: Signal<VirtualRow[]>(virtualRows.slice(0, 100)),
+      getRowId: (row) => row.id,
+      mode: "server",
+    })
+    const root = createRoot(host)
+    await act(async () => root.render(<GridTable grid={grid} />))
+    await act(settleLayout)
+
+    expect(document.documentElement.scrollHeight).toBeGreaterThan(document.documentElement.clientHeight)
+    const gridRoot = document.querySelector<HTMLElement>("[data-testid=grid]")!
+    expect(scrollableGridDescendants(gridRoot)).toMatchInlineSnapshot(`[]`)
+    await act(async () => {
+      window.scrollTo(0, document.documentElement.scrollHeight)
+      await settleLayout()
+    })
+
+    const lastRow = [...document.querySelectorAll<HTMLElement>("[data-testid=grid-row]")]
+      .find((row) => row.dataset.rowIndex === "99")!
+    const liveViewport = document.querySelector<HTMLElement>("[data-testid=grid-viewport]")!
+    const footer = document.querySelector<HTMLElement>("[data-testid=grid-footer]")!
+    expect(lastRow.textContent).toContain("Row 099")
+    expect(liveViewport.getBoundingClientRect().bottom - footer.getBoundingClientRect().bottom).toBeLessThanOrEqual(1)
+    expect(footer.getBoundingClientRect().top - lastRow.getBoundingClientRect().bottom).toBeLessThanOrEqual(1)
+    expect(after.getBoundingClientRect().top - liveViewport.getBoundingClientRect().bottom).toBeLessThanOrEqual(1)
+    expect(document.documentElement.scrollHeight).toBeGreaterThan(document.documentElement.clientHeight)
+
+    const viewport = viewportReceipt("virtual-terminal-end-viewport")
+    await viewport.capture("virtual-terminal-end")
+    root.unmount()
+    viewport.remove()
+    receipt.remove()
+    document.body.removeAttribute("style")
+    window.scrollTo(0, 0)
+  })
+
+  it("keeps 5,000 fixed and variable-height document ranges bounded through the end", async () => {
+    await page.viewport(1280, 800)
+    for (const scenario of [
+      { name: "fixed", density: "standard" as const, columns: undefined, estimate: 42 },
+      { name: "variable", density: "compact" as const, columns: variableHeightColumns, estimate: 30 },
+    ]) {
+      document.body.style.margin = "0"
+      const receipt = document.createElement("main")
+      receipt.style.cssText = receiptStyles.page
+      receiptTypography(receipt)
+      const before = receiptBlock(`Before table: 5000 ${scenario.name} rows`, 160, "#60a5fa")
+      const host = document.createElement("div")
+      host.style.cssText = "margin:0 24px"
+      const after = receiptBlock(`After table: 5000 ${scenario.name} rows`, 180, "#34d399")
+      receipt.append(before, host, after)
+      document.body.append(receipt)
+      const grid = createGrid<VirtualRow>({
+        schema: virtualSchema,
+        rows: Signal<VirtualRow[]>(largeVirtualRows),
+        columnDefs: scenario.columns,
+        getRowId: (row) => row.id,
+        mode: "server",
+      })
+      const root = createRoot(host)
+      await act(async () => root.render(<GridTable grid={grid} density={scenario.density} />))
+      await act(settleMeasurements)
+
+      assertMountedRowsAreOnlyVisible()
+      expect(mountedRowLabels().some(({ text }) => text.includes("Row 0000"))).toBe(true)
+      const gridRoot = document.querySelector<HTMLElement>("[data-testid=grid]")!
+      expect(scrollableGridDescendants(gridRoot)).toMatchInlineSnapshot(`[]`)
+
+      await act(async () => {
+        const scrollMargin = Number(gridRoot.dataset.scrollMargin)
+        window.scrollTo(0, scrollMargin + 2500 * scenario.estimate)
+        await settleMeasurements()
+      })
+      for (let attempt = 0; attempt < 3 && !mountedRowLabels().some(({ text }) => text.includes("Row 2500")); attempt += 1) {
+        await act(async () => {
+          window.scrollBy(0, (2500 - rowRange().start) * scenario.estimate)
+          await settleMeasurements()
+        })
+      }
+      assertMountedRowsAreOnlyVisible()
+      expect(mountedRowLabels().some(({ text }) => text.includes("Row 2500"))).toBe(true)
+
+      for (let attempt = 0; attempt < 12 && !mountedRowLabels().some(({ text }) => text.includes("Row 4999")); attempt += 1) {
+        await act(async () => {
+          window.scrollTo(0, document.documentElement.scrollHeight)
+          await settleMeasurements()
+        })
+      }
+      assertMountedRowsAreOnlyVisible()
+      const lastRow = [...document.querySelectorAll<HTMLElement>("[data-testid=grid-row]")]
+        .find((row) => row.dataset.rowIndex === "4999")!
+      const liveViewport = document.querySelector<HTMLElement>("[data-testid=grid-viewport]")!
+      const footer = document.querySelector<HTMLElement>("[data-testid=grid-footer]")!
+      expect(lastRow.textContent).toContain("Row 4999")
+      expect(footer.getBoundingClientRect().top - lastRow.getBoundingClientRect().bottom).toBeLessThanOrEqual(1)
+      expect(after.getBoundingClientRect().top - liveViewport.getBoundingClientRect().bottom).toBeLessThanOrEqual(1)
+
+      const viewport = viewportReceipt(`virtual-5000-${scenario.name}-end-viewport`)
+      await viewport.capture(`virtual-5000-${scenario.name}-end`)
+      // Repeat after measurement settling. The same baseline validates a
+      // deterministic screenshot at the same terminal scroll position.
+      await act(settleMeasurements)
+      await viewport.capture(`virtual-5000-${scenario.name}-end`)
+      root.unmount()
+      viewport.remove()
+      receipt.remove()
+      document.body.removeAttribute("style")
+      window.scrollTo(0, 0)
+    }
   })
 
   it("uses the nearest nested scroll parent through CSS grid and flex-column layout", async () => {
