@@ -29,6 +29,16 @@ function numericDataset(root: HTMLElement | null, key: string) {
   return Number(root?.dataset[key] ?? "0")
 }
 
+function scrollableOwnerNames(root: HTMLElement | null) {
+  const candidates = [document.documentElement, document.body, ...(root ? [root, ...root.querySelectorAll<HTMLElement>("*")] : [])]
+  return candidates
+    .filter((element) => {
+      const overflowY = getComputedStyle(element).overflowY
+      return (overflowY === "auto" || overflowY === "scroll") && element.scrollHeight > element.clientHeight
+    })
+    .map((element) => element === document.documentElement ? "document" : element === document.body ? "body" : element.dataset.testid ?? element.id ?? element.tagName.toLowerCase())
+}
+
 function App() {
   const [rowCount, setRowCount] = useState<(typeof rowCounts)[number]>(160)
   const [variableHeight, setVariableHeight] = useState(false)
@@ -86,9 +96,11 @@ function App() {
   const scrollOffset = owner?.scrollTop ?? window.scrollY
   const currentPageRows = pagingMode === "server" ? serverRows.length : Math.min(pageSize, rowCount - safePageIndex * pageSize)
   const mountedRows = pageRef.current?.querySelectorAll("[data-testid=grid-row]").length ?? 0
+  const scrollableOwners = scrollableOwnerNames(pageRef.current)
+  const ancestorLayout = ownerMode === "ancestor"
 
-  return <main ref={pageRef} style={{ minHeight: "100vh", background: "#f8fafc", color: "#111827", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
-    <style>{`body { margin: 0 } * { box-sizing: border-box } select, input, button { font: inherit }`}</style>
+  return <main ref={pageRef} style={{ ...(ancestorLayout ? { height: "100dvh", display: "flex", flexDirection: "column" as const, overflow: "hidden" } : { minHeight: "100vh" }), background: "#f8fafc", color: "#111827", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+    <style>{`html, body, #root { margin: 0; min-height: 100% } * { box-sizing: border-box } select, input, button { font: inherit } ${ancestorLayout ? "html, body, #root { height: 100%; overflow: hidden }" : ""}`}</style>
     <section style={{ position: "sticky", top: 0, zIndex: 20, padding: 16, borderBottom: "1px solid #cbd5e1", background: "#ffffffee", backdropFilter: "blur(8px)" }}>
       <strong style={{ display: "block", marginBottom: 10, fontSize: 18 }}>@hafley66/grid external-scroll playground</strong>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "end" }}>
@@ -116,6 +128,7 @@ function App() {
         `measured total px: ${gridRoot?.dataset.virtualTotalSize ?? 0}`,
         `grid document top: ${gridRoot ? Math.round(gridRoot.getBoundingClientRect().top + window.scrollY) : 0}`,
         `viewport height: ${owner?.clientHeight ?? window.innerHeight}`,
+        `scrollable owners (${scrollableOwners.length}): ${scrollableOwners.join(", ") || "none"}`,
         `render revision: ${revision}`,
       ].join("\n")}</pre>
     </section>
@@ -132,7 +145,7 @@ function DocumentScenario({ precedingHeight, grid, density }: { precedingHeight:
 }
 
 function AncestorScenario({ precedingHeight, nestedRef, grid, density }: { precedingHeight: number; nestedRef: RefObject<HTMLDivElement | null>; grid: PlaygroundGrid; density: RowDensity }) {
-  return <section style={{ margin: 16 }}><h1>Nested overflow owner</h1><div ref={nestedRef} style={{ height: "70dvh", overflowY: "auto", border: "5px solid #f97316", borderRadius: 10, background: "#fff" }}><LabeledBlock label="Before table: nested owner content" height={precedingHeight} color="#8b5cf6" /><h2 style={{ margin: 24 }}>Ancestor-owned virtual table</h2><GridTable grid={grid} density={density} /><LabeledBlock label="After table: nested owner continuation" height={280} color="#10b981" /></div></section>
+  return <section style={{ margin: 16, minHeight: 0, flex: "1 1 auto", display: "flex", flexDirection: "column" }}><h1 style={{ flex: "0 0 auto" }}>Nested overflow owner</h1><div ref={nestedRef} data-testid="playground-ancestor-owner" style={{ minHeight: 0, flex: "1 1 auto", overflowY: "auto", border: "5px solid #f97316", borderRadius: 10, background: "#fff" }}><LabeledBlock label="Before table: nested owner content" height={precedingHeight} color="#8b5cf6" /><h2 style={{ margin: 24 }}>Ancestor-owned virtual table</h2><GridTable grid={grid} density={density} /><LabeledBlock label="After table: nested owner continuation" height={280} color="#10b981" /></div></section>
 }
 
 createRoot(document.getElementById("root")!).render(<App />)

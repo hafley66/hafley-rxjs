@@ -53,6 +53,9 @@ export function GridTable<TData extends RowData>({
     scrollElement,
   })
   const virtualRows = virtualizer.virtual ? virtualizer.virtualizer.getVirtualItems() : []
+  const liveVirtualRows = virtualizer.virtual
+    ? virtualRows.filter((item) => item.index >= virtualizer.visibleStart && item.index <= virtualizer.visibleEnd)
+    : []
   const measureRow = useCallback((node: HTMLTableRowElement | null) => {
     if (!node) return
     requestAnimationFrame(() => {
@@ -60,7 +63,7 @@ export function GridTable<TData extends RowData>({
     })
   }, [virtualizer.virtualizer])
   const renderedRows = virtualizer.virtual
-    ? virtualRows.map((item) => ({ row: rows[item.index]!, index: item.index, measure: item }))
+    ? liveVirtualRows.map((item) => ({ row: rows[item.index]!, index: item.index, measure: item }))
     : rows.map((row, index) => ({ row, index, measure: null }))
   const virtualRowsHeight = virtualizer.virtual ? virtualizer.totalSize : estimatedRowsHeight
   const layoutHeight = virtualRowsHeight + virtualizer.headerHeight + virtualizer.footerHeight
@@ -151,8 +154,7 @@ export function GridTable<TData extends RowData>({
           fontFamily: FONT,
           color: C.text,
           fontSize: 13,
-          maxHeight,
-          overflowY: "auto",
+          ...(scrollMode === "internal" ? { maxHeight, overflowY: "auto" as const } : {}),
         }}
       >
         <table style={{ borderCollapse: "collapse", width: "100%", fontVariantNumeric: "tabular-nums" }}>

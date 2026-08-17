@@ -15,6 +15,7 @@ import { GridTree } from "./6_tree"
 afterEach(() => {
   document.body.replaceChildren()
   document.body.removeAttribute("style")
+  document.documentElement.removeAttribute("style")
   window.scrollTo(0, 0)
 })
 
@@ -145,13 +146,13 @@ describe("GridTable filesystem demo", () => {
     const host = document.createElement("div")
     document.body.append(host)
     const root = createRoot(host)
-    await act(async () => root.render(<GridTable grid={grid} density="cozy" />))
+    await act(async () => root.render(<GridTable grid={grid} density="cozy" scrollMode="internal" />))
 
     await expect(page.getByTestId("grid")).toMatchScreenshot("fs-collapsed")
 
     await act(async () => { await page.getByTestId("row-toggle").first().click() })
 
-    // The nonvirtual path retains the pre-external-scroll max-height cap.
+    // The explicit internal mode retains the pre-external-scroll max-height cap.
     expect(document.querySelector("[data-testid=grid]")?.getBoundingClientRect().height).toBe(602)
     await expect(page.getByTestId("grid")).toMatchScreenshot("fs-expanded")
 
@@ -269,6 +270,12 @@ const rowRange = () => ({
 
 const mountedRowLabels = () => [...document.querySelectorAll<HTMLElement>("[data-testid=grid-row]")]
   .map((row) => ({ index: Number(row.dataset.rowIndex), text: row.innerText.trim() }))
+
+const scrollableGridDescendants = (root: HTMLElement) => [root, ...root.querySelectorAll<HTMLElement>("*")]
+  .filter((element) => {
+    const overflowY = getComputedStyle(element).overflowY
+    return (overflowY === "auto" || overflowY === "scroll") && element.scrollHeight > element.clientHeight
+  })
 
 const assertMountedRangeHasLabels = () => {
   const range = rowRange()
@@ -400,10 +407,11 @@ describe("GridTable external-scroll virtualization", () => {
     expect(document.querySelector("[data-testid=grid]")?.getBoundingClientRect().height).toBeGreaterThanOrEqual(preservedHeight)
     expect(beforeOne.getBoundingClientRect().height + beforeTwo.getBoundingClientRect().height).toBeGreaterThan(window.innerHeight)
     expect(document.documentElement.scrollHeight).toBeGreaterThanOrEqual(900 + preservedHeight + after.getBoundingClientRect().height)
-    expect(document.querySelector("[data-testid=grid-viewport]")?.scrollHeight).toBeLessThanOrEqual(
-      document.querySelector("[data-testid=grid]")?.scrollHeight ?? Infinity,
-    )
-    expect(document.querySelector("[data-testid=grid-viewport]")?.style.overflowY).toBe("clip")
+    const gridRoot = document.querySelector<HTMLElement>("[data-testid=grid]")!
+    const liveViewport = document.querySelector<HTMLElement>("[data-testid=grid-viewport]")!
+    expect(liveViewport.scrollHeight).toBe(liveViewport.clientHeight)
+    expect(getComputedStyle(liveViewport).overflowY).toBe("clip")
+    expect(scrollableGridDescendants(gridRoot)).toMatchInlineSnapshot(`[]`)
     instrumentation.update()
     expect(instrumentation.panel.textContent).toContain("scroll owner type: window")
     const viewport = viewportReceipt("virtual-document-viewport")
@@ -453,10 +461,11 @@ describe("GridTable external-scroll virtualization", () => {
 
   it("uses the nearest nested scroll parent through CSS grid and flex-column layout", async () => {
     await page.viewport(1280, 800)
-    document.body.style.margin = "0"
+    document.documentElement.style.cssText = "height:800px; overflow:hidden"
+    document.body.style.cssText = "margin:0; height:800px; overflow:hidden"
     const receipt = document.createElement("section")
     receipt.dataset.testid = "virtual-ancestor-receipt"
-    receipt.style.cssText = `${receiptStyles.page}; width:760px; padding:20px`
+    receipt.style.cssText = `${receiptStyles.page}; width:760px; height:800px; overflow:hidden; padding:20px`
     receiptTypography(receipt)
     const title = document.createElement("h1")
     title.style.cssText = receiptStyles.title
@@ -498,6 +507,7 @@ describe("GridTable external-scroll virtualization", () => {
     receipt.insertBefore(instrumentation.panel, host)
     instrumentation.update()
     expect(beforeOne.getBoundingClientRect().height + beforeTwo.getBoundingClientRect().height).toBeGreaterThan(scroller.clientHeight)
+    expect(document.documentElement.scrollHeight).toBe(document.documentElement.clientHeight)
     expect(scroller.scrollHeight).toBeGreaterThanOrEqual(470 + receiptRows.length * 42 + after.getBoundingClientRect().height)
     expect(rowRange().mounted).toBeLessThan(40)
     const viewport = viewportReceipt("virtual-ancestor-viewport")
@@ -547,15 +557,55 @@ describe("GridTable external-scroll virtualization", () => {
     expect(rowRange()).toMatchInlineSnapshot(`
       {
         "end": 17,
-        "mounted": 20,
+        "mounted": 18,
         "start": 0,
       }
     `)
     expect(document.querySelector("[data-testid=grid-row]")?.textContent).toContain("Row 060")
-    expect(document.querySelectorAll("[data-testid=grid-row]").length).toBe(20)
+    expect(document.querySelectorAll("[data-testid=grid-row]").length).toBe(18)
 
     root.unmount()
     host.remove()
+  })
+
+  it("leaves short external tables in parent flow while internal mode owns a bounded scrollbar", async () => {
+    await page.viewport(1280, 800)
+    const externalHost = document.createElement("div")
+    document.body.append(externalHost)
+    const externalGrid = createGrid<VirtualRow>({
+      schema: virtualSchema,
+      rows: Signal<VirtualRow[]>(virtualRows.slice(0, 20)),
+      getRowId: (row) => row.id,
+      mode: "server",
+    })
+    const externalRoot = createRoot(externalHost)
+    await act(async () => externalRoot.render(<GridTable grid={externalGrid} density="compact" />))
+    await act(settleLayout)
+
+    const externalElement = document.querySelector<HTMLElement>("[data-testid=grid]")!
+    expect(getComputedStyle(externalElement).overflowY).toBe("visible")
+    expect(scrollableGridDescendants(externalElement)).toMatchInlineSnapshot(`[]`)
+
+    externalRoot.unmount()
+    externalHost.remove()
+    const internalHost = document.createElement("div")
+    document.body.append(internalHost)
+    const internalGrid = createGrid<VirtualRow>({
+      schema: virtualSchema,
+      rows: Signal<VirtualRow[]>(receiptRows),
+      getRowId: (row) => row.id,
+      mode: "server",
+    })
+    const internalRoot = createRoot(internalHost)
+    await act(async () => internalRoot.render(<GridTable grid={internalGrid} scrollMode="internal" />))
+    await act(settleLayout)
+
+    const internalElement = document.querySelector<HTMLElement>("[data-testid=grid]")!
+    expect(getComputedStyle(internalElement).overflowY).toBe("auto")
+    expect(internalElement.scrollHeight).toBeGreaterThan(internalElement.clientHeight)
+
+    internalRoot.unmount()
+    internalHost.remove()
   })
 
   it("measures variable-height rows and contributes the refined extent to document scroll", async () => {
