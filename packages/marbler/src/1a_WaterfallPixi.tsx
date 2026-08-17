@@ -1,6 +1,6 @@
 import { Application, Container, Graphics } from "pixi.js"
 import { useEffect, useRef } from "react"
-import type { MarbleEvent, MarblePhase } from "./0_types"
+import type { MarbleEvent, MarblePhase } from "./0_types.js"
 
 const ROW_HEIGHT = 44
 const HEADER_HEIGHT = 55

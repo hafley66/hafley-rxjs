@@ -1,22 +1,24 @@
+/// <reference path="./0_assetImports.d.ts" />
+
 import { flexRender } from "@tanstack/react-table"
 import { useGrid } from "@hafley66/grid/react"
 import { SignalReact } from "@hafley66/signals/react"
 import { useMemo, useRef } from "react"
-import type { EventFilter } from "./0_types"
-import { reduceTimeViewport, type TimelineMark } from "./0a_TimeViewport"
-import { WaterfallPixi } from "./1a_WaterfallPixi"
-import { TimeNavigatorPixi } from "./1b_TimeNavigatorPixi"
-import type { Marbler } from "./1_model"
+import type { EventFilter, MarbleEvent } from "./0_types.js"
+import { reduceTimeViewport, type TimelineMark } from "./0a_TimeViewport.js"
+import { WaterfallPixi } from "./1a_WaterfallPixi.js"
+import { TimeNavigatorPixi } from "./1b_TimeNavigatorPixi.js"
+import type { Marbler } from "./1_model.js"
 import "./2_marbler.css"
 
 const FILTERS: EventFilter[] = ["all", "request", "result", "tool", "note"]
 function MarblerView({ model }: { model: Marbler }) {
-  const table = useGrid(model.grid)
+  const table = useGrid<MarbleEvent>(model.grid)
   const scrollerRef = useRef<HTMLDivElement>(null)
   const selected = model.source.$().find((row) => row.id === model.selectedId.$()) ?? null
   const hovered = model.source.$().find((row) => row.id === model.hoveredId.$()) ?? null
   const rows = table.getRowModel().rows
-  const events = useMemo(() => rows.map((row) => row.original), [rows])
+  const events = useMemo<MarbleEvent[]>(() => rows.map((row) => row.original), [rows])
   const timelineEvents = model.rows.$()
   const marks = useMemo<TimelineMark[]>(() => timelineEvents.flatMap((event, lane) => event.start !== null && event.duration !== null ? [{ id: event.id, kind: "span" as const, start: event.start, end: event.start + event.duration, lane: lane % 5 }] : []), [timelineEvents])
   const viewport = model.viewport.$()
