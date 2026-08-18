@@ -1,6 +1,6 @@
 import { Application, Container, Graphics } from "pixi.js"
 import { useEffect, useRef } from "react"
-import { densityBuckets, type TimelineGesture, type TimelineMark, type TimeViewport } from "./0a_TimeViewport"
+import { densityBuckets, type TimelineGesture, type TimelineMark, type TimeViewport } from "./0a_TimeViewport.js"
 
 const LANE_HEIGHT = 14
 const LANE_TOP = 10

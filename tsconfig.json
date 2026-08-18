@@ -1,6 +1,7 @@
 {
   "files": [],
   "references": [
+    { "path": "./packages/boop-adapters" },
     { "path": "./packages/devtool-plugin" },
     { "path": "./packages/grid" },
     { "path": "./packages/path" },

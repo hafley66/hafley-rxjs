@@ -2,10 +2,9 @@ import { act } from "react"
 import { createRoot } from "react-dom/client"
 import { describe, expect, it } from "vitest"
 import { page } from "vitest/browser"
+import { createMarbler, MarblerPanel } from "@hafley66/marbler"
 import type { MarbleEvent } from "./0_types"
 import { createTimeViewport, eventRange } from "./0a_TimeViewport"
-import { createMarbler } from "./1_model"
-import { MarblerPanel } from "./2_Marbler"
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

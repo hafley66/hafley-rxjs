@@ -1,24 +1,26 @@
+/// <reference path="./0_assetImports.d.ts" />
+
 import { flexRender } from "@tanstack/react-table"
 import { useGrid } from "@hafley66/grid/react"
 import { SignalReact } from "@hafley66/signals/react"
 import { useMemo, useRef } from "react"
-import type { EventFilter } from "./0_types"
-import { reduceTimeViewport, type TimelineMark } from "./0a_TimeViewport"
-import { WaterfallPixi } from "./1a_WaterfallPixi"
-import { TimeNavigatorPixi } from "./1b_TimeNavigatorPixi"
-import type { Marbler } from "./1_model"
+import type { EventFilter, MarbleEvent } from "./0_types.js"
+import { reduceTimeViewport, type TimelineMark } from "./0a_TimeViewport.js"
+import { WaterfallPixi } from "./1a_WaterfallPixi.js"
+import { TimeNavigatorPixi } from "./1b_TimeNavigatorPixi.js"
+import type { Marbler } from "./1_model.js"
 import "./2_marbler.css"
 
 const FILTERS: EventFilter[] = ["all", "request", "result", "tool", "note"]
 function MarblerView({ model }: { model: Marbler }) {
-  const table = useGrid(model.grid)
+  const table = useGrid<MarbleEvent>(model.grid)
   const scrollerRef = useRef<HTMLDivElement>(null)
   const selected = model.source.$().find((row) => row.id === model.selectedId.$()) ?? null
   const hovered = model.source.$().find((row) => row.id === model.hoveredId.$()) ?? null
   const rows = table.getRowModel().rows
-  const events = useMemo(() => rows.map((row) => row.original), [rows])
+  const events = useMemo<MarbleEvent[]>(() => rows.map((row) => row.original), [rows])
   const timelineEvents = model.rows.$()
-  const marks = useMemo<TimelineMark[]>(() => timelineEvents.map((event, lane) => ({ id: event.id, kind: "span", start: event.start, end: event.start + event.duration, lane: lane % 5 })), [timelineEvents])
+  const marks = useMemo<TimelineMark[]>(() => timelineEvents.flatMap((event, lane) => event.start !== null && event.duration !== null ? [{ id: event.id, kind: "span" as const, start: event.start, end: event.start + event.duration, lane: lane % 5 }] : []), [timelineEvents])
   const viewport = model.viewport.$()
   const ticks = Array.from({ length: 6 }, (_, index) => viewport.visible[0] + (viewport.visible[1] - viewport.visible[0]) * index / 5)
   return <main className="app-shell" data-testid="marbler">
@@ -80,7 +82,7 @@ function MarblerView({ model }: { model: Marbler }) {
       <nav><b>Headers</b><span>Payload</span><span>Preview</span><span>Response</span><span>Timing</span></nav>
       <h3>General</h3><dl><dt>Request URL</dt><dd>boop://{selected.from}/{selected.to}/{selected.id}</dd><dt>Request Method</dt><dd>{selected.method}</dd><dt>Status Code</dt><dd><i className="ok-dot" /> {selected.status} {selected.status === 200 ? "Delivered" : "Accepted"}</dd><dt>Remote Address</dt><dd>{selected.to}</dd></dl>
       <h3>Message</h3><pre>{selected.preview}</pre>
-      <h3>Timing</h3><div className="timing-bars">{selected.phases.map((phase) => <div key={phase.kind}><label>{phase.kind}</label><span className={`phase-${phase.kind}`} style={{ width: `${Math.max(4, (phase.end - phase.start) / 8)}%` }} /><em>{phase.end - phase.start} ms</em></div>)}</div>
+      <h3>Timing</h3><div className="timing-bars">{selected.phases.map((phase) => phase.start !== null && phase.end !== null ? <div key={phase.kind}><label>{phase.kind}</label><span className={`phase-${phase.kind}`} style={{ width: `${Math.max(4, (phase.end - phase.start) / 8)}%` }} /><em>{phase.end - phase.start} ms</em></div> : null)}</div>
     </aside>}
   </main>
 }

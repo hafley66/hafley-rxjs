@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { createTimeViewport, densityBuckets, reduceTimeViewport } from "./0a_TimeViewport"
+import { createTimeViewport, densityBuckets, eventRange, reduceTimeViewport } from "./0a_TimeViewport"
 
 describe("time viewport", () => {
   it("reduces cursor zoom, pan, brush, and follow deterministically", () => {
@@ -78,6 +78,24 @@ describe("time viewport", () => {
       [
         2,
         0,
+        0,
+        1,
+      ]
+    `)
+  })
+
+  it("ignores events without timing instead of assigning a timestamp", () => {
+    expect(eventRange([
+      { start: null, duration: null },
+      { start: 20, duration: 5 },
+    ])).toMatchInlineSnapshot(`
+      [
+        20,
+        25,
+      ]
+    `)
+    expect(eventRange([{ start: null, duration: null }])).toMatchInlineSnapshot(`
+      [
         0,
         1,
       ]
