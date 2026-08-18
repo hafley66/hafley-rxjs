@@ -1,4 +1,4 @@
-import { orderBy } from "lodash"
+import orderBy from "lodash/orderBy.js"
 import { Signal, storageSignal, urlAdapter } from "@hafley66/signals"
 import { stringify as devalueStringify, parse as devalueParse } from "devalue"
 import type { Param } from "@hafley66/path"
