@@ -3,9 +3,17 @@
   "version": "0.1.0",
   "description": "PixiJS v8 projection adapter for grapht-bench/0: WebGL and WebGPU graph import, render, camera interaction, picking, disposal receipt",
   "type": "module",
-  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
   "scripts": {
-    "build": "vite build",
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run -c vitest.config.ts",
     "lab": "node ../../scripts/0_generate_renderer_fixture.mjs 1000 && node ../../scripts/0_generate_renderer_fixture.mjs 5000 && node ../../scripts/0_generate_renderer_fixture.mjs 10000 && playwright test -c playwright.config.ts",
@@ -14,6 +22,7 @@
     "check": "tsc --noEmit && vitest run"
   },
   "dependencies": {
+    "@hafley66/grapht": "workspace:^",
     "pixi.js": "^8.9.0"
   },
   "devDependencies": {

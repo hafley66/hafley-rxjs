@@ -12,7 +12,7 @@ import {
   WebGPURenderer,
   type ContainerChild,
 } from "pixi.js"
-import type { Geometry } from "../../../src/1_geometryProtocol.js"
+import type { Geometry } from "@hafley66/grapht"
 import { edgeTriangles, fitCamera, panCamera, screenToWorld, worldToScreen, zoomCamera, type CameraState } from "./7_geometryMath.js"
 
 export const NODE_RADIUS = 4
