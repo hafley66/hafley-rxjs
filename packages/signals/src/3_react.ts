@@ -34,6 +34,7 @@ export function SignalReact<P extends object>(Component: React.FC<P>): React.FC<
     const [, force] = React.useReducer((n: number) => n + 1, 0)
     const subRef = React.useRef<Subscription | undefined>(undefined)
     const collected = React.useRef<Set<Signal$<unknown>>>(new Set())
+    const subscribed = React.useRef<Set<Signal$<unknown>>>(new Set())
 
     // Collect this render's reads while running the component.
     collected.current = new Set()
@@ -46,19 +47,32 @@ export function SignalReact<P extends object>(Component: React.FC<P>): React.FC<
       activeCollector = previous
     }
 
-    // After commit: adopt the freshly collected set and (re)subscribe.
+    // After commit: replace subscriptions only when the dependency set changed.
+    // A query owns its request while observed, so an unsubscribe/resubscribe on
+    // every render would cancel and restart the same request indefinitely.
     React.useEffect(() => {
-      subRef.current?.unsubscribe()
       const deps = collected.current
-      if (deps.size === 0) return
+      const active = subscribed.current
+      const unchanged = deps.size === active.size && [...deps].every((dependency) => active.has(dependency))
+      if (unchanged) return
+      subRef.current?.unsubscribe()
+      subscribed.current = deps
+      if (deps.size === 0) {
+        subRef.current = undefined
+        return
+      }
       // skip(1) per accessor: BehaviorSubject emits its current value on
       // subscribe; that value is from the render just committed, not a change.
       subRef.current = merge(...[...deps].map((d) => d.pipe(skip(1)))).subscribe(() => force())
+    })
+
+    React.useEffect(() => {
       return () => {
         subRef.current?.unsubscribe()
         subRef.current = undefined
+        subscribed.current = new Set()
       }
-    })
+    }, [])
 
     return tree
   }
@@ -103,3 +117,10 @@ export type {
 } from "./0_types.js"
 export * from "./1_SignalCreator.js"
 export * from "./2_Signal.js"
+export * from "./3_Endpoint.js"
+export * from "./4_Query.js"
+export * from "./5_Route.js"
+export * from "./6_Storage.js"
+export * from "./7_signalMap.js"
+export * from "./8_sync.js"
+export * from "./9_history.js"

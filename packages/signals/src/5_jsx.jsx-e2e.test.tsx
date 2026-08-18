@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest"
 import React, { act } from "react"
 import { createRoot } from "react-dom/client"
-import { Signal } from "@hafley66/signals"
+import { Endpoint, Signal } from "@hafley66/signals"
+import { of } from "rxjs"
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -75,6 +76,30 @@ describe("vite plugin jsx auto-track (e2e)", () => {
 
     await act(async () => { parent.p.$(2); await new Promise((r) => setTimeout(r, 60)) })
     expect(parentRenders).toBe(2)
+    root.unmount()
+  })
+
+  it("starts and renders a createQuery through a tracked read", async () => {
+    const endpoint = new Endpoint<{ id: string }, { name: string }>({
+      request: (input) => ({ url: `/name/${input.id}`, method: "GET" }),
+      decode: (response) => response.body as { name: string },
+    }, () => of({ status: 200, body: { name: "Network" } }))
+    const query = endpoint.createQuery({ id: "1" })
+
+    function Plain() {
+      const state = query.$()
+      return <span>{state.data?.name ?? state.status}</span>
+    }
+
+    const host = document.createElement("div")
+    document.body.append(host)
+    const root = createRoot(host)
+    await act(async () => {
+      root.render(<Plain />)
+      await new Promise((resolve) => setTimeout(resolve, 60))
+    })
+
+    expect(host.textContent).toBe("Network")
     root.unmount()
   })
 })
