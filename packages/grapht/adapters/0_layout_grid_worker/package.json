@@ -17,6 +17,7 @@
   "files": ["dist", "bin", "src", "test", "scripts", "LEARNINGS.md"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "node --test test/*.test.mjs",
     "receipt": "node scripts/receipt.mjs"

@@ -22,6 +22,7 @@
   },
   "scripts": {
     "build": "vite build && node scripts/0_writeSchema.mjs",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "check": "npm run typespec:check && npm run generate:check && npm run typecheck && npm run test && npm run build",
     "cross-language:generate": "tsx examples/0_cross_language_scan/1_generate.ts && tsx examples/1_cross_language_map_filter_scan/2_generate.ts && tsx examples/2_cross_language_switch_map/2_generate.ts && tsx examples/3_cross_language_reactive_state/2_generate.ts && tsx examples/4_cross_process_frame/1_generate.ts",
     "cross-language:check": "npm run cross-language:generate -- --check && vitest run --config examples/0_cross_language_scan/vitest.config.ts && vitest run --config examples/5_cross_language_logic/2_vitest.config.ts && cargo test --manifest-path examples/0_cross_language_scan/rust/Cargo.toml && cargo test --manifest-path examples/1_cross_language_map_filter_scan/rust/Cargo.toml && cargo test --manifest-path examples/2_cross_language_switch_map/rust/Cargo.toml && cargo test --manifest-path examples/3_cross_language_reactive_state/rust/Cargo.toml && cargo test --manifest-path examples/4_cross_process_frame/rust/Cargo.toml && cargo test --manifest-path examples/5_cross_language_logic/rust/Cargo.toml",

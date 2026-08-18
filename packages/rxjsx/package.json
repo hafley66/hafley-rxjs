@@ -17,10 +17,12 @@
   },
   "scripts": {
     "build": "vite build",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:ui": "vitest --ui"
   },
+  "files": ["dist"],
   "dependencies": {
     "@hafley66/rxjs-ext": "workspace:*",
     "snabbdom": "^3.6.2"

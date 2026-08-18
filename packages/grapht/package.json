@@ -24,6 +24,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "pnpm run build && vitest run tests",
     "renderer-fixture": "node scripts/0_generate_renderer_fixture.mjs",

@@ -14,7 +14,7 @@
   "files": ["dist", "README.md"],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "prepack": "pnpm run build",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run -c vitest.config.ts",
     "lab": "node ../../scripts/0_generate_renderer_fixture.mjs 1000 && node ../../scripts/0_generate_renderer_fixture.mjs 5000 && node ../../scripts/0_generate_renderer_fixture.mjs 10000 && playwright test -c playwright.config.ts",

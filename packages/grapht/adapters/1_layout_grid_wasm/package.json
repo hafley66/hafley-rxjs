@@ -10,6 +10,7 @@
   "scripts": {
     "build:wasm": "cargo build --manifest-path Cargo.toml --target wasm32-unknown-unknown --release && mkdir -p wasm && cp target/wasm32-unknown-unknown/release/grapht_layout_wasm.wasm wasm/grapht_layout_wasm.wasm",
     "build": "pnpm build:wasm && tsc -p tsconfig.json",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "node --test test/*.test.mjs",
     "receipt": "node scripts/receipt.mjs"

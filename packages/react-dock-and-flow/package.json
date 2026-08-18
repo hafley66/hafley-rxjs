@@ -20,6 +20,7 @@
   },
   "scripts": {
     "build": "vite build",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
     "check": "biome check src && tsc --noEmit",
     "test": "vitest run src",

@@ -32,6 +32,7 @@
   },
   "scripts": {
     "build": "vite build",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:jsx-e2e": "vitest --config vitest.jsx-e2e.config.ts",

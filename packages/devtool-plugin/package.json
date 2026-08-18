@@ -23,6 +23,7 @@
     "dev": "vite",
     "dev:test": "vite --config src/ui/__tests__/browser/vite.config.ts",
     "build": "vite build",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
