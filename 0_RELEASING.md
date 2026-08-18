@@ -1,7 +1,7 @@
 # Releasing packages
 
 Corepack reads the root `packageManager` field so local and CI release commands
-use pnpm 11.10.0. Packages require Node 22.14.0 or newer.
+use pnpm 11.10.0. Packages require Node 24.0.0 or newer.
 
 Every public workspace package uses the same `prepack` command. The command
 builds the package and runs Publint against the exact npm file allowlist. A
