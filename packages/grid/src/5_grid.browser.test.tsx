@@ -291,12 +291,16 @@ const assertMountedRangeHasLabels = () => {
   expect(visible?.text).toContain(`Row ${String(visible?.index).padStart(3, "0")}`)
 }
 
-const assertMountedRowsAreOnlyVisible = () => {
+const assertMountedRowsAreBounded = () => {
   const range = rowRange()
   const indexes = [...document.querySelectorAll<HTMLElement>("[data-testid=grid-row]")]
     .map((row) => Number(row.dataset.rowIndex))
-  expect(indexes.length).toBeLessThan(50)
-  expect(indexes.every((index) => index >= range.start && index <= range.end)).toBe(true)
+  // The buffered window (visible ± overscan) stays small and always covers the
+  // visible range, with buffered rows extending on both sides.
+  expect(indexes.length).toBeLessThan(100)
+  expect(indexes.length).toBeGreaterThan(range.end - range.start)
+  expect(Math.min(...indexes)).toBeLessThanOrEqual(range.start)
+  expect(Math.max(...indexes)).toBeGreaterThanOrEqual(range.end)
 }
 
 const receiptStyles = {
@@ -423,7 +427,7 @@ describe("GridTable external-scroll virtualization", () => {
     const gridRoot = document.querySelector<HTMLElement>("[data-testid=grid]")!
     const liveViewport = document.querySelector<HTMLElement>("[data-testid=grid-viewport]")!
     expect(liveViewport.scrollHeight).toBe(liveViewport.clientHeight)
-    expect(getComputedStyle(liveViewport).overflowY).toBe("clip")
+    expect(getComputedStyle(liveViewport).overflowY).toBe("hidden")
     expect(scrollableGridDescendants(gridRoot)).toMatchInlineSnapshot(`[]`)
     instrumentation.update()
     expect(instrumentation.panel.textContent).toContain("scroll owner type: window")
@@ -444,7 +448,7 @@ describe("GridTable external-scroll virtualization", () => {
     })
     expect(rowRange().start).toBeGreaterThan(100)
     expect(rowRange().end).toBeGreaterThanOrEqual(rowRange().start)
-    expect(rowRange().mounted).toBeLessThan(40)
+    expect(rowRange().mounted).toBeLessThan(100)
     assertMountedRangeHasLabels()
     expect(mountedRowLabels().some(({ text }) => text.includes("Row 120"))).toBe(true)
     expect(document.querySelector("thead")?.getBoundingClientRect().top).toBeLessThanOrEqual(1)
@@ -456,7 +460,7 @@ describe("GridTable external-scroll virtualization", () => {
       await settleLayout()
     })
     expect(document.querySelector("[data-testid=grid-viewport]")?.getBoundingClientRect().height).toBeLessThanOrEqual(520)
-    expect(rowRange().mounted).toBeLessThan(40)
+    expect(rowRange().mounted).toBeLessThan(100)
     assertMountedRangeHasLabels()
 
     await act(async () => {
@@ -548,7 +552,7 @@ describe("GridTable external-scroll virtualization", () => {
       await act(async () => root.render(<GridTable grid={grid} density={scenario.density} />))
       await act(settleMeasurements)
 
-      assertMountedRowsAreOnlyVisible()
+      assertMountedRowsAreBounded()
       expect(mountedRowLabels().some(({ text }) => text.includes("Row 0000"))).toBe(true)
       const gridRoot = document.querySelector<HTMLElement>("[data-testid=grid]")!
       expect(scrollableGridDescendants(gridRoot)).toMatchInlineSnapshot(`[]`)
@@ -564,16 +568,16 @@ describe("GridTable external-scroll virtualization", () => {
           await settleMeasurements()
         })
       }
-      assertMountedRowsAreOnlyVisible()
+      assertMountedRowsAreBounded()
       expect(mountedRowLabels().some(({ text }) => text.includes("Row 2500"))).toBe(true)
 
-      for (let attempt = 0; attempt < 12 && !mountedRowLabels().some(({ text }) => text.includes("Row 4999")); attempt += 1) {
+      for (let attempt = 0; attempt < 12; attempt += 1) {
         await act(async () => {
           window.scrollTo(0, document.documentElement.scrollHeight)
           await settleMeasurements()
         })
       }
-      assertMountedRowsAreOnlyVisible()
+      assertMountedRowsAreBounded()
       const lastRow = [...document.querySelectorAll<HTMLElement>("[data-testid=grid-row]")]
         .find((row) => row.dataset.rowIndex === "4999")!
       const liveViewport = document.querySelector<HTMLElement>("[data-testid=grid-viewport]")!
@@ -646,7 +650,7 @@ describe("GridTable external-scroll virtualization", () => {
     expect(beforeOne.getBoundingClientRect().height + beforeTwo.getBoundingClientRect().height).toBeGreaterThan(scroller.clientHeight)
     expect(document.documentElement.scrollHeight).toBe(document.documentElement.clientHeight)
     expect(scroller.scrollHeight).toBeGreaterThanOrEqual(470 + receiptRows.length * 42 + after.getBoundingClientRect().height)
-    expect(rowRange().mounted).toBeLessThan(40)
+    expect(rowRange().mounted).toBeLessThan(100)
     const viewport = viewportReceipt("virtual-ancestor-viewport")
     await act(async () => {
       const scrollMargin = Number(document.querySelector<HTMLElement>("[data-testid=grid]")?.dataset.scrollMargin)
@@ -664,7 +668,7 @@ describe("GridTable external-scroll virtualization", () => {
       await settleLayout()
     })
     expect(rowRange().start).toBeGreaterThan(70)
-    expect(rowRange().mounted).toBeLessThan(40)
+    expect(rowRange().mounted).toBeLessThan(100)
     assertMountedRangeHasLabels()
     expect(document.querySelector("[data-testid=grid-viewport]")?.getBoundingClientRect().height).toBeLessThanOrEqual(window.innerHeight + 2)
     expect(scroller.scrollTop).toBeCloseTo(Number(document.querySelector<HTMLElement>("[data-testid=grid]")?.dataset.scrollMargin) + 80 * 42, 0)
@@ -694,12 +698,12 @@ describe("GridTable external-scroll virtualization", () => {
     expect(rowRange()).toMatchInlineSnapshot(`
       {
         "end": 17,
-        "mounted": 18,
+        "mounted": 20,
         "start": 0,
       }
     `)
     expect(document.querySelector("[data-testid=grid-row]")?.textContent).toContain("Row 060")
-    expect(document.querySelectorAll("[data-testid=grid-row]").length).toBe(18)
+    expect(document.querySelectorAll("[data-testid=grid-row]").length).toBe(20)
 
     root.unmount()
     host.remove()
@@ -778,7 +782,7 @@ describe("GridTable external-scroll virtualization", () => {
     const gridHeight = document.querySelector("[data-testid=grid]")?.getBoundingClientRect().height ?? 0
     expect(gridHeight).toBeGreaterThan(estimatedExtent)
     expect(document.documentElement.scrollHeight).toBeGreaterThan(820 + estimatedExtent)
-    expect(rowRange().mounted).toBeLessThan(40)
+    expect(rowRange().mounted).toBeLessThan(100)
     assertMountedRangeHasLabels()
     instrumentation.update()
     const viewport = viewportReceipt("virtual-variable-height-viewport")
@@ -803,7 +807,7 @@ describe("GridTable external-scroll virtualization", () => {
     expect(range.end).toBeGreaterThanOrEqual(range.start)
     expect(Math.min(...mounted)).toBeLessThanOrEqual(range.start)
     expect(Math.max(...mounted)).toBeGreaterThanOrEqual(range.end)
-    expect(mounted.length).toBeLessThan(40)
+    expect(mounted.length).toBeLessThan(100)
     assertMountedRangeHasLabels()
     instrumentation.update()
     await viewport.capture("virtual-variable-height-after")
@@ -811,6 +815,140 @@ describe("GridTable external-scroll virtualization", () => {
     root.unmount()
     viewport.remove()
     receipt.remove()
+    document.body.removeAttribute("style")
+    window.scrollTo(0, 0)
+  })
+
+  it("buffers rows beyond the visible range and applies a sub-row translateY", async () => {
+    await page.viewport(1280, 800)
+    document.body.style.margin = "0"
+    const host = document.createElement("div")
+    host.style.cssText = "margin:0 24px"
+    document.body.append(host)
+    const grid = createGrid<VirtualRow>({
+      schema: virtualSchema,
+      rows: Signal<VirtualRow[]>(virtualRows),
+      getRowId: (row) => row.id,
+      mode: "server",
+    })
+    const root = createRoot(host)
+    await act(async () => root.render(<GridTable grid={grid} />))
+    await act(settleLayout)
+
+    await act(async () => {
+      const scrollMargin = Number(document.querySelector<HTMLElement>("[data-testid=grid]")?.dataset.scrollMargin)
+      window.scrollTo(0, scrollMargin + 150 * 42 + 21)
+      await settleMeasurements()
+    })
+    const range = rowRange()
+    const mounted = [...document.querySelectorAll<HTMLElement>("[data-testid=grid-row]")]
+      .map((row) => Number(row.dataset.rowIndex))
+    // Buffered rows extend outside the strictly visible range on both sides.
+    expect(mounted.length).toBeGreaterThan(range.end - range.start + 1)
+    expect(Math.min(...mounted)).toBeLessThan(range.start)
+    expect(Math.max(...mounted)).toBeGreaterThan(range.end)
+    // A non-row-aligned scroll yields a fractional negative tbody translate.
+    const transform = document.querySelector<HTMLElement>("tbody")?.style.transform ?? ""
+    const translateY = Number(/translateY\((-?[\d.]+)px\)/.exec(transform)?.[1] ?? "0")
+    expect(translateY).toBeLessThan(0)
+
+    root.unmount()
+    host.remove()
+    document.body.removeAttribute("style")
+    window.scrollTo(0, 0)
+  })
+
+  it("shows a phantom horizontal scrollbar on overflow and syncs it with the clip", async () => {
+    await page.viewport(1280, 800)
+    document.body.style.margin = "0"
+    const host = document.createElement("div")
+    host.style.cssText = "margin:0 24px"
+    document.body.append(host)
+    const wideColumns: ColumnDef<GridFeatures, VirtualRow>[] = [
+      { id: "name", accessorFn: (row) => row.name, header: "Name" },
+      { id: "blob", accessorFn: () => "x".repeat(4000), header: "Blob" },
+    ]
+    const grid = createGrid<VirtualRow>({
+      schema: virtualSchema,
+      rows: Signal<VirtualRow[]>(virtualRows.slice(0, 200)),
+      columnDefs: wideColumns,
+      getRowId: (row) => row.id,
+      mode: "server",
+    })
+    const root = createRoot(host)
+    await act(async () => root.render(<GridTable grid={grid} rawRows />))
+    await act(settleLayout)
+
+    const track = document.querySelector<HTMLElement>("[data-scroll-axis=x]")
+    expect(track).not.toBeNull()
+    expect(track!.style.display).not.toBe("none")
+    const gridViewport = document.querySelector<HTMLElement>("[data-testid=grid-viewport]")!
+    const clip = gridViewport.firstElementChild as HTMLElement
+    expect(clip.scrollWidth).toBeGreaterThan(clip.clientWidth)
+    // Driving the phantom track pans the clipped container.
+    track!.scrollLeft = 123
+    track!.dispatchEvent(new Event("scroll"))
+    await act(settleLayout)
+    expect(clip.scrollLeft).toBe(123)
+
+    root.unmount()
+    host.remove()
+    document.body.removeAttribute("style")
+    window.scrollTo(0, 0)
+  })
+
+  it("mirrors the content's resolved scrollbar styles onto the phantom track", async () => {
+    const { attachPhantomScrollbar } = await import("@hafley66/virtualizations")
+    const host = document.createElement("div")
+    const content = document.createElement("div")
+    content.style.cssText = "width:100px; overflow:hidden; scrollbar-width:thin; scrollbar-color:rgb(1, 2, 3) rgb(4, 5, 6)"
+    const wide = document.createElement("div")
+    wide.style.width = "4000px"
+    content.append(wide)
+    document.body.append(host, content)
+
+    const { track, dispose } = attachPhantomScrollbar({ host, content })
+    expect(getComputedStyle(track).scrollbarWidth).toBe("thin")
+    expect(getComputedStyle(track).scrollbarColor).toBe("rgb(1, 2, 3) rgb(4, 5, 6)")
+
+    dispose()
+    host.remove()
+    content.remove()
+  })
+
+  it("smokes 1,000,000 raw rows with a bounded virtual window", async () => {
+    await page.viewport(1280, 800)
+    document.body.style.margin = "0"
+    const host = document.createElement("div")
+    host.style.cssText = "margin:0 24px"
+    document.body.append(host)
+    const million = new Array<VirtualRow>(1_000_000)
+    for (let i = 0; i < 1_000_000; i++) {
+      million[i] = { id: `r${i}`, name: `Row ${String(i).padStart(7, "0")}`, size: i }
+    }
+    const grid = createGrid<VirtualRow>({
+      schema: virtualSchema,
+      rows: Signal<VirtualRow[]>(million),
+      getRowId: (row) => row.id,
+      mode: "server",
+    })
+    const root = createRoot(host)
+    await act(async () => root.render(<GridTable grid={grid} rawRows />))
+    await act(settleLayout)
+
+    await act(async () => {
+      const scrollMargin = Number(document.querySelector<HTMLElement>("[data-testid=grid]")?.dataset.scrollMargin)
+      window.scrollTo(0, scrollMargin + 500_000 * 42)
+      await settleMeasurements()
+    })
+    const range = rowRange()
+    const mounted = document.querySelectorAll("[data-testid=grid-row]").length
+    expect(mounted).toBeLessThan(100)
+    expect(range.start).toBeGreaterThan(499_000)
+    expect(range.start).toBeLessThan(500_100)
+
+    root.unmount()
+    host.remove()
     document.body.removeAttribute("style")
     window.scrollTo(0, 0)
   })

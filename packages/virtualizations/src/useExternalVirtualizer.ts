@@ -4,9 +4,18 @@ import {
   findScrollOwner,
   localVirtualOffset,
   visibleVirtualRange,
-} from "./4a_virtualizationBoundary"
+} from "./geometry"
 
-export type GridScrollMode = "external" | "internal"
+export type ScrollMode = "external" | "internal"
+
+export type UseExternalVirtualizerOptions = {
+  count: number
+  estimateSize: number
+  enabled: boolean
+  scrollElement?: HTMLElement | null
+  /** Buffer rows per side, in rows. Defaults to ~1 viewport of rows. */
+  overscan?: number
+}
 
 type Metrics = {
   owner: HTMLElement | null
@@ -25,20 +34,18 @@ function equalMetrics(a: Metrics, b: Metrics) {
     && a.headerHeight === b.headerHeight
 }
 
-// Grid's adapter over the future @hafley66/virtualizations lifecycle. TanStack
-// Virtual supplies row measurement and overscan; the boundary module owns the
-// parent-scroll geometry that is independent of table rows.
-export function useExternalGridVirtualizer({
+// Framework-free adapter over TanStack react-virtual. Owns scroll-owner
+// discovery, geometry/resize lifecycle, the overscan buffer policy, and the
+// window translate math, so consumers get a render-ready item window and the
+// sub-row translate needed for smooth buffered scrolling. The `tanstack` field
+// is the raw virtualizer as an escape hatch.
+export function useExternalVirtualizer({
   count,
   estimateSize,
   enabled,
   scrollElement,
-}: {
-  count: number
-  estimateSize: number
-  enabled: boolean
-  scrollElement?: HTMLElement | null
-}) {
+  overscan,
+}: UseExternalVirtualizerOptions) {
   const rootRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLTableSectionElement>(null)
   const [metrics, setMetrics] = useState<Metrics>({
@@ -88,11 +95,12 @@ export function useExternalGridVirtualizer({
     }
   }, [scrollElement])
 
+  const bufferOverscan = overscan ?? Math.max(4, Math.ceil(metrics.viewportHeight / Math.max(1, estimateSize)))
   const common = {
     count,
     estimateSize: () => estimateSize,
     getItemKey: (index: number) => index,
-    overscan: 4,
+    overscan: bufferOverscan,
     scrollMargin: metrics.scrollMargin,
   }
   const ancestorVirtualizer = useVirtualizer<HTMLElement, HTMLTableRowElement>({
@@ -104,13 +112,31 @@ export function useExternalGridVirtualizer({
     ...common,
     enabled: enabled && metrics.owner === null,
   })
-  const virtualizer = metrics.owner ? ancestorVirtualizer : documentVirtualizer
+  const tanstack = metrics.owner ? ancestorVirtualizer : documentVirtualizer
+
   const scrollOffset = metrics.owner?.scrollTop ?? window.scrollY
+  const totalSize = tanstack.getTotalSize()
   const localOffset = localVirtualOffset(
     scrollOffset,
     metrics.scrollMargin,
-    count * estimateSize,
+    totalSize,
   )
+
+  // Buffered window: render the full item list (visible ± overscan), not the
+  // strictly-visible subset. Buffered/partial rows above the clip get a
+  // negative translate so sub-row scroll positions land correctly.
+  const items = enabled && count ? tanstack.getVirtualItems() : []
+  const firstItem = items[0]
+  const translateY = firstItem ? Math.min(0, firstItem.start - metrics.scrollMargin - localOffset) : 0
+
+  // Preserves the "terminal range shrinks to intrinsic height" behavior: as
+  // the local offset approaches the extent, the window collapses around the
+  // remaining rows instead of floating above empty space.
+  const liveViewportHeight = Math.min(
+    metrics.viewportHeight,
+    metrics.headerHeight + Math.max(0, totalSize - localOffset) + FOOTER_HEIGHT,
+  )
+
   const estimatedRange = visibleVirtualRange({
     count,
     estimateSize,
@@ -123,16 +149,17 @@ export function useExternalGridVirtualizer({
   const range = count ? {
     // TanStack stores measurement starts in scroll-owner coordinates when a
     // scrollMargin is supplied. The fallback range remains grid-local.
-    start: virtualizer.getVirtualItemForOffset(scrollOffset)?.index ?? estimatedRange.start,
-    end: virtualizer.getVirtualItemForOffset(scrollOffset + visibleHeight)?.index ?? estimatedRange.end,
+    start: tanstack.getVirtualItemForOffset(scrollOffset)?.index ?? estimatedRange.start,
+    end: tanstack.getVirtualItemForOffset(scrollOffset + visibleHeight)?.index ?? estimatedRange.end,
   } : estimatedRange
 
   return {
     rootRef,
     headerRef,
-    virtualizer,
     virtual: enabled,
-    totalSize: virtualizer.getTotalSize(),
+    items,
+    translateY,
+    totalSize,
     estimatedSize: count * estimateSize,
     scrollOwner: metrics.owner ? "ancestor" as const : "window" as const,
     scrollMargin: metrics.scrollMargin,
@@ -141,5 +168,8 @@ export function useExternalGridVirtualizer({
     visibleStart: range.start,
     visibleEnd: range.end,
     footerHeight: FOOTER_HEIGHT,
+    liveViewportHeight,
+    measureElement: tanstack.measureElement,
+    tanstack,
   }
 }

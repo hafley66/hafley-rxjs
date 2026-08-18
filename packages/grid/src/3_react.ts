@@ -38,5 +38,5 @@ export function useGrid<TData extends RowData>(grid: Grid<TData>) {
 
 export * from "./1_types"
 export * from "./2_createGrid"
-export { GridTable, type RowDensity, type Align } from "./4_grid"
+export { GridTable, type RowDensity, type Align, type GridScrollMode, type ScrollMode } from "./4_grid"
 export { GridTree } from "./6_tree"
