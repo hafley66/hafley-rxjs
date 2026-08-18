@@ -1,6 +1,6 @@
 {
   "name": "@hafley66/grapht-render-pixijs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "PixiJS v8 projection adapter for grapht-bench/0: WebGL and WebGPU graph import, render, camera interaction, picking, disposal receipt",
   "type": "module",
   "main": "./dist/index.js",
@@ -14,6 +14,7 @@
   "files": ["dist", "README.md"],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "prepack": "pnpm run build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run -c vitest.config.ts",
     "lab": "node ../../scripts/0_generate_renderer_fixture.mjs 1000 && node ../../scripts/0_generate_renderer_fixture.mjs 5000 && node ../../scripts/0_generate_renderer_fixture.mjs 10000 && playwright test -c playwright.config.ts",
