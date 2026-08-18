@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client"
 import { describe, expect, it } from "vitest"
 import { page } from "vitest/browser"
 import { createMarbler, MarblerPanel } from "@hafley66/marbler"
-import type { MarbleEvent } from "./0_types"
+import type { MarbleEvent, MarbleFrame } from "./0_types"
 import { createTimeViewport, eventRange } from "./0a_TimeViewport"
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -43,6 +43,17 @@ const events = [
   event("m-bb42", "read NetworkLogView.ts", "GET", "tool", "source-lane", 528, 462, "Locate data grid, filter, and waterfall ownership"),
   event("m-724d", "dependency map", "POST", "result", "source-lane", 1041, 388, "NetworkDataGridNode → TimeCalculator → WaterfallColumn"),
 ]
+
+function frame(
+  id: string,
+  t: number,
+  kind: MarbleFrame["kind"],
+  direction: MarbleFrame["direction"],
+  peer: string | null,
+  preview: string,
+): MarbleFrame {
+  return { id, t, kind, direction, peer, preview, repeat: 1 }
+}
 
 describe("Marbler receipts", () => {
   it("emits grid and selected-event PNGs", async () => {
@@ -102,6 +113,57 @@ describe("Marbler receipts", () => {
       model.viewport.$(createTimeViewport(eventRange(next)))
     })
     await expect.poll(() => document.querySelector(".time-navigator")?.getAttribute("data-mark-count")).toBe("108")
+
+    await act(async () => root.unmount())
+    host.remove()
+  })
+
+  it("indents a subagent row, draws its frame ticks, lists its messages, and hides it on collapse", async () => {
+    const childRow: MarbleEvent = {
+      ...event("agent-child", "spawn worker turn", "POST", "request", "agent-root", 120, 200, "Worker subagent session"),
+      parentId: "agent-root",
+      frames: [
+        frame("c1", 120, "spawn", "in", "agent-root", "spawned by coordinator"),
+        frame("c2", 220, "mail-out", "out", "agent-root", "progress report"),
+        frame("c3", 300, "exit", "self", null, "subagent exit"),
+      ],
+    }
+    const rootRow: MarbleEvent = {
+      ...event("agent-root", "spawn coordinator", "POST", "request", "root", 45, 400, "Coordinator session"),
+      parentId: null,
+      frames: [
+        frame("f1", 45, "spawn", "out", "agent-child", "spawn subagent"),
+        frame("f2", 200, "mail-in", "in", "agent-child", "status update"),
+        frame("f3", 380, "result", "self", null, "coordinator turn complete"),
+      ],
+      children: [childRow],
+    }
+    const model = createMarbler([rootRow])
+    model.selectedId.$(null)
+    const host = document.createElement("div")
+    document.body.append(host)
+    const root = createRoot(host)
+    await act(async () => root.render(<MarblerPanel model={model} />))
+    await expect.poll(() => document.querySelectorAll("canvas.waterfall-canvas").length).toBe(1)
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    const expandToggle = document.querySelector("[data-event-id='agent-root'] .expand-toggle") as HTMLButtonElement
+    await act(async () => expandToggle.click())
+    const childElement = document.querySelector("[data-event-id='agent-child']") as HTMLElement
+    expect(childElement.getAttribute("data-depth")).toBe("1")
+    const childNameCell = childElement.querySelector(".col-name") as HTMLElement
+    expect(childNameCell.style.paddingLeft).toBe("27px")
+
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    await expect(page.getByTestId("marbler")).toMatchScreenshot("3_nested-agent-frame-ticks")
+
+    await act(async () => childElement.click())
+    await expect.poll(() => document.querySelectorAll("[data-testid='messages-table'] tbody tr").length).toBe(3)
+    const messageKinds = Array.from(document.querySelectorAll("[data-testid='messages-table'] tbody tr")).map((row) => row.querySelector("td:nth-child(2)")?.textContent)
+    expect(messageKinds).toEqual(["spawn", "mail-out", "exit"])
+
+    await act(async () => expandToggle.click())
+    expect(document.querySelector("[data-event-id='agent-child']")).toBeNull()
 
     await act(async () => root.unmount())
     host.remove()
