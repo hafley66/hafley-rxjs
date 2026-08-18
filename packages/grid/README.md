@@ -166,9 +166,13 @@ function GridTable<TData>({ grid, density?, maxHeight?, scrollMode?, scrollEleme
 
 When the current page's estimated rows exceed the owner viewport, external mode
 keeps the full estimated table height in parent/document flow and renders a
-sticky live window capped at `100dvh`. The window has `overflow: clip`; it does
-not take over ancestor scrolling. Client pagination runs before this layer, so
-virtual indexes always address the current page.
+sticky live window capped at `100dvh`. The window is a CSS grid of a clipped
+table area (`overflow: hidden`, sub-row translate for smooth scrolling), a
+phantom horizontal-scrollbar strip, and the footer; it does not take over
+ancestor scrolling. Client pagination runs before this layer, so virtual
+indexes always address the current page. `rawRows` opts into a fast path that
+skips `getRowModel()` and indexes `grid.rows.$()` directly for multi-million-row
+datasets (no tree/sub-rows/selection in that path).
 
 ### External-scroll platform receipt
 
@@ -181,9 +185,10 @@ not applied to the live table: they can substitute an intrinsic size while
 content is skipped, while this component needs its explicit estimated extent to
 remain the parent scroll contribution. `ResizeObserver` updates geometry; CSS
 `100dvh` applies the viewport cap; TanStack Virtual owns overscan and item
-measurement. The non-Grid geometry/range boundary is
-`src/4a_virtualizationBoundary.ts`, reserved for a future
-`@hafley66/virtualizations` extraction.
+measurement. The non-Grid geometry/range boundary and scroll-owner discovery
+live in the `@hafley66/virtualizations` package (`geometry`, `scrollSync`,
+`phantomScrollbar`, `useExternalVirtualizer`, `usePhantomScrollbar`); grid only
+composes the buffered window the virtualizer hands it.
 
 Conventions the render layer honors:
 

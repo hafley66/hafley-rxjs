@@ -3,9 +3,9 @@ import {
   localVirtualOffset,
   visibleVirtualRange,
   viewportCapStyle,
-} from "./4a_virtualizationBoundary"
+} from "./geometry"
 
-describe("virtualization extraction boundary", () => {
+describe("geometry", () => {
   it("translates parent scroll coordinates into a bounded local extent", () => {
     expect([
       localVirtualOffset(20, 100, 21_000),
@@ -20,7 +20,7 @@ describe("virtualization extraction boundary", () => {
     `)
   })
 
-  it("calculates the visible index range without Grid or TanStack rows", () => {
+  it("calculates the visible index range without rows or TanStack", () => {
     expect(visibleVirtualRange({
       count: 500,
       estimateSize: 42,

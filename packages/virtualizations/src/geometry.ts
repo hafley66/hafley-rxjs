@@ -1,17 +1,10 @@
 /**
- * Extraction boundary for a future @hafley66/virtualizations package.
+ * Pure scroll geometry for virtualized content.
  *
- * Candidate public surface:
- * - findScrollOwner(element: HTMLElement | null): HTMLElement | null
- * - measureContentOrigin(root: HTMLElement, owner: HTMLElement | null): number
- * - localVirtualOffset(scrollOffset: number, contentOrigin: number, extent: number): number
- * - visibleVirtualRange(options: VisibleRangeOptions): VirtualRange
- * - viewportCapStyle(extent: number): { height: string; maxHeight: string }
- * - useExternalVirtualizerLifecycle(options): { owner, origin, viewport }
- *
- * This boundary owns scroll ownership, geometry, resize lifecycle, and range
- * math. Grid owns TanStack row materialization, table markup, row measurement,
- * sorting, pagination, and mapping a virtual index to a table row.
+ * This module owns scroll ownership, parent-offset translation, and visible
+ * range math. It never touches rows, DOM elements (other than reading computed
+ * overflow), or TanStack. Consumers (grids, lists, trees) supply extents and
+ * viewport sizes and get indexes and offsets back.
  */
 
 export type VirtualRange = { start: number; end: number }
