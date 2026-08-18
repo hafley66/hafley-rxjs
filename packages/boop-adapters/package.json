@@ -1,7 +1,7 @@
 {
   "name": "@hafley66/boop-adapters",
   "version": "0.1.0",
-  "private": true,
+  "description": "Typed projections from Boop agent records into Hafley grid, graph, and Marbler models",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,8 +11,10 @@
       "import": "./dist/index.js"
     }
   },
+  "files": ["dist", "README.md"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "pnpm run build && vitest run"
   },
@@ -27,5 +29,6 @@
     "@types/node": "^25.0.8",
     "typescript": "7.0.2",
     "vitest": "^4.1.10"
-  }
+  },
+  "license": "MIT"
 }

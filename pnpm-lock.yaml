@@ -331,6 +331,9 @@ importers:
       '@tanstack/react-table':
         specifier: ^9.1.0
         version: 9.1.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@tanstack/react-virtual':
+        specifier: ^3.14.9
+        version: 3.14.9(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       devalue:
         specifier: ^5.9.0
         version: 5.9.0
@@ -3110,9 +3113,6 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
-
-  fflate@0.8.2:
-    resolution: {integrity: sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==}
 
   fflate@0.8.3:
     resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
@@ -6016,7 +6016,7 @@ snapshots:
   '@vitest/ui@4.1.10(vitest@4.1.10)':
     dependencies:
       '@vitest/utils': 4.1.10
-      fflate: 0.8.2
+      fflate: 0.8.3
       flatted: 3.4.4
       pathe: 2.0.3
       sirv: 3.0.2
@@ -6593,8 +6593,6 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.5):
     optionalDependencies:
       picomatch: 4.0.5
-
-  fflate@0.8.2: {}
 
   fflate@0.8.3: {}
 

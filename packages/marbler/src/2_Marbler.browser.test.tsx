@@ -83,7 +83,7 @@ describe("Marbler receipts", () => {
     await act(async () => {
       const navigator = document.querySelector("canvas[data-testid='time-navigator']") as HTMLCanvasElement
       const bounds = navigator.getBoundingClientRect()
-      const eventX = ((238 - 45) / (1514 - 45)) * bounds.width
+      const eventX = 190 + ((238 - 45) / (1514 - 45)) * (bounds.width - 190)
       navigator.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: bounds.left + eventX, clientY: bounds.top + 24 }))
     })
     expect(model.hoveredId.$()).toBe("m-a4c8")
@@ -96,7 +96,10 @@ describe("Marbler receipts", () => {
     })
     await expect(page.getByTestId("hovered-event")).toHaveTextContent("inspect @cloudflare/waterfall · 297 ms")
     await act(async () => page.getByTestId("marbler").hover({ position: { x: 500, y: 12 } }))
-    await act(async () => page.getByText("search component candidates", { exact: true }).hover())
+    await act(async () => {
+      const rowName = document.querySelector("[data-event-id='m-a4c8'] b") as HTMLElement
+      rowName.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }))
+    })
     expect(model.hoveredId.$()).toBe("m-a4c8")
     await expect(page.getByTestId("marbler")).toMatchScreenshot("2_row-hover-highlights-map")
     await act(async () => page.getByTestId("marbler").hover({ position: { x: 500, y: 12 } }))

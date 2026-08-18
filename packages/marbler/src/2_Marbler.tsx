@@ -21,7 +21,26 @@ function MarblerView({ model }: { model: Marbler }) {
   const events = useMemo<MarbleEvent[]>(() => rows.map((row) => row.original), [rows])
   const hasTree = useMemo(() => rows.some((row) => row.getCanExpand()), [rows])
   const timelineEvents = model.rows.$()
-  const marks = useMemo<TimelineMark[]>(() => timelineEvents.flatMap((event, lane) => event.start !== null && event.duration !== null ? [{ id: event.id, kind: "span" as const, start: event.start, end: event.start + event.duration, lane: lane % 5 }] : []), [timelineEvents])
+  const laneById = useMemo(() => new Map(timelineEvents.map((event, lane) => [event.id, lane])), [timelineEvents])
+  const marks = useMemo<TimelineMark[]>(() => timelineEvents.flatMap((event, lane) => {
+    const eventMarks: TimelineMark[] = event.start !== null && event.duration !== null
+      ? [{ id: event.id, kind: "span", start: event.start, end: event.start + event.duration, lane }]
+      : []
+    for (const frame of event.frames ?? []) {
+      eventMarks.push({
+        id: frame.id,
+        kind: "dot",
+        time: frame.t,
+        lane,
+        variant: frame.kind === "error" ? "error" : frame.kind === "turn-finish" || frame.kind === "result" || frame.kind === "exit" ? "complete" : "next",
+      })
+      const peerLane = frame.peer === null ? undefined : laneById.get(frame.peer)
+      if (peerLane !== undefined && peerLane !== lane) {
+        eventMarks.push({ id: `${frame.id}:link`, kind: "link", from: { time: frame.t, lane }, to: { time: frame.t, lane: peerLane } })
+      }
+    }
+    return eventMarks
+  }), [laneById, timelineEvents])
   const viewport = model.viewport.$()
   const ticks = Array.from({ length: 6 }, (_, index) => viewport.visible[0] + (viewport.visible[1] - viewport.visible[0]) * index / 5)
   return <main className="app-shell" data-testid="marbler">
@@ -41,6 +60,7 @@ function MarblerView({ model }: { model: Marbler }) {
       <TimeNavigatorPixi
         marks={marks}
         viewport={viewport}
+        laneLabels={timelineEvents.map((event) => event.name)}
         highlightedId={model.hoveredId.$()}
         onMarkHover={(id) => model.hoveredId.$(id)}
         onGesture={(gesture) => model.viewport.$(reduceTimeViewport(model.viewport.$(), gesture))}
@@ -85,7 +105,7 @@ function MarblerView({ model }: { model: Marbler }) {
       <nav><b>Headers</b><span>Payload</span><span>Preview</span><span>Response</span><span>Timing</span></nav>
       <h3>General</h3><dl><dt>Request URL</dt><dd>boop://{selected.from}/{selected.to}/{selected.id}</dd><dt>Request Method</dt><dd>{selected.method}</dd><dt>Status Code</dt><dd><i className="ok-dot" /> {selected.status} {selected.status === 200 ? "Delivered" : "Accepted"}</dd><dt>Remote Address</dt><dd>{selected.to}</dd></dl>
       <h3>Message</h3><pre>{selected.preview}</pre>
-      <h3>Timing</h3><div className="timing-bars">{selected.phases.map((phase) => phase.start !== null && phase.end !== null ? <div key={phase.kind}><label>{phase.kind}</label><span className={`phase-${phase.kind}`} style={{ width: `${Math.max(4, (phase.end - phase.start) / 8)}%` }} /><em>{phase.end - phase.start} ms</em></div> : null)}</div>
+      <h3>Timing</h3><div className="timing-bars">{selected.phases.map((phase, index) => phase.start !== null && phase.end !== null ? <div key={`${phase.kind}:${phase.start}:${phase.end}:${index}`}><label>{phase.kind}</label><span className={`phase-${phase.kind}`} style={{ width: `${Math.max(4, (phase.end - phase.start) / 8)}%` }} /><em>{phase.end - phase.start} ms</em></div> : null)}</div>
       {selected.frames && selected.frames.length > 0 && <><h3>Messages</h3><table className="messages-table" data-testid="messages-table"><thead><tr><th /><th>Kind</th><th>Time</th><th>Peer</th><th>Preview</th></tr></thead><tbody>{[...selected.frames].sort((earlierFrame, laterFrame) => earlierFrame.t - laterFrame.t).map((frame) => <tr key={frame.id} className={`frame-row frame-${frame.direction}${frame.kind === "error" ? " frame-error" : ""}`}><td className="frame-direction">{frame.direction === "out" ? "▲" : frame.direction === "in" ? "▼" : "●"}</td><td>{frame.kind}</td><td>{selected.start !== null ? frame.t - selected.start : frame.t} ms</td><td>{frame.peer ?? "none"}</td><td>{frame.preview}{frame.repeat > 1 && <span className="frame-repeat">×{frame.repeat}</span>}</td></tr>)}</tbody></table></>}
     </aside>}
   </main>

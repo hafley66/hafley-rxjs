@@ -1,8 +1,8 @@
-import { createGrid } from "@hafley66/grid"
-import { Signal } from "@hafley66/signals"
+import { createGrid, type Grid } from "@hafley66/grid"
+import { Signal, type Signal as SignalValue } from "@hafley66/signals"
 import type { ExpandedState } from "@tanstack/react-table"
 import { MarbleEventSchema, type EventFilter, type MarbleEvent } from "./0_types.js"
-import { createTimeViewport, eventRange } from "./0a_TimeViewport.js"
+import { createTimeViewport, eventRange, type TimeViewport } from "./0a_TimeViewport.js"
 
 function isRowExpanded(expanded: ExpandedState, id: string): boolean {
   return expanded === true || Boolean(expanded[id])
@@ -20,7 +20,17 @@ function flattenExpandedRows(rows: MarbleEvent[], expanded: ExpandedState): Marb
   return flattened
 }
 
-export function createMarbler(seed: MarbleEvent[]) {
+export type Marbler = {
+  source: SignalValue<MarbleEvent[]>
+  filter: SignalValue<EventFilter>
+  selectedId: SignalValue<string | null>
+  hoveredId: SignalValue<string | null>
+  viewport: SignalValue<TimeViewport>
+  grid: Grid<MarbleEvent>
+  rows: SignalValue<MarbleEvent[]>
+}
+
+export function createMarbler(seed: MarbleEvent[]): Marbler {
   const source = Signal<MarbleEvent[]>(seed)
   const filter = Signal<EventFilter>("all")
   const selectedId = Signal<string | null>(seed[0]?.id ?? null)
@@ -47,5 +57,3 @@ export function createMarbler(seed: MarbleEvent[]) {
   const rows = Signal<MarbleEvent[]>(() => flattenExpandedRows(treeRows.$(), grid.state.$().expanded))
   return { source, filter, selectedId, hoveredId, viewport, rows, grid }
 }
-
-export type Marbler = ReturnType<typeof createMarbler>

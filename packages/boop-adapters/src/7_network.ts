@@ -1,10 +1,10 @@
-import type { MarbleEvent } from "@hafley66/marbler"
+import type { MarbleEvent, MarbleFrame } from "@hafley66/marbler"
 import { agentNetworkExportSchema, type AgentNetworkProjection, type AgentNetworkTopologyProjection, type BoopFrameRow, type BoopSessionRow } from "./0_types.js"
 
 type NetworkFrame = {
   id: string
   t: number
-  kind: string
+  kind: MarbleFrame["kind"]
   direction: "in" | "out" | "self"
   peer: string | null
   preview: string
@@ -28,10 +28,13 @@ function directionOf(kind: string): "in" | "out" | "self" {
 }
 
 function toFrame(row: BoopFrameRow): NetworkFrame {
+  const kind = row.kind === "spawn" || row.kind === "turn-start" || row.kind === "turn-finish" || row.kind === "mail-in" || row.kind === "mail-out" || row.kind === "result" || row.kind === "error" || row.kind === "exit"
+    ? row.kind
+    : "result"
   return {
     id: `${row.kind}:${row.session}:${row.peer ?? ""}:${row.ts}`,
     t: row.ts,
-    kind: row.kind,
+    kind,
     direction: directionOf(row.kind),
     peer: row.peer,
     preview: row.detail,
