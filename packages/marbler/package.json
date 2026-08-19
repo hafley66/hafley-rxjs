@@ -1,6 +1,6 @@
 {
   "name": "@hafley66/marbler",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Signal-driven agent message waterfall and timeline panel",
   "type": "module",
   "main": "./dist/index.js",

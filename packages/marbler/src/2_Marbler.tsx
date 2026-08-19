@@ -48,16 +48,9 @@ function MarblerView({ model }: { model: Marbler }) {
   const ticks = Array.from({ length: 6 }, (_, index) => viewport.visible[0] + (viewport.visible[1] - viewport.visible[0]) * index / 5)
   return <main className="app-shell" data-testid="marbler">
     <section className="network-panel">
-      <header className="toolbar">
-        <button className="record" aria-label="record" />
-        <button className="tool-icon">⊘</button><button className="tool-icon">⌁</button>
-        <span className="divider" />
-        <label className="filter-input"><span>⌕</span><input placeholder="Filter" /></label>
-        <button className="chip active">All</button><button className="chip">Fetch/XHR</button><button className="chip">Doc</button><button className="chip">JS</button><button className="chip">CSS</button>
-        <span className="toolbar-spacer" />{hovered && <span className="hovered-event" data-testid="hovered-event">{hovered.name} · {hovered.duration} ms</span>}<span className="summary">{rows.length} events</span>
-      </header>
       <div className="subtoolbar">
         {FILTERS.map((filter) => <button key={filter} className={model.filter.$() === filter ? "kind active" : "kind"} onClick={() => model.filter.$(filter)}>{filter}</button>)}
+        <span className="toolbar-spacer" />{hovered && <span className="hovered-event" data-testid="hovered-event">{hovered.name} · {hovered.duration} ms</span>}<span className="summary">{rows.length} events</span>
         <span className="legend"><i className="phase-send" />send <i className="phase-wait" />wait <i className="phase-receive" />receive <i className="phase-work" />work</span>
       </div>
       <TimeNavigatorPixi
