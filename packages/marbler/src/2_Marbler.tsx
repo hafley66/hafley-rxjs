@@ -12,6 +12,8 @@ import type { Marbler } from "./1_model.js"
 import "./2_marbler.css"
 
 const FILTERS: EventFilter[] = ["all", "request", "result", "tool", "note"]
+const WATERFALL_LEFT = 690
+const TREE_GUTTER = 20
 function MarblerView({ model }: { model: Marbler }) {
   const table = useGrid<MarbleEvent>(model.grid)
   const scrollerRef = useRef<HTMLDivElement>(null)
@@ -20,6 +22,7 @@ function MarblerView({ model }: { model: Marbler }) {
   const rows = table.getRowModel().rows
   const events = useMemo<MarbleEvent[]>(() => rows.map((row) => row.original), [rows])
   const hasTree = useMemo(() => rows.some((row) => row.getCanExpand()), [rows])
+  const waterfallLeft = WATERFALL_LEFT + (hasTree ? TREE_GUTTER : 0)
   const timelineEvents = model.rows.$()
   const laneById = useMemo(() => new Map(timelineEvents.map((event, lane) => [event.id, lane])), [timelineEvents])
   const marks = useMemo<TimelineMark[]>(() => timelineEvents.flatMap((event, lane) => {
@@ -69,12 +72,13 @@ function MarblerView({ model }: { model: Marbler }) {
         <div className={hasTree ? "grid-header grid-row has-tree" : "grid-header grid-row"}>
           {table.getHeaderGroups()[0].headers.filter((header) => hasTree || header.column.id !== "__expand").map((header) => <div key={header.id} className={`cell col-${header.column.id}`} onClick={header.column.getToggleSortingHandler()}>{flexRender(header.column.columnDef.header, header.getContext())}</div>)}
         </div>
-        <div className={hasTree ? "timeline grid-row has-tree" : "timeline grid-row"}><span className="timeline-gutter" />{ticks.map((tick, index) => <span key={index} style={{ left: `calc(690px + ${index * 20}%)` }}>{`${(tick / 1000).toFixed(2)} s`}</span>)}</div>
+        <div className={hasTree ? "timeline grid-row has-tree" : "timeline grid-row"}><span className="timeline-gutter" />{ticks.map((tick, index) => <span key={index} style={{ left: `calc(${waterfallLeft}px + ${index * 20}%)` }}>{`${(tick / 1000).toFixed(2)} s`}</span>)}</div>
         <div className="grid-body">
           <WaterfallPixi
             rows={events}
             scroller={scrollerRef}
             domain={viewport.visible}
+            leftOffset={waterfallLeft}
             onEventHover={(event) => model.hoveredId.$(event?.id ?? null)}
             onEventSelect={(event) => model.selectedId.$(event.id)}
           />

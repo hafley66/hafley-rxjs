@@ -24,6 +24,7 @@ export type WaterfallPixiProps = {
   rows: MarbleEvent[]
   scroller: React.RefObject<HTMLDivElement | null>
   domain?: readonly [number, number]
+  leftOffset?: number
   onEventHover?: (event: MarbleEvent | null) => void
   onEventSelect?: (event: MarbleEvent) => void
 }
@@ -32,6 +33,7 @@ export function WaterfallPixi({
   rows,
   scroller,
   domain = DEFAULT_DOMAIN,
+  leftOffset = WATERFALL_LEFT,
   onEventHover,
   onEventSelect,
 }: WaterfallPixiProps) {
@@ -85,7 +87,7 @@ export function WaterfallPixi({
 
     const render = () => {
       if (!world || !phasesGraphic || disposed) return
-      const width = Math.max(1, scrollerElement.clientWidth - WATERFALL_LEFT)
+      const width = Math.max(1, scrollerElement.clientWidth - leftOffset)
       const height = Math.max(1, scrollerElement.clientHeight - HEADER_HEIGHT)
       const scrollTop = scrollerElement.scrollTop
       const first = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT))
@@ -163,9 +165,9 @@ export function WaterfallPixi({
       interactionElement?.removeEventListener("click", pointerClick)
       if (app.renderer) app.destroy(true, { children: true })
     }
-  }, [scroller])
+  }, [scroller, leftOffset])
 
   useEffect(() => renderRef.current(), [rows, domain[0], domain[1]])
 
-  return <div ref={hostRef} className="waterfall-pixi" />
+  return <div ref={hostRef} className="waterfall-pixi" style={{ left: leftOffset }} />
 }

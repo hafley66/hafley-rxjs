@@ -156,6 +156,19 @@ describe("Marbler receipts", () => {
     expect(childElement.getAttribute("data-depth")).toBe("1")
     const childNameCell = childElement.querySelector(".col-name") as HTMLElement
     expect(childNameCell.style.paddingLeft).toBe("27px")
+    const headerCells = Array.from(host.querySelectorAll(".grid-header > .cell")).map((cell) => {
+      const rect = cell.getBoundingClientRect()
+      return [Math.round(rect.left), Math.round(rect.width)]
+    })
+    const rootCells = Array.from(host.querySelectorAll("[data-event-id='agent-root'] > .cell")).map((cell) => {
+      const rect = cell.getBoundingClientRect()
+      return [Math.round(rect.left), Math.round(rect.width)]
+    })
+    expect(headerCells).toEqual(rootCells)
+    expect((host.querySelector(".waterfall-pixi") as HTMLElement).style.left).toBe("710px")
+    const timelineBottom = (host.querySelector(".timeline") as HTMLElement).getBoundingClientRect().bottom
+    const rootTop = (host.querySelector("[data-event-id='agent-root']") as HTMLElement).getBoundingClientRect().top
+    expect(rootTop).toBeGreaterThanOrEqual(timelineBottom)
 
     await new Promise((resolve) => setTimeout(resolve, 100))
     await expect(page.getByTestId("marbler")).toMatchScreenshot("3_nested-agent-frame-ticks")
