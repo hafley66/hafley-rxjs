@@ -263,10 +263,12 @@ input {
 	grid-template-columns: 20px 310px 62px 74px 94px 78px 72px minmax(520px, 1fr);
 	min-width: 1230px;
 }
-.grid-header {
+.grid-sticky-head {
 	position: sticky;
 	top: 0;
 	z-index: 3;
+}
+.grid-header {
 	height: 30px;
 	background: #1c2027;
 	border-bottom: 1px solid #383d47;
@@ -286,9 +288,7 @@ input {
 	cursor: pointer;
 }
 .timeline {
-	position: sticky;
-	top: 30px;
-	z-index: 2;
+	position: relative;
 	height: 25px;
 	border-bottom: 1px solid #30343d;
 	background: #14171c;
