@@ -14,8 +14,15 @@ The working documents are ordered by dependency:
 2. [`2_instant_extraction_plan.d2`](./2_instant_extraction_plan.d2) records extraction of
    Instant's network/subagent trace viewer, canonical grid projection, Markdown viewer, and
    reusable whole-app live probe.
+3. [`3_implementation_agnostic_bench_plan.md`](./3_implementation_agnostic_bench_plan.md) is the
+   `grapht-bench/0` and `grapht-geometry/0` protocol plan the adapters implement.
+4. [`4_keyed_scene_renderer_plan.md`](./4_keyed_scene_renderer_plan.md) records the keyed
+   Scene / Geometry / Diff / Tween / Renderer interface, the library split across anim,
+   marbler, and react-dock-and-flow, the interchange-format and algorithm surveys, and the
+   Pixi-plus-DOM renderer decision. Pixi measurements live in
+   [`adapters/6_render_pixijs/LEARNINGS.md`](./adapters/6_render_pixijs/LEARNINGS.md).
 
-Both are D2 input fixtures. Markdown labels retain the plan while stable dotted D2 IDs make
+The first three are D2 input fixtures. Markdown labels retain the plan while stable dotted D2 IDs make
 every section addressable by parsers, renderers, diffs, and later message-carried edits.
 
 ## Scope
