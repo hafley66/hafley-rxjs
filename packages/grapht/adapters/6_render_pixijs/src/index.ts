@@ -11,3 +11,4 @@ export {
   type RendererMode,
   type Representation,
 } from "./2_projection.js"
+export { inspect, pixi, type PixiSceneOptions } from "./8_sceneRenderer.js"

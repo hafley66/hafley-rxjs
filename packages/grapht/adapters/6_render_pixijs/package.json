@@ -11,7 +11,10 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
@@ -24,11 +27,13 @@
   },
   "dependencies": {
     "@hafley66/grapht": "workspace:^",
+    "@hafley66/scene": "workspace:^",
     "pixi.js": "^8.9.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "@types/node": "^25.0.8",
+    "rxjs": "^7.8.2",
     "tsx": "^4.19.2",
     "typescript": "^7.0.2",
     "vite": "^8.2.1",
