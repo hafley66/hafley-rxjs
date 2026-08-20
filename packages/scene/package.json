@@ -1,0 +1,32 @@
+{
+  "name": "@hafley66/scene",
+  "version": "0.0.1",
+  "description": "Keyed scenes, typed-array geometry, diffs, tweens, and rxjs renderer operators",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "rxjs": "^7.8.0"
+  },
+  "devDependencies": {
+    "rxjs": "^7.8.2",
+    "typescript": "7.0.2",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
+  },
+  "keywords": ["scene", "geometry", "diff", "tween", "rxjs", "animation", "graph"],
+  "license": "MIT"
+}
