@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>grapht pixijs lab: spinning cube as a scene</title>
+<!-- Lab: one constant Scene, a Layout that projects the cube at the current angle, frames at t=1. ?n=<points> scales load; 8 corner cards are DOM. -->
+<style>
+  html, body { margin: 0; background: #111; color: #eee; font: 12px ui-monospace, monospace; }
+  #host { position: fixed; left: 0; top: 0; width: 800px; height: 600px; }
+  .scene-card { will-change: transform; background: rgba(20,20,30,.85); border: 1px solid #6af; border-radius: 4px; padding: 3px 6px; white-space: pre; pointer-events: none; }
+  .scene-card b { color: #6af; }
+  #hud { position: fixed; left: 8px; top: 8px; color: #9c9; white-space: pre; }
+</style>
+</head>
+<body>
+<div id="host"></div>
+<div id="hud"></div>
+<script type="module">
+import { animationFrames, map, of, timer } from "rxjs"
+import { frames, keyframes, tween } from "@hafley66/scene"
+import { inspect, pixi } from "../src/8_sceneRenderer.ts"
+
+const params = new URLSearchParams(location.search)
+const N = Number(params.get("n") ?? 2000)
+const SCALE = 160, CAM = 5
+
+// points: 8 corners first, then N-8 samples along the 12 edges
+const corners = []
+for (const x of [-1, 1]) for (const y of [-1, 1]) for (const z of [-1, 1]) corners.push([x, y, z])
+const edgePairs = []
+for (let i = 0; i < 8; i++) for (let j = i + 1; j < 8; j++) {
+  let d = 0; for (let k = 0; k < 3; k++) d += corners[i][k] !== corners[j][k]
+  if (d === 1) edgePairs.push([i, j])
+}
+const model = new Float32Array(N * 3)
+for (let i = 0; i < N; i++) {
+  let p
+  if (i < 8) p = corners[i]
+  else {
+    const [a, b] = edgePairs[i % 12]
+    const t = ((i / 12) | 0) / Math.max(1, ((N - 8) / 12) | 0)
+    p = [0, 1, 2].map(k => corners[a][k] + (corners[b][k] - corners[a][k]) * t)
+  }
+  model.set(p, i * 3)
+}
+
+const ids = Array.from({ length: N }, (_, i) => `p${i}`)
+const items = new Map(ids.map(id => [id, { id, kind: "node" }]))
+const cards = corners.map((c, i) => ({ id: `card:${i}`, kind: "card", parent: `p${i}`, attrs: { html: `<b>v${i}</b> ${c.join(",")}` } }))
+for (const c of cards) items.set(c.id, c)
+const edges = new Map(edgePairs.map(([a, b], i) => [`e${i}`, [`p${a}`, `p${b}`]]))
+const allIds = [...items.keys()]
+const scene = { items, edges }
+
+// the layout IS the rotation: angle comes from the scene emission's attrs-free closure below
+let angle = { x: 0, y: 0, z: 0 }
+const pos = new Float32Array(allIds.length * 2)
+const layout = () => {
+  const cx = Math.cos(angle.x), sx = Math.sin(angle.x)
+  const cy = Math.cos(angle.y), sy = Math.sin(angle.y)
+  const cz = Math.cos(angle.z), sz = Math.sin(angle.z)
+  for (let i = 0; i < N; i++) {
+    let x = model[3 * i], y = model[3 * i + 1], z = model[3 * i + 2]
+    let y1 = y * cx - z * sx, z1 = y * sx + z * cx
+    let x2 = x * cy + z1 * sy, z2 = -x * sy + z1 * cy
+    let x3 = x2 * cz - y1 * sz, y3 = x2 * sz + y1 * cz
+    const p = CAM / (CAM - z2)
+    pos[2 * i] = 400 + x3 * p * SCALE
+    pos[2 * i + 1] = 300 - y3 * p * SCALE
+  }
+  for (let c = 0; c < 8; c++) {
+    pos[2 * (N + c)] = pos[2 * c] + 8
+    pos[2 * (N + c) + 1] = pos[2 * c + 1] + 8
+  }
+  return { ids: allIds, pos }
+}
+
+let frameCount = 0
+const tick$ = animationFrames().pipe(map(({ elapsed }) => {
+  const s = elapsed / 1000
+  angle = { x: 0.7 * s, y: 1.1 * s, z: 0.3 * s }
+  frameCount++
+  return scene
+}))
+
+const host = document.getElementById("host")
+const sub = tick$.pipe(keyframes(layout), frames(tween(), of(1)), pixi({ maxFPS: 120 })(host)).subscribe()
+
+const hud = document.getElementById("hud")
+let lastCount = 0, lastT = performance.now(), fps = 0
+timer(0, 500).subscribe(() => {
+  const now = performance.now()
+  fps = ((frameCount - lastCount) * 1000) / (now - lastT)
+  lastCount = frameCount; lastT = now
+  const info = inspect(host)
+  hud.textContent = `n=${N}  views ${info?.ids.length ?? 0}  cards ${document.querySelectorAll(".scene-card").length}  fps ${fps.toFixed(1)}`
+})
+window.__lab = { host, n: N, frames: () => frameCount, inspect: () => inspect(host), sub }
+</script>
+</body>
+</html>

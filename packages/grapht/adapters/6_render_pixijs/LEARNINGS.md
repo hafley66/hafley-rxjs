@@ -1,6 +1,7 @@
 # PixiJS projection adapter learnings
 
 1. [DOMContainer lab receipt](#domcontainer-lab-receipt)
+1a. [Scene pipeline load receipt](#scene-pipeline-load-receipt)
 2. [Pixi v8 facts verified against 8.19.0](#pixi-v8-facts-verified-against-8190)
 3. [Measuring render cost under Playwright](#measuring-render-cost-under-playwright)
 4. [Official performance guidance](#official-performance-guidance)
@@ -20,6 +21,28 @@ rotating cube; `dc.scale.set(p)` with `p = CAM / (CAM - z)` makes far text small
 
 Viewport 1400x900 at `deviceScaleFactor: 2`, headless Chromium, `--use-angle=swiftshader`.
 Script time was the same in both (~0.05 s per 4 s); the cost was raster.
+
+## Scene pipeline load receipt
+
+`labs/scene-cube.html?n=<points>` + `e2e/5_scene_cube.spec.ts`. One constant `Scene`; every
+animation frame emits it again, `keyframes(layout)` projects the rotated cube into a reused
+`Float32Array`, `frames(tween(), of(1))` passes it through, `pixi()` walks `pos` into pooled
+sprites. 8 corner cards are `DOMContainer`. The numbers are the cost of the abstraction per
+frame with retained sprites; no culling, no ParticleContainer.
+
+| points | fps | ms / frame |
+|---|---|---|
+| 1 000 | 119.7 | 8.4 |
+| 20 000 | 37.7 | 26.5 |
+| 100 000 | 12.7 | 78.9 |
+
+3 s windows, 800x600, `resolution: 1`, headless Chromium with `--use-angle=swiftshader`
+(raster on CPU, so these are floors). At 20k+ the per-frame cost is the sprite walk plus the
+CPU raster; the ParticleContainer tier is the next step for the far level of detail.
+
+Defect found by the cube: `Application.init` is async and `pixi()` held only the latest
+frame while pending, so an all-keep frame arriving after the first enter-all frame lost the
+enter set. `draw` now enters any geometry id that lacks a view; `diff.enter` is advisory.
 
 ## Pixi v8 facts verified against 8.19.0
 

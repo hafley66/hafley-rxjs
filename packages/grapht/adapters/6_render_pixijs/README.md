@@ -17,6 +17,10 @@ selection, camera fitting, pan, zoom, picking, replacement, resizing, and dispos
   `DOMContainer`. `e2e/4_scene_renderer.spec.ts` asserts mount, recycling by sprite identity,
   a kept id tweening between steps, and teardown on unsubscribe.
 
+- `labs/scene-cube.html?n=<points>`: spinning cube as a constant `Scene` whose `Layout` is the
+  rotation; `e2e/5_scene_cube.spec.ts` writes a frames-per-second receipt at 1k, 20k, 100k
+  points to `receipts/generated/scene-cube.load.json`.
+
 ## Scene renderer
 
 ```ts
