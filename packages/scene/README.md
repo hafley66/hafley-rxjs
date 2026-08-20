@@ -42,6 +42,15 @@ const dom = renderer<Map<string, HTMLElement>>({
 
 Frames pass through, so renderers chain and each one sees the same `Frame`.
 
+## Renderers shipped here
+
+| renderer | sink | use |
+|---|---|---|
+| `dom(options)` | one absolutely positioned element per id, `transform: translate`, edges as SVG `<line>` | near-focus tier: cards, code panels, labels; tens of items |
+
+Pixi lives in `@hafley66/grapht-render-pixijs` as `pixi(options)`. Load receipt for both:
+`packages/grapht/adapters/6_render_pixijs/LEARNINGS.md`.
+
 ## Scripts
 
 `pnpm test`, `pnpm typecheck`, `pnpm build`.

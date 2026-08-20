@@ -30,19 +30,31 @@ animation frame emits it again, `keyframes(layout)` projects the rotated cube in
 sprites. 8 corner cards are `DOMContainer`. The numbers are the cost of the abstraction per
 frame with retained sprites; no culling, no ParticleContainer.
 
-| points | fps | ms / frame |
-|---|---|---|
-| 1 000 | 119.7 | 8.4 |
-| 20 000 | 37.7 | 26.5 |
-| 100 000 | 12.7 | 78.9 |
+Three sinks over the same cube: scene pipeline -> `pixi()`, scene pipeline -> `dom()`
+(`@hafley66/scene`, plain elements + SVG lines), and native Pixi with direct sprite writes and
+no Scene/keyframes/frames. `e2e/6_scene_compare.spec.ts`, receipt
+`receipts/generated/scene-cube.compare.json`.
 
-3 s windows, 800x600, `resolution: 1`, headless Chromium with `--use-angle=swiftshader`
-(raster on CPU, so these are floors). At 20k+ the per-frame cost is the sprite walk plus the
-CPU raster; the ParticleContainer tier is the next step for the far level of detail.
+| points | native pixi fps | scene -> pixi() fps | scene -> dom() fps |
+|---|---|---|---|
+| 1 000 | 116.3 | 120.3 | 14.7 |
+| 5 000 | 85.7 | 118.3 | 5.0 |
+| 20 000 | 50.0 | 49.7 | 1.0 |
+| 100 000 | 11.7 | 13.0 | |
 
-Defect found by the cube: `Application.init` is async and `pixi()` held only the latest
-frame while pending, so an all-keep frame arriving after the first enter-all frame lost the
-enter set. `draw` now enters any geometry id that lacks a view; `diff.enter` is advisory.
+3 s windows after 0.5 s warm-up, 800x600, `resolution: 1`, headless Chromium with
+`--use-angle=swiftshader` (CPU raster, so floors). 120 is the `maxFPS` cap.
+
+The first run had `pixi()` at 25.7 fps against native 45.3 at 20k. Three per-frame costs
+made that gap and all three are now cached: `keyframes` diffed 20k ids every tick even when
+the same `Scene` object was re-emitted (now a `WeakMap` keep-all per scene), `indexOf`
+rebuilt the id map per draw (now cached per `ids` array identity), and `draw` did a
+`Map.get` per id per frame (now a slot array aligned to `ids`, rebuilt only when the `ids`
+array changes or something exits). After that the pipeline is within noise of native.
+
+DOM as the sink is 8x slower at 1k and collapses past 5k: one `style.transform` write per
+element per frame forces style and layout on thousands of nodes. The DOM tier is for the
+near-focus handful (cards, code panels), never for the node field.
 
 ## Pixi v8 facts verified against 8.19.0
 

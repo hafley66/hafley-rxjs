@@ -3,12 +3,16 @@
 <head>
 <meta charset="utf-8" />
 <title>grapht pixijs lab: spinning cube as a scene</title>
-<!-- Lab: one constant Scene, a Layout that projects the cube at the current angle, frames at t=1. ?n=<points> scales load; 8 corner cards are DOM. -->
+<!-- Lab: one constant Scene, a Layout that projects the cube at the current angle, frames at t=1.
+     ?n=<points> scales load; ?renderer=pixi|dom|native picks the sink; 8 corner cards are HTML in every mode. -->
 <style>
   html, body { margin: 0; background: #111; color: #eee; font: 12px ui-monospace, monospace; }
   #host { position: fixed; left: 0; top: 0; width: 800px; height: 600px; }
   .scene-card { will-change: transform; background: rgba(20,20,30,.85); border: 1px solid #6af; border-radius: 4px; padding: 3px 6px; white-space: pre; pointer-events: none; }
   .scene-card b { color: #6af; }
+  .scene-item[data-kind="node"] { width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #4a7fdf; }
+  .scene-item[data-kind="card"] { background: rgba(20,20,30,.85); border: 1px solid #6af; border-radius: 4px; padding: 3px 6px; white-space: pre; pointer-events: none; }
+  .scene-item[data-kind="card"] b { color: #6af; }
   #hud { position: fixed; left: 8px; top: 8px; color: #9c9; white-space: pre; }
 </style>
 </head>
@@ -17,11 +21,13 @@
 <div id="hud"></div>
 <script type="module">
 import { animationFrames, map, of, timer } from "rxjs"
-import { frames, keyframes, tween } from "@hafley66/scene"
+import { dom, frames, keyframes, tween } from "@hafley66/scene"
+import { Application, Container, DOMContainer, Graphics, Sprite } from "pixi.js"
 import { inspect, pixi } from "../src/8_sceneRenderer.ts"
 
 const params = new URLSearchParams(location.search)
 const N = Number(params.get("n") ?? 2000)
+const RENDERER = params.get("renderer") ?? "pixi"
 const SCALE = 160, CAM = 5
 
 // points: 8 corners first, then N-8 samples along the 12 edges
@@ -76,15 +82,51 @@ const layout = () => {
 }
 
 let frameCount = 0
-const tick$ = animationFrames().pipe(map(({ elapsed }) => {
+const spin = elapsed => {
   const s = elapsed / 1000
   angle = { x: 0.7 * s, y: 1.1 * s, z: 0.3 * s }
   frameCount++
-  return scene
-}))
+}
+const tick$ = animationFrames().pipe(map(({ elapsed }) => (spin(elapsed), scene)))
 
 const host = document.getElementById("host")
-const sub = tick$.pipe(keyframes(layout), frames(tween(), of(1)), pixi({ maxFPS: 120 })(host)).subscribe()
+let sub
+let ready = RENDERER !== "pixi"
+if (RENDERER === "pixi") {
+  sub = tick$.pipe(keyframes(layout), frames(tween(), of(1)), pixi({ maxFPS: 120 })(host)).subscribe()
+} else if (RENDERER === "dom") {
+  sub = tick$.pipe(keyframes(layout), frames(tween(), of(1)), dom()(host)).subscribe()
+} else {
+  // native baseline: same layout math, sprites and DOMContainers written directly, no scene pipeline
+  ready = false
+  const app = new Application()
+  await app.init({ width: 800, height: 600, background: 0x111111, resolution: 1, autoDensity: true, antialias: false })
+  app.ticker.maxFPS = 120
+  host.appendChild(app.canvas)
+  const world = new Container()
+  app.stage.addChild(world)
+  const edgesG = new Graphics()
+  world.addChild(edgesG)
+  const g = new Graphics().circle(0, 0, 4).fill({ color: 0x4a7fdf })
+  const texture = app.renderer.generateTexture({ target: g, resolution: 1 })
+  const sprites = Array.from({ length: N }, () => world.addChild(new Sprite({ texture, anchor: 0.5 })))
+  const domCards = cards.map(c => {
+    const el = document.createElement("div")
+    el.className = "scene-card"
+    el.innerHTML = c.attrs.html
+    return world.addChild(new DOMContainer({ element: el }))
+  })
+  ready = true
+  sub = animationFrames().subscribe(({ elapsed }) => {
+    spin(elapsed)
+    layout()
+    for (let i = 0; i < N; i++) sprites[i].position.set(pos[2 * i], pos[2 * i + 1])
+    for (let c = 0; c < 8; c++) domCards[c].position.set(pos[2 * (N + c)], pos[2 * (N + c) + 1])
+    edgesG.clear()
+    for (const [a, b] of edgePairs) edgesG.moveTo(pos[2 * a], pos[2 * a + 1]).lineTo(pos[2 * b], pos[2 * b + 1])
+    edgesG.stroke({ color: 0x2a3a55, width: 1.5 })
+  })
+}
 
 const hud = document.getElementById("hud")
 let lastCount = 0, lastT = performance.now(), fps = 0
@@ -92,10 +134,17 @@ timer(0, 500).subscribe(() => {
   const now = performance.now()
   fps = ((frameCount - lastCount) * 1000) / (now - lastT)
   lastCount = frameCount; lastT = now
-  const info = inspect(host)
-  hud.textContent = `n=${N}  views ${info?.ids.length ?? 0}  cards ${document.querySelectorAll(".scene-card").length}  fps ${fps.toFixed(1)}`
+  hud.textContent = `${RENDERER} n=${N}  views ${viewCount()}  fps ${fps.toFixed(1)}`
 })
-window.__lab = { host, n: N, frames: () => frameCount, inspect: () => inspect(host), sub }
+function viewCount() {
+  if (RENDERER === "pixi") return inspect(host)?.ids.length ?? 0
+  if (RENDERER === "dom") return host.querySelectorAll(".scene-item").length
+  return N + 8
+}
+window.__lab = {
+  host, n: N, renderer: RENDERER, frames: () => frameCount, sub,
+  inspect: () => ({ ids: { length: viewCount() }, ready: RENDERER === "pixi" ? (inspect(host)?.ready ?? false) : ready }),
+}
 </script>
 </body>
 </html>

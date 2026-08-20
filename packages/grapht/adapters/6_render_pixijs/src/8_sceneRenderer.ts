@@ -22,6 +22,8 @@ type State = {
   world: Container
   edges: Graphics
   views: Map<Id, View>
+  slots: View[]
+  slotIds: readonly Id[] | null
   pool: Sprite[]
   nodeTexture: Texture | null
   latest: Frame | null
@@ -67,6 +69,8 @@ function subscribe(host: HTMLElement, options: Required<PixiSceneOptions>): Stat
     world,
     edges,
     views: new Map(),
+    slots: [],
+    slotIds: null,
     pool: [],
     nodeTexture: null,
     latest: null,
@@ -117,7 +121,7 @@ function exit(state: State, view: View): void {
   }
 }
 
-/** Enter is derived from the geometry, not `diff.enter`, so frames collapsed while `init` was pending still mount every id. */
+/** Enter is derived from the geometry, not `diff.enter`, so frames collapsed while `init` was pending still mount every id. Views are slot-aligned to `ids` and rebuilt only when the `ids` array changes or something exits. */
 function draw(state: State, frame: Frame): void {
   const { scene, geometry, diff } = frame
   for (const id of diff.exit) {
@@ -129,15 +133,24 @@ function draw(state: State, frame: Frame): void {
   }
   const ids = geometry.ids
   const pos = geometry.pos
-  for (let i = 0; i < ids.length; i++) {
-    let view = state.views.get(ids[i])
-    if (!view) {
-      const item = scene.items.get(ids[i])
-      if (!item) continue
-      view = enter(state, item)
-      state.views.set(ids[i], view)
+  if (state.slotIds !== ids || diff.exit.length) {
+    state.slots.length = ids.length
+    for (let i = 0; i < ids.length; i++) {
+      let view = state.views.get(ids[i])
+      if (!view) {
+        const item = scene.items.get(ids[i])
+        if (!item) continue
+        view = enter(state, item)
+        state.views.set(ids[i], view)
+      }
+      state.slots[i] = view
     }
-    view.position.set(pos[2 * i], pos[2 * i + 1])
+    state.slotIds = ids
+  }
+  const slots = state.slots
+  for (let i = 0; i < slots.length; i++) {
+    const view = slots[i]
+    if (view) view.position.set(pos[2 * i], pos[2 * i + 1])
   }
   const index = indexOf(geometry)
   const g = state.edges.clear()

@@ -13,10 +13,20 @@ import {
 import type { Diff, Frame, Geometry, Layout, Scene, Tween } from "./0_types"
 import { diff, enterAll } from "./1_diff"
 
+const keepAllCache = new WeakMap<Scene, Diff>()
+const keepAll = (scene: Scene): Diff => {
+  let d = keepAllCache.get(scene)
+  if (!d) {
+    d = { keep: [...scene.items.keys()], enter: [], exit: [] }
+    keepAllCache.set(scene, d)
+  }
+  return d
+}
+
 /** `(scene, geometry)` after layout, with the membership diff against the previous scene. */
 export type Keyframe = { scene: Scene; geometry: Geometry; diff: Diff }
 
-/** scene$ -> keyframe$. Sync layouts emit inline; a pending async layout is dropped when a newer scene arrives. */
+/** scene$ -> keyframe$. Sync layouts emit inline; a pending async layout is dropped when a newer scene arrives. Re-emitting the same `Scene` object skips the diff. */
 export function keyframes(layout: Layout): OperatorFunction<Scene, Keyframe> {
   return scene$ =>
     scene$.pipe(
@@ -24,7 +34,7 @@ export function keyframes(layout: Layout): OperatorFunction<Scene, Keyframe> {
       pairwise(),
       switchMap(([prev, scene]) => {
         if (!scene) return of()
-        const d = prev ? diff(prev.items.keys(), scene.items.keys()) : undefined
+        const d = prev === scene ? keepAll(scene) : prev ? diff(prev.items.keys(), scene.items.keys()) : undefined
         return defer(() => {
           const laid = layout(scene)
           return laid instanceof Promise ? from(laid) : of(laid)

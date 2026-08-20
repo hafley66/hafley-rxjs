@@ -19,7 +19,9 @@ selection, camera fitting, pan, zoom, picking, replacement, resizing, and dispos
 
 - `labs/scene-cube.html?n=<points>`: spinning cube as a constant `Scene` whose `Layout` is the
   rotation; `e2e/5_scene_cube.spec.ts` writes a frames-per-second receipt at 1k, 20k, 100k
-  points to `receipts/generated/scene-cube.load.json`.
+  points to `receipts/generated/scene-cube.load.json`. `?renderer=pixi|dom|native` switches the
+  sink; `e2e/6_scene_compare.spec.ts` writes the three-way receipt
+  `receipts/generated/scene-cube.compare.json`.
 
 ## Scene renderer
 

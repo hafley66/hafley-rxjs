@@ -13,10 +13,17 @@ export function geometryOf(ids: readonly Id[], points: ReadonlyMap<Id, readonly 
   return { ids, pos }
 }
 
-/** `id -> index` for one geometry. Build once per geometry, never per frame. */
+const indexCache = new WeakMap<readonly Id[], ReadonlyMap<Id, number>>()
+
+/** `id -> index` for one geometry, cached per `ids` array identity so per-frame callers pay once per layout. */
 export function indexOf(g: Geometry): ReadonlyMap<Id, number> {
-  const m = new Map<Id, number>()
-  for (let i = 0; i < g.ids.length; i++) m.set(g.ids[i], i)
+  let m = indexCache.get(g.ids)
+  if (!m) {
+    const built = new Map<Id, number>()
+    for (let i = 0; i < g.ids.length; i++) built.set(g.ids[i], i)
+    m = built
+    indexCache.set(g.ids, m)
+  }
   return m
 }
 
