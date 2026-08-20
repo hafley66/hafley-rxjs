@@ -46,10 +46,10 @@ Frames pass through, so renderers chain and each one sees the same `Frame`.
 
 | renderer | sink | use |
 |---|---|---|
-| `dom(options)` | one absolutely positioned element per id, `transform: translate`, edges as SVG `<line>` | near-focus tier: cards, code panels, labels; tens of items |
+| `dom(options)` from `@hafley66/scene` | one absolutely positioned element per id, `transform: translate`, edges as SVG `<line>` | near-focus tier: cards, code panels, labels; tens of items |
+| `pixi(options)` from `@hafley66/scene/pixi` | pooled sprites by id, `DOMContainer` for `kind: "card"`, one `Graphics` for edges; `pixi.js` is an optional peer | the node field, 100k+ |
 
-Pixi lives in `@hafley66/grapht-render-pixijs` as `pixi(options)`. Load receipt for both:
-`packages/grapht/adapters/6_render_pixijs/LEARNINGS.md`.
+Labs, e2e, and the load receipt live in `packages/grapht/adapters/6_render_pixijs` (`LEARNINGS.md`).
 
 ## Scripts
 

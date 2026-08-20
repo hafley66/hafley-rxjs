@@ -702,6 +702,9 @@ importers:
       jsdom:
         specifier: ^26.0.0
         version: 26.1.0
+      pixi.js:
+        specifier: ^8.9.0
+        version: 8.19.0
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2

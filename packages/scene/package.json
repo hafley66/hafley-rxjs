@@ -1,7 +1,7 @@
 {
   "name": "@hafley66/scene",
   "version": "0.0.1",
-  "description": "Keyed scenes, typed-array geometry, diffs, tweens, and rxjs renderer operators",
+  "description": "Keyed scenes, typed-array geometry, diffs, tweens, and renderers (dom, pixi) as rxjs operators",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,6 +12,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./pixi": {
+      "types": "./dist/pixi.d.ts",
+      "import": "./dist/pixi.js"
     }
   },
   "scripts": {
@@ -21,10 +25,12 @@
     "test": "vitest run"
   },
   "peerDependencies": {
+    "pixi.js": "^8.9.0",
     "rxjs": "^7.8.0"
   },
   "devDependencies": {
     "jsdom": "^26.0.0",
+    "pixi.js": "^8.9.0",
     "rxjs": "^7.8.2",
     "typescript": "7.0.2",
     "vite": "^8.2.1",
@@ -39,5 +45,10 @@
     "animation",
     "graph"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependenciesMeta": {
+    "pixi.js": {
+      "optional": true
+    }
+  }
 }

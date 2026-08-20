@@ -26,11 +26,11 @@ selection, camera fitting, pan, zoom, picking, replacement, resizing, and dispos
 ## Scene renderer
 
 ```ts
-import { pixi } from "@hafley66/grapht-render-pixijs"
+import { pixi } from "@hafley66/scene/pixi"
 scene$.pipe(keyframes(layout), frames(tween(), raf$), pixi({ width: 800, height: 600 })(host)).subscribe()
 ```
 
-`pixi(options)` returns a `@hafley66/scene` `Renderer`: subscribe mounts an `Application`
+`pixi(options)` lives in `@hafley66/scene/pixi` (this adapter hosts its labs and e2e) and returns a `Renderer`: subscribe mounts an `Application`
 (frames arriving before `init` resolves are held and drawn once), `next` applies the diff
 (exit -> pool, enter -> pooled sprite or `DOMContainer`, keep -> index walk over `pos`), and
 unsubscribe destroys views, pool, texture, and app.

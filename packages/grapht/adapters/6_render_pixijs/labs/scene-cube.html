@@ -23,7 +23,7 @@
 import { animationFrames, map, of, timer } from "rxjs"
 import { dom, frames, keyframes, tween } from "@hafley66/scene"
 import { Application, Container, DOMContainer, Graphics, Sprite } from "pixi.js"
-import { inspect, pixi } from "../src/8_sceneRenderer.ts"
+import { inspect, pixi } from "@hafley66/scene/pixi"
 
 const params = new URLSearchParams(location.search)
 const N = Number(params.get("n") ?? 2000)

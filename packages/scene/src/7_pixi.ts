@@ -1,6 +1,10 @@
 import { type Frame, type Id, type Item, indexOf, type Renderer, renderer } from "@hafley66/scene"
 import { Application, Container, DOMContainer, Graphics, Sprite, type Texture } from "pixi.js"
-import { EDGE_COLOR, EDGE_THICKNESS, NODE_COLOR, NODE_RADIUS } from "./2_projection.js"
+
+const NODE_RADIUS = 4
+const EDGE_THICKNESS = 1.5
+const NODE_COLOR = 0x4a7fdf
+const EDGE_COLOR = 0x2a3a55
 
 export type PixiSceneOptions = {
   width?: number
