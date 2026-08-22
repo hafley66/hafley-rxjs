@@ -54,3 +54,25 @@ export {
 export { directoryBytes, hashFile, hashFileIfExists, sha256Hex } from "./3_hash.js"
 export type { ProcessResult } from "./4_process.js"
 export { measureCommand } from "./4_process.js"
+
+export type {
+  BoardPlacement,
+  BoardRevision,
+  EntityGeometry,
+  EntityId,
+  GeometrySnapshot,
+  GraphEntity,
+  GraphLanguage,
+  GraphRelation,
+  GraphTopology,
+  LayoutInput,
+  LayoutOutput,
+  RenderedArtifact,
+  RenderOptions,
+  RenderRevision,
+  ReconciliationResult,
+  SequenceCollapseState,
+  SequenceFocus,
+  SourceRevision,
+  SvgBinding,
+} from "@hafley66/grapht-model"
