@@ -1,0 +1,131 @@
+import {
+  isProxyTreeNumericKey,
+  type ProxyTree,
+  type ProxyTreeApply,
+  type ProxyTreeFinalizer,
+  type ProxyTreeNodeContext,
+  type ProxyTreeType,
+  type ProxyTreeWeakReference,
+  type ProxyTreeWeakRuntime,
+} from "./0_ProxyTree.js"
+
+const ROOT = Symbol("ProxyTreeThin.root")
+const PARENT = Symbol("ProxyTreeThin.parent")
+const KEY = Symbol("ProxyTreeThin.key")
+const STRONG_CHILDREN = Symbol("ProxyTreeThin.strongChildren")
+const NUMERIC_CHILDREN = Symbol("ProxyTreeThin.numericChildren")
+
+type RootRecord = {
+  createNode(parent?: NodeTarget, key?: string): object
+  finalizer: ProxyTreeFinalizer<FinalizerHeldValue, object>
+  weakRuntime: ProxyTreeWeakRuntime
+  root?: object
+}
+
+type NodeTarget = Record<PropertyKey, unknown> & {
+  [ROOT]: RootRecord
+  [PARENT]?: NodeTarget
+  [KEY]?: string
+  [STRONG_CHILDREN]?: Map<PropertyKey, object>
+  [NUMERIC_CHILDREN]?: Map<string, ProxyTreeWeakReference<object>>
+}
+
+type FinalizerHeldValue = {
+  cache: Map<string, ProxyTreeWeakReference<object>>
+  key: string
+  reference: ProxyTreeWeakReference<object>
+}
+
+const nodeHandler: ProxyHandler<NodeTarget> = {
+  get(target, key, receiver) {
+    if (Reflect.has(target, key)) return Reflect.get(target, key, receiver)
+    if (typeof key === "symbol") return undefined
+
+    if (isProxyTreeNumericKey(key)) {
+      const cache = target[NUMERIC_CHILDREN] ??= new Map()
+      const cached = cache.get(key)
+      const child = cached?.deref()
+      if (child) return child
+
+      const created = target[ROOT].createNode(target, key)
+      const reference = target[ROOT].weakRuntime.reference(created)
+      cache.set(key, reference)
+      target[ROOT].finalizer.register(created, { cache, key, reference }, created)
+      return created
+    }
+
+    const cache = target[STRONG_CHILDREN] ??= new Map()
+    const cached = cache.get(key)
+    if (cached) return cached
+    const created = target[ROOT].createNode(target, key)
+    cache.set(key, created)
+    return created
+  },
+}
+
+function materializePath(node: NodeTarget): string[] {
+  const path = new Array<string>(node[PARENT] ? pathDepth(node) : 0)
+  let current: NodeTarget | undefined = node
+  for (let index = path.length - 1; index >= 0; index--) {
+    path[index] = current![KEY]!
+    current = current![PARENT]
+  }
+  return path
+}
+
+function pathDepth(node: NodeTarget): number {
+  let depth = 0
+  for (let current = node[PARENT]; current; current = current[PARENT]) depth++
+  return depth
+}
+
+const nativeWeakRuntime: ProxyTreeWeakRuntime = {
+  reference: <T extends object>(value: T) => new WeakRef(value),
+  finalizer: <HeldValue extends object, Token extends object>(
+    cleanup: (heldValue: HeldValue) => void,
+  ) => new FinalizationRegistry(cleanup),
+}
+
+export function createProxyTreeThin<
+  T,
+  Leaf extends ProxyTreeType,
+  Extension extends ProxyTreeType,
+>(options: {
+  createLeaf(
+    context: ProxyTreeNodeContext<T, Leaf, Extension>,
+  ): ProxyTreeApply<Leaf, unknown>
+  createExtension(
+    context: ProxyTreeNodeContext<T, Leaf, Extension>,
+  ): ProxyTreeApply<Extension, unknown>
+  weakRuntime?: ProxyTreeWeakRuntime
+}): ProxyTree<T, Leaf, Extension> {
+  const weakRuntime = options.weakRuntime ?? nativeWeakRuntime
+  const rootRecord = { weakRuntime } as RootRecord
+
+  rootRecord.finalizer = weakRuntime.finalizer<FinalizerHeldValue, object>(
+    ({ cache, key, reference }) => {
+      if (cache.get(key) === reference) cache.delete(key)
+    },
+  )
+
+  rootRecord.createNode = (parent, key) => {
+    const target = {
+      [ROOT]: rootRecord,
+      [PARENT]: parent,
+      [KEY]: key,
+    } as NodeTarget
+    const proxy = new Proxy(target, nodeHandler)
+    if (!parent) rootRecord.root = proxy
+
+    const context = {
+      root: rootRecord.root as ProxyTree<T, Leaf, Extension>,
+      node: proxy as unknown as ProxyTree<unknown, Leaf, Extension>,
+      path: materializePath(target),
+    }
+    target.$ = options.createLeaf(context)
+    Object.assign(target, options.createExtension(context))
+    return proxy
+  }
+
+  return rootRecord.createNode() as ProxyTree<T, Leaf, Extension>
+}
