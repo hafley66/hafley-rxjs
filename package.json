@@ -22,6 +22,7 @@
     "release:publish": "pnpm release:check && changeset publish",
     "smoke:sequence-renderers": "node scripts/0_sequenceRendererSmoke.mjs",
     "test:sequence-fixtures": "vitest run scripts/1_sequenceFixtures.test.ts",
+    "test:sequence-local-documents": "vitest run packages/mmd/src/1_parse.test.ts packages/d2/src/1_parse.test.ts",
     "test:sequence-receipts": "vitest run scripts/2_sequenceRenderReceipts.test.ts",
     "test:sequence-renderers": "vitest run scripts/0_sequenceRendererSmoke.test.ts"
   },
