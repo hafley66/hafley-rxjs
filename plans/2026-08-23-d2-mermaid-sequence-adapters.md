@@ -15,9 +15,29 @@ Existing work remains reference material:
 No existing branch is the integration base until the source and SVG receipts
 in sections 0 and 1 pass.
 
+## Preflight. Renderer toolchain pin
+
+The initial fixture run established these repository facts:
+
+- `/opt/homebrew/bin/d2` exists at version `0.7.1`, outside repository ownership.
+- No Mermaid renderer dependency appears in the workspace manifests or lockfile.
+- Neither `mmdc` nor `mermaid` exists on `PATH`.
+
+### Definition of done
+
+- Mermaid and D2 native renderers are declared by repository-owned version pins.
+- Exact package names, versions, commands, and deterministic options are recorded.
+- Each renderer passes one headless minimal-sequence smoke render.
+- Missing renderer state produces an explicit diagnostic.
+- This gate introduces no occurrence IDs, semantic normalization, SVG bindings,
+  or browser geometry.
+
 ## Dependency order
 
 ```text
+preflight renderer toolchain
+  |
+  v
 0 equivalent fixtures
   |
   +--> 1a Mermaid native receipt --> 2a Mermaid local document --> 4a Mermaid SVG bindings

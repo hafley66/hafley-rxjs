@@ -53,3 +53,9 @@ Implement the dependency-ordered sequence adapter plan in `plans/2026-08-23-d2-m
 ## Implementation Notes
 
 The written plan is authoritative for signatures, instance lifetimes, storage, uniqueness, and stop conditions. Existing reference branches are evidence sources and are not integration bases until their owning issue gate passes.
+
+## Decisions
+
+### 2026-08-23T18:52:00Z · @codex
+
+Inserted @sequence-renderer-toolchain before @sequence-fixtures after the first Luna run proved renderer pins were absent. The canonical issuectl DAG supersedes the original table for this added prerequisite.
