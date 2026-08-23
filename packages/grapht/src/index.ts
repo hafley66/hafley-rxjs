@@ -71,3 +71,18 @@ export {
   occurrenceId,
   validateSequenceRelations,
 } from "./12_sequenceIdentity.js"
+export type {
+  NativeRenderReceipt,
+  NativeSvgElement,
+  SvgBinding,
+  SvgBindingReceipt,
+  SvgBindingRole,
+} from "./13_sequenceSvgBinding.js"
+export {
+  decorateSvg,
+  descendantsOf,
+  elementIdForBinding,
+  parentPath,
+  pathKey,
+  SvgBindingBuilder,
+} from "./13_sequenceSvgBinding.js"
