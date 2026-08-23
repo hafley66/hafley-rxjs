@@ -19,7 +19,9 @@
     "release:version": "changeset version",
     "release:check": "node scripts/1_releaseCheck.mjs --structure-only",
     "release:audit": "node scripts/1_releaseCheck.mjs",
-    "release:publish": "pnpm release:check && changeset publish"
+    "release:publish": "pnpm release:check && changeset publish",
+    "smoke:sequence-renderers": "node scripts/0_sequenceRendererSmoke.mjs",
+    "test:sequence-renderers": "vitest run scripts/0_sequenceRendererSmoke.test.ts"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
@@ -27,6 +29,8 @@
     "@oxc-parser/binding-wasm32-wasi": "^0.144.0",
     "@typescript/typescript6": "6.0.2",
     "@vitest/ui": "^4.1.10",
+    "mermaid": "11.16.0",
+    "playwright": "1.62.1",
     "publint": "^0.3.23",
     "typedoc": "^0.28.15",
     "typescript": "7.0.2",
