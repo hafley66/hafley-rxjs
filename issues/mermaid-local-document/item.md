@@ -2,11 +2,11 @@
 created: 2026-08-23
 updated: 2026-08-23
 type: task
-assignee: sol
-status: open
+assignee: terra
+status: in-progress
 priority: high
 epic: sequence-adapters
-labels: [sequence, sol-high, mermaid]
+labels: [sequence, mermaid, terra-high]
 collision: [packages-mmd]
 blocked_by: ['@mermaid-render-receipt']
 lane: sequence-mermaid
@@ -37,3 +37,9 @@ Mermaid half of section 2 in `plans/2026-08-23-d2-mermaid-sequence-adapters.md`.
 ## Implementation Notes
 
 Agent route: gpt-5.6-sol at high. Preserve language-owned forms and source-local identity. Do not claim cross-revision stability.
+
+## Agent Runs
+
+### 2026-08-23T19:19:51Z · @codex
+
+Native gpt-5.6-terra at high dispatched as /root/sequence_local_documents in the existing Boop worktree. Explicit user routing overrides the original sol-high assignment. Coordinator retains issue tracker ownership.
