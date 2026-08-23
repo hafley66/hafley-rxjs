@@ -89,6 +89,7 @@ const occurrenceSchema = z.object({
 const relationSchema = z.object({
   id: z.string().min(1),
   kind: z.enum(["message", "contains", "activates"]),
+  occurrenceId: z.string().min(1).optional(),
   sourceId: z.string().min(1),
   targetId: z.string().min(1),
   ordinal: z.number().int().nonnegative(),

@@ -489,6 +489,7 @@ describe("grapht-sequence/0 shared artifact", () => {
               {
                 "id": "d2:49a15df1:relation:2",
                 "kind": "message",
+                "occurrenceId": "d2:49a15df1:edge:alice->bob.work:repeat#3",
                 "ordinal": 2,
                 "sourceId": "d2:49a15df1:actor:alice#0",
                 "targetId": "d2:49a15df1:actor:bob#1",
@@ -503,6 +504,7 @@ describe("grapht-sequence/0 shared artifact", () => {
               {
                 "id": "d2:49a15df1:relation:4",
                 "kind": "message",
+                "occurrenceId": "d2:49a15df1:edge:bob.work->bob.work:inspect#4",
                 "ordinal": 4,
                 "sourceId": "d2:49a15df1:actor:bob#1",
                 "targetId": "d2:49a15df1:actor:bob#1",
@@ -524,6 +526,7 @@ describe("grapht-sequence/0 shared artifact", () => {
               {
                 "id": "d2:49a15df1:relation:7",
                 "kind": "message",
+                "occurrenceId": "d2:49a15df1:edge:alice->bob.work:repeat#6",
                 "ordinal": 7,
                 "sourceId": "d2:49a15df1:actor:alice#0",
                 "targetId": "d2:49a15df1:actor:bob#1",
@@ -531,6 +534,7 @@ describe("grapht-sequence/0 shared artifact", () => {
               {
                 "id": "d2:49a15df1:relation:8",
                 "kind": "message",
+                "occurrenceId": "d2:49a15df1:edge:bob->archive:archive#7",
                 "ordinal": 8,
                 "sourceId": "d2:49a15df1:actor:bob#1",
                 "targetId": "d2:49a15df1:actor:archive#2",
@@ -545,6 +549,7 @@ describe("grapht-sequence/0 shared artifact", () => {
               {
                 "id": "d2:49a15df1:relation:10",
                 "kind": "activates",
+                "occurrenceId": "d2:49a15df1:span:bob.work#0",
                 "ordinal": 10,
                 "sourceId": "d2:49a15df1:span:bob.work#0",
                 "targetId": "d2:49a15df1:actor:bob#1",
@@ -930,6 +935,7 @@ describe("grapht-sequence/0 shared artifact", () => {
               {
                 "id": "mermaid:092e83e2:relation:2",
                 "kind": "message",
+                "occurrenceId": "mermaid:092e83e2:message:alice->>bob:repeat#2",
                 "ordinal": 2,
                 "sourceId": "mermaid:092e83e2:participant:alice#0",
                 "targetId": "mermaid:092e83e2:participant:bob#1",
@@ -944,6 +950,7 @@ describe("grapht-sequence/0 shared artifact", () => {
               {
                 "id": "mermaid:092e83e2:relation:4",
                 "kind": "activates",
+                "occurrenceId": "mermaid:092e83e2:activation:activate:bob#3",
                 "ordinal": 4,
                 "sourceId": "mermaid:092e83e2:activation:activate:bob#3",
                 "targetId": "mermaid:092e83e2:participant:bob#1",
@@ -958,6 +965,7 @@ describe("grapht-sequence/0 shared artifact", () => {
               {
                 "id": "mermaid:092e83e2:relation:6",
                 "kind": "message",
+                "occurrenceId": "mermaid:092e83e2:message:bob->>bob:inspect#4",
                 "ordinal": 6,
                 "sourceId": "mermaid:092e83e2:participant:bob#1",
                 "targetId": "mermaid:092e83e2:participant:bob#1",
@@ -979,6 +987,7 @@ describe("grapht-sequence/0 shared artifact", () => {
               {
                 "id": "mermaid:092e83e2:relation:9",
                 "kind": "message",
+                "occurrenceId": "mermaid:092e83e2:message:alice->>bob:repeat#6",
                 "ordinal": 9,
                 "sourceId": "mermaid:092e83e2:participant:alice#0",
                 "targetId": "mermaid:092e83e2:participant:bob#1",
@@ -986,6 +995,7 @@ describe("grapht-sequence/0 shared artifact", () => {
               {
                 "id": "mermaid:092e83e2:relation:12",
                 "kind": "message",
+                "occurrenceId": "mermaid:092e83e2:message:bob->>archive:archive#8",
                 "ordinal": 12,
                 "sourceId": "mermaid:092e83e2:participant:bob#1",
                 "targetId": "mermaid:092e83e2:participant:archive#2",

@@ -21,6 +21,7 @@ export type SequenceOccurrence = {
 export type SequenceRelation = {
   id: string
   kind: "message" | "contains" | "activates"
+  occurrenceId?: string
   sourceId: string
   targetId: string
   ordinal: number

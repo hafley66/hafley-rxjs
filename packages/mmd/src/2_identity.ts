@@ -25,10 +25,11 @@ export function identifyMermaidOccurrences(document: MermaidSequenceDocument): S
   const actorIds = new Map<string, string>()
   let relationOrdinal = 0
 
-  const addRelation = (kind: SequenceRelation["kind"], sourceId: string, targetId: string) => {
+  const addRelation = (kind: SequenceRelation["kind"], sourceId: string, targetId: string, occurrenceId?: string) => {
     relations.push({
       id: `mermaid:${revision}:relation:${relationOrdinal}`,
       kind,
+      ...(occurrenceId ? { occurrenceId } : {}),
       sourceId,
       targetId,
       ordinal: relationOrdinal++,
@@ -61,11 +62,16 @@ export function identifyMermaidOccurrences(document: MermaidSequenceDocument): S
     if (parentId) addRelation("contains", parentId, id)
 
     if (statement.kind === "message") {
-      addRelation("message", actorIds.get(statement.from) ?? statement.from, actorIds.get(statement.to) ?? statement.to)
+      addRelation(
+        "message",
+        actorIds.get(statement.from) ?? statement.from,
+        actorIds.get(statement.to) ?? statement.to,
+        id,
+      )
     }
 
     if (statement.kind === "activation") {
-      addRelation("activates", id, actorIds.get(statement.target) ?? statement.target)
+      addRelation("activates", id, actorIds.get(statement.target) ?? statement.target, id)
     }
   }
 

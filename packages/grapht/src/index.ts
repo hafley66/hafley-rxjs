@@ -102,3 +102,7 @@ export {
   SEQUENCE_ARTIFACT_PROTOCOL,
   sequenceArtifactSchema,
 } from "./14_sequenceArtifact.js"
+export type { EntityGeometry, GeometryDiagnostic, Matrix2D, Rect, SequenceGeometry } from "./15_sequenceGeometry.js"
+export { measureSequenceSvg } from "./15_sequenceGeometry.js"
+export type { SequenceFocus } from "./16_sequenceFocus.js"
+export { resolveSequenceFocus } from "./16_sequenceFocus.js"

@@ -24,10 +24,11 @@ export function identifyD2Occurrences(document: D2SequenceDocument): SequenceOcc
   const groupStructuralKeys = new Map<string, string>()
   let relationOrdinal = 0
 
-  const addRelation = (kind: SequenceRelation["kind"], sourceId: string, targetId: string) => {
+  const addRelation = (kind: SequenceRelation["kind"], sourceId: string, targetId: string, occurrenceId?: string) => {
     relations.push({
       id: `d2:${revision}:relation:${relationOrdinal}`,
       kind,
+      ...(occurrenceId ? { occurrenceId } : {}),
       sourceId,
       targetId,
       ordinal: relationOrdinal++,
@@ -63,6 +64,7 @@ export function identifyD2Occurrences(document: D2SequenceDocument): SequenceOcc
         "message",
         actorIds.get(statement.source.actor) ?? statement.source.actor,
         actorIds.get(statement.target.actor) ?? statement.target.actor,
+        id,
       )
     }
   }
@@ -102,7 +104,7 @@ export function identifyD2Occurrences(document: D2SequenceDocument): SequenceOcc
       label: span.name,
     })
     if (parentId) addRelation("contains", parentId, id)
-    addRelation("activates", id, actorIds.get(span.actor) ?? span.actor)
+    addRelation("activates", id, actorIds.get(span.actor) ?? span.actor, id)
   }
 
   return { language: "d2", occurrences, relations }
