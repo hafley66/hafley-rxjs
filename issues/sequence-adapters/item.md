@@ -3,9 +3,11 @@ created: 2026-08-23
 updated: 2026-08-23
 type: epic
 owner: codex
-status: open
+status: done
 priority: high
 labels: [sequence, d2, mermaid]
+closed: 2026-08-23
+closed_by: codex
 ---
 
 # D2 and Mermaid sequence adapters
@@ -38,17 +40,17 @@ Implement the dependency-ordered sequence adapter plan in `plans/2026-08-23-d2-m
 
 ## Acceptance Criteria
 
-- [ ] Every child issue passes `issuectl ready`.
-- [ ] The final `issuectl dag` contains no open blocker cycle.
-- [ ] Package dependency direction matches the written plan.
-- [ ] Cross-package fixtures validate serialized outputs at package boundaries.
-- [ ] Stop-condition evidence is recorded before any downstream type or package boundary changes.
+- [x] Every child issue passes `issuectl ready`.
+- [x] The final `issuectl dag` contains no open blocker cycle.
+- [x] Package dependency direction matches the written plan.
+- [x] Cross-package fixtures validate serialized outputs at package boundaries.
+- [x] Stop-condition evidence is recorded before any downstream type or package boundary changes.
 
 ## Tests Run
 
-- [ ] `issuectl --json doctor`
-- [ ] `issuectl --json dag`
-- [ ] Package gates recorded by each child issue
+- [x] `issuectl --json doctor`
+- [x] `issuectl --json dag`
+- [x] Package gates recorded by each child issue
 
 ## Implementation Notes
 
@@ -59,3 +61,15 @@ The written plan is authoritative for signatures, instance lifetimes, storage, u
 ### 2026-08-23T18:52:00Z · @codex
 
 Inserted @sequence-renderer-toolchain before @sequence-fixtures after the first Luna run proved renderer pins were absent. The canonical issuectl DAG supersedes the original table for this added prerequisite.
+
+## Comments
+
+### 2026-08-23T21:07:48Z · @codex
+
+Final gate: all 16 child issues return ready=true. issuectl doctor --json reports zero schema, reference, cycle, consistency, or migration findings. issuectl dag --json reports no blocked_by cycles and no open sequence lane head. Package direction and complete serialized Mermaid/D2 boundary snapshots pass; clean-output package builds precede the focused gate. The renderer-toolchain stop condition was recorded before fixture, type, and package work.
+
+## Resolution
+
+### 2026-08-23T21:07:48Z · @codex
+
+All child gates, dependency checks, serialized fixtures, tracker checks, and sequence tests passed.
