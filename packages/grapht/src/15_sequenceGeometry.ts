@@ -1,13 +1,12 @@
-import { chromium } from "playwright"
-
-import { documentFingerprint } from "./12_sequenceIdentity.js"
+import type { SequenceArtifact } from "@hafley66/grapht-model"
 import {
   decorateSvg,
+  documentFingerprint,
   type NativeRenderReceipt,
   type SvgBindingReceipt,
   type SvgBindingRole,
-} from "./13_sequenceSvgBinding.js"
-import type { SequenceArtifact } from "./14_sequenceArtifact.js"
+} from "@hafley66/grapht-model"
+import { chromium } from "playwright"
 
 export type Rect = { x: number; y: number; width: number; height: number }
 export type Matrix2D = { a: number; b: number; c: number; d: number; e: number; f: number }

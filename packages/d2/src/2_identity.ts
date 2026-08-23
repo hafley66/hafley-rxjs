@@ -4,7 +4,7 @@ import {
   type SequenceOccurrence,
   type SequenceOccurrenceDocument,
   type SequenceRelation,
-} from "../../grapht/src/12_sequenceIdentity"
+} from "@hafley66/grapht-model"
 import type { D2Edge, D2Group, D2Note, D2SequenceDocument, D2Statement } from "./0_types"
 
 function actorStructuralKey(id: string): string {

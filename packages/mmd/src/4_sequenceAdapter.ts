@@ -1,10 +1,6 @@
 import { fileURLToPath } from "node:url"
-
+import { documentFingerprint, type NativeSvgElement, type SequenceSourceAdapter } from "@hafley66/grapht-model"
 import { chromium, type Page } from "playwright"
-
-import { documentFingerprint } from "../../grapht/src/12_sequenceIdentity"
-import type { NativeSvgElement } from "../../grapht/src/13_sequenceSvgBinding"
-import type { SequenceSourceAdapter } from "../../grapht/src/14_sequenceArtifact"
 import { parseMermaidSequence } from "./1_parse"
 import { identifyMermaidOccurrences } from "./2_identity"
 import { bindMermaidSvg } from "./3_bindSvg"

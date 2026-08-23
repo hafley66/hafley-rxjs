@@ -27,12 +27,16 @@
     "test:sequence-geometry-focus": "vitest run packages/grapht/tests/15_sequenceGeometryFocus.test.ts",
     "test:sequence-board": "vitest run packages/grapht/tests/17_sequenceBoard.test.ts packages/grapht/tests/18_sequenceBoardReceipts.test.ts",
     "test:sequence-collapse-placement": "vitest run packages/grapht/tests/19_sequenceCollapsePlacement.test.ts",
+    "test:sequence-package-gate": "vitest run packages/grapht/tests/20_sequencePackageGate.test.ts",
     "test:sequence-identity": "vitest run packages/grapht/tests/12_sequenceIdentity.test.ts",
     "test:sequence-local-documents": "vitest run packages/mmd/src/1_parse.test.ts packages/d2/src/1_parse.test.ts",
     "test:sequence-receipts": "vitest run scripts/2_sequenceRenderReceipts.test.ts",
     "test:sequence-renderers": "vitest run scripts/0_sequenceRendererSmoke.test.ts"
   },
   "devDependencies": {
+    "@hafley66/d2": "workspace:*",
+    "@hafley66/grapht-model": "workspace:*",
+    "@hafley66/mmd": "workspace:*",
     "@arethetypeswrong/cli": "^0.18.5",
     "@changesets/cli": "^3.0.0",
     "@oxc-parser/binding-wasm32-wasi": "^0.144.0",

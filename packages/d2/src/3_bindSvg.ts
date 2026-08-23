@@ -1,11 +1,11 @@
-import type { SequenceOccurrenceDocument } from "../../grapht/src/12_sequenceIdentity"
+import type { SequenceOccurrenceDocument } from "@hafley66/grapht-model"
 import {
   descendantsOf,
   type NativeRenderReceipt,
   parentPath,
   SvgBindingBuilder,
   type SvgBindingReceipt,
-} from "../../grapht/src/13_sequenceSvgBinding"
+} from "@hafley66/grapht-model"
 import type { D2SequenceDocument } from "./0_types"
 
 function firstDescendant(

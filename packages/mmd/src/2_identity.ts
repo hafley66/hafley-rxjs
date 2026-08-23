@@ -4,7 +4,7 @@ import {
   type SequenceOccurrence,
   type SequenceOccurrenceDocument,
   type SequenceRelation,
-} from "../../grapht/src/12_sequenceIdentity"
+} from "@hafley66/grapht-model"
 import type {
   MermaidActivationStatement,
   MermaidGroupStatement,

@@ -1,5 +1,4 @@
-import { documentFingerprint } from "./12_sequenceIdentity.js"
-import type { SequenceArtifact } from "./14_sequenceArtifact.js"
+import { documentFingerprint, type SequenceArtifact } from "@hafley66/grapht-model"
 import type { EntityGeometry, Rect, SequenceGeometry } from "./15_sequenceGeometry.js"
 
 export type SequenceCollapseState = { collapsedGroupIds: string[] }

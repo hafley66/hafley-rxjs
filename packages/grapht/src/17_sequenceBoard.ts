@@ -1,8 +1,13 @@
-import { documentFingerprint } from "./12_sequenceIdentity.js"
-import { decorateSvg, type NativeRenderReceipt, type SvgBindingReceipt } from "./13_sequenceSvgBinding.js"
-import type { SequenceArtifact } from "./14_sequenceArtifact.js"
+import {
+  decorateSvg,
+  documentFingerprint,
+  type NativeRenderReceipt,
+  resolveSequenceFocus,
+  type SequenceArtifact,
+  type SequenceFocus,
+  type SvgBindingReceipt,
+} from "@hafley66/grapht-model"
 import type { SequenceGeometry } from "./15_sequenceGeometry.js"
-import { resolveSequenceFocus, type SequenceFocus } from "./16_sequenceFocus.js"
 
 export type SequenceCamera = { x: number; y: number; scale: number }
 export type SequenceBoardInput = {
