@@ -3,7 +3,7 @@ created: 2026-08-23
 updated: 2026-08-23
 type: task
 assignee: luna
-status: open
+status: in-progress
 priority: high
 epic: sequence-adapters
 labels: [sequence, luna-xhigh, fixtures]
@@ -47,4 +47,9 @@ Dispatched native gpt-5.6-luna at xhigh in .boop-worktrees/feature/sequence-fixt
 ### 2026-08-23T18:51:32Z · @codex
 
 Luna xhigh stop condition: d2 exists only at /opt/homebrew/bin/d2 version 0.7.1; no Mermaid dependency appears in package.json, workspace manifests, or pnpm-lock.yaml; neither mmdc nor mermaid exists on PATH. Worktree remained clean and no commit was created.
+
+### 2026-08-23T19:04:13Z · @codex
+
+Manual continuation on top of renderer commit 48901c3 after @sequence-renderer-toolchain passed.
+
 
