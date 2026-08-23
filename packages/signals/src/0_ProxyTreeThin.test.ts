@@ -80,4 +80,16 @@ describe("createProxyTreeThin", () => {
       }
     `)
   })
+
+  it("preserves a sparse child when its index later enters the dense window", () => {
+    const tree = createProxyTreeThin<Array<string>, LeafType, ExtensionType>({
+      createLeaf: ({ path }) => ({ path }),
+      createExtension: ({ path }) => ({ $field: { path } }),
+    })
+
+    const sparse = tree[100]
+    for (let index = 0; index < 100; index++) void tree[index]
+
+    expect(tree[100]).toBe(sparse)
+  })
 })

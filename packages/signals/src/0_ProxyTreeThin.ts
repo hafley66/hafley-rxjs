@@ -12,7 +12,10 @@ import {
 const ROOT = Symbol("ProxyTreeThin.root")
 const PARENT = Symbol("ProxyTreeThin.parent")
 const KEY = Symbol("ProxyTreeThin.key")
-const NUMERIC_CHILDREN = Symbol("ProxyTreeThin.numericChildren")
+const DENSE_CHILDREN = Symbol("ProxyTreeThin.denseChildren")
+const SPARSE_CHILDREN = Symbol("ProxyTreeThin.sparseChildren")
+
+const MAX_DENSE_GAP = 64
 
 type RootRecord = {
   createNode(parent?: NodeTarget, key?: string): object
@@ -25,12 +28,13 @@ type NodeTarget = Record<PropertyKey, unknown> & {
   [ROOT]?: RootRecord
   [PARENT]?: NodeTarget
   [KEY]?: string
-  [NUMERIC_CHILDREN]?: Map<string, NumericReference>
+  [DENSE_CHILDREN]?: Array<NumericReference | undefined>
+  [SPARSE_CHILDREN]?: Map<string, NumericReference>
 }
 
 type NumericReference = ProxyTreeWeakReference<object> & {
-  cache: Map<string, NumericReference>
-  key: string
+  cache: Array<NumericReference | undefined> | Map<string, NumericReference>
+  key: number | string
 }
 
 const nodeHandler: ProxyHandler<NodeTarget> = {
@@ -40,14 +44,26 @@ const nodeHandler: ProxyHandler<NodeTarget> = {
 
     if (isProxyTreeNumericKey(key)) {
       const root = rootOf(target)
-      const cache = target[NUMERIC_CHILDREN] ??= new Map()
-      const cached = cache.get(key)
+      const index = Number(key)
+      const dense = target[DENSE_CHILDREN]
+      const sparse = target[SPARSE_CHILDREN]
+      const cached = dense?.[index] ?? sparse?.get(key)
       const child = cached?.deref()
       if (child) return child
 
+      const useDense = index <= (dense?.length ?? 0) + MAX_DENSE_GAP
+      const cache = useDense
+        ? target[DENSE_CHILDREN] ??= []
+        : target[SPARSE_CHILDREN] ??= new Map()
+
       const created = root.createNode(target, key)
-      const reference = Object.assign(root.weakRuntime.reference(created), { cache, key })
-      cache.set(key, reference)
+      const cacheKey = Array.isArray(cache) ? index : key
+      const reference = Object.assign(root.weakRuntime.reference(created), {
+        cache,
+        key: cacheKey,
+      })
+      if (Array.isArray(cache)) cache[index] = reference
+      else cache.set(key, reference)
       root.finalizer.register(created, reference, created)
       return created
     }
@@ -105,8 +121,14 @@ export function createProxyTreeThin<
 
   rootRecord.finalizer = weakRuntime.finalizer<NumericReference, object>(
     (reference) => {
-      if (reference.cache.get(reference.key) === reference) {
-        reference.cache.delete(reference.key)
+      if (Array.isArray(reference.cache)) {
+        const index = reference.key as number
+        if (reference.cache[index] === reference) reference.cache[index] = undefined
+        if (index === reference.cache.length - 1) {
+          while (reference.cache.length && !reference.cache.at(-1)) reference.cache.length--
+        }
+      } else if (reference.cache.get(reference.key as string) === reference) {
+        reference.cache.delete(reference.key as string)
       }
     },
   )
