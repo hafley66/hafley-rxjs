@@ -12,7 +12,6 @@ import {
 const ROOT = Symbol("ProxyTreeThin.root")
 const PARENT = Symbol("ProxyTreeThin.parent")
 const KEY = Symbol("ProxyTreeThin.key")
-const STRONG_CHILDREN = Symbol("ProxyTreeThin.strongChildren")
 const NUMERIC_CHILDREN = Symbol("ProxyTreeThin.numericChildren")
 
 type RootRecord = {
@@ -26,7 +25,6 @@ type NodeTarget = Record<PropertyKey, unknown> & {
   [ROOT]?: RootRecord
   [PARENT]?: NodeTarget
   [KEY]?: string
-  [STRONG_CHILDREN]?: Map<PropertyKey, object>
   [NUMERIC_CHILDREN]?: Map<string, NumericReference>
 }
 
@@ -54,11 +52,8 @@ const nodeHandler: ProxyHandler<NodeTarget> = {
       return created
     }
 
-    const cache = target[STRONG_CHILDREN] ??= new Map()
-    const cached = cache.get(key)
-    if (cached) return cached
     const created = rootOf(target).createNode(target, key)
-    cache.set(key, created)
+    target[key] = created
     return created
   },
 }
