@@ -1,0 +1,15 @@
+sequenceDiagram
+  participant alice as Alice
+  participant bob as Bob
+  participant archive as Archive Service Far Right
+  loop outer exchange
+    alt nested review
+      alice->>bob: repeat
+      activate bob
+      bob->>bob: inspect
+      Note right of bob: local note
+      alice->>bob: repeat
+      deactivate bob
+      bob->>archive: archive
+    end
+  end
