@@ -3,7 +3,7 @@ created: 2026-08-23
 updated: 2026-08-23
 type: task
 assignee: terra
-status: open
+status: in-progress
 priority: high
 epic: sequence-adapters
 labels: [sequence, terra-high, artifact]
@@ -38,3 +38,9 @@ Section 5 of `plans/2026-08-23-d2-mermaid-sequence-adapters.md`.
 ## Implementation Notes
 
 Agent route: gpt-5.6-terra at high. Language-local documents remain outside the serialized shared artifact.
+
+## Agent Runs
+
+### 2026-08-23T19:55:21Z · @codex
+
+Native gpt-5.6-terra at high reused as /root/sequence_local_documents from commit 57e2aea. Coordinator retains issue tracker ownership.
