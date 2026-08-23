@@ -2,11 +2,11 @@
 created: 2026-08-23
 updated: 2026-08-23
 type: task
-assignee: sol
-status: open
+assignee: terra
+status: in-progress
 priority: normal
 epic: sequence-adapters
-labels: [sequence, sol-high, collapse]
+labels: [sequence, collapse, terra-high]
 collision: [sequence-board]
 blocked_by: ['@sequence-board-projection']
 lane: sequence-board
@@ -38,3 +38,9 @@ Section 9a of `plans/2026-08-23-d2-mermaid-sequence-adapters.md`.
 ## Implementation Notes
 
 Agent route: gpt-5.6-sol at high. Collapse projects immutable artifact and geometry into a new geometry record.
+
+## Agent Runs
+
+### 2026-08-23T20:35:23Z · @codex
+
+Native gpt-5.6-terra at high reused as /root/sequence_local_documents from commit e9945d2. Explicit user routing overrides sol-high; coordinator retains issue tracker ownership.
