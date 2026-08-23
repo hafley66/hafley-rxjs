@@ -2,11 +2,11 @@
 created: 2026-08-23
 updated: 2026-08-23
 type: task
-assignee: sol
-status: open
+assignee: terra
+status: in-progress
 priority: high
 epic: sequence-adapters
-labels: [sequence, sol-high, d2, svg]
+labels: [sequence, d2, svg, terra-high]
 collision: [packages-d2]
 blocked_by: ['@d2-render-receipt', '@d2-local-document', '@sequence-occurrence-identity']
 lane: sequence-d2
@@ -40,3 +40,9 @@ D2 half of section 4 in `plans/2026-08-23-d2-mermaid-sequence-adapters.md`.
 ## Implementation Notes
 
 Agent route: gpt-5.6-sol at high. Bindings are immutable records keyed by occurrence, role, and ordinal.
+
+## Agent Runs
+
+### 2026-08-23T19:39:59Z · @codex
+
+Native gpt-5.6-terra at high reused as /root/sequence_local_documents from commit f5f9a56. Explicit user routing overrides the original sol-high assignment. Coordinator retains issue tracker ownership.
