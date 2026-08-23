@@ -1,0 +1,69 @@
+{
+  "language": "mermaid",
+  "source": "0_mermaid.mmd",
+  "initialViewportWidth": 320,
+  "expectedOccurrences": [
+    { "fixtureKey": "actor-alice", "kind": "actor", "label": "Alice" },
+    { "fixtureKey": "actor-bob", "kind": "actor", "label": "Bob" },
+    {
+      "fixtureKey": "actor-archive",
+      "kind": "actor",
+      "label": "Archive Service Far Right"
+    },
+    {
+      "fixtureKey": "group-outer",
+      "kind": "group",
+      "label": "outer exchange"
+    },
+    {
+      "fixtureKey": "group-nested",
+      "kind": "group",
+      "parentFixtureKey": "group-outer",
+      "label": "nested review"
+    },
+    {
+      "fixtureKey": "message-repeat-1",
+      "kind": "message",
+      "parentFixtureKey": "group-nested",
+      "sourceActorFixtureKey": "actor-alice",
+      "targetActorFixtureKey": "actor-bob",
+      "label": "repeat"
+    },
+    {
+      "fixtureKey": "activation-bob",
+      "kind": "activation",
+      "parentFixtureKey": "group-nested",
+      "targetActorFixtureKey": "actor-bob"
+    },
+    {
+      "fixtureKey": "message-self",
+      "kind": "message",
+      "parentFixtureKey": "group-nested",
+      "sourceActorFixtureKey": "actor-bob",
+      "targetActorFixtureKey": "actor-bob",
+      "label": "inspect"
+    },
+    {
+      "fixtureKey": "note-bob",
+      "kind": "note",
+      "parentFixtureKey": "group-nested",
+      "targetActorFixtureKey": "actor-bob",
+      "label": "local note"
+    },
+    {
+      "fixtureKey": "message-repeat-2",
+      "kind": "message",
+      "parentFixtureKey": "group-nested",
+      "sourceActorFixtureKey": "actor-alice",
+      "targetActorFixtureKey": "actor-bob",
+      "label": "repeat"
+    },
+    {
+      "fixtureKey": "message-archive",
+      "kind": "message",
+      "sourceActorFixtureKey": "actor-bob",
+      "targetActorFixtureKey": "actor-archive",
+      "label": "archive"
+    }
+  ]
+}

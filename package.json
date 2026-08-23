@@ -21,6 +21,7 @@
     "release:audit": "node scripts/1_releaseCheck.mjs",
     "release:publish": "pnpm release:check && changeset publish",
     "smoke:sequence-renderers": "node scripts/0_sequenceRendererSmoke.mjs",
+    "test:sequence-fixtures": "vitest run scripts/1_sequenceFixtures.test.ts",
     "test:sequence-renderers": "vitest run scripts/0_sequenceRendererSmoke.test.ts"
   },
   "devDependencies": {
