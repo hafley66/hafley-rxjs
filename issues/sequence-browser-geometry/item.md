@@ -3,7 +3,7 @@ created: 2026-08-23
 updated: 2026-08-23
 type: task
 assignee: terra
-status: open
+status: in-progress
 priority: high
 epic: sequence-adapters
 labels: [sequence, terra-high, browser, svg]
@@ -37,3 +37,9 @@ Section 6 of `plans/2026-08-23-d2-mermaid-sequence-adapters.md`.
 ## Implementation Notes
 
 Agent route: gpt-5.6-terra at high. Measurement begins after SVG mount and font readiness and emits immutable geometry.
+
+## Agent Runs
+
+### 2026-08-23T20:09:42Z · @codex
+
+Native gpt-5.6-terra at high reused as /root/sequence_local_documents from commit 44fb5eb. Explicit user routing applies; coordinator retains issue tracker ownership.
