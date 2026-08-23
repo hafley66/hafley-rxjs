@@ -3,7 +3,7 @@ created: 2026-08-23
 updated: 2026-08-23
 type: task
 assignee: luna
-status: open
+status: in-progress
 priority: high
 epic: sequence-adapters
 labels: [sequence, luna-xhigh, fixtures]
@@ -36,3 +36,9 @@ Section 0 of `plans/2026-08-23-d2-mermaid-sequence-adapters.md`.
 ## Implementation Notes
 
 Agent route: gpt-5.6-luna at xhigh. Preserve immutable fixture and revision-file lifetimes from the plan. Stop after fixture and renderer viability evidence. Do not create shared runtime entity IDs.
+
+## Agent Runs
+
+### 2026-08-23T18:44:24Z · @codex
+
+Dispatched native gpt-5.6-luna at xhigh in .boop-worktrees/feature/sequence-fixtures. Boop 0.10 only parses low, medium, and high effort suffixes, so the native collaboration worker retains xhigh and registers its Codex session with Boop from the worktree.
