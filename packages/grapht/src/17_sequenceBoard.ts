@@ -1,3 +1,4 @@
+import { documentFingerprint } from "./12_sequenceIdentity.js"
 import { decorateSvg, type NativeRenderReceipt, type SvgBindingReceipt } from "./13_sequenceSvgBinding.js"
 import type { SequenceArtifact } from "./14_sequenceArtifact.js"
 import type { SequenceGeometry } from "./15_sequenceGeometry.js"
@@ -111,8 +112,17 @@ export function createSequenceBoard(host: HTMLElement, viewport: { width: number
   }
 
   const replace = (input: SequenceBoardInput) => {
+    if (input.artifact.bindingRevision.renderRevisionId !== input.artifact.renderRevision.id) {
+      throw new Error("sequence board artifact binding revision does not match artifact render revision")
+    }
     if (input.geometry.renderRevisionId !== input.artifact.renderRevision.id) {
       throw new Error("sequence board geometry render revision does not match artifact")
+    }
+    if (
+      documentFingerprint([input.bindingReceipt.bindings, input.bindingReceipt.elementPaths]) !==
+      input.artifact.bindingRevision.bindingHash
+    ) {
+      throw new Error("sequence board binding receipt does not match artifact")
     }
 
     const shell = document.createElement("div")

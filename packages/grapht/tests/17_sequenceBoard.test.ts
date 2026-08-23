@@ -173,6 +173,26 @@ describe("sequence board projection", () => {
     expect(board.receipt()).toEqual(before)
     expect(host.innerHTML).toBe(beforeMarkup)
 
+    expect(() => board.replace({
+      ...mermaid,
+      bindingReceipt: {
+        ...mermaid.bindingReceipt,
+        elementPaths: { ...mermaid.bindingReceipt.elementPaths, "mutated-binding": [] },
+      },
+    })).toThrowError("sequence board binding receipt does not match artifact")
+    expect(board.receipt()).toEqual(before)
+    expect(host.innerHTML).toBe(beforeMarkup)
+
+    expect(() => board.replace({
+      ...mermaid,
+      artifact: {
+        ...mermaid.artifact,
+        bindingRevision: { ...mermaid.artifact.bindingRevision, renderRevisionId: "render:mismatch" },
+      },
+    })).toThrowError("sequence board artifact binding revision does not match artifact render revision")
+    expect(board.receipt()).toEqual(before)
+    expect(host.innerHTML).toBe(beforeMarkup)
+
     const removeEventListener = vi.spyOn(host, "removeEventListener")
     board.unmount()
     expect(board.listenerCount()).toBe(0)
