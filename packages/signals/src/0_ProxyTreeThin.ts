@@ -17,23 +17,22 @@ const NUMERIC_CHILDREN = Symbol("ProxyTreeThin.numericChildren")
 
 type RootRecord = {
   createNode(parent?: NodeTarget, key?: string): object
-  finalizer: ProxyTreeFinalizer<FinalizerHeldValue, object>
+  finalizer: ProxyTreeFinalizer<NumericReference, object>
   weakRuntime: ProxyTreeWeakRuntime
   root?: object
 }
 
 type NodeTarget = Record<PropertyKey, unknown> & {
-  [ROOT]: RootRecord
+  [ROOT]?: RootRecord
   [PARENT]?: NodeTarget
   [KEY]?: string
   [STRONG_CHILDREN]?: Map<PropertyKey, object>
-  [NUMERIC_CHILDREN]?: Map<string, ProxyTreeWeakReference<object>>
+  [NUMERIC_CHILDREN]?: Map<string, NumericReference>
 }
 
-type FinalizerHeldValue = {
-  cache: Map<string, ProxyTreeWeakReference<object>>
+type NumericReference = ProxyTreeWeakReference<object> & {
+  cache: Map<string, NumericReference>
   key: string
-  reference: ProxyTreeWeakReference<object>
 }
 
 const nodeHandler: ProxyHandler<NodeTarget> = {
@@ -42,25 +41,32 @@ const nodeHandler: ProxyHandler<NodeTarget> = {
     if (typeof key === "symbol") return undefined
 
     if (isProxyTreeNumericKey(key)) {
+      const root = rootOf(target)
       const cache = target[NUMERIC_CHILDREN] ??= new Map()
       const cached = cache.get(key)
       const child = cached?.deref()
       if (child) return child
 
-      const created = target[ROOT].createNode(target, key)
-      const reference = target[ROOT].weakRuntime.reference(created)
+      const created = root.createNode(target, key)
+      const reference = Object.assign(root.weakRuntime.reference(created), { cache, key })
       cache.set(key, reference)
-      target[ROOT].finalizer.register(created, { cache, key, reference }, created)
+      root.finalizer.register(created, reference, created)
       return created
     }
 
     const cache = target[STRONG_CHILDREN] ??= new Map()
     const cached = cache.get(key)
     if (cached) return cached
-    const created = target[ROOT].createNode(target, key)
+    const created = rootOf(target).createNode(target, key)
     cache.set(key, created)
     return created
   },
+}
+
+function rootOf(node: NodeTarget): RootRecord {
+  let current = node
+  while (current[PARENT]) current = current[PARENT]
+  return current[ROOT]!
 }
 
 function materializePath(node: NodeTarget): string[] {
@@ -102,18 +108,18 @@ export function createProxyTreeThin<
   const weakRuntime = options.weakRuntime ?? nativeWeakRuntime
   const rootRecord = { weakRuntime } as RootRecord
 
-  rootRecord.finalizer = weakRuntime.finalizer<FinalizerHeldValue, object>(
-    ({ cache, key, reference }) => {
-      if (cache.get(key) === reference) cache.delete(key)
+  rootRecord.finalizer = weakRuntime.finalizer<NumericReference, object>(
+    (reference) => {
+      if (reference.cache.get(reference.key) === reference) {
+        reference.cache.delete(reference.key)
+      }
     },
   )
 
   rootRecord.createNode = (parent, key) => {
-    const target = {
-      [ROOT]: rootRecord,
-      [PARENT]: parent,
-      [KEY]: key,
-    } as NodeTarget
+    const target = (parent
+      ? { [PARENT]: parent, [KEY]: key }
+      : { [ROOT]: rootRecord }) as NodeTarget
     const proxy = new Proxy(target, nodeHandler)
     if (!parent) rootRecord.root = proxy
 
