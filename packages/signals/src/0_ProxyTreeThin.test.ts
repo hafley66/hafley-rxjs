@@ -15,6 +15,43 @@ interface ExtensionType extends ProxyTreeType {
   readonly type: { $field: { path: readonly string[] } }
 }
 
+function controlledWeakRuntime() {
+  const references: Array<{ clear(): void }> = []
+  const registrations: Array<{ heldValue: object; cleanup(value: object): void }> = []
+  const runtime: ProxyTreeWeakRuntime = {
+    reference<T extends object>(value: T): ProxyTreeWeakReference<T> {
+      let current: T | undefined = value
+      const reference = {
+        deref: () => current,
+        clear: () => { current = undefined },
+      }
+      references.push(reference)
+      return reference
+    },
+    finalizer<HeldValue extends object, Token extends object>(
+      cleanup: (heldValue: HeldValue) => void,
+    ): ProxyTreeFinalizer<HeldValue, Token> {
+      return {
+        register(_target, heldValue) {
+          registrations.push({
+            heldValue,
+            cleanup: cleanup as (value: object) => void,
+          })
+        },
+        unregister: () => false,
+      }
+    },
+  }
+  return {
+    runtime,
+    clear(index: number) { references[index].clear() },
+    finalize(index: number) {
+      const registration = registrations[index]
+      registration.cleanup(registration.heldValue)
+    },
+  }
+}
+
 describe("createProxyTreeThin", () => {
   it("shares behavior while preserving node identity and paths", () => {
     const tree = createProxyTreeThin<
@@ -91,5 +128,21 @@ describe("createProxyTreeThin", () => {
     for (let index = 0; index < 100; index++) void tree[index]
 
     expect(tree[100]).toBe(sparse)
+  })
+
+  it("does not let a delayed finalizer delete a replacement numeric child", () => {
+    const weak = controlledWeakRuntime()
+    const tree = createProxyTreeThin<Array<string>, LeafType, ExtensionType>({
+      createLeaf: ({ path }) => ({ path }),
+      createExtension: ({ path }) => ({ $field: { path } }),
+      weakRuntime: weak.runtime,
+    })
+
+    void tree[4]
+    weak.clear(0)
+    const replacement = tree[4]
+    weak.finalize(0)
+
+    expect(tree[4]).toBe(replacement)
   })
 })
