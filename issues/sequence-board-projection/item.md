@@ -2,11 +2,11 @@
 created: 2026-08-23
 updated: 2026-08-23
 type: task
-assignee: sol
-status: open
+assignee: terra
+status: in-progress
 priority: high
 epic: sequence-adapters
-labels: [sequence, sol-high, board]
+labels: [sequence, board, terra-high]
 collision: [sequence-board]
 blocked_by: ['@sequence-browser-geometry', '@sequence-focus-resolution']
 lane: sequence-board
@@ -40,3 +40,9 @@ Section 8 of `plans/2026-08-23-d2-mermaid-sequence-adapters.md`.
 ## Implementation Notes
 
 Agent route: gpt-5.6-sol at high. One board instance belongs to one mounted viewport and replaces SVG plus geometry atomically.
+
+## Agent Runs
+
+### 2026-08-23T20:24:04Z · @codex
+
+Native gpt-5.6-terra at high reused as /root/sequence_local_documents from commit 7e48b1d. Explicit user routing overrides sol-high; coordinator retains issue tracker ownership.
