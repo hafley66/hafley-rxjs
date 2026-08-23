@@ -2,11 +2,11 @@
 created: 2026-08-23
 updated: 2026-08-23
 type: task
-assignee: sol
-status: open
+assignee: terra
+status: in-progress
 priority: high
 epic: sequence-adapters
-labels: [sequence, sol-high, package-gate]
+labels: [sequence, package-gate, terra-high]
 collision: [packages-mmd, packages-d2, packages-grapht-model, sequence-board]
 blocked_by: ['@sequence-group-collapse', '@sequence-placement-reconciliation']
 lane: sequence-integration
@@ -37,3 +37,9 @@ Package gate of `plans/2026-08-23-d2-mermaid-sequence-adapters.md`.
 ## Implementation Notes
 
 Agent route: gpt-5.6-sol at high. This issue owns integration verification and boundary corrections only after both optional projection issues pass.
+
+## Agent Runs
+
+### 2026-08-23T20:44:57Z · @codex
+
+Native gpt-5.6-terra at high reused as /root/sequence_local_documents from commit fb04837. Explicit user routing overrides the original sol-high route; coordinator retains tracker ownership and validation.
