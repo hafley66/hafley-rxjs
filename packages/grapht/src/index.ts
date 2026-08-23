@@ -106,3 +106,5 @@ export type { EntityGeometry, GeometryDiagnostic, Matrix2D, Rect, SequenceGeomet
 export { measureSequenceSvg } from "./15_sequenceGeometry.js"
 export type { SequenceFocus } from "./16_sequenceFocus.js"
 export { resolveSequenceFocus } from "./16_sequenceFocus.js"
+export type { SequenceBoard, SequenceBoardInput, SequenceBoardReceipt, SequenceCamera } from "./17_sequenceBoard.js"
+export { createSequenceBoard } from "./17_sequenceBoard.js"
