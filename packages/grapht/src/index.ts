@@ -86,3 +86,19 @@ export {
   pathKey,
   SvgBindingBuilder,
 } from "./13_sequenceSvgBinding.js"
+export type {
+  SequenceArtifact,
+  SequenceArtifactBuild,
+  SequenceArtifactCurrent,
+  SequenceBindingRevision,
+  SequenceRenderOptions,
+  SequenceRenderRevision,
+  SequenceSourceAdapter,
+  SequenceSourceRevision,
+} from "./14_sequenceArtifact.js"
+export {
+  buildSequenceArtifact,
+  createSequenceArtifactCurrent,
+  SEQUENCE_ARTIFACT_PROTOCOL,
+  sequenceArtifactSchema,
+} from "./14_sequenceArtifact.js"

@@ -23,6 +23,11 @@ export type NativeSvgElement = {
 
 export type NativeRenderReceipt = {
   language: "mermaid" | "d2"
+  rendererPackage: string
+  rendererVersion: string
+  sourceHash: string
+  svgHash: string
+  options: unknown
   svg: string
   elements: NativeSvgElement[]
 }
