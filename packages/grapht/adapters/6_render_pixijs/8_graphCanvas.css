@@ -1,0 +1,11 @@
+:root { color-scheme: dark; font: 14px ui-monospace, SFMono-Regular, Menlo, monospace; background: #0d1117; color: #d8dee9; }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; }
+main { width: min(1100px, 96vw); }
+header { display: flex; align-items: end; justify-content: space-between; margin-bottom: 12px; }
+h1 { margin: 0; font: 650 20px system-ui, sans-serif; }
+p { margin: 5px 0 0; color: #8b949e; }
+button { border: 1px solid #45546a; border-radius: 6px; padding: 7px 12px; background: #182131; color: inherit; cursor: pointer; }
+#graph { width: 100%; height: min(720px, 76vh); overflow: hidden; border: 1px solid #303b4d; border-radius: 10px; background: #10151f; touch-action: none; }
+#graph canvas { display: block; width: 100%; height: 100%; }
+#state { display: block; min-height: 20px; padding-top: 9px; color: #9fb3cc; }
