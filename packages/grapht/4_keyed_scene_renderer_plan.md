@@ -161,7 +161,7 @@ Level of detail is a `kind` swap per id driven by `hopDistances` (`anim/src/core
 sprite exits, card enters at the sprite's last position, same `diff`, no flicker.
 
 Pixi facts, measurements, and the official guidance are in
-`adapters/6_render_pixijs/LEARNINGS.md`; the lab is `adapters/6_render_pixijs/labs/dom-cube.html`.
+The exploratory implementation and measurements are archived in Git commit `e32064d`.
 
 ## sprefa v6 in the browser
 

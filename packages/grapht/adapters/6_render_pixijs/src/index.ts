@@ -11,10 +11,3 @@ export {
   type RendererMode,
   type Representation,
 } from "./2_projection.js"
-export {
-  createPixiPinnedViewportRow,
-  createPixiStickyViewportStack,
-  type PixiPinnedViewportRow,
-  type PixiStickyViewportItem,
-  type PixiStickyViewportStack,
-} from "./12_stickyViewport.js"

@@ -138,6 +138,10 @@ revision reconciles stable entity IDs with the retained placement view.
 Every adapter is an interchangeable `grapht-bench/0` implementation over the same
 `grapht-render-fixture/0` graph, so their receipts are directly comparable.
 
+The removed renderer catalogs, scene cubes, graph canvas, ecosystem checks, and
+sticky-sequence demos are archived in Git commit `e32064d`. Current adapter trees contain
+protocol implementations, benchmark harnesses, conformance tests, and recorded receipts.
+
 | Directory | Package | Lane |
 |---|---|---|
 | [`0_layout_grid_worker`](./adapters/0_layout_grid_worker/) | `@hafley66/grapht-layout-grid-worker` | layout, Web Worker |

@@ -1,44 +1,30 @@
 # @hafley66/grapht-render-pixijs
 
-Reusable PixiJS projection for `@hafley66/grapht` geometry. `PixiProjection`
-supports retained and particle node representations, WebGL and WebGPU renderer
-selection, camera fitting, pan, zoom, picking, replacement, resizing, and disposal.
+PixiJS implementation of the `@hafley66/grapht` renderer protocol.
 
-## Labs
+`PixiProjection` consumes shared `Geometry` and supports retained or particle nodes,
+WebGL or WebGPU selection, camera fitting, pan, zoom, picking, graph replacement,
+viewport resizing, pixel readback, and unsubscribe-driven disposal.
 
-- `labs/dom-cube.html`: eight `DOMContainer` popovers parented into the scene graph
-  track the projected vertices of a rotating cube. `?heavy=1` restores the
-  full-window 2x MSAA uncapped config. `e2e/3_dom_cube.spec.ts` asserts DOM-layer
-  placement under `devicePixelRatio` 2 and records a main-thread time receipt at
-  `receipts/generated/dom-cube.perf.json`.
+## Package boundary
 
-- `labs/scene-grid.html`: the `@hafley66/scene` pipeline (`keyframes` -> `frames` -> `pixi()`)
-  over 400 ids across three scenes; sprites are pooled by id, `kind: "card"` items render as
-  `DOMContainer`. `e2e/4_scene_renderer.spec.ts` asserts mount, recycling by sprite identity,
-  a kept id tweening between steps, and teardown on unsubscribe.
+- Graph types, geometry, fixtures, scenarios, and receipts belong to `@hafley66/grapht`.
+- Sequence identity, bindings, artifacts, focus, placement, and sticky-stack algorithms
+  belong to `@hafley66/grapht-model`.
+- This package translates shared graph geometry and scenario operations into PixiJS.
 
-- `labs/scene-cube.html?n=<points>`: spinning cube as a constant `Scene` whose `Layout` is the
-  rotation; `e2e/5_scene_cube.spec.ts` writes a frames-per-second receipt at 1k, 20k, 100k
-  points to `receipts/generated/scene-cube.load.json`. `?renderer=pixi|dom|native` switches the
-  sink; `e2e/6_scene_compare.spec.ts` writes the three-way receipt
-  `receipts/generated/scene-cube.compare.json`.
+## Verification
 
-## Scene renderer
-
-```ts
-import { pixi } from "@hafley66/scene/pixi"
-scene$.pipe(keyframes(layout), frames(tween(), raf$), pixi({ width: 800, height: 600 })(host)).subscribe()
+```sh
+pnpm test
+pnpm test:e2e
+pnpm bench
+pnpm receipt
 ```
 
-`pixi(options)` lives in `@hafley66/scene/pixi` (this adapter hosts its labs and e2e) and returns a `Renderer`: subscribe mounts an `Application`
-(frames arriving before `init` resolves are held and drawn once), `next` applies the diff
-(exit -> pool, enter -> pooled sprite or `DOMContainer`, keep -> index walk over `pos`), and
-unsubscribe destroys views, pool, texture, and app.
+## Archived labs
 
-## Pixi v8 facts this package relies on
-
-| fact | where |
-|---|---|
-| `resolution` without `autoDensity: true` leaves the canvas CSS size at device pixels, so a 2x display renders the scene at double size | `Application.init` options |
-| the `DOMContainer` layer is appended inside the canvas's parent and translated by `canvas.getBoundingClientRect()`, so a parent offset from the viewport origin double-offsets every element | `pixi.js/lib/dom/CanvasObserver.mjs` `updateTranslation`, `ensureAttached` |
-| `DOMContainer` elements get `transform: matrix(worldTransform)` each `postrender`; `will-change: transform` keeps that a composite instead of a repaint | `pixi.js/lib/dom/DOMPipe.mjs` `postrender` |
+The removed DOM cube, scene comparison, graph canvas, Pixi ecosystem, Mermaid/D2,
+and sticky-sequence labs remain available in Git commit `e32064d`. They are excluded
+from the package tree so renderer implementation code cannot depend on lab-specific
+state, parsing, geometry, or interaction paths.

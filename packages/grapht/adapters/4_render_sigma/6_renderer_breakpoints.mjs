@@ -11,13 +11,13 @@ const fixtureDir = resolve(here, "../../.cache/render-fixtures")
 const fixtureGenerator = resolve(here, "../../scripts/0_generate_renderer_fixture.mjs")
 const headed = process.env.GRAPHT_BREAKPOINT_HEADED === "1"
 const captureScreenshots = process.env.GRAPHT_BREAKPOINT_SCREENSHOTS === "1"
-const demo = headed || captureScreenshots
-const outputStem = demo ? "3_renderer_demo" : "2_renderer_breakpoints"
+const evidence = headed || captureScreenshots
+const outputStem = evidence ? "3_renderer_evidence" : "2_renderer_breakpoints"
 const rawPath = resolve(results, `${outputStem}.jsonl`)
 const runningPath = resolve(results, `${outputStem}.${process.pid}.running.jsonl`)
 const holdMs = Number(process.env.GRAPHT_BREAKPOINT_HOLD_MS ?? (headed ? 5_000 : 0))
 const slowMoMs = Number(process.env.GRAPHT_BREAKPOINT_SLOW_MO_MS ?? 0)
-const sizes = (process.env.GRAPHT_BREAKPOINT_SIZES ?? (demo ? "1000,10000" : "1000,5000,10000,25000,50000,100000,250000,500000,1000000,2000000")).split(",").map(Number).filter(value => Number.isSafeInteger(value) && value > 0)
+const sizes = (process.env.GRAPHT_BREAKPOINT_SIZES ?? (evidence ? "1000,10000" : "1000,5000,10000,25000,50000,100000,250000,500000,1000000,2000000")).split(",").map(Number).filter(value => Number.isSafeInteger(value) && value > 0)
 const timeoutMs = Number(process.env.GRAPHT_BREAKPOINT_TIMEOUT_MS ?? 60_000)
 const workerTimeoutMs = timeoutMs + Math.max(0, holdMs) + 10_000
 const browserArgs = ["--enable-precise-memory-info", "--disable-background-networking"]
@@ -26,7 +26,7 @@ const rendererApps = {
   canvaskit: { cwd: resolve(here, "../3_render_canvaskit"), port: 4174, path: "/5_index.html", receipt: "#receipt" },
   sigma: { cwd: here, port: 4179, receipt: "#receipt" },
 }
-const selectedImplementations = (process.env.GRAPHT_BREAKPOINT_RENDERERS ?? (demo ? "cytoscape,canvaskit,sigma" : "cytoscape,canvaskit,sigma,vello-wgpu")).split(",").filter(Boolean)
+const selectedImplementations = (process.env.GRAPHT_BREAKPOINT_RENDERERS ?? (evidence ? "cytoscape,canvaskit,sigma" : "cytoscape,canvaskit,sigma,vello-wgpu")).split(",").filter(Boolean)
 
 function runChild(command, args, options = {}) {
   return new Promise((resolvePromise, reject) => {
@@ -112,7 +112,7 @@ async function browserPoint(browser, browserPid, app, implementation, nodeCount)
     if (visualFailure) { value.status = "visual-invalid"; value.setupValid = false; value.statusReason = visualFailure; value.reason = visualFailure }
     value.softThreshold = value.status === "healthy" && (value.firstRenderMs > 5_000 || value.interactionP95Ms > 100)
       ? (value.firstRenderMs > 5_000 ? "firstRender>5s" : "interactionP95>100ms") : null
-    if (demo) {
+    if (evidence) {
       await page.evaluate(receipt => {
         const overlay = document.createElement("pre")
         overlay.dataset.graphtPerf = "receipt"

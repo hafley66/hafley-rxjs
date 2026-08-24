@@ -11,12 +11,12 @@ default: build
 build:
     pnpm run build
 
-# render the browser labs headlessly and write validated PNG receipts
-demo-screenshots:
-    pnpm --dir adapters/4_render_sigma run demo:breakpoints
+# render browser evidence headlessly and write validated PNG receipts
+renderer-screenshots:
+    pnpm --dir adapters/4_render_sigma run benchmark:screenshots
 
 # visibly drive Chromium; headed mode occurs only through this explicit recipe
-demo-headed:
+renderer-headed:
     GRAPHT_BREAKPOINT_HEADED=1 pnpm --dir adapters/4_render_sigma run benchmark:breakpoints
 
 # run the deterministic core scenario contract tests
@@ -44,7 +44,7 @@ browser-pixijs:
     node scripts/0_generate_renderer_fixture.mjs 1000
     node scripts/0_generate_renderer_fixture.mjs 5000
     node scripts/0_generate_renderer_fixture.mjs 10000
-    pnpm --dir adapters/6_render_pixijs run lab
+    pnpm --dir adapters/6_render_pixijs run test:e2e
 
 # record a PixiJS shell-protocol receipt through the grapht-bench/0 adapter
 receipt-pixijs:
@@ -64,7 +64,7 @@ browser-threejs:
     node scripts/0_generate_renderer_fixture.mjs 1000
     node scripts/0_generate_renderer_fixture.mjs 5000
     node scripts/0_generate_renderer_fixture.mjs 10000
-    pnpm --dir adapters/7_render_threejs run lab
+    pnpm --dir adapters/7_render_threejs run test:e2e
 
 # record a Three.js shell-protocol receipt through the grapht-bench/0 adapter
 receipt-threejs:

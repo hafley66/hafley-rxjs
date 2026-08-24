@@ -20,31 +20,18 @@
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run -c vitest.config.ts",
-    "lab": "node ../../scripts/0_generate_renderer_fixture.mjs 1000 && node ../../scripts/0_generate_renderer_fixture.mjs 5000 && node ../../scripts/0_generate_renderer_fixture.mjs 10000 && playwright test -c playwright.config.ts",
-    "lab:ecosystem": "node ../../scripts/0_generate_renderer_fixture.mjs 1000 && vite --host 127.0.0.1 --port 4180",
-    "demo:catalog": "vite --host 127.0.0.1 --port 4180",
-    "demo:sequence-formats": "vite --host 127.0.0.1 --port 4180 --open /labs/sequence-formats.html",
-    "test:sequence-formats": "playwright test -c playwright.config.ts e2e/10_sequence_formats.spec.ts",
+    "test:e2e": "node ../../scripts/0_generate_renderer_fixture.mjs 1000 && node ../../scripts/0_generate_renderer_fixture.mjs 5000 && node ../../scripts/0_generate_renderer_fixture.mjs 10000 && playwright test -c playwright.config.ts",
     "bench": "node --import tsx src/3_protocol_adapter.ts",
     "receipt": "printf '%s\\n' '{\"protocol\":\"grapht-bench/0\",\"runId\":\"pixijs-receipt\",\"fixture\":\"grid-1k\",\"operation\":\"render\",\"outputDirectory\":\"receipts/generated\",\"parameters\":{\"renderer\":\"webgl\",\"representation\":\"retained\"}}' | node --import tsx src/3_protocol_adapter.ts",
     "check": "tsc --noEmit && vitest run"
   },
   "dependencies": {
     "@hafley66/grapht": "workspace:^",
-    "@hafley66/grapht-model": "workspace:^",
-    "@hafley66/scene": "workspace:^",
-    "@hafley66/signals": "workspace:^",
-    "@pixi-essentials/svg": "3.0.0",
-    "@pixi/layout": "3.2.1",
-    "@pixi/ui": "2.3.2",
-    "pixi-viewport": "6.0.3",
-    "pixi.js": "^8.9.0",
-    "yoga-layout": "^3.2.1"
+    "pixi.js": "^8.9.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "@types/node": "^25.0.8",
-    "rxjs": "^7.8.2",
     "tsx": "^4.19.2",
     "typescript": "^7.0.2",
     "vite": "^8.2.1",
