@@ -9,6 +9,7 @@ type Demo = {
 }
 
 const demos: Demo[] = [
+  { id: "sequence-board", group: "Sequence diagrams", title: "Sticky sequence board", description: "Mermaid and D2 actors, nested group-title stacking, focus, pan, and zoom.", path: "./sequence-board.html" },
   { id: "benchmark", group: "Graph rendering", title: "Renderer benchmark", description: "WebGL and WebGPU renderer fixture harness.", path: "../index.html?nodes=1000&renderer=webgl&representation=retained&pause=1" },
   { id: "graph-canvas", group: "Graph rendering", title: "Interactive graph canvas", description: "Node picking, dragging, camera pan, zoom, and graph hover states.", path: "./graph-canvas.html" },
   { id: "ecosystem", group: "Graph rendering", title: "Pixi ecosystem sequence", description: "SVGScene, viewport, layout, UI, culling, and DOM overlay compatibility.", path: "./ecosystem.html" },
@@ -78,4 +79,4 @@ filter.addEventListener("input", () => {
 })
 
 const requestedId = new URLSearchParams(location.search).get("demo")
-selectDemo(demos.find(demo => demo.id === requestedId) ?? demos.find(demo => demo.id === "ecosystem")!, false)
+selectDemo(demos.find(demo => demo.id === requestedId) ?? demos.find(demo => demo.id === "sequence-board")!, false)

@@ -3,8 +3,9 @@ import { expect, test } from "@playwright/test"
 test("demo catalog groups labs and persists the selected preview", async ({ page }) => {
   await page.goto("/labs/index.html?demo=ecosystem")
 
-  await expect(page.locator(".demo-group h3")).toHaveText(["Graph rendering", "Scene pipeline"])
+  await expect(page.locator(".demo-group h3")).toHaveText(["Sequence diagrams", "Graph rendering", "Scene pipeline"])
   await expect(page.locator(".demo-entry")).toHaveText([
+    "Sticky sequence board",
     "Renderer benchmark",
     "Interactive graph canvas",
     "Pixi ecosystem sequence",
@@ -29,6 +30,10 @@ test("queryless server root opens the structured catalog", async ({ page }) => {
   await page.goto("/")
 
   await expect(page).toHaveURL(/\/labs\/$/)
-  await expect(page.locator("[data-demo='ecosystem']")).toHaveAttribute("aria-current", "page")
-  await expect(page.locator("#demo-frame")).toHaveAttribute("src", "./ecosystem.html")
+  await expect(page.locator("[data-demo='sequence-board']")).toHaveAttribute("aria-current", "page")
+  await expect(page.locator("#demo-frame")).toHaveAttribute("src", "./sequence-board.html")
+  const frame = page.frameLocator("#demo-frame")
+  await expect(frame.locator("[data-status]")).toHaveAttribute("data-state", "ready", { timeout: 20_000 })
+  await expect(frame.locator("[data-sequence-sticky-actor-id]")).toHaveCount(3)
+  await expect(frame.locator("[data-sequence-sticky-group-id]")).toHaveCount(2)
 })
