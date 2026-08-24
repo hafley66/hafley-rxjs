@@ -15,6 +15,22 @@ test("Pixi graph canvas supports hover, selection, node drag, pan, zoom, and fit
   await page.mouse.click(box.x + box.width * 0.13, box.y + box.height * 0.5)
   await expect(page.locator("#state")).toContainText("selected: source")
 
+  const cameraBeforeNodeDrag = await graph.evaluate(element => [element.dataset.cameraX, element.dataset.cameraY])
+  await page.mouse.move(box.x + box.width * 0.13, box.y + box.height * 0.5)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width * 0.13 + 40, box.y + box.height * 0.5 + 20)
+  await page.mouse.up()
+  await expect(graph).toHaveAttribute("data-dragged-node", "source")
+  const dragReceipt = await graph.evaluate(element => ({
+    camera: [element.dataset.cameraX, element.dataset.cameraY],
+    node: [Number(element.dataset.draggedNodeX), Number(element.dataset.draggedNodeY)],
+  }))
+  expect(dragReceipt.camera).toEqual(cameraBeforeNodeDrag)
+  expect(dragReceipt.node[0]).toBeGreaterThan(0)
+  expect(dragReceipt.node[0]).toBeLessThan(100)
+  expect(dragReceipt.node[1]).toBeGreaterThan(130)
+  expect(dragReceipt.node[1]).toBeLessThan(200)
+
   await page.mouse.wheel(0, -240)
   await page.mouse.move(box.x + 20, box.y + 20)
   await page.mouse.down()

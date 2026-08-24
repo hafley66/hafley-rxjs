@@ -1,4 +1,4 @@
-import { Application, Container, Graphics, Text, TextStyle } from "pixi.js"
+import { Application, Container, Graphics, Rectangle, Text, TextStyle, type FederatedPointerEvent } from "pixi.js"
 
 type NodeModel = { id: string; label: string; x: number; y: number; color: number }
 type EdgeModel = { source: string; target: string }
@@ -51,6 +51,8 @@ const edgeLayer = new Graphics()
 const nodeLayer = new Container()
 camera.addChild(edgeLayer, nodeLayer)
 app.stage.addChild(camera)
+app.stage.eventMode = "static"
+app.stage.hitArea = new Rectangle(0, 0, app.screen.width, app.screen.height)
 
 const byId = new Map(nodes.map(node => [node.id, node]))
 const views = new Map<string, Container>()
@@ -110,18 +112,21 @@ function drawNode(node: NodeModel): Container {
     view.cursor = "grabbing"
     const start = event.global.clone()
     const origin = { x: node.x, y: node.y }
-    const move = (moveEvent: PointerEvent): void => {
-      node.x = origin.x + (moveEvent.clientX - start.x) / camera.scale.x
-      node.y = origin.y + (moveEvent.clientY - start.y) / camera.scale.y
+    const move = (moveEvent: FederatedPointerEvent): void => {
+      node.x = origin.x + (moveEvent.global.x - start.x) / camera.scale.x
+      node.y = origin.y + (moveEvent.global.y - start.y) / camera.scale.y
       view.position.set(node.x, node.y)
       drawEdges()
+      graphHost.dataset.draggedNode = node.id
+      graphHost.dataset.draggedNodeX = String(node.x)
+      graphHost.dataset.draggedNodeY = String(node.y)
     }
     const end = (): void => {
       view.cursor = "grab"
-      window.removeEventListener("pointermove", move)
+      app.stage.off("globalpointermove", move)
       window.removeEventListener("pointerup", end)
     }
-    window.addEventListener("pointermove", move)
+    app.stage.on("globalpointermove", move)
     window.addEventListener("pointerup", end, { once: true })
   })
   paint()
@@ -161,23 +166,27 @@ graphHost.addEventListener("wheel", event => {
   camera.position.y += point.y - moved.y
 }, { passive: false })
 
-graphHost.addEventListener("pointerdown", event => {
-  if (event.target !== app.canvas) return
-  const start = { x: event.clientX, y: event.clientY }
+app.stage.on("pointerdown", event => {
+  if (event.target !== app.stage) return
+  const start = event.global.clone()
   const origin = { x: camera.position.x, y: camera.position.y }
   app.canvas.style.cursor = "grabbing"
-  const move = (moveEvent: PointerEvent): void => {
-    camera.position.set(origin.x + moveEvent.clientX - start.x, origin.y + moveEvent.clientY - start.y)
+  const move = (moveEvent: FederatedPointerEvent): void => {
+    camera.position.set(origin.x + moveEvent.global.x - start.x, origin.y + moveEvent.global.y - start.y)
+    graphHost.dataset.cameraX = String(camera.position.x)
+    graphHost.dataset.cameraY = String(camera.position.y)
   }
   const end = (): void => {
     app.canvas.style.cursor = "default"
-    window.removeEventListener("pointermove", move)
+    app.stage.off("globalpointermove", move)
     window.removeEventListener("pointerup", end)
   }
-  window.addEventListener("pointermove", move)
+  app.stage.on("globalpointermove", move)
   window.addEventListener("pointerup", end, { once: true })
 })
 
 graphHost.dataset.ready = "true"
 graphHost.dataset.nodeCount = String(nodes.length)
 graphHost.dataset.edgeCount = String(edges.length)
+graphHost.dataset.cameraX = String(camera.position.x)
+graphHost.dataset.cameraY = String(camera.position.y)
