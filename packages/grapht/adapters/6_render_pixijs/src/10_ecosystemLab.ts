@@ -78,7 +78,7 @@ await app.init({
   autoStart: false,
   resizeTo: mount,
   antialias: true,
-  resolution: 1,
+  resolution: Math.min(devicePixelRatio, 2),
   autoDensity: true,
   background: 0x10151f,
 })
@@ -99,20 +99,35 @@ app.stage.addChild(viewport)
 const documentRoot = new DOMParser().parseFromString(SVG, "image/svg+xml").documentElement as unknown as SVGSVGElement
 const measureContext = document.createElement("canvas").getContext("2d")
 if (!measureContext) throw new Error("canvas text measurement unavailable")
-for (const element of documentRoot.querySelectorAll<SVGTextElement>("text[text-anchor='middle']")) {
-  const content = [...element.childNodes].filter(node => node.nodeType === Node.TEXT_NODE).map(node => node.textContent ?? "").join("").trim()
-  if (!content) continue
-  const fontSize = Number(element.getAttribute("font-size") ?? 16)
-  const fontWeight = element.getAttribute("font-weight") ?? "normal"
-  const fontFamily = element.getAttribute("font-family") ?? "sans-serif"
-  measureContext.font = `${fontWeight} ${fontSize}px ${fontFamily}`
-  const x = Number(element.getAttribute("x") ?? 0)
-  element.setAttribute("x", String(x - measureContext.measureText(content).width / 2))
-  element.removeAttribute("text-anchor")
-}
 const scene = new SVGScene(documentRoot)
 const elementNodes = (scene as unknown as { _elementToRenderNode: Map<SVGElement, Container> })._elementToRenderNode
 await new Promise<void>(resolve => setTimeout(resolve, 0))
+const textNodes: Text[] = []
+for (const element of documentRoot.querySelectorAll<SVGTextElement>("text")) {
+  const svgNode = elementNodes.get(element)
+  const parentNode = element.parentElement ? elementNodes.get(element.parentElement as unknown as SVGElement) : undefined
+  if (!svgNode || !parentNode) continue
+  svgNode.renderable = false
+  const tspans = [...element.querySelectorAll("tspan")]
+  const content = tspans.length ? tspans.map(tspan => tspan.textContent ?? "").join("\n") : element.textContent?.trim() ?? ""
+  const fontSize = Number(element.getAttribute("font-size") ?? 16)
+  const text = new Text({
+    text: content,
+    resolution: app.renderer.resolution,
+    style: {
+      fill: element.getAttribute("fill") ?? "black",
+      fontFamily: element.getAttribute("font-family") ?? "sans-serif",
+      fontSize,
+      fontWeight: (element.getAttribute("font-weight") ?? "normal") as "normal" | "bold" | "bolder" | "lighter" | "100" | "200" | "300" | "400" | "500" | "600" | "700" | "800" | "900",
+      lineHeight: tspans.length > 1 ? Number(tspans[1].getAttribute("dy") ?? fontSize * 1.2) : undefined,
+    },
+  })
+  text.anchor.set(element.getAttribute("text-anchor") === "middle" ? 0.5 : 0, 1)
+  text.position.set(Number(element.getAttribute("x") ?? 0), Number(element.getAttribute("y") ?? 0))
+  parentNode.addChild(text)
+  elementNodes.set(element, text)
+  textNodes.push(text)
+}
 scene.cullable = true
 scene.cullArea = new Rectangle(0, 0, 1000, 900)
 viewport.addChild(scene)
@@ -242,11 +257,17 @@ app.canvas.addEventListener("wheel", startRendering, { passive: true })
 window.addEventListener("pointerup", stopRenderingSoon)
 viewport.on("moved-end", stopRenderingSoon)
 viewport.on("zoomed-end", stopRenderingSoon)
+viewport.on("zoomed", () => {
+  const resolution = Math.max(app.renderer.resolution, Math.min(4, app.renderer.resolution * viewport.scale.x))
+  for (const text of textNodes) text.resolution = resolution
+  mount.dataset.textResolution = resolution.toFixed(2)
+})
 window.addEventListener("resize", () => app.render())
 
 app.render()
 app.stop()
 mount.dataset.tickerStarted = String(app.ticker.started)
+mount.dataset.textResolution = String(app.renderer.resolution.toFixed(2))
 await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
 
 const counts = Object.fromEntries([...roleCounts.entries()].sort(([left], [right]) => left.localeCompare(right)))

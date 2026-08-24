@@ -15,6 +15,7 @@ test("Pixi v8 ecosystem packages render and interact in one sequence scene", asy
   expect(Number(await lab.getAttribute("data-svg-element-nodes"))).toBeGreaterThan(20)
   await expect(page.locator("#receipt")).toContainText('"message": 3')
   await expect(page.locator("#receipt")).toContainText('"note": 1')
+  const initialTextResolution = Number(await lab.getAttribute("data-text-resolution"))
 
   const canvas = lab.locator("canvas")
   const box = await canvas.boundingBox()
@@ -28,7 +29,8 @@ test("Pixi v8 ecosystem packages render and interact in one sequence scene", asy
   await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.54)
   await expect(lab).toHaveAttribute("data-hovered-role", "message")
 
-  await page.mouse.wheel(0, -180)
+  await page.mouse.wheel(0, -1_000)
+  await expect.poll(async () => Number(await lab.getAttribute("data-text-resolution"))).toBeGreaterThan(initialTextResolution)
   await page.mouse.move(box.x + 30, box.y + box.height - 30)
   await page.mouse.down()
   await page.mouse.move(box.x + 65, box.y + box.height - 5)
