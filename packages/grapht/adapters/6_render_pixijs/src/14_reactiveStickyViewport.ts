@@ -19,6 +19,7 @@ export type ReactiveStickyItem<Id extends string = string> = {
 
 export type ReactiveStickyModel<Id extends string = string> = {
   actorWorldTop: number
+  actorBoundaryWorldBottom: number
   actorScreenTop: number
   actorWorldHeight: number
   stackInset: number
@@ -42,6 +43,13 @@ export function projectReactiveStickyFrame<Id extends string>(
   viewport: ViewportSnapshot,
 ): ReactiveStickyFrame<Id> {
   const items = [...model.items].sort((left, right) => left.order - right.order)
+  const actorHeight = model.actorWorldHeight * viewport.scale
+  const actorNaturalTop = viewport.y + model.actorWorldTop * viewport.scale
+  const actorBoundaryBottom = viewport.y + model.actorBoundaryWorldBottom * viewport.scale
+  const actorTop = Math.min(
+    Math.max(actorNaturalTop, model.actorScreenTop),
+    actorBoundaryBottom - actorHeight,
+  )
   const placements = layoutStickyStack({
     inset: model.actorScreenTop + model.actorWorldHeight * viewport.scale + model.stackInset,
     gap: model.gap,
@@ -61,7 +69,7 @@ export function projectReactiveStickyFrame<Id extends string>(
     viewport,
     actorLayer: {
       x: viewport.x,
-      y: model.actorScreenTop - model.actorWorldTop * viewport.scale,
+      y: actorTop - model.actorWorldTop * viewport.scale,
       scale: viewport.scale,
     },
     groupLayer: { x: viewport.x, y: 0, scale: viewport.scale },

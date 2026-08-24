@@ -7,7 +7,7 @@ test("Pixi v8 ecosystem packages render and interact in one sequence scene", asy
 
   const lab = page.locator("#ecosystem[data-ready='true']")
   await expect(lab, errors.join("\n")).toHaveCount(1)
-  await expect(lab).toHaveAttribute("data-viewport-plugins", "drag,pinch,wheel,decelerate,clampZoom")
+  await expect(lab).toHaveAttribute("data-viewport-plugins", "drag,pinch,wheel,decelerate,clamp,clampZoom")
   await expect(lab).toHaveAttribute("data-layout", "true")
   await expect(lab).toHaveAttribute("data-ui-button", "true")
   await expect(lab).toHaveAttribute("data-cullable", "true")
@@ -26,11 +26,13 @@ test("Pixi v8 ecosystem packages render and interact in one sequence scene", asy
   await expect(lab).toHaveAttribute("data-fit-count", "1")
   await page.mouse.click(box.x + 250, box.y + 37)
   await expect(lab).toHaveAttribute("data-active-tool", "viewport")
-  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.568)
+  await page.mouse.move(box.x + box.width * 0.43, box.y + box.height * 0.327)
   await expect(lab).toHaveAttribute("data-hovered-role", "message")
-  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.54)
+  await page.mouse.move(box.x + box.width * 0.43, box.y + box.height * 0.30)
   await expect(lab).toHaveAttribute("data-hovered-role", "message")
 
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5)
+  await page.mouse.wheel(0, -600)
   await page.mouse.move(box.x + 30, box.y + box.height - 30)
   await page.mouse.down()
   await page.mouse.move(box.x + 65, box.y + box.height - 230)
@@ -39,6 +41,32 @@ test("Pixi v8 ecosystem packages render and interact in one sequence scene", asy
   await expect(lab).toHaveAttribute("data-ticker-started", "false", { timeout: 2_000 })
   await expect(lab).toHaveScreenshot("pixi-ecosystem-sequence.png", { animations: "disabled" })
   expect(errors).toEqual([])
+})
+
+test("viewport drag continues across sticky actors and graph hit targets", async ({ page }) => {
+  await page.goto("/labs/ecosystem.html")
+  const lab = page.locator("#ecosystem[data-ready='true']")
+  await expect(lab).toHaveCount(1)
+  const box = await lab.locator("canvas").boundingBox()
+  if (!box) throw new Error("ecosystem canvas has no bounds")
+
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5)
+  await page.mouse.wheel(0, -600)
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height - 40)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width * 0.5, box.y + 90, { steps: 30 })
+  await page.mouse.up()
+
+  const panProbe = JSON.parse(await lab.getAttribute("data-pan-probe") ?? "null")
+  expect({
+    pointerMovesContinued: panProbe.pointerMoves >= 30,
+    framesRendered: panProbe.frames > 0,
+    stickyFramesApplied: panProbe.stickyFlushes > 0,
+  }).toEqual({
+    pointerMovesContinued: true,
+    framesRendered: true,
+    stickyFramesApplied: true,
+  })
 })
 
 test("Pixi text resolution follows viewport zoom", async ({ page }) => {

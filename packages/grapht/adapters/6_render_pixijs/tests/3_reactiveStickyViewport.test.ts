@@ -5,6 +5,7 @@ describe("reactive sticky viewport projection", () => {
   test("projects camera state into renderer-neutral overlay geometry", () => {
     expect(projectReactiveStickyFrame({
       actorWorldTop: 55,
+      actorBoundaryWorldBottom: 790,
       actorScreenTop: 74,
       actorWorldHeight: 72,
       stackInset: 8,
@@ -53,6 +54,42 @@ describe("reactive sticky viewport projection", () => {
           "y": -180,
         },
       }
+    `)
+  })
+
+  test("keeps actors inside their sequence boundary before, during, and after sticking", () => {
+    const model = {
+      actorWorldTop: 55,
+      actorBoundaryWorldBottom: 790,
+      actorScreenTop: 74,
+      actorWorldHeight: 72,
+      stackInset: 8,
+      gap: 6,
+      items: [],
+    }
+
+    expect([
+      projectReactiveStickyFrame(model, { x: 0, y: 100, scale: 1 }).actorLayer,
+      projectReactiveStickyFrame(model, { x: 0, y: -100, scale: 1 }).actorLayer,
+      projectReactiveStickyFrame(model, { x: 0, y: -760, scale: 1 }).actorLayer,
+    ]).toMatchInlineSnapshot(`
+      [
+        {
+          "scale": 1,
+          "x": 0,
+          "y": 100,
+        },
+        {
+          "scale": 1,
+          "x": 0,
+          "y": 19,
+        },
+        {
+          "scale": 1,
+          "x": 0,
+          "y": -97,
+        },
+      ]
     `)
   })
 })

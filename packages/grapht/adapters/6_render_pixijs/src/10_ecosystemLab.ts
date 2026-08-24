@@ -104,8 +104,11 @@ const viewport = new Viewport({
   worldHeight: 900,
   events: app.renderer.events,
   ticker: app.ticker,
+  allowPreserveDragOutside: true,
 })
-viewport.drag().pinch().wheel({ smooth: 3 }).decelerate().clampZoom({ minScale: 0.35, maxScale: 3 })
+viewport.drag().pinch().wheel({ smooth: 3 }).decelerate()
+  .clamp({ direction: "all", underflow: "center" })
+  .clampZoom({ minScale: 0.35, maxScale: 3 })
 app.stage.addChild(viewport)
 
 const documentRoot = new DOMParser().parseFromString(SVG, "image/svg+xml").documentElement as unknown as SVGSVGElement
@@ -149,6 +152,12 @@ viewport.fitWorld(true)
 const actorLayer = new Container()
 const groupLabelLayer = new Container()
 app.stage.addChild(groupLabelLayer, actorLayer)
+for (const layer of [groupLabelLayer, actorLayer]) {
+  layer.on("pointerdown", event => viewport.emit("pointerdown", event))
+  layer.on("pointerup", event => viewport.emit("pointerup", event))
+  layer.on("pointerupoutside", event => viewport.emit("pointerupoutside", event))
+  layer.on("pointercancel", event => viewport.emit("pointercancel", event))
+}
 const actorElements = [...documentRoot.querySelectorAll<SVGElement>("[data-role='actor']")]
 for (const element of actorElements) {
   const node = elementNodes.get(element)
@@ -172,6 +181,7 @@ const stickyGroupItems = [...documentRoot.querySelectorAll<SVGTextElement>("[dat
 const stickyNodes = new Map(stickyGroupItems.map(item => [item.id, elementNodes.get(documentRoot.querySelector<SVGElement>(`#${item.id}`)!)!]))
 const stickyModel = {
   actorWorldTop: 55,
+  actorBoundaryWorldBottom: 790,
   actorScreenTop: 74,
   actorWorldHeight: 72,
   stackInset: 8,
@@ -385,7 +395,7 @@ const result = {
   pixiBackend: app.renderer.type,
   svgElementNodes: elementNodes.size,
   roles: counts,
-  viewportPlugins: ["drag", "pinch", "wheel", "decelerate", "clampZoom"],
+  viewportPlugins: ["drag", "pinch", "wheel", "decelerate", "clamp", "clampZoom"],
   layout: Boolean(toolbar.layout),
   uiButton: Boolean(fitButton.view),
   cullable: scene.cullable,
