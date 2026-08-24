@@ -27,11 +27,13 @@
     "test:sequence-geometry-focus": "vitest run packages/grapht/tests/15_sequenceGeometryFocus.test.ts",
     "test:sequence-board": "vitest run packages/grapht/tests/17_sequenceBoard.test.ts packages/grapht/tests/18_sequenceBoardReceipts.test.ts",
     "test:sequence-collapse-placement": "vitest run packages/grapht/tests/19_sequenceCollapsePlacement.test.ts",
+    "test:sequence-demo": "pnpm --filter @hafley66/grapht-model run build && vitest run packages/grapht/tests/21_sequenceDemo.test.ts",
     "test:sequence-package-gate": "pnpm --filter @hafley66/grapht-model run build && pnpm --filter @hafley66/mmd run build && pnpm --filter @hafley66/d2 run build && pnpm --filter @hafley66/grapht run build && vitest run packages/grapht/tests/20_sequencePackageGate.test.ts",
     "test:sequence-identity": "vitest run packages/grapht/tests/12_sequenceIdentity.test.ts",
     "test:sequence-local-documents": "vitest run packages/mmd/src/1_parse.test.ts packages/d2/src/1_parse.test.ts",
     "test:sequence-receipts": "vitest run scripts/2_sequenceRenderReceipts.test.ts",
-    "test:sequence-renderers": "vitest run scripts/0_sequenceRendererSmoke.test.ts"
+    "test:sequence-renderers": "vitest run scripts/0_sequenceRendererSmoke.test.ts",
+    "demo:sequence": "pnpm --filter @hafley66/grapht-model run build && vite --config packages/grapht/vite.sequence-demo.config.ts"
   },
   "devDependencies": {
     "@hafley66/d2": "workspace:*",
