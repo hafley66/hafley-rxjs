@@ -216,21 +216,34 @@ fitButton.onPress.connect(() => {
 })
 toolbar.addChild(fitView)
 
+const toolViews = new Map<string, Graphics>()
+const toolWidths = new Map<string, number>()
+const selectTool = (selected: string) => {
+  for (const [label, view] of toolViews) {
+    view.clear().roundRect(0, 0, toolWidths.get(label)!, 32, 5)
+      .fill(label === selected ? 0x31517b : 0x202d40)
+      .stroke({ color: label === selected ? 0x68a7ef : 0x2a3a50, width: 1 })
+  }
+  mount.dataset.activeTool = selected
+  output.value = `toolbar: ${selected}`
+  app.render()
+}
+
 for (const label of ["SVGScene", "viewport", "layout", "UI", "culler"]) {
   const width = label.length * 8 + 18
   const view = new Graphics().roundRect(0, 0, width, 32, 5).fill(0x202d40)
   view.layout = { width, height: 32 }
+  toolViews.set(label, view)
+  toolWidths.set(label, width)
   const text = new Text({ text: label, style: { fill: 0xaec3de, fontFamily: "system-ui", fontSize: 13 } })
   text.anchor.set(0.5)
   text.position.set(width / 2, 16)
   view.addChild(text)
   const button = new Button(view)
-  button.onPress.connect(() => {
-    mount.dataset.activeTool = label
-    output.value = `toolbar: ${label}`
-  })
+  button.onPress.connect(() => selectTool(label))
   toolbar.addChild(view)
 }
+selectTool("SVGScene")
 
 const badgeElement = document.createElement("div")
 badgeElement.className = "pixi-dom-badge"
