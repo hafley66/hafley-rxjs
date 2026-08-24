@@ -22,6 +22,9 @@
     "test": "vitest run -c vitest.config.ts",
     "lab": "node ../../scripts/0_generate_renderer_fixture.mjs 1000 && node ../../scripts/0_generate_renderer_fixture.mjs 5000 && node ../../scripts/0_generate_renderer_fixture.mjs 10000 && playwright test -c playwright.config.ts",
     "lab:ecosystem": "node ../../scripts/0_generate_renderer_fixture.mjs 1000 && vite --host 127.0.0.1 --port 4180",
+    "demo:catalog": "vite --host 127.0.0.1 --port 4180",
+    "demo:sequence-formats": "vite --host 127.0.0.1 --port 4180 --open /labs/sequence-formats.html",
+    "test:sequence-formats": "playwright test -c playwright.config.ts e2e/10_sequence_formats.spec.ts",
     "bench": "node --import tsx src/3_protocol_adapter.ts",
     "receipt": "printf '%s\\n' '{\"protocol\":\"grapht-bench/0\",\"runId\":\"pixijs-receipt\",\"fixture\":\"grid-1k\",\"operation\":\"render\",\"outputDirectory\":\"receipts/generated\",\"parameters\":{\"renderer\":\"webgl\",\"representation\":\"retained\"}}' | node --import tsx src/3_protocol_adapter.ts",
     "check": "tsc --noEmit && vitest run"
