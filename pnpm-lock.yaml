@@ -344,6 +344,9 @@ importers:
       '@hafley66/scene':
         specifier: workspace:^
         version: link:../../../scene
+      '@hafley66/signals':
+        specifier: workspace:^
+        version: link:../../../signals
       '@pixi-essentials/svg':
         specifier: 3.0.0
         version: 3.0.0(pixi.js@8.19.0)

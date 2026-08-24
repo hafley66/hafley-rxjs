@@ -30,6 +30,7 @@
     "@hafley66/grapht": "workspace:^",
     "@hafley66/grapht-model": "workspace:^",
     "@hafley66/scene": "workspace:^",
+    "@hafley66/signals": "workspace:^",
     "@pixi-essentials/svg": "3.0.0",
     "@pixi/layout": "3.2.1",
     "@pixi/ui": "2.3.2",

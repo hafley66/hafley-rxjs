@@ -1,4 +1,6 @@
-import { type Frame, type Id, type Item, indexOf, type Renderer, renderer } from "@hafley66/scene"
+import type { Frame, Id, Item, Renderer } from "./0_types.js"
+import { indexOf } from "./2_geometry.js"
+import { renderer } from "./4_renderer.js"
 import { Application, Container, DOMContainer, Graphics, Sprite, type Texture } from "pixi.js"
 
 const NODE_RADIUS = 4
