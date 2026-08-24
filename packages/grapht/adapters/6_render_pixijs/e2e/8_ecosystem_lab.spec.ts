@@ -54,3 +54,31 @@ test("Pixi text resolution follows viewport zoom", async ({ page }) => {
   await expect.poll(async () => Number(await lab.getAttribute("data-text-resolution"))).toBeGreaterThan(initialTextResolution)
   await expect(lab).toHaveAttribute("data-ticker-started", "false", { timeout: 2_000 })
 })
+
+test("viewport keeps dragging after the pointer leaves the canvas", async ({ page }) => {
+  await page.goto("/labs/ecosystem.html")
+  const lab = page.locator("#ecosystem[data-ready='true']")
+  await expect(lab).toHaveCount(1)
+  const box = await lab.locator("canvas").boundingBox()
+  if (!box) throw new Error("ecosystem canvas has no bounds")
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x - 120, box.y + box.height / 2, { steps: 12 })
+  await expect(lab).toHaveAttribute("data-sticky-layout-requests", /[1-9]\d*/)
+  await page.mouse.up()
+  await expect(lab).toHaveAttribute("data-pan-probe", /"gotPointerCapture":1/)
+  const panProbe = JSON.parse(await lab.getAttribute("data-pan-probe") ?? "null")
+  expect({
+    pointerMovesContinued: panProbe.pointerMoves >= 12,
+    captured: panProbe.gotPointerCapture === 1,
+    framesRendered: panProbe.frames > 0,
+    stickyWorkBoundedByFrames: panProbe.stickyFlushes <= panProbe.frames,
+  }).toEqual({
+    pointerMovesContinued: true,
+    captured: true,
+    framesRendered: true,
+    stickyWorkBoundedByFrames: true,
+  })
+  await expect(lab).toHaveAttribute("data-ticker-started", "false", { timeout: 2_000 })
+})

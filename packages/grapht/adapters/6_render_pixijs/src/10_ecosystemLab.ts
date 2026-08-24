@@ -19,6 +19,7 @@ import {
   createPixiStickyViewportStack,
   createPixiViewportLayoutScheduler,
 } from "./12_stickyViewport.js"
+import { createPixiPanProbe } from "./13_panProbe.js"
 
 const SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 900" width="1000" height="900">
@@ -326,8 +327,26 @@ const stopRenderingSoon = () => {
     mount.dataset.tickerStarted = String(app.ticker.started)
   }, 500)
 }
-app.canvas.addEventListener("pointerdown", startRendering)
+app.canvas.addEventListener("pointerdown", event => {
+  app.canvas.setPointerCapture(event.pointerId)
+  startRendering()
+})
+const releaseCanvasPointer = (event: PointerEvent) => {
+  if (app.canvas.hasPointerCapture(event.pointerId)) {
+    app.canvas.releasePointerCapture(event.pointerId)
+  }
+}
+app.canvas.addEventListener("pointerup", releaseCanvasPointer)
+app.canvas.addEventListener("pointercancel", releaseCanvasPointer)
 app.canvas.addEventListener("wheel", startRendering, { passive: true })
+createPixiPanProbe({
+  canvas: app.canvas,
+  ticker: app.ticker,
+  stickyReceipt: stickyLayoutScheduler.receipt,
+  publish: panReceipt => {
+    mount.dataset.panProbe = JSON.stringify(panReceipt)
+  },
+})
 window.addEventListener("pointerup", stopRenderingSoon)
 viewport.on("moved-end", stopRenderingSoon)
 viewport.on("zoomed-end", stopRenderingSoon)
