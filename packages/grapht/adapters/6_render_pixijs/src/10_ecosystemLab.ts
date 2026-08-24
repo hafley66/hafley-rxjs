@@ -87,7 +87,7 @@ await app.init({
   autoDensity: true,
   background: 0x10151f,
 })
-app.ticker.maxFPS = 30
+app.ticker.maxFPS = 60
 mount.append(app.canvas)
 
 const viewport = new Viewport({
@@ -322,10 +322,11 @@ app.canvas.addEventListener("wheel", startRendering, { passive: true })
 window.addEventListener("pointerup", stopRenderingSoon)
 viewport.on("moved-end", stopRenderingSoon)
 viewport.on("zoomed-end", stopRenderingSoon)
-viewport.on("zoomed", () => {
+viewport.on("zoomed-end", () => {
   const resolution = Math.max(app.renderer.resolution, Math.min(4, app.renderer.resolution * viewport.scale.x))
   for (const text of textNodes) text.resolution = resolution
   mount.dataset.textResolution = resolution.toFixed(2)
+  app.render()
 })
 window.addEventListener("resize", () => app.render())
 
