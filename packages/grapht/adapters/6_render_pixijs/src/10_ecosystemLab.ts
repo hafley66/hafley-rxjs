@@ -14,7 +14,11 @@ import {
   extensions,
 } from "pixi.js"
 import { Viewport } from "pixi-viewport"
-import { createPixiPinnedViewportRow, createPixiStickyViewportStack } from "./12_stickyViewport.js"
+import {
+  createPixiPinnedViewportRow,
+  createPixiStickyViewportStack,
+  createPixiViewportLayoutScheduler,
+} from "./12_stickyViewport.js"
 
 const SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 900" width="1000" height="900">
@@ -142,6 +146,7 @@ viewport.fitWorld(true)
 const actorLayer = new Container()
 const groupLabelLayer = new Container()
 app.stage.addChild(groupLabelLayer, actorLayer)
+const stickyLayoutScheduler = createPixiViewportLayoutScheduler({ viewport, ticker: app.ticker })
 const actorElements = [...documentRoot.querySelectorAll<SVGElement>("[data-role='actor']")]
 for (const element of actorElements) {
   const node = elementNodes.get(element)
@@ -152,6 +157,7 @@ const pinnedActors = createPixiPinnedViewportRow({
   layer: actorLayer,
   worldTop: 55,
   screenTop: 74,
+  scheduler: stickyLayoutScheduler,
 })
 const stickyGroupItems = [...documentRoot.querySelectorAll<SVGTextElement>("[data-role='group-label']")].map((element, index) => {
   const node = elementNodes.get(element)!
@@ -175,12 +181,16 @@ const stickyGroups = createPixiStickyViewportStack({
   items: stickyGroupItems,
   inset: () => 74 + 72 * viewport.scale.x + 8,
   gap: 6,
+  scheduler: stickyLayoutScheduler,
 })
 const recordStickyState = () => {
   mount.dataset.stickyGroupStates = stickyGroups.receipt().map(item => `${item.id}:${item.state}`).join(",")
+  const metrics = stickyLayoutScheduler.receipt()
+  mount.dataset.stickyLayoutRequests = String(metrics.requests)
+  mount.dataset.stickyLayoutFlushes = String(metrics.flushes)
+  mount.dataset.stickyLayoutCallbacks = String(metrics.callbacks)
 }
-viewport.on("moved", recordStickyState)
-viewport.on("zoomed", recordStickyState)
+stickyLayoutScheduler.add(recordStickyState)
 recordStickyState()
 
 const roleCounts = new Map<string, number>()
@@ -259,9 +269,8 @@ const fitButton = new Button(fitView)
 let fitCount = 0
 fitButton.onPress.connect(() => {
   viewport.fitWorld(true)
-  pinnedActors.layout()
-  stickyGroups.layout()
-  recordStickyState()
+  stickyLayoutScheduler.request()
+  stickyLayoutScheduler.flush()
   app.render()
   fitCount += 1
   mount.dataset.fitCount = String(fitCount)

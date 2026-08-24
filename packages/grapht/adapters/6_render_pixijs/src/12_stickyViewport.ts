@@ -1,6 +1,71 @@
 import { layoutStickyStack, type StickyStackPlacement } from "@hafley66/grapht-model"
-import type { Container } from "pixi.js"
+import { UPDATE_PRIORITY, type Container, type Ticker } from "pixi.js"
 import type { Viewport } from "pixi-viewport"
+
+export type PixiViewportLayoutSchedulerReceipt = {
+  requests: number
+  flushes: number
+  coalescedRequests: number
+  callbacks: number
+}
+
+export type PixiViewportLayoutScheduler = {
+  add(layout: () => void): () => void
+  request(): void
+  flush(): void
+  receipt(): PixiViewportLayoutSchedulerReceipt
+  destroy(): void
+}
+
+export function createPixiViewportLayoutScheduler(config: {
+  viewport: Viewport
+  ticker: Ticker
+}): PixiViewportLayoutScheduler {
+  const layouts = new Set<() => void>()
+  let pending = false
+  let requests = 0
+  let flushes = 0
+  let callbacks = 0
+  const request = () => {
+    requests += 1
+    pending = true
+  }
+  const flush = () => {
+    if (!pending) return
+    pending = false
+    flushes += 1
+    for (const layout of layouts) {
+      callbacks += 1
+      layout()
+    }
+  }
+  config.viewport.on("moved", request)
+  config.viewport.on("zoomed", request)
+  config.ticker.add(flush, undefined, UPDATE_PRIORITY.LOW + 1)
+  return {
+    add(layout) {
+      layouts.add(layout)
+      layout()
+      return () => layouts.delete(layout)
+    },
+    request,
+    flush,
+    receipt() {
+      return {
+        requests,
+        flushes,
+        coalescedRequests: requests - flushes,
+        callbacks,
+      }
+    },
+    destroy() {
+      config.viewport.off("moved", request)
+      config.viewport.off("zoomed", request)
+      config.ticker.remove(flush)
+      layouts.clear()
+    },
+  }
+}
 
 export type PixiPinnedViewportRow = {
   layout(): void
@@ -28,18 +93,23 @@ export function createPixiPinnedViewportRow(config: {
   layer: Container
   worldTop: number
   screenTop: number
+  scheduler?: PixiViewportLayoutScheduler
 }): PixiPinnedViewportRow {
   const layout = () => {
     const scale = config.viewport.scale.x
     config.layer.position.set(config.viewport.x, config.screenTop - config.worldTop * scale)
     config.layer.scale.set(scale)
   }
-  config.viewport.on("moved", layout)
-  config.viewport.on("zoomed", layout)
-  layout()
+  const removeScheduledLayout = config.scheduler?.add(layout)
+  if (!config.scheduler) {
+    config.viewport.on("moved", layout)
+    config.viewport.on("zoomed", layout)
+    layout()
+  }
   return {
     layout,
     destroy() {
+      removeScheduledLayout?.()
       config.viewport.off("moved", layout)
       config.viewport.off("zoomed", layout)
     },
@@ -52,8 +122,10 @@ export function createPixiStickyViewportStack<Id extends string>(config: {
   items: PixiStickyViewportItem<Id>[]
   inset: () => number
   gap: number
+  scheduler?: PixiViewportLayoutScheduler
 }): PixiStickyViewportStack<Id> {
   let placements: StickyStackPlacement<Id>[] = []
+  const items = [...config.items].sort((left, right) => left.order - right.order)
   const layout = () => {
     const scale = config.viewport.scale.x
     config.layer.position.set(config.viewport.x, 0)
@@ -61,7 +133,7 @@ export function createPixiStickyViewportStack<Id extends string>(config: {
     placements = layoutStickyStack({
       inset: config.inset(),
       gap: config.gap,
-      items: config.items.map(item => ({
+      items: items.map(item => ({
         id: item.id,
         naturalTop: config.viewport.y + item.worldTop * scale,
         boundaryBottom: config.viewport.y + item.boundaryWorldBottom * scale,
@@ -69,23 +141,28 @@ export function createPixiStickyViewportStack<Id extends string>(config: {
         order: item.order,
       })),
     })
-    const byId = new Map(placements.map(placement => [placement.id, placement]))
-    for (const item of config.items) {
-      const placement = byId.get(item.id)!
-      item.node.visible = placement.visible
-      item.node.y = placement.top / scale - item.localTop
+    for (let index = 0; index < items.length; index += 1) {
+      const item = items[index]
+      const placement = placements[index]
+      if (item.node.visible !== placement.visible) item.node.visible = placement.visible
+      const y = placement.top / scale - item.localTop
+      if (item.node.y !== y) item.node.y = y
     }
     return placements.map(placement => ({ ...placement }))
   }
-  config.viewport.on("moved", layout)
-  config.viewport.on("zoomed", layout)
-  layout()
+  const removeScheduledLayout = config.scheduler?.add(layout)
+  if (!config.scheduler) {
+    config.viewport.on("moved", layout)
+    config.viewport.on("zoomed", layout)
+    layout()
+  }
   return {
     layout,
     receipt() {
       return placements.map(placement => ({ ...placement }))
     },
     destroy() {
+      removeScheduledLayout?.()
       config.viewport.off("moved", layout)
       config.viewport.off("zoomed", layout)
     },

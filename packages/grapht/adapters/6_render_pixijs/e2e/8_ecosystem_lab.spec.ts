@@ -36,7 +36,6 @@ test("Pixi v8 ecosystem packages render and interact in one sequence scene", asy
   await page.mouse.up()
   await expect(lab).toHaveAttribute("data-sticky-group-states", /stuck/)
   await expect(lab).toHaveAttribute("data-ticker-started", "false", { timeout: 2_000 })
-
   await expect(lab).toHaveScreenshot("pixi-ecosystem-sequence.png", { animations: "disabled" })
   expect(errors).toEqual([])
 })
