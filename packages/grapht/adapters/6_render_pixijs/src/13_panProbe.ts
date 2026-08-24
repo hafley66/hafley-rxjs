@@ -17,7 +17,7 @@ export function createPixiPanProbe(config: {
   ticker: Ticker
   stickyReceipt: () => { requests: number; flushes: number }
   publish: (receipt: PixiPanProbeReceipt) => void
-}): { destroy(): void } {
+}): { unsubscribe(): void } {
   let active = false
   let pointerMoves = 0
   let gotPointerCapture = 0
@@ -77,7 +77,7 @@ export function createPixiPanProbe(config: {
   config.ticker.add(frame)
 
   return {
-    destroy() {
+    unsubscribe() {
       config.canvas.removeEventListener("pointerdown", pointerDown)
       config.canvas.removeEventListener("pointermove", pointerMove)
       config.canvas.removeEventListener("gotpointercapture", capture)

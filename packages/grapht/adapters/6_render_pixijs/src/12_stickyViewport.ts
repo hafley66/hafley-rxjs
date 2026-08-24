@@ -14,7 +14,7 @@ export type PixiViewportLayoutScheduler = {
   request(): void
   flush(): void
   receipt(): PixiViewportLayoutSchedulerReceipt
-  destroy(): void
+  unsubscribe(): void
 }
 
 export function createPixiViewportLayoutScheduler(config: {
@@ -58,7 +58,7 @@ export function createPixiViewportLayoutScheduler(config: {
         callbacks,
       }
     },
-    destroy() {
+    unsubscribe() {
       config.viewport.off("moved", request)
       config.viewport.off("zoomed", request)
       config.ticker.remove(flush)
@@ -69,7 +69,7 @@ export function createPixiViewportLayoutScheduler(config: {
 
 export type PixiPinnedViewportRow = {
   layout(): void
-  destroy(): void
+  unsubscribe(): void
 }
 
 export type PixiStickyViewportItem<Id extends string = string> = {
@@ -85,7 +85,7 @@ export type PixiStickyViewportItem<Id extends string = string> = {
 export type PixiStickyViewportStack<Id extends string = string> = {
   layout(): StickyStackPlacement<Id>[]
   receipt(): StickyStackPlacement<Id>[]
-  destroy(): void
+  unsubscribe(): void
 }
 
 export function createPixiPinnedViewportRow(config: {
@@ -108,7 +108,7 @@ export function createPixiPinnedViewportRow(config: {
   }
   return {
     layout,
-    destroy() {
+    unsubscribe() {
       removeScheduledLayout?.()
       config.viewport.off("moved", layout)
       config.viewport.off("zoomed", layout)
@@ -161,7 +161,7 @@ export function createPixiStickyViewportStack<Id extends string>(config: {
     receipt() {
       return placements.map(placement => ({ ...placement }))
     },
-    destroy() {
+    unsubscribe() {
       removeScheduledLayout?.()
       config.viewport.off("moved", layout)
       config.viewport.off("zoomed", layout)

@@ -1,5 +1,14 @@
 # JSON-RX bootstrap and authoring rules
 
+## Lifecycle teardown naming
+
+Name lifecycle teardown `unsubscribe` throughout this repository. Public return
+types, object methods, local variables, renderer hooks, event-listener cleanup,
+and adapter teardown use `unsubscribe`. Do not introduce `dispose`, `destroy`,
+`stop`, `cleanup`, or `remove` as alternate names for the same lifecycle
+operation. Preserve third-party method names only at the direct call site behind
+the repository-owned `unsubscribe` boundary.
+
 ## Bootstrap invariant
 
 The handwritten v1 compiler emits JSON-RX documents, target lowerers, adapters,
