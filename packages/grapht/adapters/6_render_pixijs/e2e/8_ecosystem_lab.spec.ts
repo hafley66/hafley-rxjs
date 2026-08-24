@@ -21,7 +21,11 @@ test("Pixi v8 ecosystem packages render and interact in one sequence scene", asy
   if (!box) throw new Error("ecosystem canvas has no bounds")
   await page.mouse.click(box.x + 65, box.y + 37)
   await expect(lab).toHaveAttribute("data-fit-count", "1")
-  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.57)
+  await page.mouse.click(box.x + 160, box.y + 37)
+  await expect(lab).toHaveAttribute("data-active-tool", "SVGScene")
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.568)
+  await expect(lab).toHaveAttribute("data-hovered-role", "message")
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.54)
   await expect(lab).toHaveAttribute("data-hovered-role", "message")
 
   await page.mouse.wheel(0, -180)
@@ -29,6 +33,7 @@ test("Pixi v8 ecosystem packages render and interact in one sequence scene", asy
   await page.mouse.down()
   await page.mouse.move(box.x + 65, box.y + box.height - 5)
   await page.mouse.up()
+  await expect(lab).toHaveAttribute("data-ticker-started", "false", { timeout: 2_000 })
 
   await expect(lab).toHaveScreenshot("pixi-ecosystem-sequence.png", { animations: "disabled" })
   expect(errors).toEqual([])
