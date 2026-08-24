@@ -91,6 +91,7 @@ describe("sequence package gate", () => {
         "2_sequenceArtifact.ts",
         "3_sequenceFocus.ts",
         "4_sequencePlacement.ts",
+        "5_stickyStack.ts",
       ],
       nonNumericSources: { model: [], mmd: [], d2: [] },
       adapterImports: {

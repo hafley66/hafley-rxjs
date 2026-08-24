@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@hafley66/grapht": "workspace:^",
+    "@hafley66/grapht-model": "workspace:^",
     "@hafley66/scene": "workspace:^",
     "@pixi-essentials/svg": "3.0.0",
     "@pixi/layout": "3.2.1",

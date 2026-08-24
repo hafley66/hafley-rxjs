@@ -5,15 +5,16 @@ import { LayoutContainer } from "@pixi/layout/components"
 import { Button } from "@pixi/ui"
 import {
   Application,
+  Container,
   CullerPlugin,
   DOMContainer,
   Graphics,
   Rectangle,
   Text,
   extensions,
-  type Container,
 } from "pixi.js"
 import { Viewport } from "pixi-viewport"
+import { createPixiPinnedViewportRow, createPixiStickyViewportStack } from "./12_stickyViewport.js"
 
 const SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 900" width="1000" height="900">
@@ -21,6 +22,10 @@ const SVG = `
   <g id="group-frame" data-role="group-frame">
     <rect x="80" y="180" width="840" height="610" fill="#182334" stroke="#526a8e" stroke-width="3"/>
     <text id="group-label" data-role="group-label" x="105" y="220" fill="#b9c9df" font-family="system-ui" font-size="24" font-weight="600">request lifecycle</text>
+  </g>
+  <g id="nested-group-frame" data-role="group-frame">
+    <rect x="120" y="245" width="760" height="480" fill="none" stroke="#384d6d" stroke-width="2"/>
+    <text id="nested-group-label" data-role="group-label" data-depth="1" data-boundary-bottom="725" x="145" y="275" fill="#8fa8ca" font-family="system-ui" font-size="21" font-weight="600">database lookup</text>
   </g>
   <g id="actor-client" data-role="actor">
     <rect x="95" y="55" width="190" height="72" fill="#203555" stroke="#57a5ff" stroke-width="3"/>
@@ -134,6 +139,50 @@ viewport.addChild(scene)
 scene.drawPaints(app.renderer)
 viewport.fitWorld(true)
 
+const actorLayer = new Container()
+const groupLabelLayer = new Container()
+app.stage.addChild(groupLabelLayer, actorLayer)
+const actorElements = [...documentRoot.querySelectorAll<SVGElement>("[data-role='actor']")]
+for (const element of actorElements) {
+  const node = elementNodes.get(element)
+  if (node) actorLayer.addChild(node)
+}
+const pinnedActors = createPixiPinnedViewportRow({
+  viewport,
+  layer: actorLayer,
+  worldTop: 55,
+  screenTop: 74,
+})
+const stickyGroupItems = [...documentRoot.querySelectorAll<SVGTextElement>("[data-role='group-label']")].map((element, index) => {
+  const node = elementNodes.get(element)!
+  const bounds = node.getLocalBounds()
+  const baseline = Number(element.getAttribute("y"))
+  const worldTop = baseline + bounds.y
+  groupLabelLayer.addChild(node)
+  return {
+    id: element.id,
+    node,
+    worldTop,
+    boundaryWorldBottom: Number(element.dataset.boundaryBottom ?? 790),
+    localTop: bounds.y,
+    height: bounds.height,
+    order: Number(element.dataset.depth ?? index),
+  }
+})
+const stickyGroups = createPixiStickyViewportStack({
+  viewport,
+  layer: groupLabelLayer,
+  items: stickyGroupItems,
+  inset: () => 74 + 72 * viewport.scale.x + 8,
+  gap: 6,
+})
+const recordStickyState = () => {
+  mount.dataset.stickyGroupStates = stickyGroups.receipt().map(item => `${item.id}:${item.state}`).join(",")
+}
+viewport.on("moved", recordStickyState)
+viewport.on("zoomed", recordStickyState)
+recordStickyState()
+
 const roleCounts = new Map<string, number>()
 for (const [element, node] of elementNodes) {
   const role = element.getAttribute("data-role")
@@ -210,6 +259,9 @@ const fitButton = new Button(fitView)
 let fitCount = 0
 fitButton.onPress.connect(() => {
   viewport.fitWorld(true)
+  pinnedActors.layout()
+  stickyGroups.layout()
+  recordStickyState()
   app.render()
   fitCount += 1
   mount.dataset.fitCount = String(fitCount)
@@ -293,6 +345,8 @@ const result = {
   uiButton: Boolean(fitButton.view),
   cullable: scene.cullable,
   domContainer: badgeElement.isConnected,
+  stickyActors: actorElements.length,
+  stickyGroups: stickyGroupItems.length,
 }
 output.value = JSON.stringify(result, null, 2)
 mount.dataset.ready = "true"
@@ -303,3 +357,5 @@ mount.dataset.uiButton = String(result.uiButton)
 mount.dataset.cullable = String(result.cullable)
 mount.dataset.domContainer = String(result.domContainer)
 mount.dataset.fitCount = String(fitCount)
+mount.dataset.stickyActors = String(result.stickyActors)
+mount.dataset.stickyGroups = String(result.stickyGroups)
