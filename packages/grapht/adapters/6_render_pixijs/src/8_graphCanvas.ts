@@ -47,7 +47,7 @@ await app.init({
 graphHost.append(app.canvas)
 
 const camera = new Container()
-const edgeLayer = new Graphics()
+const edgeLayer = new Container()
 const nodeLayer = new Container()
 camera.addChild(edgeLayer, nodeLayer)
 app.stage.addChild(camera)
@@ -58,22 +58,68 @@ const byId = new Map(nodes.map(node => [node.id, node]))
 const views = new Map<string, Container>()
 let selectedId: string | undefined
 let hoveredId: string | undefined
+let hoveredEdge: EdgeModel | undefined
+let softHoveredIds = new Set<string>()
 
 const textStyle = new TextStyle({ fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: "600", fill: 0xe6edf3 })
 
+function reachableFrom(startId: string, includeStart: boolean): Set<string> {
+  const reached = new Set<string>(includeStart ? [startId] : [])
+  const queue = [startId]
+  for (let index = 0; index < queue.length; index++) {
+    for (const edge of edges) {
+      if (edge.source !== queue[index] || reached.has(edge.target)) continue
+      reached.add(edge.target)
+      queue.push(edge.target)
+    }
+  }
+  return reached
+}
+
+function repaintNodes(): void {
+  for (const view of views.values()) view.emit("graph-repaint")
+  graphHost.dataset.softHoveredNodes = [...softHoveredIds].sort().join(",")
+}
+
+function setNodeHover(nodeId: string | undefined): void {
+  hoveredId = nodeId
+  hoveredEdge = undefined
+  softHoveredIds = nodeId ? reachableFrom(nodeId, false) : new Set()
+  repaintNodes()
+}
+
+function setEdgeHover(edge: EdgeModel | undefined): void {
+  hoveredId = undefined
+  hoveredEdge = edge
+  softHoveredIds = edge ? reachableFrom(edge.target, true) : new Set()
+  repaintNodes()
+}
+
 function drawEdges(): void {
-  edgeLayer.clear()
+  edgeLayer.removeChildren()
   for (const edge of edges) {
     const source = byId.get(edge.source)
     const target = byId.get(edge.target)
     if (!source || !target) continue
+    const view = new Container({ label: `${edge.source}->${edge.target}` })
+    const visible = new Graphics()
+    const hit = new Graphics()
     const startX = source.x + 70
     const endX = target.x - 70
     const bend = Math.max(30, (endX - startX) * 0.5)
-    edgeLayer.moveTo(startX, source.y)
-    edgeLayer.bezierCurveTo(startX + bend, source.y, endX - bend, target.y, endX, target.y)
+    const path = (graphics: Graphics): Graphics => graphics
+      .moveTo(startX, source.y)
+      .bezierCurveTo(startX + bend, source.y, endX - bend, target.y, endX, target.y)
+    path(visible).stroke({ width: hoveredEdge === edge ? 3 : 2, color: hoveredEdge === edge ? 0x8fb9ec : 0x52647d, alpha: 0.9 })
+    path(hit).stroke({ width: 16, color: 0xffffff, alpha: 0.001 })
+    visible.poly([endX, target.y, endX - 10, target.y - 6, endX - 10, target.y + 6]).fill({ color: 0x7186a3 })
+    hit.eventMode = "static"
+    hit.cursor = "pointer"
+    hit.on("pointerover", () => { setEdgeHover(edge); stateOutput.value = `edge: ${edge.source} → ${edge.target}`; drawEdges() })
+    hit.on("pointerout", () => { setEdgeHover(undefined); stateOutput.value = selectedId ? `selected: ${selectedId}` : ""; drawEdges() })
+    view.addChild(visible, hit)
+    edgeLayer.addChild(view)
   }
-  edgeLayer.stroke({ width: 2, color: 0x52647d, alpha: 0.85 })
 }
 
 function drawNode(node: NodeModel): Container {
@@ -90,14 +136,16 @@ function drawNode(node: NodeModel): Container {
   const paint = (): void => {
     const selected = selectedId === node.id
     const hovered = hoveredId === node.id
+    const softHovered = softHoveredIds.has(node.id)
     shape.clear().roundRect(-70, -25, 140, 50, 10)
-    shape.fill({ color: selected ? 0x263d61 : 0x192334 })
-    shape.stroke({ width: selected ? 4 : hovered ? 3 : 2, color: node.color })
+    shape.fill({ color: selected ? 0x263d61 : softHovered ? 0x213149 : 0x192334 })
+    shape.stroke({ width: selected ? 4 : hovered ? 3 : softHovered ? 2.5 : 2, color: node.color, alpha: softHovered ? 0.9 : 1 })
     view.scale.set(hovered ? 1.04 : 1)
+    view.alpha = softHovered ? 0.88 : 1
   }
 
-  view.on("pointerover", () => { hoveredId = node.id; paint(); stateOutput.value = `hover: ${node.id}` })
-  view.on("pointerout", () => { hoveredId = undefined; paint(); stateOutput.value = selectedId ? `selected: ${selectedId}` : "" })
+  view.on("pointerover", () => { setNodeHover(node.id); stateOutput.value = `hover: ${node.id}` })
+  view.on("pointerout", () => { setNodeHover(undefined); stateOutput.value = selectedId ? `selected: ${selectedId}` : "" })
   view.on("pointertap", event => {
     event.stopPropagation()
     const previous = selectedId
@@ -190,3 +238,4 @@ graphHost.dataset.nodeCount = String(nodes.length)
 graphHost.dataset.edgeCount = String(edges.length)
 graphHost.dataset.cameraX = String(camera.position.x)
 graphHost.dataset.cameraY = String(camera.position.y)
+graphHost.dataset.softHoveredNodes = ""
