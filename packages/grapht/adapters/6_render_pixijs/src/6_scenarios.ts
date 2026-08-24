@@ -225,7 +225,7 @@ export function createPixiScenarioHandlers(options: PixiScenarioOptions = {}): B
     "graph-dispose": async state => {
       if (!state.projection || state.disposed) return unsupported(state, "graph-dispose", "graph has already been disposed")
       const started = now()
-      state.projection.dispose()
+      state.projection.unsubscribe()
       const nextState = { ...state, projection: null, disposed: true }
       return { state: nextState, sample: sample(nextState, "graph-dispose", now() - started, [], 0) }
     },

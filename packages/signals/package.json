@@ -13,6 +13,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./Signal": {
+      "types": "./dist/2_Signal.d.ts",
+      "import": "./dist/2_Signal.js"
+    },
     "./react": {
       "types": "./dist/3_react.d.ts",
       "import": "./dist/3_react.js"

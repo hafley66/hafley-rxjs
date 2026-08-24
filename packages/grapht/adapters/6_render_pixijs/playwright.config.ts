@@ -1,11 +1,13 @@
 import { defineConfig } from "@playwright/test"
 
+const port = Number(process.env.GRAPHT_PORT ?? 4180)
+
 export default defineConfig({
   testDir: "e2e",
   testIgnore: process.env.GRAPHT_MASSIVE === "1" ? [] : "**/2_massive.spec.ts",
   timeout: 60_000,
   use: {
-    baseURL: "http://127.0.0.1:4180",
+    baseURL: `http://127.0.0.1:${port}`,
     trace: "on",
     screenshot: "on",
     viewport: { width: 800, height: 600 },
@@ -19,8 +21,8 @@ export default defineConfig({
     },
   },
   webServer: {
-    command: "pnpm exec vite --host 127.0.0.1 --port 4180",
-    port: 4180,
-    reuseExistingServer: false,
+    command: `pnpm exec vite --host 127.0.0.1 --port ${port}`,
+    port,
+    reuseExistingServer: true,
   },
 })

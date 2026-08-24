@@ -364,7 +364,7 @@ export class PixiProjection {
     this.fitCamera()
   }
 
-  dispose(): void {
+  unsubscribe(): void {
     this.app.destroy(true, { children: true })
   }
 }

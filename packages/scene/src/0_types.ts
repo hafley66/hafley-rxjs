@@ -46,4 +46,4 @@ export type Frame = {
 }
 
 /** An operator bound to a host: subscribe = mount, next = draw, unsubscribe = unmount. `frame$.pipe(pixi(el)).subscribe()` */
-export type Renderer = (host: HTMLElement) => MonoTypeOperatorFunction<Frame>
+export type Renderer<T = Frame> = (host: HTMLElement) => MonoTypeOperatorFunction<T>

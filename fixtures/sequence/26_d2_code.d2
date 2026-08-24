@@ -1,0 +1,12 @@
+direction: down
+
+request: |typescript
+  const review = await api.post("/review", {
+    stars: 5,
+  })
+
+  review.subscribe(row => archive(row))
+|
+
+request.shape: code
+request.style.font-size: 18
