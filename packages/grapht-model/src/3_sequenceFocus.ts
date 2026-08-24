@@ -7,6 +7,11 @@ export function resolveSequenceFocus(artifact: SequenceArtifact, occurrenceId: s
   if (!hovered) return { actorIds: [], groupIds: [] }
   const actorIds = new Set<string>()
   if (hovered.kind === "actor") actorIds.add(hovered.id)
+  if (hovered.kind === "group") {
+    for (const occurrence of artifact.occurrences) {
+      if (occurrence.kind === "actor") actorIds.add(occurrence.id)
+    }
+  }
   for (const relation of artifact.relations) {
     if (hovered.kind === "message" && relation.kind === "message" && relation.occurrenceId === hovered.id) {
       actorIds.add(relation.sourceId)

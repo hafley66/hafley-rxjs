@@ -100,6 +100,8 @@ const bindingSchema = z.object({
   role: z.enum([
     "actor-shape",
     "actor-label",
+    "actor-bottom-shape",
+    "actor-bottom-label",
     "lifeline",
     "message-line",
     "message-label",

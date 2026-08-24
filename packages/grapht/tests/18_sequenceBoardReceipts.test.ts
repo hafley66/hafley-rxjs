@@ -55,7 +55,16 @@ async function receipt(language: "mermaid" | "d2") {
         board.replace(input)
         board.setCamera({ x: 0, y: -120, scale: 1 })
         board.focus(occurrenceId)
-        return board.receipt()
+        const bounds = (selector: string) => [...host.querySelectorAll<SVGElement>(selector)].map(element => {
+          const rect = element.getBoundingClientRect()
+          return { width: rect.width, height: rect.height, top: rect.top, bottom: rect.bottom }
+        })
+        return {
+          ...board.receipt(),
+          stickyActorBounds: bounds("[data-sequence-sticky-actor-id]"),
+          stickyGroupBounds: bounds("[data-sequence-sticky-group-id]"),
+          hiddenBottomActorCells: host.querySelectorAll('[data-sequence-bottom-actor="hidden"]').length,
+        }
       },
       { input: { artifact: built.artifact, bindingReceipt: built.bindingReceipt, geometry, renderReceipt: built.renderReceipt }, occurrenceId: archiveMessageId },
     )
@@ -94,13 +103,48 @@ describe("sequence board Playwright receipts", () => {
               "mermaid:092e83e2:participant:bob#1",
               "mermaid:092e83e2:participant:archive#2",
             ],
-            "geometryId": "geometry:eb1930fb",
+            "geometryId": "geometry:20befaf4",
+            "hiddenBottomActorCells": 3,
             "listenerCount": 2,
             "mounted": true,
             "renderRevisionId": "render:9db3c6f8",
+            "stickyActorBounds": [
+              {
+                "bottom": 83,
+                "height": 65,
+                "top": 18,
+                "width": 150,
+              },
+              {
+                "bottom": 83,
+                "height": 65,
+                "top": 18,
+                "width": 150,
+              },
+              {
+                "bottom": 83,
+                "height": 65,
+                "top": 18,
+                "width": 201,
+              },
+            ],
+            "stickyGroupBounds": [
+              {
+                "bottom": 110,
+                "height": 26,
+                "top": 84,
+                "width": 131.15518188476562,
+              },
+              {
+                "bottom": 134,
+                "height": 26,
+                "top": 108,
+                "width": 119.57611083984375,
+              },
+            ],
           },
-          "pngBytes": 6919,
-          "pngHash": "9fc86644",
+          "pngBytes": 8938,
+          "pngHash": "76c0f6b0",
         },
         {
           "json": {
@@ -127,12 +171,47 @@ describe("sequence board Playwright receipts", () => {
               "d2:49a15df1:actor:archive#2",
             ],
             "geometryId": "geometry:65ed6bd7",
+            "hiddenBottomActorCells": 0,
             "listenerCount": 2,
             "mounted": true,
             "renderRevisionId": "render:65e979a0",
+            "stickyActorBounds": [
+              {
+                "bottom": 74,
+                "height": 66,
+                "top": 8,
+                "width": 100,
+              },
+              {
+                "bottom": 74,
+                "height": 66,
+                "top": 8,
+                "width": 100,
+              },
+              {
+                "bottom": 74,
+                "height": 66,
+                "top": 8,
+                "width": 211,
+              },
+            ],
+            "stickyGroupBounds": [
+              {
+                "bottom": 129.26513671875,
+                "height": 26.114540100097656,
+                "top": 103.15059661865234,
+                "width": 115.3070068359375,
+              },
+              {
+                "bottom": 172.51138305664062,
+                "height": 26.114532470703125,
+                "top": 146.3968505859375,
+                "width": 105.09259796142578,
+              },
+            ],
           },
-          "pngBytes": 9120,
-          "pngHash": "5f57afc2",
+          "pngBytes": 11931,
+          "pngHash": "c69396ba",
         },
       ]
     `)

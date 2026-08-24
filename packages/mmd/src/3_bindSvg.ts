@@ -69,9 +69,24 @@ export function bindMermaidSvg(
       participantRoot.path,
       element => element.tag === "tspan" && element.text === participant.label,
     )
+    const bottomShape = receipt.elements.find(
+      element =>
+        element.tag === "rect" &&
+        element.classes.includes("actor-bottom") &&
+        element.attributes.name === participant.id,
+    )
+    const bottomLabel = bottomShape
+      ? firstDescendant(
+          receipt,
+          parentPath(bottomShape.path),
+          element => element.tag === "tspan" && element.text === participant.label,
+        )
+      : undefined
 
     if (shape) builder.add(occurrence, "actor-shape", shape)
     if (label) builder.add(occurrence, "actor-label", label)
+    if (bottomShape) builder.add(occurrence, "actor-bottom-shape", bottomShape)
+    if (bottomLabel) builder.add(occurrence, "actor-bottom-label", bottomLabel)
     builder.add(occurrence, "lifeline", lifeline)
   }
 

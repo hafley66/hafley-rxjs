@@ -444,6 +444,25 @@ describe("language-specific sequence SVG bindings", () => {
               "occurrence": "actor:Alice",
               "ordinal": 0,
               "path": [
+                2,
+                0,
+              ],
+              "role": "actor-bottom-shape",
+            },
+            {
+              "occurrence": "actor:Alice",
+              "ordinal": 0,
+              "path": [
+                2,
+                1,
+                0,
+              ],
+              "role": "actor-bottom-label",
+            },
+            {
+              "occurrence": "actor:Alice",
+              "ordinal": 0,
+              "path": [
                 5,
                 0,
               ],
@@ -474,6 +493,25 @@ describe("language-specific sequence SVG bindings", () => {
               "occurrence": "actor:Bob",
               "ordinal": 0,
               "path": [
+                1,
+                0,
+              ],
+              "role": "actor-bottom-shape",
+            },
+            {
+              "occurrence": "actor:Bob",
+              "ordinal": 0,
+              "path": [
+                1,
+                1,
+                0,
+              ],
+              "role": "actor-bottom-label",
+            },
+            {
+              "occurrence": "actor:Bob",
+              "ordinal": 0,
+              "path": [
                 4,
                 0,
               ],
@@ -499,6 +537,25 @@ describe("language-specific sequence SVG bindings", () => {
                 0,
               ],
               "role": "actor-label",
+            },
+            {
+              "occurrence": "actor:Archive Service Far Right",
+              "ordinal": 0,
+              "path": [
+                0,
+                0,
+              ],
+              "role": "actor-bottom-shape",
+            },
+            {
+              "occurrence": "actor:Archive Service Far Right",
+              "ordinal": 0,
+              "path": [
+                0,
+                1,
+                0,
+              ],
+              "role": "actor-bottom-label",
             },
             {
               "occurrence": "actor:Archive Service Far Right",
@@ -698,7 +755,7 @@ describe("language-specific sequence SVG bindings", () => {
           "unbound": [
             "activation:deactivate",
           ],
-          "unclaimedElementCount": 68,
+          "unclaimedElementCount": 62,
         },
       }
     `)

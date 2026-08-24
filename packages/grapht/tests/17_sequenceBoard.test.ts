@@ -55,7 +55,7 @@ describe("sequence board projection", () => {
         "focusOverlayActorIds": [
           "mermaid:092e83e2:participant:bob#1",
         ],
-        "geometryId": "geometry:eb1930fb",
+        "geometryId": "geometry:20befaf4",
         "listenerCount": 2,
         "mounted": true,
         "renderRevisionId": "render:9db3c6f8",
@@ -63,7 +63,30 @@ describe("sequence board projection", () => {
     `)
 
     board.setCamera({ x: 0, y: -140, scale: 1 })
-    expect(host.querySelectorAll("[data-sequence-actor-label]").length).toBe(3)
+    const mermaidGroup = mermaid.artifact.occurrences.find(
+      occurrence => occurrence.kind === "group" && occurrence.label === "outer exchange",
+    )
+    if (!mermaidGroup) throw new Error("expected Mermaid outer group")
+    board.focus(mermaidGroup.id)
+    expect({
+      legacyActorLabels: host.querySelectorAll("[data-sequence-actor-label]").length,
+      stickyActorCells: host.querySelectorAll("[data-sequence-sticky-actor-id]").length,
+      hiddenBottomActorCells: host.querySelectorAll('[data-sequence-bottom-actor="hidden"]').length,
+      stickyGroupTitles: host.querySelectorAll("[data-sequence-sticky-group-id]").length,
+      groupActorIds: board.receipt().focus.actorIds,
+    }).toMatchInlineSnapshot(`
+      {
+        "groupActorIds": [
+          "mermaid:092e83e2:participant:alice#0",
+          "mermaid:092e83e2:participant:bob#1",
+          "mermaid:092e83e2:participant:archive#2",
+        ],
+        "hiddenBottomActorCells": 3,
+        "legacyActorLabels": 0,
+        "stickyActorCells": 3,
+        "stickyGroupTitles": 2,
+      }
+    `)
 
     board.replace(d2)
     const d2Message = d2.artifact.occurrences.find(occurrence => occurrence.kind === "message" && occurrence.label === "repeat")

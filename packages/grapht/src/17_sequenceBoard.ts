@@ -36,6 +36,7 @@ export type SequenceBoard = {
 }
 
 const EMPTY_FOCUS: SequenceFocus = { actorIds: [], groupIds: [] }
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg"
 
 function cloneFocus(focus: SequenceFocus): SequenceFocus {
   return {
@@ -45,8 +46,47 @@ function cloneFocus(focus: SequenceFocus): SequenceFocus {
   }
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value))
+function bindingElement(
+  input: SequenceBoardInput,
+  svg: SVGSVGElement,
+  occurrenceId: string,
+  role: SequenceArtifact["bindings"][number]["role"],
+): Element | undefined {
+  const binding = input.artifact.bindings.find(item => item.occurrenceId === occurrenceId && item.role === role)
+  return binding ? svg.querySelector(`[id="${binding.elementId}"]`) ?? undefined : undefined
+}
+
+function commonAncestor(left: Element, right: Element): Element {
+  const leftAncestors = new Set<Element>()
+  let ancestor: Element | null = left
+  while (ancestor) {
+    leftAncestors.add(ancestor)
+    ancestor = ancestor.parentElement
+  }
+  ancestor = right
+  while (ancestor && !leftAncestors.has(ancestor)) ancestor = ancestor.parentElement
+  return ancestor ?? left
+}
+
+function cloneWithoutIdentity(element: Element): SVGElement {
+  const clone = element.cloneNode(true) as SVGElement
+  for (const item of [clone, ...clone.querySelectorAll("*")]) {
+    item.removeAttribute("id")
+    item.removeAttribute("data-sequence-occurrence-id")
+  }
+  return clone
+}
+
+function groupDepth(artifact: SequenceArtifact, occurrenceId: string): number {
+  let depth = 0
+  let parentId = artifact.occurrences.find(occurrence => occurrence.id === occurrenceId)?.parentId
+  while (parentId) {
+    const parent = artifact.occurrences.find(occurrence => occurrence.id === parentId)
+    if (!parent) break
+    if (parent.kind === "group") depth += 1
+    parentId = parent.parentId
+  }
+  return depth
 }
 
 export function createSequenceBoard(host: HTMLElement, viewport: { width: number; height: number }): SequenceBoard {
@@ -84,12 +124,36 @@ export function createSequenceBoard(host: HTMLElement, viewport: { width: number
     if (scene) scene.style.transform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.scale})`
 
     const focusedActors = new Set(focus.actorIds)
-    for (const label of host.querySelectorAll<HTMLElement>("[data-sequence-actor-label]")) {
-      label.dataset.focused = focusedActors.has(label.dataset.sequenceActorId ?? "") ? "true" : "false"
-      const worldX = Number(label.dataset.sequenceWorldX)
-      const worldY = Number(label.dataset.sequenceWorldY)
-      label.style.left = `${clamp(worldX * camera.scale + camera.x, 4, viewport.width - 4)}px`
-      label.style.top = `${clamp(worldY * camera.scale + camera.y, 4, viewport.height - 24)}px`
+    const actorOverlay = host.querySelector<SVGSVGElement>("[data-sequence-actor-overlay]")
+    if (actorOverlay) {
+      actorOverlay.style.transform = `translate(${camera.x}px, 0) scale(${camera.scale})`
+    }
+    for (const actor of host.querySelectorAll<SVGElement>("[data-sequence-sticky-actor-id]")) {
+      const focused = focusedActors.has(actor.dataset.sequenceStickyActorId ?? "")
+      actor.dataset.focused = focused ? "true" : "false"
+      actor.style.opacity = focusedActors.size === 0 || focused ? "1" : "0.5"
+      actor.style.filter = focused ? "drop-shadow(0 0 3px #0d32b2)" : ""
+    }
+
+    const groupOverlay = host.querySelector<SVGSVGElement>("[data-sequence-group-overlay]")
+    if (groupOverlay) groupOverlay.style.transform = `translate(${camera.x}px, 0) scale(${camera.scale})`
+    const actorHeight = Number(actorOverlay?.dataset.sequenceActorHeight ?? 0) * camera.scale
+    const stickyGroups = [...host.querySelectorAll<SVGElement>("[data-sequence-sticky-group-id]")]
+      .sort((left, right) => Number(left.dataset.sequenceGroupDepth) - Number(right.dataset.sequenceGroupDepth))
+    let visibleGroupIndex = 0
+    for (const group of stickyGroups) {
+      const worldY = Number(group.dataset.sequenceWorldY)
+      const cloneY = Number(group.dataset.sequenceCloneY)
+      const frameBottom = Number(group.dataset.sequenceFrameBottom)
+      const height = Number(group.dataset.sequenceHeight)
+      const slot = actorHeight + 4 + visibleGroupIndex * (height * camera.scale + 4)
+      const natural = worldY * camera.scale + camera.y
+      const active = frameBottom * camera.scale + camera.y > slot
+      group.style.display = active ? "" : "none"
+      if (!active) continue
+      const target = Math.max(natural, slot)
+      group.setAttribute("transform", `translate(0 ${(target / camera.scale) - cloneY})`)
+      if (natural <= slot) visibleGroupIndex += 1
     }
 
     const overlay = host.querySelector<HTMLElement>("[data-sequence-focus-overlay]")
@@ -135,7 +199,7 @@ export function createSequenceBoard(host: HTMLElement, viewport: { width: number
     shell.style.cssText = "position:relative;width:100%;height:100%"
     const scene = document.createElement("div")
     scene.dataset.sequenceScene = "true"
-    scene.style.cssText = "position:absolute;left:0;top:0;transform-origin:top left"
+    scene.style.cssText = "position:absolute;z-index:0;left:0;top:0;transform-origin:top left"
     scene.innerHTML = decorateSvg(input.renderReceipt, input.bindingReceipt)
     const svg = scene.querySelector<SVGSVGElement>("svg")
     if (!svg) throw new Error("sequence board render receipt has no SVG")
@@ -148,34 +212,101 @@ export function createSequenceBoard(host: HTMLElement, viewport: { width: number
       if (element) element.dataset.sequenceOccurrenceId = binding.occurrenceId
     }
 
-    const actorOverlay = document.createElement("div")
+    const actorOverlay = document.createElementNS(SVG_NAMESPACE, "svg")
     actorOverlay.dataset.sequenceActorOverlay = "true"
-    actorOverlay.style.cssText = "position:absolute;inset:0;pointer-events:none"
+    actorOverlay.setAttribute("viewBox", `${input.geometry.viewBox.x} ${input.geometry.viewBox.y} ${input.geometry.viewBox.width} ${input.geometry.viewBox.height}`)
+    actorOverlay.setAttribute("width", String(input.geometry.viewBox.width))
+    actorOverlay.setAttribute("height", String(input.geometry.viewBox.height))
+    actorOverlay.style.cssText = "position:absolute;z-index:2;left:0;top:0;overflow:visible;pointer-events:none;transform-origin:0 0"
     const actors = new Map(
       input.artifact.occurrences.filter(occurrence => occurrence.kind === "actor").map(actor => [actor.id, actor]),
     )
-    const labels = new Map(
-      input.geometry.entities
-        .filter(entity => entity.role === "actor-label")
-        .map(entity => [entity.occurrenceId, entity]),
+    const actorShapes = new Map(
+      input.geometry.entities.filter(entity => entity.role === "actor-shape").map(entity => [entity.occurrenceId, entity]),
     )
+    const actorTop = Math.min(...[...actorShapes.values()].map(entity => entity.localBounds.y))
+    const actorHeight = Math.max(...[...actorShapes.values()].map(entity => entity.localBounds.height))
+    actorOverlay.dataset.sequenceActorTop = String(actorTop)
+    actorOverlay.dataset.sequenceActorHeight = String(actorHeight)
     for (const [actorId, actor] of actors) {
-      const entity = labels.get(actorId)
-      if (!entity) continue
-      const label = document.createElement("span")
-      label.dataset.sequenceActorLabel = "true"
-      label.dataset.sequenceActorId = actorId
-      label.textContent = actor.label ?? actorId
-      label.style.cssText = "position:absolute;white-space:nowrap;pointer-events:none"
-      label.dataset.sequenceWorldX = String(entity.worldBounds.x - input.geometry.viewBox.x)
-      label.dataset.sequenceWorldY = String(entity.worldBounds.y - input.geometry.viewBox.y)
-      actorOverlay.append(label)
+      const shape = bindingElement(input, svg, actorId, "actor-shape")
+      const label = bindingElement(input, svg, actorId, "actor-label")
+      if (!shape || !label) continue
+      const nativeRoot = commonAncestor(shape, label)
+      const clone = cloneWithoutIdentity(nativeRoot)
+      nativeRoot.setAttribute("visibility", "hidden")
+      const sticky = document.createElementNS(SVG_NAMESPACE, "g")
+      sticky.dataset.sequenceStickyActorId = actorId
+      sticky.dataset.sequenceOccurrenceId = actorId
+      sticky.setAttribute("aria-label", actor.label ?? actorId)
+      sticky.setAttribute("transform", `translate(0 ${-actorTop})`)
+      sticky.append(clone)
+      actorOverlay.append(sticky)
+
+      for (const role of ["actor-bottom-shape", "actor-bottom-label"] as const) {
+        const bottom = bindingElement(input, svg, actorId, role)
+        const bottomRoot = bottom?.closest("g") ?? bottom
+        if (!bottomRoot) continue
+        bottomRoot.setAttribute("visibility", "hidden")
+        bottomRoot.setAttribute("data-sequence-bottom-actor", "hidden")
+      }
+    }
+
+    const bottomTop = Math.min(
+      ...input.geometry.entities
+        .filter(entity => entity.role === "actor-bottom-shape")
+        .map(entity => entity.worldBounds.y),
+    )
+    if (Number.isFinite(bottomTop)) {
+      const visibleHeight = bottomTop - input.geometry.viewBox.y
+      svg.setAttribute(
+        "viewBox",
+        `${input.geometry.viewBox.x} ${input.geometry.viewBox.y} ${input.geometry.viewBox.width} ${visibleHeight}`,
+      )
+      svg.style.height = `${visibleHeight}px`
+    }
+
+    const groupOverlay = document.createElementNS(SVG_NAMESPACE, "svg")
+    groupOverlay.dataset.sequenceGroupOverlay = "true"
+    groupOverlay.setAttribute("viewBox", `${input.geometry.viewBox.x} ${input.geometry.viewBox.y} ${input.geometry.viewBox.width} ${input.geometry.viewBox.height}`)
+    groupOverlay.setAttribute("width", String(input.geometry.viewBox.width))
+    groupOverlay.setAttribute("height", String(input.geometry.viewBox.height))
+    groupOverlay.style.cssText = "position:absolute;z-index:1;left:0;top:0;overflow:visible;pointer-events:none;transform-origin:0 0"
+    for (const group of input.artifact.occurrences.filter(occurrence => occurrence.kind === "group")) {
+      const label = bindingElement(input, svg, group.id, "group-label")
+      const geometry = input.geometry.entities.find(entity => entity.occurrenceId === group.id && entity.role === "group-label")
+      const frames = input.geometry.entities.filter(entity => entity.occurrenceId === group.id && entity.role === "group-frame")
+      if (!label || !geometry || frames.length === 0) continue
+      const nativeLabel = label.closest("text") ?? label
+      const clonedLabel = cloneWithoutIdentity(nativeLabel)
+      nativeLabel.setAttribute("visibility", "hidden")
+      const sticky = document.createElementNS(SVG_NAMESPACE, "g")
+      sticky.dataset.sequenceStickyGroupId = group.id
+      sticky.dataset.sequenceOccurrenceId = group.id
+      sticky.dataset.sequenceGroupDepth = String(groupDepth(input.artifact, group.id))
+      sticky.dataset.sequenceWorldY = String(geometry.worldBounds.y)
+      sticky.dataset.sequenceCloneY = String(geometry.localBounds.y)
+      sticky.dataset.sequenceHeight = String(Math.max(geometry.localBounds.height, 20))
+      sticky.dataset.sequenceFrameBottom = String(
+        Math.max(...frames.map(frame => frame.worldBounds.y + frame.worldBounds.height)),
+      )
+      const backdrop = document.createElementNS(SVG_NAMESPACE, "rect")
+      backdrop.setAttribute("x", String(geometry.localBounds.x - 6))
+      backdrop.setAttribute("y", String(geometry.localBounds.y - 3))
+      backdrop.setAttribute("width", String(geometry.localBounds.width + 12))
+      backdrop.setAttribute("height", String(Math.max(geometry.localBounds.height, 20) + 6))
+      backdrop.setAttribute("rx", "3")
+      backdrop.setAttribute("fill", "#eef1f8")
+      backdrop.setAttribute("stroke", "#0d32b2")
+      backdrop.setAttribute("fill-opacity", "0.96")
+      sticky.append(backdrop, clonedLabel)
+      groupOverlay.append(sticky)
     }
 
     const focusOverlay = document.createElement("div")
     focusOverlay.dataset.sequenceFocusOverlay = "true"
-    focusOverlay.style.cssText = "position:absolute;right:4px;top:4px;display:flex;gap:4px;pointer-events:none"
-    shell.append(scene, actorOverlay, focusOverlay)
+    focusOverlay.style.cssText = "position:absolute;z-index:3;right:4px;top:4px;display:flex;gap:4px;pointer-events:none"
+    shell.append(scene, groupOverlay, actorOverlay, focusOverlay)
 
     current = input
     focus = cloneFocus(EMPTY_FOCUS)
@@ -201,8 +332,8 @@ export function createSequenceBoard(host: HTMLElement, viewport: { width: number
         ...(current ? { renderRevisionId: current.artifact.renderRevision.id, geometryId: current.geometry.id } : {}),
         camera: { ...camera },
         focus: cloneFocus(focus),
-        actorLabelIds: [...host.querySelectorAll<HTMLElement>("[data-sequence-actor-label]")].map(
-          item => item.dataset.sequenceActorId ?? "",
+        actorLabelIds: [...host.querySelectorAll<HTMLElement>("[data-sequence-sticky-actor-id]")].map(
+          item => item.dataset.sequenceStickyActorId ?? "",
         ),
         focusOverlayActorIds: overlayActorIds,
         listenerCount: listeners,

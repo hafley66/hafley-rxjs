@@ -44,7 +44,7 @@ describe("sequence demo", () => {
       receipt: JSON.parse(receiptText),
     }).toMatchInlineSnapshot(`
       {
-        "actorLabels": 3,
+        "actorLabels": 0,
         "boardCount": 1,
         "d2": "d2 ready · 11 occurrences",
         "mermaid": "mermaid ready · 11 occurrences",

@@ -3,6 +3,8 @@ import { documentFingerprint, type SequenceOccurrence } from "./0_sequenceIdenti
 export type SvgBindingRole =
   | "actor-shape"
   | "actor-label"
+  | "actor-bottom-shape"
+  | "actor-bottom-label"
   | "lifeline"
   | "message-line"
   | "message-label"

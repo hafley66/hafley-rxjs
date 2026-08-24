@@ -577,8 +577,8 @@ describe("grapht-sequence/0 shared artifact", () => {
           "artifact": {
             "bindingRevision": {
               "adapterVersion": "mermaid-sequence-adapter/0",
-              "bindingHash": "70366954",
-              "id": "binding:af1354ad",
+              "bindingHash": "13e89648",
+              "id": "binding:41818259",
               "renderRevisionId": "render:fa11e65f",
               "sourceRevisionId": "source:10b3b203",
             },
@@ -594,6 +594,18 @@ describe("grapht-sequence/0 shared artifact", () => {
                 "occurrenceId": "mermaid:092e83e2:participant:alice#0",
                 "ordinal": 0,
                 "role": "actor-label",
+              },
+              {
+                "elementId": "sequence-binding-mermaid-1a096f15",
+                "occurrenceId": "mermaid:092e83e2:participant:alice#0",
+                "ordinal": 0,
+                "role": "actor-bottom-shape",
+              },
+              {
+                "elementId": "sequence-binding-mermaid-bef6b25a",
+                "occurrenceId": "mermaid:092e83e2:participant:alice#0",
+                "ordinal": 0,
+                "role": "actor-bottom-label",
               },
               {
                 "elementId": "actor0",
@@ -614,6 +626,18 @@ describe("grapht-sequence/0 shared artifact", () => {
                 "role": "actor-label",
               },
               {
+                "elementId": "sequence-binding-mermaid-e27a0695",
+                "occurrenceId": "mermaid:092e83e2:participant:bob#1",
+                "ordinal": 0,
+                "role": "actor-bottom-shape",
+              },
+              {
+                "elementId": "sequence-binding-mermaid-876749da",
+                "occurrenceId": "mermaid:092e83e2:participant:bob#1",
+                "ordinal": 0,
+                "role": "actor-bottom-label",
+              },
+              {
                 "elementId": "actor1",
                 "occurrenceId": "mermaid:092e83e2:participant:bob#1",
                 "ordinal": 0,
@@ -630,6 +654,18 @@ describe("grapht-sequence/0 shared artifact", () => {
                 "occurrenceId": "mermaid:092e83e2:participant:archive#2",
                 "ordinal": 0,
                 "role": "actor-label",
+              },
+              {
+                "elementId": "sequence-binding-mermaid-40ba3815",
+                "occurrenceId": "mermaid:092e83e2:participant:archive#2",
+                "ordinal": 0,
+                "role": "actor-bottom-shape",
+              },
+              {
+                "elementId": "sequence-binding-mermaid-e5a77b5a",
+                "occurrenceId": "mermaid:092e83e2:participant:archive#2",
+                "ordinal": 0,
+                "role": "actor-bottom-label",
               },
               {
                 "elementId": "actor2",
