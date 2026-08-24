@@ -5,6 +5,7 @@ export const BENCH_SCENARIOS = [
   "camera-pan",
   "camera-wheel-zoom",
   "camera-pinch-zoom",
+  "camera-shake",
   "style-update",
   "position-update",
   "viewport-resize",
@@ -42,6 +43,7 @@ export type BenchScenarioArguments = {
   "camera-pan": { dx: number; dy: number; frames: number }
   "camera-wheel-zoom": { deltaY: number; anchorX: number; anchorY: number; frames: number }
   "camera-pinch-zoom": { scale: number; anchorX: number; anchorY: number; frames: number }
+  "camera-shake": { seed: number; amplitudePx: number; frames: number }
   "style-update": { nodeCount: number; color: number }
   "position-update": { nodeCount: number; dx: number; dy: number }
   "viewport-resize": { width: number; height: number }

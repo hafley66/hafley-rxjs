@@ -2,6 +2,7 @@ import type { Scene } from "./1_scene.js"
 import type { Geometry } from "./0_protocol.js"
 import { BENCH_SCENARIOS, pan, zoomAt, type Camera, type BenchScenario, type BenchScenarioArguments, type BenchScenarioHandlers, type BenchScenarioResult } from "./9_scenarioTypes.js"
 import { frameStats, measureUploadBytes, type FrameStatsRecord } from "./9_scenarioTypes.js"
+import { shakeOffsets } from "../../src/12_shake.js"
 
 export type { BenchScenario, BenchScenarioArguments, BenchScenarioHandlers, BenchScenarioResult, Camera, FrameStatsRecord, Geometry }
 export { frameStats, measureUploadBytes }
@@ -192,6 +193,25 @@ export const handlers: BenchScenarioHandlers<CanvasKitScenarioState, CanvasKitSc
     return { state: next, sample: fillSample(next, "camera-wheel-zoom", "1 frame", performance.now(), 0, 1) }
   },
   "camera-pinch-zoom": (state) => ({ state, sample: unsupportedSample(state, "camera-pinch-zoom") }),
+  "camera-shake": (state, args) => {
+    const offsets = shakeOffsets(args.seed, args.amplitudePx, args.frames)
+    const count = offsets.length / 2
+    const rest = state.camera
+    const durations: number[] = []
+    let camera = rest
+    for (let index = 0; index < count; index++) {
+      camera = { ...rest, tx: rest.tx + offsets[index * 2], ty: rest.ty + offsets[index * 2 + 1] }
+      if (!state.renderer) continue
+      state.renderer.setCamera(camera)
+      durations.push(state.renderer.draw().totalMs)
+    }
+    const next: CanvasKitScenarioState = {
+      ...state,
+      camera,
+      bench: durations.length === 0 ? state.bench : { ...state.bench, frameDurations: durations },
+    }
+    return { state: next, sample: fillSample(next, "camera-shake", `${count} frames`, performance.now(), 0, count) }
+  },
   "style-update": (state, args) => {
     const { color } = args
     const next: CanvasKitScenarioState = { ...state, nodeColor: RGBA(color) }

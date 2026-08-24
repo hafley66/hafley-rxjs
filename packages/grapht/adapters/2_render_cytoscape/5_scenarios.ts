@@ -5,6 +5,7 @@ import type {
   BenchScenarioHandlers,
 } from "../../src/0_benchProtocol.js"
 import type { ScenarioSample } from "../../src/11_scenarios.js"
+import { shakeOffsets } from "../../src/12_shake.js"
 import type { Geometry } from "./0_protocol.js"
 import { createProjection, type Projection } from "./1_projection.js"
 import type { ElementDefinition } from "cytoscape"
@@ -159,6 +160,23 @@ export function createCytoscapeScenarioHandlers(options: CytoscapeScenarioOption
       return supported(state, "camera-wheel-zoom", () => { projection.cy.zoom({ level: projection.cy.zoom() * Math.exp(-args.deltaY / 600), renderedPosition: { x: args.anchorX, y: args.anchorY } }) }, args.frames)
     },
     "camera-pinch-zoom": unsupportedHandler("camera-pinch-zoom", "pinch gesture synthesis is not implemented"),
+    "camera-shake": async (state, args) => {
+      const projection = requireProjection(state)
+      if (!projection) return unsupported(state, "camera-shake", "graph has been disposed")
+      const started = now()
+      if (projection.mounted) projection.cy.fit(undefined, 20)
+      const rest = projection.camera().pan
+      const offsets = shakeOffsets(args.seed, args.amplitudePx, args.frames)
+      const frameTimes: number[] = []
+      let previous = now()
+      for (let index = 0; index < args.frames; index++) {
+        projection.cy.pan({ x: rest.x + offsets[index * 2], y: rest.y + offsets[index * 2 + 1] })
+        const timestamp = await frame()
+        frameTimes.push(Math.max(0, timestamp - previous))
+        previous = timestamp
+      }
+      return { state, sample: sample(state, "camera-shake", now() - started, frameTimes, 0) }
+    },
     "style-update": async (state, args) => {
       const projection = requireProjection(state)
       if (!projection) return unsupported(state, "style-update", "graph has been disposed")

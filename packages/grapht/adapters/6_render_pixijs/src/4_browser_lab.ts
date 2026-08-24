@@ -1,18 +1,10 @@
 import type { Geometry } from "../../../src/1_geometryProtocol.js"
 import { BENCH_SCENARIO_CASES, reduceBenchScenarioCases, type ScenarioRunReceipt, type ScenarioSample } from "../../../src/11_scenarios.js"
+import type { ShakeCameraState } from "../../../src/12_shake.js"
+import { evaluateVisualValidity, type VisualValidity } from "../../../src/13_visualValidity.js"
 import { loadCommonFixture, fixtureSize } from "./1_fixture.js"
 import { PixiProjection, type ActualBackend, type RendererMode, type Representation } from "./2_projection.js"
 import { createPixiScenarioHandlers, initialPixiScenarioState, type PixiScenarioState } from "./6_scenarios.js"
-
-type VisualValidity = {
-  valid: boolean
-  totalPixels: number
-  nonBackgroundPixels: number
-  drawnNodeCount: number
-  drawnEdgeCount: number
-  actualBackend: ActualBackend
-  requestedRenderer: RendererMode
-}
 
 export type WebGpuProbe = {
   available: boolean
@@ -32,6 +24,7 @@ type PixiLabReceipt = {
   edgeCount: number
   fixtureSource?: { url: string; bytes: number; sha256: string }
   visualValidity?: VisualValidity
+  cameraState?: ShakeCameraState
   webgpuProbe?: WebGpuProbe
   scenarios: ScenarioRunReceipt<ScenarioSample>[]
   reason?: string
@@ -75,38 +68,14 @@ export function probeWebGpu(): Promise<WebGpuProbe> {
   })()
 }
 
-async function visualValidity(projection: PixiProjection, requested: RendererMode): Promise<VisualValidity> {
-  const output = projection.app.renderer.extract.pixels(projection.app.stage)
-  const pixels = output.pixels
-  const width = output.width
-  const height = output.height
-  const totalPixels = width * height
-  const corner = (x: number, y: number): [number, number, number] => {
-    const i = (y * width + x) * 4
-    return [pixels[i], pixels[i + 1], pixels[i + 2]]
-  }
-  const corners = [corner(1, 1), corner(width - 2, 1), corner(1, height - 2), corner(width - 2, height - 2)]
-  const bg = [
-    Math.round(corners.reduce((sum, c) => sum + c[0], 0) / 4),
-    Math.round(corners.reduce((sum, c) => sum + c[1], 0) / 4),
-    Math.round(corners.reduce((sum, c) => sum + c[2], 0) / 4),
-  ]
-  let nonBackground = 0
-  for (let index = 0; index < pixels.length; index += 4) {
-    const dr = pixels[index] - bg[0]
-    const dg = pixels[index + 1] - bg[1]
-    const db = pixels[index + 2] - bg[2]
-    if (dr * dr + dg * dg + db * db > 400) nonBackground += 1
-  }
-  return {
-    valid: nonBackground > 500 && projection.currentNodeCount() > 0,
-    totalPixels,
-    nonBackgroundPixels: nonBackground,
+function visualValidity(projection: PixiProjection, requested: RendererMode): VisualValidity {
+  return evaluateVisualValidity({
+    readback: projection.readViewportPixels(),
     drawnNodeCount: projection.currentNodeCount(),
     drawnEdgeCount: projection.currentEdgeCount(),
     actualBackend: projection.actualBackend,
     requestedRenderer: requested,
-  }
+  })
 }
 
 function container(): HTMLElement {
@@ -138,7 +107,7 @@ async function renderWebGlEvidence(geometry: Geometry, representation: Represent
   const projection = new PixiProjection(evidenceHost, geometry, { renderer: "webgl", representation })
   await projection.init()
   await projection.firstRender()
-  const validity = await visualValidity(projection, "webgl")
+  const validity = visualValidity(projection, "webgl")
   evidenceHost.dataset.visualValid = String(validity.valid)
   return { valid: validity.valid }
 }
@@ -209,7 +178,7 @@ async function buildLab(): Promise<PixiLabReceipt> {
     }
 
     await projection.firstRender()
-    const validity = await visualValidity(projection, renderer)
+    const validity = visualValidity(projection, renderer)
     mark(host, "visualValid", String(validity.valid))
     mark(host, "actualBackend", validity.actualBackend)
     mark(host, "nonBackgroundPixels", String(validity.nonBackgroundPixels))
@@ -252,6 +221,7 @@ async function buildLab(): Promise<PixiLabReceipt> {
       edgeCount: validity.drawnEdgeCount,
       fixtureSource: loaded.source,
       visualValidity: validity,
+      cameraState: reduced.state.cameraState ?? undefined,
       scenarios: reduced.receipts,
     }
   } catch (error) {

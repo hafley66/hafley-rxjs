@@ -4,6 +4,7 @@ import type {
   BenchScenarioHandlers,
 } from "../../../src/0_benchProtocol.js"
 import type { ScenarioSample } from "../../../src/11_scenarios.js"
+import { shakeOffsets } from "../../../src/12_shake.js"
 import type { Geometry } from "./0_protocol.js"
 import { buildGraph } from "./1_graphology.js"
 import { SigmaProjection } from "./2_projection.js"
@@ -123,6 +124,26 @@ export function createSigmaScenarioHandlers(options: SigmaScenarioOptions = {}):
       return supported(state, "camera-wheel-zoom", () => { const camera = projection.sigma.getCamera(); camera.setState({ ...camera.getState(), ratio: camera.getState().ratio * Math.exp(args.deltaY / 600) }); projection.sigma.refresh() }, args.frames)
     },
     "camera-pinch-zoom": unsupportedHandler("camera-pinch-zoom", "pinch gesture synthesis is not implemented"),
+    "camera-shake": async (state, args) => {
+      const projection = requireProjection(state)
+      if (!projection) return unsupported(state, "camera-shake", "graph has been disposed")
+      const started = now()
+      projection.resetCamera()
+      const camera = projection.sigma.getCamera()
+      const rest = camera.getState()
+      const viewportWidth = state.container?.clientWidth || 800
+      const offsets = shakeOffsets(args.seed, args.amplitudePx, args.frames)
+      const frameTimes: number[] = []
+      let previous = now()
+      for (let index = 0; index < args.frames; index++) {
+        camera.setState({ ...rest, x: rest.x + offsets[index * 2] / viewportWidth, y: rest.y + offsets[index * 2 + 1] / viewportWidth })
+        projection.sigma.refresh()
+        const timestamp = await frame()
+        frameTimes.push(Math.max(0, timestamp - previous))
+        previous = timestamp
+      }
+      return { state, sample: sample(state, "camera-shake", now() - started, frameTimes, 0) }
+    },
     "style-update": async (state, args) => {
       const projection = requireProjection(state)
       if (!projection) return unsupported(state, "style-update", "graph has been disposed")

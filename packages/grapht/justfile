@@ -54,6 +54,26 @@ receipt-pixijs:
 headed-pixijs:
     pnpm --dir adapters/6_render_pixijs exec playwright test --headed
 
+# run the Three.js unit tests and typecheck
+test-threejs:
+    pnpm --dir adapters/7_render_threejs run check
+
+# run the Three.js browser scenario lane (WebGL + WebGPU, retained + particles)
+# headless by default; writes PNG + JSON receipts into the lane
+browser-threejs:
+    node scripts/0_generate_renderer_fixture.mjs 1000
+    node scripts/0_generate_renderer_fixture.mjs 5000
+    node scripts/0_generate_renderer_fixture.mjs 10000
+    pnpm --dir adapters/7_render_threejs run lab
+
+# record a Three.js shell-protocol receipt through the grapht-bench/0 adapter
+receipt-threejs:
+    pnpm --dir adapters/7_render_threejs run receipt
+
+# visibly drive Chromium through the Three.js lane; headed only through this recipe
+headed-threejs:
+    pnpm --dir adapters/7_render_threejs exec playwright test --headed
+
 # list the checked-in fixtures with node/edge counts
 fixtures: build
     @grapht-fixtures list

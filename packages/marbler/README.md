@@ -5,7 +5,7 @@ Signal-driven marble, sequence, and HTTP-style network visualization built on
 
 The tabular columns use DOM rows. PixiJS renders the viewport-clipped waterfall
 and the density overview. The overview owns a shared time viewport supporting
-cursor-anchored wheel zoom, horizontal pan, live-follow state, and fit on double
+cursor-anchored pinch zoom, horizontal pan, live-follow state, and fit on double
 click. Phase and event counts do not change the DOM node count.
 
 ## Run

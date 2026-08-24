@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { BENCH_SCENARIOS } from "../../../src/0_benchProtocol.js"
+import { BENCH_SCENARIOS, reduceBenchScenario } from "../../../src/0_benchProtocol.js"
 import { BENCH_SCENARIO_CASES, reduceBenchScenarioCases, type ScenarioRunReceipt, type ScenarioSample } from "../../../src/11_scenarios.js"
 import { createPixiScenarioHandlers, initialPixiScenarioState, type PixiScenarioState } from "../src/6_scenarios.js"
+import type { PixiProjection } from "../src/2_projection.js"
 
 function runDisposedReduction(): Promise<{ state: PixiScenarioState; receipts: ScenarioRunReceipt<ScenarioSample>[] }> {
   const geometry = { nodeIds: ["a", "b", "c"], positions: new Float32Array([0, 0, 10, 0, 10, 10]), edges: [[0, 1], [1, 2]] as [number, number][] }
@@ -32,6 +33,10 @@ describe("PixiJS scenario handler conformance", () => {
         ],
         [
           "camera-pinch-zoom",
+          "unsupported",
+        ],
+        [
+          "camera-shake",
           "unsupported",
         ],
         [
@@ -172,5 +177,48 @@ describe("PixiJS scenario handler conformance", () => {
   it("uses the shared BENCH_SCENARIO_CASES fixture table", () => {
     const caseCount = Object.values(BENCH_SCENARIO_CASES).reduce((total, cases) => total + cases.length, 0)
     expect(caseCount).toBe(BENCH_SCENARIOS.length)
+  })
+})
+
+type CameraTrace = { visited: [number, number][]; projection: PixiProjection }
+
+function tracingProjection(): CameraTrace {
+  const visited: [number, number][] = []
+  const camera = { scale: 1, tx: 0, ty: 0 }
+  const stub = {
+    camera,
+    fitCamera: () => { camera.tx = 137; camera.ty = -42 },
+    applyCamera: () => { visited.push([camera.tx, camera.ty]) },
+    render: () => {},
+    visibleNodeCount: () => 3,
+    visibleEdgeCount: () => 2,
+  }
+  return { visited, projection: stub as unknown as PixiProjection }
+}
+
+async function runShake(): Promise<{ visited: [number, number][]; sample: ScenarioSample }> {
+  const geometry = { nodeIds: ["a", "b", "c"], positions: new Float32Array([0, 0, 10, 0, 10, 10]), edges: [[0, 1], [1, 2]] as [number, number][] }
+  const trace = tracingProjection()
+  const state: PixiScenarioState = initialPixiScenarioState(geometry, null, null, trace.projection)
+  const result = await reduceBenchScenario(state, BENCH_SCENARIO_CASES["camera-shake"][0], createPixiScenarioHandlers())
+  return { visited: trace.visited, sample: result.sample }
+}
+
+describe("camera-shake", () => {
+  it("reports a supported sample once a projection is attached", async () => {
+    const { sample, visited } = await runShake()
+    expect(sample.support).toBe("supported")
+    expect(visited).toHaveLength(120)
+  })
+
+  it("visits the same camera positions on a second run of the same seed", async () => {
+    const first = await runShake()
+    const second = await runShake()
+    expect(first.visited).toEqual(second.visited)
+  })
+
+  it("lands the camera back on the fitted rest position", async () => {
+    const { visited } = await runShake()
+    expect(visited[visited.length - 1]).toEqual([137, -42])
   })
 })

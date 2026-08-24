@@ -1,6 +1,7 @@
 import type { BenchScenario, BenchScenarioHandler, BenchScenarioHandlers } from "../../../src/0_benchProtocol.js"
 import type { Geometry } from "../../../src/1_geometryProtocol.js"
 import type { ScenarioSample } from "../../../src/11_scenarios.js"
+import { shakeOffsets, type ShakeCameraState } from "../../../src/12_shake.js"
 import type { PixiProjection } from "./2_projection.js"
 
 export type PixiFixture = { geometry: Geometry; bytes?: number }
@@ -11,6 +12,7 @@ export type PixiScenarioState = {
   container: HTMLElement | null
   fixtureBytes: number | null
   disposed: boolean
+  cameraState: ShakeCameraState | null
 }
 
 export type PixiScenarioOptions = {
@@ -142,6 +144,28 @@ export function createPixiScenarioHandlers(options: PixiScenarioOptions = {}): B
       if (!projection) return unsupported(state, "camera-pinch-zoom", "graph has been disposed")
       return supported(state, "camera-pinch-zoom", () => { projection.zoomBy(args.scale, args.anchorX, args.anchorY); projection.render() }, args.frames)
     },
+    "camera-shake": async (state, args) => {
+      const projection = requireProjection(state)
+      if (!projection) return unsupported(state, "camera-shake", "graph has been disposed")
+      const started = now()
+      projection.fitCamera()
+      const restX = projection.camera.tx
+      const restY = projection.camera.ty
+      const shakeState = { ...state, cameraState: { tx: restX, ty: restY, zoom: projection.camera.scale } }
+      const offsets = shakeOffsets(args.seed, args.amplitudePx, args.frames)
+      const frameTimes: number[] = []
+      let previous = now()
+      for (let index = 0; index < args.frames; index++) {
+        projection.camera.tx = restX + offsets[index * 2]
+        projection.camera.ty = restY + offsets[index * 2 + 1]
+        projection.applyCamera()
+        projection.render()
+        const timestamp = await frame()
+        frameTimes.push(Math.max(0, timestamp - previous))
+        previous = timestamp
+      }
+      return { state: shakeState, sample: sample(shakeState, "camera-shake", now() - started, frameTimes, 0) }
+    },
     "style-update": async (state, args) => {
       const projection = requireProjection(state)
       if (!projection) return unsupported(state, "style-update", "graph has been disposed")
@@ -243,5 +267,5 @@ export function initialPixiScenarioState(
   fixtureBytes: number | null = null,
   projection: PixiProjection | null = null,
 ): PixiScenarioState {
-  return { projection, geometry, container, fixtureBytes, disposed: false }
+  return { projection, geometry, container, fixtureBytes, disposed: false, cameraState: null }
 }

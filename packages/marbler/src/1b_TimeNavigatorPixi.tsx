@@ -169,10 +169,11 @@ export function TimeNavigatorPixi({ marks, viewport, highlightedId = null, laneL
       stateRef.current.onMarkHover?.(null)
     }
     const wheel = (event: WheelEvent) => {
-      event.preventDefault()
       if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+        event.preventDefault()
         stateRef.current.onGesture({ type: "pan", deltaPx: -event.deltaX, widthPx: host.clientWidth })
-      } else {
+      } else if (event.ctrlKey) {
+        event.preventDefault()
         stateRef.current.onGesture({ type: "zoom", anchorPx: event.clientX - host.getBoundingClientRect().left, factor: Math.exp(event.deltaY * 0.0015), widthPx: host.clientWidth })
       }
     }

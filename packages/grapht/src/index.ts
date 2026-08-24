@@ -41,9 +41,6 @@ export {
 } from "./1_geometryProtocol.js"
 export type { FixtureDef, GridFixtureDef, Topology } from "./2_fixtures.js"
 export { fixturesDir, gridTopology, packageRoot } from "./2_fixtures.js"
-export { directoryBytes, hashFile, hashFileIfExists, sha256Hex } from "./3_hash.js"
-export type { ProcessResult } from "./4_process.js"
-export { measureCommand } from "./4_process.js"
 export type { RendererFixture } from "./10_rendererFixture.js"
 export { RENDER_FIXTURE_PROTOCOL, rendererFixtureNodeSchema, rendererFixtureSchema } from "./10_rendererFixture.js"
 export type { InitialBenchScenario, ScenarioRunReceipt, ScenarioSample } from "./11_scenarios.js"
@@ -112,3 +109,21 @@ export type { SequenceCollapseState } from "./18_sequenceCollapse.js"
 export { projectCollapsedSequence } from "./18_sequenceCollapse.js"
 export type { PlacementBlockReason, PlacementReconciliation, SequencePlacement } from "./19_sequencePlacement.js"
 export { reconcileSequencePlacements } from "./19_sequencePlacement.js"
+
+export type { ShakeCameraState, ShakeOffset } from "./12_shake.js"
+export { shakeOffsetAt, shakeOffsets } from "./12_shake.js"
+
+export type { PixelReadback, SampleRect, VisualValidity, VisualValidityInput } from "./13_visualValidity.js"
+export {
+  BACKGROUND_DISTANCE_SQUARED,
+  MINIMUM_NON_BACKGROUND_PIXELS,
+  VISUAL_VALIDITY_BACKGROUND_COLOR,
+  VISUAL_VALIDITY_VIEWPORT,
+  backgroundOf,
+  evaluateVisualValidity,
+  sampleRectOf,
+} from "./13_visualValidity.js"
+
+export { directoryBytes, hashFile, hashFileIfExists, sha256Hex } from "./3_hash.js"
+export type { ProcessResult } from "./4_process.js"
+export { measureCommand } from "./4_process.js"

@@ -6,6 +6,7 @@ export type { BenchScenario } from "./9_scenarioTypes.js"
 export const SUPPORTED: readonly BenchScenario[] = [
   "camera-pan",
   "camera-wheel-zoom",
+  "camera-shake",
   "style-update",
   "position-update",
   "viewport-resize",

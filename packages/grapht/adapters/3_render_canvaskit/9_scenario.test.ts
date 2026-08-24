@@ -17,6 +17,7 @@ function base(): CanvasKitScenarioState {
 const supportedCases = [
   { scenario: "camera-pan", args: { dx: 12, dy: -8, frames: 4 } },
   { scenario: "camera-wheel-zoom", args: { deltaY: -100, anchorX: 512, anchorY: 384, frames: 4 } },
+  { scenario: "camera-shake", args: { seed: 1337, amplitudePx: 24, frames: 120 } },
   { scenario: "style-update", args: { nodeCount: 1000, color: 0xff2244 } },
   { scenario: "position-update", args: { nodeCount: 100, dx: 3, dy: -2 } },
   { scenario: "viewport-resize", args: { width: 1280, height: 720 } },
@@ -29,8 +30,8 @@ const supportedCases = [
 ] as const
 
 describe("scenario dispatch covers every contract key", () => {
-  it("implements all 32 scenario keys with a supported or unsupported sample", () => {
-    expect(BENCH_SCENARIOS).toHaveLength(32)
+  it("implements all 33 scenario keys with a supported or unsupported sample", () => {
+    expect(BENCH_SCENARIOS).toHaveLength(33)
     for (const scenario of BENCH_SCENARIOS) {
       const { sample } = reduce(base(), { scenario, args: {} } as never)
       expect(sample).toMatchObject({ scenario })

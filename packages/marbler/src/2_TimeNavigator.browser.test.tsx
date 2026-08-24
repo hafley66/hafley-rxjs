@@ -58,6 +58,40 @@ async function jsHeapUsedBytes() {
 }
 
 describe("time navigator receipts", () => {
+  it("leaves vertical wheel for its dock and reserves ctrl-wheel for cursor zoom", async () => {
+    const host = document.createElement("div")
+    document.body.append(host)
+    const root = createRoot(host)
+    await act(async () => root.render(<NavigatorFixture marks={gitMarks()} initial={createTimeViewport([0, 1000])} />))
+    await expect.poll(() => host.querySelectorAll("canvas").length).toBe(1)
+    const navigator = host.querySelector(".time-navigator") as HTMLDivElement
+    const output = host.querySelector("output") as HTMLOutputElement
+
+    const wheel = new WheelEvent("wheel", { deltaY: -200, clientX: 500, cancelable: true })
+    navigator.dispatchEvent(wheel)
+    const afterWheel = output.textContent
+    const pinch = new WheelEvent("wheel", { deltaY: -200, clientX: 500, ctrlKey: true, cancelable: true })
+    await act(async () => navigator.dispatchEvent(pinch))
+    await expect.poll(() => output.textContent).not.toBe(afterWheel)
+    const pinchBounds = output.textContent?.match(/(\d+)–(\d+) ms/)
+
+    expect({
+      wheelPrevented: wheel.defaultPrevented,
+      wheelDomain: afterWheel,
+      pinchPrevented: pinch.defaultPrevented,
+      pinchSpanShrank: pinchBounds ? Number(pinchBounds[2]) - Number(pinchBounds[1]) < 1_000 : false,
+    }).toMatchInlineSnapshot(`
+      {
+        "pinchPrevented": true,
+        "pinchSpanShrank": true,
+        "wheelDomain": "0–1000 ms",
+        "wheelPrevented": false,
+      }
+    `)
+    await act(async () => root.unmount())
+    host.remove()
+  })
+
   it("renders restrained git branch and merge marks", async () => {
     const host = document.createElement("div")
     document.body.append(host)
@@ -86,6 +120,7 @@ describe("time navigator receipts", () => {
         navigator.dispatchEvent(new WheelEvent("wheel", {
           deltaX: index % 3 === 0 ? (index % 2 ? 12 : -12) : 0,
           deltaY: index % 3 === 0 ? 0 : (index % 2 ? 9 : -9),
+          ctrlKey: index % 3 !== 0,
           clientX: 40 + index % 700,
           cancelable: true,
         }))

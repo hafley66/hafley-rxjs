@@ -133,6 +133,26 @@ Source topology and human placement have separate write paths. Moving a projecte
 a placement event. Rewriting D2 requires an explicit source-edit operation. A later source
 revision reconciles stable entity IDs with the retained placement view.
 
+## Adapters
+
+Every adapter is an interchangeable `grapht-bench/0` implementation over the same
+`grapht-render-fixture/0` graph, so their receipts are directly comparable.
+
+| Directory | Package | Lane |
+|---|---|---|
+| [`0_layout_grid_worker`](./adapters/0_layout_grid_worker/) | `@hafley66/grapht-layout-grid-worker` | layout, Web Worker |
+| [`1_layout_grid_wasm`](./adapters/1_layout_grid_wasm/) | `@hafley66/grapht-layout-grid-wasm` | layout, Wasm |
+| [`2_render_cytoscape`](./adapters/2_render_cytoscape/) | `@hafley66/grapht-render-cytoscape` | render, Cytoscape |
+| [`3_render_canvaskit`](./adapters/3_render_canvaskit/) | `@hafley66/grapht-render-canvaskit` | render, CanvasKit |
+| [`4_render_sigma`](./adapters/4_render_sigma/) | `@hafley66/grapht-render-sigma` | render, Sigma |
+| [`5_render_vello_wgpu`](./adapters/5_render_vello_wgpu/) | `@hafley66/grapht-render-vello-chromium` | render, Vello / wgpu |
+| [`6_render_pixijs`](./adapters/6_render_pixijs/) | `@hafley66/grapht-render-pixijs` | render, PixiJS v8 (WebGL + WebGPU, retained + particles) |
+| [`7_render_threejs`](./adapters/7_render_threejs/) | `@hafley66/grapht-render-threejs` | render, Three.js (WebGL + WebGPU, retained meshes + instanced) |
+
+Renderer recipes: `just test-pixijs` / `just browser-pixijs` / `just receipt-pixijs`, and
+`just test-threejs` / `just browser-threejs` / `just receipt-threejs`. Three.js notes live in
+[`adapters/7_render_threejs/LEARNINGS.md`](./adapters/7_render_threejs/LEARNINGS.md).
+
 ## Existing seams
 
 | Repository | Material feeding `grapht` |

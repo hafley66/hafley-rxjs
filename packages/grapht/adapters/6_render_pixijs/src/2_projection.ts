@@ -6,18 +6,20 @@ import {
   MeshGeometry,
   Particle,
   ParticleContainer,
+  Rectangle,
   Sprite,
   Texture,
   WebGLRenderer,
   WebGPURenderer,
   type ContainerChild,
 } from "pixi.js"
-import type { Geometry } from "@hafley66/grapht"
+import type { Geometry, PixelReadback } from "@hafley66/grapht"
 import { edgeTriangles, fitCamera, panCamera, screenToWorld, worldToScreen, zoomCamera, type CameraState } from "./7_geometryMath.js"
 
 export const NODE_RADIUS = 4
 export const EDGE_THICKNESS = 1.5
 export const NODE_COLOR = 0x4a7fdf
+export const NODE_TEXTURE_RESOLUTION = 8
 export const EDGE_COLOR = 0x2a3a55
 
 export type RendererMode = "webgl" | "webgpu"
@@ -54,7 +56,11 @@ export type PixiProjectionInfo = {
 function makeNodeTexture(renderer: Application["renderer"], radius: number, color: number): Texture {
   const g = new Graphics()
   g.circle(0, 0, radius).fill({ color })
-  return renderer.generateTexture({ target: g, resolution: 1 })
+  // Authoring above 1 texel per world unit keeps a scaled particle node the same painted disc
+  // the retained node draws, rather than a filtered halo around a smaller core.
+  const texture = renderer.generateTexture({ target: g, resolution: NODE_TEXTURE_RESOLUTION })
+  texture.source.scaleMode = "nearest"
+  return texture
 }
 
 export class PixiProjection {
@@ -161,6 +167,16 @@ export class PixiProjection {
 
   render(): void {
     this.app.renderer.render(this.app.stage)
+  }
+
+  readViewportPixels(): PixelReadback {
+    const output = this.app.renderer.extract.pixels({
+      target: this.app.stage,
+      frame: new Rectangle(0, 0, this.viewWidth, this.viewHeight),
+      resolution: this.devicePixelRatio,
+      clearColor: this.opts.backgroundColor,
+    })
+    return { pixels: output.pixels, width: output.width, height: output.height }
   }
 
   async firstRender(): Promise<void> {

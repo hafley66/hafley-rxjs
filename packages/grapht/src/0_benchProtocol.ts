@@ -10,6 +10,7 @@ export interface BenchScenarioArguments {
   "camera-pan": { dx: number; dy: number; frames: number }
   "camera-wheel-zoom": { deltaY: number; anchorX: number; anchorY: number; frames: number }
   "camera-pinch-zoom": { scale: number; anchorX: number; anchorY: number; frames: number }
+  "camera-shake": { seed: number; amplitudePx: number; frames: number }
   "style-update": { nodeCount: number; color: number }
   "position-update": { nodeCount: number; dx: number; dy: number }
   "viewport-resize": { width: number; height: number }
@@ -47,6 +48,7 @@ export const BENCH_SCENARIOS = [
   "camera-pan",
   "camera-wheel-zoom",
   "camera-pinch-zoom",
+  "camera-shake",
   "style-update",
   "position-update",
   "viewport-resize",
@@ -113,6 +115,7 @@ export async function reduceBenchScenario<State, Sample>(
     case "camera-pan": return handlers["camera-pan"](state, event.args)
     case "camera-wheel-zoom": return handlers["camera-wheel-zoom"](state, event.args)
     case "camera-pinch-zoom": return handlers["camera-pinch-zoom"](state, event.args)
+    case "camera-shake": return handlers["camera-shake"](state, event.args)
     case "style-update": return handlers["style-update"](state, event.args)
     case "position-update": return handlers["position-update"](state, event.args)
     case "viewport-resize": return handlers["viewport-resize"](state, event.args)

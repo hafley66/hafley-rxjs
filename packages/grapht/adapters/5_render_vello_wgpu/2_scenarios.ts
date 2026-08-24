@@ -4,6 +4,7 @@ import {
   type BenchScenarioHandlers,
 } from "../../src/0_benchProtocol.js"
 import { BENCH_SCENARIO_CASES, type ScenarioSample } from "../../src/11_scenarios.js"
+import { shakeOffsets } from "../../src/12_shake.js"
 import type { FixtureLoad } from "./0_fixture.ts"
 import type { VelloBrowserRenderer } from "./1_wasm.ts"
 
@@ -126,6 +127,28 @@ export function createVelloScenarioHandlers(options: VelloScenarioOptions): Benc
       return supported(state, "camera-wheel-zoom", () => { renderer.set_camera_wheel_zoom(args.deltaY, args.anchorX, args.anchorY); render(state) }, args.frames)
     },
     "camera-pinch-zoom": unsupportedHandler("camera-pinch-zoom", "pinch gesture synthesis is not implemented"),
+    "camera-shake": async (state, args) => {
+      const renderer = requireRenderer(state, "camera-shake")
+      if (!renderer) return unsupported(state, "camera-shake", "graph has been disposed")
+      const started = now()
+      const offsets = shakeOffsets(args.seed, args.amplitudePx, args.frames)
+      const frameTimes: number[] = []
+      let appliedX = 0
+      let appliedY = 0
+      let previous = now()
+      for (let index = 0; index < args.frames; index++) {
+        const dx = offsets[index * 2]
+        const dy = offsets[index * 2 + 1]
+        renderer.set_camera_pan(dx - appliedX, dy - appliedY)
+        appliedX = dx
+        appliedY = dy
+        render(state)
+        const timestamp = await frame()
+        frameTimes.push(Math.max(0, timestamp - previous))
+        previous = timestamp
+      }
+      return { state, sample: sample(state, "camera-shake", now() - started, frameTimes, 0) }
+    },
     "style-update": async (state, args) => {
       const renderer = requireRenderer(state, "style-update")
       if (!renderer) return unsupported(state, "style-update", "graph has been disposed")

@@ -12,6 +12,7 @@ import {
 export const INITIAL_BENCH_SCENARIOS = [
   "camera-pan",
   "camera-wheel-zoom",
+  "camera-shake",
   "style-update",
   "position-update",
   "viewport-resize",
@@ -66,6 +67,7 @@ export const BENCH_SCENARIO_CASES: BenchScenarioCases = {
   "camera-pan": [{ scenario: "camera-pan", args: { dx: 12, dy: -8, frames: 3 } }],
   "camera-wheel-zoom": [{ scenario: "camera-wheel-zoom", args: { deltaY: -120, anchorX: 256, anchorY: 192, frames: 3 } }],
   "camera-pinch-zoom": [{ scenario: "camera-pinch-zoom", args: { scale: 1.1, anchorX: 256, anchorY: 192, frames: 3 } }],
+  "camera-shake": [{ scenario: "camera-shake", args: { seed: 1337, amplitudePx: 24, frames: 120 } }],
   "style-update": [{ scenario: "style-update", args: { nodeCount: 64, color: 0xffa33b } }],
   "position-update": [{ scenario: "position-update", args: { nodeCount: 64, dx: 0.25, dy: -0.125 } }],
   "viewport-resize": [{ scenario: "viewport-resize", args: { width: 960, height: 640 } }],
@@ -100,6 +102,7 @@ export const BENCH_SCENARIO_CASES: BenchScenarioCases = {
 export const INITIAL_BENCH_SCENARIO_CASES: readonly BenchScenarioEvent[] = [
   ...BENCH_SCENARIO_CASES["camera-pan"],
   ...BENCH_SCENARIO_CASES["camera-wheel-zoom"],
+  ...BENCH_SCENARIO_CASES["camera-shake"],
   ...BENCH_SCENARIO_CASES["style-update"],
   ...BENCH_SCENARIO_CASES["position-update"],
   ...BENCH_SCENARIO_CASES["viewport-resize"],

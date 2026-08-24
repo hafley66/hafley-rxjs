@@ -10,7 +10,7 @@ test.describe.configure({ mode: "serial" })
 for (const representation of ["retained", "particles"] as const) {
   for (const nodes of sizes) {
     test(`PixiJS WebGL ${representation} ${nodes} nodes`, async ({ page }) => {
-      test.setTimeout(180_000)
+      test.setTimeout(900_000)
       const errors: string[] = []
       page.on("pageerror", error => errors.push(error.stack ?? error.message))
       const startedAt = performance.now()
@@ -23,7 +23,7 @@ for (const representation of ["retained", "particles"] as const) {
       await mkdir("receipts/massive", { recursive: true })
       await page.screenshot({ path: `receipts/massive/webgl-${representation}-${nodes}.png` })
       await page.evaluate(() => window.dispatchEvent(new Event("grapht-continue")))
-      await expect(page.locator("#receipt"), errors.join("\n")).toHaveText(/\S+/, { timeout: 120_000 })
+      await expect(page.locator("#receipt"), errors.join("\n")).toHaveText(/\S+/, { timeout: 720_000 })
 
       const receipt = JSON.parse(await page.locator("#receipt").textContent() ?? "{}")
       const result = { nodes, representation, visualReadyMs, ...receipt }

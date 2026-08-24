@@ -31,6 +31,7 @@ describe("bench input schema", () => {
         "camera-pan",
         "camera-wheel-zoom",
         "camera-pinch-zoom",
+        "camera-shake",
         "style-update",
         "position-update",
         "viewport-resize",
