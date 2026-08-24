@@ -96,6 +96,7 @@ app.stage.addChild(viewport)
 const documentRoot = new DOMParser().parseFromString(SVG, "image/svg+xml").documentElement as unknown as SVGSVGElement
 const scene = new SVGScene(documentRoot)
 const elementNodes = (scene as unknown as { _elementToRenderNode: Map<SVGElement, Container> })._elementToRenderNode
+await new Promise<void>(resolve => setTimeout(resolve, 0))
 scene.cullable = true
 scene.cullArea = new Rectangle(0, 0, 1000, 900)
 viewport.addChild(scene)
