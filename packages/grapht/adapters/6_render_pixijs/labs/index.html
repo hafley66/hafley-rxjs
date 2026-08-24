@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pixi adapter demos</title>
+    <link rel="stylesheet" href="../11_labCatalog.css" />
+  </head>
+  <body>
+    <main id="catalog">
+      <aside class="catalog-sidebar">
+        <header class="catalog-header">
+          <span class="catalog-kicker">@hafley66/grapht-render-pixijs</span>
+          <h1>Demo catalog</h1>
+          <input id="demo-filter" type="search" placeholder="Filter demos" aria-label="Filter demos" />
+        </header>
+        <nav id="demo-navigation" aria-label="Demo catalog"></nav>
+      </aside>
+      <section class="catalog-preview">
+        <header class="preview-header">
+          <div>
+            <span id="demo-group" class="preview-group"></span>
+            <h2 id="demo-title"></h2>
+            <p id="demo-description"></p>
+          </div>
+          <a id="demo-standalone" target="_blank" rel="noreferrer">Open standalone</a>
+        </header>
+        <iframe id="demo-frame" title="Selected demo"></iframe>
+      </section>
+    </main>
+    <script type="module" src="../src/11_labCatalog.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,189 @@
+import "@pixi/layout"
+
+import { SVGScene } from "@pixi-essentials/svg"
+import { LayoutContainer } from "@pixi/layout/components"
+import { Button } from "@pixi/ui"
+import {
+  Application,
+  CullerPlugin,
+  DOMContainer,
+  Graphics,
+  Rectangle,
+  Text,
+  extensions,
+  type Container,
+} from "pixi.js"
+import { Viewport } from "pixi-viewport"
+
+const SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 900" width="1000" height="900">
+  <rect width="1000" height="900" rx="18" fill="#121a27"/>
+  <g id="group-frame" data-role="group-frame">
+    <rect x="80" y="180" width="840" height="610" rx="14" fill="#182334" stroke="#526a8e" stroke-width="3"/>
+    <text id="group-label" data-role="group-label" x="105" y="220" fill="#b9c9df" font-family="system-ui" font-size="24" font-weight="600">request lifecycle</text>
+  </g>
+  <g id="actor-client" data-role="actor">
+    <rect x="95" y="55" width="190" height="72" rx="12" fill="#203555" stroke="#57a5ff" stroke-width="3"/>
+    <text x="190" y="99" text-anchor="middle" fill="#eef5ff" font-family="system-ui" font-size="23" font-weight="600">Client</text>
+  </g>
+  <g id="actor-api" data-role="actor">
+    <rect x="405" y="55" width="190" height="72" rx="12" fill="#332956" stroke="#a78bfa" stroke-width="3"/>
+    <text x="500" y="99" text-anchor="middle" fill="#f4efff" font-family="system-ui" font-size="23" font-weight="600">API</text>
+  </g>
+  <g id="actor-db" data-role="actor">
+    <rect x="715" y="55" width="190" height="72" rx="12" fill="#173e39" stroke="#34d399" stroke-width="3"/>
+    <text x="810" y="99" text-anchor="middle" fill="#eafff8" font-family="system-ui" font-size="23" font-weight="600">Database</text>
+  </g>
+  <g stroke="#50627d" stroke-width="3" stroke-dasharray="10 9">
+    <line id="lifeline-client" data-role="lifeline" x1="190" y1="127" x2="190" y2="750"/>
+    <line id="lifeline-api" data-role="lifeline" x1="500" y1="127" x2="500" y2="750"/>
+    <line id="lifeline-db" data-role="lifeline" x1="810" y1="127" x2="810" y2="750"/>
+  </g>
+  <g id="message-request" data-role="message">
+    <line x1="190" y1="295" x2="486" y2="295" stroke="#57a5ff" stroke-width="4"/>
+    <polygon points="500,295 480,284 480,306" fill="#57a5ff"/>
+    <text x="345" y="278" text-anchor="middle" fill="#dbeafe" font-family="system-ui" font-size="22">POST /review</text>
+  </g>
+  <g id="activation-api" data-role="activation">
+    <rect x="488" y="295" width="24" height="300" rx="5" fill="#473873" stroke="#a78bfa" stroke-width="3"/>
+  </g>
+  <g id="message-query" data-role="message">
+    <line x1="512" y1="405" x2="796" y2="405" stroke="#a78bfa" stroke-width="4"/>
+    <polygon points="810,405 790,394 790,416" fill="#a78bfa"/>
+    <text x="655" y="388" text-anchor="middle" fill="#ede9fe" font-family="system-ui" font-size="22">lookup review</text>
+  </g>
+  <g id="message-result" data-role="message">
+    <line x1="810" y1="505" x2="526" y2="505" stroke="#34d399" stroke-width="4" stroke-dasharray="9 7"/>
+    <polygon points="512,505 532,494 532,516" fill="#34d399"/>
+    <text x="655" y="488" text-anchor="middle" fill="#d1fae5" font-family="system-ui" font-size="22">review row</text>
+  </g>
+  <g id="note-cache" data-role="note">
+    <rect x="620" y="620" width="235" height="82" rx="8" fill="#4a3b18" stroke="#f59e0b" stroke-width="3"/>
+    <text x="738" y="654" text-anchor="middle" fill="#fff3c4" font-family="system-ui" font-size="20">
+      <tspan x="738">cached for</tspan><tspan x="738" dy="25">30 seconds</tspan>
+    </text>
+  </g>
+</svg>`
+
+const host = document.querySelector<HTMLElement>("#ecosystem")
+const receipt = document.querySelector<HTMLOutputElement>("#receipt")
+if (!host || !receipt) throw new Error("ecosystem lab mount missing")
+const mount = host
+const output = receipt
+
+extensions.add(CullerPlugin)
+const app = new Application()
+await app.init({
+  preference: "webgl",
+  resizeTo: mount,
+  antialias: true,
+  resolution: Math.min(devicePixelRatio, 2),
+  autoDensity: true,
+  background: 0x10151f,
+})
+mount.append(app.canvas)
+
+const viewport = new Viewport({
+  screenWidth: app.screen.width,
+  screenHeight: app.screen.height,
+  worldWidth: 1000,
+  worldHeight: 900,
+  events: app.renderer.events,
+})
+viewport.drag().pinch().wheel({ smooth: 3 }).decelerate().clampZoom({ minScale: 0.35, maxScale: 3 })
+app.stage.addChild(viewport)
+
+const documentRoot = new DOMParser().parseFromString(SVG, "image/svg+xml").documentElement as unknown as SVGSVGElement
+const scene = new SVGScene(documentRoot)
+const elementNodes = (scene as unknown as { _elementToRenderNode: Map<SVGElement, Container> })._elementToRenderNode
+scene.cullable = true
+scene.cullArea = new Rectangle(0, 0, 1000, 900)
+viewport.addChild(scene)
+scene.drawPaints(app.renderer)
+viewport.fitWorld(true)
+
+const roleCounts = new Map<string, number>()
+for (const [element, node] of elementNodes) {
+  const role = element.getAttribute("data-role")
+  if (!role) continue
+  roleCounts.set(role, (roleCounts.get(role) ?? 0) + 1)
+  node.eventMode = "static"
+  node.cursor = "pointer"
+  node.on("pointerover", () => {
+    node.alpha = 0.62
+    output.value = `hover ${role}: ${element.id}`
+    mount.dataset.hoveredRole = role
+    mount.dataset.hoveredId = element.id
+  })
+  node.on("pointerout", () => {
+    node.alpha = 1
+  })
+}
+
+const toolbar = new LayoutContainer()
+toolbar.position.set(12, 12)
+toolbar.layout = {
+  width: 440,
+  height: 48,
+  padding: 7,
+  gap: 8,
+  flexDirection: "row",
+  alignItems: "center",
+  backgroundColor: 0x172234,
+  borderColor: 0x42536d,
+  borderWidth: 1,
+  borderRadius: 8,
+}
+app.stage.addChild(toolbar)
+
+const fitView = new Graphics().roundRect(0, 0, 92, 32, 6).fill(0x29466d).stroke({ color: 0x68a7ef, width: 1 })
+fitView.layout = { width: 92, height: 32 }
+const fitLabel = new Text({ text: "Fit SVG", style: { fill: 0xe7f2ff, fontFamily: "system-ui", fontSize: 14, fontWeight: "600" } })
+fitLabel.anchor.set(0.5)
+fitLabel.position.set(46, 16)
+fitView.addChild(fitLabel)
+const fitButton = new Button(fitView)
+let fitCount = 0
+fitButton.onPress.connect(() => {
+  viewport.fitWorld(true)
+  fitCount += 1
+  mount.dataset.fitCount = String(fitCount)
+})
+toolbar.addChild(fitView)
+
+for (const label of ["SVGScene", "viewport", "layout", "UI", "culler"]) {
+  const item = new Text({ text: label, style: { fill: 0xaec3de, fontFamily: "system-ui", fontSize: 13 } })
+  item.layout = { width: label.length * 8 + 8, height: 22 }
+  toolbar.addChild(item)
+}
+
+const badgeElement = document.createElement("div")
+badgeElement.className = "pixi-dom-badge"
+badgeElement.textContent = "DOMContainer: live HTML"
+const badge = new DOMContainer({ element: badgeElement })
+badge.position.set(app.screen.width - 150, 28)
+app.stage.addChild(badge)
+
+app.render()
+await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+
+const counts = Object.fromEntries([...roleCounts.entries()].sort(([left], [right]) => left.localeCompare(right)))
+const result = {
+  pixiBackend: app.renderer.type,
+  svgElementNodes: elementNodes.size,
+  roles: counts,
+  viewportPlugins: ["drag", "pinch", "wheel", "decelerate", "clampZoom"],
+  layout: Boolean(toolbar.layout),
+  uiButton: Boolean(fitButton.view),
+  cullable: scene.cullable,
+  domContainer: badgeElement.isConnected,
+}
+output.value = JSON.stringify(result, null, 2)
+mount.dataset.ready = "true"
+mount.dataset.svgElementNodes = String(result.svgElementNodes)
+mount.dataset.viewportPlugins = result.viewportPlugins.join(",")
+mount.dataset.layout = String(result.layout)
+mount.dataset.uiButton = String(result.uiButton)
+mount.dataset.cullable = String(result.cullable)
+mount.dataset.domContainer = String(result.domContainer)
+mount.dataset.fitCount = String(fitCount)
