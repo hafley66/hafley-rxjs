@@ -25,6 +25,30 @@ function recording() {
 }
 
 describe("renderer", () => {
+  it("supports renderer-specific value types", () => {
+    const values = new Subject<{ selected: string }>()
+    const applied: string[] = []
+    const selectedRenderer = renderer<undefined, { selected: string }>({
+      subscribe: () => undefined,
+      next: (_state, value) => {
+        applied.push(value.selected)
+      },
+      unsubscribe: () => undefined,
+    })
+
+    const lifetime = values.pipe(selectedRenderer({} as HTMLElement)).subscribe()
+    values.next({ selected: "viewport" })
+    values.next({ selected: "layout" })
+    lifetime.unsubscribe()
+
+    expect(applied).toMatchInlineSnapshot(`
+      [
+        "viewport",
+        "layout",
+      ]
+    `)
+  })
+
   it("mounts on subscribe, draws on next, unmounts on unsubscribe, and passes frames through", () => {
     const { log, r } = recording()
     const frame$ = new Subject<Frame>()
