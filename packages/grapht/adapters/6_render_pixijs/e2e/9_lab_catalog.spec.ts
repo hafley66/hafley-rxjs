@@ -24,3 +24,11 @@ test("demo catalog groups labs and persists the selected preview", async ({ page
   await expect(page.locator(".demo-entry:not([hidden])")).toHaveText(["DOM cube"])
   await expect(page.locator(".demo-group:not([hidden]) h3")).toHaveText(["Scene pipeline"])
 })
+
+test("queryless server root opens the structured catalog", async ({ page }) => {
+  await page.goto("/")
+
+  await expect(page).toHaveURL(/\/labs\/$/)
+  await expect(page.locator("[data-demo='ecosystem']")).toHaveAttribute("aria-current", "page")
+  await expect(page.locator("#demo-frame")).toHaveAttribute("src", "./ecosystem.html")
+})
