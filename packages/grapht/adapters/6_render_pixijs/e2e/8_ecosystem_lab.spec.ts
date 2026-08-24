@@ -74,11 +74,19 @@ test("Pixi text resolution follows viewport zoom", async ({ page }) => {
   const lab = page.locator("#ecosystem[data-ready='true']")
   await expect(lab).toHaveCount(1)
   const initialTextResolution = Number(await lab.getAttribute("data-text-resolution"))
-  const box = await lab.locator("canvas").boundingBox()
+  const canvas = lab.locator("canvas")
+  const box = await canvas.boundingBox()
   if (!box) throw new Error("ecosystem canvas has no bounds")
 
   await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5)
-  await page.mouse.wheel(0, -1_000)
+  await canvas.evaluate(element => element.dispatchEvent(new WheelEvent("wheel", {
+    bubbles: true,
+    cancelable: true,
+    clientX: element.getBoundingClientRect().x + element.clientWidth / 2,
+    clientY: element.getBoundingClientRect().y + element.clientHeight / 2,
+    ctrlKey: true,
+    deltaY: -1_000,
+  })))
 
   await expect.poll(async () => Number(await lab.getAttribute("data-text-resolution"))).toBeGreaterThan(initialTextResolution)
   await expect(lab).toHaveAttribute("data-ticker-started", "false", { timeout: 2_000 })

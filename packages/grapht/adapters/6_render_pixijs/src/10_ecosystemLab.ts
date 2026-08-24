@@ -22,6 +22,8 @@ import {
   projectReactiveStickyFrame,
   type ViewportSnapshot,
 } from "./14_reactiveStickyViewport.js"
+import { replaceSvgTextNodes } from "./15_svgText.js"
+import { installViewportWheel } from "./16_viewportWheel.js"
 
 const SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 900" width="1000" height="900">
@@ -106,10 +108,11 @@ const viewport = new Viewport({
   ticker: app.ticker,
   allowPreserveDragOutside: true,
 })
-viewport.drag().pinch().wheel({ smooth: 3 }).decelerate()
+viewport.drag().pinch().wheel({ trackpadPinch: true, wheelZoom: false }).decelerate()
   .clamp({ direction: "all", underflow: "center" })
   .clampZoom({ minScale: 0.35, maxScale: 3 })
 app.stage.addChild(viewport)
+installViewportWheel(viewport)
 
 const documentRoot = new DOMParser().parseFromString(SVG, "image/svg+xml").documentElement as unknown as SVGSVGElement
 const measureContext = document.createElement("canvas").getContext("2d")
@@ -117,32 +120,7 @@ if (!measureContext) throw new Error("canvas text measurement unavailable")
 const scene = new SVGScene(documentRoot)
 const elementNodes = (scene as unknown as { _elementToRenderNode: Map<SVGElement, Container> })._elementToRenderNode
 await new Promise<void>(resolve => setTimeout(resolve, 0))
-const textNodes: Text[] = []
-for (const element of documentRoot.querySelectorAll<SVGTextElement>("text")) {
-  const svgNode = elementNodes.get(element)
-  const parentNode = element.parentElement ? elementNodes.get(element.parentElement as unknown as SVGElement) : undefined
-  if (!svgNode || !parentNode) continue
-  svgNode.renderable = false
-  const tspans = [...element.querySelectorAll("tspan")]
-  const content = tspans.length ? tspans.map(tspan => tspan.textContent ?? "").join("\n") : element.textContent?.trim() ?? ""
-  const fontSize = Number(element.getAttribute("font-size") ?? 16)
-  const text = new Text({
-    text: content,
-    resolution: app.renderer.resolution,
-    style: {
-      fill: element.getAttribute("fill") ?? "black",
-      fontFamily: element.getAttribute("font-family") ?? "sans-serif",
-      fontSize,
-      fontWeight: (element.getAttribute("font-weight") ?? "normal") as "normal" | "bold" | "bolder" | "lighter" | "100" | "200" | "300" | "400" | "500" | "600" | "700" | "800" | "900",
-      lineHeight: tspans.length > 1 ? Number(tspans[1].getAttribute("dy") ?? fontSize * 1.2) : undefined,
-    },
-  })
-  text.anchor.set(element.getAttribute("text-anchor") === "middle" ? 0.5 : 0, 1)
-  text.position.set(Number(element.getAttribute("x") ?? 0), Number(element.getAttribute("y") ?? 0))
-  parentNode.addChild(text)
-  elementNodes.set(element, text)
-  textNodes.push(text)
-}
+const textNodes = replaceSvgTextNodes({ root: documentRoot, nodes: elementNodes, resolution: app.renderer.resolution })
 scene.cullable = true
 scene.cullArea = new Rectangle(0, 0, 1000, 900)
 viewport.addChild(scene)
@@ -165,12 +143,23 @@ for (const element of actorElements) {
 }
 const stickyGroupItems = [...documentRoot.querySelectorAll<SVGTextElement>("[data-role='group-label']")].map((element, index) => {
   const node = elementNodes.get(element)!
-  const bounds = node.getLocalBounds()
+  const labelBounds = node.getLocalBounds()
+  const frame = element.parentElement?.querySelector("rect")
+  const wrapper = new Container()
+  if (frame) {
+    const frameFill = frame.getAttribute("fill")
+    wrapper.addChild(new Graphics()
+      .rect(Number(frame.getAttribute("x")), node.y + labelBounds.y - 4, Number(frame.getAttribute("width")), labelBounds.height + 8)
+      .fill(frameFill && frameFill !== "none" ? frameFill : "#182334"))
+  }
+  wrapper.addChild(node)
+  const bounds = wrapper.getLocalBounds()
   const baseline = Number(element.getAttribute("y"))
-  const worldTop = baseline + bounds.y
-  groupLabelLayer.addChild(node)
+  const worldTop = baseline - Number(element.getAttribute("font-size"))
+  groupLabelLayer.addChild(wrapper)
   return {
     id: element.id,
+    node: wrapper,
     worldTop,
     boundaryWorldBottom: Number(element.dataset.boundaryBottom ?? 790),
     localTop: bounds.y,
@@ -178,14 +167,14 @@ const stickyGroupItems = [...documentRoot.querySelectorAll<SVGTextElement>("[dat
     order: Number(element.dataset.depth ?? index),
   }
 })
-const stickyNodes = new Map(stickyGroupItems.map(item => [item.id, elementNodes.get(documentRoot.querySelector<SVGElement>(`#${item.id}`)!)!]))
+const stickyNodes = new Map(stickyGroupItems.map(item => [item.id, item.node]))
 const stickyModel = {
   actorWorldTop: 55,
   actorBoundaryWorldBottom: 790,
   actorScreenTop: 74,
   actorWorldHeight: 72,
   stackInset: 8,
-  items: stickyGroupItems,
+  items: stickyGroupItems.map(({ node: _node, ...item }) => item),
   gap: 6,
 }
 const readViewport = (): ViewportSnapshot => ({
@@ -361,7 +350,10 @@ const releaseCanvasPointer = (event: PointerEvent) => {
 }
 app.canvas.addEventListener("pointerup", releaseCanvasPointer)
 app.canvas.addEventListener("pointercancel", releaseCanvasPointer)
-app.canvas.addEventListener("wheel", startRendering, { passive: true })
+app.canvas.addEventListener("wheel", event => {
+  startRendering()
+  if (event.ctrlKey) stopRenderingSoon()
+}, { passive: true })
 createPixiPanProbe({
   canvas: app.canvas,
   ticker: app.ticker,
@@ -376,7 +368,8 @@ createPixiPanProbe({
 window.addEventListener("pointerup", stopRenderingSoon)
 viewport.on("moved-end", stopRenderingSoon)
 viewport.on("zoomed-end", stopRenderingSoon)
-viewport.on("zoomed-end", () => {
+viewport.on("zoomed", () => {
+  stopRenderingSoon()
   const resolution = Math.max(app.renderer.resolution, Math.min(4, app.renderer.resolution * viewport.scale.x))
   for (const text of textNodes) text.resolution = resolution
   mount.dataset.textResolution = resolution.toFixed(2)

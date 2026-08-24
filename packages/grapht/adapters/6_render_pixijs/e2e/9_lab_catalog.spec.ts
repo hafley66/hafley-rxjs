@@ -8,6 +8,7 @@ test("demo catalog groups labs and persists the selected preview", async ({ page
     "Renderer benchmark",
     "Interactive graph canvas",
     "Pixi ecosystem sequence",
+    "Mermaid and D2 sequences",
     "Scene grid",
     "Scene cube",
     "DOM cube",

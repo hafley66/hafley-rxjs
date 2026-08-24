@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pixi Mermaid and D2 sequence lab</title>
+    <link rel="stylesheet" href="/12_sequenceFormatsLab.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>Pixi Mermaid and D2 imports</h1>
+          <p>Pinch zoom · scroll vertical · Command-scroll horizontal · pointer drag pan</p>
+        </div>
+        <nav aria-label="Sequence fixture">
+          <button type="button" data-format="mermaid">Mermaid sequence</button>
+          <button type="button" data-format="d2-sequence">D2 sequence</button>
+          <button type="button" data-format="d2-code">D2 code block</button>
+        </nav>
+      </header>
+      <div id="sequence-formats" aria-label="Pixi sequence format canvas"></div>
+      <output id="receipt" aria-live="polite"></output>
+    </main>
+    <script type="module" src="/src/17_sequenceFormatsLab.ts"></script>
+  </body>
+</html>

@@ -12,6 +12,7 @@ const demos: Demo[] = [
   { id: "benchmark", group: "Graph rendering", title: "Renderer benchmark", description: "WebGL and WebGPU renderer fixture harness.", path: "../index.html?nodes=1000&renderer=webgl&representation=retained&pause=1" },
   { id: "graph-canvas", group: "Graph rendering", title: "Interactive graph canvas", description: "Node picking, dragging, camera pan, zoom, and graph hover states.", path: "./graph-canvas.html" },
   { id: "ecosystem", group: "Graph rendering", title: "Pixi ecosystem sequence", description: "SVGScene, viewport, layout, UI, culling, and DOM overlay compatibility.", path: "./ecosystem.html" },
+  { id: "sequence-formats", group: "Graph rendering", title: "Mermaid and D2 sequences", description: "Generated Mermaid sequence, D2 sequence, and D2 code-block SVGs projected through Pixi.", path: "./sequence-formats.html" },
   { id: "scene-grid", group: "Scene pipeline", title: "Scene grid", description: "Scene model projected through the Pixi adapter.", path: "./scene-grid.html" },
   { id: "scene-cube", group: "Scene pipeline", title: "Scene cube", description: "Scene primitives rendered through Pixi.", path: "./scene-cube.html" },
   { id: "dom-cube", group: "Scene pipeline", title: "DOM cube", description: "DOM rendering reference for scene output.", path: "./dom-cube.html" },
