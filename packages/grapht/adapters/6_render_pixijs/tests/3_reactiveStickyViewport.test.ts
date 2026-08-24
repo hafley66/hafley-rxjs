@@ -6,7 +6,8 @@ describe("reactive sticky viewport projection", () => {
     expect(projectReactiveStickyFrame({
       actorWorldTop: 55,
       actorScreenTop: 74,
-      inset: 80,
+      actorWorldHeight: 72,
+      stackInset: 8,
       gap: 6,
       items: [
         { id: "outer", worldTop: 196, boundaryWorldBottom: 790, localTop: -20, height: 24, order: 0 },
@@ -31,18 +32,18 @@ describe("reactive sticky viewport projection", () => {
         "placements": [
           {
             "id": "outer",
-            "localY": 122.66666666666667,
-            "slot": 154,
+            "localY": 146.66666666666669,
+            "slot": 190,
             "state": "stuck",
-            "top": 154,
+            "top": 190,
             "visible": true,
           },
           {
             "id": "nested",
-            "localY": 152,
-            "slot": 196,
-            "state": "natural",
-            "top": 201,
+            "localY": 172.66666666666666,
+            "slot": 232,
+            "state": "stuck",
+            "top": 232,
             "visible": true,
           },
         ],

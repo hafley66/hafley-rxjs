@@ -14,6 +14,7 @@ test("Pixi v8 ecosystem packages render and interact in one sequence scene", asy
   await expect(lab).toHaveAttribute("data-dom-container", "true")
   await expect(lab).toHaveAttribute("data-sticky-actors", "3")
   await expect(lab).toHaveAttribute("data-sticky-groups", "2")
+  await expect(lab).toHaveAttribute("data-reactive-sticky", "true")
   expect(Number(await lab.getAttribute("data-svg-element-nodes"))).toBeGreaterThan(20)
   await expect(page.locator("#receipt")).toContainText('"message": 3')
   await expect(page.locator("#receipt")).toContainText('"note": 1')
@@ -65,7 +66,6 @@ test("viewport keeps dragging after the pointer leaves the canvas", async ({ pag
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.mouse.down()
   await page.mouse.move(box.x - 120, box.y + box.height / 2, { steps: 12 })
-  await expect(lab).toHaveAttribute("data-sticky-layout-requests", /[1-9]\d*/)
   await page.mouse.up()
   await expect(lab).toHaveAttribute("data-pan-probe", /"gotPointerCapture":1/)
   const panProbe = JSON.parse(await lab.getAttribute("data-pan-probe") ?? "null")
@@ -73,12 +73,14 @@ test("viewport keeps dragging after the pointer leaves the canvas", async ({ pag
     pointerMovesContinued: panProbe.pointerMoves >= 12,
     captured: panProbe.gotPointerCapture === 1,
     framesRendered: panProbe.frames > 0,
-    stickyWorkBoundedByFrames: panProbe.stickyFlushes <= panProbe.frames,
+    stickyFramesApplied: panProbe.stickyFlushes > 0,
+    stickyFramesBoundedByEvents: panProbe.stickyFlushes <= panProbe.stickyRequests,
   }).toEqual({
     pointerMovesContinued: true,
     captured: true,
     framesRendered: true,
-    stickyWorkBoundedByFrames: true,
+    stickyFramesApplied: true,
+    stickyFramesBoundedByEvents: true,
   })
   await expect(lab).toHaveAttribute("data-ticker-started", "false", { timeout: 2_000 })
 })

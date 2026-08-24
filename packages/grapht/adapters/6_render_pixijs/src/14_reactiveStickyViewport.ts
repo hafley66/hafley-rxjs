@@ -20,7 +20,8 @@ export type ReactiveStickyItem<Id extends string = string> = {
 export type ReactiveStickyModel<Id extends string = string> = {
   actorWorldTop: number
   actorScreenTop: number
-  inset: number
+  actorWorldHeight: number
+  stackInset: number
   gap: number
   items: readonly ReactiveStickyItem<Id>[]
 }
@@ -42,7 +43,7 @@ export function projectReactiveStickyFrame<Id extends string>(
 ): ReactiveStickyFrame<Id> {
   const items = [...model.items].sort((left, right) => left.order - right.order)
   const placements = layoutStickyStack({
-    inset: model.actorScreenTop + model.inset,
+    inset: model.actorScreenTop + model.actorWorldHeight * viewport.scale + model.stackInset,
     gap: model.gap,
     items: items.map(item => ({
       id: item.id,
@@ -81,9 +82,12 @@ export function pixiReactiveStickyViewport<Id extends string>(config: {
   actorLayer: Container
   groupLayer: Container
   nodes: ReadonlyMap<Id, Container>
+  render?: () => void
+  publishStates?: (states: string) => void
 }): ReactiveStickyRenderer<Id> {
   let frames = 0
   let writes = 0
+  let publishedStates = ""
   const operator = renderer<undefined, ReactiveStickyFrame<Id>>({
     subscribe: () => undefined,
     next: (_state, frame) => {
@@ -106,6 +110,12 @@ export function pixiReactiveStickyViewport<Id extends string>(config: {
           writes += 1
         }
       }
+      const states = frame.placements.map(placement => `${placement.id}:${placement.state}`).join(",")
+      if (states !== publishedStates) {
+        publishedStates = states
+        config.publishStates?.(states)
+      }
+      config.render?.()
     },
     unsubscribe: () => undefined,
   }) as ReactiveStickyRenderer<Id>

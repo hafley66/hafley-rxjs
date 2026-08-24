@@ -3,6 +3,7 @@ import "@pixi/layout"
 import { SVGScene } from "@pixi-essentials/svg"
 import { LayoutContainer } from "@pixi/layout/components"
 import { Button } from "@pixi/ui"
+import { Signal } from "@hafley66/signals/Signal"
 import {
   Application,
   Container,
@@ -14,12 +15,13 @@ import {
   extensions,
 } from "pixi.js"
 import { Viewport } from "pixi-viewport"
-import {
-  createPixiPinnedViewportRow,
-  createPixiStickyViewportStack,
-  createPixiViewportLayoutScheduler,
-} from "./12_stickyViewport.js"
+import { animationFrameScheduler, auditTime, fromEvent, map, merge, takeUntil, tap } from "rxjs"
 import { createPixiPanProbe } from "./13_panProbe.js"
+import {
+  pixiReactiveStickyViewport,
+  projectReactiveStickyFrame,
+  type ViewportSnapshot,
+} from "./14_reactiveStickyViewport.js"
 
 const SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 900" width="1000" height="900">
@@ -147,19 +149,11 @@ viewport.fitWorld(true)
 const actorLayer = new Container()
 const groupLabelLayer = new Container()
 app.stage.addChild(groupLabelLayer, actorLayer)
-const stickyLayoutScheduler = createPixiViewportLayoutScheduler({ viewport, ticker: app.ticker })
 const actorElements = [...documentRoot.querySelectorAll<SVGElement>("[data-role='actor']")]
 for (const element of actorElements) {
   const node = elementNodes.get(element)
   if (node) actorLayer.addChild(node)
 }
-const pinnedActors = createPixiPinnedViewportRow({
-  viewport,
-  layer: actorLayer,
-  worldTop: 55,
-  screenTop: 74,
-  scheduler: stickyLayoutScheduler,
-})
 const stickyGroupItems = [...documentRoot.querySelectorAll<SVGTextElement>("[data-role='group-label']")].map((element, index) => {
   const node = elementNodes.get(element)!
   const bounds = node.getLocalBounds()
@@ -168,7 +162,6 @@ const stickyGroupItems = [...documentRoot.querySelectorAll<SVGTextElement>("[dat
   groupLabelLayer.addChild(node)
   return {
     id: element.id,
-    node,
     worldTop,
     boundaryWorldBottom: Number(element.dataset.boundaryBottom ?? 790),
     localTop: bounds.y,
@@ -176,23 +169,46 @@ const stickyGroupItems = [...documentRoot.querySelectorAll<SVGTextElement>("[dat
     order: Number(element.dataset.depth ?? index),
   }
 })
-const stickyGroups = createPixiStickyViewportStack({
-  viewport,
-  layer: groupLabelLayer,
+const stickyNodes = new Map(stickyGroupItems.map(item => [item.id, elementNodes.get(documentRoot.querySelector<SVGElement>(`#${item.id}`)!)!]))
+const stickyModel = {
+  actorWorldTop: 55,
+  actorScreenTop: 74,
+  actorWorldHeight: 72,
+  stackInset: 8,
   items: stickyGroupItems,
-  inset: () => 74 + 72 * viewport.scale.x + 8,
   gap: 6,
-  scheduler: stickyLayoutScheduler,
-})
-const recordStickyState = () => {
-  mount.dataset.stickyGroupStates = stickyGroups.receipt().map(item => `${item.id}:${item.state}`).join(",")
-  const metrics = stickyLayoutScheduler.receipt()
-  mount.dataset.stickyLayoutRequests = String(metrics.requests)
-  mount.dataset.stickyLayoutFlushes = String(metrics.flushes)
-  mount.dataset.stickyLayoutCallbacks = String(metrics.callbacks)
 }
-stickyLayoutScheduler.add(recordStickyState)
-recordStickyState()
+const readViewport = (): ViewportSnapshot => ({
+  x: viewport.x,
+  y: viewport.y,
+  scale: viewport.scale.x,
+})
+let viewportEventCount = 0
+const viewportState = Signal(merge(
+  fromEvent(viewport, "moved"),
+  fromEvent(viewport, "zoomed"),
+).pipe(
+  tap(() => { viewportEventCount += 1 }),
+  map(readViewport),
+), readViewport())
+const stickyFrame = Signal(() => projectReactiveStickyFrame(stickyModel, viewportState.$()))
+const stickyRenderer = pixiReactiveStickyViewport({
+  actorLayer,
+  groupLayer: groupLabelLayer,
+  nodes: stickyNodes,
+  render: () => {
+    if (!app.ticker.started) app.render()
+  },
+  publishStates: states => {
+    mount.dataset.stickyGroupStates = states
+  },
+})
+stickyFrame.$.pipe(
+  auditTime(0, animationFrameScheduler),
+  stickyRenderer(mount),
+  takeUntil(fromEvent(window, "pagehide")),
+).subscribe()
+mount.dataset.reactiveSticky = "true"
 
 const roleCounts = new Map<string, number>()
 for (const [element, node] of elementNodes) {
@@ -270,9 +286,6 @@ const fitButton = new Button(fitView)
 let fitCount = 0
 fitButton.onPress.connect(() => {
   viewport.fitWorld(true)
-  stickyLayoutScheduler.request()
-  stickyLayoutScheduler.flush()
-  app.render()
   fitCount += 1
   mount.dataset.fitCount = String(fitCount)
 })
@@ -342,7 +355,10 @@ app.canvas.addEventListener("wheel", startRendering, { passive: true })
 createPixiPanProbe({
   canvas: app.canvas,
   ticker: app.ticker,
-  stickyReceipt: stickyLayoutScheduler.receipt,
+  stickyReceipt: () => ({
+    requests: viewportEventCount,
+    flushes: stickyRenderer.receipt().frames,
+  }),
   publish: panReceipt => {
     mount.dataset.panProbe = JSON.stringify(panReceipt)
   },
