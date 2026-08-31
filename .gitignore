@@ -16,3 +16,6 @@ issues/AGENTS.md
 issues/boop-agent-adapters/
 issues/mui-external-virtualization/
 .vitest-attachments/
+
+# dl runtime state
+.dl/
