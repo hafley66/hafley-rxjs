@@ -5,9 +5,15 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
     "./style.css": "./dist/style.css"
   },
   "scripts": {
@@ -16,7 +22,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
-  "dependencies": { "@terrastruct/d2": "^0.1.33" },
+  "dependencies": {
+    "@terrastruct/d2": "^0.1.33"
+  },
   "peerDependencies": {
     "@hafley66/signals": ">=0.1.0",
     "@streamdown/code": ">=1.1.1",
@@ -48,6 +56,16 @@
     "vite-plugin-dts": "^5.0.3",
     "vitest": "^4.1.10"
   },
-  "keywords": ["markdown", "mermaid", "d2", "react", "dockview"],
-  "license": "MIT"
+  "keywords": [
+    "markdown",
+    "mermaid",
+    "d2",
+    "react",
+    "dockview"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }
