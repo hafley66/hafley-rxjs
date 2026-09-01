@@ -14,7 +14,14 @@ import "./2_marbler.css"
 const FILTERS: EventFilter[] = ["all", "request", "result", "tool", "note"]
 const WATERFALL_LEFT = 690
 const TREE_GUTTER = 20
-function MarblerView({ model }: { model: Marbler }) {
+function MarblerView({ model, embedded = false, summary }: {
+	model: Marbler
+	// Host apps embed this panel inside their own chrome: drop the demo
+	// metaphors (filter chips, phase legend, fake HTTP stats, drawer nav)
+	// and fill the host box instead of the demo page geometry.
+	embedded?: boolean
+	summary?: string[]
+}) {
   const table = useGrid<MarbleEvent>(model.grid)
   const scrollerRef = useRef<HTMLDivElement>(null)
   const selected = model.rows.$().find((row) => row.id === model.selectedId.$()) ?? null
@@ -46,12 +53,12 @@ function MarblerView({ model }: { model: Marbler }) {
   }), [laneById, timelineEvents])
   const viewport = model.viewport.$()
   const ticks = Array.from({ length: 6 }, (_, index) => viewport.visible[0] + (viewport.visible[1] - viewport.visible[0]) * index / 5)
-  return <main className="app-shell" data-testid="marbler">
+  return <main className="app-shell" data-embedded={embedded ? "true" : undefined} data-testid="marbler">
     <section className="network-panel">
       <div className="subtoolbar">
-        {FILTERS.map((filter) => <button key={filter} className={model.filter.$() === filter ? "kind active" : "kind"} onClick={() => model.filter.$(filter)}>{filter}</button>)}
+        {!embedded && FILTERS.map((filter) => <button key={filter} className={model.filter.$() === filter ? "kind active" : "kind"} onClick={() => model.filter.$(filter)}>{filter}</button>)}
         <span className="toolbar-spacer" />{hovered && <span className="hovered-event" data-testid="hovered-event">{hovered.name} · {hovered.duration} ms</span>}<span className="summary">{rows.length} events</span>
-        <span className="legend"><i className="phase-send" />send <i className="phase-wait" />wait <i className="phase-receive" />receive <i className="phase-work" />work</span>
+        {!embedded && <span className="legend"><i className="phase-send" />send <i className="phase-wait" />wait <i className="phase-receive" />receive <i className="phase-work" />work</span>}
       </div>
       <TimeNavigatorPixi
         marks={marks}
@@ -97,11 +104,13 @@ function MarblerView({ model }: { model: Marbler }) {
           </div>)}
         </div>
       </div>
-      <footer className="statusbar"><span>{rows.length} / {model.source.$().length} events</span><span>2.8 kB transferred</span><span>Finish: 2.63 s</span><span className="dom">▯ DOMContentLoaded: 1.18 s</span><span className="load">▯ Load: 1.92 s</span></footer>
+      <footer className="statusbar"><span>{rows.length} / {model.source.$().length} events</span>{embedded
+        ? summary?.map((item) => <span key={item}>{item}</span>)
+        : <><span>2.8 kB transferred</span><span>Finish: 2.63 s</span><span className="dom">▯ DOMContentLoaded: 1.18 s</span><span className="load">▯ Load: 1.92 s</span></>}</footer>
     </section>
     {selected && <aside className="drawer" data-testid="event-details">
       <div className="drawer-title"><div><span className={`method method-${selected.method.toLowerCase()}`}>{selected.method}</span><b>{selected.name}</b></div><button onClick={() => model.selectedId.$(null)}>×</button></div>
-      <nav><b>Headers</b><span>Payload</span><span>Preview</span><span>Response</span><span>Timing</span></nav>
+      {!embedded && <nav><b>Headers</b><span>Payload</span><span>Preview</span><span>Response</span><span>Timing</span></nav>}
       <h3>General</h3><dl><dt>Request URL</dt><dd>boop://{selected.from}/{selected.to}/{selected.id}</dd><dt>Request Method</dt><dd>{selected.method}</dd><dt>Status Code</dt><dd><i className="ok-dot" /> {selected.status} {selected.status === 200 ? "Delivered" : "Accepted"}</dd><dt>Remote Address</dt><dd>{selected.to}</dd></dl>
       <h3>Message</h3><pre>{selected.preview}</pre>
       <h3>Timing</h3><div className="timing-bars">{selected.phases.map((phase, index) => phase.start !== null && phase.end !== null ? <div key={`${phase.kind}:${phase.start}:${phase.end}:${index}`}><label>{phase.kind}</label><span className={`phase-${phase.kind}`} style={{ width: `${Math.max(4, (phase.end - phase.start) / 8)}%` }} /><em>{phase.end - phase.start} ms</em></div> : null)}</div>
