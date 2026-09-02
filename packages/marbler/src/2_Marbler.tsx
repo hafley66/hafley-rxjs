@@ -3,7 +3,7 @@
 import { flexRender } from "@tanstack/react-table"
 import { useGrid } from "@hafley66/grid/react"
 import { SignalReact } from "@hafley66/signals/react"
-import { useMemo, useRef } from "react"
+import { useLayoutEffect, useMemo, useRef, useState } from "react"
 import type { EventFilter, MarbleEvent } from "./0_types.js"
 import { reduceTimeViewport, type TimelineMark } from "./0a_TimeViewport.js"
 import { WaterfallPixi } from "./1a_WaterfallPixi.js"
@@ -29,7 +29,24 @@ function MarblerView({ model, embedded = false, summary }: {
   const rows = table.getRowModel().rows
   const events = useMemo<MarbleEvent[]>(() => rows.map((row) => row.original), [rows])
   const hasTree = useMemo(() => rows.some((row) => row.getCanExpand()), [rows])
-  const waterfallLeft = WATERFALL_LEFT + (hasTree ? TREE_GUTTER : 0)
+  // The waterfall canvas sits on the DOM waterfall column wherever host
+  // column widths put it; the demo constant is the pre-measure fallback.
+  const [measuredLeft, setMeasuredLeft] = useState<number | null>(null)
+  useLayoutEffect(() => {
+    const scroller = scrollerRef.current
+    const cell = scroller?.querySelector<HTMLElement>(".grid-header .cell.col-waterfall")
+    if (!scroller || !cell) return
+    const measure = () => {
+      const left = cell.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft
+      setMeasuredLeft((prior) => (Math.abs((prior ?? -1) - left) < 0.5 ? prior : left))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(cell)
+    observer.observe(scroller)
+    return () => observer.disconnect()
+  })
+  const waterfallLeft = measuredLeft ?? WATERFALL_LEFT + (hasTree ? TREE_GUTTER : 0)
   const timelineEvents = model.rows.$()
   const laneById = useMemo(() => new Map(timelineEvents.map((event, lane) => [event.id, lane])), [timelineEvents])
   const marks = useMemo<TimelineMark[]>(() => timelineEvents.flatMap((event, lane) => {
