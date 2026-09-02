@@ -1,6 +1,6 @@
 {
   "name": "@hafley66/marbler",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Signal-driven agent message waterfall and timeline panel",
   "type": "module",
   "main": "./dist/index.js",
@@ -11,7 +11,10 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -p tsconfig.build.json && cp src/2_marbler.css dist/2_marbler.css",
@@ -39,5 +42,9 @@
     "vite": "^8.2.1",
     "vitest": "^4.1.10"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }
