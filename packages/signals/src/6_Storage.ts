@@ -1,4 +1,4 @@
-import { Observable, type Observer } from "rxjs"
+import { filter, fromEvent, map, merge, Observable, of, type Observer } from "rxjs"
 import { Signal } from "./2_Signal.js"
 import type { Signal as SignalType } from "./0_types.js"
 
@@ -41,15 +41,17 @@ export function storageSignal<T>(
   return signal
 }
 
+// Current value now, then again after each named window event; listeners go with the subscription.
+function readOn(events: string[], read: () => string, accept: (event: Event) => boolean = () => true): Observable<string> {
+  return merge(of(null), ...events.map((name) => fromEvent(window, name).pipe(filter(accept)))).pipe(map(read))
+}
+
 // localStorage adapter: the convenience default.
 export function localStorageAdapter(key: string): Storage<string> {
   return {
-    read: new Observable<string>(subscriber => {
-      const emit = () => subscriber.next(localStorage.getItem(key) ?? "")
-      addEventListener("storage", (event: StorageEvent) => {
-        if (event.storageArea === localStorage && event.key === key) emit()
-      })
-      emit()
+    read: readOn(["storage"], () => localStorage.getItem(key) ?? "", (event) => {
+      const e = event as StorageEvent
+      return e.storageArea === localStorage && e.key === key
     }),
     write: {
       next: value => localStorage.setItem(key, value),
@@ -63,11 +65,7 @@ export function localStorageAdapter(key: string): Storage<string> {
 // write.next uses replaceState so rapid signal changes do not spam history.
 export function urlAdapter(key: string): Storage<string> {
   return {
-    read: new Observable<string>(subscriber => {
-      const emit = () => subscriber.next(new URLSearchParams(location.search).get(key) ?? "")
-      addEventListener("popstate", emit)
-      emit()
-    }),
+    read: readOn(["popstate"], () => new URLSearchParams(location.search).get(key) ?? ""),
     write: {
       next: value => {
         const params = new URLSearchParams(location.search)
@@ -90,12 +88,7 @@ export function StorageSignal<T>(key: string, fallback: T, options: StorageOptio
 export function hashAdapter(key: string): Storage<string> {
   const hashParams = () => new URLSearchParams(location.hash.slice(1))
   return {
-    read: new Observable<string>(subscriber => {
-      const emit = () => subscriber.next(hashParams().get(key) ?? "")
-      addEventListener("hashchange", emit)
-      addEventListener("popstate", emit)
-      emit()
-    }),
+    read: readOn(["hashchange", "popstate"], () => hashParams().get(key) ?? ""),
     write: {
       next: value => {
         const params = hashParams()
@@ -114,11 +107,7 @@ export function hashAdapter(key: string): Storage<string> {
 // (skipped when the value did not change), so Back steps backward through "entering" state.
 export function historyAdapter(key: string): Storage<string> {
   return {
-    read: new Observable<string>(subscriber => {
-      const emit = () => subscriber.next(new URLSearchParams(location.search).get(key) ?? "")
-      addEventListener("popstate", emit)
-      emit()
-    }),
+    read: readOn(["popstate"], () => new URLSearchParams(location.search).get(key) ?? ""),
     write: {
       next: value => {
         const params = new URLSearchParams(location.search)

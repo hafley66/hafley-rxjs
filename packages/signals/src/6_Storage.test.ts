@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from "vitest"
-import { StorageSignal, hashAdapter, historyAdapter } from "./6_Storage.js"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+import { StorageSignal, hashAdapter, historyAdapter, urlAdapter } from "./6_Storage.js"
 
 describe("StorageSignal", () => {
   beforeEach(() => localStorage.clear())
@@ -56,5 +56,19 @@ describe("historyAdapter", () => {
     history.pushState(null, "", "/?s=b")
     dispatchEvent(new PopStateEvent("popstate"))
     expect(seen).toContain("b")
+  })
+})
+
+describe("adapter listener lifetime", () => {
+  it("urlAdapter removes its popstate listener when the read subscription ends", () => {
+    const added = vi.spyOn(window, "addEventListener")
+    const removed = vi.spyOn(window, "removeEventListener")
+    const sub = urlAdapter("q").read.subscribe()
+    const popstateAdds = added.mock.calls.filter(([name]) => name === "popstate").length
+    expect(popstateAdds).toBe(1)
+    sub.unsubscribe()
+    expect(removed.mock.calls.filter(([name]) => name === "popstate").length).toBe(1)
+    added.mockRestore()
+    removed.mockRestore()
   })
 })
