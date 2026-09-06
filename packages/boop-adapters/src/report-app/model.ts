@@ -1,8 +1,8 @@
 // All reactive state for the boop network report lives on one Model, created once in main.tsx.
 // navRows layers the window select and the outside-window fold on top of filteredTree's scope.
-import { createMarbler, createTimeViewport, eventRange, reduceTimeViewport, type Marbler, type MarbleEvent } from "@hafley66/marbler"
+import { createMarbler, type Marbler, type MarbleEvent } from "@hafley66/marbler"
 import { Signal, storageSignal, historyAdapter, localStorageAdapter, type Signal as SignalType } from "@hafley66/signals"
-import { pivotStackSignal, type PivotEntry } from "@hafley66/report-shell"
+import { pivotStackSignal, syncMarbler, type PivotEntry } from "@hafley66/report-shell"
 import { projectAgentNetwork } from "../7_network.js"
 import type { AgentNetworkExport, BoopSessionRow } from "../0_types.js"
 import { countHeader, sortByRecencyDesc, type HeaderCounts, type TimeWindow } from "../lib/window.js"
@@ -33,6 +33,7 @@ export type Model = {
   frameKinds: SignalType<string[]>
   counts: SignalType<HeaderCounts>
   marbler: Marbler
+  unsubscribe: () => void
 }
 
 export function createModel(initial: AgentNetworkExport, prefs: SignalType<Prefs>): Model {
@@ -72,19 +73,11 @@ export function createModel(initial: AgentNetworkExport, prefs: SignalType<Prefs
   })
 
   const marbler = createMarbler(scopedMarbleRows.$())
-  let lastSelected = selected.$()
-  scopedMarbleRows.$.subscribe((events) => {
-    marbler.source.$(events)
-    const sel = selected.$()
-    const selectionChanged = sel !== lastSelected
-    lastSelected = sel
-    const range = eventRange(events)
-    marbler.viewport.$(selectionChanged ? createTimeViewport(range) : reduceTimeViewport(marbler.viewport.$(), { type: "full", range }))
-  })
+  const marblerSync = syncMarbler(marbler, scopedMarbleRows.$, selected)
 
   if (selected.$() === null) selected.$(defaultSelectionId(networkTree.$(), sessionById.$(), prefs.$().window))
 
-  return { data, sessionById, continuous, selected, pivotStack, networkTree, navRows, pivotRows, frameKinds, counts, marbler }
+  return { data, sessionById, continuous, selected, pivotStack, networkTree, navRows, pivotRows, frameKinds, counts, marbler, unsubscribe: () => marblerSync.unsubscribe() }
 }
 
 // Picks a root guaranteed visible under the given window (rescued-or-active, most recent first)

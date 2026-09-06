@@ -7,9 +7,9 @@
 // (replaceState): it changes on every keystroke and must not spam history. `hoveredId` is a plain
 // Signal: hover is not shareable state, it never touches the URL or localStorage.
 import { createMarbler, DEFAULT_PHASE_STYLES, type Marbler } from '@hafley66/marbler'
-import { createTimeViewport, eventRange, reduceTimeViewport } from '@hafley66/marbler'
+import { map } from 'rxjs'
 import { Signal, storageSignal, urlAdapter, historyAdapter, type Signal as SignalType } from '@hafley66/signals'
-import { pivotStackSignal, type PivotEntry } from '@hafley66/report-shell'
+import { pivotStackSignal, syncMarbler, type PivotEntry } from '@hafley66/report-shell'
 import type { Event } from '../report/timeline.js'
 import { timelineToMarble } from './adapter/timelineToMarble.js'
 import { buildProcessNav, type NavNode } from './adapter/navTree.js'
@@ -73,6 +73,7 @@ export type Model = {
   // it on the first click anywhere (App.tsx).
   defaultViewHint: SignalType<boolean>
   marbler: Marbler
+  unsubscribe: () => void
 }
 
 export const endOf = (e: Event): number => e.t + (e.durationMs || 0)
@@ -120,18 +121,14 @@ export function createModel(initialRows: Event[]): Model {
   const defaultViewHint = Signal<boolean>(false)
 
   const marbler = createMarbler(timelineToMarble(eventsForSelected.$(), verdicts.$()), { phaseStyles: REPORT_PHASE_STYLES })
-  let lastSelection = selected.$()
-  eventsForSelected.$.subscribe((events) => {
-    const marbleEvents = timelineToMarble(events, verdicts.$())
-    marbler.source.$(marbleEvents)
-    const sel = selected.$()
-    const selectionChanged = sel.file !== lastSelection.file || sel.test !== lastSelection.test
-    lastSelection = sel
-    const range = eventRange(marbleEvents)
-    marbler.viewport.$(selectionChanged ? createTimeViewport(range) : reduceTimeViewport(marbler.viewport.$(), { type: 'full', range }))
-  })
+  const marblerSync = syncMarbler(
+    marbler,
+    eventsForSelected.$.pipe(map((events) => timelineToMarble(events, verdicts.$()))),
+    selected,
+    (a, b) => a.file === b.file && a.test === b.test,
+  )
 
-  return { rows, continuous, selected, pivotStack, hoveredId, verdicts, eventsForSelected, nav, firstFailure, defaultViewHint, marbler }
+  return { rows, continuous, selected, pivotStack, hoveredId, verdicts, eventsForSelected, nav, firstFailure, defaultViewHint, marbler, unsubscribe: () => marblerSync.unsubscribe() }
 }
 
 export function dismissDefaultViewHint(model: Pick<Model, 'defaultViewHint'>): void {

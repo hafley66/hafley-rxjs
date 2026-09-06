@@ -76,12 +76,21 @@ describe("boop network report", () => {
     expect(dotClass).toMatch(/dot (running|waiting|idle|done|failed|unknown)/)
   })
 
-  it("clicking the session column header sorts (the first row changes)", async () => {
-    const before = await firstRowName()
-    await page.locator("[data-testid=tree-table-header] th", { hasText: "session" }).click()
+  it("clicking the session column header sorts the root rows by name", async () => {
+    const rootNames = () =>
+      page.locator("[data-testid=tree-row]").evaluateAll((rows) =>
+        rows
+          .filter((row) => (row.querySelector<HTMLElement>("[data-testid=tree-indent]")?.style.width ?? "0px") === "0px")
+          .map((row) => row.querySelector(".name-primary")?.textContent ?? "")
+          .filter(Boolean),
+      )
+    const th = page.locator("[data-testid=tree-table-header] th", { hasText: "session" })
+    await th.click()
     await page.waitForTimeout(200)
-    const after = await firstRowName()
-    expect(after).not.toBe(before)
+    expect(await th.textContent()).toContain("▲")
+    const names = await rootNames()
+    expect(names.length).toBeGreaterThan(1)
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })))
   })
 
   it("the window select changes how many rows are visible", async () => {

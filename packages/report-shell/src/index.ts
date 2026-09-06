@@ -15,3 +15,4 @@ export { EventsPanel, defaultEventDetail, type EventsPanelProps } from './compon
 export { pivotStackSignal, pushPivot, popPivotsTo, encodePivotStack, decodePivotStack } from './lib/pivotStack'
 export { usePivotEffect } from './components/usePivotEffect'
 export { useTheme, type ThemePrefs } from './components/useTheme'
+export { syncMarbler } from './lib/marblerSync'
