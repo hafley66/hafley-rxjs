@@ -9,6 +9,13 @@ and adapter teardown use `unsubscribe`. Do not introduce `dispose`, `destroy`,
 operation. Preserve third-party method names only at the direct call site behind
 the repository-owned `unsubscribe` boundary.
 
+## Shared helpers live in `src/lib`
+
+Pure helpers that more than one file needs (time formatting, status derivation,
+grouping) go in `packages/<name>/src/lib/`, one concern per file, with a test
+beside it. Components and models import from there; they do not define helpers
+inline.
+
 ## Bootstrap invariant
 
 The handwritten v1 compiler emits JSON-RX documents, target lowerers, adapters,
