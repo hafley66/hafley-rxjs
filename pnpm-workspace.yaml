@@ -3,7 +3,11 @@ packages:
   - "packages/grapht/adapters/*"
 allowBuilds:
   esbuild: true
+  protobufjs: false
 minimumReleaseAgeExclude:
   - '@hafley66/alloy-rs@0.1.0'
   - '@tanstack/react-table@9.1.0'
   - '@tanstack/table-core@9.1.0'
+  - '@logtape/file@2.3.3'
+  - '@logtape/logtape@2.3.3'
+  - '@logtape/otel@2.3.3'

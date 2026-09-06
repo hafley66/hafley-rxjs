@@ -1,0 +1,55 @@
+{
+  "name": "@hafley66/report-shell",
+  "version": "0.1.0",
+  "description": "Domain-free UI shell for signal-driven HTML report viewers: resizable tracks, truncated text, sub-tables, presets, pivot stacks, a generic nav tree, and a marbler events panel",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "scripts": {
+    "build": "vite build && cp src/style.css dist/style.css",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "receipts": "pnpm typecheck && pnpm test && pnpm build"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@hafley66/grid": "workspace:*",
+    "@hafley66/marbler": "workspace:*",
+    "@hafley66/signals": "workspace:*"
+  },
+  "devDependencies": {
+    "@hafley66/grid": "workspace:*",
+    "@hafley66/marbler": "workspace:*",
+    "@hafley66/signals": "workspace:*",
+    "@tanstack/react-table": "^9.1.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.5",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "typescript": "7.0.2",
+    "vite": "^8.2.1"
+  },
+  "keywords": [
+    "signals",
+    "react",
+    "report",
+    "ui"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

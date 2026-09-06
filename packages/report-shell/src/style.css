@@ -1,0 +1,191 @@
+@layer base, layout, components;
+
+@layer base {
+  :root {
+    color-scheme: dark light;
+    --bg: light-dark(#f4f4f4, #111);
+    --fg: light-dark(#1a1a1a, #ddd);
+    --dim: light-dark(#5a5a5a, #9a9a9a); /* >=4.5:1 vs bg/panel/row-hover in both themes, see README */
+    --line: light-dark(#ddd, #2a2a2a);
+    --sel: light-dark(#cfe0f5, #1e2a3a);
+    --row-hover: light-dark(#ececec, #161616);
+    --panel-bg: light-dark(#fff, #161616);
+    --err-bg: light-dark(#fde8e8, #1a0f0f);
+    --err: #f55; --warn: #fb3; --ok: #5c5; --info: #8bf;
+    --accent: light-dark(#2a8a6a, #6fd7ad);
+    --track-nav: 380px;
+    --track-overview: 160px;
+    /* @hafley66/marbler reads these when embedded; its rows/canvases hardcode a dark palette,
+       so the panel stays a dark island in both themes until marbler tokenizes rows. */
+    --marbler-surface: #12151b;
+    --marbler-panel: #16191f;
+    --marbler-head: #171b21;
+    --marbler-border: #30343d;
+    --marbler-ink: #bac1cb;
+    --marbler-muted: #848c98;
+    --marbler-font: ui-monospace, Menlo, monospace;
+  }
+  :root[data-theme=dark] { color-scheme: dark }
+  :root[data-theme=light] { color-scheme: light }
+  * { box-sizing: border-box }
+  body { margin: 0; font: 13px/1.4 ui-monospace, Menlo, monospace; background: var(--bg); color: var(--fg) }
+}
+
+@layer layout {
+  #root {
+    display: grid;
+    grid-template-columns: var(--track-nav) 1fr;
+    grid-template-rows: 34px 1fr;
+    height: 100vh;
+  }
+  header {
+    grid-column: 1 / 3;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    align-items: center;
+    padding: 0 10px;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  nav {
+    position: relative;
+    overflow: auto;
+    border-right: 1px solid var(--line);
+    padding: 0 0 6px;
+  }
+  main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 8px 12px 0;
+  }
+}
+
+@layer components {
+  .gear-button {
+    background: none; color: var(--fg); border: 1px solid var(--line); border-radius: 3px; cursor: pointer; padding: 2px 6px; font: inherit;
+    &:hover { background: var(--row-hover) }
+  }
+  #presets-gear { margin-left: auto; anchor-name: --presets-anchor }
+
+  .popover {
+    margin: 0; background: var(--panel-bg); color: var(--fg); border: 1px solid var(--line);
+    padding: 20px 10px 8px; gap: 14px; position: fixed; top: 34px; right: 10px;
+    &:popover-open { display: flex }
+    fieldset { border: 0; padding: 0; margin: 0 }
+    legend { color: var(--dim); font-size: 10px; text-transform: uppercase; padding: 0 0 4px }
+    label { display: block; color: var(--fg); cursor: pointer; padding: 1px 0 }
+  }
+  .popover-close {
+    position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; line-height: 1; padding: 0;
+    background: none; border: 0; color: var(--dim); cursor: pointer; font-size: 14px;
+    &:hover { color: var(--fg) }
+  }
+  @supports (position-anchor: --presets-anchor) {
+    #presets-popover { position-anchor: --presets-anchor; position-area: block-end span-inline-start; top: auto; right: auto; position: absolute }
+  }
+  #presets-popover {
+    flex-direction: column; align-items: stretch;
+    select, button { background: var(--panel-bg); color: var(--fg); border: 1px solid var(--line); padding: 3px 6px; font: inherit; cursor: pointer }
+  }
+
+  /* Truncated: an inline button anchored to its own hint popover, full text + copy button. */
+  .truncated-anchor {
+    color: inherit; font: inherit; text-align: left; padding: 0; min-width: 0;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+  }
+  .truncated-popover {
+    flex-direction: column; max-width: 60ch; max-height: 22em; overflow: auto; padding-top: 22px;
+  }
+  .truncated-copy { position: absolute; top: 2px; right: 22px; background: none; border: 1px solid var(--line); border-radius: 3px; color: var(--dim); cursor: pointer; font-size: 10px }
+  .truncated-text { white-space: pre-wrap; word-break: break-word; margin: 0; max-height: 20lh; overflow: auto }
+  @supports (position-anchor: --presets-anchor) {
+    .truncated-popover { position-anchor: inherit; position-area: block-end span-inline-start; position: absolute; top: auto; right: auto }
+  }
+
+  /* Nav grid: process > file > test. --depth widens the first track (indent + glyph) per row.
+     Hover tiers, three classes only: `ancestor` outlines a hovered row's parent chain, `hovered`
+     is that same outline plus a brighter background, `selected` is sticky and wins the background. */
+  nav {
+    --nav-indent: 12px;
+    --nav-row-h: 30px;
+    .nav-grid { display: grid }
+    .nav-row {
+      display: grid; align-items: center; gap: 6px; padding: 0 10px; cursor: pointer; white-space: nowrap;
+      min-height: var(--nav-row-h);
+      grid-template-columns: calc(14px + var(--depth, 0) * var(--nav-indent)) minmax(0, 1fr) 56px 64px 56px;
+    }
+    .disclosure { color: var(--dim); justify-self: end; width: 14px; text-align: center }
+    .nav-header {
+      position: sticky; top: 0; z-index: 1; cursor: default;
+      background: var(--panel-bg); color: var(--dim); border-bottom: 1px solid var(--line);
+      font-variant-caps: all-small-caps; letter-spacing: .06em;
+    }
+    .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0 }
+    .status, .ms, .count { color: var(--dim); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+    .ms, .count { font-variant-numeric: tabular-nums }
+    .status.dot { justify-self: end }
+    .nav-row.ancestor { outline: 1px solid var(--accent); outline-offset: -1px }
+    .nav-row.hovered { outline: 1px solid var(--accent); outline-offset: -1px; background: color-mix(in oklch, var(--row-hover), var(--accent) 20%) }
+    .nav-row.status-fail { background: color-mix(in oklch, var(--bg), var(--err) 12%) }
+    .nav-row.selected { background: var(--sel) }
+  }
+  body[data-density=compact] nav { --nav-row-h: 26px }
+
+  .nav-rail-toggle {
+    display: block; width: 100%; height: 22px; position: sticky; top: 0; z-index: 2;
+    background: var(--panel-bg); color: var(--dim); border: 0; border-bottom: 1px solid var(--line);
+    cursor: pointer; font: inherit;
+    &:hover { color: var(--fg); background: var(--row-hover) }
+  }
+  nav[data-nav-collapsed=true] .nav-grid { display: none }
+
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 4px; background: var(--dim) }
+  .dot.pass { background: var(--ok) }
+  .dot.fail { background: var(--err) }
+  .dot.skip { background: var(--warn) }
+
+  /* Resize gutters: transform-only drag, one signal write on release (see layout.ts). */
+  .gutter { position: absolute; z-index: 3 }
+  .gutter-x { top: 0; right: -3px; width: 6px; height: 100%; cursor: ew-resize }
+  .gutter-y { height: 6px; width: 100%; cursor: ns-resize; margin: -3px 0 }
+  .gutter:hover, .gutter.dragging { background: var(--accent) }
+
+  .events-panel { flex: 1; overflow: auto; display: flex; flex-direction: column; min-height: 0; position: relative }
+
+  /* Master/detail sub-table: text never rides the accent border, and value columns cap width
+     instead of forcing horizontal scroll. */
+  .subtable {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: var(--subtable-cols, minmax(0, 160px) minmax(0, 1fr));
+    gap: 2px 8px;
+    margin: 6px 0;
+    padding: 6px 12px 8px 14px;
+    border-inline-start: 2px solid var(--accent);
+    background: color-mix(in oklch, var(--bg), var(--fg) calc(var(--depth, 0) * 6%));
+  }
+  .subtable .cell { padding: 2px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60ch }
+  .subtable .cell.hdr {
+    font-variant-caps: all-small-caps; letter-spacing: .06em; color: var(--accent);
+    border-bottom: 1px dashed var(--accent); white-space: nowrap; max-width: none;
+  }
+  .event-attrs h4 { font-size: 11px; text-transform: uppercase; color: var(--dim); margin: 8px 0 2px }
+
+  /* Pivot: breadcrumb + a stack of flat grids, newest at the bottom. */
+  .pivot-stack { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 6px }
+  .breadcrumb { display: flex; gap: 4px; margin-bottom: 6px }
+  .breadcrumb button { background: none; border: 1px solid var(--line); border-radius: 3px; color: var(--fg); cursor: pointer; font: inherit; padding: 1px 6px }
+  .pivot-grid { display: grid; grid-template-columns: minmax(0, 1fr) 60px 60px; margin-bottom: 6px; border: 1px solid var(--line) }
+  .pivot-row { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; padding: 2px 6px; align-items: center }
+  .pivot-header { color: var(--dim); border-bottom: 1px solid var(--line) }
+
+  details::details-content { interpolate-size: allow-keywords; height: 0; overflow: clip; transition: height .15s }
+  details[open]::details-content { height: auto }
+}
+
+/* Unlayered on purpose: marbler ships unlayered CSS (`.app-shell[data-embedded] { height: 100% }`),
+   and any rule inside @layer loses to it regardless of specificity. */
+.events-panel > .app-shell[data-testid=marbler] { flex: none; height: 60vh }
