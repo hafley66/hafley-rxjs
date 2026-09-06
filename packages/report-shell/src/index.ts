@@ -16,3 +16,4 @@ export { pivotStackSignal, pushPivot, popPivotsTo, encodePivotStack, decodePivot
 export { usePivotEffect } from './components/usePivotEffect'
 export { useTheme, type ThemePrefs } from './components/useTheme'
 export { syncMarbler } from './lib/marblerSync'
+export { ReportShell, type ReportShellProps, type ReportTracks } from './components/ReportShell'

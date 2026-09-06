@@ -1,11 +1,9 @@
-// Top-level layout: header, resizable nav pane (a TreeTable sidebar), title/events/pivot main
-// column. Wires the layout tracks and theme/density onto the DOM.
-import { useEffect, useMemo, useRef } from "react"
+import { useMemo } from "react"
 import { z } from "zod"
 import { createGrid, createDefaultGridState, type Grid } from "@hafley66/grid"
 import { TreeTable, treeColumnDefs } from "@hafley66/grid/react"
-import { NavRail, EventsPanel, PivotStack, layout, gutter, popPivotsTo, usePivotEffect, useTheme, type Track } from "@hafley66/report-shell"
-import { Signal, localStorageAdapter, type Signal as SignalType } from "@hafley66/signals/react"
+import { EventsPanel, PivotStack, ReportShell, popPivotsTo, usePivotEffect, useTheme, type Track } from "@hafley66/report-shell"
+import { Signal, type Signal as SignalType } from "@hafley66/signals/react"
 import type { MarbleEvent } from "@hafley66/marbler"
 import { formatAge } from "../../lib/time.js"
 import { OLDER_FOLD_ID, type Model, type NetworkNavRow, type Prefs } from "../model"
@@ -55,16 +53,9 @@ function useSessionGrid(model: Model): Grid<NetworkNavRow> {
 
 export function App({ model, prefs, meta }: { model: Model; prefs: SignalType<Prefs>; meta: string }) {
   useTheme(prefs)
-  const navGutterRef = useRef<HTMLDivElement>(null)
-  const tracks = useMemo(() => layout(document.documentElement, TRACKS, localStorageAdapter("boop-network.tracks")), [])
   const navGrid = useSessionGrid(model)
   const detail = useMemo(() => sessionDetail(model), [model])
   usePivotEffect(navGrid, model.pivotStack)
-
-  useEffect(() => {
-    if (!navGutterRef.current) return
-    return gutter(navGutterRef.current, tracks.nav!, { axis: "x" })
-  }, [tracks])
 
   const pivotBase = useMemo(
     () =>
@@ -83,10 +74,11 @@ export function App({ model, prefs, meta }: { model: Model; prefs: SignalType<Pr
   )
 
   return (
-    <>
-      <Header model={model} prefs={prefs} meta={meta} />
-      <nav>
-        <NavRail track={tracks.nav!} storage={localStorageAdapter("boop-network.nav-collapsed")} expandedFallback={380} />
+    <ReportShell
+      tracks={TRACKS}
+      storageKey="boop-network"
+      header={<Header model={model} prefs={prefs} meta={meta} />}
+      nav={
         <TreeTable<NetworkNavRow>
           grid={navGrid}
           rowClassName={(row) => `${row.kind} status-${row.status}${row.selected ? " selected" : ""}`}
@@ -94,14 +86,16 @@ export function App({ model, prefs, meta }: { model: Model; prefs: SignalType<Pr
             if (row.id !== OLDER_FOLD_ID) model.selected.$(row.id)
           }}
         />
-        <div ref={navGutterRef} className="gutter gutter-x" data-testid="nav-gutter" />
-      </nav>
-      <main>
-        <Title model={model} />
-        <EventsPanel marbler={model.marbler} overviewTrack={tracks.overview!} detail={detail} />
-        <FrameDetail model={model} />
-        <PivotStack pivotStack={model.pivotStack} baseGrid={pivotBase} onPop={(count) => popPivotsTo(model.pivotStack, count)} />
-      </main>
-    </>
+      }
+    >
+      {(tracks) => (
+        <>
+          <Title model={model} />
+          <EventsPanel marbler={model.marbler} overviewTrack={tracks.overview!} detail={detail} />
+          <FrameDetail model={model} />
+          <PivotStack pivotStack={model.pivotStack} baseGrid={pivotBase} onPop={(count) => popPivotsTo(model.pivotStack, count)} />
+        </>
+      )}
+    </ReportShell>
   )
 }

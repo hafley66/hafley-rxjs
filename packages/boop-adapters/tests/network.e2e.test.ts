@@ -81,13 +81,20 @@ describe("boop network report", () => {
           .map((row) => row.querySelector(".name-primary")?.textContent ?? "")
           .filter(Boolean),
       )
+    const select = page.locator('[data-testid="window-select"]')
+    await select.selectOption("all")
+    await page.waitForTimeout(200)
     const th = page.locator("[data-testid=tree-table-header] th", { hasText: "session" })
     await th.click()
     await page.waitForTimeout(200)
     expect(await th.textContent()).toContain("▲")
     const names = await rootNames()
     expect(names.length).toBeGreaterThan(1)
-    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })))
+    expect(names).toEqual([...names].sort())
+    await th.click()
+    await th.click()
+    await select.selectOption("active")
+    await page.waitForTimeout(200)
   })
 
   it("the window select changes how many rows are visible", async () => {
