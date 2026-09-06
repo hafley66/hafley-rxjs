@@ -76,7 +76,7 @@ describe("createGrid seam", () => {
   it("onSortingChange writes the state signal and emits a sort event", () => {
     const grid = newGrid("client")
     const seen: string[] = []
-    grid.events.$.subscribe((e) => seen.push(e!.type))
+    grid.actions$.subscribe((a) => seen.push(a.type))
 
     grid.onSortingChange([{ id: "n", desc: false }])
 
@@ -139,7 +139,7 @@ describe("grid route URL snapshots", () => {
   it("pins the exact URL for two grids (before -> after)", () => {
     const a = createDefaultGridState({ sorting: [{ id: "n", desc: true }] })
     const b = createDefaultGridState({ pagination: { pageIndex: 3, pageSize: 50 } })
-    expect(dash.print({ a, b })).toMatchInlineSnapshot(`"/dash?a=%5B%7B%22sorting%22%3A1%2C%22columnFilters%22%3A5%2C%22globalFilter%22%3A-1%2C%22columnOrder%22%3A6%2C%22columnPinning%22%3A7%2C%22columnVisibility%22%3A10%2C%22columnSizing%22%3A11%2C%22rowPinning%22%3A12%2C%22rowSelection%22%3A15%2C%22expanded%22%3A16%2C%22grouping%22%3A17%2C%22pagination%22%3A18%7D%2C%5B2%5D%2C%7B%22id%22%3A3%2C%22desc%22%3A4%7D%2C%22n%22%2Ctrue%2C%5B%5D%2C%5B%5D%2C%7B%22start%22%3A8%2C%22end%22%3A9%7D%2C%5B%5D%2C%5B%5D%2C%7B%7D%2C%7B%7D%2C%7B%22top%22%3A13%2C%22bottom%22%3A14%7D%2C%5B%5D%2C%5B%5D%2C%7B%7D%2C%7B%7D%2C%5B%5D%2C%7B%22pageIndex%22%3A19%2C%22pageSize%22%3A20%7D%2C0%2C20%5D&b=%5B%7B%22sorting%22%3A1%2C%22columnFilters%22%3A2%2C%22globalFilter%22%3A-1%2C%22columnOrder%22%3A3%2C%22columnPinning%22%3A4%2C%22columnVisibility%22%3A7%2C%22columnSizing%22%3A8%2C%22rowPinning%22%3A9%2C%22rowSelection%22%3A12%2C%22expanded%22%3A13%2C%22grouping%22%3A14%2C%22pagination%22%3A15%7D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%7B%22start%22%3A5%2C%22end%22%3A6%7D%2C%5B%5D%2C%5B%5D%2C%7B%7D%2C%7B%7D%2C%7B%22top%22%3A10%2C%22bottom%22%3A11%7D%2C%5B%5D%2C%5B%5D%2C%7B%7D%2C%7B%7D%2C%5B%5D%2C%7B%22pageIndex%22%3A16%2C%22pageSize%22%3A17%7D%2C3%2C50%5D"`)
+    expect(dash.print({ a, b })).toMatchInlineSnapshot(`"/dash?a=%5B%7B%22sorting%22%3A1%2C%22columnFilters%22%3A5%2C%22globalFilter%22%3A-1%2C%22columnOrder%22%3A6%2C%22columnPinning%22%3A7%2C%22columnVisibility%22%3A10%2C%22columnSizing%22%3A11%2C%22rowPinning%22%3A12%2C%22rowSelection%22%3A15%2C%22expanded%22%3A16%2C%22grouping%22%3A17%2C%22pagination%22%3A18%2C%22tree%22%3A21%7D%2C%5B2%5D%2C%7B%22id%22%3A3%2C%22desc%22%3A4%7D%2C%22n%22%2Ctrue%2C%5B%5D%2C%5B%5D%2C%7B%22start%22%3A8%2C%22end%22%3A9%7D%2C%5B%5D%2C%5B%5D%2C%7B%7D%2C%7B%7D%2C%7B%22top%22%3A13%2C%22bottom%22%3A14%7D%2C%5B%5D%2C%5B%5D%2C%7B%7D%2C%7B%7D%2C%5B%5D%2C%7B%22pageIndex%22%3A19%2C%22pageSize%22%3A20%7D%2C0%2C100000%2C%7B%22compactChains%22%3A22%7D%2Cfalse%5D&b=%5B%7B%22sorting%22%3A1%2C%22columnFilters%22%3A2%2C%22globalFilter%22%3A-1%2C%22columnOrder%22%3A3%2C%22columnPinning%22%3A4%2C%22columnVisibility%22%3A7%2C%22columnSizing%22%3A8%2C%22rowPinning%22%3A9%2C%22rowSelection%22%3A12%2C%22expanded%22%3A13%2C%22grouping%22%3A14%2C%22pagination%22%3A15%2C%22tree%22%3A18%7D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%7B%22start%22%3A5%2C%22end%22%3A6%7D%2C%5B%5D%2C%5B%5D%2C%7B%7D%2C%7B%7D%2C%7B%22top%22%3A10%2C%22bottom%22%3A11%7D%2C%5B%5D%2C%5B%5D%2C%7B%7D%2C%7B%7D%2C%5B%5D%2C%7B%22pageIndex%22%3A16%2C%22pageSize%22%3A17%7D%2C3%2C50%2C%7B%22compactChains%22%3A19%7D%2Cfalse%5D"`)
   })
 
   it("parses the snapshot URL back to the original states (after -> before)", () => {
@@ -164,7 +164,7 @@ describe("grid route URL snapshots", () => {
             "grouping": [],
             "pagination": {
               "pageIndex": 0,
-              "pageSize": 20,
+              "pageSize": 100000,
             },
             "rowPinning": {
               "bottom": [],
@@ -177,6 +177,9 @@ describe("grid route URL snapshots", () => {
                 "id": "n",
               },
             ],
+            "tree": {
+              "compactChains": false,
+            },
           },
           "b": {
             "columnFilters": [],
@@ -200,6 +203,9 @@ describe("grid route URL snapshots", () => {
             },
             "rowSelection": {},
             "sorting": [],
+            "tree": {
+              "compactChains": false,
+            },
           },
         },
       }
@@ -227,7 +233,7 @@ describe("grid route URL snapshots", () => {
             "grouping": [],
             "pagination": {
               "pageIndex": 0,
-              "pageSize": 20,
+              "pageSize": 100000,
             },
             "rowPinning": {
               "bottom": [],
@@ -235,6 +241,9 @@ describe("grid route URL snapshots", () => {
             },
             "rowSelection": {},
             "sorting": [],
+            "tree": {
+              "compactChains": false,
+            },
           },
         },
       }

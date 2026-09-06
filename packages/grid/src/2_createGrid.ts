@@ -1,5 +1,6 @@
 import orderBy from "lodash/orderBy.js"
-import { Signal, storageSignal, urlAdapter } from "@hafley66/signals"
+import { filter, type Observable } from "rxjs"
+import { createSlice, Signal, storageSignal, urlAdapter } from "@hafley66/signals"
 import { stringify as devalueStringify, parse as devalueParse } from "devalue"
 import type { Param } from "@hafley66/path"
 import { z } from "zod"
@@ -9,7 +10,16 @@ import type {
   RowData,
 } from "@tanstack/react-table"
 import { gridFeatures, type GridFeatures } from "./0_features"
-import type { ColumnSpec, Grid, GridConfig, GridEvent, GridState } from "./1_types"
+import type {
+  ColumnSpec,
+  Grid,
+  GridAction,
+  GridConfig,
+  GridEpicCtx,
+  GridPhase,
+  GridState,
+} from "./1_types"
+import { pivotGrid } from "./8_pivot"
 
 export const createDefaultGridState = (overrides: Partial<GridState> = {}): GridState => ({
   sorting: [],
@@ -23,7 +33,10 @@ export const createDefaultGridState = (overrides: Partial<GridState> = {}): Grid
   rowSelection: {},
   expanded: {},
   grouping: [],
-  pagination: { pageIndex: 0, pageSize: 20 },
+  // getRowModel() always applies the registered paginated row model; a large default avoids
+  // silently truncating a plain tree/list grid that never touches pagination itself.
+  pagination: { pageIndex: 0, pageSize: 100_000 },
+  tree: { compactChains: false },
   ...overrides,
 })
 
@@ -55,14 +68,22 @@ function deriveColumns<TData extends RowData>(
     })) as ColumnDef<GridFeatures, TData>[]
 }
 
+const reduceGrid = <TData>(state: GridState, action: GridAction<TData>): GridState =>
+  action.phase === "change" ? { ...state, [action.type]: action[action.type] } : state
+
+type ColumnStream<TData> = Observable<Extract<GridAction<TData>, { column: string }>>
+
+const byPhase = <TData, P extends GridPhase>(actions$: Observable<GridAction<TData>>, phase: P) =>
+  actions$.pipe(filter((a): a is Extract<GridAction<TData>, { phase: P }> => a.phase === phase))
+
 export function createGrid<TData extends RowData>(config: GridConfig<TData>): Grid<TData> {
-  const state = config.sync
+  const store = config.sync
     ? storageSignal(urlAdapter(config.sync.key), createDefaultGridState(), {
         serialize: (state) => gridStateParam.print(state),
         parse: (raw) => gridStateParam.parse(raw) ?? createDefaultGridState(),
       })
-    : config.state ?? Signal<GridState>(createDefaultGridState())
-  const events = Signal<GridEvent>()
+    : config.state ??
+      Signal<GridState>(createDefaultGridState({ tree: { compactChains: config.tree?.compactSingleChildChains ?? false } }))
   const columns = config.columnDefs ?? deriveColumns<TData>(
     config.schema,
     config.columns as Partial<Record<string, ColumnSpec>> | undefined,
@@ -80,20 +101,49 @@ export function createGrid<TData extends RowData>(config: GridConfig<TData>): Gr
     )
   })
 
-  // Writes the slice then emits a typed event; accepts updater fn or value.
+  const columnStreams = new Map<string, ColumnStream<TData>>()
+  const epicCtx = {} as GridEpicCtx<TData>
+  const slice = createSlice<GridState, GridAction<TData>, GridEpicCtx<TData>>({
+    initial: store.$(),
+    state: store,
+    reduce: reduceGrid,
+    epics: config.epics ?? [],
+    ctx: epicCtx,
+  })
+  const { state, actions$, dispatch } = slice
+  Object.assign(epicCtx, {
+    grid$: actions$,
+    phase$: { intent: byPhase(actions$, "intent"), change: byPhase(actions$, "change"), effect: byPhase(actions$, "effect") },
+    column$: (id: string): ColumnStream<TData> => {
+      const cached = columnStreams.get(id)
+      if (cached) return cached
+      const stream: ColumnStream<TData> = actions$.pipe(
+        filter((a): a is Extract<GridAction<TData>, { column: string }> => "column" in a && a.column === id),
+      )
+      columnStreams.set(id, stream)
+      return stream
+    },
+    state,
+    rows,
+    dispatch,
+  } satisfies GridEpicCtx<TData>)
+
+  // Resolves TanStack's updater-or-value, then dispatches one change action.
   const on = <K extends keyof GridState>(key: K): OnChangeFn<GridState[K]> => (updater) => {
     const prev = state.$()[key]
     const value = typeof updater === "function"
       ? (updater as (p: GridState[K]) => GridState[K])(prev)
       : updater
-    state.$({ ...state.$(), [key]: value })
-    events.$({ type: key, [key]: value } as GridEvent)
+    dispatch({ phase: "change", type: key, [key]: value } as GridAction<TData>)
   }
 
-  return {
+  const grid: Grid<TData> = {
     schema: config.schema,
     state,
-    events,
+    actions$,
+    dispatch,
+    epics$: slice.epics$,
+    epicCtx,
     rows,
     columns,
     mode: config.mode,
@@ -112,5 +162,7 @@ export function createGrid<TData extends RowData>(config: GridConfig<TData>): Gr
     onExpandedChange: on("expanded"),
     onGroupingChange: on("grouping"),
     onPaginationChange: on("pagination"),
+    pivot: (columnId, value) => pivotGrid(grid, columnId, value),
   }
+  return grid
 }

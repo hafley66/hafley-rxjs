@@ -1,3 +1,5 @@
 export * from "./0_features.js"
 export * from "./1_types.js"
 export * from "./2_createGrid.js"
+export * from "./7_compactChains.js"
+export * from "./8_pivot.js"

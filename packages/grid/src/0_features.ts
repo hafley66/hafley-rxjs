@@ -11,6 +11,7 @@ import {
   createFilteredRowModel,
   createGroupedRowModel,
   createPaginatedRowModel,
+  createSortedRowModel,
   globalFilteringFeature,
   rowAggregationFeature,
   rowExpandingFeature,
@@ -21,8 +22,7 @@ import {
   tableFeatures,
 } from "@tanstack/react-table"
 
-// Every v9 feature module + the row models that need them. Core row model is
-// built in. manualSorting stays true (rows memo pre-sorts via lodash).
+// Every v9 feature module + the row models that need them. Core row model is built in.
 export const gridFeatures = tableFeatures({
   rowSortingFeature,
   rowPaginationFeature,
@@ -43,6 +43,7 @@ export const gridFeatures = tableFeatures({
   expandedRowModel: createExpandedRowModel(),
   facetedRowModel: createFacetedRowModel(),
   paginatedRowModel: createPaginatedRowModel(),
+  sortedRowModel: createSortedRowModel(),
 })
 
 export type GridFeatures = typeof gridFeatures

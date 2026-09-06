@@ -27,8 +27,8 @@
     "playground": "vite --config vite.playground.config.ts --host 127.0.0.1 --port 4177"
   },
   "dependencies": {
-    "@hafley66/path": "^0.1.0",
-    "@hafley66/signals": "^0.1.0",
+    "@hafley66/path": "workspace:*",
+    "@hafley66/signals": "workspace:*",
     "@hafley66/virtualizations": "workspace:*",
     "@tanstack/react-table": "^9.1.0",
     "@tanstack/react-virtual": "^3.14.9",

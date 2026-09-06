@@ -17,6 +17,8 @@ RxJS signal; renders nothing until you mount `GridTable`.
 - [createGrid](#creategrid)
 - [State model](#state-model)
 - [GridTable](#gridtable)
+- [TreeTable](#treetable)
+- [GridTree](#gridtree)
 - [Client vs server](#client-vs-server)
 - [URL binding](#url-binding)
 - [Build / test](#build--test)
@@ -32,9 +34,9 @@ flowchart LR
   end
   cg["createGrid"]
   subgraph g["Grid"]
-    state["state Signal — 12 slices"]
-    events["events Signal"]
-    rowsM["rows memo — client sort"]
+    state["state Signal, 13 slices"]
+    actions["actions$ bus: intent, change, effect"]
+    rowsM["rows memo, root pre-sort"]
   end
   hook["useGrid"]
   tt["TanStack useTable v9"]
@@ -43,11 +45,12 @@ flowchart LR
   g --> hook --> tt --> gt
 ```
 
-`createGrid` turns a config into a `Grid`: one `state` signal holding all twelve
-TanStack slices, one `events` signal that fires on every slice write, and a
-`rows` memo that sorts client-side off the `sorting` slice. `useGrid` feeds all
-of that into TanStack `useTable`; `GridTable` is the reference render layer over
-the resulting table instance.
+`createGrid` turns a config into a `Grid`: one `state` signal holding every
+TanStack slice, one `actions$` bus every write and DOM intent passes through,
+and a `rows` memo that pre-sorts roots off the `sorting` slice (TanStack's
+sorted row model then sorts every level). `useGrid` feeds all of that into
+TanStack `useTable` and subscribes the grid's epics for the component's
+lifetime; `GridTable` is the reference render layer over the table instance.
 
 ## Install
 
@@ -119,11 +122,65 @@ function createGrid<TData>(config: GridConfig<TData>): Grid<TData>
 | `getSubRows` | `(row, index) => TData[] \| undefined` | tree children |
 | `mode` | `"client" \| "server"` | client sorts/paginates locally; server is manual |
 | `state` | `Signal<GridState>` | inject to share state across grids |
+| `epics` | `GridEpic<TData>[]` | grid-level epics, run while `epics$` is subscribed |
 
-A `Grid` exposes `state`, `events`, `rows`, `columns`, `schema`, `mode`,
-`getRowId`, `getSubRows`, and twelve `on*Change` handlers wired straight into the
-matching state slice. Each handler writes its slice in one atomic emit and fires
-`events` with `{ type, ...slice }`.
+A `Grid` exposes `state`, `actions$`, `dispatch`, `epics$`, `epicCtx`, `rows`,
+`columns`, `schema`, `mode`, `getRowId`, `getSubRows`, and twelve `on*Change`
+handlers. Each handler dispatches one `{ phase: "change", type, ...slice }`
+action; the reducer writes that slice in one atomic emit.
+
+## Actions and epics
+
+The grid is a `createSlice` from `@hafley66/signals`: a reducer over
+`GridState`, one action bus, and epics that turn actions into more actions.
+
+| phase | who emits | carries | who consumes |
+| --- | --- | --- | --- |
+| `intent` | `TreeTable` DOM handlers | `cell.click`, `cell.dblclick`, `header.click` (with `mods`), `row.hover` | epics |
+| `change` | `on*Change`, epics | one `GridState` slice | reducer |
+| `effect` | epics | `select`, `pivot`, `custom` | the consumer |
+
+```
+step 0  user alt-clicks the status cell of row r7
+step 1  dispatch intent  {cell.click, column:"status", rowId:"r7", mods.alt:true}
+step 2  selectOnPlainClick epic: alt set, emits nothing
+step 3  status column epic (pivotOnAltClick): emits effect {pivot, column:"status", value:"fail"}
+step 4  dispatch effect; reducer ignores; useGridEffect(grid, "pivot", handler) runs the consumer
+```
+
+Lifetime is rxjs. `dispatch` reduces synchronously with nobody subscribed;
+epics run only while `grid.epics$` (grid-level) or the `TreeTable`'s column
+epic subscription is live. `useGrid` subscribes `epics$` in a `useEffect`;
+two mounts share one run through `share()`.
+
+```ts
+type GridEpicCtx<TData> = {
+  grid$: Observable<GridAction<TData>>
+  phase$: { intent: Observable<GridIntent>; change: Observable<GridChange>; effect: Observable<GridEffect> }
+  column$: (id: string) => Observable<GridAction & { column: string }>
+  state: Signal<GridState>
+  rows: Signal<TData[]>
+  dispatch: (action: GridAction<TData>) => void
+}
+```
+
+A `TreeColumn` can own its receiver:
+
+```tsx
+{
+  id: "status",
+  header: "status",
+  cell: (row) => <StatusDot status={row.status} />,
+  sortValue: (row) => STATUS_RANK[row.status],
+  epic: pivotOnAltClick((row) => row.status),        // or ({ column$, phase$, state, dispatch, id }) => Observable<GridAction>
+}
+
+useGridEffect(grid, "pivot", (effect) => pushPivot(model, effect.column, effect.value))
+```
+
+Built-in epics: `selectOnPlainClick(columns)` (plain click outside a
+`noRowClick` column becomes `effect select`; `onRowClick` is sugar over it)
+and `pivotOnAltClick(value)`.
 
 ## State model
 
@@ -204,9 +261,78 @@ const { expanded } = grid.state.$()
 grid.state.$.setImmer((d) => { d.expanded = { src: true } })
 ```
 
+## TreeTable
+
+Multi-column tree/table renderer over a `Grid`. `sorting`, `expanded`,
+`columnSizing`, and `columnVisibility` are read and written through the
+grid's own signals (via `useGrid`); `TreeTable` never keeps that state
+locally. One column carries `tree: true` and renders the twisty plus the
+depth indent; any column can opt into `toggleExpand` (click anywhere in that
+cell toggles the row) or `noRowClick` (an action cell that swallows clicks
+before they reach `onRowClick`). Rows virtualize through
+`useExternalVirtualizer`, the same external-scroll-owner seam `GridTable`
+uses; a sticky `<thead>` (`position: sticky`, `z-index: var(--grid-tree-header-z, 2)`)
+stays pinned inside whichever ancestor owns the scroll. An expanded row can
+render a full-width detail region underneath via `renderDetail`.
+
+```ts
+import { TreeTable, ColumnVisibilityToolbar, type TreeColumn } from "@hafley66/grid/react"
+```
+
+```tsx
+const columns: TreeColumn<Node>[] = [
+  { id: "name", header: "Name", tree: true, toggleExpand: true, cell: (n) => n.name, sortValue: (n) => n.name },
+  { id: "size", header: "Size", cell: (n) => String(n.size) },
+]
+
+<ColumnVisibilityToolbar grid={grid} columns={columns} />
+<TreeTable
+  grid={grid}
+  columns={columns}
+  renderDetail={(n) => <pre>{JSON.stringify(n, null, 2)}</pre>}
+/>
+```
+
+| prop | default | effect |
+| --- | --- | --- |
+| `grid` | — | a `Grid` from `createGrid` |
+| `columns` | — | `TreeColumn<TData>[]`; exactly one should set `tree: true` |
+| `density` | `"standard"` | row height, overridable per-px via `rowHeight` |
+| `rowHeight` | — | explicit row height in px, overrides `density` |
+| `scrollMode` | `"external"` | `"internal"` retains a bounded, own-scrollbar card |
+| `maxHeight` | `600` | height cap for `scrollMode="internal"` |
+| `showHeader` / `showFooter` | `true` | toggle the `<thead>` / row-count footer |
+| `indentUnit` | `14` | px per depth level on the tree column |
+| `indentGuides` | `false` | render per-ancestor vertical guide lines |
+| `renderDetail` | — | `(row) => ReactNode`; renders under an expanded row |
+| `rowClassName` | — | extra class per row, e.g. for selection highlighting |
+| `onRowClick` | — | sugar over the `select` effect; skips `noRowClick` cells and modified clicks |
+
+`TreeColumn<TData>` fields: `id`, `header`, `headerCell?()`, `cell(row)`,
+`cellClass?(row)`, `sortValue?(row)`, `epic?(ctx)`, `tree?`, `toggleExpand?`,
+`noRowClick?`, `size?`, `minSize?`, `maxSize?`.
+
+Each `<tr>` carries `data-row-id`, `data-row-index`, `data-expanded`; each
+`<td>`/`<th>` carries `data-column`. Row background reads
+`var(--grid-row-bg, <stripe>)`, so hover/selected/status rules set
+`--grid-row-bg` on the row instead of fighting the inline stripe. Column widths follow the same width-signal rule as
+Instant's `treetableSize.ts`: a column gets a fixed px width only once it
+carries a signal (an authored `size`, or a `columnSizing` entry), otherwise
+every column stays auto-sized.
+
+`ColumnVisibilityToolbar` lists `columns` as checkboxes bound to the grid's
+`columnVisibility` slice; unchecking one hides it from both the header and
+every row without touching any other state slice.
+
+Left out of this port: `instant/src/treetableEdit.tsx` (inline cell editing)
+and drag-to-resize column handles — neither was requested for this pass, and
+folding them in would have pushed files over the 200-line budget.
+
 ## GridTree
 
-A VS Code-style single-column tree over the same seam. Same `Grid`, one nestable
+A thin preset over `TreeTable`: one `tree` column, icons keyed off `kind`,
+and indent guides on by default. Same public props as before, so existing
+`FileTree` call sites keep working unchanged. Same `Grid`, one nestable
 column, per-depth indent guides, chevron toggles, and a trailing `/` on any open
 node — so a file that expands into its own children (a markdown doc into its AST)
 reads as a container too.

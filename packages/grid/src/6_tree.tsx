@@ -1,6 +1,8 @@
-import { useState, type CSSProperties, type ReactNode } from "react"
+import { useMemo, useState, type CSSProperties, type ReactNode } from "react"
 import type { RowData } from "@tanstack/react-table"
-import { useGrid } from "./3_react"
+import { useSignal } from "@hafley66/signals/react"
+import { TreeTable } from "./12_treeTable"
+import type { TreeColumn } from "./10_treeColumn"
 import type { Grid } from "./1_types"
 
 const FONT = `-apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`
@@ -31,7 +33,6 @@ const FileIcon = ({ color }: { color: string }) => (
   </svg>
 )
 
-// Generic node icon for anything that is neither folder nor file (e.g. an AST block).
 const NodeIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24">
     <circle cx="6" cy="12" r="2.4" fill="currentColor" />
@@ -47,8 +48,6 @@ const iconFor = (node: TreeLike, open: boolean) => {
   return <NodeIcon />
 }
 
-// Any row with getSubRows children is a container; an open container gains a
-// trailing "/", so a file expanding into its own AST reads as a folder too.
 export function GridTree<TData extends RowData & TreeLike>({
   grid,
   indentUnit = 14,
@@ -68,9 +67,46 @@ export function GridTree<TData extends RowData & TreeLike>({
   renderIcon?: (node: TData, open: boolean) => ReactNode
   renderLabel?: (node: TData, open: boolean) => ReactNode
 }) {
-  const table = useGrid(grid)
-  const rows = table.getRowModel().rows
+  const state = useSignal(grid.state.$)
   const [selected, setSelected] = useState<string | null>(null)
+  const isOpen = (node: TData) => {
+    const id = grid.getRowId(node)
+    return state.expanded === true || !!state.expanded[id]
+  }
+
+  const columns: TreeColumn<TData>[] = useMemo(
+    () => [
+      {
+        id: "name",
+        header: "",
+        tree: true,
+        toggleExpand: true,
+        cell: (node) => {
+          const open = isOpen(node)
+          const text = open ? `${node.name}/` : node.name
+          return (
+            <>
+              <span style={{ width: 20, flex: "0 0 20px", display: "inline-flex", alignItems: "center" }}>
+                {renderIcon ? renderIcon(node, open) : iconFor(node, open)}
+              </span>
+              <span
+                style={{
+                  fontSize: 13,
+                  whiteSpace: "nowrap",
+                  fontWeight: node.kind === "folder" || node.kind === "dir" ? 600 : 400,
+                  color: "var(--grid-fg, #1f2937)",
+                }}
+              >
+                {renderLabel ? renderLabel(node, open) : text}
+              </span>
+            </>
+          )
+        },
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [renderIcon, renderLabel, state.expanded],
+  )
 
   return (
     <div
@@ -99,74 +135,22 @@ export function GridTree<TData extends RowData & TreeLike>({
           borderBottom: "1px solid var(--grid-hairline, #f3f4f6)",
         }}>{label}</div>
       ) : null}
-      <div style={{ maxHeight: 560, overflowY: "auto", padding: "4px 0" }}>
-        {rows.map((row) => {
-          const node = row.original as TreeLike
-          const depth = row.depth
-          const canExpand = row.getCanExpand()
-          const open = row.getIsExpanded()
-          const text = open ? `${node.name}/` : node.name
-          return (
-            <div
-              key={row.id}
-              className={`gt-row${selected === row.id ? " sel" : ""}`}
-              onClick={() => {
-                setSelected(row.id)
-                onRowClick?.(row.original)
-              }}
-              style={{
-                position: "relative",
-                height: rowHeight,
-                display: "flex",
-                alignItems: "center",
-                paddingLeft: 8 + depth * indentUnit,
-                cursor: "default",
-              }}
-            >
-              {Array.from({ length: depth }, (_, i) => (
-                <span
-                  key={i}
-                  style={{
-                    position: "absolute",
-                    left: 8 + i * indentUnit + indentUnit / 2,
-                    top: 0,
-                    bottom: 0,
-                    borderLeft: "1px solid var(--grid-hairline, rgba(0,0,0,.08))",
-                  }}
-                />
-              ))}
-              <span style={{ width: 18, flex: "0 0 18px", display: "inline-flex", justifyContent: "center", color: "var(--grid-muted-fg, #9ca3af)" }}>
-                {canExpand ? (
-                  <button
-                    data-testid={`toggle-${row.id}`}
-                    onClick={row.getToggleExpandedHandler()}
-                    style={{
-                      border: "none",
-                      background: "transparent",
-                      cursor: "pointer",
-                      padding: 0,
-                      display: "inline-flex",
-                      transform: open ? "rotate(90deg)" : "none",
-                      transition: "transform 100ms ease",
-                    }}
-                  >
-                    <svg width="8" height="8" viewBox="0 0 8 8"><path d="M2 1 L6 4 L2 7 Z" fill="currentColor" /></svg>
-                  </button>
-                ) : null}
-              </span>
-              <span style={{ width: 20, flex: "0 0 20px", display: "inline-flex", alignItems: "center" }}>
-                {renderIcon ? renderIcon(row.original, open) : iconFor(node, open)}
-              </span>
-              <span style={{
-                fontSize: 13,
-                whiteSpace: "nowrap",
-                fontWeight: node.kind === "folder" || node.kind === "dir" ? 600 : 400,
-                color: "var(--grid-fg, #1f2937)",
-              }}>{renderLabel ? renderLabel(row.original, open) : text}</span>
-            </div>
-          )
-        })}
-      </div>
+      <TreeTable
+        grid={grid}
+        columns={columns}
+        showHeader={false}
+        showFooter={false}
+        scrollMode="internal"
+        maxHeight={560}
+        indentUnit={indentUnit}
+        indentGuides
+        rowHeight={rowHeight}
+        rowClassName={(node) => `gt-row${selected === grid.getRowId(node) ? " sel" : ""}`}
+        onRowClick={(node) => {
+          setSelected(grid.getRowId(node))
+          onRowClick?.(node)
+        }}
+      />
     </div>
   )
 }
