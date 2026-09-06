@@ -4,23 +4,29 @@ import { flexRender } from "@tanstack/react-table"
 import { useGrid } from "@hafley66/grid/react"
 import { SignalReact } from "@hafley66/signals/react"
 import { useLayoutEffect, useMemo, useRef, useState } from "react"
-import type { EventFilter, MarbleEvent } from "./0_types.js"
+import type { MarbleEvent } from "./0_types.js"
 import { reduceTimeViewport, type TimelineMark } from "./0a_TimeViewport.js"
 import { WaterfallPixi } from "./1a_WaterfallPixi.js"
 import { TimeNavigatorPixi } from "./1b_TimeNavigatorPixi.js"
 import type { Marbler } from "./1_model.js"
 import "./2_marbler.css"
 
-const FILTERS: EventFilter[] = ["all", "request", "result", "tool", "note"]
 const WATERFALL_LEFT = 690
 const TREE_GUTTER = 20
-function MarblerView({ model, embedded = false, summary }: {
+
+// Embedded mode drops the demo metaphors (fake HTTP stats, drawer nav) by default; a host can
+// opt back into the filter chip row (still useful once real events carry more than one type).
+type EmbeddedOption = boolean | { chips?: boolean }
+
+function showChips(embedded: EmbeddedOption): boolean {
+  return embedded === false || (typeof embedded === "object" && embedded.chips === true)
+}
+
+function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
 	model: Marbler
-	// Host apps embed this panel inside their own chrome: drop the demo
-	// metaphors (filter chips, phase legend, fake HTTP stats, drawer nav)
-	// and fill the host box instead of the demo page geometry.
-	embedded?: boolean
+	embedded?: EmbeddedOption
 	summary?: string[]
+	navigatorHeight?: number
 }) {
   const table = useGrid<MarbleEvent>(model.grid)
   const scrollerRef = useRef<HTMLDivElement>(null)
@@ -59,7 +65,7 @@ function MarblerView({ model, embedded = false, summary }: {
         kind: "dot",
         time: frame.t,
         lane,
-        variant: frame.kind === "error" ? "error" : frame.kind === "turn-finish" || frame.kind === "result" || frame.kind === "exit" ? "complete" : "next",
+        variant: frame.severity === "error" ? "error" : frame.severity === "done" ? "complete" : "next",
       })
       const peerLane = frame.peer === null ? undefined : laneById.get(frame.peer)
       if (peerLane !== undefined && peerLane !== lane) {
@@ -70,12 +76,14 @@ function MarblerView({ model, embedded = false, summary }: {
   }), [laneById, timelineEvents])
   const viewport = model.viewport.$()
   const ticks = Array.from({ length: 6 }, (_, index) => viewport.visible[0] + (viewport.visible[1] - viewport.visible[0]) * index / 5)
+  const filterChips = ["all", ...model.filters.$()]
+  const legendEntries = Object.entries(model.phaseStyles)
   return <main className="app-shell" data-embedded={embedded ? "true" : undefined} data-testid="marbler">
     <section className="network-panel">
       <div className="subtoolbar">
-        {!embedded && FILTERS.map((filter) => <button key={filter} className={model.filter.$() === filter ? "kind active" : "kind"} onClick={() => model.filter.$(filter)}>{filter}</button>)}
+        {showChips(embedded) && filterChips.map((chip) => <button key={chip} className={model.filter.$() === chip ? "kind active" : "kind"} onClick={() => model.filter.$(chip)}>{chip}</button>)}
         <span className="toolbar-spacer" />{hovered && <span className="hovered-event" data-testid="hovered-event">{hovered.name} · {hovered.duration} ms</span>}<span className="summary">{rows.length} events</span>
-        {!embedded && <span className="legend"><i className="phase-send" />send <i className="phase-wait" />wait <i className="phase-receive" />receive <i className="phase-work" />work</span>}
+        {!embedded && <span className="legend">{legendEntries.map(([kind, style]) => <span key={kind}><i style={{ background: style.color }} />{style.label} </span>)}</span>}
       </div>
       <TimeNavigatorPixi
         marks={marks}
@@ -84,6 +92,7 @@ function MarblerView({ model, embedded = false, summary }: {
         highlightedId={model.hoveredId.$()}
         onMarkHover={(id) => model.hoveredId.$(id)}
         onGesture={(gesture) => model.viewport.$(reduceTimeViewport(model.viewport.$(), gesture))}
+        height={navigatorHeight}
       />
       <div className="grid-scroller" ref={scrollerRef}>
         <div className="grid-sticky-head">
@@ -98,6 +107,7 @@ function MarblerView({ model, embedded = false, summary }: {
             scroller={scrollerRef}
             domain={viewport.visible}
             leftOffset={waterfallLeft}
+            phaseStyles={model.phaseStyles}
             onEventHover={(event) => model.hoveredId.$(event?.id ?? null)}
             onEventSelect={(event) => model.selectedId.$(event.id)}
           />
@@ -130,8 +140,8 @@ function MarblerView({ model, embedded = false, summary }: {
       {!embedded && <nav><b>Headers</b><span>Payload</span><span>Preview</span><span>Response</span><span>Timing</span></nav>}
       <h3>General</h3><dl><dt>Request URL</dt><dd>boop://{selected.from}/{selected.to}/{selected.id}</dd><dt>Request Method</dt><dd>{selected.method}</dd><dt>Status Code</dt><dd><i className="ok-dot" /> {selected.status} {selected.status === 200 ? "Delivered" : "Accepted"}</dd><dt>Remote Address</dt><dd>{selected.to}</dd></dl>
       <h3>Message</h3><pre>{selected.preview}</pre>
-      <h3>Timing</h3><div className="timing-bars">{selected.phases.map((phase, index) => phase.start !== null && phase.end !== null ? <div key={`${phase.kind}:${phase.start}:${phase.end}:${index}`}><label>{phase.kind}</label><span className={`phase-${phase.kind}`} style={{ width: `${Math.max(4, (phase.end - phase.start) / 8)}%` }} /><em>{phase.end - phase.start} ms</em></div> : null)}</div>
-      {selected.frames && selected.frames.length > 0 && <><h3>Messages</h3><table className="messages-table" data-testid="messages-table"><thead><tr><th /><th>Kind</th><th>Time</th><th>Peer</th><th>Preview</th></tr></thead><tbody>{[...selected.frames].sort((earlierFrame, laterFrame) => earlierFrame.t - laterFrame.t).map((frame) => <tr key={frame.id} className={`frame-row frame-${frame.direction}${frame.kind === "error" ? " frame-error" : ""}`}><td className="frame-direction">{frame.direction === "out" ? "▲" : frame.direction === "in" ? "▼" : "●"}</td><td>{frame.kind}</td><td>{selected.start !== null ? frame.t - selected.start : frame.t} ms</td><td>{frame.peer ?? "none"}</td><td>{frame.preview}{frame.repeat > 1 && <span className="frame-repeat">×{frame.repeat}</span>}</td></tr>)}</tbody></table></>}
+      <h3>Timing</h3><div className="timing-bars">{selected.phases.map((phase, index) => phase.start !== null && phase.end !== null ? <div key={`${phase.kind}:${phase.start}:${phase.end}:${index}`}><label>{phase.kind}</label><span style={{ width: `${Math.max(4, (phase.end - phase.start) / 8)}%`, background: (model.phaseStyles[phase.kind] ?? { color: "#70839b" }).color }} /><em>{phase.end - phase.start} ms</em></div> : null)}</div>
+      {selected.frames && selected.frames.length > 0 && <><h3>Messages</h3><table className="messages-table" data-testid="messages-table"><thead><tr><th /><th>Kind</th><th>Time</th><th>Peer</th><th>Preview</th></tr></thead><tbody>{[...selected.frames].sort((earlierFrame, laterFrame) => earlierFrame.t - laterFrame.t).map((frame) => <tr key={frame.id} className={`frame-row frame-${frame.direction}${frame.severity === "error" ? " frame-error" : ""}`}><td className="frame-direction">{frame.direction === "out" ? "▲" : frame.direction === "in" ? "▼" : "●"}</td><td>{frame.kind}</td><td>{selected.start !== null ? frame.t - selected.start : frame.t} ms</td><td>{frame.peer ?? "none"}</td><td>{frame.preview}{frame.repeat > 1 && <span className="frame-repeat">×{frame.repeat}</span>}</td></tr>)}</tbody></table></>}
     </aside>}
   </main>
 }

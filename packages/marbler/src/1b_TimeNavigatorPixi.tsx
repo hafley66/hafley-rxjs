@@ -11,11 +11,13 @@ export type TimeNavigatorPixiProps = {
   viewport: TimeViewport
   highlightedId?: string | null
   laneLabels?: readonly string[]
+  // Overrides the lane-count-derived height, e.g. a host's resizable overview track.
+  height?: number
   onMarkHover?: (id: string | null) => void
   onGesture: (gesture: TimelineGesture) => void
 }
 
-export function TimeNavigatorPixi({ marks, viewport, highlightedId = null, laneLabels = [], onMarkHover, onGesture }: TimeNavigatorPixiProps) {
+export function TimeNavigatorPixi({ marks, viewport, highlightedId = null, laneLabels = [], height, onMarkHover, onGesture }: TimeNavigatorPixiProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const stateRef = useRef({ marks, viewport, highlightedId, laneLabels, onMarkHover, onGesture })
   const drawRef = useRef<() => void>(() => {})
@@ -23,7 +25,7 @@ export function TimeNavigatorPixi({ marks, viewport, highlightedId = null, laneL
     if (mark.kind === "link") return Math.max(count, mark.from.lane + 1, mark.to.lane + 1)
     return Math.max(count, (mark.lane ?? 0) + 1)
   }, 1))
-  const navigatorHeight = LANE_TOP + laneCount * LANE_HEIGHT + VERTICAL_PADDING
+  const navigatorHeight = height ?? LANE_TOP + laneCount * LANE_HEIGHT + VERTICAL_PADDING
   stateRef.current = { marks, viewport, highlightedId, laneLabels, onMarkHover, onGesture }
 
   useEffect(() => {
@@ -34,8 +36,40 @@ export function TimeNavigatorPixi({ marks, viewport, highlightedId = null, laneL
     let scene: Container | null = null
     let overview: Graphics | null = null
     let viewportGraphic: Graphics | null = null
-    let dragX: number | null = null
+    // DevTools-style gestures on the window: grab an edge to resize it, drag inside to pan, drag
+    // outside (or anywhere while the window spans the full range) to brush a new window.
+    type DragMode = "pan" | "brush" | "resize-left" | "resize-right"
+    let drag: { mode: DragMode; anchorTime: number; startVisible: readonly [number, number]; lastX: number } | null = null
     let hoveredMarkId: string | null = null
+    const HANDLE_PX = 6
+
+    const plotLeftOf = () => (stateRef.current.laneLabels.length > 0 ? 190 : 0)
+    const timeAt = (clientX: number) => {
+      const { full } = stateRef.current.viewport
+      const plotLeft = plotLeftOf()
+      const plotWidth = Math.max(1, host.clientWidth - plotLeft)
+      const fraction = Math.min(1, Math.max(0, (clientX - host.getBoundingClientRect().left - plotLeft) / plotWidth))
+      return full[0] + fraction * (full[1] - full[0])
+    }
+    const windowEdgesPx = () => {
+      const { full, visible } = stateRef.current.viewport
+      const plotLeft = plotLeftOf()
+      const plotWidth = Math.max(1, host.clientWidth - plotLeft)
+      const fullSpan = Math.max(1, full[1] - full[0])
+      return { left: plotLeft + ((visible[0] - full[0]) / fullSpan) * plotWidth, right: plotLeft + ((visible[1] - full[0]) / fullSpan) * plotWidth }
+    }
+    const modeAt = (clientX: number): DragMode | null => {
+      const x = clientX - host.getBoundingClientRect().left
+      if (x < plotLeftOf()) return null
+      const { full, visible } = stateRef.current.viewport
+      const isFull = visible[0] <= full[0] && visible[1] >= full[1]
+      const { left, right } = windowEdgesPx()
+      if (!isFull && Math.abs(x - left) <= HANDLE_PX) return "resize-left"
+      if (!isFull && Math.abs(x - right) <= HANDLE_PX) return "resize-right"
+      if (!isFull && x > left && x < right) return "pan"
+      return "brush"
+    }
+    const cursorFor = (mode: DragMode | null) => (mode === "pan" ? "grab" : mode === "brush" ? "crosshair" : mode === null ? "default" : "ew-resize")
     let hitDots: Array<{ id: string; x: number; y: number }> = []
 
     const draw = () => {
@@ -142,16 +176,31 @@ export function TimeNavigatorPixi({ marks, viewport, highlightedId = null, laneL
     void initialize()
 
     const pointerDown = (event: PointerEvent) => {
-      dragX = event.clientX
+      const mode = modeAt(event.clientX)
+      if (!mode) return
+      drag = { mode, anchorTime: timeAt(event.clientX), startVisible: stateRef.current.viewport.visible, lastX: event.clientX }
+      host.style.cursor = mode === "pan" ? "grabbing" : cursorFor(mode)
       host.setPointerCapture(event.pointerId)
     }
     const pointerMove = (event: PointerEvent) => {
-      if (dragX !== null) {
-        const deltaPx = event.clientX - dragX
-        dragX = event.clientX
-        stateRef.current.onGesture({ type: "pan", deltaPx, widthPx: host.clientWidth })
+      if (drag) {
+        const time = timeAt(event.clientX)
+        if (drag.mode === "pan") {
+          const deltaPx = event.clientX - drag.lastX
+          drag.lastX = event.clientX
+          // The pan gesture is content-relative (drag right = see earlier). Dragging the window itself
+          // moves the window, so the sign flips here.
+          stateRef.current.onGesture({ type: "pan", deltaPx: -deltaPx, widthPx: Math.max(1, host.clientWidth - plotLeftOf()) })
+        } else if (drag.mode === "resize-left") {
+          stateRef.current.onGesture({ type: "brush", range: [Math.min(time, drag.startVisible[1]), drag.startVisible[1]] })
+        } else if (drag.mode === "resize-right") {
+          stateRef.current.onGesture({ type: "brush", range: [drag.startVisible[0], Math.max(time, drag.startVisible[0])] })
+        } else {
+          stateRef.current.onGesture({ type: "brush", range: [Math.min(drag.anchorTime, time), Math.max(drag.anchorTime, time)] })
+        }
         return
       }
+      host.style.cursor = cursorFor(modeAt(event.clientX))
       const bounds = host.getBoundingClientRect()
       const x = event.clientX - bounds.left
       const y = event.clientY - bounds.top
@@ -161,7 +210,8 @@ export function TimeNavigatorPixi({ marks, viewport, highlightedId = null, laneL
       stateRef.current.onMarkHover?.(hit)
     }
     const pointerUp = (event: PointerEvent) => {
-      dragX = null
+      drag = null
+      host.style.cursor = cursorFor(modeAt(event.clientX))
       if (host.hasPointerCapture(event.pointerId)) host.releasePointerCapture(event.pointerId)
     }
     const pointerLeave = () => {
@@ -201,7 +251,7 @@ export function TimeNavigatorPixi({ marks, viewport, highlightedId = null, laneL
     }
   }, [])
 
-  useEffect(() => drawRef.current(), [marks, viewport, highlightedId, laneLabels])
+  useEffect(() => drawRef.current(), [marks, viewport, highlightedId, laneLabels, navigatorHeight])
   const labeledDots = laneLabels.length > 0 ? marks.filter((mark): mark is Extract<TimelineMark, { kind: "dot" }> => mark.kind === "dot" && Boolean(mark.label) && mark.variant !== "suppressed") : []
   const fullSpan = Math.max(1, viewport.full[1] - viewport.full[0])
   return <div ref={hostRef} className={laneLabels.length > 0 ? "time-navigator labeled" : "time-navigator"} style={{ height: navigatorHeight }} data-mark-count={marks.length}>

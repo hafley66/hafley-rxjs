@@ -1,20 +1,36 @@
 import { z } from "zod"
 
+// kind is free-form; phaseStyles (createMarbler option) maps kind -> { label, color }.
 export const PhaseSchema = z.object({
-  kind: z.enum(["queue", "send", "wait", "receive", "work"]),
+  kind: z.string(),
   start: z.number().nullable(),
   end: z.number().nullable(),
 })
 
+// kind is free-form; severity is the fixed vocabulary driving frame color/variant.
 export const FrameSchema = z.object({
   id: z.string(),
   t: z.number(),
-  kind: z.enum(["spawn", "turn-start", "turn-finish", "mail-in", "mail-out", "result", "error", "exit"]),
+  kind: z.string(),
   direction: z.enum(["in", "out", "self"]),
   peer: z.string().nullable(),
   preview: z.string(),
   repeat: z.number().default(1),
+  severity: z.enum(["info", "warn", "error", "done"]).optional(),
 })
+
+export type PhaseStyle = { label: string; color: string }
+
+// Default vocabulary: queue/send/wait/receive/work, used when no phaseStyles option is given.
+export const DEFAULT_PHASE_STYLES: Record<string, PhaseStyle> = {
+  queue: { label: "queue", color: "#777f8b" },
+  send: { label: "send", color: "#d59b47" },
+  wait: { label: "wait", color: "#8e57bc" },
+  receive: { label: "receive", color: "#3f8dbd" },
+  work: { label: "work", color: "#49a56b" },
+}
+
+export const FALLBACK_PHASE_STYLE: PhaseStyle = { label: "phase", color: "#70839b" }
 
 // Hand-written: MarbleEventSchema is self-referential through `children`, so
 // z.infer cannot derive it. frames/parentId/children stay optional.
@@ -58,4 +74,5 @@ export const MarbleEventSchema: z.ZodType<MarbleEvent> = z.object({
 
 export type MarblePhase = z.infer<typeof PhaseSchema>
 export type MarbleFrame = z.infer<typeof FrameSchema>
-export type EventFilter = "all" | "request" | "result" | "tool" | "note"
+// "all" plus whatever distinct `type` values the host's events carry.
+export type EventFilter = string
