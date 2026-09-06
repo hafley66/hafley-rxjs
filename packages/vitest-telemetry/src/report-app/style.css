@@ -1,0 +1,72 @@
+@layer components {
+  header {
+    > b { flex: none; white-space: nowrap }
+    input[type=text] {
+      background: var(--panel-bg); color: var(--fg); border: 1px solid var(--line); padding: 3px 6px; font: inherit;
+      flex: 1 1 200px; min-width: 120px;
+    }
+    label { color: var(--dim); cursor: pointer; user-select: none; white-space: nowrap; flex: none }
+    label input { margin: 0 3px 0 0; vertical-align: -1px }
+  }
+  #meta { color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 0 1 auto }
+
+  #prefs-gear { anchor-name: --prefs-anchor }
+  @supports (position-anchor: --prefs-anchor) {
+    #prefs-popover { position-anchor: --prefs-anchor; position-area: block-end span-inline-start; top: auto; right: auto; position: absolute }
+  }
+
+  h2 { display: flex; align-items: baseline; gap: 10px; padding-right: 28px }
+  h2 .title-text { flex: 0 1 auto }
+  h2 small { flex: none; margin: 0 }
+  h2 { font-size: 13px; margin: 8px 0 4px; color: var(--fg); position: relative }
+  h2 small { color: var(--dim); font-weight: normal; margin-left: 10px }
+  .title-close {
+    position: absolute; right: 0; top: 0; background: none; border: 1px solid var(--line); border-radius: 3px;
+    color: var(--dim); cursor: pointer; line-height: 1; padding: 1px 6px; font: inherit;
+    &:hover { color: var(--fg) }
+  }
+  .summary { color: var(--dim); margin: 0 0 6px }
+  .default-view-hint { color: var(--accent); margin: 0 0 6px; font-style: italic }
+  .failure { color: var(--err); white-space: pre-wrap; margin: 4px 0 8px; padding: 6px; border: 1px solid #522; background: var(--err-bg) }
+
+  /* Nav: @hafley66/grid's TreeTable, themed onto this report's tokens. Row hooks off
+     [data-testid=tree-row] plus rowClassName's kind/status/selected classes; never `.nav-row`
+     (that belongs to report-shell's deprecated NavGrid, still used by boop-adapters). */
+  nav {
+    --grid-header-bg: var(--panel-bg);
+    --grid-muted-fg: var(--dim);
+    --grid-border: var(--line);
+    --grid-hairline: var(--line);
+    --grid-bg: var(--panel-bg);
+    --grid-row-alternate-bg: color-mix(in oklch, var(--panel-bg), var(--fg) 3%);
+    --grid-accent: var(--accent);
+    --grid-fg: var(--fg);
+  }
+  .nav-tree-wrap { position: relative }
+  nav [data-testid=tree-table] { border: 0; border-radius: 0 }
+  nav [data-testid=tree-table] table { table-layout: fixed; width: 100% }
+  nav [data-testid=tree-row]:hover { --grid-row-bg: color-mix(in oklch, var(--bg), var(--accent) 12%) }
+  nav [data-testid=tree-row].status-fail { --grid-row-bg: color-mix(in oklch, var(--bg), var(--err) 12%) }
+  nav [data-testid=tree-row].selected { --grid-row-bg: var(--sel) }
+  nav [data-testid=tree-table-footer] { font-size: 10px }
+
+  /* The tree column's td (always td:first-child, column order is fixed) wraps a twisty +
+     cell in an inline-flex span with no min-width; without min-width:0 here, that flex item
+     never shrinks below its content's natural width and the long label spills into next cells. */
+  nav [data-testid=tree-row] td:first-child { overflow: hidden }
+  nav [data-testid=tree-row] td:first-child > span:last-child { min-width: 0; overflow: hidden }
+  .nav-name-cell { display: flex; flex-direction: column; gap: 1px; min-width: 0; overflow: hidden }
+  .nav-name-primary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+  .nav-name-secondary { font-size: 10px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+  .status.dot { cursor: pointer }
+
+  .nav-status-legend { position: absolute; top: 0; height: 30px; width: 20px; z-index: 3; display: flex; align-items: center; justify-content: center }
+  .status-legend-trigger { background: none; border: 0; color: var(--dim); cursor: pointer; font-size: 11px; padding: 0 }
+  .status-legend-trigger:hover { color: var(--fg) }
+  #status-legend-gear { anchor-name: --status-legend-anchor }
+  @supports (position-anchor: --status-legend-anchor) {
+    #status-legend-popover { position-anchor: --status-legend-anchor; position-area: block-end span-inline-start; top: auto; right: auto; position: absolute }
+  }
+  .status-legend-popover p { display: flex; align-items: center; gap: 6px; margin: 3px 0; color: var(--fg) }
+  .status-legend-hint { color: var(--dim); font-style: italic }
+}

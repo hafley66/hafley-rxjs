@@ -1,0 +1,93 @@
+{
+  "name": "@hafley66/vitest-telemetry",
+  "version": "0.0.1",
+  "description": "OTel + LogTape telemetry for Vitest: OTLP receiver, timeline, HTML report, Chrome trace",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./plugin": {
+      "types": "./dist/plugin.d.ts",
+      "import": "./dist/plugin.js"
+    },
+    "./report": {
+      "types": "./dist/report/index.d.ts",
+      "import": "./dist/report/index.js"
+    }
+  },
+  "bin": {
+    "vitest-telemetry": "./dist/cli.js"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && vite build -c vite.report.config.ts",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "rm -rf out && node dist/cli.js run --otlp http://localhost:14318 -- sh -c \"VITEST_SHARD=1 JUNIT_OUT=out/junit-1.xml vitest run -c fixtures/vitest.config.ts --shard=1/2; VITEST_SHARD=2 JUNIT_OUT=out/junit-2.xml vitest run -c fixtures/vitest.config.ts --shard=2/2; JUNIT_OUT=out/junit-merged.xml vitest run -c fixtures/vitest.config.ts --merge-reports --experimental.openTelemetry.enabled=false --reporter=junit\"; node dist/cli.js report && node dist/cli.js trace",
+    "test:e2e": "vitest run -c vitest.e2e.config.ts",
+    "receipts": "pnpm run typecheck && pnpm run build && node dist/cli.js report && node scripts/1_checkNoExternal.mjs out/report.html && pnpm run test:e2e"
+  },
+  "dependencies": {
+    "@hafley66/grid": "workspace:*",
+    "@hafley66/marbler": "workspace:*",
+    "@hafley66/path": "workspace:*",
+    "@hafley66/report-shell": "workspace:*",
+    "@hafley66/rxjs-ext": "workspace:*",
+    "@hafley66/signals": "workspace:*",
+    "@hafley66/xdom": "workspace:*",
+    "@logtape/file": "2.3.3",
+    "@logtape/otel": "2.3.3",
+    "@opentelemetry/exporter-logs-otlp-http": "0.222.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "0.222.0",
+    "@opentelemetry/exporter-trace-otlp-http": "0.222.0",
+    "@opentelemetry/resources": "2.11.0",
+    "@opentelemetry/sdk-logs": "0.222.0",
+    "@opentelemetry/sdk-metrics": "2.11.0",
+    "@opentelemetry/sdk-node": "0.222.0",
+    "@opentelemetry/sdk-trace-web": "2.11.0",
+    "lodash-es": "^4.17.21",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "peerDependencies": {
+    "@logtape/logtape": "^2.3.3",
+    "@opentelemetry/api": "^1.9.0",
+    "debug": "^4.4.3",
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11"
+  },
+  "peerDependenciesMeta": {
+    "debug": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@logtape/logtape": "2.3.3",
+    "@opentelemetry/api": "1.9.0",
+    "@tanstack/react-table": "^9.1.0",
+    "@types/debug": "4.1.12",
+    "@types/lodash-es": "^4.17.12",
+    "@types/node": "^25.0.8",
+    "@types/react": "^19.2.3",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.5",
+    "@vitest/browser": "^4.1.10",
+    "@vitest/browser-playwright": "4.1.11",
+    "debug": "4.4.3",
+    "playwright": "1.62.1",
+    "rxjs": "^7.8.2",
+    "typescript": "7.0.2",
+    "vite": "8.2.2",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vitest": "4.1.11",
+    "zod": "^4.4.3"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
+}
