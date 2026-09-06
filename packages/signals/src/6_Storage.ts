@@ -84,3 +84,53 @@ export function urlAdapter(key: string): Storage<string> {
 export function StorageSignal<T>(key: string, fallback: T, options: StorageOptions<T> = {}): SignalType<T> {
   return storageSignal(localStorageAdapter(key), fallback, options)
 }
+
+// Same query-param encoding as urlAdapter, targeting location.hash instead of location.search.
+// Emits on hashchange and popstate; write.next uses replaceState, matching urlAdapter.
+export function hashAdapter(key: string): Storage<string> {
+  const hashParams = () => new URLSearchParams(location.hash.slice(1))
+  return {
+    read: new Observable<string>(subscriber => {
+      const emit = () => subscriber.next(hashParams().get(key) ?? "")
+      addEventListener("hashchange", emit)
+      addEventListener("popstate", emit)
+      emit()
+    }),
+    write: {
+      next: value => {
+        const params = hashParams()
+        if (value === "") params.delete(key)
+        else params.set(key, value)
+        const hash = params.toString()
+        history.replaceState(null, "", `${location.pathname}${location.search}${hash ? `#${hash}` : ""}`)
+      },
+      error() {},
+      complete() {},
+    },
+  }
+}
+
+// urlAdapter with pushState instead of replaceState: every write is a new history entry
+// (skipped when the value did not change), so Back steps backward through "entering" state.
+export function historyAdapter(key: string): Storage<string> {
+  return {
+    read: new Observable<string>(subscriber => {
+      const emit = () => subscriber.next(new URLSearchParams(location.search).get(key) ?? "")
+      addEventListener("popstate", emit)
+      emit()
+    }),
+    write: {
+      next: value => {
+        const params = new URLSearchParams(location.search)
+        const current = params.get(key) ?? ""
+        if (current === value) return
+        if (value === "") params.delete(key)
+        else params.set(key, value)
+        const query = params.toString()
+        history.pushState(null, "", `${location.pathname}${query ? `?${query}` : ""}${location.hash}`)
+      },
+      error() {},
+      complete() {},
+    },
+  }
+}

@@ -61,6 +61,32 @@ Mutate with Immer recipes via `.setImmer`, and watch meta events on `.$.$`.
 
 ---
 
+## `createSlice` and epics
+
+A reducer over a state signal, one action bus, and epics that turn actions into
+more actions. `dispatch` reduces synchronously; epics run only while `epics$` is
+subscribed.
+
+```ts
+const slice = createSlice<State, Action, Ctx>({ initial, reduce, epics, ctx, state? })
+slice.state.$()             // reduced state, any time
+slice.dispatch(action)      // reduce, then re-emit on actions$
+slice.actions$              // Observable<Action>, every dispatched action after its reduce
+slice.epics$.subscribe()    // run epics; unsubscribe to stop; share() across subscribers
+
+type Epic<A, S, Ctx> = (actions$: Observable<A>, state: Signal<S>, ctx: Ctx) => Observable<A>
+runEpics(actions$, state, ctx, epics, dispatch)   // Observable<never>, for extra epic sets
+```
+
+```
+step 0  state={n:3}   dispatch {double-please}   epics cold   -> state {n:3}
+step 1  epics$.subscribe()
+step 2  dispatch {double-please} -> doubler epic emits {add, by:3} -> dispatch -> state {n:6}
+step 3  unsubscribe -> epics cold again
+```
+
+---
+
 ## `signalMap` — pipe operator
 
 Project source emissions against tracked signal values, and re-emit when any
