@@ -1,5 +1,6 @@
 // One resize utility for every draggable track (nav width, overview height, details height).
 // CSS owns the proportions via `--track-<name>` custom properties on `root`; this only persists the pixel value.
+import { Subscription } from 'rxjs'
 import { Signal, storageSignal, type Signal as SignalType, type Storage } from '@hafley66/signals'
 import type { SizingStore } from './sizing'
 
@@ -51,30 +52,35 @@ function startingPx(tracks: Track[], stored: Record<string, number>, sizing?: Si
 
 // One Signal<number> per track, persisted as one JSON blob through `storage`; an optional
 // `sizing` store also records every write and seeds starting pixels via sizing.restore.
+export type Layout = { tracks: Record<string, SignalType<number>>; unsubscribe: () => void }
+
 export function layout(
   root: HTMLElement,
   tracks: Track[],
   storage: Storage<string>,
   sizing?: SizingStore,
-): Record<string, SignalType<number>> {
+): Layout {
   const defaults = Object.fromEntries(tracks.map((track) => [track.name, track.fallback]))
   const stored = storageSignal<Record<string, number>>(storage, defaults)
   const starting = startingPx(tracks, stored.$(), sizing)
   const signals: Record<string, SignalType<number>> = {}
+  const subscription = new Subscription()
 
   for (const track of tracks) {
     const value = clampToTrack(track, starting[track.name])
     const signal = Signal<number>(value)
     root.style.setProperty(`--track-${track.name}`, `${value}px`)
-    signal.$.subscribe((next) => {
-      const clamped = clampToTrack(track, next)
-      root.style.setProperty(`--track-${track.name}`, `${clamped}px`)
-      stored.$({ ...stored.$(), [track.name]: clamped })
-      sizing?.record(track.name, clamped, viewportPxForAxis(track.axis), takeManual(signal))
-    })
+    subscription.add(
+      signal.$.subscribe((next) => {
+        const clamped = clampToTrack(track, next)
+        root.style.setProperty(`--track-${track.name}`, `${clamped}px`)
+        stored.$({ ...stored.$(), [track.name]: clamped })
+        sizing?.record(track.name, clamped, viewportPxForAxis(track.axis), takeManual(signal))
+      }),
+    )
     signals[track.name] = signal
   }
-  return signals
+  return { tracks: signals, unsubscribe: () => subscription.unsubscribe() }
 }
 
 export type GutterOptions = { commit?: 'frame' | 'release'; axis?: 'x' | 'y' }

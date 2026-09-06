@@ -1,4 +1,4 @@
-export { layout, gutter, type Track, type GutterOptions } from './layout'
+export { layout, gutter, type Layout, type Track, type GutterOptions } from './layout'
 export { createSizingStore, type Sizing, type SizingStore } from './sizing'
 export { formatAge, formatDuration } from './lib/time'
 export { createNavCollapse, NAV_RAIL_PX, type NavCollapse } from './lib/navCollapse'

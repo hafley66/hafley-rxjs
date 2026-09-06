@@ -17,7 +17,8 @@ through the generic parameter.
 
 | Export | Kind | Contract |
 | --- | --- | --- |
-| `layout(root, tracks, storage, sizing?)` | function | one `Signal<number>` per `Track`, persisted through a `Storage<string>`; an optional `SizingStore` records writes and seeds a viewport-appropriate start |
+| `layout(root, tracks, storage, sizing?)` | function | `{ tracks, unsubscribe }`: one `Signal<number>` per `Track`, persisted through a `Storage<string>`; an optional `SizingStore` records writes and seeds a viewport-appropriate start |
+| `ReportShell` | component | header / nav rail + nav + drag gutter / main over `layout()` tracks; `children(tracks)` render prop; tears the layout down on unmount |
 | `gutter(el, track, options)` | function | pointer-drag resize handle bound to a track signal, returns `unsubscribe` |
 | `createSizingStore(storage)` | function | reusable resize memory for pane tracks, grid columns, nav width; see Sizing below |
 | `Truncated` | component | overflow-aware label with a hover/click popover and copy button |
@@ -67,7 +68,7 @@ import { localStorageAdapter } from '@hafley66/signals'
 
 const sizing = createSizingStore(localStorageAdapter('app.sizing'))
 const tracks: Track[] = [{ name: 'nav', min: 160, max: 480, fallback: 240, axis: 'x' }]
-const signals = layout(document.documentElement, tracks, localStorageAdapter('app.layout'), sizing)
+const { tracks: signals, unsubscribe } = layout(document.documentElement, tracks, localStorageAdapter('app.layout'), sizing)
 ```
 
 ## NavGrid is deprecated
