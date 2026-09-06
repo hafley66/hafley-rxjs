@@ -139,6 +139,8 @@ export type AgentTreeGridConfig = Pick<GridConfig<AgentTreeRow>, "getRowId" | "g
 export type AgentTimelineProjection = (snapshot: BoopAgentSnapshot) => AgentTimelineEvent[]
 export type AgentTopologyProjection = (snapshot: BoopAgentSnapshot) => AgentTopology
 
+export type ExitStatus = "ok" | "error" | "unknown"
+
 export type BoopSessionRow = {
   session: string
   harness: string
@@ -153,7 +155,11 @@ export type BoopSessionRow = {
   closedTs: number | null
   firstTurnTs: number | null
   lastTurnTs: number | null
+  lastActivityTs: number | null
   turns: number
+  exitStatus: ExitStatus
+  live: boolean
+  tokens: number
 }
 
 export type BoopFrameRow = {
@@ -170,6 +176,8 @@ export type AgentNetworkExport = { rows: BoopSessionRow[]; frames: BoopFrameRow[
 export type AgentNetworkProjection = (input: AgentNetworkExport) => MarbleEvent[]
 export type AgentNetworkTopologyProjection = (input: AgentNetworkExport) => Topology
 
+const booleanFlagSchema = z.union([z.boolean(), z.literal(0), z.literal(1)]).transform((value) => value === true || value === 1)
+
 const boopSessionRowSchema = z.object({
   session: z.string().min(1),
   harness: z.string().min(1),
@@ -184,7 +192,11 @@ const boopSessionRowSchema = z.object({
   closedTs: z.number().nullable(),
   firstTurnTs: z.number().nullable(),
   lastTurnTs: z.number().nullable(),
+  lastActivityTs: z.number().nullable(),
   turns: z.number(),
+  exitStatus: z.enum(["ok", "error", "unknown"]),
+  live: booleanFlagSchema,
+  tokens: z.number(),
 })
 
 const boopFrameRowSchema = z.object({

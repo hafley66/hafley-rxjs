@@ -11,23 +11,40 @@
       "import": "./dist/index.js"
     }
   },
+  "bin": {
+    "boop-network": "./dist/9_cli.js"
+  },
   "files": ["dist", "README.md"],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json && vite build -c vite.report.config.ts",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "pnpm run build && vitest run"
+    "test": "pnpm run build && vitest run",
+    "test:unit": "vitest run src dist",
+    "test:e2e": "vitest run -c vitest.e2e.config.ts",
+    "receipts": "pnpm run typecheck && pnpm run build && node dist/9_cli.js report --out out && node scripts/1_checkNoExternal.mjs out/boop-network.html && pnpm run test:unit && pnpm run test:e2e"
   },
   "dependencies": {
     "@hafley66/grapht": "workspace:*",
     "@hafley66/grid": "workspace:*",
     "@hafley66/marbler": "workspace:*",
     "@hafley66/path": "workspace:*",
+    "@hafley66/report-shell": "workspace:*",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@hafley66/signals": "workspace:*",
+    "@tanstack/react-table": "^9.1.0",
     "@types/node": "^25.0.8",
+    "@types/react": "^19.2.3",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.5",
+    "playwright": "1.62.1",
     "typescript": "7.0.2",
+    "vite": "8.2.2",
+    "vite-plugin-singlefile": "^2.3.3",
     "vitest": "^4.1.10"
   },
   "license": "MIT"

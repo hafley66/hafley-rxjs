@@ -1,0 +1,37 @@
+/* boop-network report: status dot colors, two-line name cell, plain row hover, legend popover. */
+header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+header .counts {
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 4px; margin-right: 4px }
+.dot.running { background: var(--ok) }
+.dot.waiting { background: var(--warn) }
+.dot.idle { background: var(--dim) }
+.dot.done { background: var(--ok) }
+.dot.failed { background: var(--err) }
+.dot.unknown { background: var(--info) }
+
+[data-testid=tree-row]:hover { --grid-row-bg: var(--row-hover) }
+[data-testid=tree-row].status-failed { --grid-row-bg: color-mix(in oklch, var(--bg), var(--err) 12%) }
+[data-testid=tree-row].selected { --grid-row-bg: var(--sel, var(--row-hover)) }
+[data-testid=tree-row].fold { font-style: italic; color: var(--dim) }
+
+.name-cell { display: flex; flex-direction: column; line-height: 1.25; min-width: 0 }
+.name-primary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.name-secondary { color: var(--dim); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.name-fold { color: var(--dim); font-style: italic }
+.status-cell { display: inline-flex; align-items: center; white-space: nowrap }
+
+nav[data-nav-collapsed=true] [data-testid=tree-table] { display: none }
+
+.status-legend { flex-direction: column; align-items: stretch; gap: 6px }
+.status-legend-row { display: grid; grid-template-columns: 14px 60px 1fr; align-items: center; gap: 6px; white-space: nowrap }
+.status-legend-def { color: var(--dim); font-size: 11px; white-space: normal }
+
+.frame-detail { margin-top: 8px }

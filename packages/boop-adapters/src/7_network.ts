@@ -18,23 +18,22 @@ type NetworkRow = MarbleEvent & {
   children?: NetworkRow[]
 }
 
-const inboundEdgeKinds = new Set(["spawned", "hail", "deliver-midturn", "deliver-nextturn"])
-const outboundEdgeKinds = new Set(["result"])
+// Kinds actually emitted by the store (see dict_edekind, dict_trace_kind, dict_role): edges carry
+// something arriving at or leaving this session; trace/turn kinds are its own lifecycle or speech.
+const inboundKinds = new Set(["spawned", "hail", "deliver-midturn", "deliver-nextturn", "delivery", "user"])
+const outboundKinds = new Set(["result", "completed", "completion-mailed", "completion-delivered", "assistant"])
 
 function directionOf(kind: string): "in" | "out" | "self" {
-  if (inboundEdgeKinds.has(kind)) return "in"
-  if (outboundEdgeKinds.has(kind)) return "out"
+  if (inboundKinds.has(kind)) return "in"
+  if (outboundKinds.has(kind)) return "out"
   return "self"
 }
 
 function toFrame(row: BoopFrameRow): NetworkFrame {
-  const kind = row.kind === "spawn" || row.kind === "turn-start" || row.kind === "turn-finish" || row.kind === "mail-in" || row.kind === "mail-out" || row.kind === "result" || row.kind === "error" || row.kind === "exit"
-    ? row.kind
-    : "result"
   return {
     id: `${row.kind}:${row.session}:${row.peer ?? ""}:${row.ts}`,
     t: row.ts,
-    kind,
+    kind: row.kind,
     direction: directionOf(row.kind),
     peer: row.peer,
     preview: row.detail,
@@ -64,9 +63,9 @@ export const projectAgentNetwork: AgentNetworkProjection = (input) => {
       .sort((left, right) => left.ts - right.ts || left.kind.localeCompare(right.kind))
       .map(toFrame)
     const start = row.openedTs ?? row.spawnedTs ?? row.firstTurnTs
-    const end = row.closedTs ?? row.lastTurnTs ?? start
+    const end = row.closedTs ?? row.lastActivityTs ?? row.lastTurnTs ?? start
     const duration = start !== null && end !== null ? Math.max(0, end - start) : null
-    const hasError = rowFrames.some((frame) => frame.kind === "error")
+    const hasError = row.exitStatus === "error" || rowFrames.some((frame) => frame.kind === "error")
     const status = row.closedTs === null ? 101 : hasError ? 500 : 200
     const type = row.parent === null ? "root" : row.session.includes("/agent-") ? "subagent" : "lane"
     const childIds = ancestry.has(session) ? [] : (childrenByParent.get(session) ?? [])
