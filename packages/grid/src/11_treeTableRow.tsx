@@ -2,7 +2,8 @@ import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "re
 import type { Row, RowData } from "@tanstack/react-table"
 import type { GridFeatures } from "./0_features"
 import type { GridAction, Modifiers } from "./1_types"
-import { noMods, treeColumnMeta, type TreeColumn } from "./10_treeColumn"
+import { treeColumnMeta } from "./10_treeColumn"
+import { noMods } from "./10a_columnEpics"
 
 export const modifiersOf = (e: ReactMouseEvent | MouseEvent): Modifiers => ({
   alt: e.altKey,

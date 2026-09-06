@@ -75,12 +75,8 @@ export {
   treeColumnDefs,
   treeColumnsOf,
   columnValue,
-  columnEpics,
-  treeColumnGridEpics,
-  selectOnPlainClick,
-  pivotOnAltClick,
-  noMods,
   visibilityEntries,
   toggleColumnVisibility,
 } from "./10_treeColumn"
+export { columnEpics, treeColumnGridEpics, selectOnPlainClick, pivotOnAltClick, noMods } from "./10a_columnEpics"
 export { hasWidthSignal, anyWidthSignal } from "./9_treeSize"

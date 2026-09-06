@@ -3,7 +3,8 @@ import { filter, map } from "rxjs"
 import { runEpics, Signal } from "@hafley66/signals"
 import { z } from "zod"
 import { createGrid } from "./2_createGrid"
-import { columnEpics, selectOnPlainClick, type TreeColumn } from "./10_treeColumn"
+import type { TreeColumn } from "./10_treeColumn"
+import { columnEpics, selectOnPlainClick } from "./10a_columnEpics"
 import type { GridAction, GridEpic, Modifiers } from "./1_types"
 
 type Row = { id: string; status: string; n: number; children?: Row[] }

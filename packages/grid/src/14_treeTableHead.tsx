@@ -3,7 +3,7 @@ import { flexRender, type ColumnSizingState, type Header, type RowData } from "@
 import type { GridFeatures } from "./0_features"
 import type { GridAction } from "./1_types"
 import { modifiersOf } from "./11_treeTableRow"
-import { noMods } from "./10_treeColumn"
+import { noMods } from "./10a_columnEpics"
 import { hasWidthSignal } from "./9_treeSize"
 
 const C = {

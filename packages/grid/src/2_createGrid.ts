@@ -21,7 +21,8 @@ import type {
   GridState,
 } from "./1_types"
 import { pivotGrid } from "./8_pivot"
-import { treeColumnGridEpics, treeColumnsOf } from "./10_treeColumn"
+import { treeColumnsOf } from "./10_treeColumn"
+import { treeColumnGridEpics } from "./10a_columnEpics"
 
 export const createDefaultGridState = (overrides: Partial<GridState> = {}): GridState => ({
   sorting: [],
