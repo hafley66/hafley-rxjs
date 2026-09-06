@@ -92,9 +92,11 @@ export function createGrid<TData extends RowData>(config: GridConfig<TData>): Gr
     config.columns as Partial<Record<string, ColumnSpec>> | undefined,
   )
 
+  // Flat client grids sort here (useGrid passes them through as manualSorting); trees are sorted
+  // by TanStack's sortedRowModel, which reaches subRows, so the roots are not sorted twice.
   const rows = Signal<TData[]>(() => {
     const data = config.rows.$()
-    if (config.mode !== "client") return data
+    if (config.mode !== "client" || config.getSubRows) return data
     const sort = state.sorting.$()
     if (!sort.length) return data
     return orderBy(
