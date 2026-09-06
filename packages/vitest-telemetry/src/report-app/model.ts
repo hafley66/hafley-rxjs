@@ -9,6 +9,7 @@
 import { createMarbler, DEFAULT_PHASE_STYLES, type Marbler } from '@hafley66/marbler'
 import { createTimeViewport, eventRange, reduceTimeViewport } from '@hafley66/marbler'
 import { Signal, storageSignal, urlAdapter, historyAdapter, type Signal as SignalType } from '@hafley66/signals'
+import { pivotStackSignal, type PivotEntry } from '@hafley66/report-shell'
 import type { Event } from '../report/timeline.js'
 import { timelineToMarble } from './adapter/timelineToMarble.js'
 import { buildProcessNav, type NavNode } from './adapter/navTree.js'
@@ -20,7 +21,7 @@ export const LEVEL: Record<string, number> = { trace: 0, debug: 1, info: 2, warn
 
 export type { Verdict, Selection }
 export type Filters = { search: string; kinds: Set<string>; minLevel: string }
-export type PivotEntry = { columnId: string; value: string; label: string }
+export type { PivotEntry }
 
 export type ContinuousState = {
   search: string
@@ -55,17 +56,6 @@ function decodeSelection(raw: string): Selection {
   const at = raw.lastIndexOf('::')
   if (at === -1) return { file: raw, test: null }
   return { file: raw.slice(0, at), test: raw.slice(at + 2) || null }
-}
-function encodePivotStack(stack: PivotEntry[]): string {
-  return stack.length ? JSON.stringify(stack) : ''
-}
-function decodePivotStack(raw: string): PivotEntry[] {
-  if (!raw) return []
-  try {
-    return JSON.parse(raw) as PivotEntry[]
-  } catch {
-    return []
-  }
 }
 
 export type Model = {
@@ -109,7 +99,7 @@ export function createModel(initialRows: Event[]): Model {
   const rows = Signal<Event[]>(initialRows)
   const continuous = storageSignal(urlAdapter('q'), DEFAULT_CONTINUOUS_STATE)
   const selected = storageSignal(historyAdapter('s'), DEFAULT_SELECTION, { serialize: encodeSelection, parse: decodeSelection })
-  const pivotStack = storageSignal(historyAdapter('p'), [] as PivotEntry[], { serialize: encodePivotStack, parse: decodePivotStack })
+  const pivotStack = pivotStackSignal('p')
   const hoveredId = Signal<string | null>(null)
 
   const verdicts = Signal<Map<string, Verdict>>(() => buildVerdicts(rows.$()))
@@ -144,12 +134,6 @@ export function createModel(initialRows: Event[]): Model {
   return { rows, continuous, selected, pivotStack, hoveredId, verdicts, eventsForSelected, nav, firstFailure, defaultViewHint, marbler }
 }
 
-export function pushPivot(model: Pick<Model, 'pivotStack'>, entry: PivotEntry): void {
-  model.pivotStack.$([...model.pivotStack.$(), entry])
-}
-export function popPivotsTo(model: Pick<Model, 'pivotStack'>, count: number): void {
-  model.pivotStack.$(model.pivotStack.$().slice(0, count))
-}
 export function dismissDefaultViewHint(model: Pick<Model, 'defaultViewHint'>): void {
   if (model.defaultViewHint.$()) model.defaultViewHint.$(false)
 }

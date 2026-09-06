@@ -2,7 +2,7 @@
 // navRows layers the window select and the outside-window fold on top of filteredTree's scope.
 import { createMarbler, createTimeViewport, eventRange, reduceTimeViewport, type Marbler, type MarbleEvent } from "@hafley66/marbler"
 import { Signal, storageSignal, historyAdapter, localStorageAdapter, type Signal as SignalType } from "@hafley66/signals"
-import type { PivotEntry } from "@hafley66/report-shell"
+import { pivotStackSignal, type PivotEntry } from "@hafley66/report-shell"
 import { projectAgentNetwork } from "../7_network.js"
 import type { AgentNetworkExport, BoopSessionRow } from "../0_types.js"
 import { countHeader, sortByRecencyDesc, type HeaderCounts, type TimeWindow } from "../lib/window.js"
@@ -20,18 +20,6 @@ export const DEFAULT_PREFS: Prefs = { theme: "auto", density: "compact", window:
 
 export { OLDER_FOLD_ID, type NetworkNavRow, type PivotRow } from "./nav.js"
 export { findNode }
-
-function decodePivotStack(raw: string): PivotEntry[] {
-  if (!raw) return []
-  try {
-    return JSON.parse(raw) as PivotEntry[]
-  } catch {
-    return []
-  }
-}
-function encodePivotStack(stack: PivotEntry[]): string {
-  return stack.length ? JSON.stringify(stack) : ""
-}
 
 export type Model = {
   data: SignalType<AgentNetworkExport>
@@ -52,7 +40,7 @@ export function createModel(initial: AgentNetworkExport, prefs: SignalType<Prefs
   const sessionById = Signal<Map<string, BoopSessionRow>>(() => new Map(data.$().rows.map((row) => [row.session, row])))
   const continuous = Signal<ContinuousState>({ search: "", kinds: collectFrameKinds(initial.frames) })
   const selected = storageSignal<string | null>(historyAdapter("s"), null, { serialize: (v) => v ?? "", parse: (raw) => raw || null })
-  const pivotStack = storageSignal(historyAdapter("p"), [] as PivotEntry[], { serialize: encodePivotStack, parse: decodePivotStack })
+  const pivotStack = pivotStackSignal("p")
 
   const networkTree = Signal<MarbleEvent[]>(() => projectAgentNetwork(data.$()))
   const frameKinds = Signal<string[]>(() => collectFrameKinds(data.$().frames))
@@ -113,12 +101,6 @@ function defaultSelectionId(tree: MarbleEvent[], sessionById: Map<string, BoopSe
 
 export function patchContinuous(model: Pick<Model, "continuous">, patch: Partial<ContinuousState>): void {
   model.continuous.$({ ...model.continuous.$(), ...patch })
-}
-export function pushPivot(model: Pick<Model, "pivotStack">, entry: PivotEntry): void {
-  model.pivotStack.$([...model.pivotStack.$(), entry])
-}
-export function popPivotsTo(model: Pick<Model, "pivotStack">, count: number): void {
-  model.pivotStack.$(model.pivotStack.$().slice(0, count))
 }
 
 export function createPrefs(): SignalType<Prefs> {

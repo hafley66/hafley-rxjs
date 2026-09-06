@@ -5,8 +5,8 @@ import { z } from 'zod'
 import { createGrid } from '@hafley66/grid'
 import { localStorageAdapter, Signal } from '@hafley66/signals/react'
 import type { Signal as SignalType } from '@hafley66/signals'
-import { layout, gutter, EventsPanel, PivotStack, NavRail, NAV_RAIL_PX, type Track } from '@hafley66/report-shell'
-import { dismissDefaultViewHint, popPivotsTo, type Model, type NavNode } from '../model'
+import { layout, gutter, EventsPanel, PivotStack, NavRail, NAV_RAIL_PX, popPivotsTo, type Track } from '@hafley66/report-shell'
+import { dismissDefaultViewHint, type Model, type NavNode } from '../model'
 import type { Prefs } from '../prefs'
 import { flattenLeaves } from '../adapter/navTree'
 import { Header } from './Header'
@@ -78,7 +78,7 @@ export function App({ model, prefs, meta }: { model: Model; prefs: SignalType<Pr
       <main onClickCapture={dismissHint}>
         <Title model={model} />
         <EventsPanel marbler={model.marbler} overviewTrack={tracks.overview!} />
-        <PivotStack pivotStack={model.pivotStack} baseGrid={pivotBase} onPop={(count) => popPivotsTo(model, count)} />
+        <PivotStack pivotStack={model.pivotStack} baseGrid={pivotBase} onPop={(count) => popPivotsTo(model.pivotStack, count)} />
       </main>
     </>
   )

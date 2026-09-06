@@ -4,11 +4,11 @@ import { useCallback, useEffect, useMemo, useRef } from "react"
 import { z } from "zod"
 import { createGrid, createDefaultGridState, type Grid } from "@hafley66/grid"
 import { TreeTable, useGridEffect } from "@hafley66/grid/react"
-import { NavRail, EventsPanel, PivotStack, layout, gutter, type Track } from "@hafley66/report-shell"
+import { NavRail, EventsPanel, PivotStack, layout, gutter, popPivotsTo, pushPivot, type Track } from "@hafley66/report-shell"
 import { Signal, localStorageAdapter, type Signal as SignalType } from "@hafley66/signals/react"
 import type { MarbleEvent } from "@hafley66/marbler"
 import { formatAge } from "../../lib/time.js"
-import { OLDER_FOLD_ID, popPivotsTo, pushPivot, type Model, type NetworkNavRow, type Prefs } from "../model"
+import { OLDER_FOLD_ID, type Model, type NetworkNavRow, type Prefs } from "../model"
 import type { PivotRow } from "../nav.js"
 import { SESSION_COLUMNS } from "./sessionColumns"
 import { Header } from "./Header"
@@ -78,7 +78,7 @@ export function App({ model, prefs, meta }: { model: Model; prefs: SignalType<Pr
     useCallback(
       (effect: { value: unknown }) => {
         const status = String(effect.value)
-        pushPivot(model, { columnId: "status", value: status, label: `status=${status}` })
+        pushPivot(model.pivotStack, { columnId: "status", value: status, label: `status=${status}` })
       },
       [model],
     ),
@@ -124,7 +124,7 @@ export function App({ model, prefs, meta }: { model: Model; prefs: SignalType<Pr
         <Title model={model} />
         <EventsPanel marbler={model.marbler} overviewTrack={tracks.overview!} detail={detail} />
         <FrameDetail model={model} />
-        <PivotStack pivotStack={model.pivotStack} baseGrid={pivotBase} onPop={(count) => popPivotsTo(model, count)} />
+        <PivotStack pivotStack={model.pivotStack} baseGrid={pivotBase} onPop={(count) => popPivotsTo(model.pivotStack, count)} />
       </main>
     </>
   )

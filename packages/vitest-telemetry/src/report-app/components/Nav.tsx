@@ -5,7 +5,8 @@ import { z } from 'zod'
 import { createGrid, createDefaultGridState, compactSingleChildChains, type Grid, type GridState } from '@hafley66/grid'
 import { TreeTable, useGridEffect } from '@hafley66/grid/react'
 import { Signal, useSignal, type Signal as SignalType } from '@hafley66/signals/react'
-import { pushPivot, type Model, type NavNode } from '../model'
+import { pushPivot } from '@hafley66/report-shell'
+import type { Model, NavNode } from '../model'
 import type { Prefs } from '../prefs'
 import { expandedPathTo } from '../lib/expandedForSelection'
 import { NAV_COLUMNS } from './NavColumns'
@@ -25,7 +26,7 @@ function selectNode(model: Model, node: NavNode): void {
 }
 
 function pivotOnStatus(model: Model, status: string): void {
-  pushPivot(model, { columnId: 'status', value: status, label: `status=${status}` })
+  pushPivot(model.pivotStack, { columnId: 'status', value: status, label: `status=${status}` })
 }
 
 // Default-view expansion: only the failing test's branch open, everything else collapsed. Falls
