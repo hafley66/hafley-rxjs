@@ -35,9 +35,6 @@ function treeRows() {
 function foldRows() {
   return page.locator("[data-testid=tree-row].fold")
 }
-function firstRowName() {
-  return treeRows().first().locator(".name-primary, .name-fold").first().textContent()
-}
 
 describe("boop network report", () => {
   it("renders at least one session row", async () => {
