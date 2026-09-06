@@ -51,8 +51,8 @@ export function useGrid<TData extends RowData>(
     onExpandedChange: grid.onExpandedChange,
     onGroupingChange: grid.onGroupingChange,
     onPaginationChange: grid.onPaginationChange,
-    // Client mode sorts in TanStack so subRows sort too; the rows memo only pre-sorts the roots.
-    manualSorting: grid.mode === "server",
+    // Flat client grids arrive pre-sorted from the rows memo; trees need TanStack to sort subRows.
+    manualSorting: grid.mode === "server" || !grid.getSubRows,
     manualFiltering: grid.mode === "server",
     manualPagination: grid.mode === "server",
     // Signal-backed rows commonly emit new arrays while preserving row ids.
@@ -73,9 +73,13 @@ export {
   type TreeColumnEpicCtx,
   type ColumnVisibilityEntry,
   treeColumnDefs,
+  treeColumnsOf,
+  columnValue,
   columnEpics,
+  treeColumnGridEpics,
   selectOnPlainClick,
   pivotOnAltClick,
+  noMods,
   visibilityEntries,
   toggleColumnVisibility,
 } from "./10_treeColumn"

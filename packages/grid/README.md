@@ -215,7 +215,7 @@ function GridTable<TData>({ grid, density?, maxHeight?, scrollMode?, scrollEleme
 
 | prop | default | effect |
 | --- | --- | --- |
-| `grid` | — | a `Grid` from `createGrid` |
+| `grid` |, | a `Grid` from `createGrid` |
 | `density` | `"standard"` | `"compact"` 30px · `"standard"` 42px · `"cozy"` 52px rows |
 | `maxHeight` | `600` | height for legacy `scrollMode="internal"` |
 | `scrollMode` | `"external"` | uses document or nearest overflow-y ancestor; `"internal"` retains the card scrollbar |
@@ -295,18 +295,18 @@ const columns: TreeColumn<Node>[] = [
 
 | prop | default | effect |
 | --- | --- | --- |
-| `grid` | — | a `Grid` from `createGrid` |
-| `columns` | — | `TreeColumn<TData>[]`; exactly one should set `tree: true` |
+| `grid` |, | a `Grid` from `createGrid` |
+| `columns` |, | `TreeColumn<TData>[]`; exactly one should set `tree: true` |
 | `density` | `"standard"` | row height, overridable per-px via `rowHeight` |
-| `rowHeight` | — | explicit row height in px, overrides `density` |
+| `rowHeight` |, | explicit row height in px, overrides `density` |
 | `scrollMode` | `"external"` | `"internal"` retains a bounded, own-scrollbar card |
 | `maxHeight` | `600` | height cap for `scrollMode="internal"` |
 | `showHeader` / `showFooter` | `true` | toggle the `<thead>` / row-count footer |
 | `indentUnit` | `14` | px per depth level on the tree column |
 | `indentGuides` | `false` | render per-ancestor vertical guide lines |
-| `renderDetail` | — | `(row) => ReactNode`; renders under an expanded row |
-| `rowClassName` | — | extra class per row, e.g. for selection highlighting |
-| `onRowClick` | — | sugar over the `select` effect; skips `noRowClick` cells and modified clicks |
+| `renderDetail` |, | `(row) => ReactNode`; renders under an expanded row |
+| `rowClassName` |, | extra class per row, e.g. for selection highlighting |
+| `onRowClick` |, | sugar over the `select` effect; skips `noRowClick` cells and modified clicks |
 
 `TreeColumn<TData>` fields: `id`, `header`, `headerCell?()`, `cell(row)`,
 `cellClass?(row)`, `sortValue?(row)`, `epic?(ctx)`, `tree?`, `toggleExpand?`,
@@ -325,7 +325,7 @@ every column stays auto-sized.
 every row without touching any other state slice.
 
 Left out of this port: `instant/src/treetableEdit.tsx` (inline cell editing)
-and drag-to-resize column handles — neither was requested for this pass, and
+and drag-to-resize column handles, neither was requested for this pass, and
 folding them in would have pushed files over the 200-line budget.
 
 ## GridTree
@@ -334,7 +334,7 @@ A thin preset over `TreeTable`: one `tree` column, icons keyed off `kind`,
 and indent guides on by default. Same public props as before, so existing
 `FileTree` call sites keep working unchanged. Same `Grid`, one nestable
 column, per-depth indent guides, chevron toggles, and a trailing `/` on any open
-node — so a file that expands into its own children (a markdown doc into its AST)
+node, so a file that expands into its own children (a markdown doc into its AST)
 reads as a container too.
 
 ```ts
@@ -347,10 +347,10 @@ import { GridTree } from "@hafley66/grid/react"
 
 | prop | default | effect |
 | --- | --- | --- |
-| `grid` | — | a `Grid` whose rows carry `name` (+ optional `kind`) |
+| `grid` |, | a `Grid` whose rows carry `name` (+ optional `kind`) |
 | `indentUnit` | `14` | px per depth level; children shift right, never aligned |
 | `rowHeight` | `24` | row height |
-| `label` | — | optional VS Code-style uppercase panel header |
+| `label` |, | optional VS Code-style uppercase panel header |
 | `width` | `360` | panel width |
 
 Icons key off `row.kind`: `"folder"` (blue, open/closed), `"file"` (colored by

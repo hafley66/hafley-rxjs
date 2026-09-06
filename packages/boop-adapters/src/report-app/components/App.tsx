@@ -1,10 +1,10 @@
 // Top-level layout: header, resizable nav pane (a TreeTable sidebar), title/events/pivot main
 // column. Wires the layout tracks and theme/density onto the DOM.
-import { useCallback, useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { z } from "zod"
 import { createGrid, createDefaultGridState, type Grid } from "@hafley66/grid"
-import { TreeTable, useGridEffect } from "@hafley66/grid/react"
-import { NavRail, EventsPanel, PivotStack, layout, gutter, popPivotsTo, pushPivot, type Track } from "@hafley66/report-shell"
+import { TreeTable, treeColumnDefs } from "@hafley66/grid/react"
+import { NavRail, EventsPanel, PivotStack, layout, gutter, popPivotsTo, usePivotEffect, useTheme, type Track } from "@hafley66/report-shell"
 import { Signal, localStorageAdapter, type Signal as SignalType } from "@hafley66/signals/react"
 import type { MarbleEvent } from "@hafley66/marbler"
 import { formatAge } from "../../lib/time.js"
@@ -19,19 +19,6 @@ const TRACKS: Track[] = [
   { name: "nav", min: 200, max: 720, fallback: 380, axis: "x" },
   { name: "overview", min: 48, max: 480, fallback: 160, axis: "y" },
 ]
-
-function useTheme(prefs: SignalType<Prefs>): void {
-  useEffect(() => {
-    const apply = (current: Prefs) => {
-      if (current.theme === "auto") delete document.documentElement.dataset.theme
-      else document.documentElement.dataset.theme = current.theme
-      document.body.dataset.density = current.density
-    }
-    apply(prefs.$())
-    const sub = prefs.$.subscribe(apply)
-    return () => sub.unsubscribe()
-  }, [prefs])
-}
 
 function sessionDetail(model: Model) {
   return (event: MarbleEvent): [string, string][] => {
@@ -61,7 +48,7 @@ function useSessionGrid(model: Model): Grid<NetworkNavRow> {
       getRowCanExpand: (row) => (row.children?.length ?? 0) > 0,
       mode: "client",
       state: Signal(createDefaultGridState({ expanded, sorting: [{ id: "age", desc: true }] })),
-      columnDefs: SESSION_COLUMNS.map((column) => ({ id: column.id, header: column.header })),
+      columnDefs: treeColumnDefs(SESSION_COLUMNS),
     })
   }, [model])
 }
@@ -72,17 +59,7 @@ export function App({ model, prefs, meta }: { model: Model; prefs: SignalType<Pr
   const tracks = useMemo(() => layout(document.documentElement, TRACKS, localStorageAdapter("boop-network.tracks")), [])
   const navGrid = useSessionGrid(model)
   const detail = useMemo(() => sessionDetail(model), [model])
-  useGridEffect(
-    navGrid,
-    "pivot",
-    useCallback(
-      (effect: { value: unknown }) => {
-        const status = String(effect.value)
-        pushPivot(model.pivotStack, { columnId: "status", value: status, label: `status=${status}` })
-      },
-      [model],
-    ),
-  )
+  usePivotEffect(navGrid, model.pivotStack)
 
   useEffect(() => {
     if (!navGutterRef.current) return
@@ -112,7 +89,6 @@ export function App({ model, prefs, meta }: { model: Model; prefs: SignalType<Pr
         <NavRail track={tracks.nav!} storage={localStorageAdapter("boop-network.nav-collapsed")} expandedFallback={380} />
         <TreeTable<NetworkNavRow>
           grid={navGrid}
-          columns={SESSION_COLUMNS}
           rowClassName={(row) => `${row.kind} status-${row.status}${row.selected ? " selected" : ""}`}
           onRowClick={(row) => {
             if (row.id !== OLDER_FOLD_ID) model.selected.$(row.id)

@@ -29,7 +29,7 @@ const C = {
   alternate: "var(--grid-row-alternate-bg, #fafafa)",
 }
 
-// Never index the rows signal — numeric proxy keys lazy-instantiate.
+// Never index the rows signal: numeric proxy keys lazy-instantiate.
 // Column-id conventions: "__expand" = depth toggle, "name" = depth indent.
 export function GridTable<TData extends RowData>({
   grid,

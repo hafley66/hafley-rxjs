@@ -123,7 +123,7 @@ export function GridTree<TData extends RowData & TreeLike>({
         overflow: "hidden",
       }}
     >
-      <style>{`.gt-row:hover{background:var(--grid-row-hover,rgba(59,130,246,.09))}.gt-row.sel{background:var(--grid-row-selected,rgba(59,130,246,.16))}`}</style>
+      <style>{`.gt-row:hover{--grid-row-bg:var(--grid-row-hover,rgba(59,130,246,.09))}.gt-row.sel{--grid-row-bg:var(--grid-row-selected,rgba(59,130,246,.16))}`}</style>
       {label ? (
         <div style={{
           padding: "8px 12px",

@@ -54,7 +54,7 @@ export type GridIntent<TData> =
   | { phase: "intent"; type: "header.click"; column: string; mods: Modifiers }
   | { phase: "intent"; type: "row.hover"; rowId: string | null }
 
-export type GridChange = { phase: "change"; type: keyof GridState } & Partial<GridState>
+export type GridChange = { [K in keyof GridState]: { phase: "change"; type: K } & Pick<GridState, K> }[keyof GridState]
 
 export type GridEffect<TData> =
   | { phase: "effect"; type: "select"; rowId: string; row: TData }

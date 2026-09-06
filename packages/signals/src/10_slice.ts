@@ -1,9 +1,6 @@
-import { defer, ignoreElements, merge, Observable, share, Subject, tap } from "rxjs"
+import { defer, ignoreElements, merge, Observable, observeOn, queueScheduler, share, Subject, tap } from "rxjs"
 import { Signal } from "./2_Signal.js"
 import type { Signal as SignalType } from "./0_types.js"
-
-// dispatch reduces synchronously (no subscriber needed), then re-emits on actions$.
-// Epics run only while epics$ is subscribed; share() lets several mounts hold one run.
 
 export type Reducer<S, A> = (state: S, action: A) => S
 
@@ -17,20 +14,19 @@ export type Slice<S, A> = {
   state: SignalType<S>
   actions$: Observable<A>
   dispatch: (action: A) => void
-  // Never emits. Subscribe to run the slice's epics; unsubscribe to stop them.
+  // Never emits; subscribed = epics running.
   epics$: Observable<never>
 }
+
+type CtxField<Ctx> = unknown extends Ctx ? { ctx?: Ctx } : { ctx: Ctx }
 
 export type SliceConfig<S, A, Ctx> = {
   initial: S
   reduce: Reducer<S, A>
   epics?: readonly Epic<A, S, Ctx>[]
-  ctx?: Ctx
-  // Use an existing signal as the store instead of Signal(initial).
   state?: SignalType<S>
-}
+} & CtxField<Ctx>
 
-// Identity with a type anchor so call sites read `createEpic((actions$, state, ctx) => ...)`.
 export function createEpic<A, S, Ctx = unknown>(epic: Epic<A, S, Ctx>): Epic<A, S, Ctx> {
   return epic
 }
@@ -38,7 +34,9 @@ export function createEpic<A, S, Ctx = unknown>(epic: Epic<A, S, Ctx>): Epic<A, 
 export function createSlice<S, A, Ctx = unknown>(config: SliceConfig<S, A, Ctx>): Slice<S, A> {
   const state = config.state ?? Signal<S>(config.initial)
   const bus = new Subject<A>()
-  const actions$ = bus.asObservable()
+  // One queue-scheduled multicast: a dispatch made inside an observer reaches everyone after the
+  // current action has reached everyone (causal order, bounded recursion).
+  const actions$ = bus.pipe(observeOn(queueScheduler), share())
 
   const dispatch = (action: A): void => {
     const prev = state.$()
@@ -47,13 +45,12 @@ export function createSlice<S, A, Ctx = unknown>(config: SliceConfig<S, A, Ctx>)
     bus.next(action)
   }
 
-  const ctx = config.ctx as Ctx
+  const ctx = (config as { ctx?: Ctx }).ctx as Ctx
   const epics$ = runEpics(actions$, state, ctx, config.epics ?? [], dispatch)
 
   return { state, actions$, dispatch, epics$ }
 }
 
-// Every epic output is dispatched. Never emits; the subscription is the epics' lifetime.
 export function runEpics<S, A, Ctx>(
   actions$: Observable<A>,
   state: SignalType<S>,

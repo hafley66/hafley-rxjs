@@ -3,6 +3,7 @@ import { flexRender, type ColumnSizingState, type Header, type RowData } from "@
 import type { GridFeatures } from "./0_features"
 import type { GridAction } from "./1_types"
 import { modifiersOf } from "./11_treeTableRow"
+import { noMods } from "./10_treeColumn"
 import { hasWidthSignal } from "./9_treeSize"
 
 const C = {
@@ -55,8 +56,9 @@ export function TreeTableHead<TData extends RowData>({
               key={h.id}
               data-column={h.column.id}
               onClick={(e) => {
-                dispatch({ phase: "intent", type: "header.click", column: h.column.id, mods: modifiersOf(e) })
-                if (sortable) h.column.getToggleSortingHandler()?.(e)
+                const mods = modifiersOf(e)
+                dispatch({ phase: "intent", type: "header.click", column: h.column.id, mods })
+                if (sortable && noMods(mods)) h.column.getToggleSortingHandler()?.(e)
               }}
               style={{
                 background: C.head,

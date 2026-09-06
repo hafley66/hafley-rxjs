@@ -77,6 +77,23 @@ describe("createSlice", () => {
     b.unsubscribe()
   })
 
+  it("delivers an intent to every observer before the effect an epic derived from it", () => {
+    const derive = createEpic<Action, State>((actions$) =>
+      actions$.pipe(
+        filter((a) => a.type === "double-please"),
+        map(() => ({ type: "inc" }) as Action),
+      ),
+    )
+    const slice = createSlice<State, Action>({ initial: { n: 0 }, reduce, epics: [derive] })
+    const sub = slice.epics$.subscribe()
+    const late: string[] = []
+    slice.actions$.subscribe((a) => late.push(a.type))
+    slice.dispatch({ type: "double-please" })
+    expect(late).toEqual(["double-please", "inc"])
+    expect(slice.state.$().n).toBe(1)
+    sub.unsubscribe()
+  })
+
   it("accepts an external state signal as the store", () => {
     const store = Signal<State>({ n: 10 })
     const slice = createSlice<State, Action>({ initial: { n: 0 }, reduce, state: store })

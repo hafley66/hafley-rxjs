@@ -2,7 +2,7 @@ import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "re
 import type { Row, RowData } from "@tanstack/react-table"
 import type { GridFeatures } from "./0_features"
 import type { GridAction, Modifiers } from "./1_types"
-import type { TreeColumn } from "./10_treeColumn"
+import { noMods, treeColumnMeta, type TreeColumn } from "./10_treeColumn"
 
 export const modifiersOf = (e: ReactMouseEvent | MouseEvent): Modifiers => ({
   alt: e.altKey,
@@ -12,13 +12,15 @@ export const modifiersOf = (e: ReactMouseEvent | MouseEvent): Modifiers => ({
   button: e.button,
 })
 
-const columnOf = (e: ReactMouseEvent): string | undefined =>
-  (e.target as HTMLElement).closest<HTMLElement>("td[data-column]")?.dataset.column
+// Only a cell of this row (not a nested table's) names the column.
+const columnOf = (e: ReactMouseEvent): string | undefined => {
+  const td = (e.target as HTMLElement).closest<HTMLElement>("td[data-column]")
+  return td && td.parentElement === e.currentTarget ? td.dataset.column : undefined
+}
 
 export function TreeTableRow<TData extends RowData>({
   row,
   index,
-  columns,
   rowHeight,
   indentUnit,
   indentGuides,
@@ -28,7 +30,6 @@ export function TreeTableRow<TData extends RowData>({
 }: {
   row: Row<GridFeatures, TData>
   index: number
-  columns: readonly TreeColumn<TData>[]
   rowHeight: number
   indentUnit: number
   indentGuides?: boolean
@@ -55,20 +56,21 @@ export function TreeTableRow<TData extends RowData>({
       onMouseEnter={() => dispatch({ phase: "intent", type: "row.hover", rowId: row.id })}
       onMouseLeave={() => dispatch({ phase: "intent", type: "row.hover", rowId: null })}
     >
-      {columns.map((c) => {
+      {row.getVisibleCells().map((cell) => {
+        const c = treeColumnMeta<TData>(cell.column.columnDef)
+        if (!c) return <td key={cell.id} data-column={cell.column.id} />
         const isTree = !!c.tree
         const canExpand = isTree && row.getCanExpand()
         return (
           <td
-            key={c.id}
+            key={cell.id}
             className={c.cellClass?.(data)}
             data-column={c.id}
             style={isTree ? { paddingLeft: 8, overflow: "hidden" } : undefined}
             onClick={
               c.toggleExpand && row.getCanExpand()
                 ? (e) => {
-                    e.stopPropagation()
-                    toggle()
+                    if (noMods(modifiersOf(e))) toggle()
                   }
                 : undefined
             }
@@ -130,11 +132,11 @@ export function TreeTableRow<TData extends RowData>({
 
 export function TreeDetailRow<TData extends RowData>({
   row,
-  columns,
+  colSpan,
   renderDetail,
 }: {
   row: Row<GridFeatures, TData>
-  columns: readonly TreeColumn<TData>[]
+  colSpan: number
   renderDetail: (row: TData) => ReactNode
 }) {
   const style: CSSProperties & Record<"--depth", number> = {
@@ -146,7 +148,7 @@ export function TreeDetailRow<TData extends RowData>({
   }
   return (
     <tr data-testid="tree-detail-row" data-depth={row.depth}>
-      <td colSpan={columns.length} style={style}>
+      <td colSpan={colSpan} style={style}>
         {renderDetail(row.original)}
       </td>
     </tr>

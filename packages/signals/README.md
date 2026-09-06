@@ -31,19 +31,19 @@ One `Signal` constructor, four call shapes. The only read surface is `.$()`;
 the only write surface is `.$(value)`.
 
 ```ts
-// 1. State — BehaviorSubject, has a current value
+// 1. State, BehaviorSubject, has a current value
 const count = Signal(0)
 count.$()      // 0
 count.$(5)     // set
 
-// 2. Source — from an observable, undefined until first emission
+// 2. Source, from an observable, undefined until first emission
 const data = Signal(fetch$.pipe(map(r => r.body)))
 const withDefault = Signal(fetch$, { loading: true })
 
-// 3. Computed / memo — Solid-style dep tracking, lazy + cached
+// 3. Computed / memo, Solid-style dep tracking, lazy + cached
 const doubled = Signal(() => count.$() * 2)
 
-// 4. Event — bare Subject, no replay, no current value
+// 4. Event, bare Subject, no replay, no current value
 const click = Signal<number>()
 click.$(1)
 ```
@@ -87,7 +87,7 @@ step 3  unsubscribe -> epics cold again
 
 ---
 
-## `signalMap` — pipe operator
+## `signalMap`, pipe operator
 
 Project source emissions against tracked signal values, and re-emit when any
 signal read inside the projection changes. It is the operator form of a computed

@@ -27,26 +27,26 @@ function StatusCell({ row }: { row: NetworkNavRow }) {
 }
 
 export const SESSION_COLUMNS: TreeColumn<NetworkNavRow>[] = [
-  { id: "name", header: "session", tree: true, toggleExpand: true, cell: (row) => <NameCell row={row} />, sortValue: (row) => row.name },
+  { id: "name", header: "session", tree: true, toggleExpand: true, cell: (row) => <NameCell row={row} />, value: (row) => row.name },
   {
     id: "status",
     header: "status",
     cell: (row) => <StatusCell row={row} />,
-    sortValue: (row) => row.status,
-    epic: pivotOnAltClick((row) => row.status),
+    value: (row) => row.status,
+    epic: pivotOnAltClick(),
   },
   {
     id: "age",
     header: "age",
     cell: (row) => (row.id === OLDER_FOLD_ID ? "" : formatAge(row.age, Date.now())),
-    sortValue: (row) => row.age,
+    value: (row) => row.age,
   },
-  { id: "waitingOn", header: "waiting on", cell: (row) => row.waitingOn ?? "", sortValue: (row) => row.waitingOn ?? "" },
-  { id: "turns", header: "turns", cell: (row) => (row.id === OLDER_FOLD_ID ? "" : String(row.turns)), sortValue: (row) => row.turns },
+  { id: "waitingOn", header: "waiting on", cell: (row) => row.waitingOn ?? "", value: (row) => row.waitingOn ?? "" },
+  { id: "turns", header: "turns", cell: (row) => (row.id === OLDER_FOLD_ID ? "" : String(row.turns)), value: (row) => row.turns },
   {
     id: "tokens",
     header: "tokens",
     cell: (row) => (row.id === OLDER_FOLD_ID ? "" : formatTokens(row.tokens)),
-    sortValue: (row) => row.tokens,
+    value: (row) => row.tokens,
   },
 ]

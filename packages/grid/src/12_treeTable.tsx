@@ -5,7 +5,7 @@ import { runEpics, useSignal } from "@hafley66/signals/react"
 import { useExternalVirtualizer, type ScrollMode } from "@hafley66/virtualizations"
 import { useGrid } from "./3_react"
 import type { Grid } from "./1_types"
-import { columnEpics, selectOnPlainClick, treeColumnDefs, type TreeColumn } from "./10_treeColumn"
+import { treeColumnDefs, treeColumnGridEpics, treeColumnsOf, type TreeColumn } from "./10_treeColumn"
 import { anyWidthSignal } from "./9_treeSize"
 import { TreeTableRow, TreeDetailRow } from "./11_treeTableRow"
 import { TreeTableColGroup, TreeTableHead } from "./14_treeTableHead"
@@ -16,7 +16,9 @@ const ROW_HEIGHT: Record<TreeTableDensity, number> = { compact: 26, standard: 34
 
 export type TreeTableProps<TData extends RowData> = {
   grid: Grid<TData>
-  columns: TreeColumn<TData>[]
+  // Defaults to the TreeColumns the grid was created with (columnDefs: treeColumnDefs(columns)).
+  // An override runs its own epics per mount; grid-owned columns run theirs under grid.epics$.
+  columns?: TreeColumn<TData>[]
   density?: TreeTableDensity
   rowHeight?: number
   scrollMode?: ScrollMode
@@ -48,7 +50,7 @@ const HEADER_STYLE: CSSProperties = {
 
 export function TreeTable<TData extends RowData>({
   grid,
-  columns,
+  columns: columnsProp,
   density = "standard",
   rowHeight: rowHeightProp,
   scrollMode = "external",
@@ -62,13 +64,14 @@ export function TreeTable<TData extends RowData>({
   rowClassName,
   onRowClick,
 }: TreeTableProps<TData>) {
-  const colDefs = useMemo(() => treeColumnDefs(columns), [columns])
+  const columns = useMemo(() => columnsProp ?? treeColumnsOf<TData>(grid.columns), [columnsProp, grid])
+  const colDefs = useMemo(() => (columnsProp ? treeColumnDefs(columnsProp) : grid.columns), [columnsProp, grid])
   const table = useGrid(grid, colDefs)
   useEffect(() => {
-    const epics = [selectOnPlainClick(columns), ...columnEpics(columns)]
-    const sub = runEpics(grid.actions$, grid.state, grid.epicCtx, epics, grid.dispatch).subscribe()
+    if (!columnsProp) return
+    const sub = runEpics(grid.actions$, grid.state, grid.epicCtx, treeColumnGridEpics(columnsProp), grid.dispatch).subscribe()
     return () => sub.unsubscribe()
-  }, [grid, columns])
+  }, [grid, columnsProp])
   useEffect(() => {
     if (!onRowClick) return
     const sub = grid.actions$
@@ -98,13 +101,10 @@ export function TreeTable<TData extends RowData>({
     })
   }, [virtualizer.measureElement])
 
-  const visibleColumns = useMemo(
-    () => columns.filter((c) => state.columnVisibility[c.id] !== false),
-    [columns, state.columnVisibility],
-  )
   const sizeById: Record<string, number | undefined> = {}
   for (const c of columns) sizeById[c.id] = c.size
-  const sized = anyWidthSignal(visibleColumns.map((c) => c.id), state.columnSizing, sizeById)
+  const visibleIds = table.getVisibleLeafColumns().map((c) => c.id)
+  const sized = anyWidthSignal(visibleIds, state.columnSizing, sizeById)
   const headers = table.getHeaderGroups()[0]?.headers ?? []
   const colgroup = <TreeTableColGroup headers={headers} sized={sized} columnSizing={state.columnSizing} sizeById={sizeById} />
 
@@ -121,7 +121,6 @@ export function TreeTable<TData extends RowData>({
           <TreeTableRow
             row={row}
             index={index}
-            columns={visibleColumns}
             rowHeight={rowHeight}
             indentUnit={indentUnit}
             indentGuides={indentGuides}
@@ -130,7 +129,7 @@ export function TreeTable<TData extends RowData>({
             dispatch={grid.dispatch}
           />
           {renderDetail && row.getIsExpanded() ? (
-            <TreeDetailRow row={row} columns={visibleColumns} renderDetail={renderDetail} />
+            <TreeDetailRow row={row} colSpan={visibleIds.length} renderDetail={renderDetail} />
           ) : null}
         </tbody>
       )

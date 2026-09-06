@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { createGrid } from '@hafley66/grid'
 import { localStorageAdapter, Signal } from '@hafley66/signals/react'
 import type { Signal as SignalType } from '@hafley66/signals'
-import { layout, gutter, EventsPanel, PivotStack, NavRail, NAV_RAIL_PX, popPivotsTo, type Track } from '@hafley66/report-shell'
+import { layout, gutter, EventsPanel, PivotStack, NavRail, NAV_RAIL_PX, popPivotsTo, useTheme, type Track } from '@hafley66/report-shell'
 import { dismissDefaultViewHint, type Model, type NavNode } from '../model'
 import type { Prefs } from '../prefs'
 import { flattenLeaves } from '../adapter/navTree'
@@ -21,24 +21,14 @@ const TRACKS: Track[] = [
   { name: 'overview', min: 48, max: 480, fallback: 160, axis: 'y' },
 ]
 
-function useTheme(prefs: SignalType<Prefs>) {
-  useEffect(() => {
-    const apply = (current: Prefs) => {
-      if (current.theme === 'auto') delete document.documentElement.dataset.theme
-      else document.documentElement.dataset.theme = current.theme
-      document.body.dataset.density = current.density
-      document.body.dataset.hideRealm = String(!current.columns.realm)
-      document.body.dataset.hideCategory = String(!current.columns.category)
-      document.body.dataset.hideLevel = String(!current.columns.level)
-    }
-    apply(prefs.$())
-    const sub = prefs.$.subscribe(apply)
-    return () => sub.unsubscribe()
-  }, [prefs])
+function applyColumnPrefs(current: Prefs): void {
+  document.body.dataset.hideRealm = String(!current.columns.realm)
+  document.body.dataset.hideCategory = String(!current.columns.category)
+  document.body.dataset.hideLevel = String(!current.columns.level)
 }
 
 export function App({ model, prefs, meta }: { model: Model; prefs: SignalType<Prefs>; meta: string }) {
-  useTheme(prefs)
+  useTheme(prefs, applyColumnPrefs)
   const navRef = useRef<HTMLElement>(null)
   const navGutterRef = useRef<HTMLDivElement>(null)
   const tracks = useMemo(() => layout(document.documentElement, TRACKS, localStorageAdapter('vitest-telemetry.tracks')), [])

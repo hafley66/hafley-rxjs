@@ -171,7 +171,7 @@ describe("GridTable filesystem demo", () => {
 })
 
 // Arbitrary nesting: a file (README.md) is itself a folder of markdown AST blocks,
-// and one block nests a code line — depth is unbounded.
+// and one block nests a code line; depth is unbounded.
 type TreeNode = { id: string; name: string; kind: "folder" | "file" | "block"; children?: TreeNode[] }
 
 const MD = z.object({

@@ -14,12 +14,14 @@ import type {
   ColumnSpec,
   Grid,
   GridAction,
+  GridChange,
   GridConfig,
   GridEpicCtx,
   GridPhase,
   GridState,
 } from "./1_types"
 import { pivotGrid } from "./8_pivot"
+import { treeColumnGridEpics, treeColumnsOf } from "./10_treeColumn"
 
 export const createDefaultGridState = (overrides: Partial<GridState> = {}): GridState => ({
   sorting: [],
@@ -69,7 +71,7 @@ function deriveColumns<TData extends RowData>(
 }
 
 const reduceGrid = <TData>(state: GridState, action: GridAction<TData>): GridState =>
-  action.phase === "change" ? { ...state, [action.type]: action[action.type] } : state
+  action.phase === "change" ? { ...state, [action.type]: (action as unknown as Record<string, unknown>)[action.type] } : state
 
 type ColumnStream<TData> = Observable<Extract<GridAction<TData>, { column: string }>>
 
@@ -107,7 +109,7 @@ export function createGrid<TData extends RowData>(config: GridConfig<TData>): Gr
     initial: store.$(),
     state: store,
     reduce: reduceGrid,
-    epics: config.epics ?? [],
+    epics: [...treeColumnGridEpics(treeColumnsOf<TData>(columns)), ...(config.epics ?? [])],
     ctx: epicCtx,
   })
   const { state, actions$, dispatch } = slice
@@ -128,13 +130,12 @@ export function createGrid<TData extends RowData>(config: GridConfig<TData>): Gr
     dispatch,
   } satisfies GridEpicCtx<TData>)
 
-  // Resolves TanStack's updater-or-value, then dispatches one change action.
   const on = <K extends keyof GridState>(key: K): OnChangeFn<GridState[K]> => (updater) => {
     const prev = state.$()[key]
     const value = typeof updater === "function"
       ? (updater as (p: GridState[K]) => GridState[K])(prev)
       : updater
-    dispatch({ phase: "change", type: key, [key]: value } as GridAction<TData>)
+    dispatch({ phase: "change", type: key, [key]: value } as unknown as GridChange)
   }
 
   const grid: Grid<TData> = {

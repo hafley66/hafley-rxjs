@@ -7,7 +7,7 @@ import { z } from "zod"
 import { createGrid } from "./2_createGrid"
 import { TreeTable } from "./12_treeTable"
 import { ColumnVisibilityToolbar } from "./13_columnVisibilityToolbar"
-import type { TreeColumn } from "./10_treeColumn"
+import { treeColumnDefs, type TreeColumn } from "./10_treeColumn"
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -146,6 +146,31 @@ describe("TreeTable", () => {
     expect(document.querySelectorAll("[data-testid=tree-row] td").length).toBe(2)
 
     root.unmount()
+    host.remove()
+  })
+
+  it("two TreeTables over one grid emit one select effect per click, none after unmount", async () => {
+    const { host, grid, root } = mountTree(tree, columns)
+    const gridOwned = createGrid<Node>({
+      schema: NodeSchema,
+      rows: grid.rows,
+      columnDefs: treeColumnDefs(columns),
+      getRowId: (n) => n.id,
+      getSubRows: (n) => n.children,
+      mode: "client",
+    })
+    const selects: string[] = []
+    const seen = gridOwned.epicCtx.phase$.effect.subscribe((a) => selects.push(`${a.type}:${a.row.id}`))
+    await act(async () => root.render(<><TreeTable grid={gridOwned} scrollMode="internal" /><TreeTable grid={gridOwned} scrollMode="internal" /></>))
+    await act(settleLayout)
+
+    await act(async () => document.querySelector<HTMLElement>("[data-row-id=pkg] td[data-column=name]")!.click())
+    expect(selects).toEqual(["select:pkg"])
+
+    root.unmount()
+    await act(async () => gridOwned.dispatch({ phase: "intent", type: "cell.click", column: "name", rowId: "pkg", row: tree[1]!, mods: { alt: false, ctrl: false, meta: false, shift: false, button: 0 } }))
+    expect(selects).toEqual(["select:pkg"])
+    seen.unsubscribe()
     host.remove()
   })
 
