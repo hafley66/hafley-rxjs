@@ -135,7 +135,7 @@ function Cells({
   return (
     <div ref={host} className={`row flex flex-wrap items-end gap-5 ${anim ? "kit-draw" : ""}`}>
       {cells.map(({ name, cell }) => (
-        <div key={name} className="cell grid justify-items-center gap-1 text-[10px] text-muted">
+        <div key={name} className="cell cell-unit grid justify-items-center gap-1 text-[10px] text-muted">
           <Raw html={cell.sc.svg(cell.box)} />
           <span>{name}</span>
         </div>

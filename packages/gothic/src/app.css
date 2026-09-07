@@ -171,12 +171,14 @@ body.nopen .pen {
   opacity: 1;
 }
 
-/* unit-coordinate generators scale their viewBox by hundreds, so cell strokes stay hairlines */
 .cell svg {
   max-width: 100%;
   height: auto;
 }
-.cell svg :is(path, polyline, circle) {
+/* legacy unit-coordinate generators (circles, tiles, arches) scale their viewBox by hundreds, so their strokes stay
+   hairlines. Scoped to .cell-unit: non-scaling-stroke measures stroke-dasharray in screen px, which breaks every
+   pathLength=1 dash trick (draw-in, slice reveal). */
+.cell-unit svg :is(path, polyline, circle) {
   vector-effect: non-scaling-stroke;
 }
 .cell svg path.aux {

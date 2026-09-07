@@ -365,6 +365,7 @@ function Cell({ inst, ailen }: { inst: Inst; ailen: number }) {
         aria-label={inst.label}
       >
         <title>{inst.label}</title>
+        {/* inline styles: app.css sets stroke-width on every svg path, which beats a presentation attribute */}
         <g className="slash">
           {inst.strokes.map((s, i) => {
             const Ln = s.diag * ailen
@@ -372,14 +373,18 @@ function Cell({ inst, ailen }: { inst: Inst; ailen: number }) {
             const sn = Math.sin(s.th) * Ln
             return (
               // biome-ignore lint/suspicious/noArrayIndexKey: strokes are positional and rebuilt as one set
-              <path key={i} d={line(s.cx - c, s.cy - sn, s.cx + c, s.cy + sn)} strokeWidth={0.75} strokeOpacity={0} />
+              <path
+                key={i}
+                d={line(s.cx - c, s.cy - sn, s.cx + c, s.cy + sn)}
+                style={{ strokeWidth: 0.75, strokeOpacity: 0 }}
+              />
             )
           })}
         </g>
         <g className="blade">
           {inst.strokes.map((_, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: strokes are positional and rebuilt as one set
-            <path key={i} d="" strokeWidth={1.6} strokeOpacity={0} />
+            <path key={i} d="" style={{ strokeWidth: 1.6, strokeOpacity: 0 }} />
           ))}
         </g>
         <g className="ink">

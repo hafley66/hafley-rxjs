@@ -165,7 +165,7 @@ function Cells({ cells }: { cells: Made[] }): ReactNode {
   return (
     <div className="row flex flex-wrap items-end gap-5">
       {cells.map(c => (
-        <div key={c.name} className="cell grid justify-items-center gap-1 text-[10px] text-muted">
+        <div key={c.name} className="cell cell-unit grid justify-items-center gap-1 text-[10px] text-muted">
           <Raw html={c.html} />
           <span>{c.name}</span>
         </div>
