@@ -95,6 +95,20 @@ function trackAnchor(sec: HTMLElement, a: HTMLAnchorElement): void {
   io.observe(sec)
 }
 
+// legacy single-file notebooks: same header, anchors from their own <section id> elements, sticky offset via --kit-top
+export function legacyPage(o: PageOpts, selector = "main > section[id]"): Page {
+  const pg = page(o)
+  for (const sec of document.querySelectorAll<HTMLElement>(selector)) {
+    const a = document.createElement("a")
+    a.href = `#${sec.id}`
+    a.textContent = sec.id.replace(/-s$/, "")
+    pg.sections.append(a)
+    trackAnchor(sec, a)
+  }
+  pg.main.remove()
+  return pg
+}
+
 function ensureZ(): void {
   if (zCell || !current) return
   zCell = Signal<ValuesOf<typeof ZSPEC>>(readUrl("page", ZSPEC))

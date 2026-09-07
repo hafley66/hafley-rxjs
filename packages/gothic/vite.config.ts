@@ -1,7 +1,7 @@
 import { resolve } from "path"
 import { defineConfig } from "vitest/config"
 
-const entries = ["eye", "slice", "icons", "border", "fractal"]
+const entries = ["eye", "slice", "icons", "border", "fractal", "circles", "tiles", "arches", "index"]
 
 export default defineConfig({
   build: {

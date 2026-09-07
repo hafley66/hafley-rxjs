@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>circles: ring layouts, transmutation circles, tilings, mosaics, blackwork</title>
+<title>tiles: islamic star tilings, mosaics, blackwork</title>
 <style>
 :root { color-scheme: light dark; --bg: light-dark(#fafafa, #121212); --fg: light-dark(#212121, #e0e0e0); --cap: light-dark(#757575, #9e9e9e); --rule: light-dark(#e0e0e0, #303030); --ink: light-dark(#212121, #e6e6e6); }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 Roboto, system-ui, -apple-system, sans-serif; }
@@ -45,7 +45,7 @@ textarea { width: min(100%, 720px); height: 120px; font: 11px/1.4 ui-monospace, 
 <body>
 <script type="module" src="/src/notebooks/1_legacy.ts"></script>
 <main>
-  <nav><a href="#diagram">1 ring diagram editor</a><a href="#fma">2 transmutation circles</a><a href="#sacred">3 sacred geometry</a><a href="tiles.html">tilework →</a></nav>
+  <nav><a href="#islamic">1 islamic star tilings</a><a href="#mosaic">2 mosaics</a><a href="#blackwork">3 blackwork</a><a href="circles.html">circles →</a></nav>
   <div class="ctl" id="ctl">
     <label>weight <input type="range" data-p="weight" min=".5" max="3" step=".25" value="1"><output>1</output></label>
     <label>seed <input type="number" data-p="seed" value="7" style="width:6em"></label>
@@ -62,16 +62,9 @@ textarea { width: min(100%, 720px); height: 120px; font: 11px/1.4 ui-monospace, 
     <span id="states"></span>
   </div>
 
-  <section id="diagram-s">
-    <h2>ring diagram editor: bands get radii by weight (flex layout), n slots per band, kinds compose; validated by zod, rendered live; seed change morphs matching paths</h2>
-    <div class="ctl sub">
-      <textarea id="spec"></textarea>
-      <span><button id="specFromFma">load a random transmutation spec</button> <button id="morph">morph to next seed</button><br><span id="specErr"></span></span>
-    </div>
-    <div class="grid" id="diagram"></div>
-  </section>
-  <section id="fma-s"><h2>transmutation circles: seeded compositor over the ring layout (runes on textPath, polygons, nodes, chords, sub-circles, ticks)</h2><div class="grid" id="fma"></div></section>
-  <section id="sacred-s"><h2>sacred geometry: flower of life, seed, metatron's cube, vesica lattice, spirographs</h2><div class="grid" id="sacred"></div></section>
+  <section id="islamic-s"><h2>islamic star tilings: hankin's polygons in contact, rays at contact angle θ from edge midpoints, square / hex / octagon-square tilings, clipped to a roundel</h2><div class="grid" id="islamic"></div></section>
+  <section id="mosaic-s"><h2>mosaics: tesserae in rings (cell = density px), noise jitter, dark share; opus circumactum fans</h2><div class="grid" id="mosaic"></div></section>
+  <section id="blackwork-s"><h2>blackwork: unit-cell line grammars as svg patterns, filled into circles and annuli; density shading by ring</h2><div class="grid" id="blackwork"></div></section>
 </main>
 
 <script type="module">
@@ -120,7 +113,7 @@ let uid = 0; const id = p => `${p}${(uid++).toString(36)}`;
 const boxOf = R => [-R - 3, -R - 3, 2 * R + 6, 2 * R + 6];
 
 /* ============================================================ 1. ring layout + band kinds ============================================================ */
-const KINDS = ['ring', 'runes', 'ticks', 'polygon', 'nodes', 'foils', 'chords', 'arcs', 'spokes', 'dots', 'sub', 'empty'];
+const KINDS = ['ring', 'runes', 'ticks', 'polygon', 'nodes', 'foils', 'chords', 'arcs', 'spokes', 'dots', 'blackwork', 'mosaic', 'sub', 'empty'];
 const CORES = ['eye', 'star', 'flower', 'spiro', 'glyph', 'foil', 'empty'];
 const Band = z.object({ w: z.number().positive().default(1), kind: z.enum(KINDS).default('ring'), k: z.number().int().min(1).max(12).optional(), step: z.number().int().min(1).optional(), sides: z.number().int().min(2).max(24).optional(),
   text: z.string().optional(), lobes: z.number().int().min(3).max(12).optional(), pattern: z.string().optional(), cell: z.number().positive().optional(), double: z.boolean().optional(), inner: z.boolean().optional(), dark: z.number().min(0).max(1).optional(), out: z.boolean().optional(), rot: z.number().optional(),
@@ -158,6 +151,8 @@ function band(sc, b, n, rot, rng, depth) {
     case 'arcs': for (let i = 0; i < n; i++) { const [x0, y0] = at(b.out ? r0 : r1, i), [x1, y1] = at(b.out ? r0 : r1, i + 1), c = Math.hypot(x1 - x0, y1 - y0); sc.path(M(x0, y0) + arc(c * (b.out ? .55 : .62), x1, y1, b.out ? 1 : 0)); } break;
     case 'spokes': { const k = n * (b.k ?? 1); for (let i = 0; i < k; i++) { const a = rot + i * TAU / k, [x0, y0] = polar(r0, a), [x1, y1] = polar(r1, a); sc.path(line(x0, y0, x1, y1)); } break; }
     case 'dots': { const k = n * (b.k ?? 3); for (let i = 0; i < k; i++) { const [x, y] = polar(rm, rot + i * TAU / k); sc.path(circle(x, y, Math.max(1, h * .12)), 'dark'); } break; }
+    case 'blackwork': sc.path(annulus(r0, r1), '', `style="fill:url(#${blackwork(sc, b.pattern ?? 'lattice', b.cell ?? G.density, rot * 180 / Math.PI)})" fill-rule="evenodd"`); sc.path(circle(0, 0, r1)); sc.path(circle(0, 0, r0)); break;
+    case 'mosaic': tesserae(sc, r0, r1, b.cell ?? G.density, G.noise, b.dark ?? 0, rng); break;
     case 'sub': { const rr = h * .48; if (rr * 2 >= G.minPx * 4 && depth < 3) for (let i = 0; i < n; i++) { const [x, y] = at(rm, i), sub = b.spec ?? randomSpec(rng, .4, Math.max(3, Math.min(8, n))), s2 = scene(); diagram(s2, rr, sub, rng, depth + 1); sc.defs.push(...s2.defs); sc.raw(`<g transform="translate(${f(x)} ${f(y)}) rotate(${f(slots[i] * 180 / Math.PI + 90)})">${s2.parts.join('')}</g>`); } else for (let i = 0; i < n; i++) { const [x, y] = at(rm, i); sc.path(circle(x, y, rr)); } break; }
     case 'empty': break;
   }
@@ -184,7 +179,7 @@ export function diagram(sc, R, spec, rng = mulberry32(G.seed), depth = 0) {
 export function randomSpec(rng, I = G.intensity, n = G.sym || [3, 4, 5, 6, 7, 8][Math.floor(rng() * 6)]) {
   const pick = a => a[Math.floor(rng() * a.length)];
   const count = 3 + Math.round(I * 5), bands = [{ w: .25, kind: 'ring', double: true }];
-  const menu = ['runes', 'ticks', 'polygon', 'nodes', 'chords', 'arcs', 'spokes', 'dots', 'foils', 'sub', 'ring'];
+  const menu = ['runes', 'ticks', 'polygon', 'nodes', 'chords', 'arcs', 'spokes', 'dots', 'foils', 'sub', 'blackwork', 'mosaic', 'ring'];
   for (let i = 1; i < count; i++) {
     const kind = i === 1 ? 'runes' : pick(menu), b = { w: kind === 'ring' ? .2 : kind === 'runes' || kind === 'ticks' ? .6 : kind === 'sub' ? 1.6 : 1, kind };
     if (kind === 'polygon') { b.sides = pick([n, n, n * 2, 3, 4]); b.step = b.sides > 4 && rng() < .6 ? 2 : 1; b.inner = rng() < .4; }
@@ -193,6 +188,8 @@ export function randomSpec(rng, I = G.intensity, n = G.sym || [3, 4, 5, 6, 7, 8]
     if (kind === 'arcs') b.out = rng() < .5;
     if (kind === 'ticks') b.k = pick([2, 3, 4, 6]);
     if (kind === 'foils') b.lobes = pick([3, 4, 5, 6]);
+    if (kind === 'blackwork') b.pattern = pick(Object.keys(BW));
+    if (kind === 'mosaic') b.dark = rng() * .5;
     if (kind === 'ring') b.double = rng() < .5;
     bands.push(b);
   }
@@ -217,6 +214,72 @@ export function spiro(sc, R, p, q, d) {
   sc.raw(`<polyline points="${pts.map(p => f(p[0]) + ',' + f(p[1])).join(' ')}" pathLength="1"/>`);
 }
 export function spiroCell(S, p, q, d) { const sc = scene(), R = S / 2 - 3; spiro(sc, R, p, q, d); sc.path(circle(0, 0, R)); return { sc, box: boxOf(R) }; }
+
+/* ============================================================ 4. islamic: hankin's polygons in contact ============================================================ */
+/** star segments for one polygon: from each edge midpoint, a ray at contact angle theta meets the ray from the next midpoint */
+function hankin(pts, theta) {
+  const n = pts.length, segs = [], mids = [], dirs = [];
+  const cx = pts.reduce((s, p) => s + p[0], 0) / n, cy = pts.reduce((s, p) => s + p[1], 0) / n;
+  for (let i = 0; i < n; i++) { const a = pts[i], b = pts[(i + 1) % n], m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], d = [b[0] - a[0], b[1] - a[1]], len = Math.hypot(...d); mids.push(m); const u = [d[0] / len, d[1] / len]; let nn = [-u[1], u[0]]; if ((cx - m[0]) * nn[0] + (cy - m[1]) * nn[1] < 0) nn = [-nn[0], -nn[1]]; dirs.push([u, nn]); }
+  const c = Math.cos(theta), s = Math.sin(theta);
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n, [ui, ni] = dirs[i], [uj, nj] = dirs[j];
+    const v1 = [c * ui[0] + s * ni[0], c * ui[1] + s * ni[1]], v2 = [-c * uj[0] + s * nj[0], -c * uj[1] + s * nj[1]];
+    const det = v1[0] * -v2[1] - v1[1] * -v2[0];
+    if (Math.abs(det) < 1e-6) { segs.push(line(mids[i][0], mids[i][1], mids[j][0], mids[j][1])); continue; }   // collinear rays (square 45, hex 30): the strap runs midpoint to midpoint
+    const dx = mids[j][0] - mids[i][0], dy = mids[j][1] - mids[i][1], t = (dx * -v2[1] - dy * -v2[0]) / det;
+    const X = [mids[i][0] + v1[0] * t, mids[i][1] + v1[1] * t];
+    segs.push(line(mids[i][0], mids[i][1], X[0], X[1]) + line(mids[j][0], mids[j][1], X[0], X[1]));
+  }
+  return segs.join('');
+}
+export function islamic(S, tile, thetaDeg, o = {}) {
+  const sc = scene(), R = S / 2 - 3, cell = o.cell ?? Math.max(G.density * 2.4, S / 6), th = thetaDeg * Math.PI / 180, cid = id('cl');
+  sc.def(`<clipPath id="${cid}"><circle r="${f(R)}"/></clipPath>`);
+  let d = '', tiles = '';
+  if (tile === 'square') for (let x = -R - cell; x < R + cell; x += cell) for (let y = -R - cell; y < R + cell; y += cell) { const p = [[x, y], [x + cell, y], [x + cell, y + cell], [x, y + cell]]; d += hankin(p, th); if (o.tiles) tiles += poly(p); }
+  if (tile === 'hex') { const rr = cell / 2 / Math.cos(Math.PI / 6), w = cell, hh = rr * 1.5; for (let j = -Math.ceil(R / hh) - 1; j <= Math.ceil(R / hh) + 1; j++) for (let i = -Math.ceil(R / w) - 1; i <= Math.ceil(R / w) + 1; i++) { const cx = i * w + (j % 2 ? w / 2 : 0), cy = j * hh, p = Array.from({ length: 6 }, (_, k) => polar(rr, Math.PI / 6 + k * TAU / 6)).map(q => [q[0] + cx, q[1] + cy]); d += hankin(p, th); if (o.tiles) tiles += poly(p); } }
+  if (tile === 'octsquare') { const s = cell / (1 + Math.SQRT2), rr = cell / 2 / Math.cos(Math.PI / 8); for (let x = -R - cell; x < R + cell; x += cell) for (let y = -R - cell; y < R + cell; y += cell) { const oc = Array.from({ length: 8 }, (_, k) => polar(rr, Math.PI / 8 + k * TAU / 8)).map(q => [q[0] + x, q[1] + y]); d += hankin(oc, th); const sq = [[x + cell / 2 - s / 2, y + cell / 2 - s / 2], [x + cell / 2 + s / 2, y + cell / 2 - s / 2], [x + cell / 2 + s / 2, y + cell / 2 + s / 2], [x + cell / 2 - s / 2, y + cell / 2 + s / 2]]; d += hankin(sq, th); if (o.tiles) tiles += poly(oc) + poly(sq); } }
+  sc.raw(`<g clip-path="url(#${cid})"><path d="${d}" pathLength="1"/>${tiles ? `<path d="${tiles}" pathLength="1" stroke-opacity=".3"/>` : ''}</g>`); sc.path(circle(0, 0, R));
+  return { sc, box: boxOf(R) };
+}
+
+/* ============================================================ 5. mosaics ============================================================ */
+function tesserae(sc, r0, r1, cell, jitter, dark, rng) {
+  const rings = Math.max(1, Math.round((r1 - r0) / cell)), rh = (r1 - r0) / rings, g = cell * .12;
+  for (let j = 0; j < rings; j++) {
+    const ri = r0 + j * rh, ro = ri + rh, rm = (ri + ro) / 2, n = Math.max(3, Math.round(TAU * rm / cell)), off = (j % 2) * .5;
+    if (rh - g < 1.2) continue;
+    for (let i = 0; i < n; i++) {
+      const jx = jitter * .35 * vnoise(i * .9 + j * 7.1, j * 3.3), a0 = (i + off + jx) * TAU / n + g / rm / 2, a1 = (i + 1 + off + jx) * TAU / n - g / rm / 2;
+      const [ax, ay] = polar(ri + g / 2, a0), [bx, by] = polar(ri + g / 2, a1), [cx, cy] = polar(ro - g / 2, a1), [dx, dy] = polar(ro - g / 2, a0);
+      sc.path(M(ax, ay) + arc(ri + g / 2, bx, by, 1) + L(cx, cy) + arc(ro - g / 2, dx, dy, 0) + 'Z', rng() < dark ? 'dark' : '');
+    }
+  }
+}
+export function mosaicRings(S, o = {}) { const sc = scene(), R = S / 2 - 3, rng = mulberry32(G.seed + (o.salt ?? 0)); tesserae(sc, o.r0 ?? R * .1, R, o.cell ?? G.density, o.jitter ?? G.noise, o.dark ?? 0, rng); sc.path(circle(0, 0, R)); return { sc, box: boxOf(R) }; }
+/** opus circumactum: rows of overlapping fan arcs */
+export function fanMosaic(S, o = {}) {
+  const sc = scene(), R = S / 2 - 3, cell = o.cell ?? G.density * 2.2, cid = id('cl'); sc.def(`<clipPath id="${cid}"><circle r="${f(R)}"/></clipPath>`);
+  let d = ''; for (let y = -R; y < R + cell; y += cell * .5) { const row = Math.round(y / (cell * .5)), off = (row % 2) * cell / 2; for (let x = -R - cell; x < R + cell; x += cell) for (let k = 1; k <= (o.arcs ?? 4); k++) { const r = cell / 2 * k / (o.arcs ?? 4); d += M(x + off - r, y) + arc(r, x + off + r, y, 1); } }
+  sc.raw(`<g clip-path="url(#${cid})"><path d="${d}" pathLength="1"/></g>`); sc.path(circle(0, 0, R)); return { sc, box: boxOf(R) };
+}
+
+/* ============================================================ 6. blackwork: unit-cell line grammars as patterns ============================================================ */
+export const BW = {
+  lattice: 'M0 .5L.5 0L1 .5L.5 1Z', diag: 'M0 1L1 0', cross: 'M0 0L1 1M1 0L0 1', grid: 'M0 0H1M0 0V1',
+  zigzag: 'M0 .25L.25 0L.5 .25L.75 0L1 .25M0 .75L.25 .5L.5 .75L.75 .5L1 .75', brick: 'M0 0H1M0 .5H1M.5 0V.5M0 .5V1M1 .5V1',
+  steps: 'M0 0H.5V.5H1V1', honeycomb: 'M.25 0L.5 .125L.75 0M.5 .125V.375M.25 .5L.5 .375L.75 .5M.25 .5V1M.75 .5V1M0 .75L.25 .5M1 .75L.75 .5',
+  trellis: 'M0 .5L.5 0L1 .5L.5 1ZM.5 .3L.7 .5L.5 .7L.3 .5Z', wave: 'M0 .5C.25 0 .25 0 .5 .5S.75 1 1 .5', scale: 'M0 .5A.5 .5 0 0 1 1 .5M.5 1A.5 .5 0 0 1 1 .5M0 .5A.5 .5 0 0 0 .5 1', quatre: 'M.5 0A.25 .25 0 0 1 .5 .5A.25 .25 0 0 1 .5 1M0 .5A.25 .25 0 0 1 .5 .5A.25 .25 0 0 1 1 .5',
+};
+function blackwork(sc, name, cell, rot = 0) {
+  const pid = id('bw');
+  sc.def(`<pattern id="${pid}" patternUnits="userSpaceOnUse" width="1" height="1" patternTransform="rotate(${f(rot)}) scale(${f(cell)})"><path d="${BW[name] ?? BW.lattice}" fill="none" stroke="currentColor" stroke-width="${f(G.weight / cell)}"/></pattern>`);
+  return pid;
+}
+export function bwCircle(S, name, o = {}) { const sc = scene(), R = S / 2 - 3; sc.path(circle(0, 0, R), '', `style="fill:url(#${blackwork(sc, name, o.cell ?? G.density, o.rot ?? 0)})"`); sc.path(circle(0, 0, R)); return { sc, box: boxOf(R) }; }
+/** density shading: rings of the same grammar with cell shrinking inward */
+export function bwShade(S, name, rings = 4) { const sc = scene(), R = S / 2 - 3; for (let j = 0; j < rings; j++) { const r1 = R * (rings - j) / rings, r0 = R * (rings - j - 1) / rings, cell = G.density * (1 + j * .8); sc.path(annulus(r0, r1), '', `style="fill:url(#${blackwork(sc, name, cell, j * 15)})" fill-rule="evenodd"`); sc.path(circle(0, 0, r1)); } return { sc, box: boxOf(R) }; }
 
 /* ============================================================ animation layer ============================================================ */
 /** number strokes for the stagger and set the per-cell duration. cheap: attributes only, CSS does the rest */
@@ -259,11 +322,10 @@ function renderDiagram(seed = G.seed) {
 }
 function renderAll() {
   readGlobal();
-  renderDiagram();
-  const fmaRows = {}; for (const n of [3, 4, 5, 6, 7, 8]) fmaRows[`fma n=${n}`] = S => fma(S, { n, salt: n }); fmaRows['fma dense'] = S => fma(S, { intensity: 1, salt: 11 }); fmaRows['fma sparse'] = S => fma(S, { intensity: 0, salt: 12 }); fmaRows['fma sliders'] = S => fma(S, { salt: 13 });
-  notebook('fma', fmaRows, [360, 180, 90]);
-  notebook('sacred', { 'flower 1': S => flower(S, 1), 'flower 2': S => flower(S, 2), 'flower 3': S => flower(S, 3), metatron: S => metatron(S), 'vesica 3': S => vesicaLattice(S, 3), 'vesica 6': S => vesicaLattice(S, 6),
-    'spiro 5/3': S => spiroCell(S, 5, 3, .8), 'spiro 7/2': S => spiroCell(S, 7, 2, .6), 'spiro 9/4': S => spiroCell(S, 9, 4, 1), 'spiro 11/3': S => spiroCell(S, 11, 3, .35) }, [240, 120, 60]);
+  notebook('islamic', { 'square 45': S => islamic(S, 'square', 45), 'square 60': S => islamic(S, 'square', 60), 'square 72 tiles': S => islamic(S, 'square', 72, { tiles: true }), 'hex 30': S => islamic(S, 'hex', 30), 'hex 45': S => islamic(S, 'hex', 45), 'hex 60': S => islamic(S, 'hex', 60), 'oct-square 45': S => islamic(S, 'octsquare', 45), 'oct-square 67': S => islamic(S, 'octsquare', 67.5, { tiles: true }) }, [240, 120, 60]);
+  notebook('mosaic', { rings: S => mosaicRings(S), 'rings dark .3': S => mosaicRings(S, { dark: .3, salt: 1 }), 'rings jitter': S => mosaicRings(S, { jitter: 1, salt: 2 }), 'rings fine': S => mosaicRings(S, { cell: G.density * .6, dark: .15, salt: 3 }), 'fans 4': S => fanMosaic(S), 'fans 6': S => fanMosaic(S, { arcs: 6 }) }, [240, 120, 60]);
+  const bw = {}; for (const k of Object.keys(BW)) bw[k] = S => bwCircle(S, k); bw['shade lattice'] = S => bwShade(S, 'lattice'); bw['shade honeycomb'] = S => bwShade(S, 'honeycomb'); bw['shade wave'] = S => bwShade(S, 'wave');
+  notebook('blackwork', bw, [200, 100, 50]);
 }
 // ---------- state: fields -> zod -> localStorage + URL ----------
 const LS = { get: k => JSON.parse(localStorage.getItem(k) || 'null'), set: (k, v) => localStorage.setItem(k, JSON.stringify(v)) };
@@ -271,7 +333,7 @@ const field = el => { const key = el.dataset.p || el.id, t = el.type, sel = el.t
   const schema = t === 'checkbox' ? z.preprocess(v => v === true || v === '1' || v === 'true', z.boolean()) : sel ? z.enum([...el.options].map(o => o.value)) : t === 'range' || t === 'number' ? (el.min !== '' && el.max !== '' ? z.coerce.number().min(+el.min).max(+el.max) : z.coerce.number()) : z.string();
   const get = () => t === 'checkbox' ? el.checked : sel || ta || t === 'text' ? el.value : +el.value, set = v => { t === 'checkbox' ? el.checked = !!v : el.value = v; };
   return { el, key, schema, get, set, def: get() }; };
-const fields = [...document.querySelectorAll('#ctl [data-p], #spec')].map(field);
+const fields = [...document.querySelectorAll('#ctl [data-p]')].map(field);
 const Schema = z.object(Object.fromEntries(fields.map(f => [f.key, f.schema])));
 const readState = () => Schema.parse(Object.fromEntries(fields.map(f => [f.key, f.get()])));
 const writeState = st => { for (const f of fields) if (st[f.key] !== undefined) f.set(st[f.key]); };
@@ -280,24 +342,21 @@ const toParams = st => { const sp = new URLSearchParams(); for (const f of field
 const urlQ = () => location.search ? location.search.slice(1) : location.hash.startsWith('#?') ? location.hash.slice(2) : '';
 const syncURL = push => { const q = toParams(readState()).toString(), h = push ? 'pushState' : 'replaceState'; try { history[h](null, '', location.pathname + (q ? '?' + q : '')); } catch { history[h](null, '', location.pathname + (q ? '#?' + q : '')); } };
 const rerender = () => { const bar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bar')) || 0, y = scrollY + bar; const sec = [...document.querySelectorAll('main > section')].find(el => y >= el.offsetTop && y < el.offsetTop + el.offsetHeight); const frac = sec ? (y - sec.offsetTop) / sec.offsetHeight : 0; renderAll(); if (sec) scrollTo({ top: sec.offsetTop + frac * sec.offsetHeight - bar, behavior: 'instant' }); };
-let states = LS.get('circles.states') ?? [];
+let states = LS.get('tiles.states') ?? [];
 const renderStates = () => { $('#states').innerHTML = states.map(st => `<span class="chip${st.star ? ' star' : ''}" data-id="${st.id}"><b>${st.name}</b><button data-act="star">${st.star ? '★' : '☆'}</button><button data-act="del">×</button></span>`).join(''); };
-$('#states').onclick = e => { const chip = e.target.closest('.chip'); if (!chip) return; const st = states.find(x => x.id === +chip.dataset.id), act = e.target.dataset.act; if (act === 'del') states = states.filter(x => x !== st); else if (act === 'star') st.star = !st.star; else { writeState(st.vals); rerender(); syncURL(true); } LS.set('circles.states', states); renderStates(); };
-$('#save').onclick = () => { states.push({ id: Date.now(), name: $('#stateName').value.trim() || `state ${states.length + 1}`, star: false, vals: readState() }); $('#stateName').value = ''; LS.set('circles.states', states); renderStates(); };
-$('#shuffle').onclick = () => { const r = Math.random; for (const { el: i, key } of fields) { if (i.type === 'range' && key !== 'ms') { const lo = +i.min, hi = +i.max, st = +i.step || 1; i.value = (lo + st * Math.round(r() * (hi - lo) / st)).toFixed(4); } else if (key === 'seed') i.value = Math.floor(r() * 1e6); } readGlobal(); $('#spec').value = JSON.stringify(randomSpec(mulberry32(G.seed)), null, 1); rerender(); LS.set('circles.current', readState()); syncURL(true); };
-$('#specFromFma').onclick = () => { readGlobal(); $('#spec').value = JSON.stringify(randomSpec(mulberry32((G.seed * 7 + Date.now()) >>> 0)), null, 1); rerender(); LS.set('circles.current', readState()); syncURL(true); };
-$('#morph').onclick = () => { const i = $('[data-p=seed]'); i.value = +i.value + 1; readGlobal(); const on = G.anim; G.anim = true; renderDiagram(); G.anim = on; LS.set('circles.current', readState()); syncURL(true); };
-document.addEventListener('input', e => { LS.set('circles.current', readState()); syncURL(false); if (e.target.id === 'spec') { readGlobal(); renderDiagram(); } else rerender(); });
+$('#states').onclick = e => { const chip = e.target.closest('.chip'); if (!chip) return; const st = states.find(x => x.id === +chip.dataset.id), act = e.target.dataset.act; if (act === 'del') states = states.filter(x => x !== st); else if (act === 'star') st.star = !st.star; else { writeState(st.vals); rerender(); syncURL(true); } LS.set('tiles.states', states); renderStates(); };
+$('#save').onclick = () => { states.push({ id: Date.now(), name: $('#stateName').value.trim() || `state ${states.length + 1}`, star: false, vals: readState() }); $('#stateName').value = ''; LS.set('tiles.states', states); renderStates(); };
+$('#shuffle').onclick = () => { const r = Math.random; for (const { el: i, key } of fields) { if (i.type === 'range' && key !== 'ms') { const lo = +i.min, hi = +i.max, st = +i.step || 1; i.value = (lo + st * Math.round(r() * (hi - lo) / st)).toFixed(4); } else if (key === 'seed') i.value = Math.floor(r() * 1e6); } readGlobal(); $('#spec').value = JSON.stringify(randomSpec(mulberry32(G.seed)), null, 1); rerender(); LS.set('tiles.current', readState()); syncURL(true); };
+document.addEventListener('input', e => { LS.set('tiles.current', readState()); syncURL(false); rerender(); });
 addEventListener('popstate', () => { writeState(fromParams(new URLSearchParams(urlQ()))); rerender(); });
 readGlobal();
-$('#spec').value = JSON.stringify(randomSpec(mulberry32(G.seed)), null, 1);
 for (const f of fields) f.def = f.get();
-writeState(LS.get('circles.current') ?? {}); writeState(fromParams(new URLSearchParams(urlQ()))); renderStates();
+writeState(LS.get('tiles.current') ?? {}); writeState(fromParams(new URLSearchParams(urlQ()))); renderStates();
 renderAll();
 new ResizeObserver(([e]) => document.documentElement.style.setProperty('--bar', e.target.offsetHeight + 'px')).observe($('#ctl'));
-new ResizeObserver(([e]) => document.documentElement.style.setProperty('--h2', e.target.offsetHeight + 'px')).observe($('#diagram-s > h2'));
+new ResizeObserver(([e]) => document.documentElement.style.setProperty('--h2', e.target.offsetHeight + 'px')).observe($('#islamic-s > h2'));
 let rzT; addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(rerender, 150); });
-window.circles = { Spec, Band, layoutRings, diagram, randomSpec, fma, flower, metatron, vesicaLattice, spiroCell, foilRing, morph, readState, G };
+window.circles = { Spec, Band, layoutRings, diagram, randomSpec, fma, flower, metatron, vesicaLattice, spiroCell, islamic, mosaicRings, fanMosaic, bwCircle, bwShade, BW, foilRing, morph, readState, G };
 </script>
 </body>
 </html>

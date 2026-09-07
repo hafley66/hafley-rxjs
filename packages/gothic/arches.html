@@ -18,9 +18,9 @@ nav { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; }
 nav a { color: var(--cap); text-decoration: none; border-bottom: 1px solid var(--rule); }
 h2 { font-size: 13px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--cap); margin: 0 0 8px; }
 .ctl { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: center; font-size: 12px; color: var(--cap); border-bottom: 1px solid var(--rule); padding: 10px 0; background: var(--bg); }
-#ctl { position: sticky; top: 0; z-index: 3; }
-.ctl.sub { position: sticky; top: var(--bar, 48px); z-index: 2; }
-section > h2 { position: sticky; top: var(--bar, 48px); z-index: 1; background: var(--bg); padding: 6px 0; margin: 0; }
+#ctl { position: sticky; top: var(--kit-top, 0px); z-index: 3; }
+.ctl.sub { position: sticky; top: calc(var(--kit-top, 0px) + var(--bar, 48px)); z-index: 2; }
+section > h2 { position: sticky; top: calc(var(--kit-top, 0px) + var(--bar, 48px)); z-index: 1; background: var(--bg); padding: 6px 0; margin: 0; }
 section:has(.ctl.sub) > h2 { top: var(--bar, 48px); }
 .chip { display: inline-flex; gap: 4px; align-items: center; border: 1px solid var(--rule); border-radius: 12px; padding: 1px 4px 1px 8px; margin: 2px; }
 .chip b { font-weight: 500; color: var(--fg); cursor: pointer; }
@@ -42,6 +42,7 @@ section:has(.ctl.sub) > .ctl.sub { top: calc(var(--bar, 48px) + var(--h2, 28px))
 </style>
 </head>
 <body>
+<script type="module" src="/src/notebooks/1_legacy.ts"></script>
 <main>
   <nav>
     <a href="#families">1 arch families</a><a href="#spread">2 spread</a><a href="#lobes">3 lobes</a><a href="#anatomy">4 anatomy</a><a href="#rose">5 rose windows</a><a href="#panel">6 panel tracery</a>
