@@ -1,5 +1,5 @@
 import { mulberry32, pick, type Rng } from "./0_rng.js"
-import { M, TAU, arc, circle, f, gcd, line, polar, poly, type Pt } from "./1_geom.js"
+import { arc, circle, f, gcd, line, M, type Pt, polar, poly, TAU } from "./1_geom.js"
 import { foilRing } from "./2_foil.js"
 
 export type Part = { d: string; cls: string; z?: number }

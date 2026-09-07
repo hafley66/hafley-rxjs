@@ -64,7 +64,7 @@ import { roseWindow } from "../lib/8_rose.js"          // pure generator: params
 
 const SPEC = {
   seed: { kind: "seed", default: 7 },
-  petals: { kind: "range", min: 6, max: 24, default: 12, roll: [8, 16] },
+  petals: { kind: "range", hint: "petals around the eye", min: 6, max: 24, default: 12, roll: [8, 16] },
   style: { kind: "select", options: ["plain", "foiled"], default: "plain" },
   weight: { kind: "range", min: 0.5, max: 2.5, step: 0.1, default: 1, static: true },
 } as const satisfies AnySpec
@@ -108,7 +108,7 @@ Several sections on one page: one `Section` per spec, each with its own `id`; li
 | `bool` | boolean | `p` true-probability under shuffle |
 | `text` | string | `size` |
 
-Every kind takes `label`, `group` (bar cluster), `static: true` or `shuffle: false` (trailing cluster, no pin).
+Every kind takes `label`, `hint` (tooltip first line; the derived facts follow it), `group` (bar cluster), `static: true` or `shuffle: false` (trailing cluster, no pin). Hover any control for its tooltip; the smoke test fails on a control without one.
 
 **Algo** (`src/kit/2_algo.ts`): `{ name, spec, presets, run(params, { size, seed, minPx }) -> { paths: [{ d, z?, cls? }], caption, lod[] } }`. Drop one into `src/algos/`, then `<AlgoSection page="fractal" algo={myAlgo} sizes={[64, 128, 256]} />` renders a sizes row with LOD captions. `/fractal` is the reference.
 

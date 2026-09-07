@@ -1,7 +1,7 @@
 import { Spring } from "animejs"
 import { hilbertIndex } from "../algos/1_fractal.js"
 import { mulberry32 } from "./0_rng.js"
-import { L, M, type Pt, TAU, backOut, clamp01, pl, polar, poly } from "./1_geom.js"
+import { backOut, clamp01, L, M, type Pt, pl, polar, poly, TAU } from "./1_geom.js"
 import type { Part } from "./3_seal.js"
 import { colored, gammaV, gauss } from "./4_dist.js"
 

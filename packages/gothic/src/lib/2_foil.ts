@@ -1,4 +1,4 @@
-import { M, TAU, arc, type Pt } from "./1_geom.js"
+import { arc, M, type Pt, TAU } from "./1_geom.js"
 
 // n lobes on radius R; lobe radius by bisection so neighbours touch, cusps on the union boundary
 export type FoilGeom = { d: string; C: Pt[]; rho: number }

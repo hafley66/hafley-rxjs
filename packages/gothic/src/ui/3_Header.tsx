@@ -44,7 +44,10 @@ export const Header = SignalReact(function Header({ pages, current }: Props) {
         ))}
       </nav>
       <span className="kit-ctl inline-flex items-center gap-3">
-        <label className="inline-flex items-center gap-1.5">
+        <label
+          className="inline-flex items-center gap-1.5"
+          title="depth fade: paths carrying data-z (0 near .. 1 far) lose opacity and width with z; 0 = flat. url ?page.z"
+        >
           zDepth
           <input
             id="kit-page-z"
@@ -57,7 +60,10 @@ export const Header = SignalReact(function Header({ pages, current }: Props) {
             onChange={e => page.set({ z: Number(e.currentTarget.value) })}
           />
         </label>
-        <label className="inline-flex items-center gap-1.5">
+        <label
+          className="inline-flex items-center gap-1.5"
+          title="draw paths in along their length on every rerender; off renders instantly. url ?page.draw"
+        >
           <input
             id="kit-page-draw"
             type="checkbox"

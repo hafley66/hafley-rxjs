@@ -4,10 +4,10 @@
    sc.archT(spec, transform, a): unit-coord arch scaled by a px, so LOD sees a.
    ============================================================ */
 import {
+  global as archGlobal,
   build,
   cusped,
   foilRing,
-  global as archGlobal,
   headOgee,
   headTwoCentred,
   insideHead,

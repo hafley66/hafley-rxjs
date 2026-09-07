@@ -73,7 +73,7 @@ export function spiralPts(cx, cy, r0, turns, decay, a0, steps = 10) {
   const n = Math.ceil(turns * steps)
   for (let i = 0; i <= n; i++) {
     const t = i / steps // turns elapsed
-    const r = r0 * Math.pow(decay, t)
+    const r = r0 * decay ** t
     const a = a0 + t * Math.PI * 2
     out.push([cx + r * Math.cos(a), cy + r * Math.sin(a)])
   }

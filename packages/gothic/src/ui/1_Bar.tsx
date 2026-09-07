@@ -2,7 +2,7 @@ import { SignalReact } from "@hafley66/signals/react"
 import type { ReactNode } from "react"
 import { useEffect, useRef } from "react"
 import type { SectionState } from "../app/2_state.js"
-import { type AnySpec, type Field, fmt, isStatic, pinSet, readout } from "../kit/0_spec.js"
+import { type AnySpec, describe, type Field, fmt, isStatic, pinSet, readout } from "../kit/0_spec.js"
 
 export const inputId = (section: string, key: string): string => `kit-${section}-${key}`
 
@@ -53,7 +53,7 @@ export const Bar = SignalReact(function Bar({ state, title, extra }: BarProps) {
         type="button"
         className={`kit-pin grid size-3.5 shrink-0 place-items-center rounded-[3px] border ${pins.has(k) ? "on border-ink bg-ink/25" : "border-edge"}`}
         data-pin={k}
-        title="pin: shuffle skips this field"
+        title={`pin ${k}: shuffle skips it; pins travel in the url as ${id}.pin and survive reload`}
         aria-label={`pin ${k}`}
         onClick={() => state.togglePin(k)}
       >
@@ -101,7 +101,7 @@ export const Bar = SignalReact(function Bar({ state, title, extra }: BarProps) {
 
     return (
       // biome-ignore lint/a11y/noLabelWithoutControl: the control is the input built above
-      <label key={k} className="inline-flex items-center gap-1.5">
+      <label key={k} className="inline-flex items-center gap-1.5" title={describe(k, fd)}>
         {fd.kind === "bool" ? (
           <>
             {input}
@@ -140,6 +140,7 @@ export const Bar = SignalReact(function Bar({ state, title, extra }: BarProps) {
       <button
         type="button"
         className="kit-shuffle rounded-sm border border-edge px-1.5 py-px text-fg hover:border-ink"
+        title="reroll every field that is neither static nor pinned, from one fresh seed; adds a history entry"
         onClick={() => state.rollAll()}
       >
         shuffle
@@ -147,6 +148,7 @@ export const Bar = SignalReact(function Bar({ state, title, extra }: BarProps) {
       {presetNames.length > 0 && (
         <select
           className={`kit-preset ${FIELD}`}
+          title="apply a named partial value set; the select shows a preset while every value it sets still matches"
           value={presetHit}
           onChange={e => state.applyPreset(e.currentTarget.value)}
         >
@@ -180,10 +182,17 @@ export const Bar = SignalReact(function Bar({ state, title, extra }: BarProps) {
         {readout(spec, values)}
       </code>
       <span className="kit-states inline-flex flex-wrap items-center gap-1 border-edge border-l-2 pl-3">
-        <input ref={name} className={`kit-state-name w-20 ${FIELD}`} placeholder="state name" size={8} />
+        <input
+          ref={name}
+          className={`kit-state-name w-20 ${FIELD}`}
+          placeholder="state name"
+          size={8}
+          title="name for the current values + pins; save stores them in localStorage for this section"
+        />
         <button
           type="button"
           className="kit-save rounded-sm border border-edge px-1.5 py-px text-fg hover:border-ink"
+          title="save the current values and pins under the name on the left"
           onClick={() => {
             state.save(name.current?.value ?? "")
             if (name.current) name.current.value = ""
@@ -201,14 +210,27 @@ export const Bar = SignalReact(function Bar({ state, title, extra }: BarProps) {
               type="button"
               data-act="load"
               className="cursor-pointer font-medium text-fg"
+              title="load this saved state (values + pins); adds a history entry"
               onClick={() => state.load(s.id)}
             >
               {s.name}
             </button>
-            <button type="button" data-act="star" className="px-0.5" onClick={() => state.star(s.id)}>
+            <button
+              type="button"
+              data-act="star"
+              className="px-0.5"
+              title="star: keep it first"
+              onClick={() => state.star(s.id)}
+            >
               {s.star ? "★" : "☆"}
             </button>
-            <button type="button" data-act="del" className="px-0.5" onClick={() => state.remove(s.id)}>
+            <button
+              type="button"
+              data-act="del"
+              className="px-0.5"
+              title="delete this saved state"
+              onClick={() => state.remove(s.id)}
+            >
               ×
             </button>
           </span>

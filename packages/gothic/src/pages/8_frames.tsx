@@ -5,14 +5,43 @@ import { attach, detach, presets, reseed } from "../lib/legacy/4_frames.js"
 import { Section } from "../ui/2_Section.js"
 
 const SPEC = {
-  preset: { kind: "select", options: Object.keys(presets), default: "kingdom" },
-  density: { kind: "range", min: 0, max: 3, default: 1 },
-  weight: { kind: "range", min: 0.5, max: 2, step: 0.05, default: 1, static: true },
-  idle: { kind: "range", min: 0.1, max: 1, step: 0.05, default: 0.55, static: true },
-  ink: { kind: "text", default: "#e2c477", size: 8, static: true },
+  preset: {
+    kind: "select",
+    hint: "frame composition preset from the legacy frames notebook",
+    options: Object.keys(presets),
+    default: "kingdom",
+  },
+  density: {
+    kind: "range",
+    hint: "ornament density: 0 = bare frame, 3 = every motif layer",
+    min: 0,
+    max: 3,
+    default: 1,
+  },
+  weight: {
+    kind: "range",
+    hint: "stroke width multiplier for every path in the section",
+    min: 0.5,
+    max: 2,
+    step: 0.05,
+    default: 1,
+    static: true,
+  },
+  idle: {
+    kind: "range",
+    hint: "opacity of the idle (non-hovered) frames",
+    min: 0.1,
+    max: 1,
+    step: 0.05,
+    default: 0.55,
+    static: true,
+  },
+  ink: { kind: "text", hint: "stroke colour, any css colour", default: "#e2c477", size: 8, static: true },
 } as const satisfies AnySpec
 type V = ValuesOf<typeof SPEC>
-const SIZER = { seed: { kind: "seed", default: 1 } } as const satisfies AnySpec
+const SIZER = {
+  seed: { kind: "seed", hint: "seed for the size ladder; reseed all rolls every frame on the page", default: 1 },
+} as const satisfies AnySpec
 
 const PANE = "pane relative overflow-hidden rounded-sm bg-well p-6 text-fg"
 
@@ -119,6 +148,7 @@ function FramesPage() {
       ref={reseedRef}
       type="button"
       className="rounded-sm border border-edge px-1.5 py-px text-fg hover:border-ink"
+      title="roll a fresh seed for every frame on the page; the preset and density stay"
     >
       reseed all
     </button>

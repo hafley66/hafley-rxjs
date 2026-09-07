@@ -2,20 +2,20 @@ import { Signal } from "@hafley66/signals"
 import { skip } from "rxjs"
 import {
   type AnySpec,
-  PIN_SPEC,
-  type PinValues,
-  type Presets,
-  type ValuesOf,
   defaultsOf,
   freshSeed,
   mulberry32,
+  PIN_SPEC,
+  type PinValues,
+  type Presets,
   parseValues,
   pinSet,
   pinText,
   shuffle,
+  type ValuesOf,
 } from "../kit/0_spec.js"
-import { type Mode, type Namespaces, type NsValues, mergeSearch, parseSearch, printSearch } from "../kit/1_url.js"
-import { type Saved, type Store, currentPin, store } from "../kit/3_store.js"
+import { type Mode, mergeSearch, type Namespaces, type NsValues, parseSearch, printSearch } from "../kit/1_url.js"
+import { currentPin, type Saved, type Store, store } from "../kit/3_store.js"
 import { loc, writeSearch } from "./1_router.js"
 import { transition } from "./3_view.js"
 

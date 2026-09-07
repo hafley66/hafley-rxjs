@@ -1,7 +1,7 @@
 import { SignalReact } from "@hafley66/signals/react"
 import { useEffect } from "react"
 import { Header } from "../ui/3_Header.js"
-import { PAGES, matchPage } from "./0_pages.js"
+import { matchPage, PAGES } from "./0_pages.js"
 import { listen, loc } from "./1_router.js"
 import { setActivePage, syncFromUrl } from "./2_state.js"
 import { armTransitions } from "./3_view.js"

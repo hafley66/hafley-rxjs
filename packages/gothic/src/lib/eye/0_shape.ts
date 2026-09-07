@@ -1,4 +1,4 @@
-import { type Rng, clamp } from "../index.js"
+import { clamp, type Rng } from "../index.js"
 
 /* Rest anatomy in eye units: x in [-1,1] (-1 nasal, +1 temporal), y in half-heights.
    lid(x) = base line from nasal corner (-1,0) to temporal corner (1,-tilt) plus bulge h*(1-|u|^p), apex at peak. */

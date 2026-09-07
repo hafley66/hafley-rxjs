@@ -1,5 +1,5 @@
 import type { Algo, AlgoPath } from "../kit/2_algo.js"
-import { M, L as Lp, type Pt, TAU, circle, clamp, f, foilRingGeom, mulberry32, pl } from "../lib/index.js"
+import { circle, clamp, f, foilRingGeom, L as Lp, M, mulberry32, type Pt, pl, TAU } from "../lib/index.js"
 
 type Circ = { x: number; y: number; r: number; k: number }
 type Ap = { ring: number; depth: number; minPx: number; seed: number }
@@ -8,10 +8,32 @@ type Ap = { ring: number; depth: number; minPx: number; seed: number }
 export const apollonian: Algo<Ap> = {
   name: "apollonian",
   spec: {
-    ring: { kind: "range", min: 3, max: 7, step: 1, default: 3 },
-    depth: { kind: "range", min: 1, max: 8, step: 1, default: 5 },
-    minPx: { kind: "range", min: 1, max: 12, step: 0.5, default: 2.5, static: true },
-    seed: { kind: "seed", default: 1 },
+    ring: {
+      kind: "range",
+      hint: "circles in the first ring, each tangent to its neighbours and the outer circle",
+      min: 3,
+      max: 7,
+      step: 1,
+      default: 3,
+    },
+    depth: {
+      kind: "range",
+      hint: "Descartes recursion depth: each gap gets its fourth tangent circle",
+      min: 1,
+      max: 8,
+      step: 1,
+      default: 5,
+    },
+    minPx: {
+      kind: "range",
+      hint: "smallest circle drawn, in px",
+      min: 1,
+      max: 12,
+      step: 0.5,
+      default: 2.5,
+      static: true,
+    },
+    seed: { kind: "seed", hint: "seed for the ring rotation", default: 1 },
   },
   presets: { gasket3: { ring: 3, depth: 5 }, rose5: { ring: 5, depth: 4 }, wheel7: { ring: 7, depth: 3 } },
   run(p, { size }) {
@@ -91,12 +113,12 @@ type Fo = { lobes: number; child: number; shrink: number; depth: number; minPx: 
 export const foils: Algo<Fo> = {
   name: "foils",
   spec: {
-    lobes: { kind: "range", min: 3, max: 8, step: 1, default: 5 },
-    child: { kind: "range", min: 2, max: 8, step: 1, default: 3 },
-    shrink: { kind: "range", min: 0.2, max: 0.6, step: 0.02, default: 0.38 },
-    depth: { kind: "range", min: 1, max: 5, step: 1, default: 3 },
-    minPx: { kind: "range", min: 1, max: 12, step: 0.5, default: 3, static: true },
-    seed: { kind: "seed", default: 1 },
+    lobes: { kind: "range", hint: "lobes of the outer foil", min: 3, max: 8, step: 1, default: 5 },
+    child: { kind: "range", hint: "lobes of each child foil", min: 2, max: 8, step: 1, default: 3 },
+    shrink: { kind: "range", hint: "child radius over parent radius", min: 0.2, max: 0.6, step: 0.02, default: 0.38 },
+    depth: { kind: "range", hint: "recursion depth", min: 1, max: 5, step: 1, default: 3 },
+    minPx: { kind: "range", hint: "smallest foil drawn, in px", min: 1, max: 12, step: 0.5, default: 3, static: true },
+    seed: { kind: "seed", hint: "seed for the child placement", default: 1 },
   },
   presets: {
     trefoil: { lobes: 3, child: 3, shrink: 0.42, depth: 4 },
@@ -140,12 +162,20 @@ type Ls = { rule: RuleName; iter: number; angle: number; jitter: number; seed: n
 export const lsys: Algo<Ls> = {
   name: "lsys",
   spec: {
-    rule: { kind: "select", options: RULE_NAMES, default: "mullion" },
-    iter: { kind: "range", min: 1, max: 7, step: 1, default: 4, roll: [2, 5] },
-    angle: { kind: "range", min: 5, max: 120, step: 1, default: 22 },
-    jitter: { kind: "range", min: 0, max: 20, step: 1, default: 3 },
-    seed: { kind: "seed", default: 1 },
-    minPx: { kind: "range", min: 0.5, max: 8, step: 0.5, default: 1.5, static: true },
+    rule: { kind: "select", hint: "L-system rule set", options: RULE_NAMES, default: "mullion" },
+    iter: { kind: "range", hint: "rewrite iterations", min: 1, max: 7, step: 1, default: 4, roll: [2, 5] },
+    angle: { kind: "range", hint: "turn angle in degrees", min: 5, max: 120, step: 1, default: 22 },
+    jitter: { kind: "range", hint: "random angle jitter in degrees", min: 0, max: 20, step: 1, default: 3 },
+    seed: { kind: "seed", hint: "seed for the jitter", default: 1 },
+    minPx: {
+      kind: "range",
+      hint: "shortest segment drawn, in px",
+      min: 0.5,
+      max: 8,
+      step: 0.5,
+      default: 1.5,
+      static: true,
+    },
   },
   presets: Object.fromEntries(
     RULE_NAMES.map(k => [k, { rule: k, angle: RULES[k].angle, iter: k === "dragon" ? 7 : 4 }]),
@@ -213,11 +243,19 @@ type Cu = { sides: number; depth: number; bump: number; inward: boolean; minPx: 
 export const cusping: Algo<Cu> = {
   name: "cusping",
   spec: {
-    sides: { kind: "range", min: 3, max: 8, step: 1, default: 4 },
-    depth: { kind: "range", min: 0, max: 5, step: 1, default: 3 },
-    bump: { kind: "range", min: 0.1, max: 0.9, step: 0.02, default: 0.5 },
-    inward: { kind: "bool", default: false, p: 0.25 },
-    minPx: { kind: "range", min: 0.5, max: 8, step: 0.5, default: 1.5, static: true },
+    sides: { kind: "range", hint: "polygon sides", min: 3, max: 8, step: 1, default: 4 },
+    depth: { kind: "range", hint: "cusp recursion depth", min: 0, max: 5, step: 1, default: 3 },
+    bump: { kind: "range", hint: "cusp height over edge length", min: 0.1, max: 0.9, step: 0.02, default: 0.5 },
+    inward: { kind: "bool", hint: "cusps point into the shape", default: false, p: 0.25 },
+    minPx: {
+      kind: "range",
+      hint: "shortest edge that still gets cusps, in px",
+      min: 0.5,
+      max: 8,
+      step: 0.5,
+      default: 1.5,
+      static: true,
+    },
   },
   presets: {
     cross: { sides: 4, bump: 0.5, depth: 3 },
@@ -289,9 +327,9 @@ type Hi = { order: number; round: number; minPx: number }
 export const hilbert: Algo<Hi> = {
   name: "hilbert",
   spec: {
-    order: { kind: "range", min: 1, max: 7, step: 1, default: 4, roll: [2, 6] },
-    round: { kind: "range", min: 0, max: 1, step: 0.05, default: 0.35 },
-    minPx: { kind: "range", min: 0.5, max: 8, step: 0.5, default: 2, static: true },
+    order: { kind: "range", hint: "curve order; cells = 4^order", min: 1, max: 7, step: 1, default: 4, roll: [2, 6] },
+    round: { kind: "range", hint: "corner rounding 0..1", min: 0, max: 1, step: 0.05, default: 0.35 },
+    minPx: { kind: "range", hint: "smallest cell drawn, in px", min: 0.5, max: 8, step: 0.5, default: 2, static: true },
   },
   presets: { o3: { order: 3 }, o5: { order: 5, round: 0.5 }, sharp: { order: 4, round: 0 } },
   run(p, { size }) {

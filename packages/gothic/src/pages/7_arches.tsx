@@ -3,7 +3,7 @@ import type { ReactNode } from "react"
 import type { PageSpec } from "../app/0_pages.js"
 import { sectionState } from "../app/2_state.js"
 import type { AnySpec } from "../kit/0_spec.js"
-import { SIZES, axes, cell, families, global as archGlobal } from "../lib/legacy/2_arches.js"
+import { global as archGlobal, axes, cell, families, SIZES } from "../lib/legacy/2_arches.js"
 import {
   band,
   base,
@@ -33,50 +33,120 @@ import { Raw } from "../ui/5_Raw.js"
 
 /* ============ the page globals: the old #ctl bar, now the families section's own spec ============ */
 const GLOBALS = {
-  seed: { kind: "seed", default: 7 },
-  legs: { kind: "range", min: 0, max: 1.5, step: 0.1, default: 0.6 },
-  lambda: { kind: "range", min: 1, max: 1.6, step: 0.02, default: 1.3, label: "lobe λ" },
-  lobe: { kind: "select", options: ["round", "pointed", "dagger", "eyelet"], default: "round" },
-  noise: { kind: "range", min: 0, max: 1, step: 0.05, default: 0 },
-  asym: { kind: "range", min: 0, max: 1, step: 0.05, default: 0 },
-  intensity: { kind: "range", min: 0, max: 1, step: 0.05, default: 0 },
-  minLobe: { kind: "range", min: 2, max: 24, default: 7, label: "min lobe px", static: true },
-  minSub: { kind: "range", min: 8, max: 64, step: 2, default: 22, label: "min sub-arch px", static: true },
-  weight: { kind: "range", min: 0.5, max: 3, step: 0.25, default: 1, static: true },
-  guides: { kind: "bool", default: false, label: "show guides", static: true },
+  seed: { kind: "seed", hint: "seed for every arch on the page", default: 7 },
+  legs: { kind: "range", hint: "leg height as a fraction of the span", min: 0, max: 1.5, step: 0.1, default: 0.6 },
+  lambda: {
+    kind: "range",
+    hint: "lobe stretch: 1 = round, 1.6 = tall pointed",
+    min: 1,
+    max: 1.6,
+    step: 0.02,
+    default: 1.3,
+    label: "lobe λ",
+  },
+  lobe: {
+    kind: "select",
+    hint: "cap shape of foils and cusps",
+    options: ["round", "pointed", "dagger", "eyelet"],
+    default: "round",
+  },
+  noise: { kind: "range", hint: "hand-drawn wobble on every stroke", min: 0, max: 1, step: 0.05, default: 0 },
+  asym: { kind: "range", hint: "left / right asymmetry of the arch", min: 0, max: 1, step: 0.05, default: 0 },
+  intensity: {
+    kind: "range",
+    hint: "ornament density: 0 = bare arch, 1 = every tracery layer",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    default: 0,
+  },
+  minLobe: {
+    kind: "range",
+    hint: "smallest lobe drawn, in px; smaller ones are skipped",
+    min: 2,
+    max: 24,
+    default: 7,
+    label: "min lobe px",
+    static: true,
+  },
+  minSub: {
+    kind: "range",
+    hint: "smallest sub-arch drawn, in px",
+    min: 8,
+    max: 64,
+    step: 2,
+    default: 22,
+    label: "min sub-arch px",
+    static: true,
+  },
+  weight: {
+    kind: "range",
+    hint: "stroke width multiplier for every path in the section",
+    min: 0.5,
+    max: 3,
+    step: 0.25,
+    default: 1,
+    static: true,
+  },
+  guides: {
+    kind: "bool",
+    hint: "draw the construction circles and centre lines",
+    default: false,
+    label: "show guides",
+    static: true,
+  },
 } as const satisfies AnySpec
 
 const SPREAD = {
-  axis: { kind: "select", options: Object.keys(axes), default: "k" },
-  lo: { kind: "number", default: 0, step: 0.1, label: "from" },
-  hi: { kind: "number", default: 2, step: 0.1, label: "to" },
-  m: { kind: "range", min: 2, max: 16, default: 7, label: "m steps" },
-  n: { kind: "range", min: 1, max: 10, default: 6, label: "n sizes" },
-  big: { kind: "number", default: 256, step: 16, label: "big px", static: true },
-  small: { kind: "number", default: 16, step: 4, label: "small px", static: true },
-  base: { kind: "select", options: Object.keys(families), default: "equilateral" },
+  axis: { kind: "select", hint: "which parameter the row sweeps", options: Object.keys(axes), default: "k" },
+  lo: { kind: "number", hint: "sweep start value", default: 0, step: 0.1, label: "from" },
+  hi: { kind: "number", hint: "sweep end value", default: 2, step: 0.1, label: "to" },
+  m: { kind: "range", hint: "columns: parameter steps from..to", min: 2, max: 16, default: 7, label: "m steps" },
+  n: { kind: "range", hint: "rows: sizes from big to small", min: 1, max: 10, default: 6, label: "n sizes" },
+  big: { kind: "number", hint: "largest size in px", default: 256, step: 16, label: "big px", static: true },
+  small: { kind: "number", hint: "smallest size in px", default: 16, step: 4, label: "small px", static: true },
+  base: {
+    kind: "select",
+    hint: "arch family the sweep starts from",
+    options: Object.keys(families),
+    default: "equilateral",
+  },
 } as const satisfies AnySpec
 
 const LOBES = {
-  shape: { kind: "select", options: ["all", "round", "pointed", "dagger", "eyelet"], default: "all" },
-  lancet: { kind: "range", min: 1, max: 3.5, step: 0.1, default: 2.2 },
+  shape: {
+    kind: "select",
+    hint: "cap shape, or all four in a row",
+    options: ["all", "round", "pointed", "dagger", "eyelet"],
+    default: "all",
+  },
+  lancet: { kind: "range", hint: "lancet height over half span", min: 1, max: 3.5, step: 0.1, default: 2.2 },
 } as const satisfies AnySpec
-const ANATOMY = { big: { kind: "range", min: 80, max: 320, step: 40, default: 160 } } as const satisfies AnySpec
+const ANATOMY = {
+  big: { kind: "range", hint: "drawing size of the labelled arch, in px", min: 80, max: 320, step: 40, default: 160 },
+} as const satisfies AnySpec
 const ROSE = {
-  spokes: { kind: "range", min: 4, max: 24, default: 8 },
-  rings: { kind: "range", min: 1, max: 5, default: 3 },
-  k: { kind: "range", min: 0, max: 2.5, step: 0.1, default: 1 },
-  eye: { kind: "range", min: 0.05, max: 0.4, step: 0.01, default: 0.2 },
-  twist: { kind: "range", min: 0, max: 0.4, step: 0.02, default: 0 },
-  foils: { kind: "range", min: 0, max: 6, default: 0 },
-  depth: { kind: "range", min: 0, max: 2, default: 0 },
+  spokes: { kind: "range", hint: "radial divisions", min: 4, max: 24, default: 8 },
+  rings: { kind: "range", hint: "concentric rings", min: 1, max: 5, default: 3 },
+  k: { kind: "range", hint: "lobe stretch of the petals", min: 0, max: 2.5, step: 0.1, default: 1 },
+  eye: {
+    kind: "range",
+    hint: "central eye radius as a fraction of the window",
+    min: 0.05,
+    max: 0.4,
+    step: 0.01,
+    default: 0.2,
+  },
+  twist: { kind: "range", hint: "rotation offset per ring, in turns", min: 0, max: 0.4, step: 0.02, default: 0 },
+  foils: { kind: "range", hint: "foils per petal; 0 = plain", min: 0, max: 6, default: 0 },
+  depth: { kind: "range", hint: "sub-tracery recursion depth", min: 0, max: 2, default: 0 },
 } as const satisfies AnySpec
 const PANEL = {
-  cols: { kind: "range", min: 1, max: 8, default: 4 },
-  rows: { kind: "range", min: 1, max: 4, default: 2 },
-  k: { kind: "range", min: 0.1, max: 1.5, step: 0.05, default: 0.35 },
-  foils: { kind: "range", min: 0, max: 6, default: 3 },
-  levels: { kind: "range", min: 1, max: 4, default: 2 },
+  cols: { kind: "range", hint: "lights across the panel", min: 1, max: 8, default: 4 },
+  rows: { kind: "range", hint: "rows of lights", min: 1, max: 4, default: 2 },
+  k: { kind: "range", hint: "head height over light width", min: 0.1, max: 1.5, step: 0.05, default: 0.35 },
+  foils: { kind: "range", hint: "foils in each head", min: 0, max: 6, default: 3 },
+  levels: { kind: "range", hint: "tracery recursion levels", min: 1, max: 4, default: 2 },
 } as const satisfies AnySpec
 
 const GRID = [320, 160, 80, 40]

@@ -4,21 +4,43 @@ import type { PageSpec } from "../app/0_pages.js"
 import { type AnySpec, type ValuesOf } from "../kit/0_spec.js"
 import { type EyeOpts, eye, hash, sealCaption, sealSvg } from "../lib/index.js"
 import { stagger } from "../ui/0_hooks.js"
-import { AlgoSection } from "../ui/4_Algo.js"
 import { Section } from "../ui/2_Section.js"
+import { AlgoSection } from "../ui/4_Algo.js"
 import { Raw } from "../ui/5_Raw.js"
 
 const SPEC = {
-  seed: { kind: "seed", default: 1 },
-  minPx: { kind: "range", min: 1, max: 6, step: 0.5, default: 2 },
+  seed: { kind: "seed", hint: "seed for every seal on the row", default: 1 },
+  minPx: {
+    kind: "range",
+    hint: "smallest feature drawn, in px; bands and lobes under it are dropped (LOD)",
+    min: 1,
+    max: 6,
+    step: 0.5,
+    default: 2,
+  },
   names: {
     kind: "text",
+    hint: "one seal per word; the word hashes into that seal's seed",
     default: "github rxjs hn docs mail calendar grapht boop gothic tanstack vite playwright",
     size: 60,
     shuffle: false,
   },
-  weight: { kind: "range", min: 0.5, max: 2.5, step: 0.1, default: 1, static: true },
-  anim: { kind: "bool", default: true, label: "draw-in", static: true },
+  weight: {
+    kind: "range",
+    hint: "stroke width multiplier for every path in the section",
+    min: 0.5,
+    max: 2.5,
+    step: 0.1,
+    default: 1,
+    static: true,
+  },
+  anim: {
+    kind: "bool",
+    hint: "draw paths in along their length on every rerender",
+    default: true,
+    label: "draw-in",
+    static: true,
+  },
 } as const satisfies AnySpec
 type V = ValuesOf<typeof SPEC>
 

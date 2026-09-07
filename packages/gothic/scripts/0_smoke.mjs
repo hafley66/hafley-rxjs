@@ -1,5 +1,5 @@
 // Smoke: boot vite, walk every tab in the header, assert zero console errors, svg on every route, tab x identical
-// across routes, then open dist/index.html from file:// if it exists. Exit 1 on any failure.
+// across routes, every header/bar control carries a tooltip, then open dist/index.html from file:// if it exists. Exit 1 on any failure.
 // run: pnpm --filter @hafley66/gothic smoke   (or via `pnpm check`)
 import { existsSync } from "node:fs"
 import { dirname, resolve } from "node:path"
@@ -29,10 +29,16 @@ for (const t of tabs) {
   const xs = JSON.stringify(await page.$$eval("header a[data-tab]", as => as.map(a => Math.round(a.getBoundingClientRect().x))))
   const svg = await page.$$eval("svg", s => s.length)
   const anchors = await page.$$eval("header .kit-anchor", as => as.length)
+  // every control in the header and the bars has a title on itself or its label (non-interactive hover tooltip)
+  const untitled = await page.$$eval("header input, header select, header button, .kit-bar input, .kit-bar select, .kit-bar button", els =>
+    els.filter(e => !(e.title || e.closest("label")?.title)).map(e => `${e.tagName.toLowerCase()}#${e.id || e.dataset.key || e.textContent?.trim().slice(0, 12)}`),
+  )
   tabX ??= xs
-  const ok = svg > 0 && xs === tabX
+  const ok = svg > 0 && xs === tabX && untitled.length === 0
   if (!ok) fail++
-  rows.push(`${ok ? "ok  " : "FAIL"} /${t.padEnd(8)} svg=${String(svg).padStart(3)} anchors=${anchors} tabs=${xs === tabX ? "same" : xs}`)
+  rows.push(
+    `${ok ? "ok  " : "FAIL"} /${t.padEnd(8)} svg=${String(svg).padStart(3)} anchors=${anchors} tabs=${xs === tabX ? "same" : xs}${untitled.length ? ` untitled=${untitled.join(",")}` : ""}`,
+  )
 }
 const single = resolve(root, "dist/index.html")
 if (existsSync(single)) {

@@ -47,6 +47,7 @@ type V = ValuesOf<typeof SPEC>
 | `roll: [lo, hi]` | shuffle window inside `min..max` (ranges, numbers) |
 | `pool` | select shuffle draws uniformly from this list (repeat an option to weight it) |
 | `p` | bool shuffle true-probability (default .5) |
+| `hint` | first tooltip line; `describe(key, fd)` appends kind, window, default and the shuffle behaviour. The bar puts it on the label's `title`, so every input has a hover tooltip |
 
 Derived, never written twice: `schemaOf(spec)` gives a zod object; `parseValues(spec, raw)` safeParses per key, so a junk value falls to the field default and unknown keys are ignored.
 

@@ -2,7 +2,7 @@ import { route } from "@hafley66/path"
 import type { Signal } from "@hafley66/signals"
 import { skip } from "rxjs"
 import * as z from "zod"
-import { type AnySpec, type ValuesOf, fieldSchema, parseValues } from "./0_spec.js"
+import { type AnySpec, fieldSchema, parseValues, type ValuesOf } from "./0_spec.js"
 
 export type Namespaces = Record<string, AnySpec>
 export type NsValues = Record<string, Record<string, unknown>>

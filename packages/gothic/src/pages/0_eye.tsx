@@ -138,49 +138,210 @@ export function pose(e: Eye, au: Au, gaze = { x: 0, y: 0 }, dil = 1) {
 
 /* ============ page ============ */
 const SPEC = {
-  seed: { kind: "seed", default: 3 },
+  seed: { kind: "seed", hint: "seed for the seal, the lash slots and the whole blink schedule", default: 3 },
   shape: {
     kind: "select",
+    hint: "eye outline: lid bulge curves, tilt, iris size; random draws a new one from the seed",
     options: [...Object.keys(SHAPES), "random"],
     default: "human",
     pool: [...Object.keys(SHAPES), "random", "random"],
   },
-  expr: { kind: "select", options: Object.keys(EXPR), default: "neutral", label: "expression" },
+  expr: {
+    kind: "select",
+    hint: "FACS expression the muscles hold; auto expressions drift away from it and back",
+    options: Object.keys(EXPR),
+    default: "neutral",
+    label: "expression",
+  },
   lash: {
     kind: "select",
+    hint: "where lashes root: one per seal ray, one per ray times k, equal arc length, or none",
     options: ["slots", "slots×k", "arclen", "none"],
     default: "slots",
     pool: ["slots", "slots×k", "arclen"],
     label: "lashes",
   },
-  segs: { kind: "range", min: 8, max: 160, default: 96, roll: [24, 160], group: "lids" },
-  lag: { kind: "range", min: 0, max: 1, step: 0.05, default: 1, label: "tilt", group: "lids" },
-  pop: { kind: "range", min: 0, max: 0.03, step: 0.001, default: 0.03, label: "settle", group: "lids" },
-  auto: { kind: "bool", default: true, p: 0.8, label: "auto expressions" },
-  dress: { kind: "bool", default: true, static: true },
-  weight: { kind: "range", min: 0.5, max: 2.5, step: 0.1, default: 1, static: true },
-  tempo: { kind: "range", min: 0.25, max: 3, step: 0.05, default: 1, static: true },
-  run: { kind: "bool", default: true, static: true },
+  segs: {
+    kind: "range",
+    hint: "polyline samples per lid; low values show facets",
+    min: 8,
+    max: 160,
+    default: 96,
+    roll: [24, 160],
+    group: "lids",
+  },
+  lag: {
+    kind: "range",
+    hint: "how much of the nasal lag reaches the lid margin: 0 = closes as one line, 1 = the full temporal-to-nasal tilt",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    default: 1,
+    label: "tilt",
+    group: "lids",
+  },
+  pop: {
+    kind: "range",
+    hint: "settle above rest at the end of an opening, as a fraction of the aperture; capped at 3%",
+    min: 0,
+    max: 0.03,
+    step: 0.001,
+    default: 0.03,
+    label: "settle",
+    group: "lids",
+  },
+  auto: {
+    kind: "bool",
+    hint: "the scheduler plays random expressions with per-muscle ease; off holds the chosen one",
+    default: true,
+    p: 0.8,
+    label: "auto expressions",
+  },
+  dress: { kind: "bool", hint: "crease, lower-lid shadow, brow and crow's feet", default: true, static: true },
+  weight: {
+    kind: "range",
+    hint: "stroke width multiplier for every path in the section",
+    min: 0.5,
+    max: 2.5,
+    step: 0.1,
+    default: 1,
+    static: true,
+  },
+  tempo: {
+    kind: "range",
+    hint: "clock speed multiplier for the whole schedule",
+    min: 0.25,
+    max: 3,
+    step: 0.05,
+    default: 1,
+    static: true,
+  },
+  run: { kind: "bool", hint: "advance the clock; off freezes at the scrubbed time", default: true, static: true },
 } as const satisfies AnySpec
 type V = ValuesOf<typeof SPEC>
 const SIZES = [16, 24, 32, 48, 64, 96, 160]
 
 // the scheduler's timing table as a bar; every key of TIMING is a knob, so the section is the module's test rig
 const T_SPEC = {
-  close: { kind: "range", min: 40, max: 300, step: 5, default: TIMING.close, group: "blink" },
-  open: { kind: "range", min: 60, max: 500, step: 5, default: TIMING.open, group: "blink" },
-  settle: { kind: "range", min: 0, max: 400, step: 10, default: TIMING.settle, group: "blink" },
-  lagMs: { kind: "range", min: 0, max: 40, step: 1, default: TIMING.lagMs, label: "nasal lag", group: "blink" },
-  bellLag: { kind: "range", min: 0, max: 150, step: 5, default: TIMING.bellLag, label: "bell lag", group: "blink" },
-  ibiMean: { kind: "range", min: 1500, max: 10000, step: 100, default: TIMING.ibiMean, label: "ibi", group: "rhythm" },
-  ibiFloor: { kind: "range", min: 500, max: 3000, step: 50, default: TIMING.ibiFloor, label: "floor", group: "rhythm" },
-  doubleP: { kind: "range", min: 0, max: 1, step: 0.05, default: TIMING.doubleP, label: "double", group: "rhythm" },
-  doubleGap: { kind: "range", min: 40, max: 400, step: 10, default: TIMING.doubleGap, label: "gap", group: "rhythm" },
-  drowsyP: { kind: "range", min: 0, max: 1, step: 0.02, default: TIMING.drowsyP, label: "drowsy", group: "rhythm" },
-  coupleP: { kind: "range", min: 0, max: 1, step: 0.05, default: TIMING.coupleP, label: "couple", group: "gaze" },
-  saccade: { kind: "range", min: 15, max: 120, step: 5, default: TIMING.saccade, group: "gaze" },
+  close: {
+    kind: "range",
+    hint: "full-amplitude closing time in ms, jittered 20% per blink; peak velocity near 35% of the phase",
+    min: 40,
+    max: 300,
+    step: 5,
+    default: TIMING.close,
+    group: "blink",
+  },
+  open: {
+    kind: "range",
+    hint: "full-amplitude opening time in ms, jittered 25% per blink; peak velocity near 10%",
+    min: 60,
+    max: 500,
+    step: 5,
+    default: TIMING.open,
+    group: "blink",
+  },
+  settle: {
+    kind: "range",
+    hint: "small settle above rest after opening, in ms; 0 = none",
+    min: 0,
+    max: 400,
+    step: 10,
+    default: TIMING.settle,
+    group: "blink",
+  },
+  lagMs: {
+    kind: "range",
+    hint: "temporal-to-nasal closure delay across the lid margin, in ms; 15 is human",
+    min: 0,
+    max: 40,
+    step: 1,
+    default: TIMING.lagMs,
+    label: "nasal lag",
+    group: "blink",
+  },
+  bellLag: {
+    kind: "range",
+    hint: "the globe trails the lid on reopening by this many ms (Bell's roll)",
+    min: 0,
+    max: 150,
+    step: 5,
+    default: TIMING.bellLag,
+    label: "bell lag",
+    group: "blink",
+  },
+  ibiMean: {
+    kind: "range",
+    hint: "mean onset-to-onset interval between blinks in ms; right-skewed: floor + exponential tail",
+    min: 1500,
+    max: 10000,
+    step: 100,
+    default: TIMING.ibiMean,
+    label: "ibi",
+    group: "rhythm",
+  },
+  ibiFloor: {
+    kind: "range",
+    hint: "shortest interval between blinks, in ms",
+    min: 500,
+    max: 3000,
+    step: 50,
+    default: TIMING.ibiFloor,
+    label: "floor",
+    group: "rhythm",
+  },
+  doubleP: {
+    kind: "range",
+    hint: "fraction of blinks followed by a smaller second blink",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    default: TIMING.doubleP,
+    label: "double",
+    group: "rhythm",
+  },
+  doubleGap: {
+    kind: "range",
+    hint: "gap before the second blink of a double, in ms, jittered 0.4..1x",
+    min: 40,
+    max: 400,
+    step: 10,
+    default: TIMING.doubleGap,
+    label: "gap",
+    group: "rhythm",
+  },
+  drowsyP: {
+    kind: "range",
+    hint: "fraction of blinks that become a slow half-close; only when levator tone is already low",
+    min: 0,
+    max: 1,
+    step: 0.02,
+    default: TIMING.drowsyP,
+    label: "drowsy",
+    group: "rhythm",
+  },
+  coupleP: {
+    kind: "range",
+    hint: "fraction of blinks that ride a gaze shift",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    default: TIMING.coupleP,
+    label: "couple",
+    group: "gaze",
+  },
+  saccade: {
+    kind: "range",
+    hint: "gaze jump duration in ms, jittered 33%",
+    min: 15,
+    max: 120,
+    step: 5,
+    default: TIMING.saccade,
+    group: "gaze",
+  },
   glanceMean: {
     kind: "range",
+    hint: "mean interval between free glances, in ms",
     min: 900,
     max: 5000,
     step: 100,
@@ -188,7 +349,14 @@ const T_SPEC = {
     label: "glance",
     group: "gaze",
   },
-  wake: { kind: "range", min: 300, max: 3000, step: 50, default: TIMING.wake },
+  wake: {
+    kind: "range",
+    hint: "levator wake-up ramp in ms, with two sags the lid catches up from; re-wake replays it",
+    min: 300,
+    max: 3000,
+    step: 50,
+    default: TIMING.wake,
+  },
 } as const satisfies Record<keyof Timing, AnySpec[string]>
 type TV = ValuesOf<typeof T_SPEC>
 const T_PRESETS = {
@@ -435,7 +603,11 @@ function EyePage() {
         {Object.keys(AU)
           .filter(k => k !== "AU45")
           .map(k => (
-            <label key={k} className="inline-flex items-center gap-1.5 text-[oklch(75%_0.12_200)]" title={AU[k]}>
+            <label
+              key={k}
+              className="inline-flex items-center gap-1.5 text-[oklch(75%_0.12_200)]"
+              title={`${k} ${AU[k]}: adds to the expression's tone, 0..1; resets when the expression changes; not saved`}
+            >
               {k}
               <input
                 data-au={k}
@@ -454,13 +626,26 @@ function EyePage() {
   )
   const transport = (
     <>
-      <button type="button" className={BTN} onClick={() => p.ctl.current?.blink()}>
+      <button
+        type="button"
+        className={BTN}
+        title="layer one full blink on the schedule right now, with the same nasal and Bell's lags"
+        onClick={() => p.ctl.current?.blink()}
+      >
         blink now
       </button>
-      <button type="button" className={BTN} onClick={() => p.ctl.current?.rewake()}>
+      <button
+        type="button"
+        className={BTN}
+        title="reset the clock to 0: the lids replay the wake-up ramp"
+        onClick={() => p.ctl.current?.rewake()}
+      >
         re-wake
       </button>
-      <label className="inline-flex items-center gap-1.5">
+      <label
+        className="inline-flex items-center gap-1.5"
+        title="position in the hero's blink cycle; dragging pauses the clock"
+      >
         scrub
         <input ref={p.scrub} className="w-60 accent-ink" type="range" min={0} max={100} step={0.05} defaultValue={0} />
       </label>

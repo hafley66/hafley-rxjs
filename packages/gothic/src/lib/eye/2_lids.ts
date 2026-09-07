@@ -1,6 +1,6 @@
-import { type Pt, mix } from "../index.js"
-import { type Shape, bulge } from "./0_shape.js"
-import { type Au, type Frame, activate, frame } from "./1_muscles.js"
+import { mix, type Pt } from "../index.js"
+import { bulge, type Shape } from "./0_shape.js"
+import { type Au, activate, type Frame, frame } from "./1_muscles.js"
 
 /* The upper lid does the travel: at full closure it lands on the lower lid, which rises 10% of the gap (1..2 mm on a real eye).
    rest = the smile line at 30% of the lower bulge, where the upper lid hangs with zero levator tone. */

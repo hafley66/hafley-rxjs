@@ -4,15 +4,15 @@ import type { SectionState } from "../app/2_state.js"
 import type { AnySpec } from "../kit/0_spec.js"
 import {
   type Cell,
-  G,
-  Spec,
   diagramCell,
   flower,
   fma,
+  G,
   metatron,
   morph,
   mulberry32,
   randomSpec,
+  Spec,
   spiroCell,
   vesicaLattice,
 } from "../lib/legacy/0_circles.js"
@@ -21,19 +21,78 @@ import { Section } from "../ui/2_Section.js"
 import { Raw } from "../ui/5_Raw.js"
 
 const SHARED = {
-  seed: { kind: "seed", default: 7 },
-  sym: { kind: "range", min: 0, max: 12, default: 0, label: "sym n" },
-  intensity: { kind: "range", min: 0, max: 1, step: 0.05, default: 0.5 },
-  lambda: { kind: "range", min: 1, max: 1.6, step: 0.02, default: 1.3, label: "lobe λ" },
-  minPx: { kind: "range", min: 2, max: 24, default: 6, label: "min px", static: true },
-  weight: { kind: "range", min: 0.5, max: 3, step: 0.25, default: 1, static: true },
-  anim: { kind: "bool", default: false, label: "draw-in", static: true },
+  seed: { kind: "seed", hint: "seed for every seal and diagram in the section", default: 7 },
+  sym: {
+    kind: "range",
+    hint: "forced rotational symmetry n; 0 = the seed picks",
+    min: 0,
+    max: 12,
+    default: 0,
+    label: "sym n",
+  },
+  intensity: {
+    kind: "range",
+    hint: "ornament bands per seal: 0 = bare ring, 1 = every band",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    default: 0.5,
+  },
+  lambda: {
+    kind: "range",
+    hint: "lobe stretch for foil arcs: 1 = semicircle, 1.6 = tall pointed lobe",
+    min: 1,
+    max: 1.6,
+    step: 0.02,
+    default: 1.3,
+    label: "lobe λ",
+  },
+  minPx: {
+    kind: "range",
+    hint: "smallest feature drawn, in px; bands and lobes under it are dropped (LOD)",
+    min: 2,
+    max: 24,
+    default: 6,
+    label: "min px",
+    static: true,
+  },
+  weight: {
+    kind: "range",
+    hint: "stroke width multiplier for every path in the section",
+    min: 0.5,
+    max: 3,
+    step: 0.25,
+    default: 1,
+    static: true,
+  },
+  anim: {
+    kind: "bool",
+    hint: "draw paths in along their length on every rerender",
+    default: false,
+    label: "draw-in",
+    static: true,
+  },
 } as const satisfies AnySpec
 
 const DIAGRAM = {
   ...SHARED,
-  spec: { kind: "text", default: "", size: 60, label: "spec json", shuffle: false },
-  ms: { kind: "range", min: 200, max: 4000, step: 100, default: 1200, static: true },
+  spec: {
+    kind: "text",
+    hint: "seal spec as JSON; empty = the seeded spec. Edit it to hand-compose a seal",
+    default: "",
+    size: 60,
+    label: "spec json",
+    shuffle: false,
+  },
+  ms: {
+    kind: "range",
+    hint: "draw-in time for the diagram, in ms",
+    min: 200,
+    max: 4000,
+    step: 100,
+    default: 1200,
+    static: true,
+  },
 } as const satisfies AnySpec
 const FMA = SHARED
 const SACRED = {

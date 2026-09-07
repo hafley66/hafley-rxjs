@@ -1,4 +1,4 @@
-import { M, TAU, arc, circle, f, line } from "./1_geom.js"
+import { arc, circle, f, line, M, TAU } from "./1_geom.js"
 import { foilRing } from "./2_foil.js"
 import { scene, sceneMarkup } from "./3_seal.js"
 

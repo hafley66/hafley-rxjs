@@ -1,24 +1,64 @@
 import { useEffect, useRef } from "react"
 import type { PageSpec } from "../app/0_pages.js"
 import type { AnySpec } from "../kit/0_spec.js"
-import { BW, type Cell, G, bwCircle, bwShade, fanMosaic, islamic, mosaicRings } from "../lib/legacy/1_tiles.js"
+import { BW, bwCircle, bwShade, type Cell, fanMosaic, G, islamic, mosaicRings } from "../lib/legacy/1_tiles.js"
 import { stagger } from "../ui/0_hooks.js"
 import { Section } from "../ui/2_Section.js"
 import { Raw } from "../ui/5_Raw.js"
 
 const BASE = {
-  seed: { kind: "seed", default: 7 },
-  density: { kind: "range", min: 4, max: 24, default: 10, label: "density px" },
-  weight: { kind: "range", min: 0.5, max: 3, step: 0.25, default: 1, static: true },
-  minPx: { kind: "range", min: 2, max: 24, default: 6, label: "min px", static: true },
-  anim: { kind: "bool", default: false, label: "draw-in", static: true },
+  seed: { kind: "seed", hint: "seed for every tile field in the section", default: 7 },
+  density: { kind: "range", hint: "tile cell size in px", min: 4, max: 24, default: 10, label: "density px" },
+  weight: {
+    kind: "range",
+    hint: "stroke width multiplier for every path in the section",
+    min: 0.5,
+    max: 3,
+    step: 0.25,
+    default: 1,
+    static: true,
+  },
+  minPx: {
+    kind: "range",
+    hint: "smallest feature drawn, in px; bands and lobes under it are dropped (LOD)",
+    min: 2,
+    max: 24,
+    default: 6,
+    label: "min px",
+    static: true,
+  },
+  anim: {
+    kind: "bool",
+    hint: "draw paths in along their length on every rerender",
+    default: false,
+    label: "draw-in",
+    static: true,
+  },
 } as const satisfies AnySpec
 
 const ISLAMIC = {
   ...BASE,
-  lambda: { kind: "range", min: 1, max: 1.6, step: 0.02, default: 1.3, label: "lobe λ" },
+  lambda: {
+    kind: "range",
+    hint: "lobe stretch of the star's petals: 1 = round, 1.6 = tall pointed",
+    min: 1,
+    max: 1.6,
+    step: 0.02,
+    default: 1.3,
+    label: "lobe λ",
+  },
 } as const satisfies AnySpec
-const MOSAIC = { ...BASE, noise: { kind: "range", min: 0, max: 1, step: 0.05, default: 0 } } as const satisfies AnySpec
+const MOSAIC = {
+  ...BASE,
+  noise: {
+    kind: "range",
+    hint: "random jitter of tile corners; 0 = exact grid",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    default: 0,
+  },
+} as const satisfies AnySpec
 const BLACKWORK = BASE
 
 type Knobs = Record<string, unknown>

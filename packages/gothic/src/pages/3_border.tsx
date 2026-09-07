@@ -2,22 +2,49 @@ import { type RefObject, useEffect, useRef } from "react"
 import type { PageSpec } from "../app/0_pages.js"
 import type { SectionState } from "../app/2_state.js"
 import type { AnySpec, ValuesOf } from "../kit/0_spec.js"
-import { type Plan, border, f, mulberry32, plan } from "../lib/index.js"
+import { border, f, mulberry32, type Plan, plan } from "../lib/index.js"
 import { reducedMotion, useClock } from "../ui/0_hooks.js"
 import { inputId } from "../ui/1_Bar.js"
 import { Section } from "../ui/2_Section.js"
 
 const SPEC = {
-  seed: { kind: "seed", default: 7 },
-  rail: { kind: "select", options: ["auto", "cusp", "ogee", "crenel", "dagger", "plain"], default: "auto" },
-  corner: { kind: "select", options: ["auto", "loop", "point", "trefoil", "spiral", "none"], default: "auto" },
-  cell: { kind: "range", min: 8, max: 64, default: 22 },
-  depth: { kind: "range", min: 2, max: 24, default: 6 },
-  weight: { kind: "range", min: 0.5, max: 4, step: 0.1, default: 1.2, static: true },
-  t: { kind: "range", min: 0, max: 100, step: 0.1, default: 100, label: "offset", shuffle: false },
-  ms: { kind: "number", default: 4000, step: 250, shuffle: false },
-  ghost: { kind: "bool", default: true, static: true },
-  pen: { kind: "bool", default: true, static: true },
+  seed: { kind: "seed", hint: "seed for the rails, the corners and the random rects", default: 7 },
+  rail: {
+    kind: "select",
+    hint: "edge motif repeated along each side; auto picks from the seed",
+    options: ["auto", "cusp", "ogee", "crenel", "dagger", "plain"],
+    default: "auto",
+  },
+  corner: {
+    kind: "select",
+    hint: "motif at each corner; auto picks from the seed",
+    options: ["auto", "loop", "point", "trefoil", "spiral", "none"],
+    default: "auto",
+  },
+  cell: { kind: "range", hint: "motif cell size in px", min: 8, max: 64, default: 22 },
+  depth: { kind: "range", hint: "how far the motif reaches into the rect, in px", min: 2, max: 24, default: 6 },
+  weight: {
+    kind: "range",
+    hint: "stroke width multiplier for every path in the section",
+    min: 0.5,
+    max: 4,
+    step: 0.1,
+    default: 1.2,
+    static: true,
+  },
+  t: {
+    kind: "range",
+    hint: "pen position along the one continuous path, in %; the loop drives it while playing",
+    min: 0,
+    max: 100,
+    step: 0.1,
+    default: 100,
+    label: "offset",
+    shuffle: false,
+  },
+  ms: { kind: "number", hint: "one full pass of the pen, in ms", default: 4000, step: 250, shuffle: false },
+  ghost: { kind: "bool", hint: "show the finished path faintly under the ink", default: true, static: true },
+  pen: { kind: "bool", hint: "show the pen dot at the drawing tip", default: true, static: true },
 } as const satisfies AnySpec
 type V = ValuesOf<typeof SPEC>
 const PRESETS = {
@@ -182,13 +209,23 @@ function BorderPage() {
   const btn = "rounded-sm border border-edge px-1.5 py-px text-fg hover:border-ink"
   const extra = (
     <>
-      <button ref={respawn} type="button" className={`respawn ${btn}`}>
+      <button
+        ref={respawn}
+        type="button"
+        className={`respawn ${btn}`}
+        title="new random rects under the same border settings; the pen restarts"
+      >
         respawn rects
       </button>
-      <button ref={playBtn} type="button" className={`play ${btn}`}>
+      <button
+        ref={playBtn}
+        type="button"
+        className={`play ${btn}`}
+        title="run the pen from 0 to 100% over ms; the offset slider follows"
+      >
         play
       </button>
-      <b ref={tv} className="tv min-w-[6ch] font-medium text-fg tabular-nums">
+      <b ref={tv} className="tv min-w-[6ch] font-medium text-fg tabular-nums" title="pen position along the path">
         100%
       </b>
       <span ref={stats} />

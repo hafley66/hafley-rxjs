@@ -13,7 +13,8 @@ export function mulberry32(seed: number): Rng {
 }
 export const freshSeed = (): number => Math.floor(Math.random() * 2 ** 31)
 
-type Common = { label?: string; group?: string; static?: boolean; shuffle?: boolean }
+// hint = the first tooltip line; describe() appends the derived facts
+type Common = { label?: string; hint?: string; group?: string; static?: boolean; shuffle?: boolean }
 // roll narrows the shuffle window inside min..max; p is the true-probability for bools; pool weights select options by repetition
 export type RangeField = Common & {
   kind: "range"
@@ -148,4 +149,24 @@ export const fmt = (v: unknown): string => (typeof v === "number" ? String(Numbe
 export const readout = <S extends AnySpec>(spec: S, values: ValuesOf<S>): string => {
   const diff = Object.keys(spec).filter(k => values[k] !== spec[k].default)
   return diff.length ? diff.map(k => `${k}=${fmt(values[k])}`).join(" ") : "defaults"
+}
+
+// tooltip text for a bar control: the hint, then key, kind and window, default, and what shuffle does to it
+export function describe(key: string, fd: Field): string {
+  const facts: string[] = []
+  if (fd.kind === "range" || fd.kind === "number") {
+    const win = fd.min !== undefined && fd.max !== undefined ? ` ${fd.min}..${fd.max}` : ""
+    facts.push(`${fd.kind}${win}${fd.step !== undefined ? ` step ${fd.step}` : ""}`)
+  } else if (fd.kind === "select") facts.push(`one of ${fd.options.join(" | ")}`)
+  else facts.push(fd.kind)
+  facts.push(`default ${fmt(fd.default)}`)
+  if (isStatic(fd)) facts.push("static: shuffle keeps it, no pin")
+  else if (fd.kind === "seed") facts.push("shuffle: fresh seed")
+  else if (fd.kind === "text") facts.push("shuffle: resets to default")
+  else if ((fd.kind === "range" || fd.kind === "number") && fd.roll)
+    facts.push(`shuffle rolls ${fd.roll[0]}..${fd.roll[1]}`)
+  else if (fd.kind === "bool") facts.push(`shuffle: true with p ${fd.p ?? 0.5}`)
+  else if (fd.kind === "select" && fd.pool) facts.push(`shuffle draws from ${[...new Set(fd.pool)].join(" | ")}`)
+  else facts.push("shuffle rolls the whole window")
+  return [fd.hint, `${key}: ${facts.join(" · ")}`].filter(Boolean).join("\n")
 }

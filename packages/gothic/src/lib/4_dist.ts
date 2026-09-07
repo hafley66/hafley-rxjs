@@ -1,5 +1,5 @@
 import { blue, green, pink, red, violet, white } from "@thi.ng/colored-noise"
-import { type IRandom, Smush32, exponential, normal } from "@thi.ng/random"
+import { exponential, type IRandom, normal, Smush32 } from "@thi.ng/random"
 import type { Rng } from "./0_rng.js"
 
 // thi.ng-backed distributions behind the notebooks' Rng = () => number convention

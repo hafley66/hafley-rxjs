@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { PAGES, matchPage } from "./0_pages.js"
+import { matchPage, PAGES } from "./0_pages.js"
 
 describe("pages", () => {
   it("one route per notebook, in tab order", () => {

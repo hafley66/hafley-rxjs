@@ -7,9 +7,16 @@ export type SealParams = { seed: number; minPx: number; pupil: boolean }
 export const sealAlgo: Algo<SealParams> = {
   name: "seal",
   spec: {
-    seed: { kind: "seed", default: 1 },
-    minPx: { kind: "range", min: 1, max: 6, step: 0.5, default: 2 },
-    pupil: { kind: "bool", default: true, static: true },
+    seed: { kind: "seed", hint: "seed for the seal composition", default: 1 },
+    minPx: {
+      kind: "range",
+      hint: "smallest feature drawn, in px; bands and lobes under it are dropped (LOD)",
+      min: 1,
+      max: 6,
+      step: 0.5,
+      default: 2,
+    },
+    pupil: { kind: "bool", hint: "draw the pupil inside the eye band", default: true, static: true },
   },
   presets: { fine: { minPx: 1 }, coarse: { minPx: 4 } },
   run(p, ctx) {
