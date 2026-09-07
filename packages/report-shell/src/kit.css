@@ -168,7 +168,8 @@
   .kit-files a { border-bottom: 2px solid transparent; padding: 1px 0; text-decoration: none; color: var(--muted) }
   .kit-files a:hover { color: var(--fg) }
   .kit-files a[aria-current] { border-color: var(--accent); color: var(--accent) }
-  .kit-top-end { margin-left: auto; display: inline-flex; gap: 10px; align-items: center }
+  /* the end slot takes the rest of the tab row and shrinks instead of wrapping under the tabs */
+  .kit-top-end { flex: 1 1 0; min-width: 0; margin-left: 8px; display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; justify-content: flex-end }
   .kit-sections { display: flex; min-width: 0; flex-wrap: wrap; column-gap: 4px }
   .kit-anchor {
     border-bottom: 2px solid transparent; padding: 0 4px; color: var(--muted); text-decoration: none;

@@ -1,10 +1,8 @@
 /* boop-network report: status dot colors, two-line name cell, plain row hover, legend popover. */
-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
+/* one 34px row: the kit tab row's end slot scrolls sideways instead of wrapping under the tab */
+header .kit-top-end { overflow-x: auto; scrollbar-width: none; justify-content: flex-start }
+header label, header .counts, header #meta, header button { white-space: nowrap; flex: none }
+header input[type=text] { flex: 1 0 160px }
 header .counts {
   color: var(--dim);
   font-variant-numeric: tabular-nums;

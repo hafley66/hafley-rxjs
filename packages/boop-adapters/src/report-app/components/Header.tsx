@@ -1,5 +1,6 @@
-// Top bar: active/live/today/total counts, a time-window select, the status legend, a text
+// Top bar: the kit's NavTabs (one tab: this report); its end slot carries active/live/today/total counts, a time-window select, the status legend, a text
 // filter, and one chip per frame kind actually present in the data.
+import { NavTabs } from "@hafley66/report-shell"
 import { SignalReact } from "@hafley66/signals/react"
 import { patchContinuous, type Model, type Prefs } from "../model"
 import type { TimeWindow } from "../../lib/window.js"
@@ -14,44 +15,48 @@ function HeaderView({ model, prefs, meta }: { model: Model; prefs: SignalType<Pr
   const counts = model.counts.$()
   const current = prefs.$()
   return (
-    <header>
-      <b>boop network</b>
-      <span className="counts" data-testid="counts">
-        A {counts.active} active · L {counts.live} live · T {counts.today} today · N {counts.total} sessions
-      </span>
-      <span id="meta">{meta}</span>
-      <select
-        data-testid="window-select"
-        value={current.window}
-        onChange={(event) => prefs.$({ ...current, window: event.target.value as TimeWindow })}
-      >
-        {WINDOW_OPTIONS.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-      <StatusLegend />
-      <input
-        type="text"
-        placeholder="filter session / harness / cwd / frame preview"
-        value={cont.search}
-        onChange={(event) => patchContinuous(model, { search: event.target.value })}
-      />
-      {kinds.map((kind) => (
-        <label key={kind} className="kind-chip" data-kind={kind}>
+    <NavTabs
+      tabs={[{ id: "network", label: "boop network", href: "#", current: true, title: "this report" }]}
+      end={
+        <>
+          <span className="counts" data-testid="counts">
+            A {counts.active} active · L {counts.live} live · T {counts.today} today · N {counts.total} sessions
+          </span>
+          <span id="meta">{meta}</span>
+          <select
+            data-testid="window-select"
+            value={current.window}
+            onChange={event => prefs.$({ ...current, window: event.target.value as TimeWindow })}
+          >
+            {WINDOW_OPTIONS.map(option => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <StatusLegend />
           <input
-            type="checkbox"
-            checked={cont.kinds.includes(kind)}
-            onChange={(event) => {
-              const nextKinds = event.target.checked ? [...cont.kinds, kind] : cont.kinds.filter((k) => k !== kind)
-              patchContinuous(model, { kinds: nextKinds })
-            }}
+            type="text"
+            placeholder="filter session / harness / cwd / frame preview"
+            value={cont.search}
+            onChange={event => patchContinuous(model, { search: event.target.value })}
           />
-          {kind}
-        </label>
-      ))}
-    </header>
+          {kinds.map(kind => (
+            <label key={kind} className="kind-chip" data-kind={kind}>
+              <input
+                type="checkbox"
+                checked={cont.kinds.includes(kind)}
+                onChange={event => {
+                  const nextKinds = event.target.checked ? [...cont.kinds, kind] : cont.kinds.filter(k => k !== kind)
+                  patchContinuous(model, { kinds: nextKinds })
+                }}
+              />
+              {kind}
+            </label>
+          ))}
+        </>
+      }
+    />
   )
 }
 

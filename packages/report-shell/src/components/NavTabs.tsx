@@ -37,13 +37,15 @@ export function NavTabs({ tabs, anchors = [], title, onNavigate, end }: NavTabsP
         ))}
         {end && <span className="kit-top-end">{end}</span>}
       </nav>
-      <span className="kit-sections">
-        {anchors.map(a => (
-          <a key={a.id} href={`#${a.id}`} data-anchor={a.id} className="kit-anchor">
-            {a.label ?? a.id}
-          </a>
-        ))}
-      </span>
+      {anchors.length > 0 && (
+        <span className="kit-sections">
+          {anchors.map(a => (
+            <a key={a.id} href={`#${a.id}`} data-anchor={a.id} className="kit-anchor">
+              {a.label ?? a.id}
+            </a>
+          ))}
+        </span>
+      )}
       {title !== undefined && <b className="kit-page-title">{title}</b>}
     </header>
   )
