@@ -4,6 +4,8 @@ import { defineConfig } from "vitest/config"
 
 export default defineConfig({
   plugins: [react()],
+  // grid resolves its own react through pnpm isolation; one copy or hooks read null dispatchers
+  resolve: { dedupe: ["react", "react-dom"] },
   test: {
     browser: {
       enabled: true,

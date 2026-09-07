@@ -26,3 +26,5 @@ export { Drawer, useDrawerBody, DRAWER_BODY_ID, type DrawerProps } from './compo
 export { SpecPanel, inputId, type SpecPanelProps } from './components/SpecPanel'
 export { StateCombo } from './components/StateCombo'
 export { Section, PlainSection, type SectionDef, type SectionCtx, type SectionProps } from './components/Section'
+export { formatBytes } from './lib/bytes'
+export { FsTree, fsColumns, type FsRow, type FsTreeProps, type FsColumnsOptions } from './components/FsTree'

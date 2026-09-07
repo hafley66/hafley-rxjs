@@ -270,6 +270,12 @@
   .kit-extra { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; color: var(--muted) }
   .kit-extra label { display: inline-flex; gap: 6px; align-items: center }
   .kit-extra input[type="range"] { width: 160px }
+  /* FsTree: dir glyph, numeric columns right-aligned */
+  .fs-name { display: inline-flex; gap: 6px; align-items: center; min-width: 0 }
+  .fs-name .fs-glyph { color: var(--dim); width: 1ch }
+  .fs-name[data-kind="dir"] { color: var(--accent) }
+  .fs-num { text-align: right; font-variant-numeric: tabular-nums; color: var(--dim) }
+  .fs-file { cursor: pointer }
   /* the summary slot: inline page-global knobs */
   .kit-page { display: inline-flex; gap: 16px; align-items: center; margin-left: auto }
   .kit-page label { display: inline-flex; gap: 6px; align-items: center }
