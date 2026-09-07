@@ -30,8 +30,8 @@ for (const t of tabs) {
   const svg = await page.$$eval("svg", s => s.length)
   const anchors = await page.$$eval("header .kit-anchor", as => as.length)
   // every control in the header and the bars has a title on itself or its label (non-interactive hover tooltip)
-  const untitled = await page.$$eval("header input, header select, header button, .kit-bar input, .kit-bar select, .kit-bar button", els =>
-    els.filter(e => !(e.title || e.closest("label")?.title)).map(e => `${e.tagName.toLowerCase()}#${e.id || e.dataset.key || e.textContent?.trim().slice(0, 12)}`),
+  const untitled = await page.$$eval("header input, header select, header button, .kit-drawer input, .kit-drawer select, .kit-drawer button", els =>
+    els.filter(e => !(e.title || e.closest("label")?.title || e.closest(".kit-row")?.title)).map(e => `${e.tagName.toLowerCase()}#${e.id || e.dataset.key || e.textContent?.trim().slice(0, 12)}`),
   )
   tabX ??= xs
   const ok = svg > 0 && xs === tabX && untitled.length === 0

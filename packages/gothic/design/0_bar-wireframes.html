@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>gothic bar wireframe: rail</title><style>
+:root { color-scheme: dark; --bg:#0f1117; --panel:#0c0e14; --well:#171a23; --edge:#3a3f4f; --edge-hi:#6b7188; --line:#1f2330; --fg:#e6e8ef; --muted:#9a9fb0; --dim:#6b7080; --ink:oklch(84% .1 85) }
+* { box-sizing:border-box }
+body { margin:0; background:var(--bg); color:var(--fg); font:13px/1.35 system-ui,sans-serif }
+header.top { position:sticky; top:0; z-index:5; display:flex; gap:18px; align-items:center; padding:8px 16px; background:var(--panel); border-bottom:1px solid var(--line); color:var(--muted) }
+header.top b { color:var(--fg); font-weight:500 } header.top .sec { margin-left:auto; color:var(--dim) }
+.body { display:grid; grid-template-columns:300px 1fr; gap:16px; padding:12px 16px }
+aside { position:sticky; top:44px; align-self:start; max-height:calc(100vh - 56px); overflow:auto; scrollbar-width:thin; background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:10px 10px 14px; display:grid; gap:12px }
+.canvas { display:grid; place-items:center; color:var(--dim); border:1px dashed var(--edge); border-radius:6px; min-height:1200px; background:radial-gradient(circle at 50% 30%, #14171f 0, transparent 50%) }
+
+/* head: name · shuffle · save (autocomplete) · states menu */
+.head { display:grid; grid-template-columns:auto auto 1fr; gap:6px; align-items:center; padding-bottom:10px; border-bottom:1px solid var(--line) }
+.head b { font-weight:500 }
+button, select, input[type=number], input[type=text], .combo input { background:var(--well); color:var(--fg); border:1px solid var(--edge); border-radius:4px; padding:3px 7px; font:inherit; min-height:24px }
+button:hover, select:hover, input:hover { border-color:var(--edge-hi) }
+:focus-visible { outline:2px solid var(--ink); outline-offset:1px }
+/* combobox: the input shows the selected state; the list drops while focused; items carry star and delete */
+.combo { position:relative; display:grid; grid-template-columns:1fr auto; align-items:center; gap:6px; min-width:0 }
+.combo input { width:100%; min-width:0 }
+.combo .sync { color:var(--ink); font-size:9px; opacity:.8 }
+.combo ul { display:none; position:absolute; top:100%; left:0; min-width:100%; width:max-content; max-width:300px; z-index:6; margin:4px 0 0; padding:4px; list-style:none; background:var(--well); border:1px solid var(--edge); border-radius:4px; box-shadow:0 8px 24px #0008 }
+.combo:focus-within ul { display:grid; gap:2px }
+.combo li { display:grid; grid-template-columns:1fr auto auto; gap:6px; align-items:center; padding:3px 6px; border-radius:3px; color:var(--fg) }
+.combo li:hover, .combo li.sel { background:var(--panel) }
+.combo li .name { display:grid } .combo li .name small { color:var(--dim); font:10px ui-monospace,Menlo,monospace; white-space:nowrap }
+.combo li button.i { background:none; border:0; padding:0 3px; color:var(--dim); min-height:0 } .combo li:hover button.i { color:var(--fg) }
+.combo li.star .name::before { content:"★ "; color:var(--ink) }
+.combo li.new { color:var(--muted); border-top:1px solid var(--line); border-radius:0; margin-top:2px; padding-top:5px }
+/* rows */
+fieldset { border:0; margin:0; padding:0; min-width:0; display:grid; gap:1px }
+legend { padding:0 4px; margin-bottom:4px; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--dim) }
+fieldset.static legend::after { content:" · not shuffled"; text-transform:none; letter-spacing:0 }
+.row { display:grid; grid-template-columns:14px 8ch 1fr 4.5ch 16px; align-items:center; gap:7px; padding:3px 4px; border-radius:4px }
+.row:hover { background:var(--well) }
+.row .lbl { color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.row:hover .lbl { color:var(--fg) }
+.row select, .row input[type=number] { width:100%; min-height:22px; padding:1px 5px }
+.row input[type=checkbox]:not(.pin) { justify-self:start; width:15px; height:15px; accent-color:var(--ink); margin:0 }
+output { font:11px ui-monospace,Menlo,monospace; text-align:right; font-variant-numeric:tabular-nums; color:var(--fg) }
+/* pin + roll: quiet until the row is hovered or the pin is on */
+.pin { width:13px; height:13px; margin:0; accent-color:var(--ink); opacity:.35 }
+.row:hover .pin, .pin:checked { opacity:1 }
+.roll { background:none; border:0; padding:0; min-height:0; color:var(--dim); opacity:0; font-size:13px; line-height:1; cursor:pointer }
+.row:hover .roll { opacity:1 } .roll:hover { color:var(--ink) }
+span.pin, span.roll { visibility:hidden }
+/* range: fat thumb, thin track, a tick at the default */
+input[type=range] { width:100%; height:20px; margin:0; accent-color:var(--ink); background:transparent }
+input[type=range]::-webkit-slider-runnable-track { height:3px; background:var(--edge); border-radius:2px }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:13px; height:13px; margin-top:-5px; border-radius:50%; background:var(--ink); border:2px solid var(--bg); box-shadow:0 0 0 1px var(--ink) }
+datalist { display:none }
+/* scrub foot */
+.foot { display:grid; grid-template-columns:auto 1fr 4.5ch; gap:8px; align-items:center; padding-top:8px; border-top:1px solid var(--line); color:var(--muted) }
+</style></head><body>
+<header class="top"><b>gothic</b><span>eye</span><span style="color:var(--fg);border-bottom:2px solid var(--ink)">slice</span><span>icons</span><span>border</span><span>fractal</span><span>circles</span><span>tiles</span><span>arches</span><span>frames</span><span class="sec">zDepth ▁▁ · draw-in ☑</span></header>
+<div class="body"><aside>
+  <div class="head"><b>slice</b><button title="reroll every field that is neither static nor pinned">shuffle</button>
+    <div class="combo" title="state: the selected name receives every edit (autosave). Type a new name to fork the current values into a new state">
+      <input value="tight" placeholder="state…" aria-label="state"><span class="sync" title="synced">●</span>
+      <ul role="listbox">
+        <li class="star sel"><span class="name">tight<small>cut=32 spread=400</small></span><button class="i" title="unstar">★</button><button class="i" title="delete">×</button></li>
+        <li><span class="name">loose<small>cut=92 spread=1600</small></span><button class="i" title="star">☆</button><button class="i" title="delete">×</button></li>
+        <li><span class="name">cathedral<small>order=hilbert curve=gamma</small></span><button class="i" title="star">☆</button><button class="i" title="delete">×</button></li>
+        <li class="new"><span class="name">+ new state from typed name</span></li>
+      </ul>
+    </div>
+  </div>
+  <fieldset class=""><legend>shape</legend><div class="row" title="seed for the seal and every stochastic order and gap
+seed: seed · default 7 · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">seed</label><input type="number" value="7"><output>7</output><button class="roll" title="reroll seed only">↻</button></div><div class="row" title="how a stroke appears: drawn, cut behind a blade, slid along its chord, both, or glowed up
+reveal: one of draw | cut | slide | draw+slide | glow · default draw · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">reveal</label><select><option>draw</option><option>cut</option><option>slide</option><option>draw+slide</option><option>glow</option></select><output></output><button class="roll" title="reroll reveal only">↻</button></div></fieldset><fieldset class=""><legend>cut</legend><div class="row" title="stroke length in px; every subpath is cut into equal arc-length pieces
+cut: range 8..160 step 1 · default 48 · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">cut px</label><input type="range" min="8" max="160" step="1" value="48" list="d-cut"><datalist id="d-cut"><option value="48"></option></datalist><output>48</output><button class="roll" title="reroll cut px only">↻</button></div><div class="row" title="sweep direction in degrees; orders the sweep only
+angle: range 0..360 step 1 · default 215 · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">angle</label><input type="range" min="0" max="360" step="1" value="215" list="d-angle"><datalist id="d-angle"><option value="215"></option></datalist><output>215</output><button class="roll" title="reroll angle only">↻</button></div><div class="row" title="random spread added to the sweep angle per stroke
+jit: range 0..180 step 1 · default 18 · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">jitter</label><input type="range" min="0" max="180" step="1" value="18" list="d-jit"><datalist id="d-jit"><option value="18"></option></datalist><output>18</output><button class="roll" title="reroll jitter only">↻</button></div><div class="row" title="flight distance in chord lengths
+dist: range 0.3..3 step 0.1 · default 1.2 · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">dist</label><input type="range" min="0.3" max="3" step="0.1" value="1.2" list="d-dist"><datalist id="d-dist"><option value="1.2"></option></datalist><output>1.2</output><button class="roll" title="reroll dist only">↻</button></div><div class="row" title="flight time per stroke in ms
+flight: range 60..600 step 10 · default 160 · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">flight</label><input type="range" min="60" max="600" step="10" value="160" list="d-flight"><datalist id="d-flight"><option value="160"></option></datalist><output>160</output><button class="roll" title="reroll flight only">↻</button></div></fieldset><fieldset class=""><legend>order</legend><div class="row" title="which stroke starts when
+order: one of sweep | radial | radial-in | path | golden | vdc | spectral | hilbert | random · default sweep · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">order</label><select><option>sweep</option><option>radial</option><option>radial-in</option><option>path</option><option>golden</option><option>vdc</option><option>spectral</option><option>hilbert</option><option>random</option></select><output></output><button class="roll" title="reroll order only">↻</button></div><div class="row" title="start-time progression: shaped curves or stochastic gaps
+curve: one of linear | smooth-2 | fourier | logistic | poisson | gamma | levy | pink · default linear · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">curve</label><select><option>linear</option><option>smooth-2</option><option>fourier</option><option>logistic</option><option>poisson</option><option>gamma</option><option>levy</option><option>pink</option></select><output></output><button class="roll" title="reroll curve only">↻</button></div><div class="row" title="the curve's parameter
+ordN: range 1..8 step 0.5 · default 2 · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">N/β/k</label><input type="range" min="1" max="8" step="0.5" value="2" list="d-ordN"><datalist id="d-ordN"><option value="2"></option></datalist><output>2</output><button class="roll" title="reroll N/β/k only">↻</button></div><div class="row" title="contrast of the progression curve; 0 = linear
+gain: range 0..4 step 0.1 · default 1.5 · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">gain</label><input type="range" min="0" max="4" step="0.1" value="1.5" list="d-gain"><datalist id="d-gain"><option value="1.5"></option></datalist><output>1.5</output><button class="roll" title="reroll gain only">↻</button></div><div class="row" title="clamps every gap to this many medians
+silence: range 1..8 step 0.5 · default 2.5 · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">silence</label><input type="range" min="1" max="8" step="0.5" value="2.5" list="d-silence"><datalist id="d-silence"><option value="2.5"></option></datalist><output>2.5</output><button class="roll" title="reroll silence only">↻</button></div><div class="row" title="total start-time window in ms
+spread: range 0..3000 step 50 · default 800 · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">spread</label><input type="range" min="0" max="3000" step="50" value="800" list="d-spread"><datalist id="d-spread"><option value="800"></option></datalist><output>800</output><button class="roll" title="reroll spread only">↻</button></div><div class="row" title="steps the window is quantised into
+burst: range 1..16 step 1 · default 10 · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">steps</label><input type="range" min="1" max="16" step="1" value="10" list="d-burst"><datalist id="d-burst"><option value="10"></option></datalist><output>10</output><button class="roll" title="reroll steps only">↻</button></div></fieldset><fieldset class=""><legend>fly</legend><div class="row" title="easing of the fly-in
+fease: one of back | spring | out | io | linear · default back · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">fly ease</label><select><option>back</option><option>spring</option><option>out</option><option>io</option><option>linear</option></select><output></output><button class="roll" title="reroll fly ease only">↻</button></div><div class="row" title="stroke stretched along its flight direction at launch
+stretch: range 0..2.5 step 0.05 · default 0.9 · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">stretch</label><input type="range" min="0" max="2.5" step="0.05" value="0.9" list="d-stretch"><datalist id="d-stretch"><option value="0.9"></option></datalist><output>0.9</output><button class="roll" title="reroll stretch only">↻</button></div><div class="row" title="overshoot past the resting place
+os: range 0..1.4 step 0.05 · default 0.5 · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">overshoot</label><input type="range" min="0" max="1.4" step="0.05" value="0.5" list="d-os"><datalist id="d-os"><option value="0.5"></option></datalist><output>0.5</output><button class="roll" title="reroll overshoot only">↻</button></div><div class="row" title="afterimage length in stroke lengths
+ailen: range 0.5..5 step 0.1 · default 2 · shuffle rolls it"><input type="checkbox" class="pin" title="pin: shuffle skips this field"><label class="lbl">ai len</label><input type="range" min="0.5" max="5" step="0.1" value="2" list="d-ailen"><datalist id="d-ailen"><option value="2"></option></datalist><output>2</output><button class="roll" title="reroll ai len only">↻</button></div></fieldset><fieldset class="static"><legend>static</legend><div class="row" title="leave a fading afterimage behind each stroke
+ai: bool · default on · static: shuffle keeps it"><span class="pin" aria-hidden="true"></span><label class="lbl">afterimage</label><input type="checkbox" checked><output></output><span class="roll" aria-hidden="true"></span></div><div class="row" title="stroke width multiplier
+weight: range 0.4..2.5 step 0.1 · default 1 · static: shuffle keeps it"><span class="pin" aria-hidden="true"></span><label class="lbl">weight</label><input type="range" min="0.4" max="2.5" step="0.1" value="1" list="d-weight"><datalist id="d-weight"><option value="1"></option></datalist><output>1</output><span class="roll" aria-hidden="true"></span></div><div class="row" title="advance the clock; off freezes at the scrubbed time
+run: bool · default on · static: shuffle keeps it"><span class="pin" aria-hidden="true"></span><label class="lbl">play</label><input type="checkbox" checked><output></output><span class="roll" aria-hidden="true"></span></div></fieldset>
+  <div class="foot"><span>scrub</span><input type="range" min="0" max="100" value="38"><output>38%</output></div>
+</aside>
+<div class="canvas">hero 240 · sizes row · polyline · plot · trace<br><br>state combobox: the shown name is the state that receives every edit (● synced); focus it to pick another or type a new name<br>hover a row: pin and ↻ appear, label brightens, the title tooltip carries desc · range · default · shuffle rule<br>tick under each slider = the default</div></div>
+</body></html>

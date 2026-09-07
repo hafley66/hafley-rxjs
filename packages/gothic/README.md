@@ -1,6 +1,6 @@
 # @hafley66/gothic
 
-Procedural gothic line art as one React SPA. Every route is a notebook: a bar of knobs derived from a spec, URL state per section, shuffle with pins, named states, draw-in animation, a shared header with scroll-driven anchors. The point of the package is to study a generator by turning its knobs and to add a new generator in one file.
+Procedural gothic line art as one React SPA. Every route is a notebook: a sticky knob drawer derived from a spec (one row per field: pin, label, control, value, reroll), URL state per section, shuffle with pins, named states, draw-in animation, a shared header with scroll-driven anchors. The point of the package is to study a generator by turning its knobs and to add a new generator in one file.
 
 ## TOC
 
@@ -45,7 +45,9 @@ pnpm --filter @hafley66/gothic check          # typecheck + vitest + build:singl
 | shuffle | every unpinned, non-static field rerolls from one seeded rng, `pushState` | same keys, new values |
 | pin (box next to a knob) | shuffle skips it; survives reload and back/forward | `?eye.pin=seed,shape` |
 | preset select | applies a partial value set, `pushState` | keys it touches |
-| save (state name + save) | localStorage `gothic.<page>.<section>.states`, chips with star and delete | none |
+| state combobox | the shown name is the state receiving every edit (●). Type an existing name or pick it from the list to load it; type a new name and press Enter to fork the current values into it; list rows carry star and delete. localStorage `gothic.<page>.<section>.states` + `.selected` | none |
+| ↻ on a row | rerolls that one field, `pushState` | that key |
+| knobs (drawer summary) | folds the drawer to one line; zDepth and draw-in live on that line | none |
 | autosave | every change lands in `gothic.<page>.<section>.current`; start order is defaults, then autosave, then URL keys present | none |
 | zDepth / draw-in (header) | page-global stroke fade by `data-z`, and draw-in time | `?page.z=0.4&page.draw=false` |
 
@@ -108,7 +110,7 @@ Several sections on one page: one `Section` per spec, each with its own `id`; li
 | `bool` | boolean | `p` true-probability under shuffle |
 | `text` | string | `size` |
 
-Every kind takes `label`, `hint` (tooltip first line; the derived facts follow it), `group` (bar cluster), `static: true` or `shuffle: false` (trailing cluster, no pin). Hover any control for its tooltip; the smoke test fails on a control without one.
+Every kind takes `label`, `hint` (tooltip first line; the derived facts follow it), `group` (drawer column), `static: true` or `shuffle: false` (last column, no pin, no reroll). Hover any control for its tooltip; the smoke test fails on a control without one.
 
 **Algo** (`src/kit/2_algo.ts`): `{ name, spec, presets, run(params, { size, seed, minPx }) -> { paths: [{ d, z?, cls? }], caption, lod[] } }`. Drop one into `src/algos/`, then `<AlgoSection page="fractal" algo={myAlgo} sizes={[64, 128, 256]} />` renders a sizes row with LOD captions. `/fractal` is the reference.
 
@@ -128,7 +130,7 @@ Every kind takes `label`, `hint` (tooltip first line; the derived facts follow i
 | path | role |
 |---|---|
 | `src/app/` | page table, router (`loc` signal, history or hash), section state (values + pins signals, URL, autosave), view transitions, `App` |
-| `src/ui/` | hooks (`useClock`, `useDrawIn`, `useAnchor`), `Bar`, `Section`, `Header`, `AlgoSection`, `Raw` |
+| `src/ui/` | hooks (`useClock`, `useDrawIn`, `useAnchor`), `Bar` (one drawer panel per section: head, state combobox, group columns of rows), `Section` (portals its panel into the drawer, renders the art), `Header`, `AlgoSection`, `Raw` |
 | `src/kit/` | framework with no gothic knowledge: spec, url, algo contract, store. `src/kit/README.md` is the contract and the harvest list |
 | `src/pages/` | one module per route exporting `PAGE` |
 | `src/lib/`, `src/algos/` | generators and algos, pure |

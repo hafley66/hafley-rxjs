@@ -7,7 +7,7 @@ Shared notebook framework: a spec drives the bar, the URL, shuffle, pins, named 
 1. Files
 2. Spec and derived schema
 3. URL namespaces
-4. Bar: groups, static cluster, shuffle, pins, presets, named states
+4. Bar: drawer panel, group columns, rows, shuffle, pins, reroll, presets, state combobox
 5. Section and page
 6. Depth contract (data-z / zDepth)
 7. Animation: draw-in and clock
@@ -42,12 +42,12 @@ type V = ValuesOf<typeof SPEC>
 | field key | meaning |
 |---|---|
 | `kind` | `range`, `number`, `seed`, `select`, `bool`, `text` |
-| `static: true` or `shuffle: false` | shuffle never touches it; rendered in the trailing static cluster; no pin toggle |
-| `group` | bar cluster label; first-appearance order |
+| `static: true` or `shuffle: false` | shuffle never touches it; rendered in the last column; no pin, no reroll |
+| `group` | drawer column label; first-appearance order |
 | `roll: [lo, hi]` | shuffle window inside `min..max` (ranges, numbers) |
 | `pool` | select shuffle draws uniformly from this list (repeat an option to weight it) |
 | `p` | bool shuffle true-probability (default .5) |
-| `hint` | first tooltip line; `describe(key, fd)` appends kind, window, default and the shuffle behaviour. The bar puts it on the label's `title`, so every input has a hover tooltip |
+| `hint` | first tooltip line; `describe(key, fd)` appends kind, window, default and the shuffle behaviour. The bar puts it on the row's `title`, so every input has a hover tooltip |
 
 Derived, never written twice: `schemaOf(spec)` gives a zod object; `parseValues(spec, raw)` safeParses per key, so a junk value falls to the field default and unknown keys are ignored.
 
@@ -75,9 +75,9 @@ flowchart LR
 | pin | `.kit-pin[data-pin]` | toggles membership in the section pin set; pinned fields skip shuffle |
 | shuffle | `.kit-shuffle` | one seeded rng rolls every non-static, non-pinned field; one push |
 | preset | `.kit-preset` | `presets: Record<name, Partial<Values>>`; merges and pushes; shows the matching name |
-| readout | `.kit-readout` | non-default values as `k=v`; full list in the title |
 | extra | `.kit-extra` | notebook-owned slot (stats, scrub, custom buttons); persists across renders |
-| named states | `.kit-states` | name input + save; chips: click name loads (push), star toggles, × deletes |
+| state combobox | `.kit-combo` | input shows the selected state (● synced); typing an existing name or clicking a row loads and selects it (push); Enter on a new name saves and selects; rows carry star and delete. `state.selected`, store `.selected` |
+| reroll | `.kit-roll` | one field, `state.roll(key)`, push |
 
 Inputs with `data-live="1"` are skipped by sync (an animation loop owns them).
 

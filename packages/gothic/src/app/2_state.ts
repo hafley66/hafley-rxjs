@@ -11,6 +11,7 @@ import {
   parseValues,
   pinSet,
   pinText,
+  rollField,
   shuffle,
   type ValuesOf,
 } from "../kit/0_spec.js"
@@ -105,13 +106,16 @@ export type SectionState<S extends AnySpec> = {
   values: Signal<ValuesOf<S>>
   pins: Signal<PinValues>
   states: Signal<Saved[]>
+  selected: Signal<number | null>
   store: Store
   set(patch: Partial<ValuesOf<S>>, m?: Mode): void
   rollAll(): void
+  roll(key: string): void
   togglePin(key: string): void
   applyPreset(name: string): void
   save(name: string): void
   load(id: number): void
+  select(id: number | null): void
   star(id: number): void
   remove(id: number): void
 }
@@ -141,14 +145,24 @@ export function sectionState<S extends AnySpec>(
     pin: urlKeys.has(`${id}.pin`) ? String(fromUrl.pin ?? "") : currentPin(`${STORAGE}.${key}`),
   })
   const states = Signal<Saved[]>(st.list())
+  const selected = Signal<number | null>(st.selected())
   cells.set(key, { page, id, spec, values: values as never, pins })
 
+  // every edit lands in the autosave and, when a named state is selected, in that state too
+  const persist = (v: ValuesOf<S>, pin: string) => {
+    st.saveCurrent(v, pin)
+    const sid = selected.$()
+    if (sid !== null && st.list().some(x => x.id === sid)) {
+      st.update(sid, v, pin)
+      states.$(st.list())
+    }
+  }
   values.$.pipe(skip(1)).subscribe(v => {
-    st.saveCurrent(v, pins.$().pin)
+    persist(v, pins.$().pin)
     writeUrl(mode)
   })
   pins.$.pipe(skip(1)).subscribe(p => {
-    st.saveCurrent(values.$(), p.pin)
+    persist(values.$(), p.pin)
     writeUrl(mode)
   })
 
@@ -162,9 +176,11 @@ export function sectionState<S extends AnySpec>(
     values,
     pins,
     states,
+    selected,
     store: st,
     set,
     rollAll: () => commit("push", () => values.$(shuffle(spec, values.$(), mulberry32(freshSeed()), pinSet(pins.$())))),
+    roll: k => set({ [k]: rollField(spec[k], mulberry32(freshSeed())) } as Partial<ValuesOf<S>>, "push"),
     togglePin(k) {
       const p = pinSet(pins.$())
       if (p.has(k)) p.delete(k)
@@ -175,9 +191,13 @@ export function sectionState<S extends AnySpec>(
       const p = presets[name]
       if (p) set(p, "push")
     },
+    // save = create or overwrite by name, then that state receives every later edit
     save(name) {
-      st.add(name, values.$(), pins.$().pin)
+      const hit = st.byName(name)
+      if (hit) st.update(hit.id, values.$(), pins.$().pin)
+      const s = hit ?? st.add(name, values.$(), pins.$().pin)
       states.$(st.list())
+      state.select(s.id)
     },
     load(sid) {
       const s = st.list().find(x => x.id === sid)
@@ -186,6 +206,11 @@ export function sectionState<S extends AnySpec>(
         values.$({ ...values.$(), ...(s.vals as Partial<ValuesOf<S>>) })
         pins.$({ pin: s.pin })
       })
+      state.select(sid)
+    },
+    select(sid) {
+      st.select(sid)
+      selected.$(sid)
     },
     star(sid) {
       st.star(sid)
@@ -194,6 +219,7 @@ export function sectionState<S extends AnySpec>(
     remove(sid) {
       st.remove(sid)
       states.$(st.list())
+      if (selected.$() === sid) selected.$(null)
     },
   }
   made.set(key, state as unknown as SectionState<AnySpec>)

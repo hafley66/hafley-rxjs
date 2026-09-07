@@ -6,6 +6,10 @@ export type Store = {
   add(name: string, vals: Record<string, unknown>, pin: string): Saved
   star(id: number): void
   remove(id: number): void
+  update(id: number, vals: Record<string, unknown>, pin: string): void
+  byName(name: string): Saved | undefined
+  selected(): number | null
+  select(id: number | null): void
 }
 
 type Kv = Pick<globalThis.Storage, "getItem" | "setItem">
@@ -19,10 +23,12 @@ const get = <T>(ls: Kv, k: string): T | null => {
 }
 const set = (ls: Kv, k: string, v: unknown) => ls.setItem(k, JSON.stringify(v))
 
-// key = "<prefix>.<page>.<section>": ".current" autosaves the live values, ".states" holds the named list
+// key = "<prefix>.<page>.<section>": ".current" autosaves the live values, ".states" holds the named list,
+// ".selected" is the id of the named state that receives every edit (null = only the autosave does)
 export function store(key: string, ls: Kv = localStorage): Store {
   const ck = `${key}.current`
   const sk = `${key}.states`
+  const selk = `${key}.selected`
   const list = () => get<Saved[]>(ls, sk) ?? []
   const put = (states: Saved[]) => set(ls, sk, states)
   return {
@@ -46,7 +52,14 @@ export function store(key: string, ls: Kv = localStorage): Store {
     },
     remove(id) {
       put(list().filter(s => s.id !== id))
+      if (get<number>(ls, selk) === id) set(ls, selk, null)
     },
+    update(id, vals, pin) {
+      put(list().map(s => (s.id === id ? { ...s, vals, pin } : s)))
+    },
+    byName: name => list().find(s => s.name === name.trim()),
+    selected: () => get<number>(ls, selk),
+    select: id => set(ls, selk, id),
   }
 }
 
