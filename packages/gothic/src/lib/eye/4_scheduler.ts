@@ -199,3 +199,12 @@ export function scheduler(seed: number, tempo: number, auto: boolean, opts: Part
     },
   }
 }
+
+/* A full-amplitude blink layered over the schedule by the caller; u = ms since the trigger. null once it is over.
+   Same close/open profiles and the same nasal and Bell's lags as a scheduled blink. */
+export function blinkAt(tm: Timing, u: number): { AU45: number; AU45n: number; AU45b: number } | null {
+  if (u < 0 || u >= tm.close + tm.open) return null
+  const at = (x: number) => (x < 0 ? 0 : x < tm.close ? closeP(x / tm.close) : 1 - openP((x - tm.close) / tm.open))
+  const c = at(u)
+  return { AU45: c, AU45n: Math.min(c, at(u - tm.lagMs)), AU45b: Math.max(c, at(u - tm.bellLag)) }
+}

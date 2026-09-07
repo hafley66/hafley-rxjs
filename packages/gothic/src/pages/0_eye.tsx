@@ -1,27 +1,33 @@
 import { type RefObject, useEffect, useRef } from "react"
 import type { PageSpec } from "../app/0_pages.js"
+import { sectionState } from "../app/2_state.js"
 import type { AnySpec, ValuesOf } from "../kit/0_spec.js"
 import {
-  type Au,
   AU,
+  type Au,
+  activate,
+  blinkAt,
   EXPR,
   type Frame,
-  SHAPES,
-  type Shape,
-  type Scheduler,
-  type Slot,
+  lashLines,
   lashSlots,
   lidPts,
   randomShape,
+  type Scheduler,
+  SHAPES,
+  type Shape,
+  type Slot,
   scheduler,
-  activate,
+  TIMING,
+  type Timing,
 } from "../lib/eye/index.js"
-import { type Pt, type Scene, f, line, mulberry32, pl, seal, sceneMarkup } from "../lib/index.js"
+import { f, line, mulberry32, type Pt, pl, type Scene, sceneMarkup, seal } from "../lib/index.js"
 import { useClock } from "../ui/0_hooks.js"
 import { Section } from "../ui/2_Section.js"
 
 /* ============ markup once, pose per frame ============ */
 type Knobs = { sh: Shape; N: number; lag: number; pop: number; dress: boolean }
+type Ctl = { blink(): void; rewake(): void }
 type Eye = {
   el: SVGSVGElement
   k: Knobs
@@ -105,34 +111,10 @@ function dress(e: Eye, sh: Shape, W: number, H: number, au: Au, up: Pt[], lo: Pt
   set("feet", d)
 }
 
-function lashes(e: Eye, up: Pt[], N: number, yc: number, aUpMean: number) {
+function lashes(e: Eye, up: Pt[], aUp: number) {
   const ps = e.el.querySelectorAll(".lashes path")
-  e.slots.forEach(({ a, long }, i) => {
-    let best = 0
-    let bd = 9
-    for (let j = 0; j < up.length; j++) {
-      const da = Math.abs(Math.atan2(up[j][1] - yc, up[j][0]) - a)
-      if (da < bd) {
-        bd = da
-        best = j
-      }
-    }
-    const [x0, y0] = up[best]
-    const len = e.lashLen * (long ? 1 : 0.55) * (0.2 + 0.8 * aUpMean)
-    const j1 = Math.min(best + 1, N)
-    const j0 = Math.max(best - 1, 0)
-    const nx = -(up[j1][1] - up[j0][1])
-    const ny = up[j1][0] - up[j0][0]
-    const nl = Math.hypot(nx, ny) || 1
-    ps[i].setAttribute(
-      "d",
-      line(
-        x0,
-        y0,
-        x0 + ((nx / nl) * 0.5 + Math.cos(a) * 0.5) * len,
-        y0 + ((ny / nl) * 0.5 + Math.sin(a) * 0.5 * aUpMean + (1 - aUpMean) * 0.4) * len,
-      ),
-    )
+  lashLines(up, e.slots, e.lashLen, aUp).forEach(([a, b], i) => {
+    ps[i].setAttribute("d", line(a[0], a[1], b[0], b[1]))
   })
 }
 
@@ -150,9 +132,8 @@ export function pose(e: Eye, au: Au, gaze = { x: 0, y: 0 }, dil = 1) {
   const gy = H * 0.5 * (gaze.y + fr.bell)
   const gx = W * 0.22 * gaze.x
   el.querySelector(".seal")?.setAttribute("transform", `translate(${f(gx)} ${f(yc + gy)}) scale(${f(dil)})`)
-  const aUpMean = activate(au, 0, lag, pop).aUp
   dress(e, sh, W, H, au, up, lo, fr, N)
-  lashes(e, up, N, yc, aUpMean)
+  lashes(e, up, activate(au, sh.up.peak, lag, pop).aUp)
 }
 
 /* ============ page ============ */
@@ -173,8 +154,8 @@ const SPEC = {
     label: "lashes",
   },
   segs: { kind: "range", min: 8, max: 160, default: 96, roll: [24, 160], group: "lids" },
-  lag: { kind: "range", min: 0, max: 1.5, step: 0.05, default: 0.5, label: "zip", group: "lids" },
-  pop: { kind: "range", min: 0, max: 1, step: 0.05, default: 0.15, roll: [0, 0.6], group: "lids" },
+  lag: { kind: "range", min: 0, max: 1, step: 0.05, default: 1, label: "tilt", group: "lids" },
+  pop: { kind: "range", min: 0, max: 0.03, step: 0.001, default: 0.03, label: "settle", group: "lids" },
   auto: { kind: "bool", default: true, p: 0.8, label: "auto expressions" },
   dress: { kind: "bool", default: true, static: true },
   weight: { kind: "range", min: 0.5, max: 2.5, step: 0.1, default: 1, static: true },
@@ -184,10 +165,49 @@ const SPEC = {
 type V = ValuesOf<typeof SPEC>
 const SIZES = [16, 24, 32, 48, 64, 96, 160]
 
-const auSliders = (): Record<string, number> =>
-  Object.fromEntries(
-    [...document.querySelectorAll<HTMLInputElement>("[data-au]")].map(e => [e.dataset.au as string, Number(e.value)]),
-  )
+// the scheduler's timing table as a bar; every key of TIMING is a knob, so the section is the module's test rig
+const T_SPEC = {
+  close: { kind: "range", min: 40, max: 300, step: 5, default: TIMING.close, group: "blink" },
+  open: { kind: "range", min: 60, max: 500, step: 5, default: TIMING.open, group: "blink" },
+  settle: { kind: "range", min: 0, max: 400, step: 10, default: TIMING.settle, group: "blink" },
+  lagMs: { kind: "range", min: 0, max: 40, step: 1, default: TIMING.lagMs, label: "nasal lag", group: "blink" },
+  bellLag: { kind: "range", min: 0, max: 150, step: 5, default: TIMING.bellLag, label: "bell lag", group: "blink" },
+  ibiMean: { kind: "range", min: 1500, max: 10000, step: 100, default: TIMING.ibiMean, label: "ibi", group: "rhythm" },
+  ibiFloor: { kind: "range", min: 500, max: 3000, step: 50, default: TIMING.ibiFloor, label: "floor", group: "rhythm" },
+  doubleP: { kind: "range", min: 0, max: 1, step: 0.05, default: TIMING.doubleP, label: "double", group: "rhythm" },
+  doubleGap: { kind: "range", min: 40, max: 400, step: 10, default: TIMING.doubleGap, label: "gap", group: "rhythm" },
+  drowsyP: { kind: "range", min: 0, max: 1, step: 0.02, default: TIMING.drowsyP, label: "drowsy", group: "rhythm" },
+  coupleP: { kind: "range", min: 0, max: 1, step: 0.05, default: TIMING.coupleP, label: "couple", group: "gaze" },
+  saccade: { kind: "range", min: 15, max: 120, step: 5, default: TIMING.saccade, group: "gaze" },
+  glanceMean: {
+    kind: "range",
+    min: 900,
+    max: 5000,
+    step: 100,
+    default: TIMING.glanceMean,
+    label: "glance",
+    group: "gaze",
+  },
+  wake: { kind: "range", min: 300, max: 3000, step: 50, default: TIMING.wake },
+} as const satisfies Record<keyof Timing, AnySpec[string]>
+type TV = ValuesOf<typeof T_SPEC>
+const T_PRESETS = {
+  defaults: { ...TIMING },
+  nervous: { ibiMean: 2000, doubleP: 0.4, coupleP: 0.6, glanceMean: 1000, saccade: 30 },
+  calm: { ibiMean: 7000, doubleP: 0.05, drowsyP: 0.15, glanceMean: 3200 },
+  "slow-mo": { close: 300, open: 500, settle: 400, lagMs: 40, bellLag: 150, wake: 3000 },
+}
+const timingState = () => sectionState("eye", "timing", T_SPEC, T_PRESETS)
+
+// the bar sliders add to the expression's tone (they start at 0 and reset on an expression change)
+const withSliders = (au: Au): Au => {
+  const out: Au = { ...au }
+  for (const e of document.querySelectorAll<HTMLInputElement>("[data-au]")) {
+    const k = e.dataset.au as string
+    out[k] = Math.min(1, (out[k] ?? 0) + Number(e.value))
+  }
+  return out
+}
 const clearSliders = () => {
   for (const e of document.querySelectorAll<HTMLInputElement>("[data-au]")) e.value = "0"
 }
@@ -199,14 +219,17 @@ type CellProps = {
   seed: number
   sh: Shape
   k: V
+  tm: Timing
   caption: string
   fixedAu?: Au | null
   hero?: boolean
   reg: Reg
 }
 
-function EyeCell({ W, H, seed, sh, k, caption, fixedAu = null, hero = false, reg }: CellProps) {
+function EyeCell({ W, H, seed, sh, k, tm, caption, fixedAu = null, hero = false, reg }: CellProps) {
   const ref = useRef<HTMLDivElement>(null)
+  const tmKey = JSON.stringify(tm)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: tm is read through tmKey
   useEffect(() => {
     const host = ref.current
     if (!host) return
@@ -222,7 +245,7 @@ function EyeCell({ W, H, seed, sh, k, caption, fixedAu = null, hero = false, reg
       k: { sh, N: Math.max(8, Math.round(k.segs * Math.min(1, W / 240))), lag: k.lag, pop: k.pop, dress: k.dress },
       fixedAu,
       hero,
-      sch: scheduler(seed, k.tempo, k.auto),
+      sch: scheduler(seed, k.tempo, k.auto, tm),
       last: "",
     }
     pose(e, { ...EXPR.neutral, AU45: 1 })
@@ -231,15 +254,25 @@ function EyeCell({ W, H, seed, sh, k, caption, fixedAu = null, hero = false, reg
       const at = reg.current.indexOf(e)
       if (at >= 0) reg.current.splice(at, 1)
     }
-  }, [W, H, seed, sh, k.lash, k.segs, k.lag, k.pop, k.dress, k.tempo, k.auto, caption, fixedAu, hero, reg])
+  }, [W, H, seed, sh, k.lash, k.segs, k.lag, k.pop, k.dress, k.tempo, k.auto, tmKey, caption, fixedAu, hero, reg])
   return <div ref={ref} className="cell grid justify-items-center gap-1 text-[10px] text-muted" />
 }
 
-function EyeBody({ v, stats }: { v: V; stats: RefObject<HTMLSpanElement | null> }) {
+type Panels = {
+  stats: RefObject<HTMLSpanElement | null>
+  scrub: RefObject<HTMLInputElement | null>
+  tms: RefObject<HTMLSpanElement | null>
+  drives: RefObject<HTMLDivElement | null>
+  log: RefObject<HTMLDivElement | null>
+  ctl: RefObject<Ctl | null>
+}
+
+const bar = (v: number) => "█".repeat(Math.round(Math.min(1, Math.max(0, v)) * 20)).padEnd(20, "·")
+
+function EyeBody({ v, tm, p }: { v: V; tm: Timing; p: Panels }) {
   const reg = useRef<Eye[]>([])
-  const auEl = useRef<HTMLDivElement>(null)
-  const logEl = useRef<HTMLDivElement>(null)
   const lines = useRef<string[]>([])
+  const forced = useRef<number | null>(null)
   const sh = v.shape === "random" ? randomShape(mulberry32(v.seed ^ 0x51ed27)) : SHAPES[v.shape]
   const names = Object.keys(EXPR)
 
@@ -248,57 +281,86 @@ function EyeBody({ v, stats }: { v: V; stats: RefObject<HTMLSpanElement | null> 
   }, [v.weight])
   useEffect(() => {
     lines.current = []
-    if (logEl.current) logEl.current.textContent = ""
-  }, [])
+    if (p.log.current) p.log.current.textContent = ""
+  }, [p.log])
 
-  useClock(elapsed => {
+  const clk = useClock(elapsed => {
     const eyes = reg.current
     if (!eyes.length) return
-    const run = v.run
-    const base: Au = { ...EXPR[v.expr], ...auSliders() }
+    const base: Au = withSliders(EXPR[v.expr])
     const hero = eyes.find(e => e.hero)
-    if (stats.current && hero)
-      stats.current.textContent = `${eyes.length} eyes · ${hero.k.N} segs/lid · cycle ${Math.round(hero.sch.T / 1000)}s`
+    if (p.stats.current && hero)
+      p.stats.current.textContent = `${eyes.length} eyes · ${hero.k.N} segs/lid · cycle ${Math.round(hero.sch.T / 1000)}s`
+    // forced blink rides on top of whatever the schedule says, max-merged per drive
+    const fb = forced.current === null ? null : blinkAt(tm, elapsed - forced.current)
+    if (forced.current !== null && fb === null && elapsed - forced.current >= 0) forced.current = null
+    const layer = (au: Au): Au =>
+      fb
+        ? {
+            ...au,
+            AU45: Math.max(au.AU45 ?? 0, fb.AU45),
+            AU45n: Math.max(au.AU45n ?? 0, fb.AU45n),
+            AU45b: Math.max(au.AU45b ?? 0, fb.AU45b),
+          }
+        : au
     for (const e of eyes) {
+      const q = e.sch.at(elapsed, e.fixedAu ?? base)
       if (e.fixedAu) {
-        pose(e, { ...e.fixedAu, AU45: run ? e.sch.at(elapsed, e.fixedAu).au.AU45 : 0 })
+        // held expression: only the closure drives come from the schedule, so tilt and Bell's roll still play
+        pose(e, layer({ ...e.fixedAu, AU45: q.au.AU45, AU45n: q.au.AU45n, AU45b: q.au.AU45b }))
         continue
       }
-      if (!run) {
-        pose(e, { ...base, AU45: 0 })
-        continue
-      }
-      const p = e.sch.at(elapsed, base)
-      pose(e, p.au, p.gaze, p.dil)
+      const au = layer(q.au)
+      pose(e, au, q.gaze, q.dil)
       if (!e.hero) continue
-      if (auEl.current)
-        auEl.current.textContent = Object.keys(AU)
-          .map(
-            k =>
-              `${k} ${AU[k].padEnd(13)} ${"█".repeat(Math.round((p.au[k] ?? 0) * 20)).padEnd(20, "·")} ${(p.au[k] ?? 0).toFixed(2)}`,
-          )
-          .join("\n")
-      if (p.what !== e.last) {
-        e.last = p.what
+      const what = fb ? "forced" : q.what
+      if (p.tms.current) p.tms.current.textContent = `${Math.round(q.tt)} ms`
+      if (p.drives.current)
+        p.drives.current.textContent = [
+          `t ${String(Math.round(q.tt)).padStart(6)} ms   ${what}`,
+          ...Object.keys(AU).map(
+            k => `${k.padEnd(5)} ${AU[k].padEnd(13)} ${bar(au[k] ?? 0)} ${(au[k] ?? 0).toFixed(3)}`,
+          ),
+          `AU45n nasal         ${bar(au.AU45n ?? 0)} ${(au.AU45n ?? 0).toFixed(3)}   tilt ${((au.AU45 ?? 0) - (au.AU45n ?? 0)).toFixed(3)}`,
+          `AU45b bell          ${bar(au.AU45b ?? 0)} ${(au.AU45b ?? 0).toFixed(3)}`,
+          `gaze (${q.gaze.x.toFixed(3)}, ${q.gaze.y.toFixed(3)})   pupil ${q.dil.toFixed(3)}`,
+        ].join("\n")
+      if (what !== e.last) {
+        e.last = what
         lines.current.push(
-          `${String(Math.round(p.tt)).padStart(6)}  ${p.what.padEnd(9)} gaze=(${p.gaze.x.toFixed(2)},${p.gaze.y.toFixed(2)}) dil=${p.dil.toFixed(3)}`,
+          `${String(Math.round(q.tt)).padStart(6)}  ${what.padEnd(9)} gaze=(${q.gaze.x.toFixed(2)},${q.gaze.y.toFixed(2)}) dil=${q.dil.toFixed(3)}`,
         )
         if (lines.current.length > 200) lines.current.shift()
-        if (logEl.current) {
-          logEl.current.textContent = lines.current.join("\n")
-          logEl.current.scrollTop = 1e9
+        if (p.log.current) {
+          p.log.current.textContent = lines.current.join("\n")
+          p.log.current.scrollTop = 1e9
         }
       }
     }
   })
+  useEffect(() => {
+    clk.run(v.run)
+  }, [clk, v.run])
+  useEffect(() => {
+    const input = p.scrub.current
+    if (!input) return
+    clk.bindScrub(input, () => (reg.current.find(e => e.hero)?.sch.T ?? 1000) / v.tempo)
+  }, [clk, p.scrub, v.tempo])
+  useEffect(() => {
+    p.ctl.current = {
+      blink: () => {
+        forced.current = clk.elapsed()
+      },
+      rewake: () => clk.reset(),
+    }
+  }, [clk, p.ctl])
 
-  const mono = "rounded-md bg-well p-2 font-mono text-[11px] text-muted leading-normal whitespace-pre"
   return (
     <>
       <section>
         <h2 className="mb-2 font-medium text-muted">
-          hero: rest anatomy from the shape, muscles deform it; blink = AU45 drive with a temporal→nasal zip; Bell's
-          roll hides the seal under the lid
+          hero: rest anatomy from the shape, muscles deform it; blink = AU45 closure whose margin tilts temporal to
+          nasal by the nasal lag; Bell's roll hides the seal under the lid; lashes rotate with the margin
         </h2>
         <div className="row flex flex-wrap items-end gap-5">
           <EyeCell
@@ -307,6 +369,7 @@ function EyeBody({ v, stats }: { v: V; stats: RefObject<HTMLSpanElement | null> 
             seed={v.seed}
             sh={sh}
             k={v}
+            tm={tm}
             caption={`hero ${v.shape}`}
             hero
             reg={reg}
@@ -324,6 +387,7 @@ function EyeBody({ v, stats }: { v: V; stats: RefObject<HTMLSpanElement | null> 
               seed={v.seed + 31 * i}
               sh={sh}
               k={v}
+              tm={tm}
               caption={n}
               fixedAu={EXPR[n]}
               reg={reg}
@@ -342,24 +406,30 @@ function EyeBody({ v, stats }: { v: V; stats: RefObject<HTMLSpanElement | null> 
               seed={v.seed + i * 7919}
               sh={sh}
               k={v}
+              tm={tm}
               caption={`${W}`}
               reg={reg}
             />
           ))}
         </div>
       </section>
-      <section>
-        <h2 className="mb-2 font-medium text-muted">muscle state (hero) and scheduler log: t ms · event · AUs</h2>
-        <div ref={auEl} className={mono} />
-        <div ref={logEl} className={`${mono} mt-2 h-[150px] overflow-auto`} />
-      </section>
     </>
   )
 }
 
+const MONO = "rounded-md bg-well p-2 font-mono text-[11px] text-muted leading-normal whitespace-pre"
+const BTN = "rounded-sm border border-edge px-1.5 py-px text-fg hover:border-ink"
+
 function EyePage() {
-  const stats = useRef<HTMLSpanElement>(null)
-  const extra = (
+  const p: Panels = {
+    stats: useRef<HTMLSpanElement>(null),
+    scrub: useRef<HTMLInputElement>(null),
+    tms: useRef<HTMLSpanElement>(null),
+    drives: useRef<HTMLDivElement>(null),
+    log: useRef<HTMLDivElement>(null),
+    ctl: useRef<Ctl>(null),
+  }
+  const muscles = (
     <>
       <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1.5">
         {Object.keys(AU)
@@ -379,30 +449,58 @@ function EyePage() {
             </label>
           ))}
       </span>
-      <span ref={stats} />
+      <span ref={p.stats} />
+    </>
+  )
+  const transport = (
+    <>
+      <button type="button" className={BTN} onClick={() => p.ctl.current?.blink()}>
+        blink now
+      </button>
+      <button type="button" className={BTN} onClick={() => p.ctl.current?.rewake()}>
+        re-wake
+      </button>
+      <label className="inline-flex items-center gap-1.5">
+        scrub
+        <input ref={p.scrub} className="w-60 accent-ink" type="range" min={0} max={100} step={0.05} defaultValue={0} />
+      </label>
+      <span ref={p.tms} className="font-mono text-[11px]" />
     </>
   )
   return (
-    <Section page="eye" def={{ id: "eye", title: "eye", spec: SPEC }} extra={extra}>
-      {v => <Body v={v as V} stats={stats} />}
-    </Section>
+    <>
+      <Section page="eye" def={{ id: "eye", title: "eye", spec: SPEC }} extra={muscles}>
+        {v => <Body v={v as V} tm={{ ...TIMING, ...(timingState().values.$() as TV) }} p={p} />}
+      </Section>
+      <Section page="eye" def={{ id: "timing", title: "timing", spec: T_SPEC, presets: T_PRESETS }} extra={transport}>
+        {() => (
+          <>
+            <h2 className="font-medium text-muted">
+              drives (hero): closure temporal / nasal / Bell's, muscle tone, gaze, pupil; log of scheduler events
+            </h2>
+            <div ref={p.drives} className={MONO} />
+            <div ref={p.log} className={`${MONO} h-[150px] overflow-auto`} />
+          </>
+        )}
+      </Section>
+    </>
   )
 }
 
 // the sliders are shared muscle input, so an expression change zeroes them before the next frame reads them
-function Body({ v, stats }: { v: V; stats: RefObject<HTMLSpanElement | null> }) {
+function Body({ v, tm, p }: { v: V; tm: Timing; p: Panels }) {
   const expr = useRef(v.expr)
   if (expr.current !== v.expr) {
     expr.current = v.expr
     clearSliders()
   }
-  return <EyeBody v={v} stats={stats} />
+  return <EyeBody v={v} tm={tm} p={p} />
 }
 
 export const PAGE: PageSpec = {
   id: "eye",
   title: "gothic: eye, muscle model",
   path: "/eye",
-  specs: { eye: SPEC },
+  specs: { eye: SPEC, timing: T_SPEC },
   Component: EyePage,
 }

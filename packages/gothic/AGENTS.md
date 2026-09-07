@@ -18,7 +18,7 @@ Rules for agents editing this package (user-set 2026-09-07):
 | styles | Tailwind v4 via `@tailwindcss/vite`; `src/app.css` holds only the theme vars, keyframes, the `data-z` depth rule and `@view-transition` |
 | generators | `src/lib/**`, `src/lib/legacy/**`, `src/algos/**`: pure, no React, path strings only |
 
-Commands: `pnpm --filter @hafley66/gothic dev | build | build:single | typecheck | test`.
+Commands: `pnpm --filter @hafley66/gothic dev | build | build:single | typecheck | test | smoke | check`. `check` = typecheck + test + build:single + smoke (`scripts/0_smoke.mjs`, playwright: every tab renders, zero console errors, tab x identical, file:// works). Human onboarding: `README.md` (run, study loop, add a page / field / algo).
 
 ## Layout
 
@@ -32,7 +32,7 @@ Commands: `pnpm --filter @hafley66/gothic dev | build | build:single | typecheck
 | `src/ui/` | `0_hooks` (clock, draw-in, `--kit-top`, anchors), `1_Bar`, `2_Section`, `3_Header`, `4_Algo`, `5_Raw` |
 | `src/kit/` | `0_spec` (field format, shuffle, pins), `1_url` (namespaced query), `2_algo` (Algo contract), `3_store` |
 | `src/pages/` | one module per route, each exporting `PAGE: PageSpec` |
-| `src/lib/eye/` | the eye anatomy module (SHAPES, EXPR, AU, activate, frame, lidPts, lashSlots, scheduler) |
+| `src/lib/eye/` | the eye anatomy module (SHAPES, EXPR, AU, activate, frame, lidPts, lashSlots, lashLines, TIMING, scheduler, blinkAt); `/eye` has a `timing` section whose spec mirrors `TIMING`, so the route is the module's test rig |
 | `src/lib/legacy/` | the single-file notebooks' generators, moved unchanged (`.js` + a hand-written `.d.ts`) |
 
 ## Routes
