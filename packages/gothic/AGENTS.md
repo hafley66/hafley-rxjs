@@ -16,7 +16,7 @@ Rules for agents editing this package (user-set 2026-09-07):
 | `src/lib/` | gothic-specific shared code: rng, geometry helpers, `foilRing`, the seal composer |
 | `src/notebooks/` | one module per notebook; `0_nav.ts` lists the header links |
 | `src/algos/` | `Algo<P>` implementations (`0_seal.ts`) |
-| `arches.html`, `circles.html`, `tiles.html`, `index.html` | legacy single-file notebooks, not on the kit; they load `src/notebooks/1_legacy.ts` for the shared header + section anchors |
+| `arches.html`, `circles.html`, `tiles.html`, `index.html` | legacy single-file notebooks, not on the kit; they load `nav.js` (classic script, works from file://) for the shared sticky header: file tabs, section anchors, `--kit-top` offset |
 
 Commands: `pnpm --filter @hafley66/gothic dev` (vite, entries at `/eye.html` etc.), `typecheck`, `test` (vitest over `src/kit`).
 
@@ -32,5 +32,7 @@ Commands: `pnpm --filter @hafley66/gothic dev` (vite, entries at `/eye.html` etc
 - Kit stays harvestable: no gothic-specific code inside `src/kit`; seal, foilRing, eye anatomy, slice reveal live in `src/lib` or the notebook module.
 
 ## Legacy notebooks (not migrated)
+
+- `nav.js` is the single page list; `src/notebooks/0_nav.ts` imports it for the kit header. Add a page there once.
 
 - `arches.html`, `circles.html`, `tiles.html`, `index.html`: single-file, own their state handling. `tiles.html` holds the islamic star / mosaic / blackwork sections split out of circles; the fma composer has no tiling bands.
