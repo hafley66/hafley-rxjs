@@ -1,0 +1,27 @@
+{
+  "name": "@hafley66/gothic",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Procedural SVG notebooks on a shared kit: spec-derived bars, URL state per section, shuffle, draw-in, algo contract",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hafley66/path": "workspace:*",
+    "@hafley66/signals": "workspace:*",
+    "@thi.ng/colored-noise": "1.0.138",
+    "@thi.ng/random": "4.1.54",
+    "animejs": "4.5.0",
+    "rxjs": "^7.8.2",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
+  }
+}

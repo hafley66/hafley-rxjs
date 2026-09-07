@@ -1,0 +1,40 @@
+.fav {
+	display: flex;
+	gap: 4px;
+	flex-wrap: wrap;
+	padding: 6px 8px;
+	background: #1a1d26;
+	border-radius: 6px;
+}
+.fav a {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 3px 8px;
+	border-radius: 4px;
+	color: var(--fg);
+	text-decoration: none;
+	font-size: 12px;
+}
+.fav a:hover {
+	background: #262a35;
+}
+table {
+	border-collapse: collapse;
+}
+td,
+th {
+	padding: 6px 10px;
+	text-align: left;
+	vertical-align: middle;
+	font-weight: 400;
+	color: var(--muted);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+td svg {
+	display: block;
+}
+#icons .row {
+	gap: 14px;
+}

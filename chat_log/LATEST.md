@@ -1,1 +1,1 @@
-20260824.0.pixi-sticky-sequence-pan.md
+20260907.0.gothic-procedural-svg-notebooks.md
