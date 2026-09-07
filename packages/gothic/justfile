@@ -1,0 +1,14 @@
+default:
+    just --list
+
+# vite dev server, http://localhost:5173/eye
+dev:
+    pnpm dev
+
+# one inlined dist/index.html that opens from file://
+single:
+    pnpm build:single
+
+# typecheck + vitest + build:single + playwright smoke
+check:
+    pnpm check
