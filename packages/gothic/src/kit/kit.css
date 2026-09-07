@@ -80,37 +80,74 @@ svg text {
 	view-transition-name: gothic-header;
 }
 
-/* global bar: notebook links, section anchors, zDepth */
+/* global bar: fixed grid, the file tabs sit in a cell nothing else can push */
 .kit-top {
 	position: sticky;
 	top: 0;
 	z-index: 10;
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px 14px;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	grid-template-areas:
+		"files ctl"
+		"sections sections"
+		"title title";
+	gap: 3px 14px;
 	align-items: center;
 	padding: 6px 14px;
 	background: #0a0c11;
 	border-bottom: 1px solid #262a35;
 	color: var(--muted);
 }
-.kit-top nav {
+.kit-top .kit-files {
+	grid-area: files;
 	display: flex;
-	gap: 10px;
+	flex-wrap: wrap;
+	gap: 0 12px;
+	min-width: 0;
+}
+.kit-top .kit-ctl {
+	grid-area: ctl;
+	display: inline-flex;
+	gap: 12px;
+	align-items: center;
+}
+.kit-top .kit-sections {
+	grid-area: sections;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 4px;
+	min-width: 0;
+}
+.kit-top .kit-page-title {
+	grid-area: title;
+	font-weight: 400;
+	font-size: 11px;
+	color: #5e6270;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 .kit-top nav a {
 	color: var(--muted);
 	text-decoration: none;
+	padding: 1px 0;
+	border-bottom: 2px solid transparent;
 }
 .kit-top nav a:hover {
 	color: var(--fg);
 }
 .kit-top nav a[aria-current] {
 	color: var(--ink);
+	border-bottom-color: var(--ink);
+}
+.kit-top label {
+	display: inline-flex;
+	gap: 5px;
+	align-items: center;
 }
 .kit-top .kit-sections a {
 	padding: 0 4px;
-	border-left: 1px solid #262a35;
 	border-bottom: 2px solid transparent;
 	/* scroll-driven: the anchor animates on its section's view timeline (set inline by the kit) */
 	animation: kit-active linear both;
@@ -132,12 +169,6 @@ svg text {
 .kit-top .kit-sections a[data-active] {
 	color: var(--ink);
 	border-bottom-color: var(--ink);
-}
-.kit-top label {
-	display: inline-flex;
-	gap: 5px;
-	align-items: center;
-	margin-left: auto;
 }
 
 /* section bar sits under the global bar */
@@ -209,16 +240,33 @@ svg text {
 	white-space: nowrap;
 }
 .kit-bar .kit-pin {
-	border: 0;
-	background: none;
-	color: #5e6270;
+	width: 14px;
+	height: 14px;
+	padding: 0;
+	border: 1px solid #4a4f5e;
+	border-radius: 3px;
+	background: transparent;
 	cursor: pointer;
-	padding: 0 2px;
-	font-size: 11px;
-	line-height: 1;
+	display: inline-grid;
+	place-items: center;
+	flex: none;
+}
+.kit-bar .kit-pin::after {
+	content: "";
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: transparent;
+}
+.kit-bar .kit-pin:hover {
+	border-color: var(--ink);
 }
 .kit-bar .kit-pin.on {
-	color: var(--ink);
+	border-color: var(--ink);
+	background: color-mix(in oklab, var(--ink) 25%, transparent);
+}
+.kit-bar .kit-pin.on::after {
+	background: var(--ink);
 }
 .kit-bar .kit-states {
 	display: inline-flex;

@@ -48,7 +48,8 @@ export function page(o: PageOpts): Page {
   if (current) return current
   const header = document.createElement("header")
   header.className = "kit-top"
-  header.innerHTML = `<b>${o.title ?? document.title}</b><nav></nav><span class="kit-sections"></span>`
+  // grid areas: tabs never move; controls sit in their own column; title is the last row and truncates
+  header.innerHTML = `<nav class="kit-files"></nav><span class="kit-ctl"></span><span class="kit-sections"></span><b class="kit-page-title">${o.title ?? document.title}</b>`
   const nav = header.querySelector("nav") as HTMLElement
   for (const l of o.links ?? []) {
     const a = document.createElement("a")
@@ -109,7 +110,7 @@ function ensureZ(): void {
   label.innerHTML = `zDepth <input id="${inputId("page", "z")}" type="range" min="0" max="1" step="0.05">`
   const input = label.querySelector("input") as HTMLInputElement
   input.addEventListener("input", () => commit("replace", () => zCell?.$({ z: Number(input.value) })))
-  current.header.append(label)
+  ;(current.header.querySelector(".kit-ctl") as HTMLElement).append(label)
   zCell.$.subscribe(v => {
     input.value = String(v.z)
     document.documentElement.style.setProperty("--kit-zdepth", String(v.z))

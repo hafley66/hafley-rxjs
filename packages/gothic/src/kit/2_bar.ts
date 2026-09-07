@@ -37,7 +37,7 @@ function control(id: string, key: string, fd: Field): string {
   const label = esc(fd.label ?? key)
   const pin = isStatic(fd)
     ? ""
-    : `<button type="button" class="kit-pin" data-pin="${esc(key)}" title="pin: shuffle skips this field">○</button>`
+    : `<button type="button" class="kit-pin" data-pin="${esc(key)}" title="pin: shuffle skips this field" aria-label="pin"></button>`
   switch (fd.kind) {
     case "range":
       return `<label>${label} <input id="${eid}" data-key="${esc(key)}" type="range" min="${fd.min}" max="${fd.max}" step="${fd.step ?? 1}" value="${fd.default}">${pin}</label>`

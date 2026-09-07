@@ -23,8 +23,9 @@
   // module import from the kit: only publish LINKS. classic script in a legacy page: build the header
   if (!document.currentScript) return
   var STYLE = [
-    ".gk-top{position:sticky;top:0;z-index:20;display:grid;gap:2px 0;padding:6px 14px;background:#0a0c11;border-bottom:1px solid #262a35;font:12px/1.4 system-ui,sans-serif;color:#8b8f9c}",
-    ".gk-top nav{display:flex;flex-wrap:wrap;gap:0 14px}.gk-top a{color:#8b8f9c;text-decoration:none;padding:1px 0;border-bottom:2px solid transparent}",
+    ".gk-top{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:\"files ctl\" \"sections sections\" \"title title\";gap:3px 14px;padding:6px 14px;background:#0a0c11;border-bottom:1px solid #262a35;font:12px/1.4 system-ui,sans-serif;color:#8b8f9c}",
+    ".gk-top .gk-files{grid-area:files}.gk-top .gk-sections{grid-area:sections}.gk-top .gk-title{grid-area:title;font-size:11px;color:#5e6270;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+    ".gk-top nav{display:flex;flex-wrap:wrap;gap:0 12px;min-width:0}.gk-top a{color:#8b8f9c;text-decoration:none;padding:1px 0;border-bottom:2px solid transparent}",
     ".gk-top a:hover{color:#d9dbe3}.gk-top .gk-files a[aria-current]{color:oklch(84% .1 85);border-bottom-color:oklch(84% .1 85)}",
     ".gk-top .gk-sections a{animation:gk-active linear both;animation-range:entry 0% exit 100%}",
     "@keyframes gk-active{0%,100%{color:#8b8f9c;border-bottom-color:transparent}12%,88%{color:oklch(84% .1 85);border-bottom-color:oklch(84% .1 85)}}",
@@ -50,8 +51,12 @@
     })
     var secs = document.createElement("nav")
     secs.className = "gk-sections"
+    var title = document.createElement("b")
+    title.className = "gk-title"
+    title.textContent = document.title
     top.appendChild(files)
     top.appendChild(secs)
+    top.appendChild(title)
     document.body.insertBefore(top, document.body.firstChild)
     var supports = CSS_supports("animation-timeline: view()")
     var names = []
