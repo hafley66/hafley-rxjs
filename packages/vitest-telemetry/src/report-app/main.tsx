@@ -1,6 +1,7 @@
 // Parses the embedded data blob, creates the one model + prefs signal for the whole page, and
 // mounts the React root. No module-level `let` state: everything lives on `model` or `prefs`.
 import '@hafley66/report-shell/style.css'
+import '@hafley66/report-shell/marbler.css'
 import './style.css'
 import { createRoot } from 'react-dom/client'
 import type { Event } from '../report/timeline.js'

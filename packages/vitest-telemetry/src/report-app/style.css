@@ -28,19 +28,9 @@
   .default-view-hint { color: var(--accent); margin: 0 0 6px; font-style: italic }
   .failure { color: var(--err); white-space: pre-wrap; margin: 4px 0 8px; padding: 6px; border: 1px solid #522; background: var(--err-bg) }
 
-  /* Nav: @hafley66/grid's TreeTable, themed onto this report's tokens. Row hooks off
+  /* Nav: @hafley66/grid's TreeTable on the kit's --grid-* defaults (kit.css). Row hooks off
      [data-testid=tree-row] plus rowClassName's kind/status/selected classes; never `.nav-row`
      (that belongs to report-shell's deprecated NavGrid, still used by boop-adapters). */
-  nav {
-    --grid-header-bg: var(--panel-bg);
-    --grid-muted-fg: var(--dim);
-    --grid-border: var(--line);
-    --grid-hairline: var(--line);
-    --grid-bg: var(--panel-bg);
-    --grid-row-alternate-bg: color-mix(in oklch, var(--panel-bg), var(--fg) 3%);
-    --grid-accent: var(--accent);
-    --grid-fg: var(--fg);
-  }
   .nav-tree-wrap { position: relative }
   nav [data-testid=tree-table] { border: 0; border-radius: 0 }
   nav [data-testid=tree-table] table { table-layout: fixed; width: 100% }

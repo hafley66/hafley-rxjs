@@ -60,7 +60,9 @@ Enter to fork or overwrite, ArrowUp/Down + Enter, star and delete per row), `Sec
 title under the drawer, anchor timeline, scroll keep), and the hooks `stagger`, `useDrawIn`, `useResizeVar`,
 `useAnchor`. Styles live in `@hafley66/report-shell/kit.css` (tokens + `@layer components`), which `style.css`
 imports before adding the report layout. Consumers map their palette onto `--bg --fg --muted --dim --accent
---panel-bg --line --well --edge`. Receipts: `pnpm test:browser` (`src/components/kit.browser.test.tsx`).
+--panel-bg --line --well --edge`; `kit.css` also defaults the 14 `--grid-*` names onto those tokens, so a grid
+`TreeTable` follows the theme with no per-app mapping. `@hafley66/report-shell/marbler.css` carries the
+`--marbler-*` defaults and the embedded-panel height rule; import it next to `EventsPanel`. Receipts: `pnpm test:browser` (`src/components/kit.browser.test.tsx`).
 
 ## Sizing
 

@@ -31,7 +31,3 @@
     padding: 8px 12px 0;
   }
 }
-
-/* Unlayered on purpose: marbler ships unlayered CSS (`.app-shell[data-embedded] { height: 100% }`),
-   and any rule inside @layer loses to it regardless of specificity. */
-.events-panel > .app-shell[data-testid=marbler] { flex: none; height: 60vh }

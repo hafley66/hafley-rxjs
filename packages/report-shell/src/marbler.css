@@ -1,0 +1,16 @@
+/* Companion to the `@hafley66/report-shell/marbler` subpath: import it next to EventsPanel.
+   @hafley66/marbler reads these when embedded; its rows/canvases hardcode a dark palette,
+   so the panel stays a dark island in both themes until marbler tokenizes rows. */
+:root {
+  --marbler-surface: #12151b;
+  --marbler-panel: #16191f;
+  --marbler-head: #171b21;
+  --marbler-border: #30343d;
+  --marbler-ink: #bac1cb;
+  --marbler-muted: #848c98;
+  --marbler-font: ui-monospace, Menlo, monospace;
+}
+
+/* Unlayered on purpose: marbler ships unlayered CSS (`.app-shell[data-embedded] { height: 100% }`),
+   and any rule inside @layer loses to it regardless of specificity. */
+.events-panel > .app-shell[data-testid=marbler] { flex: none; height: 60vh }

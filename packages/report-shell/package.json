@@ -18,10 +18,11 @@
       "types": "./dist/marbler.d.ts",
       "import": "./dist/marbler.js"
     },
-    "./kit.css": "./dist/kit.css"
+    "./kit.css": "./dist/kit.css",
+    "./marbler.css": "./dist/marbler.css"
   },
   "scripts": {
-    "build": "vite build && cp src/style.css src/kit.css dist/",
+    "build": "vite build && cp src/style.css src/kit.css src/marbler.css dist/",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

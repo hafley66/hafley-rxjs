@@ -20,15 +20,21 @@
     --kit-drawer: 0px;
     --track-nav: 380px;
     --track-overview: 160px;
-    /* @hafley66/marbler reads these when embedded; its rows/canvases hardcode a dark palette,
-       so the panel stays a dark island in both themes until marbler tokenizes rows. */
-    --marbler-surface: #12151b;
-    --marbler-panel: #16191f;
-    --marbler-head: #171b21;
-    --marbler-border: #30343d;
-    --marbler-ink: #bac1cb;
-    --marbler-muted: #848c98;
-    --marbler-font: ui-monospace, Menlo, monospace;
+    /* @hafley66/grid reads these; defaults map its 14 names onto the kit tokens so a TreeTable
+       inside any consumer follows the theme without a per-app mapping block. */
+    --grid-bg: var(--panel-bg);
+    --grid-fg: var(--fg);
+    --grid-muted-fg: var(--dim);
+    --grid-faint-fg: var(--dim);
+    --grid-border: var(--line);
+    --grid-hairline: var(--line);
+    --grid-header-bg: var(--panel-bg);
+    --grid-row-alternate-bg: color-mix(in oklch, var(--panel-bg), var(--fg) 3%);
+    --grid-row-hover: var(--row-hover);
+    --grid-row-selected: var(--sel);
+    --grid-accent: var(--accent);
+    --grid-folder: var(--accent);
+    --grid-tree-header-z: 2;
   }
   :root[data-theme=dark] { color-scheme: dark }
   :root[data-theme=light] { color-scheme: light }
