@@ -28,10 +28,15 @@ through the generic parameter.
 | `PivotStack<T>` | component | breadcrumb + stacked `Grid<T>` pivots, `onPop(count)` callback |
 | `NavGrid<T>` | component | tree grid over `Grid<T>`, `onSelect(row)` / `onPivot(row)` callbacks |
 | `NavRail` | component | chevron toggle that collapses a nav `Track` signal to a 28px rail |
-| `EventsPanel` | component | marbler embed + a `SubTable` driven by `detail(row)` |
 | `formatAge(ms, now?)`, `formatDuration(ms)` | functions | shared time labels, see Time below |
 | `createNavCollapse(track, storage, expandedFallback)` | function | collapse/restore logic behind `NavRail`, usable standalone |
 | `NavRow<Extra>`, `PivotEntry` | types | base row/pivot-entry shapes |
+
+### marbler subpath
+
+`@hafley66/report-shell/marbler` exports `EventsPanel`, `defaultEventDetail`, `EventsPanelProps` and `syncMarbler`. They
+are the only pieces that import `@hafley66/marbler` (and pixi.js), so the marbler peer is optional: consumers that never
+import the subpath never carry pixi.
 
 Import `@hafley66/report-shell/style.css` once for tokens, popover, truncated, sub-table, nav
 grid, gutter, pivot, and events-panel styling; a consumer's own stylesheet layers its

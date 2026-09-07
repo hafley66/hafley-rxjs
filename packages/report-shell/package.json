@@ -13,7 +13,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./style.css": "./dist/style.css"
+    "./style.css": "./dist/style.css",
+    "./marbler": {
+      "types": "./dist/marbler.d.ts",
+      "import": "./dist/marbler.js"
+    }
   },
   "scripts": {
     "build": "vite build && cp src/style.css dist/style.css",
@@ -54,5 +58,10 @@
   },
   "dependencies": {
     "rxjs": "^7.8.2"
+  },
+  "peerDependenciesMeta": {
+    "@hafley66/marbler": {
+      "optional": true
+    }
   }
 }

@@ -2,7 +2,8 @@
 // navRows layers the window select and the outside-window fold on top of filteredTree's scope.
 import { createMarbler, type Marbler, type MarbleEvent } from "@hafley66/marbler"
 import { Signal, storageSignal, historyAdapter, localStorageAdapter, type Signal as SignalType } from "@hafley66/signals"
-import { pivotStackSignal, syncMarbler, type PivotEntry } from "@hafley66/report-shell"
+import { pivotStackSignal, type PivotEntry } from "@hafley66/report-shell"
+import { syncMarbler } from "@hafley66/report-shell/marbler"
 import { projectAgentNetwork } from "../7_network.js"
 import type { AgentNetworkExport, BoopSessionRow } from "../0_types.js"
 import { countHeader, sortByRecencyDesc, type HeaderCounts, type TimeWindow } from "../lib/window.js"

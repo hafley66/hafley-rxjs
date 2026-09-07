@@ -11,9 +11,8 @@ export { PivotStack, type PivotStackProps } from './components/PivotStack'
 // @deprecated: use @hafley66/grid's TreeTable for new nav trees; see README's "NavGrid is deprecated".
 export { NavGrid, type NavGridProps } from './components/NavGrid'
 export { NavRail, type NavRailProps } from './components/NavRail'
-export { EventsPanel, defaultEventDetail, type EventsPanelProps } from './components/EventsPanel'
 export { pivotStackSignal, pushPivot, popPivotsTo, encodePivotStack, decodePivotStack } from './lib/pivotStack'
 export { usePivotEffect } from './components/usePivotEffect'
 export { useTheme, type ThemePrefs } from './components/useTheme'
-export { syncMarbler } from './lib/marblerSync'
 export { ReportShell, type ReportShellProps, type ReportTracks } from './components/ReportShell'
+// marbler-bound pieces (EventsPanel, syncMarbler) live on the './marbler' subpath so pixi stays optional
