@@ -1,0 +1,51 @@
+import { describe, expect, it } from "vitest"
+import { memoryStorage, store } from "./2_store.js"
+
+describe("store", () => {
+  it("autosaves current values and pins under the key", () => {
+    const mem = memoryStorage()
+    const st = store("kit.eye.eye", mem)
+    expect(st.current.$()).toBeNull()
+    st.saveCurrent({ seed: 5 }, "seed")
+    expect(st.current.$()).toEqual({ vals: { seed: 5 }, pin: "seed" })
+    expect(mem.get("kit.eye.eye.current")).toBe('{"vals":{"seed":5},"pin":"seed"}')
+    expect(mem.keys()).toEqual(["kit.eye.eye.current", "kit.eye.eye.states", "kit.eye.eye.selected"])
+  })
+  it("names, stars, and deletes saved states in insertion order", () => {
+    const st = store("kit.eye.eye", memoryStorage())
+    const a = st.add("  ", { seed: 1 }, "")
+    const b = st.add("blue", { seed: 2 }, "seed")
+    expect(a.name).toBe("state 1")
+    expect(st.states.$().map(s => s.name)).toEqual(["state 1", "blue"])
+    st.star(b.id)
+    expect(st.states.$()[1].star).toBe(true)
+    st.star(b.id)
+    expect(st.states.$()[1].star).toBe(false)
+    st.remove(a.id)
+    expect(st.states.$().map(s => s.id)).toEqual([b.id])
+    expect(st.states.$()[0].vals).toEqual({ seed: 2 })
+  })
+  it("update and byName address one record; remove of the selected id clears selected", () => {
+    const st = store("k", memoryStorage())
+    const a = st.add("tight", { cut: 1 }, "")
+    st.update(a.id, { cut: 9 }, "cut")
+    expect(st.byName(" tight ")).toMatchObject({ id: a.id, vals: { cut: 9 }, pin: "cut" })
+    st.select(a.id)
+    expect(st.selected.$()).toBe(a.id)
+    st.remove(a.id)
+    expect(st.selected.$()).toBeNull()
+  })
+  it("reads what a previous store wrote and follows later writes to the backend", () => {
+    const mem = memoryStorage()
+    store("k", mem).add("x", { a: 1 }, "")
+    const st = store("k", mem)
+    expect(st.states.$().map(s => s.name)).toEqual(["x"])
+    mem.set("k.selected", "42")
+    expect(st.selected.$()).toBe(42)
+  })
+  it("survives junk in storage", () => {
+    const mem = memoryStorage()
+    mem.set("k.states", "{not json")
+    expect(store("k", mem).states.$()).toEqual([])
+  })
+})

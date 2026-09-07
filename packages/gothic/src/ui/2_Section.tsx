@@ -1,8 +1,8 @@
+import type { AnySpec, Presets, ValuesOf } from "@hafley66/report-shell"
 import { SignalReact } from "@hafley66/signals/react"
 import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { type SectionState, sectionState, zDepth } from "../app/2_state.js"
-import type { AnySpec, Presets, ValuesOf } from "../kit/0_spec.js"
 import { useAnchor } from "./0_hooks.js"
 import { Bar } from "./1_Bar.js"
 

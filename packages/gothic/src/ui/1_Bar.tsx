@@ -1,8 +1,8 @@
+import { type AnySpec, describe, type Field, fmt, isStatic, pinSet } from "@hafley66/report-shell"
 import { SignalReact } from "@hafley66/signals/react"
 import type { ReactNode } from "react"
 import { useEffect, useRef, useState } from "react"
 import type { SectionState } from "../app/2_state.js"
-import { type AnySpec, describe, type Field, fmt, isStatic, pinSet } from "../kit/0_spec.js"
 
 export const inputId = (section: string, key: string): string => `kit-${section}-${key}`
 

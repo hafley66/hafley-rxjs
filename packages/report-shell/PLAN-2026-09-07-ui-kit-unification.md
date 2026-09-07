@@ -276,7 +276,8 @@ pnpm receipts:ui                                        # root: all of the above
 | Tailwind in the kit | no. Kit ships plain css classes `kit-*` in `style.css`; gothic keeps Tailwind for page bodies and maps its `@theme` colours onto the kit token names | 1 of 23 packages uses Tailwind (sitrep §5); kit consumers must not inherit a build plugin |
 | framework | React only (`SignalReact`) | 38 call sites, no framework-free consumer today |
 | router seam | `SectionHost` interface; gothic passes its hash-aware router, others pass `signalHistory` | the only gothic-specific import inside the old kit |
-| storage seam | `Storage<string>` from signals; memory adapter in tests | md and tests cannot use `localStorage` |
+| storage seam | `Storage<string>` from signals through `storageSignal`; the store exposes `current`, `states`, `selected` as signals; `SectionHost.storage(key)` defaults to `localStorageAdapter`; `memoryStorage()` (kit, `2_store.ts`) in tests, its `write.next` stores silently like localStorage and `set()` plays the other tab | md and tests cannot use `localStorage`; no second storage contract beside signals |
+| host search | `SectionHost.search(): string` getter (step 2) instead of the `Signal<string>` in §3 | gothic keeps one `loc` signal of `{path, search}`; a getter avoids a derived signal the kit never subscribes to |
 | TanStack | stays in `@hafley66/grid`; the kit peer-depends on grid only for `FsTree` | 1870 lines and 13 screenshot baselines stay where they are |
 | combobox keyboard | ArrowUp/Down over rows, Enter loads the active row or saves the typed name, Escape blurs; native `datalist` does the text filtering | smallest model that covers the wireframe |
 | marbler | behind `@hafley66/report-shell/marbler`; peer optional | pixi stops entering every consumer (sitrep step 1) |

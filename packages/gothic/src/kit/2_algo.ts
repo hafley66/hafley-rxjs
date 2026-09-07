@@ -1,4 +1,4 @@
-import type { Presets, Spec } from "./0_spec.js"
+import type { Presets, Spec } from "@hafley66/report-shell"
 
 export type AlgoCtx = { size: number; seed: number; minPx: number }
 export type AlgoPath = { d: string; z?: number; cls?: string }

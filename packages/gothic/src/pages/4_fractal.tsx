@@ -1,6 +1,6 @@
+import type { AnySpec } from "@hafley66/report-shell"
 import { FRACTALS } from "../algos/1_fractal.js"
 import type { PageSpec } from "../app/0_pages.js"
-import type { AnySpec } from "../kit/0_spec.js"
 import { AlgoSection } from "../ui/4_Algo.js"
 
 const SIZES = [48, 96, 160, 320]

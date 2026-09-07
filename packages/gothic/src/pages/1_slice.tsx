@@ -1,7 +1,7 @@
+import type { AnySpec, ValuesOf } from "@hafley66/report-shell"
 import { type RefObject, useEffect, useMemo, useRef } from "react"
 import type { PageSpec } from "../app/0_pages.js"
 import type { SectionState } from "../app/2_state.js"
-import type { AnySpec, ValuesOf } from "../kit/0_spec.js"
 import {
   alongPts,
   CURVES,

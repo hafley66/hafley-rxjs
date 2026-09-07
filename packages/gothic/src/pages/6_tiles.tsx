@@ -1,6 +1,6 @@
+import type { AnySpec } from "@hafley66/report-shell"
 import { useEffect, useRef } from "react"
 import type { PageSpec } from "../app/0_pages.js"
-import type { AnySpec } from "../kit/0_spec.js"
 import { BW, bwCircle, bwShade, type Cell, fanMosaic, G, islamic, mosaicRings } from "../lib/legacy/1_tiles.js"
 import { stagger } from "../ui/0_hooks.js"
 import { Section } from "../ui/2_Section.js"

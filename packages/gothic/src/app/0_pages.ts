@@ -1,6 +1,6 @@
+import type { AnySpec } from "@hafley66/report-shell"
+import { queryRoute } from "@hafley66/report-shell"
 import type { FC } from "react"
-import type { AnySpec } from "../kit/0_spec.js"
-import { queryRoute } from "../kit/1_url.js"
 import { PAGE as eye } from "../pages/0_eye.js"
 import { PAGE as slice } from "../pages/1_slice.js"
 import { PAGE as icons } from "../pages/2_icons.js"

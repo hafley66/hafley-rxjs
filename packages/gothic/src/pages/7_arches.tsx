@@ -1,8 +1,8 @@
+import type { AnySpec } from "@hafley66/report-shell"
 import { SignalReact } from "@hafley66/signals/react"
 import type { ReactNode } from "react"
 import type { PageSpec } from "../app/0_pages.js"
 import { sectionState } from "../app/2_state.js"
-import type { AnySpec } from "../kit/0_spec.js"
 import { global as archGlobal, axes, cell, families, SIZES } from "../lib/legacy/2_arches.js"
 import {
   band,

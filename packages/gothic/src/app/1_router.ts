@@ -1,5 +1,5 @@
+import type { Mode } from "@hafley66/report-shell"
 import { Signal } from "@hafley66/signals"
-import type { Mode } from "../kit/1_url.js"
 import { transition } from "./3_view.js"
 
 export type Loc = { path: string; search: string }

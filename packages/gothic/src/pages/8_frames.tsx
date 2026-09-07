@@ -1,6 +1,6 @@
+import type { AnySpec, ValuesOf } from "@hafley66/report-shell"
 import { useEffect, useRef } from "react"
 import type { PageSpec } from "../app/0_pages.js"
-import type { AnySpec, ValuesOf } from "../kit/0_spec.js"
 import { attach, detach, presets, reseed } from "../lib/legacy/4_frames.js"
 import { Section } from "../ui/2_Section.js"
 

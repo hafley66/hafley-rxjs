@@ -1,6 +1,6 @@
+import type { AnySpec, ValuesOf } from "@hafley66/report-shell"
 import type { CSSProperties, ReactNode } from "react"
 import { useRef } from "react"
-import type { AnySpec, ValuesOf } from "../kit/0_spec.js"
 import { type Algo, type AlgoOut, algoCtx } from "../kit/2_algo.js"
 import { useDrawIn } from "./0_hooks.js"
 import { Section } from "./2_Section.js"

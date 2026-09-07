@@ -1,8 +1,6 @@
 import { route } from "@hafley66/path"
-import type { Signal } from "@hafley66/signals"
-import { skip } from "rxjs"
 import * as z from "zod"
-import { type AnySpec, fieldSchema, parseValues, type ValuesOf } from "./0_spec.js"
+import { type AnySpec, fieldSchema, parseValues } from "./0_spec.js"
 
 export type Namespaces = Record<string, AnySpec>
 export type NsValues = Record<string, Record<string, unknown>>
@@ -52,69 +50,4 @@ export function mergeSearch(current: string, next: string, namespaces: Namespace
   for (const [k, v] of add) keep.set(k, v)
   const s = keep.toString()
   return s ? `?${s}` : ""
-}
-
-// several cells may share one namespace (values + pins); their specs merge per namespace for the URL
-type Cell = { ns: string; spec: AnySpec; signal: Signal<Record<string, unknown>> }
-const cells = new Map<string, Cell>()
-let applying = false
-let mode: Mode = "replace"
-let listening = false
-
-function specs(): Namespaces {
-  const out: Namespaces = {}
-  for (const c of cells.values()) out[c.ns] = { ...(out[c.ns] ?? {}), ...c.spec }
-  return out
-}
-function current(): NsValues {
-  const out: NsValues = {}
-  for (const c of cells.values()) out[c.ns] = { ...(out[c.ns] ?? {}), ...c.signal.$() }
-  return out
-}
-
-export function readUrl<S extends AnySpec>(ns: string, spec: S): ValuesOf<S> {
-  return parseSearch(location.search, { [ns]: spec })[ns] as ValuesOf<S>
-}
-
-function write(m: Mode): void {
-  const all = specs()
-  const search = mergeSearch(location.search, printSearch(current(), all), all)
-  const url = location.pathname + search + location.hash
-  if (url === location.pathname + location.search + location.hash) return
-  history[m === "push" ? "pushState" : "replaceState"](null, "", url)
-}
-
-function onPop(): void {
-  const parsed = parseSearch(location.search, specs())
-  applying = true
-  try {
-    for (const c of cells.values()) c.signal.$(Object.fromEntries(Object.keys(c.spec).map(k => [k, parsed[c.ns][k]])))
-  } finally {
-    applying = false
-  }
-}
-
-// mode applies to the signal writes inside fn only; the default write is replaceState
-export function commit(m: Mode, fn: () => void): void {
-  mode = m
-  try {
-    fn()
-  } finally {
-    mode = "replace"
-  }
-}
-
-export function bindUrl(ns: string, spec: AnySpec, signal: Signal<Record<string, unknown>>, cellKey = ns): () => void {
-  cells.set(cellKey, { ns, spec, signal })
-  if (!listening) {
-    listening = true
-    addEventListener("popstate", onPop)
-  }
-  const sub = signal.$.pipe(skip(1)).subscribe(() => {
-    if (!applying) write(mode)
-  })
-  return () => {
-    sub.unsubscribe()
-    cells.delete(cellKey)
-  }
 }

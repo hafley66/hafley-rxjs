@@ -42,6 +42,15 @@ Import `@hafley66/report-shell/style.css` once for tokens, popover, truncated, s
 grid, gutter, pivot, and events-panel styling; a consumer's own stylesheet layers its
 domain-specific rules on top.
 
+### spec (section state)
+
+`src/spec/` is the state half of the kit: `Field`/`Spec` with zod derivation, shuffle and pins (`0_spec`), namespaced
+query strings `?<section>.<key>=` (`1_url`), named states + autosave + selected over signals `Storage<string>`
+(`2_store`), and `createSections(host)` (`3_sections`), which ties a section's values to the URL and to storage.
+A host passes `search()`, `write(search, mode)`, an optional `storage(key)` factory (default `localStorageAdapter`),
+an optional `transition` wrapper, and a storage `prefix`. `memoryStorage()` is the test host's storage.
+Peer: `@hafley66/path`. Dependency: `zod`.
+
 ## Sizing
 
 Every resizable thing (pane tracks, grid columns, nav width) can share one `SizingStore` so a

@@ -16,3 +16,7 @@ export { usePivotEffect } from './components/usePivotEffect'
 export { useTheme, type ThemePrefs } from './components/useTheme'
 export { ReportShell, type ReportShellProps, type ReportTracks } from './components/ReportShell'
 // marbler-bound pieces (EventsPanel, syncMarbler) live on the './marbler' subpath so pixi stays optional
+export * from './spec/0_spec'
+export * from './spec/1_url'
+export * from './spec/2_store'
+export * from './spec/3_sections'

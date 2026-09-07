@@ -1,7 +1,7 @@
+import { type AnySpec, type ValuesOf } from "@hafley66/report-shell"
 import { type RefObject, useEffect, useRef } from "react"
 import { sealAlgo } from "../algos/0_seal.js"
 import type { PageSpec } from "../app/0_pages.js"
-import { type AnySpec, type ValuesOf } from "../kit/0_spec.js"
 import { type EyeOpts, eye, hash, sealCaption, sealSvg } from "../lib/index.js"
 import { stagger } from "../ui/0_hooks.js"
 import { Section } from "../ui/2_Section.js"

@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@hafley66/path": "workspace:*",
+    "@hafley66/report-shell": "workspace:*",
     "@hafley66/signals": "workspace:*",
     "@thi.ng/colored-noise": "1.0.138",
     "@thi.ng/random": "4.1.54",
