@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>gothic: eye lab</title>
+<style>
+:root { color-scheme: dark; --bg: #0f1117; --fg: #d9dbe3; --muted: #8b8f9c; --ink: oklch(84% 0.1 85); --w: 1 }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 13px/1.4 system-ui, sans-serif; padding: 0 18px 24px; display: grid; gap: 18px; align-content: start }
+h2 { font-size: 13px; font-weight: 500; color: var(--muted); margin: 0 0 8px }
+.bar { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; position: sticky; top: 0; z-index: 2; background: color-mix(in oklab, var(--bg) 92%, black); padding: 10px 0; border-bottom: 1px solid #1f2330 }
+.bar label { display: inline-flex; gap: 5px; align-items: center; color: var(--muted); white-space: nowrap }
+.bar label b { color: var(--fg); font-weight: 500; min-width: 4.5ch; text-align: right; font-variant-numeric: tabular-nums }
+input[type=range] { width: 84px; accent-color: var(--ink) }
+input[type=range].scrub { width: min(640px, 60vw) }
+button, select, input[type=number] { background: #1a1d26; color: var(--fg); border: 1px solid #2a2e3a; border-radius: 4px; padding: 3px 8px; font: inherit }
+.row { display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-end }
+.cell { display: grid; justify-items: center; gap: 4px; color: var(--muted); font-size: 11px }
+svg { overflow: visible; display: block }
+svg path { fill: none; stroke: var(--ink); stroke-width: var(--w); stroke-linecap: round; stroke-linejoin: round }
+svg .iris path { stroke-opacity: 0.7 }
+svg .lid.lo { stroke-opacity: 0.8 }
+svg .dress path { stroke-opacity: 0.45 }
+.mono { font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; color: var(--muted) }
+.knobs { display: flex; flex-wrap: wrap; gap: 4px 14px }
+</style>
+</head>
+<body>
+<div class="bar">
+  <button id="play">pause</button>
+  <input id="scrub" class="scrub" type="range" min="0" max="120000" step="1" value="0"><b id="tms" class="mono">0 ms</b>
+  <label>seed <input id="seed" type="number" value="3" style="width:6ch"></label>
+  <label>shape <select id="shape"></select></label>
+  <label>expression <select id="expr"></select></label>
+  <label>auto <input id="auto" type="checkbox" checked></label>
+  <label>tempo <input id="tempo" type="range" min="0.1" max="3" step="0.05" value="1"><b>1</b></label>
+  <label>weight <input id="weight" type="range" min="0.5" max="2.5" step="0.1" value="1"><b>1</b></label>
+  <button id="blink">blink now</button>
+  <button id="rewake">re-wake</button>
+  <span class="knobs" id="knobs"></span>
+</div>
+<section><h2>hero 280: lids, Bell's roll under the closing lid, lashes rotate with the lid margin</h2><div class="row" id="hero"></div></section>
+<section><h2>sizes 16..160</h2><div class="row" id="sizes"></div></section>
+<section><h2>drives (hero): closure temporal / nasal / Bell's, gaze, pupil, event</h2><div class="mono" id="readout"></div><div class="mono" id="log"></div></section>
+<script>
+/* Transcribed from packages/gothic/src/lib/eye/*.ts (esbuild type strip); regenerate after editing the module. */
+// ---- src/lib helpers (0_rng.ts, 1_geom.ts)
+const TAU = Math.PI * 2
+const f = n => Math.round(n * 100) / 100
+const clamp = (t, a = 0, b = 1) => (t < a ? a : t > b ? b : t)
+const mix = (a, b, t) => a + (b - a) * t
+const M = (x, y) => `M${f(x)} ${f(y)}`
+const L = (x, y) => `L${f(x)} ${f(y)}`
+const line = (x0, y0, x1, y1) => M(x0, y0) + L(x1, y1)
+const pl = pts => pts.map((p, i) => `${i ? "L" : "M"}${f(p[0])} ${f(p[1])}`).join("")
+const ease = { in: t => t * t, out: t => 1 - (1 - t) ** 2, io: t => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2) }
+function mulberry32(seed) {
+  let a = seed >>> 0
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0
+    let t = a
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+const pick = (rng, arr) => arr[Math.floor(rng() * arr.length)]
+const expo = (rng, mean) => -Math.log(1 - rng()) * mean
+
+// ---- 0_shape.ts
+const SHAPES = {
+  human: {
+    ratio: 0.42,
+    up: { h: 0.62, p: 1.6, peak: -0.12 },
+    lo: { h: 0.4, p: 1.5, peak: 0.08 },
+    tilt: 0.1,
+    iris: 0.58
+  },
+  shoujo: { ratio: 0.5, up: { h: 0.8, p: 1.7, peak: 0.05 }, lo: { h: 0.45, p: 1.5, peak: 0 }, tilt: 0.02, iris: 0.62 },
+  shonen: {
+    ratio: 0.38,
+    up: { h: 0.55, p: 1.15, peak: -0.25 },
+    lo: { h: 0.3, p: 1.1, peak: 0.1 },
+    tilt: 0.16,
+    iris: 0.5
+  },
+  tsurime: {
+    ratio: 0.42,
+    up: { h: 0.6, p: 1.4, peak: -0.15 },
+    lo: { h: 0.35, p: 1.3, peak: 0.15 },
+    tilt: 0.28,
+    iris: 0.55
+  },
+  tareme: {
+    ratio: 0.45,
+    up: { h: 0.62, p: 1.6, peak: 0.1 },
+    lo: { h: 0.4, p: 1.4, peak: -0.1 },
+    tilt: -0.22,
+    iris: 0.58
+  },
+  jitome: { ratio: 0.34, up: { h: 0.3, p: 4, peak: 0 }, lo: { h: 0.4, p: 1.4, peak: 0 }, tilt: 0.04, iris: 0.62 },
+  cat: { ratio: 0.4, up: { h: 0.6, p: 1, peak: -0.1 }, lo: { h: 0.4, p: 1, peak: 0.1 }, tilt: 0.14, iris: 0.48 },
+  sanpaku: { ratio: 0.46, up: { h: 0.55, p: 1.5, peak: 0 }, lo: { h: 0.55, p: 1.3, peak: 0 }, tilt: 0, iris: 0.34 },
+  gigantic: { ratio: 0.58, up: { h: 1, p: 2.2, peak: 0 }, lo: { h: 0.75, p: 1.9, peak: 0 }, tilt: 0.02, iris: 0.7 }
+};
+function randomShape(rng) {
+  const r = (a, b) => a + rng() * (b - a);
+  return {
+    ratio: r(0.32, 0.6),
+    up: { h: r(0.3, 1), p: r(1, 3.5), peak: r(-0.3, 0.2) },
+    lo: { h: r(0.25, 0.75), p: r(1, 2.2), peak: r(-0.2, 0.2) },
+    tilt: r(-0.25, 0.3),
+    iris: r(0.34, 0.7)
+  };
+}
+const bulge = (x, c) => {
+  const u = (x - c.peak) / (x < c.peak ? 1 + c.peak : 1 - c.peak);
+  return 1 - Math.abs(clamp(u, -1, 1)) ** c.p;
+};
+{
+  SHAPES,
+  bulge,
+  randomShape
+};
+
+// ---- 1_muscles.ts
+const AU = {
+  AU5: "levator",
+  AU45: "blink",
+  AU7: "tighten",
+  AU6: "squint",
+  AU2: "brow raise",
+  AU4: "brow lower",
+  AU5L: "lower retract"
+};
+const EXPR = {
+  neutral: { AU5: 0.78, AU7: 0, AU6: 0, AU2: 0, AU4: 0, AU5L: 0 },
+  alert: { AU5: 0.92, AU7: 0, AU6: 0, AU2: 0.35, AU4: 0, AU5L: 0.1 },
+  surprise: { AU5: 1, AU7: 0, AU6: 0, AU2: 1, AU4: 0, AU5L: 0.7 },
+  squint: { AU5: 0.7, AU7: 0.45, AU6: 0.85, AU2: 0, AU4: 0.2, AU5L: 0 },
+  smile: { AU5: 0.75, AU7: 0.1, AU6: 0.6, AU2: 0.1, AU4: 0, AU5L: 0 },
+  sleepy: { AU5: 0.22, AU7: 0.05, AU6: 0, AU2: 0, AU4: 0, AU5L: 0 },
+  angry: { AU5: 0.82, AU7: 0.5, AU6: 0.2, AU2: 0, AU4: 0.9, AU5L: 0.1 },
+  fear: { AU5: 1, AU7: 0.3, AU6: 0, AU2: 0.8, AU4: 0.4, AU5L: 0.5 },
+  glare: { AU5: 0.6, AU7: 0.7, AU6: 0.3, AU2: 0, AU4: 0.6, AU5L: 0 }
+};
+function activate(au, x, lag, pop) {
+  const cT = au.AU45 ?? 0;
+  const cN = mix(cT, au.AU45n ?? cT, clamp(lag));
+  const c = clamp(mix(cT, cN, (1 - x) / 2));
+  const over = Math.max(0, -cT) * Math.min(pop, 0.03);
+  const medial = (1 - x) / 2;
+  const up63 = au.AU63 ?? 0;
+  const dn64 = au.AU64 ?? 0;
+  const lev = 0.35 + 0.8 * au.AU5 + 0.15 * au.AU2 - 0.3 * au.AU4 * medial - 0.15 * au.AU6 - 0.25 * au.AU7 + 0.12 * up63 - 0.14 * dn64;
+  const up = clamp(lev, 0, 1.3) / 1.3 * (1 + over);
+  const lo = clamp(1 - 0.55 * au.AU6 - 0.2 * au.AU7 + 0.45 * au.AU5L + 0.12 * dn64, 0, 1.4);
+  return { aUp: up * (1 - c), aLo: lo, c, up, lo };
+}
+function frame(au) {
+  const sq = au.AU6;
+  const bl = Math.max(0, au.AU45 ?? 0);
+  return {
+    wScale: 1 - 0.06 * sq - 0.03 * au.AU7,
+    canthusLift: 0.06 * sq + 0.03 * au.AU2,
+    apexShift: -0.04 * bl - 0.03 * au.AU7,
+    bell: -0.35 * Math.max(0, au.AU45b ?? bl),
+    browY: -0.35 * au.AU2 + 0.18 * au.AU4,
+    browPinch: 0.25 * au.AU4
+  };
+}
+{
+  AU,
+  EXPR,
+  activate,
+  frame
+};
+
+// ---- 2_lids.ts
+function lidPts(sh, W, H, au, N, lag, pop) {
+  const fr = frame(au);
+  const up = [];
+  const lo = [];
+  const hh = H / 2;
+  const w = W / 2 * fr.wScale;
+  const upC = { ...sh.up, peak: sh.up.peak + fr.apexShift };
+  for (let i = 0; i <= N; i++) {
+    const x = -1 + 2 * i / N;
+    const a = activate(au, x, lag, pop);
+    const base = -(sh.tilt + fr.canthusLift) * hh * (x + 1) / 2;
+    const bLo = sh.lo.h * hh * bulge(x, sh.lo);
+    const rest = base + 0.3 * bLo;
+    const upOpen = rest - (sh.up.h * hh * bulge(x, upC) + 0.3 * bLo) * a.up;
+    const loOpen = mix(rest, base + bLo, a.lo);
+    const g = Math.max(0, loOpen - upOpen) / 1.1;
+    up.push([x * w, upOpen + a.c * g]);
+    lo.push([x * w, loOpen - a.c * 0.1 * g]);
+  }
+  return { up, lo, fr };
+}
+{
+  lidPts
+};
+
+// ---- 3_lashes.ts
+function lashSlots(mode, s) {
+  if (mode === "none") return [];
+  const k = mode === "slots" ? s.n : mode === "slots\xD7k" ? s.n * s.k : 9;
+  const out = [];
+  for (let i = 0; i < k; i++) {
+    const a = mode === "arclen" ? -Math.PI * (i + 1) / (k + 1) : s.rot + i * TAU / k;
+    const m = (a % TAU + TAU) % TAU;
+    if (m > Math.PI + 0.12 && m < TAU - 0.12) out.push({ a: m - TAU, long: mode !== "slots\xD7k" || i % s.k === 0 });
+  }
+  return out.sort((p, q) => p.a - q.a);
+}
+function lashLines(up, slots, lashLen, aUp) {
+  const N = up.length - 1;
+  const r = (1 - aUp) * 0.65;
+  return slots.map(({ a, long }) => {
+    const best = Math.round((Math.cos(a) + 1) / 2 * N);
+    const [x0, y0] = up[best];
+    const j1 = Math.min(best + 1, N);
+    const j0 = Math.max(best - 1, 0);
+    const tx = up[j1][0] - up[j0][0];
+    const ty = up[j1][1] - up[j0][1];
+    const tl = Math.hypot(tx, ty) || 1;
+    const dx0 = ty / tl * 0.5 + Math.cos(a) * 0.5;
+    const dy0 = -tx / tl * 0.5 + Math.sin(a) * 0.5;
+    const dx = dx0 * (1 - r) + 0.35 * Math.sign(x0) * r;
+    const dy = dy0 * (1 - r) + r;
+    const dl = Math.hypot(dx, dy) || 1;
+    const len = lashLen * (long ? 1 : 0.55);
+    return [
+      [x0, y0],
+      [x0 + dx / dl * len, y0 + dy / dl * len]
+    ];
+  });
+}
+{
+  lashLines,
+  lashSlots
+};
+
+// ---- 4_scheduler.ts
+const TIMING = {
+  close: 100,
+  open: 200,
+  settle: 120,
+  lagMs: 15,
+  bellLag: 40,
+  ibiMean: 4e3,
+  ibiFloor: 1500,
+  doubleP: 0.15,
+  doubleGap: 150,
+  drowsyP: 0.06,
+  coupleP: 0.3,
+  saccade: 45,
+  glanceMean: 1700,
+  wake: 1150
+};
+const AU_IO = {
+  AU5: [420, 700, 0],
+  AU7: [360, 620, 40],
+  AU6: [520, 820, 90],
+  AU5L: [460, 740, 60],
+  AU4: [760, 1150, 140],
+  AU2: [880, 1300, 200]
+};
+const T_IN = 1080;
+const T_OUT = 1500;
+const S = (u) => u * u * (3 - 2 * u);
+const closeP = (u) => S(clamp(u) ** 0.8);
+const openP = (u) => S(clamp(u) ** 0.6);
+const bump = (u, c, w) => Math.exp(-(((u - c) / w) ** 2));
+function scheduler(seed, tempo, auto, opts = {}) {
+  const tm = { ...TIMING, ...opts };
+  const rng = mulberry32(seed);
+  const jit = (v, k) => v * (1 - k + 2 * k * rng());
+  const wakeT = jit(tm.wake, 0.2);
+  const blinks = [];
+  const glances = [
+    { t: 0, x: 0.3 * (rng() - 0.5), y: 0.2 + 0.15 * rng(), dur: 1 },
+    { t: wakeT * (0.67 + 0.2 * rng()), x: 0, y: 0, dur: jit(tm.saccade, 0.33) }
+  ];
+  const exprs = [];
+  const target = () => [(rng() * 2 - 1) * 0.8, (rng() * 2 - 1) * 0.35];
+  const CYCLE = 12e4;
+  let t = wakeT + 400;
+  while (t < CYCLE) {
+    t += tm.ibiFloor + expo(rng, Math.max(1, tm.ibiMean - tm.ibiFloor));
+    const drowsy = rng() < tm.drowsyP;
+    const amp = drowsy ? 0.55 : 1;
+    const close = drowsy ? 600 + rng() * 300 : jit(tm.close, 0.2);
+    const open = drowsy ? 500 + rng() * 300 : jit(tm.open, 0.25);
+    blinks.push({ t0: t, amp, close, open, kind: drowsy ? "drowsy" : "blink", slow: drowsy });
+    if (rng() < tm.coupleP) {
+      const [x, y] = target();
+      glances.push({ t: t + 10, x, y, dur: jit(tm.saccade, 0.33) });
+    }
+    t += close + open;
+    if (!drowsy && rng() < tm.doubleP) {
+      const a2 = 0.6 + rng() * 0.3;
+      const gap = tm.doubleGap * (0.4 + 0.6 * rng());
+      const c2 = jit(tm.close, 0.2) * Math.sqrt(a2);
+      const o2 = jit(tm.open, 0.25) * Math.sqrt(a2);
+      blinks.push({ t0: t + gap, amp: a2, close: c2, open: o2, kind: "double", slow: false });
+      t += gap + c2 + o2;
+    }
+  }
+  let tg = wakeT;
+  while (tg < CYCLE) {
+    tg += 800 + expo(rng, Math.max(1, tm.glanceMean - 800));
+    const [x, y] = target();
+    glances.push({ t: tg, x, y, dur: jit(tm.saccade, 0.33) });
+  }
+  glances.sort((a, b) => a.t - b.t);
+  for (let i = glances.length - 1; i > 1; i--) if (glances[i].t - glances[i - 1].t < 250) glances.splice(i, 1);
+  let te = wakeT + 2500;
+  while (te < CYCLE) {
+    const name = pick(
+      rng,
+      Object.keys(EXPR).filter((n) => n !== "neutral")
+    );
+    const hold = 1200 + expo(rng, 1500);
+    exprs.push({ t0: te, t1: te + T_IN + hold + T_OUT, hold, name });
+    te += T_IN + hold + T_OUT + 4e3 + expo(rng, 5e3);
+  }
+  const last = blinks[blinks.length - 1];
+  const T = last.t0 + last.close + last.open + tm.settle + 500;
+  const exprAt = (tt, base) => {
+    const au = { ...base };
+    if (!auto) return { au, name: "neutral" };
+    for (const e of exprs) {
+      if (tt < e.t0 || tt >= e.t1) continue;
+      for (const key in AU_IO) {
+        const [ti, to, d] = AU_IO[key];
+        const w = tt < e.t0 + T_IN ? ease.io(clamp((tt - e.t0 - d) / ti)) : tt < e.t0 + T_IN + e.hold ? 1 : 1 - ease.io(clamp((tt - e.t0 - T_IN - e.hold - d) / to));
+        au[key] = mix(base[key] ?? 0, EXPR[e.name][key] ?? 0, w);
+      }
+      return { au, name: e.name };
+    }
+    return { au, name: "neutral" };
+  };
+  const drive = (tt, base) => {
+    for (const b of blinks) {
+      const u = tt - b.t0;
+      if (u < 0) break;
+      const sleepy = b.slow && exprAt(b.t0, base).au.AU5 < 0.5;
+      const amp = b.slow && !sleepy ? 1 : b.amp;
+      const close = b.slow && !sleepy ? tm.close : b.close;
+      const open = b.slow && !sleepy ? tm.open : b.open;
+      if (u < close) return { c: amp * closeP(u / close), what: b.kind };
+      if (u < close + open) return { c: amp * (1 - openP((u - close) / open)), what: "reopen" };
+      if (u < close + open + tm.settle && !sleepy)
+        return { c: -amp * Math.sin(Math.PI * (u - close - open) / tm.settle), what: "reopen" };
+    }
+    return { c: 0, what: "open" };
+  };
+  const wakeTone = (ms) => {
+    const u = clamp(ms / wakeT);
+    if (u >= 1) return 1;
+    return clamp(S(u) * (1 - 0.1 * bump(u, 0.45, 0.07) - 0.07 * bump(u, 0.72, 0.06)));
+  };
+  const gazeAt = (tt) => {
+    let gi = 0;
+    while (gi + 1 < glances.length && glances[gi + 1].t <= tt) gi++;
+    const g0 = glances[gi];
+    const gp = glances[gi - 1] ?? g0;
+    const k = S(clamp((tt - g0.t) / g0.dur));
+    return {
+      x: mix(gp.x, g0.x, k) + 0.015 * (Math.sin(tt / 430) + 0.6 * Math.sin(tt / 1130 + 2)),
+      y: mix(gp.y, g0.y, k) + 0.012 * (Math.sin(tt / 610 + 1) + 0.6 * Math.sin(tt / 970))
+    };
+  };
+  return {
+    T,
+    timing: tm,
+    wakeT,
+    at(ms, base) {
+      const ma = ms * tempo;
+      const tt = ma % T;
+      const w = wakeTone(ma);
+      const ex = exprAt(tt, base);
+      const b = drive(tt, base);
+      const cT = w < 1 ? Math.max(b.c, 1 - w) : b.c;
+      const cN = cT > 0 ? Math.min(Math.max(drive(tt - tm.lagMs, base).c, 1 - wakeTone(ma - tm.lagMs)), cT) : cT;
+      const cB = Math.max(cT, drive(tt - tm.bellLag, base).c, 1 - wakeTone(ma - tm.bellLag), 0);
+      const gaze = gazeAt(tt);
+      const au = {
+        ...ex.au,
+        AU5: ex.au.AU5 * w,
+        AU45: cT,
+        AU45n: cN,
+        AU45b: cB,
+        AU63: Math.max(0, -gaze.y),
+        AU64: Math.max(0, gaze.y)
+      };
+      const what = w < 1 ? "wake" : b.what === "open" ? ex.name : b.what;
+      const dil = mix(1.32, 1, S(clamp(ma / wakeT))) * (0.96 + 0.06 * Math.sin(tt / 1900) + 0.03 * Math.sin(tt / 610));
+      return { au, what, gaze, dil, tt };
+    }
+  };
+}
+{
+  TIMING,
+  scheduler
+};
+
+
+// ---- lab
+const $ = s => document.querySelector(s)
+const SIZES = [16, 24, 32, 48, 64, 96, 160]
+const KNOBS = {
+  close: [40, 300, 5], open: [60, 500, 5], settle: [0, 400, 10], lagMs: [0, 40, 1], bellLag: [0, 150, 5],
+  ibiMean: [1500, 10000, 100], ibiFloor: [500, 3000, 50], doubleP: [0, 1, 0.05], doubleGap: [40, 400, 10],
+  drowsyP: [0, 1, 0.02], coupleP: [0, 1, 0.05], saccade: [15, 120, 5], glanceMean: [900, 5000, 100], wake: [300, 3000, 50],
+  lag: [0, 1, 0.05], pop: [0, 0.03, 0.001],
+}
+const state = { now: 0, playing: true, lag: 1, pop: 0.03, timing: { ...TIMING }, forced: null, wakeAt: 0 }
+$("#knobs").innerHTML = Object.entries(KNOBS)
+  .map(([k, [lo, hi, st]]) => {
+    const v = k in TIMING ? TIMING[k] : state[k]
+    return `<label title="${k}">${k} <input data-k="${k}" type="range" min="${lo}" max="${hi}" step="${st}" value="${v}"><b>${v}</b></label>`
+  })
+  .join("")
+$("#shape").innerHTML = Object.keys(SHAPES).map(n => `<option>${n}</option>`).join("")
+$("#expr").innerHTML = Object.keys(EXPR).map(n => `<option>${n}</option>`).join("")
+
+let eyes = []
+let sch = null
+const lines = []
+function eyeSvg(W, H, seed, sh) {
+  const rng = mulberry32(seed)
+  const R = (H / 2) * sh.iris * 1.05
+  const n = 8 + Math.floor(rng() * 6)
+  const slots = lashSlots("slots", { n, k: 2, rot: rng() * TAU, core: 0, gap: 0, eye: 0, bands: [] })
+  const lashLen = H * 0.4
+  const pad = lashLen + H * 0.55 + 2
+  const uid = `e${seed.toString(36)}_${W}`
+  let iris = `<path d="${circle(0, 0, R)}"/><path d="${circle(0, 0, R * 0.62)}"/>`
+  const spokes = 10 + Math.floor(rng() * 10)
+  for (let i = 0; i < spokes; i++) {
+    const a = (i / spokes) * TAU + rng() * 0.2
+    const r0 = R * (0.5 + rng() * 0.15)
+    iris += `<path d="${line(r0 * Math.cos(a), r0 * Math.sin(a), R * 0.95 * Math.cos(a), R * 0.95 * Math.sin(a))}"/>`
+  }
+  const svg = `<svg viewBox="${f(-W / 2 - 1)} ${f(-H / 2 - pad)} ${f(W + 2)} ${f(H + 2 * pad)}" width="${W + 2}" height="${f(H + 2 * pad)}">
+  <defs><clipPath id="${uid}c"><path class="clip" d=""/></clipPath></defs>
+  <g clip-path="url(#${uid}c)"><g class="iris">${iris}<path class="pupil" d=""/></g></g>
+  <g class="dress"><path class="crease" d=""/><path class="brow" d=""/></g>
+  <path class="lid up" d=""/><path class="lid lo" d=""/>
+  <g class="lash">${slots.map(() => '<path d=""/>').join("")}</g></svg>`
+  return { svg, slots, lashLen, R }
+}
+function circle(cx, cy, r) {
+  return `M${f(cx - r)} ${f(cy)}A${f(r)} ${f(r)} 0 1 1 ${f(cx + r)} ${f(cy)}A${f(r)} ${f(r)} 0 1 1 ${f(cx - r)} ${f(cy)}`
+}
+function mount(host, W, H, seed, sh, caption) {
+  const e = eyeSvg(W, H, seed, sh)
+  const cell = document.createElement("div")
+  cell.className = "cell"
+  cell.innerHTML = `${e.svg}<span>${caption}</span>`
+  host.appendChild(cell)
+  const el = cell.querySelector("svg")
+  const N = Math.max(8, Math.round(96 * Math.min(1, W / 240)))
+  return { el, W, H, sh, N, slots: e.slots, lashLen: e.lashLen, R: e.R, q: s => el.querySelector(s) }
+}
+function pose(e, p) {
+  const { sh, W, H, N } = e
+  const { up, lo, fr } = lidPts(sh, W, H, p.au, N, state.lag, state.pop)
+  e.q(".up").setAttribute("d", pl(up))
+  e.q(".lo").setAttribute("d", pl(lo))
+  e.q(".clip").setAttribute("d", `${pl(up)}${pl(lo.slice().reverse()).replace("M", "L")}Z`)
+  const yc = (-sh.tilt * H) / 4
+  const gy = H * 0.5 * (p.gaze.y + fr.bell)
+  const gx = W * 0.22 * p.gaze.x
+  e.q(".iris").setAttribute("transform", `translate(${f(gx)} ${f(yc + gy)})`)
+  e.q(".pupil").setAttribute("d", circle(0, 0, e.R * 0.4 * p.dil))
+  const hh = H / 2
+  if (H >= 24) {
+    const mid = (pts, a, b) => pts.filter((_, i) => i / N >= a && i / N <= b)
+    e.q(".crease").setAttribute(
+      "d",
+      pl(mid(up, 0.12, 0.88).map(([x, y]) => [x, y - hh * (0.18 + 0.12 * p.au.AU2) * p.au.AU5 * bulge(x / (W / 2), sh.up)])),
+    )
+    const bw = W * 0.56
+    const by = -hh * (0.95 + sh.up.h * 0.3) + hh * fr.browY
+    e.q(".brow").setAttribute(
+      "d",
+      pl(
+        Array.from({ length: 24 }, (_, i) => {
+          const x = -1 + (2 * i) / 23
+          return [
+            x * bw - ((fr.browPinch * hh * (1 - x)) / 2) * 0.5,
+            by - hh * 0.22 * (1 - Math.abs(x) ** 1.4) + ((fr.browPinch * hh * 0.6 * (1 - x)) / 2) * Math.max(0, 0.5 - Math.abs(x + 0.6)),
+          ]
+        }),
+      ),
+    )
+  } else {
+    e.q(".crease").setAttribute("d", "")
+    e.q(".brow").setAttribute("d", "")
+  }
+  const aUp = activate(p.au, sh.up.peak, state.lag, state.pop).aUp
+  const ls = e.el.querySelectorAll(".lash path")
+  lashLines(up, e.slots, e.lashLen, aUp).forEach(([a, b], i) => ls[i].setAttribute("d", line(a[0], a[1], b[0], b[1])))
+}
+function rebuild() {
+  const seed = Number($("#seed").value)
+  const sh = SHAPES[$("#shape").value]
+  sch = scheduler(seed, 1, $("#auto").checked, state.timing)
+  $("#scrub").max = String(Math.round(sch.T))
+  $("#hero").innerHTML = ""
+  $("#sizes").innerHTML = ""
+  eyes = [mount($("#hero"), 280, Math.round(280 * sh.ratio), seed, sh, `hero ${$("#shape").value}`)]
+  for (const [i, W] of SIZES.entries())
+    eyes.push(mount($("#sizes"), W, Math.max(6, Math.round(W * sh.ratio)), seed + i * 7919, sh, String(W)))
+  lines.length = 0
+  $("#log").textContent = ""
+}
+let last = ""
+function frameAt(ms) {
+  const base = EXPR[$("#expr").value]
+  const p0 = sch.at(ms, base)
+  // forced blink: a full-amplitude closure layered on the schedule at the moment the button was pressed
+  if (state.forced !== null) {
+    const u = ms - state.forced
+    const tm = sch.timing
+    if (u >= 0 && u < tm.close + tm.open) {
+      const c = u < tm.close ? closeP(u / tm.close) : 1 - openP((u - tm.close) / tm.open)
+      const cN = Math.min(c, u - tm.lagMs < tm.close ? closeP(Math.max(0, u - tm.lagMs) / tm.close) : c)
+      p0.au.AU45 = Math.max(p0.au.AU45, c)
+      p0.au.AU45n = Math.max(p0.au.AU45n, cN)
+      p0.au.AU45b = Math.max(p0.au.AU45b, c)
+      p0.what = "forced"
+    } else if (u >= tm.close + tm.open) state.forced = null
+  }
+  for (const e of eyes) pose(e, p0)
+  const bar = v => "█".repeat(Math.round(clamp(v) * 20)).padEnd(20, "·")
+  const a = p0.au
+  $("#readout").textContent = [
+    `t ${String(Math.round(p0.tt)).padStart(6)} ms   ${p0.what}`,
+    `AU45  temporal ${bar(a.AU45)} ${a.AU45.toFixed(3)}`,
+    `AU45n nasal    ${bar(a.AU45n)} ${a.AU45n.toFixed(3)}   tilt ${(a.AU45 - a.AU45n).toFixed(3)}`,
+    `AU45b bell     ${bar(a.AU45b)} ${a.AU45b.toFixed(3)}`,
+    `AU5   levator  ${bar(a.AU5)} ${a.AU5.toFixed(3)}`,
+    `gaze (${p0.gaze.x.toFixed(3)}, ${p0.gaze.y.toFixed(3)})   pupil ${p0.dil.toFixed(3)}`,
+  ].join("\n")
+  if (p0.what !== last) {
+    last = p0.what
+    lines.push(`${String(Math.round(p0.tt)).padStart(6)}  ${p0.what.padEnd(9)} gaze=(${p0.gaze.x.toFixed(2)},${p0.gaze.y.toFixed(2)})`)
+    if (lines.length > 12) lines.shift()
+    $("#log").textContent = lines.join("\n")
+  }
+  $("#tms").textContent = `${Math.round(ms)} ms`
+  if (document.activeElement !== $("#scrub")) $("#scrub").value = String(Math.round(ms % sch.T))
+}
+let prev = performance.now()
+function tick(now) {
+  const dt = now - prev
+  prev = now
+  if (state.playing) state.now += dt * Number($("#tempo").value)
+  frameAt(state.now)
+  requestAnimationFrame(tick)
+}
+$("#play").onclick = () => {
+  state.playing = !state.playing
+  $("#play").textContent = state.playing ? "pause" : "play"
+}
+$("#scrub").oninput = ev => {
+  state.playing = false
+  $("#play").textContent = "play"
+  state.now = Number(ev.target.value)
+}
+$("#blink").onclick = () => (state.forced = state.now)
+$("#rewake").onclick = () => (state.now = 0)
+for (const id of ["seed", "shape", "auto"]) $(`#${id}`).onchange = rebuild
+$("#expr").onchange = () => {}
+$("#tempo").oninput = ev => (ev.target.nextElementSibling.textContent = ev.target.value)
+$("#weight").oninput = ev => {
+  ev.target.nextElementSibling.textContent = ev.target.value
+  document.documentElement.style.setProperty("--w", ev.target.value)
+}
+$("#knobs").oninput = ev => {
+  const k = ev.target.dataset.k
+  if (!k) return
+  const v = Number(ev.target.value)
+  ev.target.nextElementSibling.textContent = String(v)
+  if (k in TIMING) {
+    state.timing[k] = v
+    rebuild()
+  } else state[k] = v
+}
+window.lab = { state, frameAt, rebuild, get eyes() { return eyes }, get sch() { return sch } }
+rebuild()
+requestAnimationFrame(tick)
+
+</script>
+</body>
+</html>
