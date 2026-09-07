@@ -14,6 +14,12 @@
   ]
   if (typeof window === "undefined") return
   window.GOTHIC_LINKS = LINKS
+  // kit pages live in dist/ when opened from file://; legacy pages stay at the package root; http serves everything at root
+  window.GOTHIC_HREF = function (l) {
+    var inDist = /\/dist\/[^/]*$/.test(location.pathname)
+    if (location.protocol !== "file:") return l.href
+    return l.legacy ? (inDist ? "../" : "") + l.href : (inDist ? "" : "dist/") + l.href
+  }
   // module import from the kit: only publish LINKS. classic script in a legacy page: build the header
   if (!document.currentScript) return
   var STYLE = [
@@ -23,6 +29,7 @@
     ".gk-top .gk-sections a{animation:gk-active linear both;animation-range:entry 0% exit 100%}",
     "@keyframes gk-active{0%,100%{color:#8b8f9c;border-bottom-color:transparent}12%,88%{color:oklch(84% .1 85);border-bottom-color:oklch(84% .1 85)}}",
     ".gk-top .gk-sections a[data-active]{color:oklch(84% .1 85);border-bottom-color:oklch(84% .1 85)}",
+    "@view-transition{navigation:auto}.gk-top{view-transition-name:gothic-header}",
   ].join("")
   function build() {
     var id = (location.pathname.split("/").pop() || "index").replace(/\.html$/, "")
@@ -35,7 +42,7 @@
     files.className = "gk-files"
     LINKS.forEach(function (l) {
       var a = document.createElement("a")
-      a.href = l.href
+      a.href = window.GOTHIC_HREF(l)
       a.textContent = l.id + (l.legacy ? "*" : "")
       a.title = l.sections.join(" · ")
       if (l.id === id) a.setAttribute("aria-current", "page")

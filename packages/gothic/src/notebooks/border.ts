@@ -1,6 +1,6 @@
 import { type AnySpec, type ValuesOf, clock, commit, inputId, page, reducedMotion, section } from "../kit/index.js"
 import { f, mulberry32, pick } from "../lib/index.js"
-import { LINKS } from "./0_nav.js"
+import { LINKS, hrefFor } from "./0_nav.js"
 import "./border.css"
 
 // ---------- 1. local path recorder ----------
@@ -315,7 +315,7 @@ function play() {
 }
 
 // ---------- 7. wiring ----------
-page({ id: "border", title: "gothic: border draw lab", links: LINKS })
+page({ id: "border", title: "gothic: border draw lab", links: LINKS, href: hrefFor })
 const sec = section({
   id: "border",
   title: "border",

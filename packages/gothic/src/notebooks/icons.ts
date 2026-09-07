@@ -1,7 +1,7 @@
 import { sealAlgo } from "../algos/0_seal.js"
 import { type AnySpec, type ValuesOf, algoSection, page, section, stagger } from "../kit/index.js"
 import { M, TAU, arc, circle, f, foilRing, hash, line, scene, sceneMarkup, sealCaption, sealSvg } from "../lib/index.js"
-import { LINKS } from "./0_nav.js"
+import { LINKS, hrefFor } from "./0_nav.js"
 import "./icons.css"
 
 /* ============ 1. gothic eye: vesica lids, exact fits ============
@@ -111,7 +111,7 @@ function render(v: V, host: HTMLElement) {
   statsEl.textContent = `${names.length} names · ${n} paths`
 }
 
-page({ id: "icons", title: "gothic: fma favicons + eyes", links: LINKS })
+page({ id: "icons", title: "gothic: fma favicons + eyes", links: LINKS, href: hrefFor })
 section({
   id: "icons",
   title: "icons",

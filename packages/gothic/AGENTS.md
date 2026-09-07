@@ -31,6 +31,12 @@ Commands: `pnpm --filter @hafley66/gothic dev` (vite, entries at `/eye.html` etc
 - Algo interface: `{ name, spec, presets, run(params, { size, seed, minPx }) -> { paths[{ d, z?, cls? }], caption, lod[] } }`; `algoSection(algo, sizes)` renders a sizes row with LOD captions. Fractal generators and the seal composer conform to it.
 - Kit stays harvestable: no gothic-specific code inside `src/kit`; seal, foilRing, eye anatomy, slice reveal live in `src/lib` or the notebook module.
 
+## Opening from file://
+
+- Kit pages redirect to `dist/<page>.html`, one inlined file per entry from `pnpm --filter @hafley66/gothic build:single` (vite-plugin-singlefile, one build per entry). `dist/` is gitignored: rebuild after editing `src/`.
+- `nav.js` resolves hrefs both ways (`dist/` for kit pages, `../` for legacy pages) so the header works from either directory; `pnpm dev` serves everything at the root.
+- View transitions: `@view-transition { navigation: auto }` between pages (same origin only, so not on file://), `document.startViewTransition` around every section rerender after the first.
+
 ## Legacy notebooks (not migrated)
 
 - `nav.js` is the single page list; `src/notebooks/0_nav.ts` imports it for the kit header. Add a page there once.

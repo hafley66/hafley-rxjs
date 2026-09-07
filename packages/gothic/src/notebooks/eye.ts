@@ -17,7 +17,7 @@ import {
   seal,
   sceneMarkup,
 } from "../lib/index.js"
-import { LINKS } from "./0_nav.js"
+import { LINKS, hrefFor } from "./0_nav.js"
 import "./eye.css"
 
 /* ============ 1. Shape: rest anatomy in eye units (x in [-1,1], y in half-heights; -1 = nasal, +1 = temporal) ============
@@ -544,7 +544,7 @@ function tick(elapsed: number) {
   })
 }
 
-page({ id: "eye", title: "gothic: eye, muscle model", links: LINKS })
+page({ id: "eye", title: "gothic: eye, muscle model", links: LINKS, href: hrefFor })
 const sec = section({
   id: "eye",
   title: "eye",

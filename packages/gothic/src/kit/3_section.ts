@@ -15,7 +15,13 @@ import "./kit.css"
 
 // sections: the anchors a page registers, shown as the link's hover list so the header says what each page has
 export type Link = { id: string; href: string; legacy?: boolean; sections?: readonly string[] }
-export type PageOpts = { id: string; title?: string; links?: readonly Link[]; storage?: string }
+export type PageOpts = {
+  id: string
+  title?: string
+  links?: readonly Link[]
+  href?: (l: Link) => string
+  storage?: string
+}
 export type Page = {
   id: string
   header: HTMLElement
@@ -46,7 +52,7 @@ export function page(o: PageOpts): Page {
   const nav = header.querySelector("nav") as HTMLElement
   for (const l of o.links ?? []) {
     const a = document.createElement("a")
-    a.href = l.href
+    a.href = o.href ? o.href(l) : l.href
     a.textContent = l.legacy ? `${l.id}*` : l.id
     if (l.sections?.length) a.title = l.sections.join(" · ")
     if (l.id === o.id) a.setAttribute("aria-current", "page")
@@ -157,6 +163,7 @@ export function section<S extends AnySpec>(o: SectionOpts<S>): Section<S> {
   const { extra } = bar(el, { id: o.id, spec: o.spec, values, pins, store: st, presets: o.presets, title: o.title })
   const host = document.createElement("div")
   host.className = "kit-host"
+  host.style.viewTransitionName = `sec-${o.id.replace(/[^a-z0-9_-]/gi, "_")}`
   el.append(host)
   pg.main.append(el)
   const a = document.createElement("a")
@@ -171,8 +178,12 @@ export function section<S extends AnySpec>(o: SectionOpts<S>): Section<S> {
     const top = el.getBoundingClientRect().top + scrollY
     const h = el.offsetHeight
     const frac = h && scrollY > top ? (scrollY - top) / h : 0
-    o.render(v, host, { first: prev === null, changed, extra, values, zDepth: pg.zDepth() })
-    applyDepth(host)
+    const paint = () => {
+      o.render(v, host, { first: prev === null, changed, extra, values, zDepth: pg.zDepth() })
+      applyDepth(host)
+    }
+    if (prev === null || !document.startViewTransition) paint()
+    else document.startViewTransition(paint)
     if (frac > 0) scrollTo(0, top + frac * el.offsetHeight)
     prev = v
   }

@@ -72,6 +72,14 @@ svg text {
 	border-radius: 6px;
 }
 
+/* cross-document view transition between notebooks; the header keeps its name so it slides, not fades */
+@view-transition {
+	navigation: auto;
+}
+.kit-top {
+	view-transition-name: gothic-header;
+}
+
 /* global bar: notebook links, section anchors, zDepth */
 .kit-top {
 	position: sticky;

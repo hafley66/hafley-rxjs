@@ -20,7 +20,7 @@ import {
 } from "../lib/index.js"
 import { hilbertIndex } from "../algos/1_fractal.js"
 import { Spring } from "animejs"
-import { LINKS } from "./0_nav.js"
+import { LINKS, hrefFor } from "./0_nav.js"
 import "./slice.css"
 
 export function polyShape(R: number): Part[] {
@@ -555,7 +555,7 @@ const clk = clock(elapsed => {
   for (const inst of insts) pose(inst, t % inst.T, K)
 })
 
-page({ id: "slice", title: "gothic: judgement cut", links: LINKS })
+page({ id: "slice", title: "gothic: judgement cut", links: LINKS, href: hrefFor })
 section({
   id: "slice",
   title: "slice",
