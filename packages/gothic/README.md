@@ -18,7 +18,7 @@ Procedural gothic line art as one React SPA. Every route is a notebook: a sticky
 ```bash
 pnpm --filter @hafley66/gothic dev            # http://localhost:5173/eye
 pnpm --filter @hafley66/gothic build:single   # dist/index.html, opens from file:// (hash routing)
-pnpm --filter @hafley66/gothic check          # typecheck + vitest + build:single + playwright smoke
+pnpm --filter @hafley66/gothic check          # typecheck + vitest + build:single + playwright e2e over dist/index.html
 ```
 
 ## 2. Routes
@@ -93,7 +93,7 @@ function RosePage() {
 export const PAGE: PageSpec = { id: "rose", title: "gothic: rose window", path: "/rose", specs: { rose: SPEC }, Component: RosePage }
 ```
 
-Then add `rose` to the `PAGES` array in `src/app/0_pages.ts`. Run `pnpm check`: the smoke test walks the new tab.
+Then add `rose` to the `PAGES` array in `src/app/0_pages.ts`. Run `pnpm check`: `tests/app.e2e.test.ts` walks the new tab.
 
 Several sections on one page: one `Section` per spec, each with its own `id`; list them all in `specs`. Bar-less sections use `PlainSection` and go in `anchors`.
 
@@ -110,7 +110,7 @@ Several sections on one page: one `Section` per spec, each with its own `id`; li
 | `bool` | boolean | `p` true-probability under shuffle |
 | `text` | string | `size` |
 
-Every kind takes `label`, `hint` (tooltip first line; the derived facts follow it), `group` (drawer column), `static: true` or `shuffle: false` (last column, no pin, no reroll). Hover any control for its tooltip; the smoke test fails on a control without one.
+Every kind takes `label`, `hint` (tooltip first line; the derived facts follow it), `group` (drawer column), `static: true` or `shuffle: false` (last column, no pin, no reroll). Hover any control for its tooltip; the e2e test fails on a control without one.
 
 **Algo** (`src/kit/2_algo.ts`): `{ name, spec, presets, run(params, { size, seed, minPx }) -> { paths: [{ d, z?, cls? }], caption, lod[] } }`. Drop one into `src/algos/`, then `<AlgoSection page="fractal" algo={myAlgo} sizes={[64, 128, 256]} />` renders a sizes row with LOD captions. `/fractal` is the reference.
 
@@ -122,7 +122,7 @@ Every kind takes `label`, `hint` (tooltip first line; the derived facts follow i
 |---|---|
 | `pnpm --filter @hafley66/gothic typecheck` | `tsc --noEmit` clean |
 | `pnpm --filter @hafley66/gothic test` | vitest over spec, url, store, router, pages |
-| `pnpm --filter @hafley66/gothic smoke` | every header tab renders svg with zero console errors, tab x identical on every route, `dist/index.html` works from `file://` |
+| `pnpm --filter @hafley66/gothic test:e2e` | over `dist/index.html` from `file://`: every tab renders svg with zero console errors, tab x identical on every route, drawer mounted, every control titled; edit → shuffle → back restores values; a named state survives reload |
 | `pnpm --filter @hafley66/gothic check` | all of the above plus `build:single` |
 
 ## 7. Where things live
@@ -136,7 +136,7 @@ Every kind takes `label`, `hint` (tooltip first line; the derived facts follow i
 | `src/lib/`, `src/algos/` | generators and algos, pure |
 | `src/lib/legacy/` | the pre-kit single-file notebooks' generators, unchanged, with hand-written `.d.ts` |
 | `src/app.css` | Tailwind v4 theme, keyframes, `data-z` depth rule, `@view-transition` |
-| `scripts/0_smoke.mjs` | the playwright smoke |
+| `tests/app.e2e.test.ts` | the playwright e2e (vitest, `vitest.e2e.config.ts`) |
 
 ## 8. Rules
 

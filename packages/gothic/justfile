@@ -9,6 +9,6 @@ dev:
 single:
     pnpm build:single
 
-# typecheck + vitest + build:single + playwright smoke
+# typecheck + vitest + build:single + tests/app.e2e.test.ts (playwright over dist/index.html)
 check:
     pnpm check

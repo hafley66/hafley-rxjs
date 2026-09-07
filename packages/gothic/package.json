@@ -10,8 +10,8 @@
     "build:single": "vite build --mode single",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "smoke": "node scripts/0_smoke.mjs",
-    "check": "pnpm typecheck && pnpm test && pnpm build:single && pnpm smoke"
+    "check": "pnpm typecheck && pnpm test && pnpm build:single && pnpm test:e2e",
+    "test:e2e": "vitest run -c vitest.e2e.config.ts"
   },
   "dependencies": {
     "@hafley66/path": "workspace:*",
