@@ -19,13 +19,11 @@ Shared notebook framework: a spec drives the bar, the URL, shuffle, pins, named 
 | file | owns |
 |---|---|
 | `0_spec.ts` | `Field`, `Spec<P>`, `ValuesOf<S>`, zod derivation, `parseValues`, `shuffle`, pins helpers, local `mulberry32` |
-| `1_url.ts` | one `@hafley66/path` route per notebook, `parseSearch` / `printSearch` / `mergeSearch`, `bindUrl`, `commit` |
-| `2_bar.ts` | sticky bar DOM from a spec: groups, static cluster, shuffle, pin toggles, preset select, readout, named-state chips |
-| `3_section.ts` | `page()` header + nav, `section()` = namespace + bar + host + scroll restore + autosave; zDepth control |
-| `4_anim.ts` | `stagger()`, `clock()`, `reducedMotion` |
-| `5_algo.ts` | `Algo<P>`, `mountAlgo`, `algoSection` |
-| `6_store.ts` | localStorage autosave + named states |
-| `kit.css` | theme tokens, bars, chips, depth rule, draw-in keyframes |
+| `1_url.ts` | one `@hafley66/path` route per notebook, `queryRoute` / `parseSearch` / `printSearch` / `mergeSearch` |
+| `2_algo.ts` | `Algo<P>`, `AlgoOut`, `algoCtx` |
+| `3_store.ts` | localStorage autosave + named states |
+
+The React side of the old kit lives outside this directory: `src/app/2_state.ts` (signals, url binding, autosave, shuffle), `src/ui/1_Bar.tsx` (the bar), `src/ui/2_Section.tsx` (section + anchors + scroll restore), `src/ui/0_hooks.ts` (`useClock`, `useDrawIn`, `useAnchor`, `stagger`), `src/ui/4_Algo.tsx` (`AlgoSection`), `src/app.css` (theme, depth rule, draw-in keyframes).
 
 ## 2. Spec and derived schema
 
@@ -66,7 +64,7 @@ flowchart LR
 - One route per notebook (`route("/", z.object(shape), z.object({}))`); every key is `<section>.<key>` so `?eye.seed=3&eye.shape=cat&seal.minPx=4` carries several sections.
 - Pins travel as `<section>.pin=seed,shape`.
 - Only non-default values print. Foreign query keys survive writes.
-- `commit("push", fn)` marks the writes inside `fn` as pushState; everything else is replaceState.
+- `commit("push", fn)` in `app/2_state.ts` marks the writes inside `fn` as pushState; everything else is replaceState.
 
 ## 4. Bar
 
@@ -84,27 +82,27 @@ Inputs with `data-live="1"` are skipped by sync (an animation loop owns them).
 
 ## 5. Section and page
 
-```ts
-page({ id: "eye", title, links, storage: "gothic" })
-const sec = section({ id: "eye", title: "eye", spec: SPEC, presets, zDepth: false, render(values, host, ctx) {} })
+```tsx
+<Section page="eye" def={{ id: "eye", title: "eye", spec: SPEC, presets, zDepth: false }} extra={<Stats />}>
+  {(values, ctx) => <Body v={values} state={ctx.state} z={ctx.z} />}
+</Section>
 ```
 
-- `ctx.first` on the initial render, `ctx.changed` = keys that differ from the previous values, `ctx.extra` = bar slot, `ctx.values` = the Signal, `ctx.zDepth`.
-- Render runs on every value change; return early on light keys (read `ctx.changed`).
+- The body re-renders on every value change; memo the heavy geometry on the keys that change it.
 - Scroll: the section's viewport fraction is restored after each render.
-- Autosave: every value/pin change writes `<storage>.<page>.<section>.current`; start order is defaults, then autosave, then URL keys present.
-- Header: notebook links (`links`, `legacy` gets a `*`), section anchors, zDepth range when any section opts in. `--kit-top` tracks the header height so section bars stick under it.
+- Autosave: every value/pin change writes `gothic.<page>.<section>.current`; start order is defaults, then autosave, then URL keys present.
+- Header: file tabs (row 1) never move, zDepth and draw-in sit in their own column, section anchors are row 2, the page title is row 3. `--kit-top` tracks the header height so section bars stick under it.
 
 ## 6. Depth contract
 
-- Any element with `data-z="0..1"` (0 near, 1 far) is styled by `kit.css`: `stroke-opacity = 1 - 0.8·z·zDepth`, `stroke-width = --w · (1 - 0.6·z·zDepth)`.
+- Any element with `data-z="0..1"` (0 near, 1 far) is styled by `app.css`: `stroke-opacity = 1 - 0.8·z·zDepth`, `stroke-width = --w · (1 - 0.6·z·zDepth)`.
 - `zDepth` is the global range in the header (`?page.z=`); 0 = flat. `applyDepth(root)` copies `data-z` into `--z` after each render.
 - Sections with `zDepth: true` re-render when zDepth changes and can read `ctx.zDepth`.
 
 ## 7. Animation
 
-- Draw-in: give every path `pathLength="1"`, put class `kit-draw` on an ancestor, call `stagger(root)` to number paths with `--i`. Tune with `--kit-ms` and `--kit-stagger`. Reduced motion disables it.
-- `clock(frame, { tempo, running })`: rAF loop; `elapsed()` advances only while running, scaled by tempo; `run`, `seek`, `reset`, `stop`; `bindScrub(input, period)` mirrors elapsed into a 0..100 slider and seeks on input.
+- Draw-in: give every path `pathLength="1"`, put class `kit-draw` on an ancestor, call `stagger(root)` (or `useDrawIn`) to number paths with `--i`. Tune with `--kit-ms` and `--kit-stagger`; the header's draw-in toggle sets `--kit-ms` to 0. Reduced motion disables it.
+- `useClock(frame, { tempo, running })`: rAF loop bound to the component's lifetime; `elapsed()` advances only while running, scaled by tempo; `run`, `seek`, `reset`, `stop`; `bindScrub(input, period)` mirrors elapsed into a 0..100 slider and seeks on input.
 
 ## 8. Algo contract
 
@@ -115,8 +113,8 @@ type Algo<P> = {
   presets: Record<string, Partial<P>>
   run(params: P, ctx: { size: number; seed: number; minPx: number }): { paths: { d: string; z?: number; cls?: string }[]; caption: string; lod: string[] }
 }
-mountAlgo(algo, host, sizes, params)   // one cell per size: svg + "<size> · caption · lod"
-algoSection(algo, sizes, title?)       // section keyed by algo.name, zDepth on
+<AlgoCells algo={algo} sizes={sizes} params={v} />   // one cell per size: svg + "<size> · caption · lod"
+<AlgoSection page algo sizes title? />               // section keyed by algo.name, zDepth on
 ```
 
 `ctx.seed` and `ctx.minPx` come from `params.seed` / `params.minPx` when the spec has them.
@@ -126,7 +124,8 @@ algoSection(algo, sizes, title?)       // section keyed by algo.name, zDepth on
 Copy these files into another project:
 
 ```
-kit/0_spec.ts  kit/1_url.ts  kit/2_bar.ts  kit/3_section.ts  kit/4_anim.ts  kit/5_algo.ts  kit/6_store.ts  kit/kit.css  kit/index.ts
+kit/0_spec.ts  kit/1_url.ts  kit/2_algo.ts  kit/3_store.ts  kit/index.ts
+app/2_state.ts  ui/0_hooks.ts  ui/1_Bar.tsx  ui/2_Section.tsx  ui/4_Algo.tsx  app.css
 ```
 
-They need exactly four imports: `@hafley66/path` (`route`), `@hafley66/signals` (`Signal`), `zod`, `rxjs` (`skip`). Everything else is DOM. The CSS import in `3_section.ts` assumes a bundler that accepts `import "./kit.css"`.
+`kit/` needs two imports: `@hafley66/path` (`route`) and `zod`. The React layer adds `@hafley66/signals` (`Signal`, `SignalReact`), `rxjs` (`skip`), `react`, `react-dom` and Tailwind v4.

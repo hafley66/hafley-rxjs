@@ -7,38 +7,58 @@ Rules for agents editing this package (user-set 2026-09-07):
 - Refactor, merge, or de-duplicate only when the user says "copy", "combine", or "clean" for those functions.
 - Keep code tight.
 
+## Stack
+
+| piece | choice |
+|---|---|
+| app | one React 19 SPA, `index.html` -> `src/main.tsx`, vite |
+| routing | `@hafley66/path` (`route` / `queryRoute`) + `src/app/1_router.ts`; history under the dev server, hash under `file:` |
+| state | `@hafley66/signals` only (`SignalReact` for every reactive component). No useState for app state |
+| storage | `src/kit/3_store.ts`: `gothic.<page>.<section>.current` autosave + `.states` named list |
+| styles | Tailwind v4 via `@tailwindcss/vite`; `src/app.css` holds only the theme vars, keyframes, the `data-z` depth rule and `@view-transition` |
+| generators | `src/lib/**`, `src/lib/legacy/**`, `src/algos/**`: pure, no React, path strings only |
+
+Commands: `pnpm --filter @hafley66/gothic dev | build | build:single | typecheck | test`.
+
 ## Layout
 
 | path | role |
 |---|---|
-| `eye.html`, `slice.html`, `icons.html`, `border.html` | vite entries; each is a tiny shell loading `src/notebooks/<name>.ts` |
-| `src/kit/` | shared notebook framework (`src/kit/README.md`); depends only on `@hafley66/path`, `@hafley66/signals`, `zod`, `rxjs`, DOM |
-| `src/lib/` | gothic-specific shared code: rng, geometry helpers, `foilRing`, the seal composer |
-| `src/notebooks/` | one module per notebook; `0_nav.ts` lists the header links |
-| `src/algos/` | `Algo<P>` implementations (`0_seal.ts`) |
-| `arches.html`, `circles.html`, `tiles.html`, `index.html` | legacy single-file notebooks, not on the kit; they load `nav.js` (classic script, works from file://) for the shared sticky header: file tabs, section anchors, `--kit-top` offset |
+| `src/app/0_pages.ts` | the page list; builds one `queryRoute(specs, path)` per notebook and matches the current path |
+| `src/app/1_router.ts` | `loc` signal, `parseHref` / `toHref`, `navigate`, `writeSearch`, popstate + hashchange |
+| `src/app/2_state.ts` | `sectionState(page, id, spec)`: values + pins signals, url read/write, autosave, shuffle, named states |
+| `src/app/3_view.ts` | `transition()`: `startViewTransition` around a `flushSync`, armed only after the first commit |
+| `src/app/4_App.tsx` | header + the matched page |
+| `src/ui/` | `0_hooks` (clock, draw-in, `--kit-top`, anchors), `1_Bar`, `2_Section`, `3_Header`, `4_Algo`, `5_Raw` |
+| `src/kit/` | `0_spec` (field format, shuffle, pins), `1_url` (namespaced query), `2_algo` (Algo contract), `3_store` |
+| `src/pages/` | one module per route, each exporting `PAGE: PageSpec` |
+| `src/lib/eye/` | the eye anatomy module (SHAPES, EXPR, AU, activate, frame, lidPts, lashSlots, scheduler) |
+| `src/lib/legacy/` | the single-file notebooks' generators, moved unchanged (`.js` + a hand-written `.d.ts`) |
 
-Commands: `pnpm --filter @hafley66/gothic dev` (vite, entries at `/eye.html` etc.), `typecheck`, `test` (vitest over `src/kit`).
+## Routes
 
-## Kit contract
+`/eye` `/slice` `/icons` `/border` `/fractal` `/circles` `/tiles` `/arches` `/frames`. `/` redirects to `/eye`.
 
-- Specs derive schemas: a notebook declares one `Spec` per section; the zod schema, URL parsing, bar inputs, shuffle, and readout all derive from it. Never write a schema by hand.
-- Sections own URL namespaces: section `id` = query prefix (`?eye.seed=3&seal.minPx=4`); pins live at `<id>.pin`. Input = replaceState, shuffle/preset/chip load = pushState, popstate restores.
-- Static fields never shuffle: `static: true` or `shuffle: false` puts a field in the trailing static cluster with no pin. Per notebook: `seed` shuffles; `weight`, `tempo`, `run`, `dress`, `ghost`, `pen`, `anim`, `afterimage` are static.
-- Pins: any shuffleable field can be pinned in the bar; pinned fields are skipped by shuffle and the pin set survives reload and back/forward.
-- Named states: every section autosaves to localStorage (`gothic.<page>.<section>.current`) and offers save-as-name chips with star and delete; the URL wins over the autosave on load.
-- Depth: elements carrying `data-z` (0 near .. 1 far) get stroke-opacity and stroke-width scaled by the global `zDepth` range (0 = flat). Sections opt in with `zDepth: true`.
-- Algo interface: `{ name, spec, presets, run(params, { size, seed, minPx }) -> { paths[{ d, z?, cls? }], caption, lod[] } }`; `algoSection(algo, sizes)` renders a sizes row with LOD captions. Fractal generators and the seal composer conform to it.
-- Kit stays harvestable: no gothic-specific code inside `src/kit`; seal, foilRing, eye anatomy, slice reveal live in `src/lib` or the notebook module.
+## Section contract
 
-## Opening from file://
+- One section = one url namespace: `?<section>.<key>=`, pins at `?<section>.pin=a,b`, plus the page-global `?page.z` and `?page.draw`.
+- Input = replaceState, shuffle / preset / chip load = pushState, popstate restores. Foreign query keys survive a write.
+- Start values: defaults, then the localStorage autosave, then the url keys that are present.
+- Specs derive everything: `kind` is `range | number | seed | select | bool | text`; `static: true` or `shuffle: false` moves a field into the trailing static cluster with no pin; `group` clusters it; `roll` narrows the shuffle window; `pool` weights a select; `p` is a bool's true-probability.
+- Shuffle skips static and pinned fields and rolls everything else from one seeded rng.
+- Depth: paths carrying `data-z` (0 near .. 1 far) fade and thin with the header's zDepth; sections opt in with `zDepth: true`.
+- Anchors: the header's row 2 lights each section on its own named view timeline, with an IntersectionObserver fallback.
 
-- Kit pages redirect to `dist/<page>.html`, one inlined file per entry from `pnpm --filter @hafley66/gothic build:single` (vite-plugin-singlefile, one build per entry). `dist/` is gitignored: rebuild after editing `src/`.
-- `nav.js` resolves hrefs both ways (`dist/` for kit pages, `../` for legacy pages) so the header works from either directory; `pnpm dev` serves everything at the root.
-- View transitions: `@view-transition { navigation: auto }` between pages (same origin only, so not on file://), `document.startViewTransition` around every section rerender after the first.
+## Adding a page
 
-## Legacy notebooks (not migrated)
+1. `src/pages/<n>_<name>.tsx`: declare one `Spec` per section, render `<Section page="<name>" def={{ id, title, spec }}>{v => ...}</Section>`, export `PAGE: PageSpec` (`id`, `title`, `path`, `specs`, optional `anchors` for bar-less sections, `Component`).
+2. Add the module to `PAGES` in `src/app/0_pages.ts`. The tab, the route, the query schema and the anchors all follow from it.
+3. Generators go to `src/lib/**` or `src/algos/**`, never into the component.
 
-- `nav.js` is the single page list; `src/notebooks/0_nav.ts` imports it for the kit header. Add a page there once.
+## file:// build
 
-- `arches.html`, `circles.html`, `tiles.html`, `index.html`: single-file, own their state handling. `tiles.html` holds the islamic star / mosaic / blackwork sections split out of circles; the fma composer has no tiling bands.
+`pnpm --filter @hafley66/gothic build:single` writes one inlined `dist/index.html` (vite-plugin-singlefile, `base: "./"`). Opened from `file:`, the router switches to hash urls (`dist/index.html#/eye?eye.seed=3`), so every route and every section's query state work without a server. `pnpm build` writes the same app as a normal asset build.
+
+## Not ported
+
+- `arches`: the first six sections (families, spread, lobes, anatomy, rose, panel) carry bars; the remaining nine (flamboyant, pinnacle, vault, buttress, bands, facade, noisy, grammar, grammar2) render from the same generators on the families bar's globals. The `tex` section is dropped: it loaded textures.js from a CDN, which no single-file build can carry.

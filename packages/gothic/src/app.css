@@ -1,0 +1,190 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0f1117;
+  --color-fg: #d9dbe3;
+  --color-muted: #8b8f9c;
+  --color-dim: #5e6270;
+  --color-ink: oklch(84% 0.1 85);
+  --color-panel: #0a0c11;
+  --color-line: #262a35;
+  --color-well: #1a1d26;
+  --color-edge: #3a3f4d;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --w: 1;
+    --t: 1;
+    --kit-top: 0px;
+    --kit-zdepth: 0;
+    --kit-ms: 1400ms;
+    --kit-stagger: 25ms;
+  }
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font: 13px / 1.4 system-ui, sans-serif;
+  }
+  svg {
+    color: var(--color-ink);
+    display: block;
+    overflow: visible;
+  }
+  svg :is(path, circle, polyline) {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: var(--w);
+  }
+  svg .dark {
+    fill: currentColor;
+    stroke: none;
+  }
+  svg text {
+    fill: currentColor;
+    font-family: serif;
+  }
+}
+
+/* cross-document transition; the header keeps its name so it slides between routes */
+@view-transition {
+  navigation: auto;
+}
+.kit-top {
+  view-transition-name: gothic-header;
+}
+
+/* scroll-driven: each anchor animates on its section's named view timeline (set inline by useAnchor) */
+.kit-anchor {
+  animation: kit-active linear both;
+  animation-range: entry 0% exit 100%;
+}
+@keyframes kit-active {
+  0%,
+  100% {
+    color: var(--color-muted);
+    border-bottom-color: transparent;
+  }
+  12%,
+  88% {
+    color: var(--color-ink);
+    border-bottom-color: var(--color-ink);
+  }
+}
+/* engines without view timelines: IntersectionObserver sets data-active instead */
+.kit-anchor[data-active] {
+  color: var(--color-ink);
+  border-bottom-color: var(--color-ink);
+}
+
+/* depth: zDepth 0 = flat; z 0 near .. 1 far fades opacity and thins the stroke */
+[data-z] {
+  --z: 0;
+  stroke-opacity: calc(1 - 0.8 * var(--z) * var(--kit-zdepth));
+  stroke-width: calc(var(--w) * (1 - 0.6 * var(--z) * var(--kit-zdepth)));
+}
+
+/* draw-in: every path carries pathLength=1 so dash 1 covers its whole length */
+.kit-draw :is(path, circle, polyline) {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: kit-draw var(--kit-ms) cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  animation-delay: calc(var(--i, 0) * var(--kit-stagger));
+}
+.kit-draw .dark {
+  animation: kit-fade var(--kit-ms) forwards;
+  opacity: 0;
+  stroke-dashoffset: 0;
+}
+@keyframes kit-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes kit-fade {
+  80% {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  svg * {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+    opacity: 1 !important;
+  }
+}
+
+/* border lab: one overlay path per host rect, --t is the perimeter fraction */
+.frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  color: var(--color-ink);
+}
+.frame path {
+  stroke-width: var(--w);
+}
+.frame .ghost {
+  stroke-opacity: 0.12;
+}
+.frame .ink {
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--t));
+}
+.frame .pen {
+  fill: var(--color-ink);
+  stroke: none;
+  filter: drop-shadow(0 0 4px var(--color-ink));
+}
+body.noghost .ghost,
+body.nopen .pen {
+  display: none;
+}
+
+/* frames lab: the gothic frame overlay drawn into every pane */
+.gothic-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  color: var(--gothic-ink, var(--color-ink));
+  opacity: var(--gothic-idle, 0.55);
+  transition: opacity 0.25s;
+}
+.gothic-frame path {
+  stroke-width: calc(var(--k, 1) * 1px);
+}
+.pane:hover .gothic-frame,
+.pane:focus-within .gothic-frame {
+  opacity: 1;
+}
+
+/* unit-coordinate generators scale their viewBox by hundreds, so cell strokes stay hairlines */
+.cell svg {
+  max-width: 100%;
+  height: auto;
+}
+.cell svg :is(path, polyline, circle) {
+  vector-effect: non-scaling-stroke;
+}
+.cell svg path.aux {
+  stroke-opacity: 0.45;
+}
+.cell svg path.fill {
+  stroke: none;
+}
+.cell svg text {
+  font-family: "Noto Sans Runic", "Segoe UI Symbol", "Apple Symbols", system-ui, sans-serif;
+}

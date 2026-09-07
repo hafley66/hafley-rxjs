@@ -1,4 +1,4 @@
-import type { Algo } from "../kit/5_algo.js"
+import type { Algo } from "../kit/2_algo.js"
 import { seal, sealCaption } from "../lib/3_seal.js"
 
 export type SealParams = { seed: number; minPx: number; pupil: boolean }

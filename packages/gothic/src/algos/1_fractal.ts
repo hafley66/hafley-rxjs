@@ -1,4 +1,4 @@
-import type { Algo, AlgoPath } from "../kit/5_algo.js"
+import type { Algo, AlgoPath } from "../kit/2_algo.js"
 import { M, L as Lp, type Pt, TAU, circle, clamp, f, foilRingGeom, mulberry32, pl } from "../lib/index.js"
 
 type Circ = { x: number; y: number; r: number; k: number }
