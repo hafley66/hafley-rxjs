@@ -9,7 +9,7 @@ markup a domain package styles and wires up.
 A consumer owns the domain model (rows, selection, verdicts, whatever the report is about) and
 passes signals plus a handful of callbacks into these components. The shell owns layout tracks,
 popovers, truncation, sub-tables, presets storage, pivot chaining, the nav tree renderer, and the
-marbler events panel. Row types passed to `NavGrid` and `PivotStack` extend `NavRow`, which fixes
+marbler events panel. Row types passed to `PivotStack` extend `NavRow`, which fixes
 only `id`, `label`, `status`, `durationMs`, `events`, and `children`; a domain adds its own fields
 through the generic parameter.
 
@@ -26,7 +26,6 @@ through the generic parameter.
 | `GearButton`, `PopoverPanel` | components | gear button + native-popover shell primitives |
 | `PresetsMenu<T>` | component | apply/save/reset named `T` snapshots through a `Storage<string>` |
 | `PivotStack<T>` | component | breadcrumb + stacked `Grid<T>` pivots, `onPop(count)` callback |
-| `NavGrid<T>` | component | tree grid over `Grid<T>`, `onSelect(row)` / `onPivot(row)` callbacks |
 | `NavRail` | component | chevron toggle that collapses a nav `Track` signal to a 28px rail |
 | `formatAge(ms, now?)`, `formatDuration(ms)` | functions | shared time labels, see Time below |
 | `createNavCollapse(track, storage, expandedFallback)` | function | collapse/restore logic behind `NavRail`, usable standalone |
@@ -98,32 +97,11 @@ const tracks: Track[] = [{ name: 'nav', min: 160, max: 480, fallback: 240, axis:
 const { tracks: signals, unsubscribe } = layout(document.documentElement, tracks, localStorageAdapter('app.layout'), sizing)
 ```
 
-## NavGrid is deprecated
-
-`NavGrid` is superseded by `@hafley66/grid`'s own `TreeTable` (sortable headers, sticky header,
-virtualization, column sizing); see that package's README, "TreeTable" section. `vitest-telemetry`
-has already moved its sidebar onto `TreeTable` directly; `NavGrid` stays exported and working here
-only because `boop-adapters` still imports it. Do not build new nav trees on `NavGrid`.
-
-## Hover tiers
-
-`NavGrid` rows carry exactly three color-changing classes, applied in this cascade order so
-later ones win a tie:
-
-| Class | Meaning | Style |
-| --- | --- | --- |
-| `ancestor` | row is on the hovered row's parent chain | one `--accent` outline, no background |
-| `hovered` | row is the one under the pointer / `hoveredId` | the same outline plus a brighter background |
-| `selected` | row is the domain's current selection | `--sel` background, always wins over hover |
-
-The old `sameScope` sibling tint is gone; `sameScope` is still accepted on `NavGridProps` for
-callers that pass it (e.g. `boop-adapters`), but it no longer changes any row's color.
-
 ## Nav collapse
 
 `NavRail` collapses a `layout()` track to a 28px (`NAV_RAIL_PX`) rail and restores the width it
 had before collapsing. It owns no row rendering, only the track: place it as a sibling of
-`NavGrid` inside your own `<nav>`, the same way `gutter`'s div sits beside it.
+your grid `TreeTable` inside your own `<nav>`, the same way `gutter`'s div sits beside it.
 
 ```tsx
 import { NavRail, layout, type Track } from '@hafley66/report-shell'
@@ -135,7 +113,7 @@ function Nav() {
   return (
     <nav>
       <NavRail track={tracks.nav} storage={localStorageAdapter('app.tracks.nav.collapsed')} expandedFallback={380} />
-      {/* <NavGrid ... /> */}
+      {/* <TreeTable grid={grid} /> or <FsTree rows={rows} /> */}
     </nav>
   )
 }
@@ -143,37 +121,32 @@ function Nav() {
 
 A `Track`'s `min` must be at or below `NAV_RAIL_PX` for the rail width to actually render; a
 higher `min` clamps the collapse back open (see `layout.ts`'s `clampToTrack`). `NavRail` sets
-`data-nav-collapsed` on its closest `<nav>` ancestor; `style.css` hides `.nav-grid` under that
-attribute. `collapsed` is a derived `Signal` read straight off `track`, so a manual gutter drag
+`data-nav-collapsed` on its closest `<nav>` ancestor; `kit.css` hides the tree under that
+attribute (any `[data-testid=tree-table]`). `collapsed` is a derived `Signal` read straight off `track`, so a manual gutter drag
 down to the rail width flips it too, not only the toggle button.
-
-`NavGrid` was left alone (no `collapsible` prop): it never receives a track signal today, and
-adding one just to host a toggle button would mix an unrelated concern (track ownership, the
-same boundary `gutter` already sits on the far side of) into the row-tree component.
 
 ## Time
 
 `formatAge(ms, now = Date.now())` and `formatDuration(ms)` in `src/lib/time.ts` are the shared
 labels for "when" and "how long": `formatAge` reads a timestamp against `now` ("14s ago", "2m
 ago", "1h 4m ago", "3d ago"); `formatDuration` reads a span ("14ms", "1.2s", "14s", "2m 10s",
-"1h 4m", "2d 3h"). `NavGrid`'s `ms` column renders through `formatDuration`.
+"1h 4m", "2d 3h").
 
 ## Usage
 
 ```tsx
-import { NavGrid, type NavRow } from '@hafley66/report-shell'
-import '@hafley66/report-shell/style.css'
+import { FsTree, type FsRow } from '@hafley66/report-shell'
+import '@hafley66/report-shell/kit.css'
+import { Signal } from '@hafley66/signals'
 
-type Row = NavRow<{ kind: 'file' | 'test'; file?: string }>
+const rows = Signal<FsRow[]>([{ id: 'src', path: 'src', name: 'src', kind: 'dir', loaded: false }])
 
-function Tree({ grid, hoveredId }: { grid: Grid<Row>; hoveredId: Signal<string | null> }) {
+function Files() {
   return (
-    <NavGrid
-      grid={grid}
-      hoveredId={hoveredId}
-      rowClassName={(row) => row.kind}
-      onSelect={(row) => console.log('selected', row.id)}
-      onPivot={(row) => console.log('pivot on', row.status)}
+    <FsTree
+      rows={rows}
+      getChildren={async (dir) => (await fetch(`/ls?path=${dir.path}`)).json()}
+      onOpen={(file) => console.log('open', file.path)}
     />
   )
 }

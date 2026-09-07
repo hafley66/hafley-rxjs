@@ -31,7 +31,8 @@
     "test:sequence-identity": "vitest run packages/grapht/tests/12_sequenceIdentity.test.ts",
     "test:sequence-local-documents": "vitest run packages/mmd/src/1_parse.test.ts packages/d2/src/1_parse.test.ts",
     "test:sequence-receipts": "vitest run scripts/2_sequenceRenderReceipts.test.ts",
-    "test:sequence-renderers": "vitest run scripts/0_sequenceRendererSmoke.test.ts"
+    "test:sequence-renderers": "vitest run scripts/0_sequenceRendererSmoke.test.ts",
+    "receipts:ui": "pnpm --filter @hafley66/report-shell receipts && pnpm --filter @hafley66/report-shell test:browser && pnpm --filter @hafley66/gothic check && pnpm --filter @hafley66/vitest-telemetry receipts && pnpm --filter @hafley66/boop-adapters receipts"
   },
   "devDependencies": {
     "@hafley66/d2": "workspace:*",

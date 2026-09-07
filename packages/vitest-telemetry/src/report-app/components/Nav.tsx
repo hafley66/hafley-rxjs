@@ -1,5 +1,5 @@
 // Left pane: @hafley66/grid's TreeTable over the process > file > test tree, replacing the
-// hand-rolled NavGrid from @hafley66/report-shell (deprecated there; still used by boop-adapters).
+// hand-rolled NavGrid that @hafley66/report-shell used to ship (deleted in the ui kit unification).
 import { useMemo } from 'react'
 import { z } from 'zod'
 import { createGrid, createDefaultGridState, compactSingleChildChains, type Grid, type GridState } from '@hafley66/grid'

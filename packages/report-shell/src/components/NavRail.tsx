@@ -1,5 +1,5 @@
-// Chevron toggle placed at the top of a consumer's <nav>, beside NavGrid: same shape as the
-// `gutter` div, not a NavGrid prop, since NavGrid never sees a track signal.
+// Chevron toggle placed at the top of a consumer's <nav>, beside its TreeTable: same shape as the
+// `gutter` div, not a tree prop, since the tree never sees a track signal.
 import { useEffect, useMemo, useRef } from 'react'
 import { SignalReact } from '@hafley66/signals/react'
 import type { Signal as SignalType, Storage } from '@hafley66/signals'

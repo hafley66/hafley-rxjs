@@ -8,8 +8,6 @@ export { SubTable } from './components/SubTable'
 export { GearButton, PopoverPanel } from './components/Popover'
 export { PresetsMenu, type PresetsMenuProps } from './components/PresetsMenu'
 export { PivotStack, type PivotStackProps } from './components/PivotStack'
-// @deprecated: use @hafley66/grid's TreeTable for new nav trees; see README's "NavGrid is deprecated".
-export { NavGrid, type NavGridProps } from './components/NavGrid'
 export { NavRail, type NavRailProps } from './components/NavRail'
 export { pivotStackSignal, pushPivot, popPivotsTo, encodePivotStack, decodePivotStack } from './lib/pivotStack'
 export { usePivotEffect } from './components/usePivotEffect'

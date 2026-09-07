@@ -202,6 +202,8 @@ Each step is one commit. A gate is the exact command list that must pass before 
 | 7 | `FsTree` preset over grid `TreeTable`: `fsColumns`, lazy children, `formatBytes`; browser receipt with a 3-level tree | report-shell `src/components/FsTree.tsx`, `src/lib/bytes.ts`, browser test | +220 | report-shell `test:browser` |
 | 8 | delete `NavGrid` once boop uses `TreeTable`; root `receipts:ui` script | report-shell `NavGrid.tsx`, `index.ts`, `README.md`; boop nav; root `package.json` | −111 | full `pnpm receipts:ui` |
 
+Status (2026-09-07): all 8 steps landed on main: 1 `784de8f`, 2 `e443231`, 3 `3a1a50c`, 4 `0e98419`, 5 `6e3d5eb`, 6 `acf5dfc`, 7 `c3fc39a`, 8 this commit. Gate for the whole set: `pnpm receipts:ui` at the root.
+
 Order rationale: 1 removes pixi from every consumer before anything else imports the kit; 2 moves state before components so component tests run against the final state API; 4 converts gothic's smoke early so steps 5 to 8 have an app-level receipt on the richest consumer.
 
 ## 8. E2E receipts: test plan

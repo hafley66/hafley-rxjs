@@ -3,7 +3,7 @@
 //
 // Nav rows are @hafley66/grid's TreeTable markup: `[data-testid=tree-row]` plus the kind
 // (process/file/test), `status-<status>`, and `selected` classes NavColumns.tsx's rowClassName
-// applies. Never `.nav-row`: that class belongs to report-shell's now-deprecated NavGrid.
+// applies.
 import { type Browser, type Page } from 'playwright'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { assertReportBuilt, expandEverything, launchReportPage, openPopover } from './e2eHelpers'
