@@ -1,4 +1,4 @@
-import type { AnySpec } from "@hafley66/report-shell"
+import { type AnySpec, stagger } from "@hafley66/report-shell"
 import { useEffect, useRef } from "react"
 import type { PageSpec } from "../app/0_pages.js"
 import type { SectionState } from "../app/2_state.js"
@@ -16,7 +16,6 @@ import {
   spiroCell,
   vesicaLattice,
 } from "../lib/legacy/0_circles.js"
-import { stagger } from "../ui/0_hooks.js"
 import { Section } from "../ui/2_Section.js"
 import { Raw } from "../ui/5_Raw.js"
 

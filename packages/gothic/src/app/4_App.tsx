@@ -1,7 +1,6 @@
+import { Drawer } from "@hafley66/report-shell"
 import { SignalReact } from "@hafley66/signals/react"
-import { useEffect, useRef } from "react"
-import { useResizeVar } from "../ui/0_hooks.js"
-import { RAIL_ID } from "../ui/2_Section.js"
+import { useEffect } from "react"
 import { Header } from "../ui/3_Header.js"
 import { matchPage, PAGES } from "./0_pages.js"
 import { listen, loc } from "./1_router.js"
@@ -68,19 +67,11 @@ export const App = SignalReact(function App() {
     document.title = page.title
   }, [page.title])
   useEffect(() => armTransitions(), [])
-  const drawer = useRef<HTMLElement>(null)
-  useResizeVar(drawer, "--kit-drawer")
 
   return (
     <>
       <Header pages={PAGES} current={page} />
-      <details className="kit-drawer" ref={drawer as never} open>
-        <summary title="every knob of this page; click to fold the drawer">
-          <span className="kit-drawer-tag">knobs</span>
-          <PagePanel />
-        </summary>
-        <div id={RAIL_ID} className="kit-panels" key={page.id} />
-      </details>
+      <Drawer pageKey={page.id} summary={<PagePanel />} />
       <main className="grid gap-6">
         <Body />
       </main>

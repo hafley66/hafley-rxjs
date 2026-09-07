@@ -1,13 +1,14 @@
-import { type AnySpec, describe, type Field, fmt, isStatic, pinSet } from "@hafley66/report-shell"
 import { SignalReact } from "@hafley66/signals/react"
 import type { ReactNode } from "react"
-import { useEffect, useRef, useState } from "react"
-import type { SectionState } from "../app/2_state.js"
+import { useEffect, useRef } from "react"
+import { type AnySpec, describe, type Field, fmt, isStatic, pinSet } from "../spec/0_spec.js"
+import type { SectionState } from "../spec/3_sections.js"
+import { StateCombo } from "./StateCombo.js"
 
 export const inputId = (section: string, key: string): string => `kit-${section}-${key}`
 
 type El = HTMLInputElement | HTMLSelectElement
-type BarProps = { state: SectionState<AnySpec>; title: string; extra?: ReactNode }
+export type SpecPanelProps = { state: SectionState<AnySpec>; title: string; extra?: ReactNode }
 
 type Val = string | number | boolean
 
@@ -17,95 +18,16 @@ const readInput = (el: El, fd: Field): Val => {
   const n = Number(el.value)
   return Number.isFinite(n) ? n : fd.default
 }
-// data-live inputs are driven by an animation loop and skip the sync (border's offset slider while playing)
+// data-live inputs are driven by an animation loop and skip the sync (a scrub slider while playing)
 const writeInput = (el: El, fd: Field, v: Val): void => {
   if (el.dataset.live) return
   if (fd.kind === "bool") (el as HTMLInputElement).checked = v === true
   else if (el.value !== String(v)) el.value = String(v)
 }
 
-// a short diff against the defaults, for the states list
-const brief = (spec: AnySpec, vals: Record<string, unknown>): string =>
-  Object.entries(vals)
-    .filter(([k, v]) => spec[k] && v !== spec[k].default)
-    .slice(0, 4)
-    .map(([k, v]) => `${k}=${fmt(v)}`)
-    .join(" ")
-
-/* state combobox: the input shows the state receiving every edit; typing an existing name selects it, Enter on a new
-   name forks the current values into a new state; the list under it carries star and delete per row */
-const Combo = SignalReact(function Combo({ state }: { state: SectionState<AnySpec> }) {
-  const saved = state.states.$()
-  const sid = state.selected.$()
-  const cur = saved.find(s => s.id === sid)
-  const [open, setOpen] = useState(false)
-  const [text, setText] = useState(cur?.name ?? "")
-  const listId = `kit-states-${state.page}-${state.id}`.replace(/[^a-z0-9_-]/gi, "_")
-  useEffect(() => {
-    setText(cur?.name ?? "")
-  }, [cur?.name])
-  const pick = (name: string) => {
-    const hit = saved.find(s => s.name === name.trim())
-    if (hit) state.load(hit.id)
-  }
-  return (
-    <div className="kit-combo" data-open={open || undefined}>
-      <input
-        list={listId}
-        value={text}
-        placeholder="state…"
-        aria-label="state"
-        title="state: the shown name receives every edit. Pick another to load it, type a new name and press Enter to fork the current values into it"
-        onFocus={() => setOpen(true)}
-        onBlur={() => setOpen(false)}
-        onChange={e => {
-          setText(e.currentTarget.value)
-          pick(e.currentTarget.value)
-        }}
-        onKeyDown={e => {
-          if (e.key === "Enter" && text.trim()) {
-            state.save(text)
-            e.currentTarget.blur()
-          }
-          if (e.key === "Escape") e.currentTarget.blur()
-        }}
-      />
-      <datalist id={listId}>
-        {saved.map(s => (
-          <option key={s.id} value={s.name} />
-        ))}
-      </datalist>
-      <span className="kit-sync" title={cur ? `synced into ${cur.name}` : "autosave only; pick or name a state"}>
-        {cur ? "●" : "○"}
-      </span>
-      <ul onMouseDown={e => e.preventDefault()}>
-        {saved.map(s => (
-          <li key={s.id} className={s.id === sid ? "sel" : undefined} data-id={s.id}>
-            <button type="button" className="name" title="load and select" onClick={() => state.load(s.id)}>
-              {s.star ? "★ " : ""}
-              {s.name}
-              <small>{brief(state.spec, s.vals)}</small>
-            </button>
-            <button type="button" className="i" title={s.star ? "unstar" : "star"} onClick={() => state.star(s.id)}>
-              {s.star ? "★" : "☆"}
-            </button>
-            <button type="button" className="i" title="delete" onClick={() => state.remove(s.id)}>
-              ×
-            </button>
-          </li>
-        ))}
-        <li className="new">
-          {text.trim() && !saved.some(s => s.name === text.trim())
-            ? `Enter: new state "${text.trim()}"`
-            : "type a name, Enter saves"}
-        </li>
-      </ul>
-    </div>
-  )
-})
-
-// one rail panel per section: head (title, shuffle, preset, state), one row per field grouped by fieldset, extra at the foot
-export const Bar = SignalReact(function Bar({ state, title, extra }: BarProps) {
+// one panel per section: head (title, shuffle, state combobox, preset), one row per field grouped by fieldset
+// as columns, statics in their own group, extra at the foot. Every row carries the field's tooltip.
+export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra }: SpecPanelProps) {
   const { spec, id, presets } = state
   const values = state.values.$()
   const pins = pinSet(state.pins.$())
@@ -212,7 +134,7 @@ export const Bar = SignalReact(function Bar({ state, title, extra }: BarProps) {
   const presetHit = presetNames.find(n => Object.entries(presets[n] ?? {}).every(([k, x]) => values[k] === x)) ?? ""
 
   return (
-    <div className="kit-bar kit-panel" data-section={id}>
+    <div className="kit-panel" data-section={id}>
       <div className="kit-head">
         <b className="kit-title">{title}</b>
         <button
@@ -223,7 +145,7 @@ export const Bar = SignalReact(function Bar({ state, title, extra }: BarProps) {
         >
           shuffle
         </button>
-        <Combo state={state} />
+        <StateCombo state={state} />
         {presetNames.length > 0 && (
           <select
             className="kit-preset"
@@ -243,7 +165,7 @@ export const Bar = SignalReact(function Bar({ state, title, extra }: BarProps) {
       <div className="kit-groups">
         {[...groups].map(([g, rows]) => (
           <fieldset key={g || "_"} className="kit-group" data-group={g}>
-            <legend>{g || "\u00a0"}</legend>
+            <legend>{g || " "}</legend>
             {rows}
           </fieldset>
         ))}

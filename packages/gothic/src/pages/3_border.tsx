@@ -1,10 +1,10 @@
-import type { AnySpec, ValuesOf } from "@hafley66/report-shell"
+import { type AnySpec, inputId, type ValuesOf } from "@hafley66/report-shell"
 import { type RefObject, useEffect, useRef } from "react"
 import type { PageSpec } from "../app/0_pages.js"
 import type { SectionState } from "../app/2_state.js"
 import { border, f, mulberry32, type Plan, plan } from "../lib/index.js"
 import { reducedMotion, useClock } from "../ui/0_hooks.js"
-import { inputId } from "../ui/1_Bar.js"
+
 import { Section } from "../ui/2_Section.js"
 
 const SPEC = {
