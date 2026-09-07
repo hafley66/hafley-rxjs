@@ -44,7 +44,7 @@ afterAll(async () => {
 })
 
 describe("gothic single file", () => {
-  it("every tab renders svg, keeps the tab row fixed, mounts the drawer, and titles every control", async () => {
+  it("every tab renders svg, keeps the tab row fixed, mounts a drawer per section, and titles every control", async () => {
     expect(tabs.length).toBeGreaterThan(5)
     const x0 = await tabX()
     const rows: string[] = []
@@ -52,7 +52,7 @@ describe("gothic single file", () => {
       await go(t)
       const svg = await page.$$eval("svg", s => s.length)
       const anchors = await page.$$eval("header .kit-anchor", as => as.length)
-      const panels = await page.$$eval("#kit-panels .kit-panel", ps => ps.length)
+      const panels = await page.$$eval(".kit-section > .kit-drawer .kit-panel", ps => ps.length)
       const untitled = await page.$$eval(
         "header input, header select, header button, .kit-drawer input, .kit-drawer select, .kit-drawer button",
         els =>
@@ -63,7 +63,7 @@ describe("gothic single file", () => {
       rows.push(`/${t} svg=${svg} anchors=${anchors} panels=${panels} untitled=${untitled.join(",")}`)
       expect(svg, `/${t} svg`).toBeGreaterThan(0)
       expect(await tabX(), `/${t} tab x`).toEqual(x0)
-      expect(await page.$("details.kit-drawer"), `/${t} drawer`).not.toBeNull()
+      expect(await page.$(".kit-section > details.kit-drawer"), `/${t} drawer`).not.toBeNull()
       expect(untitled, `/${t} untitled`).toEqual([])
       expect(panels, `/${t} panels`).toBeGreaterThan(0)
     }
@@ -73,8 +73,8 @@ describe("gothic single file", () => {
 
   it("an edit replaces the url, shuffle pushes, back restores the pre-shuffle values", async () => {
     await go("slice")
-    const key = await page.$eval("#kit-panels .kit-row input[type=range]", el => (el as HTMLElement).dataset.key ?? "")
-    const sel = `#kit-panels .kit-row input[type=range][data-key="${key}"]`
+    const key = await page.$eval(".kit-drawer .kit-row input[type=range]", el => (el as HTMLElement).dataset.key ?? "")
+    const sel = `.kit-drawer .kit-row input[type=range][data-key="${key}"]`
     const max = await page.$eval(sel, el => (el as HTMLInputElement).max)
     const min = await page.$eval(sel, el => (el as HTMLInputElement).min)
     const target = String((Number(min) + Number(max)) / 2)
@@ -82,7 +82,7 @@ describe("gothic single file", () => {
     await page.waitForTimeout(100)
     expect(page.url()).toContain(`slice.${key}=`)
     const before = { url: page.url(), value: await page.$eval(sel, el => (el as HTMLInputElement).value) }
-    await page.click("#kit-panels button.kit-shuffle")
+    await page.click(".kit-drawer button.kit-shuffle")
     await page.waitForTimeout(150)
     expect(page.url()).not.toBe(before.url)
     await page.goBack()
@@ -91,21 +91,40 @@ describe("gothic single file", () => {
     expect(await page.$eval(sel, el => (el as HTMLInputElement).value)).toBe(before.value)
   })
 
+  it("no view transition on a knob commit: the page stays clickable and a double-click on shuffle shuffles twice", async () => {
+    await go("slice")
+    const shuffle = ".kit-drawer button.kit-shuffle"
+    const seed = () => page.$eval(".kit-drawer .kit-row[data-kind=seed] input[type=number]", el => (el as HTMLInputElement).value)
+    const hit = () =>
+      page.$eval(shuffle, b => {
+        const r = b.getBoundingClientRect()
+        return document.elementFromPoint(r.x + 4, r.y + 4)?.tagName
+      })
+    await page.click(shuffle)
+    expect(await hit(), "hit test right after a shuffle").toBe("BUTTON")
+    const s1 = await seed()
+    const len = await page.evaluate(() => history.length)
+    await page.dblclick(shuffle)
+    await page.waitForTimeout(150)
+    expect(await seed()).not.toBe(s1)
+    expect(await page.evaluate(() => history.length)).toBe(len + 2)
+  })
+
   it("a named state survives a reload and stays selected", async () => {
     await go("slice")
     const name = `e2e-${Date.now()}`
-    await page.click("#kit-panels .kit-combo input")
+    await page.click(".kit-drawer .kit-combo input")
     await page.keyboard.type(name)
     await page.keyboard.press("Enter")
     await page.waitForTimeout(100)
-    expect(await page.$eval("#kit-panels .kit-sync", el => el.textContent)).toBe("●")
+    expect(await page.$eval(".kit-drawer .kit-sync", el => el.textContent)).toBe("●")
     await page.reload()
-    await page.waitForSelector("#kit-panels .kit-combo input")
+    await page.waitForSelector(".kit-drawer .kit-combo input")
     await page.waitForTimeout(400)
-    expect(await page.$eval("#kit-panels .kit-combo input", el => (el as HTMLInputElement).value)).toBe(name)
-    await page.click("#kit-panels .kit-combo input")
-    await page.click(`#kit-panels .kit-combo li.sel button[title=delete]`)
+    expect(await page.$eval(".kit-drawer .kit-combo input", el => (el as HTMLInputElement).value)).toBe(name)
+    await page.click(".kit-drawer .kit-combo input")
+    await page.click(`.kit-drawer .kit-combo li.sel button[title=delete]`)
     await page.waitForTimeout(100)
-    expect(await page.$eval("#kit-panels .kit-sync", el => el.textContent)).toBe("○")
+    expect(await page.$eval(".kit-drawer .kit-sync", el => el.textContent)).toBe("○")
   })
 })

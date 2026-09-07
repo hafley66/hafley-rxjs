@@ -5,8 +5,7 @@ import type { AnySpec } from "../spec/0_spec"
 import type { Mode } from "../spec/1_url"
 import { memoryStorage } from "../spec/2_store"
 import { createSections, type SectionHost, type Sections } from "../spec/3_sections"
-import { Drawer } from "./Drawer"
-import { NavTabs, type Anchor } from "./NavTabs"
+import { type Anchor, NavTabs } from "./NavTabs"
 import { Section } from "./Section"
 import "../kit.css"
 
@@ -54,14 +53,13 @@ function mount(ui: React.ReactNode): HTMLElement {
   return el
 }
 
-// the panel needs the drawer body in the DOM first; Section portals into it after its own mount
+// tabs + one section; the section renders its own knob drawer
 function mountSection(host = memHost(), anchors: Anchor[] = [{ id: "slice" }]) {
   const k: Sections = createSections(host)
   k.setActivePage("p", host.search())
   const el = mount(
     <>
       <NavTabs tabs={[{ id: "p", href: "#/p", current: true }]} anchors={anchors} title="page p" />
-      <Drawer pageKey="p" />
       <main>
         <Section sections={k} page="p" def={{ id: "slice", title: "slice", spec: SPEC }}>
           {v => <div data-testid="out" style={{ height: 1600 }}>{`cut=${v.cut} seed=${v.seed}`}</div>}
@@ -201,18 +199,42 @@ describe("StateCombo", () => {
 })
 
 describe("Drawer + NavTabs", () => {
-  it("folding the drawer shrinks --kit-drawer to the summary line and the section title sticks right under it", async () => {
-    const { q } = mountSection()
-    const details = q<HTMLDetailsElement>("details.kit-drawer")
-    const summary = q<HTMLElement>("details.kit-drawer > summary")
+  it("each section owns a sticky drawer under the tabs whose summary is the title; folding one leaves the other open", async () => {
+    const host = memHost()
+    const k: Sections = createSections(host)
+    k.setActivePage("p", "")
+    const el = mount(
+      <>
+        <NavTabs tabs={[{ id: "p", href: "#/p", current: true }]} anchors={[{ id: "slice" }, { id: "seal" }]} />
+        <main>
+          <Section sections={k} page="p" def={{ id: "slice", title: "slice", spec: SPEC }}>
+            {() => <div style={{ height: 1600 }} />}
+          </Section>
+          <Section sections={k} page="p" def={{ id: "seal", title: "seal", spec: SPEC }}>
+            {() => <div style={{ height: 1600 }} />}
+          </Section>
+        </main>
+      </>,
+    )
+    const drawers = [...el.querySelectorAll<HTMLDetailsElement>("section.kit-section > details.kit-drawer")]
+    expect(drawers).toHaveLength(2)
+    expect(el.querySelector("#kit-panels")).toBeNull()
+    expect(drawers.map(d => d.querySelector("summary h2.kit-sec-title")?.textContent)).toEqual(["slice", "seal"])
+    expect(drawers.map(d => d.querySelectorAll(".kit-row").length)).toEqual([5, 5])
     const px = (name: string) => Number.parseFloat(document.documentElement.style.getPropertyValue(name))
-    await vi.waitFor(() => expect(px("--kit-drawer")).toBeGreaterThan(summary.offsetHeight + 40))
-    act(() => summary.click())
-    expect(details.open).toBe(false)
-    await vi.waitFor(() => expect(px("--kit-drawer")).toBe(details.offsetHeight))
-    expect(px("--kit-drawer")).toBeLessThan(summary.offsetHeight + 4)
-    const title = q<HTMLElement>("h2.kit-sec-title")
-    expect(Number.parseFloat(getComputedStyle(title).top)).toBe(px("--kit-top") + px("--kit-drawer"))
+    await vi.waitFor(() => expect(px("--kit-top")).toBeGreaterThan(0))
+    for (const d of drawers) {
+      expect(getComputedStyle(d).position).toBe("sticky")
+      expect(Number.parseFloat(getComputedStyle(d).top)).toBe(px("--kit-top"))
+    }
+    const first = drawers[0]
+    const rows = () => drawers.map(d => (d.querySelector(".kit-row")?.checkVisibility() ? 1 : 0))
+    expect(rows()).toEqual([1, 1])
+    act(() => first.querySelector<HTMLElement>("summary")?.click())
+    expect(first.open).toBe(false)
+    expect(drawers[1].open).toBe(true)
+    expect(rows()).toEqual([0, 1])
+    expect(first.offsetHeight).toBeLessThan((first.querySelector<HTMLElement>("summary")?.offsetHeight ?? 0) + 4)
   })
 
   it("tab x positions do not move when the anchor row grows from 3 to 12", () => {

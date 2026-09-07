@@ -52,11 +52,12 @@ Peer: `@hafley66/path`. Dependency: `zod`.
 
 ### kit components + `kit.css`
 
-`NavTabs` (tabs, section anchors, page title; height into `--kit-top`), `Drawer` (sticky `<details>` whose body
-`#kit-panels` receives one `SpecPanel` per mounted `Section`; height into `--kit-drawer`), `SpecPanel` (rows of
-pin · label · control · value · reroll, groups as columns, statics apart), `StateCombo` (named states: type to load,
-Enter to fork or overwrite, ArrowUp/Down + Enter, star and delete per row), `Section` / `PlainSection` (sticky
-title under the drawer, anchor timeline, scroll keep), and the hooks `stagger`, `useDrawIn`, `useResizeVar`,
+`NavTabs` (tabs, section anchors, page title, an `end` slot for page-wide knobs; height into `--kit-top`),
+`SpecPanel` (rows of pin · label · control · value · reroll, groups as columns, statics apart), `StateCombo` (named
+states: type to load, Enter to fork or overwrite, ArrowUp/Down + Enter, star and delete per row), `Section` /
+`PlainSection` (each section owns a sticky `<details class="kit-drawer">` under the tabs whose summary is the
+section title and whose body is its `SpecPanel`; it scrolls away with its section; `open` prop; anchor timeline,
+scroll keep), and the hooks `stagger`, `useDrawIn`, `useResizeVar`,
 `useAnchor`. Styles live in `@hafley66/report-shell/kit.css` (tokens + `@layer components`), which `style.css`
 imports before adding the report layout. Consumers map their palette onto `--bg --fg --muted --dim --accent
 --panel-bg --line --well --edge`; `kit.css` also defaults the 14 `--grid-*` names onto those tokens, so a grid

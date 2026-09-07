@@ -29,8 +29,8 @@ Commands: `pnpm --filter @hafley66/gothic dev | build | build:single | typecheck
 | `src/app/2_state.ts` | `sectionState(page, id, spec)`: values + pins signals, url read/write, autosave, shuffle, named states |
 | `src/app/3_view.ts` | `transition()`: `startViewTransition` around a `flushSync`, armed only after the first commit |
 | `src/app/4_App.tsx` | header + the matched page |
-| `src/ui/` | `0_hooks` (clock, draw-in, `--kit-top`, anchors), `1_Bar` (drawer panel: head with shuffle + state combobox + preset, groups as columns, rows `pin · label · control · value · ↻`), `2_Section` (portals its panel into `#kit-panels` in the drawer, renders title + host), `3_Header` (tabs, anchors, title), `4_Algo`, `5_Raw` |
-| `src/app/4_App.tsx` | header, then the sticky `<details class="kit-drawer">` (summary: knobs toggle + page zDepth/draw-in; body: the section panels), then `<main>`. `--kit-drawer` tracks its height so section titles stick under it |
+| `src/ui/` | `0_hooks` (clock), `2_Section` (kit `Section` bound to `sections`: a sticky `<details class="kit-drawer">` per section whose summary is the title and whose body is the `SpecPanel`, then the host), `3_Header` (kit `NavTabs`: tabs, anchors, title, page knobs in the end slot), `4_Algo`, `5_Raw` |
+| `src/app/4_App.tsx` | header (`PagePanel` = zDepth/draw-in in the tab row end slot), then `<main>`; no page-level drawer, each section carries its own |
 | `src/kit/` | `0_spec` (field format, shuffle, pins), `1_url` (namespaced query), `2_algo` (Algo contract), `3_store` |
 | `src/pages/` | one module per route, each exporting `PAGE: PageSpec` |
 | `src/lib/eye/` | the eye anatomy module (SHAPES, EXPR, AU, activate, frame, lidPts, lashSlots, lashLines, TIMING, scheduler, blinkAt); `/eye` has a `timing` section whose spec mirrors `TIMING`, so the route is the module's test rig |

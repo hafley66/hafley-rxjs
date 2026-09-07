@@ -1,28 +1,27 @@
-export { layout, gutter, type Layout, type Track, type GutterOptions } from './layout'
-export { createSizingStore, type Sizing, type SizingStore } from './sizing'
-export { formatAge, formatDuration } from './lib/time'
-export { createNavCollapse, NAV_RAIL_PX, type NavCollapse } from './lib/navCollapse'
-export type { NavRow, PivotEntry } from './types'
-export { Truncated } from './components/Truncated'
-export { SubTable } from './components/SubTable'
-export { GearButton, PopoverPanel } from './components/Popover'
-export { PresetsMenu, type PresetsMenuProps } from './components/PresetsMenu'
-export { PivotStack, type PivotStackProps } from './components/PivotStack'
-export { NavRail, type NavRailProps } from './components/NavRail'
-export { pivotStackSignal, pushPivot, popPivotsTo, encodePivotStack, decodePivotStack } from './lib/pivotStack'
-export { usePivotEffect } from './components/usePivotEffect'
-export { useTheme, type ThemePrefs } from './components/useTheme'
-export { ReportShell, type ReportShellProps, type ReportTracks } from './components/ReportShell'
+export { type FsColumnsOptions, type FsRow, FsTree, type FsTreeProps, fsColumns } from "./components/FsTree"
+export { NavRail, type NavRailProps } from "./components/NavRail"
+export { type Anchor, NavTabs, type NavTabsProps, type Tab } from "./components/NavTabs"
+export { PivotStack, type PivotStackProps } from "./components/PivotStack"
+export { GearButton, PopoverPanel } from "./components/Popover"
+export { PresetsMenu, type PresetsMenuProps } from "./components/PresetsMenu"
+export { ReportShell, type ReportShellProps, type ReportTracks } from "./components/ReportShell"
+export { PlainSection, Section, type SectionCtx, type SectionDef, type SectionProps } from "./components/Section"
+export { inputId, SpecPanel, type SpecPanelProps } from "./components/SpecPanel"
+export { StateCombo } from "./components/StateCombo"
+export { SubTable } from "./components/SubTable"
+export { Truncated } from "./components/Truncated"
+export { usePivotEffect } from "./components/usePivotEffect"
+export { type ThemePrefs, useTheme } from "./components/useTheme"
+export { type GutterOptions, gutter, type Layout, layout, type Track } from "./layout"
+export { formatBytes } from "./lib/bytes"
+export { stagger, useAnchor, useDrawIn, useResizeVar } from "./lib/hooks"
+export { createNavCollapse, NAV_RAIL_PX, type NavCollapse } from "./lib/navCollapse"
+export { decodePivotStack, encodePivotStack, pivotStackSignal, popPivotsTo, pushPivot } from "./lib/pivotStack"
+export { formatAge, formatDuration } from "./lib/time"
+export { createSizingStore, type Sizing, type SizingStore } from "./sizing"
 // marbler-bound pieces (EventsPanel, syncMarbler) live on the './marbler' subpath so pixi stays optional
-export * from './spec/0_spec'
-export * from './spec/1_url'
-export * from './spec/2_store'
-export * from './spec/3_sections'
-export { stagger, useDrawIn, useResizeVar, useAnchor } from './lib/hooks'
-export { NavTabs, type NavTabsProps, type Tab, type Anchor } from './components/NavTabs'
-export { Drawer, useDrawerBody, DRAWER_BODY_ID, type DrawerProps } from './components/Drawer'
-export { SpecPanel, inputId, type SpecPanelProps } from './components/SpecPanel'
-export { StateCombo } from './components/StateCombo'
-export { Section, PlainSection, type SectionDef, type SectionCtx, type SectionProps } from './components/Section'
-export { formatBytes } from './lib/bytes'
-export { FsTree, fsColumns, type FsRow, type FsTreeProps, type FsColumnsOptions } from './components/FsTree'
+export * from "./spec/0_spec"
+export * from "./spec/1_url"
+export * from "./spec/2_store"
+export * from "./spec/3_sections"
+export type { NavRow, PivotEntry } from "./types"

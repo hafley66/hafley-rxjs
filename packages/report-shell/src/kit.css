@@ -17,7 +17,6 @@
     --well: light-dark(#fff, #1a1d26);     /* input background */
     --edge: light-dark(#b8b8b8, #3a3f4d);  /* input border */
     --kit-top: 0px;
-    --kit-drawer: 0px;
     --track-nav: 380px;
     --track-overview: 160px;
     /* @hafley66/grid reads these; defaults map its 14 names onto the kit tokens so a TreeTable
@@ -161,24 +160,26 @@
   .kit-anchor[data-active] { color: var(--accent); border-bottom-color: var(--accent) }
   .kit-page-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: normal; font-size: 11px; color: var(--dim) }
 
-  /* ============ Section: sticky title under the drawer, host body ============ */
+  /* ============ Section: its own knob drawer, sticky under the tabs while the section is in view ============ */
   .kit-section { display: grid; gap: 12px }
   .kit-host { display: grid; gap: 20px; padding: 0 16px 16px }
-  .kit-sec-title {
-    position: sticky; top: calc(var(--kit-top) + var(--kit-drawer, 0px)); z-index: 8;
-    margin: 0; padding: 8px 14px; font-weight: 500; font-size: inherit; color: var(--muted);
-    background: var(--panel-bg); border-bottom: 1px solid var(--line);
-  }
+  .kit-sec-title { margin: 0; font-weight: 500; font-size: inherit; color: var(--muted) }
 
-  /* ============ Drawer: sticky under the tabs, folds to one line, panels stack, groups columnize ============ */
-  .kit-drawer { position: sticky; top: var(--kit-top); z-index: 9; background: var(--panel-bg); border-bottom: 1px solid var(--line) }
+  /* ============ Drawer: sticky under the tabs, the summary is the section title, folds to that one line ============ */
+  .kit-drawer {
+    position: sticky; top: var(--kit-top); z-index: 9; background: var(--panel-bg);
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  }
   .kit-drawer > summary {
-    list-style: none; cursor: pointer; display: flex; align-items: center; gap: 18px; padding: 5px 14px;
+    list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 5px 14px;
     color: var(--muted); user-select: none;
   }
   .kit-drawer > summary::-webkit-details-marker { display: none }
-  .kit-drawer-tag::before { content: "▸ " }
-  .kit-drawer[open] .kit-drawer-tag::before { content: "▾ " }
+  /* expand icon: a chevron that turns down when the drawer is open */
+  .kit-drawer-icon { display: inline-block; width: 1ch; font-size: 1.15em; color: var(--dim); transition: transform 120ms ease-out }
+  .kit-drawer-icon::before { content: "▸" }
+  .kit-drawer[open] .kit-drawer-icon { transform: rotate(90deg) }
+  .kit-drawer > summary:hover .kit-drawer-icon { color: var(--accent) }
   .kit-drawer::details-content { transition: none }
   .kit-panels { display: grid; gap: 8px; padding: 4px 14px 10px; max-height: 55vh; overflow: auto; scrollbar-width: thin }
   .kit-panel { display: grid; gap: 6px; padding: 6px 0 8px; border-top: 1px solid var(--line) }
@@ -247,7 +248,7 @@
   .fs-name[data-kind="dir"] { color: var(--accent) }
   .fs-num { text-align: right; font-variant-numeric: tabular-nums; color: var(--dim) }
   .fs-file { cursor: pointer }
-  /* the summary slot: inline page-global knobs */
+  /* page-global knobs inline in the tab row end slot */
   .kit-page { display: inline-flex; gap: 16px; align-items: center; margin-left: auto }
   .kit-page label { display: inline-flex; gap: 6px; align-items: center }
   .kit-page input[type="range"] { width: 90px }

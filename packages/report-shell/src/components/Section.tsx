@@ -1,10 +1,8 @@
 import { SignalReact } from "@hafley66/signals/react"
 import { type ReactNode, useLayoutEffect, useRef } from "react"
-import { createPortal } from "react-dom"
 import { useAnchor } from "../lib/hooks.js"
 import type { AnySpec, Presets, ValuesOf } from "../spec/0_spec.js"
-import type { Sections, SectionState } from "../spec/3_sections.js"
-import { useDrawerBody } from "./Drawer.js"
+import type { SectionState, Sections } from "../spec/3_sections.js"
 import { SpecPanel } from "./SpecPanel.js"
 
 export type SectionDef<S extends AnySpec> = {
@@ -20,17 +18,17 @@ type ShellProps = {
   page: string
   def: SectionDef<AnySpec>
   extra?: ReactNode
+  open?: boolean
   render: (v: ValuesOf<AnySpec>, ctx: SectionCtx<AnySpec>) => ReactNode
 }
 
 const safe = (id: string) => id.replace(/[^a-z0-9_-]/gi, "_")
 
-const Shell = SignalReact(function Shell({ sections, page, def, extra, render }: ShellProps) {
+const Shell = SignalReact(function Shell({ sections, page, def, extra, open = true, render }: ShellProps) {
   const state = sections.sectionState(page, def.id, def.spec, def.presets)
   const values = state.values.$()
   const ref = useRef<HTMLElement>(null)
   const keep = useRef(0)
-  const body = useDrawerBody()
   useAnchor(def.id, ref)
 
   // the section's own scroll fraction, measured before this render lands, restored after it
@@ -48,8 +46,15 @@ const Shell = SignalReact(function Shell({ sections, page, def, extra, render }:
 
   return (
     <section id={def.id} ref={ref} className="kit-section">
-      {body && createPortal(<SpecPanel state={state} title={def.title} extra={extra} />, body)}
-      <h2 className="kit-sec-title">{def.title}</h2>
+      <details className="kit-drawer" open={open}>
+        <summary title={`${def.title}: every knob of this section; click to fold`}>
+          <span className="kit-drawer-icon" aria-hidden />
+          <h2 className="kit-sec-title">{def.title}</h2>
+        </summary>
+        <div className="kit-panels">
+          <SpecPanel state={state} extra={extra} />
+        </div>
+      </details>
       <div className="kit-host" style={{ viewTransitionName: `sec-${safe(def.id)}` }}>
         {render(values, { state })}
       </div>
@@ -62,10 +67,12 @@ export type SectionProps<S extends AnySpec> = {
   page: string
   def: SectionDef<S>
   extra?: ReactNode
+  // the knob drawer starts open unless told otherwise
+  open?: boolean
   children: (v: ValuesOf<S>, ctx: SectionCtx<AnySpec>) => ReactNode
 }
 
-// one url namespace + one storage key + one drawer panel; the body renders from the live values
+// one url namespace + one storage key + one sticky knob drawer whose summary is the section title; the body renders from the live values
 export function Section<S extends AnySpec>(props: SectionProps<S>): ReactNode {
   return (
     <Shell
@@ -73,6 +80,7 @@ export function Section<S extends AnySpec>(props: SectionProps<S>): ReactNode {
       page={props.page}
       def={props.def as unknown as SectionDef<AnySpec>}
       extra={props.extra}
+      open={props.open}
       render={props.children as never}
     />
   )

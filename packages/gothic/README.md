@@ -1,6 +1,6 @@
 # @hafley66/gothic
 
-Procedural gothic line art as one React SPA. Every route is a notebook: a sticky knob drawer derived from a spec (one row per field: pin, label, control, value, reroll), URL state per section, shuffle with pins, named states, draw-in animation, a shared header with scroll-driven anchors. The point of the package is to study a generator by turning its knobs and to add a new generator in one file.
+Procedural gothic line art as one React SPA. Every route is a notebook: one sticky knob drawer per section derived from its spec (one row per field: pin, label, control, value, reroll), URL state per section, shuffle with pins, named states, draw-in animation, a shared header with scroll-driven anchors. The point of the package is to study a generator by turning its knobs and to add a new generator in one file.
 
 ## TOC
 
@@ -47,7 +47,7 @@ pnpm --filter @hafley66/gothic check          # typecheck + vitest + build:singl
 | preset select | applies a partial value set, `pushState` | keys it touches |
 | state combobox | the shown name is the state receiving every edit (●). Type an existing name or pick it from the list to load it; type a new name and press Enter to fork the current values into it; list rows carry star and delete. localStorage `gothic.<page>.<section>.states` + `.selected` | none |
 | ↻ on a row | rerolls that one field, `pushState` | that key |
-| knobs (drawer summary) | folds the drawer to one line; zDepth and draw-in live on that line | none |
+| section title row | folds that section's drawer to one line (chevron); zDepth and draw-in sit at the end of the tab row | none |
 | autosave | every change lands in `gothic.<page>.<section>.current`; start order is defaults, then autosave, then URL keys present | none |
 | zDepth / draw-in (header) | page-global stroke fade by `data-z`, and draw-in time | `?page.z=0.4&page.draw=false` |
 
@@ -122,7 +122,7 @@ Every kind takes `label`, `hint` (tooltip first line; the derived facts follow i
 |---|---|
 | `pnpm --filter @hafley66/gothic typecheck` | `tsc --noEmit` clean |
 | `pnpm --filter @hafley66/gothic test` | vitest over spec, url, store, router, pages |
-| `pnpm --filter @hafley66/gothic test:e2e` | over `dist/index.html` from `file://`: every tab renders svg with zero console errors, tab x identical on every route, drawer mounted, every control titled; edit → shuffle → back restores values; a named state survives reload |
+| `pnpm --filter @hafley66/gothic test:e2e` | over `dist/index.html` from `file://`: every tab renders svg with zero console errors, tab x identical on every route, a drawer per section, every control titled; edit → shuffle → back restores values; a double-click on shuffle shuffles twice; a named state survives reload |
 | `pnpm --filter @hafley66/gothic check` | all of the above plus `build:single` |
 
 ## 7. Where things live
@@ -130,7 +130,7 @@ Every kind takes `label`, `hint` (tooltip first line; the derived facts follow i
 | path | role |
 |---|---|
 | `src/app/` | page table, router (`loc` signal, history or hash), section state (values + pins signals, URL, autosave), view transitions, `App` |
-| `src/ui/` | hooks (`useClock`, `useDrawIn`, `useAnchor`), `Bar` (one drawer panel per section: head, state combobox, group columns of rows), `Section` (portals its panel into the drawer, renders the art), `Header`, `AlgoSection`, `Raw` |
+| `src/ui/` | `useClock`, `Section` (the kit `Section` bound to gothic's section factory: its own sticky drawer, then the art), `Header` (kit `NavTabs` + page knobs in the end slot), `AlgoSection`, `Raw` |
 | `src/kit/` | framework with no gothic knowledge: spec, url, algo contract, store. `src/kit/README.md` is the contract and the harvest list |
 | `src/pages/` | one module per route exporting `PAGE` |
 | `src/lib/`, `src/algos/` | generators and algos, pure |

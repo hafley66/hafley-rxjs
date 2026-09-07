@@ -8,7 +8,7 @@ import { StateCombo } from "./StateCombo.js"
 export const inputId = (section: string, key: string): string => `kit-${section}-${key}`
 
 type El = HTMLInputElement | HTMLSelectElement
-export type SpecPanelProps = { state: SectionState<AnySpec>; title: string; extra?: ReactNode }
+export type SpecPanelProps = { state: SectionState<AnySpec>; title?: string; extra?: ReactNode }
 
 type Val = string | number | boolean
 
@@ -25,7 +25,7 @@ const writeInput = (el: El, fd: Field, v: Val): void => {
   else if (el.value !== String(v)) el.value = String(v)
 }
 
-// one panel per section: head (title, shuffle, state combobox, preset), one row per field grouped by fieldset
+// one panel per section: head (optional title, shuffle, state combobox, preset), one row per field grouped by fieldset
 // as columns, statics in their own group, extra at the foot. Every row carries the field's tooltip.
 export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra }: SpecPanelProps) {
   const { spec, id, presets } = state
@@ -136,7 +136,7 @@ export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra }:
   return (
     <div className="kit-panel" data-section={id}>
       <div className="kit-head">
-        <b className="kit-title">{title}</b>
+        {title && <b className="kit-title">{title}</b>}
         <button
           type="button"
           className="kit-shuffle"

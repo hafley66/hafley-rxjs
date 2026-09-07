@@ -12,7 +12,7 @@ import { sections } from "../app/2_state.js"
 export type { SectionCtx, SectionDef }
 export { PlainSection }
 
-// the kit Section bound to gothic's section factory (hash router + view transitions + "gothic." storage prefix)
+// the kit Section bound to gothic's section factory (hash router + "gothic." storage prefix)
 export function Section<S extends AnySpec>(props: {
   page: string
   def: SectionDef<S>
