@@ -9,7 +9,8 @@
     "noEmit": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "paths": { "@hafley66/report-shell": ["../report-shell/src/index.ts"] }
   },
   "include": ["src/**/*", "vite.config.ts"],
   "exclude": ["node_modules"]
