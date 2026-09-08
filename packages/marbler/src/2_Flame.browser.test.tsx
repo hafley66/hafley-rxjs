@@ -80,8 +80,8 @@ describe("aggregate waterfall bars", () => {
     const model = createMarbler([narrow])
     const { host, root } = await mount(model)
     const cell = host.querySelector("[data-event-id='narrow'] .col-duration") as HTMLElement
-    expect(cell.textContent).toBe("420 ms20 ms")
-    expect(cell.querySelector("small")?.textContent).toBe("20 ms")
+    expect(cell.textContent).toBe("420ms20ms")
+    expect(cell.querySelector("small")?.textContent).toBe("20ms")
     await act(async () => root.unmount())
     host.remove()
   })

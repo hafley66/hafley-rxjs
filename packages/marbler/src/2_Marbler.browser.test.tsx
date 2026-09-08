@@ -94,7 +94,7 @@ describe("Marbler receipts", () => {
       const bounds = canvas.getBoundingClientRect()
       canvas.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, clientX: bounds.left + 180, clientY: bounds.top + 110 }))
     })
-    await expect(page.getByTestId("hovered-event")).toHaveTextContent("inspect @cloudflare/waterfall · 297 ms")
+    await expect(page.getByTestId("hovered-event")).toHaveTextContent("inspect @cloudflare/waterfall · 297ms")
     await act(async () => page.getByTestId("marbler").hover({ position: { x: 500, y: 12 } }))
     await act(async () => {
       const rowName = document.querySelector("[data-event-id='m-a4c8'] b") as HTMLElement

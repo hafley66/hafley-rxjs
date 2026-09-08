@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { formatAge, formatDuration } from './time'
 
 describe('formatDuration', () => {
-  it('rounds sub-millisecond durations to 0ms', () => {
+  it('keeps two decimals for a sub-millisecond duration, exact zero stays 0ms', () => {
     expect(formatDuration(0)).toBe('0ms')
-    expect(formatDuration(0.4)).toBe('0ms')
+    expect(formatDuration(0.4)).toBe('0.40ms')
   })
 
   it('shows whole milliseconds under 1s', () => {

@@ -292,6 +292,7 @@ input {
 .timeline span:not(.timeline-gutter) {
 	position: absolute;
 	top: 5px;
+	white-space: nowrap;
 }
 .grid-body > .grid-row {
 	height: 44px;

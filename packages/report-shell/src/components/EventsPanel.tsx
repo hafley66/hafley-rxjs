@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { SignalReact } from '@hafley66/signals/react'
 import type { Signal as SignalType } from '@hafley66/signals'
-import { MarblerPanel, type Marbler, type MarbleEvent } from '@hafley66/marbler'
+import { MarblerPanel, formatDuration, type Marbler, type MarbleEvent } from '@hafley66/marbler'
 import { gutter, type GutterOptions } from '../layout'
 import { SubTable } from './SubTable'
 
@@ -25,7 +25,7 @@ export function defaultEventDetail(event: MarbleEvent): [string, string][] {
     ['from', event.from],
     ['to', event.to],
     ['status', String(event.status)],
-    ['duration', `${event.duration ?? 0}ms`],
+    ['duration', formatDuration(event.duration ?? 0)],
   ]
 }
 

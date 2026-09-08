@@ -1,4 +1,5 @@
 import { createTimeViewport, eventRange, reduceTimeViewport } from "./0a_TimeViewport"
+import { formatDuration } from "./0b_time"
 import type { MarbleEvent, MarblePhase } from "./0_types"
 import { createMarbler } from "./1_model"
 import { MarblerPanel } from "./2_Marbler"
@@ -28,7 +29,7 @@ function makeEvent(index: number): MarbleEvent {
     duration,
     from: `lane-${index % 5}`,
     to: `lane-${(index + 1 + index % 3) % 5}`,
-    preview: `Deterministic demo event ${index} at ${start} ms`,
+    preview: `Deterministic demo event ${index} at ${formatDuration(start)}`,
     phases: [
       { kind: PHASES[index % PHASES.length], start, end: sendEnd },
       { kind: PHASES[(index + 2) % PHASES.length], start: sendEnd, end: workEnd },

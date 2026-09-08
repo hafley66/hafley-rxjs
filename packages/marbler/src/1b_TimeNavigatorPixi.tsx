@@ -4,11 +4,21 @@ import { useEffect, useRef } from "react"
 // pixi: `app.destroy(true)` also means releaseGlobalResources, which clears the batch pool shared by every renderer
 // on the page; the other marbler canvas then pulls a destroyed Batch on its next frame. Drop the view only.
 const DESTROY_RENDERER = { removeView: true } as const
-import { densityBuckets, type TimelineGesture, type TimelineMark, type TimeViewport } from "./0a_TimeViewport.js"
+import { densityBuckets, type TimeRange, type TimelineGesture, type TimelineMark, type TimeViewport } from "./0a_TimeViewport.js"
 
 const LANE_HEIGHT = 14
 const LANE_TOP = 10
 const VERTICAL_PADDING = 12
+// Width of the lane label gutter. Lane geometry begins here; nothing is drawable to the left of it.
+export const NAVIGATOR_PLOT_LEFT = 190
+
+// A mark can sit outside `full` (a host builds the range from top-level rows while an aggregate
+// extent reaches further back), so every x is clamped into the plot instead of into the labels.
+export function plotX(time: number, full: TimeRange, plotLeft: number, plotWidth: number): number {
+  const fullSpan = Math.max(1, full[1] - full[0])
+  const unclamped = plotLeft + ((time - full[0]) / fullSpan) * plotWidth
+  return Math.min(plotLeft + plotWidth, Math.max(plotLeft, unclamped))
+}
 
 export type TimeNavigatorPixiProps = {
   marks: readonly TimelineMark[]
@@ -47,7 +57,7 @@ export function TimeNavigatorPixi({ marks, viewport, highlightedId = null, laneL
     let hoveredMarkId: string | null = null
     const HANDLE_PX = 6
 
-    const plotLeftOf = () => (stateRef.current.laneLabels.length > 0 ? 190 : 0)
+    const plotLeftOf = () => (stateRef.current.laneLabels.length > 0 ? NAVIGATOR_PLOT_LEFT : 0)
     const timeAt = (clientX: number) => {
       const { full } = stateRef.current.viewport
       const plotLeft = plotLeftOf()
@@ -83,11 +93,9 @@ export function TimeNavigatorPixi({ marks, viewport, highlightedId = null, laneL
       const width = Math.max(1, host.clientWidth)
       const height = Math.max(1, host.clientHeight)
       const { marks: currentMarks, viewport: currentViewport, highlightedId: currentHighlightedId, laneLabels: currentLaneLabels } = stateRef.current
-      const plotLeft = currentLaneLabels.length > 0 ? 190 : 0
+      const plotLeft = currentLaneLabels.length > 0 ? NAVIGATOR_PLOT_LEFT : 0
       const plotWidth = Math.max(1, width - plotLeft)
-      const [fullStart, fullEnd] = currentViewport.full
-      const fullSpan = Math.max(1, fullEnd - fullStart)
-      const x = (time: number) => plotLeft + ((time - fullStart) / fullSpan) * plotWidth
+      const x = (time: number) => plotX(time, currentViewport.full, plotLeft, plotWidth)
       app.renderer.resize(width, height)
       overviewGraphics.clear()
       viewportWindow.clear()
@@ -257,12 +265,24 @@ export function TimeNavigatorPixi({ marks, viewport, highlightedId = null, laneL
 
   useEffect(() => drawRef.current(), [marks, viewport, highlightedId, laneLabels, navigatorHeight])
   const labeledDots = laneLabels.length > 0 ? marks.filter((mark): mark is Extract<TimelineMark, { kind: "dot" }> => mark.kind === "dot" && Boolean(mark.label) && mark.variant !== "suppressed") : []
-  const fullSpan = Math.max(1, viewport.full[1] - viewport.full[0])
+  const labelFraction = (time: number) => {
+    const fullSpan = Math.max(1, viewport.full[1] - viewport.full[0])
+    return Math.min(1, Math.max(0, (time - viewport.full[0]) / fullSpan))
+  }
   return <div ref={hostRef} className={laneLabels.length > 0 ? "time-navigator labeled" : "time-navigator"} style={{ height: navigatorHeight }} data-mark-count={marks.length}>
     {laneLabels.length > 0 && <div className="time-lane-labels">{laneLabels.map((label) => <span key={label}>{label}</span>)}</div>}
-    {labeledDots.length > 0 && <div className="time-mark-values">{labeledDots.map((mark) => <span
-      key={mark.id}
-      style={{ left: `calc(190px + ${(mark.time - viewport.full[0]) / fullSpan} * (100% - 190px))`, top: LANE_TOP + (mark.lane ?? 0) * LANE_HEIGHT - 7 }}
-    >{mark.label}</span>)}</div>}
+    {labeledDots.length > 0 && <div className="time-mark-values">{labeledDots.map((mark) => {
+      // The centering transform is dropped at the ends so a clamped label butts against the plot
+      // origin (or the right edge) instead of half-covering the lane label gutter.
+      const fraction = labelFraction(mark.time)
+      return <span
+        key={mark.id}
+        style={{
+          left: `calc(${NAVIGATOR_PLOT_LEFT}px + ${fraction} * (100% - ${NAVIGATOR_PLOT_LEFT}px))`,
+          transform: fraction === 0 ? "translateX(0)" : fraction === 1 ? "translateX(-100%)" : undefined,
+          top: LANE_TOP + (mark.lane ?? 0) * LANE_HEIGHT - 7,
+        }}
+      >{mark.label}</span>
+    })}</div>}
   </div>
 }

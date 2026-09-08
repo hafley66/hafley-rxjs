@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client"
 import { describe, expect, it } from "vitest"
 import { cdp, page } from "vitest/browser"
 import { createTimeViewport, reduceTimeViewport, type TimelineGesture, type TimelineMark, type TimeViewport } from "./0a_TimeViewport"
-import { TimeNavigatorPixi } from "./1b_TimeNavigatorPixi"
+import { NAVIGATOR_PLOT_LEFT, plotX, TimeNavigatorPixi } from "./1b_TimeNavigatorPixi"
 import "./2_marbler.css"
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -99,6 +99,40 @@ describe("time navigator receipts", () => {
     await act(async () => root.render(<NavigatorFixture marks={gitMarks()} initial={createTimeViewport([0, 1000])} git />))
     await expect.poll(() => host.querySelectorAll("canvas").length).toBe(1)
     await expect(page.getByTestId("git-timeline")).toMatchScreenshot("2_git-merge-timeline")
+    await act(async () => root.unmount())
+    host.remove()
+  })
+
+  it("clamps a span reaching before the full range to the plot origin, never into the lane labels", async () => {
+    // A host that builds `full` from top-level rows leaves an aggregate root span starting earlier;
+    // unclamped that bar paints across the label gutter.
+    const full = [0, 1000] as const
+    const marks: TimelineMark[] = [{ id: "root", kind: "span", start: -4_000, end: 800, lane: 0 }]
+    const host = document.createElement("div")
+    document.body.append(host)
+    const root = createRoot(host)
+    await act(async () => root.render(<TimeNavigatorPixi marks={marks} viewport={createTimeViewport(full)} laneLabels={["root lane"]} onGesture={() => {}} />))
+    await expect.poll(() => host.querySelectorAll("canvas").length).toBe(1)
+    const navigator = host.querySelector(".time-navigator") as HTMLDivElement
+    const plotWidth = Math.max(1, navigator.clientWidth - NAVIGATOR_PLOT_LEFT)
+    const barLeft = plotX(marks[0].kind === "span" ? marks[0].start : 0, full, NAVIGATOR_PLOT_LEFT, plotWidth)
+    const unclamped = NAVIGATOR_PLOT_LEFT + ((-4_000 - full[0]) / (full[1] - full[0])) * plotWidth
+    const laneLabel = host.querySelector(".time-lane-labels span") as HTMLElement
+    const labelRight = laneLabel.getBoundingClientRect().right - navigator.getBoundingClientRect().left
+
+    expect({
+      barLeftIsPlotOrigin: barLeft === NAVIGATOR_PLOT_LEFT,
+      barLeftIsZero: barLeft === 0,
+      unclampedWouldEnterTheGutter: unclamped < NAVIGATOR_PLOT_LEFT,
+      laneLabelEndsAtOrBeforePlotOrigin: labelRight <= NAVIGATOR_PLOT_LEFT,
+    }).toMatchInlineSnapshot(`
+      {
+        "barLeftIsPlotOrigin": true,
+        "barLeftIsZero": false,
+        "laneLabelEndsAtOrBeforePlotOrigin": true,
+        "unclampedWouldEnterTheGutter": true,
+      }
+    `)
     await act(async () => root.unmount())
     host.remove()
   })

@@ -7,6 +7,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react"
 import type { MarbleEvent } from "./0_types.js"
 import type { AggregateExtent } from "./1c_aggregate.js"
 import { reduceTimeViewport, type TimelineMark } from "./0a_TimeViewport.js"
+import { formatDuration } from "./0b_time.js"
 import { aggregateExtents, displayDuration, flameNodes } from "./1c_aggregate.js"
 import { FlameChart } from "./1d_FlameChart.js"
 import { WaterfallPixi } from "./1a_WaterfallPixi.js"
@@ -16,6 +17,9 @@ import "./2_marbler.css"
 
 const WATERFALL_LEFT = 690
 const TREE_GUTTER = 20
+// One tick per this many measured waterfall pixels: below it the labels collide.
+const TICK_PITCH = 90
+const MIN_TICKS = 2
 
 // Embedded mode drops the demo metaphors (fake HTTP stats, drawer nav) by default; a host can
 // opt back into the filter chip row (still useful once real events carry more than one type).
@@ -36,9 +40,14 @@ function findEvent(rows: readonly MarbleEvent[], id: string | null): MarbleEvent
   return null
 }
 
+function durationLabel(event: MarbleEvent, extent?: AggregateExtent): string {
+  const shown = displayDuration(event, extent)
+  return shown === null ? "—" : formatDuration(shown)
+}
+
 function durationCell(event: MarbleEvent, extent?: AggregateExtent) {
   const shown = displayDuration(event, extent)
-  return <>{shown === null ? "—" : `${shown} ms`}{event.duration !== null && event.duration !== shown && <small>{event.duration} ms</small>}</>
+  return <>{durationLabel(event, extent)}{event.duration !== null && event.duration !== shown && <small>{formatDuration(event.duration)}</small>}</>
 }
 
 function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
@@ -58,13 +67,16 @@ function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
   // The waterfall canvas sits on the DOM waterfall column wherever host
   // column widths put it; the demo constant is the pre-measure fallback.
   const [measuredLeft, setMeasuredLeft] = useState<number | null>(null)
+  const [measuredWidth, setMeasuredWidth] = useState<number | null>(null)
   useLayoutEffect(() => {
     const scroller = scrollerRef.current
     const cell = scroller?.querySelector<HTMLElement>(".grid-header .cell.col-waterfall")
     if (!scroller || !cell) return
     const measure = () => {
-      const left = cell.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft
+      const bounds = cell.getBoundingClientRect()
+      const left = bounds.left - scroller.getBoundingClientRect().left + scroller.scrollLeft
       setMeasuredLeft((prior) => (Math.abs((prior ?? -1) - left) < 0.5 ? prior : left))
+      setMeasuredWidth((prior) => (Math.abs((prior ?? -1) - bounds.width) < 0.5 ? prior : bounds.width))
     }
     measure()
     const observer = new ResizeObserver(measure)
@@ -98,7 +110,10 @@ function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
     return eventMarks
   }), [extents, laneById, timelineEvents])
   const viewport = model.viewport.$()
-  const ticks = Array.from({ length: 6 }, (_, index) => viewport.visible[0] + (viewport.visible[1] - viewport.visible[0]) * index / 5)
+  // Ticks are read off the measured waterfall column, not a fixed count, and are labelled relative
+  // to the start of the full range: absolute epoch seconds are both meaningless and too wide here.
+  const tickCount = Math.max(MIN_TICKS, Math.round((measuredWidth ?? 520) / TICK_PITCH))
+  const ticks = Array.from({ length: tickCount }, (_, index) => viewport.visible[0] + (viewport.visible[1] - viewport.visible[0]) * index / (tickCount - 1))
   const filterChips = ["all", ...model.filters.$()]
   const legendEntries = Object.entries(model.phaseStyles)
   return <main className="app-shell" data-embedded={embedded ? "true" : undefined} data-testid="marbler">
@@ -106,7 +121,7 @@ function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
       <div className="subtoolbar">
         {showChips(embedded) && filterChips.map((chip) => <button key={chip} className={model.filter.$() === chip ? "kind active" : "kind"} onClick={() => model.filter.$(chip)}>{chip}</button>)}
         <span className="view-toggle">{(["table", "flame"] as const).map((mode) => <button key={mode} type="button" className={model.view.$() === mode ? "kind active" : "kind"} data-testid={`view-${mode}`} onClick={() => model.view.$(mode)}>{mode}</button>)}</span>
-        <span className="toolbar-spacer" />{hovered && <span className="hovered-event" data-testid="hovered-event">{hovered.name} · {displayDuration(hovered, extents.get(hovered.id))} ms</span>}<span className="summary">{rows.length} events</span>
+        <span className="toolbar-spacer" />{hovered && <span className="hovered-event" data-testid="hovered-event">{hovered.name} · {durationLabel(hovered, extents.get(hovered.id))}</span>}<span className="summary">{rows.length} events</span>
         {!embedded && <span className="legend">{legendEntries.map(([kind, style]) => <span key={kind}><i style={{ background: style.color }} />{style.label} </span>)}</span>}
       </div>
       <TimeNavigatorPixi
@@ -133,7 +148,7 @@ function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
           <div className={hasTree ? "grid-header grid-row has-tree" : "grid-header grid-row"}>
             {table.getHeaderGroups()[0].headers.filter((header) => hasTree || header.column.id !== "__expand").map((header) => <div key={header.id} className={`cell col-${header.column.id}`} onClick={header.column.getToggleSortingHandler()}>{flexRender(header.column.columnDef.header, header.getContext())}</div>)}
           </div>
-          <div className={hasTree ? "timeline grid-row has-tree" : "timeline grid-row"}><span className="timeline-gutter" />{ticks.map((tick, index) => <span key={index} style={{ left: `calc(${waterfallLeft}px + (100% - ${waterfallLeft}px) * ${index / (ticks.length - 1)})`, transform: index === 0 ? undefined : index === ticks.length - 1 ? "translateX(-100%)" : "translateX(-50%)" }}>{`${(tick / 1000).toFixed(2)} s`}</span>)}</div>
+          <div className={hasTree ? "timeline grid-row has-tree" : "timeline grid-row"}><span className="timeline-gutter" />{ticks.map((tick, index) => <span key={index} style={{ left: `calc(${waterfallLeft}px + (100% - ${waterfallLeft}px) * ${index / (ticks.length - 1)})`, transform: index === 0 ? undefined : index === ticks.length - 1 ? "translateX(-100%)" : "translateX(-50%)" }}>{`+${formatDuration(tick - viewport.full[0])}`}</span>)}</div>
         </div>
         <div className="grid-body">
           <WaterfallPixi
@@ -175,8 +190,8 @@ function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
       {!embedded && <nav><b>Headers</b><span>Payload</span><span>Preview</span><span>Response</span><span>Timing</span></nav>}
       <h3>General</h3><dl><dt>Request URL</dt><dd>boop://{selected.from}/{selected.to}/{selected.id}</dd><dt>Request Method</dt><dd>{selected.method}</dd><dt>Status Code</dt><dd><i className="ok-dot" /> {selected.status} {selected.status === 200 ? "Delivered" : "Accepted"}</dd><dt>Remote Address</dt><dd>{selected.to}</dd></dl>
       <h3>Message</h3><pre>{selected.preview}</pre>
-      <h3>Timing</h3><div className="timing-bars">{selected.phases.map((phase, index) => phase.start !== null && phase.end !== null ? <div key={`${phase.kind}:${phase.start}:${phase.end}:${index}`}><label>{phase.kind}</label><span style={{ width: `${Math.max(4, (phase.end - phase.start) / 8)}%`, background: (model.phaseStyles[phase.kind] ?? { color: "#70839b" }).color }} /><em>{phase.end - phase.start} ms</em></div> : null)}</div>
-      {selected.frames && selected.frames.length > 0 && <><h3>Messages</h3><table className="messages-table" data-testid="messages-table"><thead><tr><th /><th>Kind</th><th>Time</th><th>Peer</th><th>Preview</th></tr></thead><tbody>{[...selected.frames].sort((earlierFrame, laterFrame) => earlierFrame.t - laterFrame.t).map((frame) => <tr key={frame.id} className={`frame-row frame-${frame.direction}${frame.severity === "error" ? " frame-error" : ""}`}><td className="frame-direction">{frame.direction === "out" ? "▲" : frame.direction === "in" ? "▼" : "●"}</td><td>{frame.kind}</td><td>{selected.start !== null ? frame.t - selected.start : frame.t} ms</td><td>{frame.peer ?? "none"}</td><td>{frame.preview}{frame.repeat > 1 && <span className="frame-repeat">×{frame.repeat}</span>}</td></tr>)}</tbody></table></>}
+      <h3>Timing</h3><div className="timing-bars">{selected.phases.map((phase, index) => phase.start !== null && phase.end !== null ? <div key={`${phase.kind}:${phase.start}:${phase.end}:${index}`}><label>{phase.kind}</label><span style={{ width: `${Math.max(4, (phase.end - phase.start) / 8)}%`, background: (model.phaseStyles[phase.kind] ?? { color: "#70839b" }).color }} /><em>{formatDuration(phase.end - phase.start)}</em></div> : null)}</div>
+      {selected.frames && selected.frames.length > 0 && <><h3>Messages</h3><table className="messages-table" data-testid="messages-table"><thead><tr><th /><th>Kind</th><th>Time</th><th>Peer</th><th>Preview</th></tr></thead><tbody>{[...selected.frames].sort((earlierFrame, laterFrame) => earlierFrame.t - laterFrame.t).map((frame) => <tr key={frame.id} className={`frame-row frame-${frame.direction}${frame.severity === "error" ? " frame-error" : ""}`}><td className="frame-direction">{frame.direction === "out" ? "▲" : frame.direction === "in" ? "▼" : "●"}</td><td>{frame.kind}</td><td>{formatDuration(selected.start !== null ? frame.t - selected.start : frame.t)}</td><td>{frame.peer ?? "none"}</td><td>{frame.preview}{frame.repeat > 1 && <span className="frame-repeat">×{frame.repeat}</span>}</td></tr>)}</tbody></table></>}
     </aside>}
   </main>
 }

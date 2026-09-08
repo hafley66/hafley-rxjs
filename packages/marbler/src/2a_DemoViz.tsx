@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { createTimeViewport, reduceTimeViewport, type TimelineMark, type TimeViewport } from "./0a_TimeViewport"
+import { formatDuration } from "./0b_time"
 import { TimeNavigatorPixi } from "./1b_TimeNavigatorPixi"
 
 type DemoEntry = {
@@ -27,7 +28,7 @@ function EventTree({ lanes, hoveredId, onHover }: { lanes: DemoLane[]; hoveredId
           className={hoveredId === entry.id ? "demo-entry hovered" : "demo-entry"}
           onMouseEnter={() => onHover(entry.id)}
           onMouseLeave={() => onHover(null)}
-        ><span>{entry.label}</span><span>{entry.kind}</span><span>{entry.time} ms</span><code>{entry.value}</code></div>)}
+        ><span>{entry.label}</span><span>{entry.kind}</span><span>{formatDuration(entry.time)}</span><code>{entry.value}</code></div>)}
       </div>
     </details>)}
   </div>
