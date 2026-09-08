@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`toMatchSnapshot alias > every other receiver keeps vitest's snapshot matcher 1`] = `
+{
+  "a": 1,
+}
+`;
+
+exports[`toMatchSnapshot alias > every other receiver keeps vitest's snapshot matcher 2`] = `"plain"`;

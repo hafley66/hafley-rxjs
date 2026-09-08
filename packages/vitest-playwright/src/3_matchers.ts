@@ -1,11 +1,13 @@
-// pkg:matchers: 27 locator/page matchers + toBeOK + toPass over pw:Locator._expect / pw:Frame._expect.
+// pkg:matchers: 27 locator/page matchers + toBeOK + toPass over pw:Locator._expect / pw:Frame._expect, plus
+// toHaveScreenshot (11_screenshot) and the toMatchSnapshot alias that routes a Page/Locator receiver to it.
 // Polling is server-side inside playwright; each matcher is one await. Payloads follow PLAN §2.2.
 import type { APIResponse, Frame, Locator, Page } from "playwright"
 import { lastValueFrom } from "rxjs"
-import { inject, type Matcher, type MatcherState } from "vitest"
+import { chai, inject, type Matcher, type MatcherState } from "vitest"
 import { KEY } from "./0_options.js"
 import { poll$ } from "./5_streams.js"
 import { als } from "./6_roots.js"
+import { type ScreenshotName, type ScreenshotOptions, screenshot } from "./11_screenshot.js"
 
 type MatchersObject = Record<string, Matcher>
 type ExpectResult = {
@@ -408,6 +410,20 @@ export const playwrightMatchers: MatchersObject = {
     )
   }),
 
+  toHaveScreenshot: takeover(function (
+    this: Ctx,
+    receiver: Page | Locator,
+    nameOrOptions?: ScreenshotName | ScreenshotOptions,
+    options?: ScreenshotOptions,
+  ) {
+    if (receiver === null && this.assertion && flag(this.assertion, "_poll.fn"))
+      throw new Error(
+        'expect.poll() does not support "toHaveScreenshot". The matcher already retries; use { timeout }.',
+      )
+    if (!isPage(receiver) && !isLocator(receiver))
+      throw new Error(`toHaveScreenshot: expected a playwright Page or Locator, received ${typeName(receiver)}`)
+    return screenshot.call(this, receiver, nameOrOptions, options)
+  }),
   toBeOK: async function (this: Ctx, response: APIResponse) {
     guard.call(this, "toBeOK", response, "APIResponse")
     const pass = response.ok()
@@ -474,8 +490,28 @@ export interface PlaywrightMatchers<R> {
     expected: string | RegExp | URLPattern | ((url: URL) => boolean),
     o?: LocatorOpts & { ignoreCase?: boolean },
   ): Promise<void>
+  toHaveScreenshot(name?: ScreenshotName | ScreenshotOptions, o?: ScreenshotOptions): Promise<void>
   toBeOK(): Promise<void>
   toPass(o?: { timeout?: number; intervals?: number[] }): Promise<void>
+}
+
+type Chainable = { toHaveScreenshot: (...args: unknown[]) => unknown }
+const aliased = Symbol.for("vitest-playwright:toMatchSnapshot")
+/** `expect(page).toMatchSnapshot()` / `expect(locator).toMatchSnapshot("name")` become toHaveScreenshot; every other
+ *  receiver keeps vitest's own snapshot matcher. Installed once per process (setup.ts). */
+export function installSnapshotAlias(): void {
+  const proto = chai.Assertion.prototype as unknown as {
+    [aliased]?: true
+    toMatchSnapshot?: (this: object, ...args: unknown[]) => unknown
+  }
+  const original = proto.toMatchSnapshot
+  if (!original || proto[aliased]) return
+  proto[aliased] = true
+  chai.util.addMethod(chai.Assertion.prototype, "toMatchSnapshot", function (this: object, ...args: unknown[]) {
+    const receiver = chai.util.flag(this, "object")
+    if (isPage(receiver) || isLocator(receiver)) return (this as Chainable).toHaveScreenshot(...args)
+    return original.apply(this, args)
+  })
 }
 declare module "vitest" {
   // biome-ignore lint/suspicious/noExplicitAny: must match vitest's own `Assertion<T = any>` declaration to merge

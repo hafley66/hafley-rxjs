@@ -7,6 +7,16 @@ export type BrowserName = "chromium" | "firefox" | "webkit"
 export type ScreenshotMode = "off" | "on" | "only-on-failure"
 export type TraceMode = "off" | "on" | "retain-on-failure" | "on-first-retry"
 export type VideoMode = "off" | "on" | "retain-on-failure"
+/** Defaults for toHaveScreenshot; per-call options override. `dir` is relative to the test file. */
+export type ScreenshotDefaults = {
+  dir?: string
+  animations?: "disabled" | "allow"
+  caret?: "hide" | "initial"
+  scale?: "css" | "device"
+  maxDiffPixels?: number
+  maxDiffPixelRatio?: number
+  threshold?: number
+}
 
 export type ServeOptions =
   | { kind: "url"; url: string }
@@ -37,7 +47,7 @@ export interface VitestPlaywrightOptions {
   context?: BrowserContextOptions
   /** 'test' (default): context + page per test attempt. 'file': one context + page per file, sequential files only. */
   contextScope?: "test" | "file"
-  expect?: { timeout?: number }
+  expect?: { timeout?: number; toHaveScreenshot?: ScreenshotDefaults }
   timeouts?: { action?: number; navigation?: number }
   clock?: { install?: boolean; time?: number | string; mode?: "running" | "paused" | "fixed" }
   har?: { path: string; update?: boolean; url?: string | RegExp }
@@ -56,6 +66,8 @@ export interface ResolvedOptions {
   context: BrowserContextOptions
   contextScope: "test" | "file"
   expectTimeout: number
+  screenshots: Required<Pick<ScreenshotDefaults, "dir" | "animations" | "caret" | "scale">> &
+    Pick<ScreenshotDefaults, "maxDiffPixels" | "maxDiffPixelRatio" | "threshold">
   timeouts: { action: number; navigation: number }
   clock: { install: boolean; time?: number | string; mode: "running" | "paused" | "fixed" }
   har?: { path: string; update?: boolean; url?: { source: string; flags: string } }
@@ -87,6 +99,15 @@ export function resolveOptions(o: VitestPlaywrightOptions = {}): ResolvedOptions
     context: cloneable(o.context ?? {}, "context"),
     contextScope: o.contextScope ?? "test",
     expectTimeout: o.expect?.timeout ?? 5000,
+    screenshots: {
+      dir: o.expect?.toHaveScreenshot?.dir ?? "__screenshots__",
+      animations: o.expect?.toHaveScreenshot?.animations ?? "disabled",
+      caret: o.expect?.toHaveScreenshot?.caret ?? "hide",
+      scale: o.expect?.toHaveScreenshot?.scale ?? "css",
+      maxDiffPixels: o.expect?.toHaveScreenshot?.maxDiffPixels,
+      maxDiffPixelRatio: o.expect?.toHaveScreenshot?.maxDiffPixelRatio,
+      threshold: o.expect?.toHaveScreenshot?.threshold,
+    },
     timeouts: { action: o.timeouts?.action ?? 0, navigation: o.timeouts?.navigation ?? 0 },
     clock: { install: o.clock?.install ?? false, time: o.clock?.time, mode: o.clock?.mode ?? "running" },
     har: o.har

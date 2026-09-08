@@ -6,8 +6,8 @@ import { boot, URL } from "./0_bootstrap.js"
 
 describe("barrel", () => {
   it("exports exactly the public surface", () => {
-    vitestExpect(Object.keys(barrel).sort()).toEqual(["describe", "expect", "it", "playwrightMatchers", "serializeExpectedText", "test", "vitestPlaywright"])
-    vitestExpect(Object.keys(barrel.playwrightMatchers).length).toBe(29)
+    vitestExpect(Object.keys(barrel).sort()).toEqual(["baselinePath", "describe", "expect", "it", "playwrightMatchers", "serializeExpectedText", "test", "vitestPlaywright"])
+    vitestExpect(Object.keys(barrel.playwrightMatchers).length).toBe(30)
   })
   test("test and expect from the barrel drive a page", async ({ page }) => {
     await boot(page)

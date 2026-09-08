@@ -1,8 +1,8 @@
 // App-level receipt over the built single file, on @hafley66/vitest-playwright: the plugin builds dist/index.html
 // (serve slot, vite --mode single) and serves its file:// URL as baseURL; contextScope 'file' keeps one page for
 // the file; page errors and console errors fail the owning test at teardown (no hand-rolled pageErrors list).
-import { describe, expect, inject } from "vitest"
-import { test } from "@hafley66/vitest-playwright/test"
+import { inject } from "vitest"
+import { describe, expect, test } from "@hafley66/vitest-playwright"
 
 const base = inject("vitest-playwright:baseURL")
 const go = async (tab: string) => {

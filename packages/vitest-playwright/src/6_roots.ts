@@ -50,6 +50,8 @@ export type TestRootState = {
   context: BrowserContext | null
   page: Page | null
   phase: Phase
+  /** toHaveScreenshot calls so far in this attempt; names the unnamed baselines. */
+  shots: number
 }
 export type TestRoot = SignalType<TestRootState>
 /** vitest: one AbortController per test for every retry, so a timed-out first attempt leaves ctx.signal aborted
@@ -78,6 +80,7 @@ export function testRoot(task: Test, signal: AbortSignal, options: ResolvedOptio
     context: null,
     page: null,
     phase: "setup",
+    shots: 0,
   })
 }
 

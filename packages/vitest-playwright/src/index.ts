@@ -5,3 +5,4 @@ export { type ExpectedText, type PlaywrightMatchers, playwrightMatchers, seriali
 export { describe, expect, it, type PwFile, type PwTest, type PwWorker, test } from "./4_test.js"
 export type { ApiEvent, AttemptEvent, ConsoleLine, NetEvent, PageError, TestLog, TestLogState } from "./6_roots.js"
 export type { PageGlobals } from "./7_page-global.js"
+export { baselinePath, type ScreenshotName, type ScreenshotOptions } from "./11_screenshot.js"

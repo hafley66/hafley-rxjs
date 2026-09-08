@@ -58,6 +58,7 @@ The plugin fills `test.setupFiles`, `test.globalSetup`, `test.provide`, `test.ru
 | `context` | `{}` | pw:BrowserContextOptions, cloneable subset |
 | `contextScope` | `test` | pkg: |
 | `expect.timeout` | 5000 | pkg:, matchers |
+| `expect.toHaveScreenshot.dir` / `animations` / `caret` / `scale` / `maxDiffPixels` / `maxDiffPixelRatio` / `threshold` | `__screenshots__`, disabled, hide, css, unset | pkg:toHaveScreenshot defaults |
 | `timeouts.action` / `timeouts.navigation` | 0 | pw: |
 | `clock.install` / `clock.time` / `clock.mode` | off | pw:context.clock |
 | `har` | off | pw:routeFromHAR |
@@ -71,7 +72,7 @@ Every option crosses `vitest:provide` into workers, so it must be structured-clo
 ## 3. Writing tests
 
 ```ts
-import { expect, test } from "@hafley66/vitest-playwright/test"
+import { expect, test } from "@hafley66/vitest-playwright"
 import { inject } from "vitest"
 
 const base = inject("vitest-playwright:baseURL")
@@ -92,6 +93,8 @@ test("same thing through the global", async () => {
 
 Plain vitest `it` works too: the bridge launches a worker browser lazily on the first `$page` read.
 
+Two import paths cover everything: the root for test files, `/plugin` for the config. The other subpaths (`/setup`, `/test`, `/global-setup`, `/runner`) are what the plugin wires for itself.
+
 ## 4. Fixtures
 
 | fixture | scope | value |
@@ -109,7 +112,7 @@ Plain vitest `it` works too: the bridge launches a worker browser lazily on the 
 
 ## 5. Matchers
 
-29 keys over `pw:Locator._expect`, polling server-side inside playwright: `toBeAttached toBeChecked toBeDisabled toBeEditable toBeEmpty toBeEnabled toBeFocused toBeHidden toBeVisible toBeInViewport toHaveText toContainText toHaveClass toContainClass toHaveId toHaveRole toHaveValue toHaveValues toHaveAccessibleName toHaveAccessibleDescription toHaveAccessibleErrorMessage toHaveAttribute toHaveCSS toHaveCount toHaveJSProperty toHaveTitle toHaveURL toBeOK toPass`.
+30 keys, 29 over `pw:Locator._expect` polling server-side inside playwright: `toBeAttached toBeChecked toBeDisabled toBeEditable toBeEmpty toBeEnabled toBeFocused toBeHidden toBeVisible toBeInViewport toHaveText toContainText toHaveClass toContainClass toHaveId toHaveRole toHaveValue toHaveValues toHaveAccessibleName toHaveAccessibleDescription toHaveAccessibleErrorMessage toHaveAttribute toHaveCSS toHaveCount toHaveJSProperty toHaveTitle toHaveURL toBeOK toPass`, plus `toHaveScreenshot`.
 
 `.not`, `expect.soft`, and `{ timeout }` work as in playwright. `expect.poll` refuses them (they retry already). `toPass` retries on timers captured at import, so `vi.useFakeTimers()` cannot freeze it. Failure text:
 
@@ -121,6 +124,26 @@ Expected: visible
 Received: hidden
 Timeout:  200ms (exceeded)
 ```
+
+### toHaveScreenshot
+
+```ts
+await expect(page).toHaveScreenshot()                       // <slug of the full test name>-1.png
+await expect(page).toHaveScreenshot("hero.png", { maxDiffPixelRatio: 0.01 })
+await expect(page.locator("#chart")).toHaveScreenshot(["charts", "bar.png"])
+await expect($page).toMatchSnapshot("hero.png")             // alias: a Page or Locator receiver routes here
+await expect({ a: 1 }).toMatchSnapshot()                    // every other receiver keeps vitest's snapshot
+```
+
+| piece | where |
+| --- | --- |
+| compare | `pw:Page._expectScreenshot`: the server waits for two consecutive frames to agree, then compares with its bundled pixelmatch; no image library on this side |
+| baseline | `<test dir>/__screenshots__/<test file>/<name>-<browser>-<platform>.png` (`baselinePath()` exported) |
+| update | vitest's own mode: `-u` rewrites, default writes missing, CI (`none`) fails on missing |
+| failure | `<name>-expected.png`, `-actual.png`, `-diff.png` in the attempt dir, recorded as a `visual-regression` artifact |
+| options | `animations caret clip fullPage mask maskColor omitBackground scale style stylePath timeout maxDiffPixels maxDiffPixelRatio threshold`, defaults from `expect.toHaveScreenshot` |
+
+`toMatchSnapshot` on a page takes a name only; vitest types its second argument as a hint string, so per-call options go through `toHaveScreenshot`.
 
 ## 6. The serve slot
 
@@ -183,4 +206,4 @@ Each attempt gets its own `AbortSignal` derived from vitest's (which is never re
 - Every test acquires a context and a page (31 ms on this machine) whether or not it touches one.
 - The playwright client itself needs real timers; a body that calls playwright under `vi.useFakeTimers()` hangs until the test timeout. The bridge restores real timers at capture and logs a `bridge` warning. Use `context.clock` for page time.
 - `contextScope: "file"` skips `describe.concurrent` tests with an error.
-- `toHaveScreenshot`, `toMatchAriaSnapshot`, and a component `render()` are not implemented.
+- `toMatchAriaSnapshot` and a component `render()` are not implemented.

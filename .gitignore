@@ -21,4 +21,4 @@ issues/mui-external-virtualization/
 .dl/
 
 # vitest-playwright artifact dir (packages/vitest-playwright/src/0_options.ts artifacts.outDir default)
-out/pw/
+**/out/pw/
