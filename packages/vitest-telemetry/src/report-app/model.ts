@@ -114,8 +114,11 @@ export function createModel(initialRows: Event[]): Model {
     return eventsFor(rows.$(), filters, sel.file, sel.test)
   })
 
+  // Deliberately free of `selected`: the tree is expensive to build (one pass over every event),
+  // and the selected row's highlight is painted by Nav.tsx from `selected` instead, so clicking a
+  // row never rebuilds this.
   const nav = Signal<NavNode[]>(() => {
-    const built = buildProcessNav(rows.$(), verdicts.$(), selected.$())
+    const built = buildProcessNav(rows.$(), verdicts.$())
     return continuous.$().failedOnly ? filterFailedOnly(built) : built
   })
   const firstFailure = Signal<Selection | null>(() => findFirstFailure(nav.$()))
