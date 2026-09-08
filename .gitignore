@@ -19,3 +19,6 @@ issues/mui-external-virtualization/
 
 # dl runtime state
 .dl/
+
+# vitest-playwright artifact dir (packages/vitest-playwright/src/0_options.ts artifacts.outDir default)
+out/pw/

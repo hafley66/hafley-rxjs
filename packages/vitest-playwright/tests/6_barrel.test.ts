@@ -15,7 +15,7 @@ describe("barrel", () => {
     await expect(page).toHaveURL(URL)
   })
   it("the plugin returns the tel:plugin shape", () => {
-    const cfg = (barrel.vitestPlaywright({ expect: { timeout: 1 } }) as { config: (u: object) => { test: Record<string, unknown> } }).config({})
-    vitestExpect(Object.keys(cfg.test).sort()).toEqual(["globalSetup", "isolate", "provide", "runner", "setupFiles"])
+    const cfg = barrel.vitestPlaywright({ expect: { timeout: 1 } }).config({})
+    vitestExpect(Object.keys(cfg.test ?? {}).sort()).toEqual(["globalSetup", "isolate", "provide", "runner", "setupFiles"])
   })
 })

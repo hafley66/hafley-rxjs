@@ -14,6 +14,8 @@ type TestBlock = {
   provide?: Record<string, unknown>
 }
 type WithTest = UserConfig & { test?: TestBlock }
+// The plugin with its config hook pinned to the plain-function form so callers and tests can invoke it directly.
+export type VitestPlaywrightPlugin = Plugin & { config: (user: WithTest) => WithTest }
 
 // Resolves a sibling module by name with this module's own extension: '.js' from dist/, '.ts' from src/.
 function siblingPath(name: string): string {
@@ -21,7 +23,7 @@ function siblingPath(name: string): string {
   return fileURLToPath(new URL(`./${name}.${extension}`, import.meta.url))
 }
 
-export function vitestPlaywright(options: VitestPlaywrightOptions = {}): Plugin {
+export function vitestPlaywright(options: VitestPlaywrightOptions = {}): VitestPlaywrightPlugin {
   const resolved = resolveOptions(options)
   const serve = options.serve ?? null
   // serve crosses into the vitest:globalSetup process as JSON; a vite InlineConfig with plugins cannot make that trip
