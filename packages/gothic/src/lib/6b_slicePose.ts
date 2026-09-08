@@ -34,7 +34,7 @@ export function slicePose(s: Omit<SliceStroke, "source">, t: number, k: SlicePar
   return {
     opacity, transform, dash, blade,
     matrix: [a, b, b, d, off * c + s.cx - a * s.cx - b * s.cy, off * sn + s.cy - b * s.cx - d * s.cy],
-    width: f(k.weight * (s.baseWidth ?? 1) * (age >= 0 && age < 80 ? 1 + 1.5 * (1 - age / 80) : 1)),
+    width: f((k.weight + (k.finalWeight - k.weight) * clamp01(age / 80)) * (s.baseWidth ?? 1) * (age >= 0 && age < 80 ? 1 + 1.5 * (1 - age / 80) : 1)),
     afterimage: k.ai && age >= 0 && age < 120 ? f(0.85 * (1 - age / 120)) : 0,
   }
 }

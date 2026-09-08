@@ -18,3 +18,9 @@ it("seeks every reveal and easing directly and lands on an identity pose", () =>
   }
   expect(receipt).toMatchSnapshot()
 })
+
+it("sets moving and landed widths independently through the landing pulse", () => {
+  const stroke = { ...slicePaths(["M0 0H100"], { cut: 160, spread: 0 }).strokes[0], baseWidth: 2 }
+  const p = { ...SLICE_DEFAULTS, weight: 2, finalWeight: 0.5 }
+  expect([-20, 0, 40, 80, 200].map(age => slicePose(stroke, stroke.t0 + stroke.dur + age, p).width)).toEqual([4, 10, 4.38, 1, 1])
+})

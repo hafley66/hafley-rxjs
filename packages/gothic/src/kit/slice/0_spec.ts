@@ -213,6 +213,8 @@ export const SLICE_SPEC = {
   ...SLICE_ORDER_INPUTS,
   ...SLICE_FLIGHT_INPUTS,
   ...STROKE_INPUTS,
+  weight: { ...STROKE_INPUTS.weight, label: "slice weight", hint: "width multiplier for moving strokes, blades and afterimages" },
+  finalWeight: { ...STROKE_INPUTS.weight, label: "path weight", hint: "width multiplier for the completed paths" },
   ...PLAYBACK_INPUTS,
   time: { ...PLAYBACK_INPUTS.time, default: 0 },
   speed: { ...PLAYBACK_INPUTS.speed, default: 1 },

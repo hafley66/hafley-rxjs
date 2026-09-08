@@ -48,6 +48,10 @@ it("attaches the slice toolkit to arbitrary mounted SVGs and restores originals 
     expect(await page.locator("defs [data-slice-overlay]").count()).toBe(0)
     await page.evaluate(() => { const a = (window as any).animation; a.seek(a.frame.timeline.T.$()) })
     expect(await page.locator("#curve").evaluate(el => getComputedStyle(el).visibility)).toBe("visible")
+    await page.evaluate(() => { const a = (window as any).animation; a.params.finalWeight.$(0.5); a.params.weight.$(2) })
+    expect(await page.locator("#curve").evaluate(el => getComputedStyle(el).strokeWidth)).toBe("1px")
+    await page.evaluate(() => (window as any).animation.seek(0))
+    expect(await page.locator("[data-slice-overlay]").first().locator("path").last().evaluate(el => getComputedStyle(el).strokeWidth)).toBe("4px")
     await page.evaluate(() => (window as any).observer.unsubscribe())
     expect(await page.locator("#art").innerHTML()).toBe(original)
     await page.evaluate(() => {

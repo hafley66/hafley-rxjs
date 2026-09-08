@@ -11,7 +11,7 @@ const NS = "http://www.w3.org/2000/svg"
 const GEOMETRY = "path,circle,ellipse,line,polyline,polygon,rect"
 export type SliceTarget = Element | readonly SVGGeometryElement[]
 export type SliceAttachOptions = Partial<SliceParams> & SliceGeometryOptions & { loop?: boolean; reducedMotion?: boolean; params?: Signal<SliceParams> }
-type Source = { element: SVGGeometryElement; group: SVGGElement; visibility: string; priority: string; style: string | null; normalizedStyle: string; end: number }
+type Source = { element: SVGGeometryElement; group: SVGGElement; visibility: string; priority: string; width: string; widthPriority: string; baseWidth: number; style: string | null; normalizedStyle: string; end: number }
 
 function sourcePath(element: SVGGeometryElement): string {
   if (element.tagName.toLowerCase() === "path") return element.getAttribute("d") ?? ""
@@ -30,6 +30,8 @@ function bindSlice(target: SliceTarget, params: SliceParams, options: SliceAttac
   let sources: Source[] = []
   function restore() {
     for (const s of sources) {
+      if (s.width) s.element.style.setProperty("stroke-width", s.width, s.widthPriority)
+      else s.element.style.removeProperty("stroke-width")
       if (s.visibility) s.element.style.setProperty("visibility", s.visibility, s.priority)
       else s.element.style.removeProperty("visibility")
       if (s.element.style.cssText === s.normalizedStyle) {
@@ -48,9 +50,14 @@ function bindSlice(target: SliceTarget, params: SliceParams, options: SliceAttac
       const done = time >= source.end
       source.group.style.display = done ? "none" : ""
       if (done) {
+        source.element.style.setProperty("stroke-width", String(source.baseWidth * params.finalWeight))
         if (source.visibility) source.element.style.setProperty("visibility", source.visibility, source.priority)
         else source.element.style.removeProperty("visibility")
-      } else source.element.style.setProperty("visibility", "hidden", "important")
+      } else {
+        if (source.width) source.element.style.setProperty("stroke-width", source.width, source.widthPriority)
+        else source.element.style.removeProperty("stroke-width")
+        source.element.style.setProperty("visibility", "hidden", "important")
+      }
     }
   }
   function refresh() {
@@ -62,6 +69,7 @@ function bindSlice(target: SliceTarget, params: SliceParams, options: SliceAttac
     ]).filter((el, i, all) => all.indexOf(el) === i && !el.closest("defs,clipPath,mask,marker,pattern,symbol,[data-slice-overlay]"))
       .filter(el => { const css = getComputedStyle(el); return css.display !== "none" && css.visibility !== "hidden" && css.visibility !== "collapse" })
     const originals = elements.map(element => ({ style: element.getAttribute("style"), normalizedStyle: element.style.cssText,
+      width: element.style.getPropertyValue("stroke-width"), widthPriority: element.style.getPropertyPriority("stroke-width"),
       visibility: element.style.getPropertyValue("visibility"), priority: element.style.getPropertyPriority("visibility") }))
     const styles = elements.map(el => getComputedStyle(el))
     const size = options.size ?? Math.max(1, ...elements.map(el => el.ownerSVGElement?.viewBox.baseVal.width || 240))
@@ -94,7 +102,7 @@ function bindSlice(target: SliceTarget, params: SliceParams, options: SliceAttac
         group.style.clipPath = css.clipPath
         group.style.mask = css.mask
         group.style.filter = css.filter
-        const source: Source = { element, group, ...originals[i], end: Math.max(...strokes.map(s => s.t0 + s.dur)) + 120 }
+        const source: Source = { element, group, ...originals[i], baseWidth: parseFloat(css.strokeWidth) || 1, end: Math.max(...strokes.map(s => s.t0 + s.dur)) + 120 }
         element.after(group)
         sources.push(source)
         for (const stroke of strokes) {

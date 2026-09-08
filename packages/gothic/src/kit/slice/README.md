@@ -30,6 +30,7 @@ Enable `signalsJsx()` from `@hafley66/signals/vite`. The frame read activates th
 - `animation.seek(ms)` pauses and saves the normalized position into `params.time`.
 - `animation.replay()` begins at zero, including after reduced-motion initialization.
 - `animation.params.order.$("spectral")` edits a control through the existing signal tree.
+- `weight` scales moving strokes, blades and afterimages; `finalWeight` scales completed paths. Original widths are restored on teardown.
 - `animation.refresh()` rebuilds after external geometry edits.
 - `animation.ref(node)` binds a committed DOM node; `null` releases that target.
 
