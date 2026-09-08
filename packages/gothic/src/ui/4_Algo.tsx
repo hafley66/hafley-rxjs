@@ -1,6 +1,6 @@
 import { type AnySpec, useDrawIn, type ValuesOf } from "@hafley66/report-shell"
 import type { CSSProperties, ReactNode } from "react"
-import { useRef } from "react"
+import { useMemo, useRef } from "react"
 import { type Algo, type AlgoOut, algoCtx } from "../kit/2_algo.js"
 import { timed } from "../kit/5_perf.js"
 import { Section } from "./2_Section.js"
@@ -46,8 +46,13 @@ export function AlgoCells<P extends object>({
   params: P
 }): ReactNode {
   const ref = useRef<HTMLDivElement>(null)
-  const outs = sizes.map(size => timed(`algo:${algo.name}:${size}`, () => algo.run(params, algoCtx(params, size))))
-  useDrawIn(ref, [algo.name, JSON.stringify(params), sizes.join()])
+  // one key drives the run cache and the draw-in deps, so an unrelated re-render regenerates nothing
+  const key = JSON.stringify(params)
+  const outs = useMemo(
+    () => sizes.map(size => timed(`algo:${algo.name}:${size}`, () => algo.run(params, algoCtx(params, size)))),
+    [algo, key, sizes],
+  )
+  useDrawIn(ref, [algo.name, key, sizes.join()])
   return (
     <div ref={ref} className="row flex flex-wrap items-end gap-5">
       {outs.map((out, i) => (

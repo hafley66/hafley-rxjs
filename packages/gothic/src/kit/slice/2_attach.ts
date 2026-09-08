@@ -1,5 +1,6 @@
 import { Signal } from "@hafley66/signals"
-import { combineLatest, concat, defer, distinctUntilChanged, filter, finalize, map, NEVER, of, type Observable, shareReplay, switchMap } from "rxjs"
+import { auditTime, combineLatest, concat, defer, distinctUntilChanged, filter, finalize, map, merge, NEVER, of, type Observable, share, shareReplay, skip, switchMap, take } from "rxjs"
+import { inViewport } from "../1_browser.js"
 import { f, line } from "../../lib/1_geom.js"
 import { schedule } from "../../lib/6_slice.js"
 import { slicePaths, type SliceGeometryOptions, type SliceTimeline } from "../../lib/6a_slicePaths.js"
@@ -12,7 +13,7 @@ import type { StrokeMotionFrame } from "../../lib/7a_variation.js"
 const NS = "http://www.w3.org/2000/svg"
 const GEOMETRY = "path,circle,ellipse,line,polyline,polygon,rect"
 export type SliceTarget = Element | readonly SVGGeometryElement[]
-export type SliceAttachOptions = Partial<SliceParams> & SliceGeometryOptions & { loop?: boolean; reducedMotion?: boolean; params?: Signal<SliceParams>; input?: Signal<SliceParams>; motion?: Signal<StrokeMotionFrame> }
+export type SliceAttachOptions = Partial<SliceParams> & SliceGeometryOptions & { loop?: boolean; reducedMotion?: boolean; visible?: Observable<boolean>; params?: Signal<SliceParams>; input?: Signal<SliceParams>; motion?: Signal<StrokeMotionFrame> }
 type Source = { element: SVGGeometryElement; group: SVGGElement; visibility: string; priority: string; width: string; widthPriority: string; baseWidth: number; style: string | null; normalizedStyle: string; end: number }
 
 function sourcePath(element: SVGGeometryElement): string {
@@ -150,15 +151,18 @@ export function attachSlice(target: SliceTarget | null = null, options: SliceAtt
   const runtime = Signal<PlaybackRuntime & { target: SliceTarget | null; revision: number }>({ target, enabled: !reducedMotion, seek: null, revision: 0 })
   const empty: SliceTimeline = { strokes: [], T: 0, bursts: 0, size: options.size ?? 240 }
   const fields = ["seed", "cut", "angle", "jit", "dist", "flight", "order", "curve", "ordN", "gain", "silence", "spread", "burst"] as const
+  // first geometry binds at once; during a scrub drag later ones coalesce to one rebind per 50ms
+  const geometry$ = input.$.pipe(map(p => fields.map(field => p[field]).join("|")), distinctUntilChanged(), share())
+  const geometry = merge(geometry$.pipe(take(1)), geometry$.pipe(skip(1), auditTime(50)))
   const binding$ = combineLatest([
     runtime.target.$.pipe(distinctUntilChanged()), runtime.revision.$.pipe(distinctUntilChanged()),
-    input.$.pipe(map(p => fields.map(field => p[field]).join("|")), distinctUntilChanged()),
+    geometry,
   ]).pipe(switchMap(([node]) => node ? defer(() => {
     const binding = bindSlice(node, input.$(), options)
     return concat(of(binding), NEVER).pipe(finalize(binding.unsubscribe))
   }) : of(null)), shareReplay({ bufferSize: 1, refCount: true }))
   // A React ref replacement briefly emits null. Keep the clock's span through that gap.
-  const clock = playback(params, binding$.pipe(filter(binding => binding !== null), map(binding => binding.timeline.T)), { ...options, runtime: runtime as unknown as Signal<PlaybackRuntime>, reducedMotion, landOnReduce: true })
+  const clock = playback(params, binding$.pipe(filter(binding => binding !== null), map(binding => binding.timeline.T)), { ...options, visible: options.visible ?? inViewport(runtime.target.$.pipe(map(t => (Array.isArray(t) ? t[0] ?? null : t)))), runtime: runtime as unknown as Signal<PlaybackRuntime>, reducedMotion, landOnReduce: true })
   const motion$: Observable<StrokeMotionFrame | undefined> = options.motion ? options.motion.$ : of(undefined)
   const frame = Signal(combineLatest([binding$, clock.frame.$, input.$, motion$]).pipe(map(([binding, clock, params, motion]) => {
     binding?.paint(clock.time, params, motion)

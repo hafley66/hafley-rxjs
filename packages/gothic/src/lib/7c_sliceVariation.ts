@@ -9,16 +9,25 @@ const identities = new WeakMap<Stroke, number>()
 
 // Preserve the original pose. Independent appearance sampling happens at the paint boundary.
 export function variedSlicePose(s: Stroke, time: number, params: SliceParams, motion?: StrokeMotionFrame) {
-  let key = identities.get(s)
-  if (key === undefined) { key = hash(`${s.d}|${s.sub}|${s.cx}|${s.cy}`); identities.set(s, key) }
-  const patches = Object.entries(motion?.fields ?? {}).filter(([name]) => STROKE_PROPERTIES.has(name)).map(([name, v]) =>
-    [name, variedField(SLICE_SPEC[name as keyof typeof SLICE_SPEC], v, motion!.times?.[name] ?? motion!.time, key! ^ hash(name))])
-  const k = patches.length ? { ...params, ...Object.fromEntries(patches) } : params
-  const pose = slicePose(s, time, k), age = time - s.t0 - s.dur
-  const length = s.diag * k.ailen, x = Math.cos(s.th) * length, y = Math.sin(s.th) * length
+  let k = params
+  if (motion && motion.fields) {
+    const fields = Object.entries(motion.fields)
+    let patches: [string, unknown][] | null = null
+    for (const [name, v] of fields) {
+      if (!STROKE_PROPERTIES.has(name)) continue
+      let key = identities.get(s)
+      if (key === undefined) { key = hash(`${s.d}|${s.sub}|${s.cx}|${s.cy}`); identities.set(s, key) }
+      const patch = [name, variedField(SLICE_SPEC[name as keyof typeof SLICE_SPEC], v, motion.times?.[name] ?? motion.time, key ^ hash(name))] as [string, unknown]
+      ;(patches ??= []).push(patch)
+    }
+    if (patches) k = { ...params, ...Object.fromEntries(patches) }
+  }
+  const pose = slicePose(s, time, k)
+  const age = time - s.t0 - s.dur
+  const afterimage = k.ai && age >= 0 && age < k.aiFade ? f(k.aiOpacity * (1 - age / k.aiFade)) : 0
   return { ...pose,
-    afterimage: k.ai && age >= 0 && age < k.aiFade ? f(k.aiOpacity * (1 - age / k.aiFade)) : 0,
+    afterimage,
     bladeWidth: 1.6 * k.weight, afterimageWidth: 0.75 * k.weight,
-    afterimagePath: line(s.cx - x, s.cy - y, s.cx + x, s.cy + y),
+    afterimagePath: afterimage > 0 ? line(s.cx - Math.cos(s.th) * s.diag * k.ailen, s.cy - Math.sin(s.th) * s.diag * k.ailen, s.cx + Math.cos(s.th) * s.diag * k.ailen, s.cy + Math.sin(s.th) * s.diag * k.ailen) : "",
   }
 }

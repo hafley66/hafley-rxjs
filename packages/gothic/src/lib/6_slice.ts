@@ -95,6 +95,7 @@ export type Stroke = {
   _tr?: string | null
   _w?: number | null
   _ao?: number | null
+  _bw?: number | null
 }
 export function strokesOf(parts: Part[], k: SliceKnobs, seed: number, size: number): Stroke[] {
   const rng = mulberry32(seed ^ 0x5bf03635)

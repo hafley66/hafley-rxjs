@@ -15,7 +15,7 @@ export function paintSlice(strokes: Stroke[], time: number, params: SliceParams,
     }
     if (s._tr !== pose.transform) { s.el.setAttribute("transform", pose.transform); s._tr = pose.transform }
     if (s._w !== pose.width) { s.el.style.strokeWidth = String(pose.width); s._w = pose.width }
-    if (s.bl) s.bl.style.strokeWidth = String(pose.bladeWidth)
+    if (s.bl && s._bw !== pose.bladeWidth) { s.bl.style.strokeWidth = String(pose.bladeWidth); s._bw = pose.bladeWidth }
     if (s.ai) {
       s.ai.style.strokeWidth = String(pose.afterimageWidth)
       if (s.ai.getAttribute("d") !== pose.afterimagePath) s.ai.setAttribute("d", pose.afterimagePath)

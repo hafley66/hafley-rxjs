@@ -59,6 +59,28 @@ const VARIANTS: EyeOpts[] = [
   { lobes: 4, lash: 4, lashLen: 0.45 },
 ]
 
+// seal identity is (size, seed, minPx); a weight scrub regenerates nothing
+const sealCache = new Map<string, ReturnType<typeof sealSvg>>()
+function sealAt(s: number, seed: number, minPx: number) {
+  const key = `${s}|${seed}|${minPx}`
+  let hit = sealCache.get(key)
+  if (!hit) {
+    if (sealCache.size > 512) sealCache.clear()
+    sealCache.set(key, (hit = sealSvg(s, seed, minPx)))
+  }
+  return hit
+}
+const eyeCache = new Map<string, ReturnType<typeof eye>>()
+function eyeAt(W: number, H: number, o: EyeOpts, minPx: number) {
+  const key = `${W}|${H}|${JSON.stringify(o)}|${minPx}`
+  let hit = eyeCache.get(key)
+  if (!hit) {
+    if (eyeCache.size > 512) eyeCache.clear()
+    eyeCache.set(key, (hit = eye(W, H, o, minPx)))
+  }
+  return hit
+}
+
 function Icons({ v, stats }: { v: V; stats: RefObject<HTMLSpanElement | null> }) {
   const host = useRef<HTMLDivElement>(null)
   const names = v.names.trim().split(/\s+/)
@@ -98,7 +120,7 @@ function Icons({ v, stats }: { v: V; stats: RefObject<HTMLSpanElement | null> })
               href="#/icons"
               className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-fg text-xs no-underline hover:bg-line"
             >
-              <Raw html={timed(`seal:16`, () => sealSvg(16, sd(n), v.minPx)).svg} />
+              <Raw html={timed(`seal:16`, () => sealAt(16, sd(n), v.minPx)).svg} />
               {n}
             </a>
           ))}
@@ -124,11 +146,11 @@ function Icons({ v, stats }: { v: V; stats: RefObject<HTMLSpanElement | null> })
                 <td className="whitespace-nowrap px-2.5 py-1.5 text-muted">{n}</td>
                 {SIZES.map(s => (
                   <td key={s} className="px-2.5 py-1.5">
-                    <Raw html={timed(`seal:${s}`, () => sealSvg(s, sd(n), v.minPx)).svg} />
+                    <Raw html={timed(`seal:${s}`, () => sealAt(s, sd(n), v.minPx)).svg} />
                   </td>
                 ))}
                 <td className="whitespace-nowrap px-2.5 py-1.5 text-muted">
-                  {sealCaption(timed(`seal:96`, () => sealSvg(96, sd(n), v.minPx)))}
+                  {sealCaption(timed(`seal:96`, () => sealAt(96, sd(n), v.minPx)))}
                 </td>
               </tr>
             ))}
@@ -146,7 +168,7 @@ function Icons({ v, stats }: { v: V; stats: RefObject<HTMLSpanElement | null> })
                 key={`${W}-${o.lobes}-${o.lash}`}
                 className="cell grid justify-items-center gap-1 text-[10px] text-muted"
               >
-                <Raw html={timed(`eye:${W}`, () => eye(W, H, o, v.minPx)).svg} />
+                <Raw html={timed(`eye:${W}`, () => eyeAt(W, H, o, v.minPx)).svg} />
                 <span>{`${W}×${H} f${o.lobes}${o.double ? " dbl" : ""}${o.lash === 0 ? " bare" : ""}`}</span>
               </div>
             )),
