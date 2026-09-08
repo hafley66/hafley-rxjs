@@ -44,7 +44,7 @@ Paths, circles, ellipses, rectangles, lines, polylines and polygons are supporte
 
 Temporary stroke overlays stay beside each source element, preserving ancestor transforms, clipping and paint order. Filled shapes appear as animated outlines during the reveal; the original returns after its strokes land. Geometry changes require `refresh()` or the React revision argument. Pause independent animations while slice owns a shape.
 
-Reduced motion lands the artwork and pauses. Explicit replay enables motion. Browser-tab hiding releases the frame stream until visible again. The default budget is 12,000 stroke pieces; raise `cut` or pass `maxStrokes` for larger drawings.
+Reduced motion lands the artwork and pauses. Explicit replay enables motion. Browser-tab hiding and offscreen targets release the frame stream until visible again; pass `visible: Observable<boolean>` to override the viewport gate. The default budget is 12,000 stroke pieces; raise `cut` or pass `maxStrokes` for larger drawings. The first geometry change binds at once; later changes coalesce to one rebind per 50ms, so scrubbing a geometry slider rebuilds at most 20 times a second.
 
 ## Reuse inputs and presets
 

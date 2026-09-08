@@ -21,7 +21,11 @@ pnpm --filter @hafley66/gothic dev            # http://localhost:5173/eye
 pnpm --filter @hafley66/gothic build:single   # dist/index.html, opens from file:// (hash routing)
 pnpm --filter @hafley66/gothic publish:pages # build and publish index.html to origin's gh-pages branch
 pnpm --filter @hafley66/gothic check          # typecheck + vitest + build:single + playwright e2e over dist/index.html
+pnpm --filter @hafley66/gothic bench          # per-generator timing harness; prints whole-run cpu + peak rss
+pnpm --filter @hafley66/gothic render:static # out/static: every algo/preset/size as standalone svg + gallery.html
 ```
+
+`?perf=1` on any route turns on live marks (`src/kit/5_perf.ts`): a console table of ms per `algo.run`, seal grid, slice compile/dom/paint, with stroke gauges, refreshed every 2s. `window.__gothicPerf` exposes the samples. The e2e stress gun (`tests/8_perf.e2e.test.ts`) asserts fps and long-task floors on `/fma`, `/slice` and `/circles`.
 
 GitHub Pages: [hafley66.github.io/hafley-rxjs](https://hafley66.github.io/hafley-rxjs/). The single-file build uses hash routes on HTTP and `file://`, so notebook links and reloads work under a repository path. Publishing requires authenticated `gh` and Git access; the command creates Pages on its first run and preserves the publishing branch history.
 
@@ -32,7 +36,7 @@ GitHub Pages: [hafley66.github.io/hafley-rxjs](https://hafley66.github.io/hafley
 | `/eye` | eye anatomy on FACS muscles, blink scheduler | `eye`, `timing` (the scheduler's timing table as knobs, scrub, blink now, re-wake, drives readout) |
 | `/slice` | judgement-cut stroke reveal | `slice` |
 | `/icons` | rule-driven fma seal composer with LOD | `icons`, `seal` |
-| `/border` | continuous-path gothic border with pen scrub | `border` |
+| `/border` | continuous-path gothic border with pen scrub; masonry rails (brick, dentil, chevron, plinth) and block/mitre corners are straight joints only | `border` |
 | `/fractal` | fractal algos on the Algo contract | `apollonian`, `foils`, `lsys`, `cusping`, `hilbert` |
 | `/circles` | fma seals, sacred geometry, diagrams | `diagram`, `fma`, `sacred` |
 | `/tiles` | islamic star, mosaic, blackwork | `islamic`, `mosaic`, `blackwork` |
