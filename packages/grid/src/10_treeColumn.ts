@@ -55,7 +55,7 @@ export function treeColumnDefs<TData extends RowData>(
     header: c.headerCell ? () => c.headerCell!() : c.header,
     accessorFn: (row: TData) => columnValue(c, row),
     enableSorting: !!(c.sortValue ?? c.value),
-    sortingFn: c.sortValue
+    sortFn: c.sortValue
       ? (a: { original: TData }, b: { original: TData }) => compareKeys(c.sortValue!(a.original), c.sortValue!(b.original))
       : "auto",
     sortUndefined: "last",

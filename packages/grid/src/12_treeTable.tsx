@@ -173,6 +173,10 @@ export function TreeTable<TData extends RowData>({
       data-testid="tree-table"
       data-scroll-mode={scrollMode}
       ref={virtualizer.rootRef}
+      data-scroll-margin={Math.round(virtualizer.scrollMargin)}
+      data-total-size={Math.round(virtualizer.totalSize)}
+      data-translate={Math.round(virtualizer.translateY)}
+      data-visible-start={virtualizer.visibleStart}
       style={{ position: "relative", height: virtualizer.totalSize + virtualizer.headerHeight + virtualizer.footerHeight }}
     >
       <div

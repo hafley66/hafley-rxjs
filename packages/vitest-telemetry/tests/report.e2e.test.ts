@@ -137,6 +137,13 @@ describe('vitest-telemetry nav tree', () => {
     await page.locator('[data-testid=pivot-close]').click()
   })
 
+  it('every nav row id is unique, so TanStack keys and React keys never collide', async () => {
+    await expandEverything(page)
+    const ids = await page.locator('nav [data-testid=tree-row]').evaluateAll((rows) => rows.map((r) => (r as HTMLElement).dataset.rowId))
+    expect(ids.length).toBeGreaterThan(0)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
   it('the popover column picker hides and restores a nav column', async () => {
     const heads = page.locator('nav th[data-column]')
     expect(await heads.count()).toBe(4)

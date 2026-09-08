@@ -99,7 +99,7 @@ function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
           <div className={hasTree ? "grid-header grid-row has-tree" : "grid-header grid-row"}>
             {table.getHeaderGroups()[0].headers.filter((header) => hasTree || header.column.id !== "__expand").map((header) => <div key={header.id} className={`cell col-${header.column.id}`} onClick={header.column.getToggleSortingHandler()}>{flexRender(header.column.columnDef.header, header.getContext())}</div>)}
           </div>
-          <div className={hasTree ? "timeline grid-row has-tree" : "timeline grid-row"}><span className="timeline-gutter" />{ticks.map((tick, index) => <span key={index} style={{ left: `calc(${waterfallLeft}px + ${index * 20}%)` }}>{`${(tick / 1000).toFixed(2)} s`}</span>)}</div>
+          <div className={hasTree ? "timeline grid-row has-tree" : "timeline grid-row"}><span className="timeline-gutter" />{ticks.map((tick, index) => <span key={index} style={{ left: `calc(${waterfallLeft}px + (100% - ${waterfallLeft}px) * ${index / (ticks.length - 1)})`, transform: index === 0 ? undefined : index === ticks.length - 1 ? "translateX(-100%)" : "translateX(-50%)" }}>{`${(tick / 1000).toFixed(2)} s`}</span>)}</div>
         </div>
         <div className="grid-body">
           <WaterfallPixi

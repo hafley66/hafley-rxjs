@@ -27,8 +27,9 @@ function processLabel(row: ProcessRow): string {
   return shortCommand(row.command)
 }
 
-// file > test children scoped to one process's rows.
-function fileTestChildren(rows: Event[], verdicts: Map<string, Verdict>, selectedTest: { file: string | null; test: string | null }): NavNode[] {
+// file > test children scoped to one process's rows. `scope` (the parent's pid or host key) lands in every
+// id: the same file runs under several processes (shards, reruns in one out dir), and TanStack keys rows by id.
+function fileTestChildren(rows: Event[], verdicts: Map<string, Verdict>, selectedTest: { file: string | null; test: string | null }, scope: string): NavNode[] {
   const byFile = new Map<string, Map<string, { start: number; end: number }>>()
   const rowsByFile = new Map<string, Event[]>()
   for (const e of rows) {
@@ -45,7 +46,7 @@ function fileTestChildren(rows: Event[], verdicts: Map<string, Verdict>, selecte
     const testNodes: NavNode[] = sortBy([...tests.entries()], ([test]) => test).map(([test, span]) => {
       const verdict = verdictOf(verdicts, file, test)
       return {
-        id: `test:${file}::${test}`,
+        id: `test:${scope}/${file}::${test}`,
         kind: 'test' as const,
         label: test,
         status: verdict.status ?? 'none',
@@ -58,7 +59,7 @@ function fileTestChildren(rows: Event[], verdicts: Map<string, Verdict>, selecte
     })
     const status = testNodes.some((t) => t.status === 'fail') ? 'fail' : testNodes.some((t) => t.status === 'pass') ? 'pass' : 'none'
     return {
-      id: `file:${file}`,
+      id: `file:${scope}/${file}`,
       kind: 'file' as const,
       label: file,
       status,
@@ -94,7 +95,7 @@ export function buildProcessNav(
   const nodeByPid = new Map<number, NavNode>()
   for (const [pid, row] of processes) {
     const ownRows = rows.filter((e) => e.pid === pid && e.kind !== 'process')
-    const fileChildren = fileTestChildren(ownRows, verdicts, selectedTest)
+    const fileChildren = fileTestChildren(ownRows, verdicts, selectedTest, String(pid))
     nodeByPid.set(pid, toNavNode(row, fileChildren))
   }
 
@@ -118,7 +119,7 @@ export function buildProcessNav(
   const byHost = groupBy(orphanRows, (e) => `${hostPidOf(e, hostIndex) ?? 'none'}\u0000${e.realm}`)
   for (const [key, group] of Object.entries(byHost)) {
     const [hostPid, realm] = key.split('\u0000')
-    const children = fileTestChildren(group, verdicts, selectedTest)
+    const children = fileTestChildren(group, verdicts, selectedTest, `${hostPid}:${realm}`)
     if (!children.length) continue
     const node: NavNode = { id: `process:${hostPid}:${realm}`, kind: 'process', label: `${realm} page · via trace`, status: 'none', durationMs: 0, events: group.length, children }
     const host = nodeByPid.get(Number(hostPid))
