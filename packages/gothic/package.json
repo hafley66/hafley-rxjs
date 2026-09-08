@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "bench": "vitest bench --run",
+    "render:static": "RENDER_STATIC=1 vitest run scripts/2_render-static.test.ts",
     "check": "pnpm typecheck && pnpm test && pnpm build:single && pnpm test:e2e",
     "test:e2e": "vitest run -c vitest.e2e.config.ts"
   },
