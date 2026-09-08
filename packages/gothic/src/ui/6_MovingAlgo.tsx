@@ -10,6 +10,7 @@ import { playback, type PlaybackRuntime } from "../kit/1a_playback.js"
 import { inViewport } from "../kit/1_browser.js"
 import { AnimationControls } from "./1b_AnimationControls.js"
 import { Section } from "./2_Section.js"
+import { propertyMotion } from "../kit/4_propertyMotion.js"
 
 type MovingProps<P extends MotionParams> = {
   algo: Algo<P>
@@ -25,7 +26,7 @@ function MovingBody<P extends MotionParams>({
 }: MovingProps<P> & { state: SectionState<AnySpec> }) {
   const model = useMemo(() => {
     const runtime = Signal<PlaybackRuntime & { node: Element | null }>({ node: null, enabled: typeof matchMedia !== "function" || !matchMedia("(prefers-reduced-motion: reduce)").matches, seek: null })
-    const motion = playback(state.values as unknown as Signal<MotionParams>, duration * 1000, { loop, runtime: runtime as unknown as Signal<PlaybackRuntime>, visible: inViewport(runtime.node.$) })
+    const motion = playback(state.values as unknown as Signal<MotionParams>, duration * 1000, { input: propertyMotion(state.page).values(state) as unknown as Signal<MotionParams>, loop, runtime: runtime as unknown as Signal<PlaybackRuntime>, visible: inViewport(runtime.node.$) })
     const hold = (time: number) => {
       const next = Number(Math.max(0, Math.min(1, time)).toFixed(3))
       state.set({ time: next, run: false })
@@ -59,7 +60,7 @@ function MovingBody<P extends MotionParams>({
   }, [state, loop, duration, gesture])
   const { motion, hold } = model
   model.gestures.$()
-  const v = state.values.$() as P
+  const v = propertyMotion(state.page).values(state).$() as P
   const frame = motion.frame.$()
   const time = frame.time / (duration * 1000), running = frame.active
   const out = algo.run({ ...v, time }, algoCtx(v, 720))

@@ -9,27 +9,30 @@ export const frameDeltas = animationFrames().pipe(pairwise(), map(([a, b]) => Ma
 
 // One grouped runtime and one source signal. Reading frame in JSX owns the entire connection.
 export function playback<P extends PlaybackParams>(input: Signal<P>, duration: Observable<number> | number, options: {
-  loop?: boolean; visible?: Observable<boolean>; reducedMotion?: boolean; landOnReduce?: boolean
+  loop?: boolean | Observable<boolean>; visible?: Observable<boolean>; reducedMotion?: boolean; landOnReduce?: boolean
+  input?: Signal<P>
   frames?: Observable<number>; runtime?: Signal<PlaybackRuntime>
 } = {}) {
   const values = input as unknown as Signal<PlaybackParams>
+  const sampled = (options.input ?? input) as unknown as Signal<PlaybackParams>
   const runtime = options.runtime ?? Signal<PlaybackRuntime>({ enabled: !options.reducedMotion, seek: null })
   const frame = Signal(defer(() => {
     let elapsed = 0, position = NaN, total = NaN, intent: PlaybackRuntime["seek"] = null
     return combineLatest([
-      values.$.pipe(map(p => [p.time, p.speed, p.run] as const), distinctUntilChanged((a, b) => a.every((v, i) => v === b[i]))),
+      sampled.$.pipe(map(p => [p.time, p.speed, p.run] as const), distinctUntilChanged((a, b) => a.every((v, i) => v === b[i]))),
       typeof duration === "number" ? of(duration) : duration.pipe(distinctUntilChanged()),
       options.visible ?? documentVisible$, runtime.$.pipe(map(r => [r.enabled, r.seek] as const), distinctUntilChanged((a, b) => a[0] === b[0] && a[1] === b[1])),
-    ]).pipe(switchMap(([[saved, speed, run], span, shown, [allowed, seek]]) => {
+      typeof options.loop === "boolean" ? of(options.loop) : options.loop ?? of(true),
+    ]).pipe(switchMap(([[saved, speed, run], span, shown, [allowed, seek], loop]) => {
       if (saved !== position || span !== total) elapsed = !allowed && options.landOnReduce ? span : Math.max(0, Math.min(1, saved)) * span
       if (seek !== intent && seek !== null) elapsed = Math.max(0, Math.min(span, seek.time))
       position = saved; total = span; intent = seek
-      const active = run && shown && allowed && span > 0 && (options.loop !== false || elapsed < span)
+      const active = run && shown && allowed && span > 0 && (loop || elapsed < span)
       const start = { time: elapsed, active }
       return active ? (options.frames ?? frameDeltas).pipe(map(dt => {
         const next = elapsed + dt * speed
-        elapsed = options.loop === false ? Math.min(span, next) : next % span
-        return { time: elapsed, active: options.loop !== false || next < span }
+        elapsed = !loop ? Math.min(span, next) : next % span
+        return { time: elapsed, active: loop || next < span }
       }), takeWhile(frame => frame.active, true), startWith(start)) : of(start)
     }))
   }), { time: 0, active: false })

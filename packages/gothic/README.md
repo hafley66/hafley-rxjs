@@ -12,6 +12,7 @@ Procedural gothic line art as one React SPA. Every route is a notebook: one stic
 6. Validate
 7. Where things live
 8. Rules
+9. Property timelines
 
 ## 1. Run
 
@@ -176,3 +177,10 @@ Every Gothic field can be pinned and rerolled. Shuffle changes unpinned fields; 
 ## Common controls and reactive animation
 
 [Shared input groups](src/kit/README.md) provide seed, playback, stroke weight, detail and presets. [Slice](src/kit/slice/README.md) exports reusable path timing and SVG binding. Vite enables `signalsJsx()`, so plain components read source signals to activate their streams. The [signals skill](../signals/skills/signals/SKILL.md) records the authoring conventions.
+## Property timelines
+
+Each input's ⚙ opens a keyframe table. Enable that input, edit percentage/value rows, then scrub or play the property timeline. Page timing supplies defaults; section and field checkboxes override individual duration, delay, easing, direction and loop values. Field cycles run inside the page timeline. Numeric fields interpolate with anime.js easing and obey the spec's bounds and step; select, text, boolean and seed fields switch at keyframes. `roll values` randomizes the table through the input's existing spec.
+
+The live values are derived signals. Saved inputs, named states and shuffle pins keep their base values. Timeline settings and held position persist separately at `gothic.<page>.timelines` in localStorage. Resetting a field removes its timeline and returns the saved input. The property timeline can drive Slice controls while Slice's stroke clock runs or holds independently.
+
+Slice's `slice weight` controls moving strokes, blades and afterimages; `path weight` controls completed paths. Core presets add iris, opposed blades and rung lattice variants. `core · original` restores the original seal; it remains the default.

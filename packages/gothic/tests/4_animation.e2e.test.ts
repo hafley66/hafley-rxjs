@@ -93,7 +93,7 @@ it("uses Slice on every FMA and circles drawing with deterministic seeking, repl
       expect(await page.locator('#timing input[data-key="run"]').isChecked()).toBe(false)
       const id = route === "fma" ? "fma2" : "diagram"
       await page.locator(`#${id} .kit-row[data-kind=seed] button.kit-roll`).click()
-      await page.waitForSelector(`#${id} [data-slice-overlay]`)
+      await page.waitForSelector(`#${id} [data-slice-overlay]`, { state: "attached" })
       await page.locator("#kit-page-draw").uncheck()
       expect(await page.locator("[data-slice-overlay]").count()).toBe(0)
       expect(errors).toEqual([])

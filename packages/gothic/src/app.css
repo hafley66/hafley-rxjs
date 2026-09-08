@@ -101,6 +101,13 @@
 }
 /* Slice owns reveal on these existing SVGs; the CSS draw-in must not keep a second clock. */
 [data-inscriptions="off"] text { display: none; }
+.kit-row:has(.kit-field-settings) { grid-template-columns: 14px minmax(7ch, 10ch) 1fr 4.5ch 16px 18px; }
+.kit-settings { padding: 0; border: 0; background: none; color: var(--muted); }
+.kit-settings[data-active] { color: var(--ink); }
+.property-editor { position: fixed; inset: 0; margin: auto; width: min(560px, calc(100vw - 32px)); max-height: 85vh; overflow: auto; padding: 18px; border: 1px solid var(--edge); border-radius: 6px; background: var(--well); color: var(--fg); font-size: 12px; }
+.property-editor::backdrop { background: #0008; }
+.property-editor input[type="number"], .property-editor select { width: 120px; }
+.property-editor td { padding: 3px 0; }
 [data-slice-stage] .kit-draw :is(path, circle, polyline) {
   animation: none;
   stroke-dasharray: none;

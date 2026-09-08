@@ -11,6 +11,8 @@ import type { Signal } from "@hafley66/signals"
 import { pageState, sections, sectionState } from "../app/2_state.js"
 import { SLICE_SPEC, SLICE_PRESETS, type SliceParams } from "../kit/slice/0_spec.js"
 import { SliceStage } from "./1c_SliceStage.js"
+import { PropertySettings } from "./1d_PropertySettings.js"
+import { propertyMotion } from "../kit/4_propertyMotion.js"
 
 export type { SectionCtx, SectionDef }
 export { PlainSection }
@@ -24,10 +26,11 @@ export function Section<S extends AnySpec>(props: {
   children: (v: ValuesOf<S>, ctx: SectionCtx<AnySpec>) => ReactNode
 }): ReactNode {
   const { slice, children, ...rest } = props
-  return <KitSection sections={sections} {...rest}>{(v, ctx) => {
-    const body = children(v, ctx)
-    if (!slice || !pageState().values.draw.$()) return body
+  return <KitSection sections={sections} {...rest} fieldSettings={(name, field, state) => <PropertySettings state={state} field={field} name={name} />}>{(_v, ctx) => {
+    const v = propertyMotion(props.page).values(ctx.state).$()
+    const body = children(v as ValuesOf<S>, ctx)
+    if (!slice || !propertyMotion("*").values(pageState()).draw.$()) return body
     const timing = sectionState(props.page, "timing", SLICE_SPEC, SLICE_PRESETS)
-    return <SliceStage params={timing.values as unknown as Signal<SliceParams>} revision={JSON.stringify(v)} label={props.def.id}>{body}</SliceStage>
+    return <SliceStage params={timing.values as unknown as Signal<SliceParams>} input={propertyMotion(props.page).values(timing) as unknown as Signal<SliceParams>} revision={JSON.stringify(v)} label={props.def.id}>{body}</SliceStage>
   }}</KitSection>
 }

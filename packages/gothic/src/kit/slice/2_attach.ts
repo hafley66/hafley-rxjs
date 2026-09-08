@@ -1,5 +1,5 @@
 import { Signal } from "@hafley66/signals"
-import { combineLatest, concat, defer, distinctUntilChanged, finalize, map, NEVER, of, shareReplay, switchMap } from "rxjs"
+import { combineLatest, concat, defer, distinctUntilChanged, filter, finalize, map, NEVER, of, shareReplay, switchMap } from "rxjs"
 import { f, line } from "../../lib/1_geom.js"
 import { schedule } from "../../lib/6_slice.js"
 import { slicePaths, type SliceGeometryOptions, type SliceTimeline } from "../../lib/6a_slicePaths.js"
@@ -10,7 +10,7 @@ import { playback, type PlaybackRuntime } from "../1a_playback.js"
 const NS = "http://www.w3.org/2000/svg"
 const GEOMETRY = "path,circle,ellipse,line,polyline,polygon,rect"
 export type SliceTarget = Element | readonly SVGGeometryElement[]
-export type SliceAttachOptions = Partial<SliceParams> & SliceGeometryOptions & { loop?: boolean; reducedMotion?: boolean; params?: Signal<SliceParams> }
+export type SliceAttachOptions = Partial<SliceParams> & SliceGeometryOptions & { loop?: boolean; reducedMotion?: boolean; params?: Signal<SliceParams>; input?: Signal<SliceParams> }
 type Source = { element: SVGGeometryElement; group: SVGGElement; visibility: string; priority: string; width: string; widthPriority: string; baseWidth: number; style: string | null; normalizedStyle: string; end: number }
 
 function sourcePath(element: SVGGeometryElement): string {
@@ -132,19 +132,21 @@ function bindSlice(target: SliceTarget, params: SliceParams, options: SliceAttac
 
 export function attachSlice(target: SliceTarget | null = null, options: SliceAttachOptions = {}) {
   const params = options.params ?? Signal<SliceParams>({ ...SLICE_DEFAULTS, ...Object.fromEntries(Object.entries(options).filter(([key]) => key in SLICE_DEFAULTS)) })
+  const input = options.input ?? params
   const reducedMotion = options.reducedMotion ?? (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches)
   const runtime = Signal<PlaybackRuntime & { target: SliceTarget | null; revision: number }>({ target, enabled: !reducedMotion, seek: null, revision: 0 })
   const empty: SliceTimeline = { strokes: [], T: 0, bursts: 0, size: options.size ?? 240 }
   const fields = ["seed", "cut", "angle", "jit", "dist", "flight", "order", "curve", "ordN", "gain", "silence", "spread", "burst", "ailen"] as const
   const binding$ = combineLatest([
     runtime.target.$.pipe(distinctUntilChanged()), runtime.revision.$.pipe(distinctUntilChanged()),
-    params.$.pipe(map(p => fields.map(field => p[field]).join("|")), distinctUntilChanged()),
+    input.$.pipe(map(p => fields.map(field => p[field]).join("|")), distinctUntilChanged()),
   ]).pipe(switchMap(([node]) => node ? defer(() => {
-    const binding = bindSlice(node, params.$(), options)
+    const binding = bindSlice(node, input.$(), options)
     return concat(of(binding), NEVER).pipe(finalize(binding.unsubscribe))
   }) : of(null)), shareReplay({ bufferSize: 1, refCount: true }))
-  const clock = playback(params, binding$.pipe(map(binding => binding?.timeline.T ?? 0)), { ...options, runtime: runtime as unknown as Signal<PlaybackRuntime>, reducedMotion, landOnReduce: true })
-  const frame = Signal(combineLatest([binding$, clock.frame.$, params.$]).pipe(map(([binding, clock, params]) => {
+  // A React ref replacement briefly emits null. Keep the clock's span through that gap.
+  const clock = playback(params, binding$.pipe(filter(binding => binding !== null), map(binding => binding.timeline.T)), { ...options, runtime: runtime as unknown as Signal<PlaybackRuntime>, reducedMotion, landOnReduce: true })
+  const frame = Signal(combineLatest([binding$, clock.frame.$, input.$]).pipe(map(([binding, clock, params]) => {
     binding?.paint(clock.time, params)
     return { ...clock, timeline: binding?.timeline ?? empty }
   })), { time: 0, active: false, timeline: empty })

@@ -1,0 +1,89 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`cascades field timing over section and page values, interpolates numbers, and steps discrete values 1`] = `
+[
+  {
+    "count": 2,
+    "on": true,
+    "radius": 2,
+    "shape": "circle",
+  },
+  {
+    "count": 4,
+    "on": true,
+    "radius": 2,
+    "shape": "circle",
+  },
+  {
+    "count": 6,
+    "on": true,
+    "radius": 0,
+    "shape": "triangle",
+  },
+  {
+    "count": 2,
+    "on": true,
+    "radius": 2.5,
+    "shape": "circle",
+  },
+  {
+    "count": 6,
+    "on": true,
+    "radius": 5,
+    "shape": "triangle",
+  },
+  {
+    "count": 6,
+    "on": true,
+    "radius": 0,
+    "shape": "triangle",
+  },
+  {
+    "count": 2,
+    "on": true,
+    "radius": 2.5,
+    "shape": "circle",
+  },
+]
+`;
+
+exports[`cascades field timing over section and page values, interpolates numbers, and steps discrete values 2`] = `
+[
+  {
+    "count": 2,
+    "on": true,
+    "radius": 2,
+    "shape": "circle",
+  },
+  {
+    "count": 6,
+    "on": true,
+    "radius": 0,
+    "shape": "triangle",
+  },
+  {
+    "count": 9,
+    "on": true,
+    "radius": 2.5,
+    "shape": "triangle",
+  },
+  {
+    "count": 6,
+    "on": true,
+    "radius": 5,
+    "shape": "triangle",
+  },
+  {
+    "count": 2,
+    "on": true,
+    "radius": 7.5,
+    "shape": "circle",
+  },
+  {
+    "count": 6,
+    "on": true,
+    "radius": 10,
+    "shape": "triangle",
+  },
+]
+`;

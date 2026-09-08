@@ -14,10 +14,10 @@ function Transport({ animation, label }: { animation: SliceController; label: st
 }
 
 // The source can contain any SVG geometry. Only the ref and geometry revision reach Slice.
-export function SliceStage({ params, revision, label, children }: {
-  params: Signal<SliceParams>; revision: unknown; label: string; children: ReactNode
+export function SliceStage({ params, input, revision, label, children }: {
+  params: Signal<SliceParams>; input?: Signal<SliceParams>; revision: unknown; label: string; children: ReactNode
 }) {
-  const animation = useSlice(params, revision)
+  const animation = useSlice(params, revision, { input })
   return <div data-slice-stage={label}>
     <Transport animation={animation} label={label} />
     <div ref={animation.ref}>{children}</div>

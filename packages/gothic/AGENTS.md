@@ -82,6 +82,10 @@ Adding sections to a handwritten page generates a wrapper around its existing `P
 
 The slice toolkit is exported from `src/kit/slice/index.ts`, with a separate React hook. Reuse its segmentation, schedule, gap distributions, poses and clock when requesting that animation. Each technique remains opt-in. FMA adds five distinct sections in `src/pages/14_fma.tsx`; its original notebook stays as the base.
 
+`<Section slice>` / `<AlgoSection slice>` attach the shared SVG stage. FMA and circles expose a `timing` namespace for it. The original Slice seal remains the default; optional core functions live in `src/lib/3a_sealCore.ts`. `weight` controls moving Slice strokes and `finalWeight` controls completed paths.
+
+Each spec input has a property-timeline settings slot. `src/kit/4_propertyMotion.ts` owns one grouped config and one cold clock per page, with section and field overrides. Source-signal projections sample live values without writing animation frames to saved inputs or shuffle pins. Timing tables persist separately in `gothic.<page>.timelines`. Field cycles run inside the page timeline. Header controls share the `*` page timeline. Do not replace the source projection with a computed signal that pins producer connections on a synchronous read.
+
 Every input is shuffleable and pinnable. Text fields need a `pool`; number fields need finite `min`/`max`. Use pins to hold values instead of a static field category.
 
 ## Signals authoring

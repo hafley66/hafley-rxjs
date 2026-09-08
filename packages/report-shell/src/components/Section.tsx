@@ -3,7 +3,7 @@ import { type ReactNode, useLayoutEffect, useRef } from "react"
 import { useAnchor } from "../lib/hooks.js"
 import type { AnySpec, Presets, ValuesOf } from "../spec/0_spec.js"
 import type { SectionState, Sections } from "../spec/3_sections.js"
-import { SpecPanel } from "./SpecPanel.js"
+import { SpecPanel, type SpecPanelProps } from "./SpecPanel.js"
 
 export type SectionDef<S extends AnySpec> = {
   id: string
@@ -18,13 +18,14 @@ type ShellProps = {
   page: string
   def: SectionDef<AnySpec>
   extra?: ReactNode
+  fieldSettings?: SpecPanelProps["fieldSettings"]
   open?: boolean
   render: (v: ValuesOf<AnySpec>, ctx: SectionCtx<AnySpec>) => ReactNode
 }
 
 const safe = (id: string) => id.replace(/[^a-z0-9_-]/gi, "_")
 
-const Shell = SignalReact(function Shell({ sections, page, def, extra, open = true, render }: ShellProps) {
+const Shell = SignalReact(function Shell({ sections, page, def, extra, fieldSettings, open = true, render }: ShellProps) {
   const state = sections.sectionState(page, def.id, def.spec, def.presets)
   const values = state.values.$()
   const ref = useRef<HTMLElement>(null)
@@ -52,7 +53,7 @@ const Shell = SignalReact(function Shell({ sections, page, def, extra, open = tr
           <h2 className="kit-sec-title">{def.title}</h2>
         </summary>
         <div className="kit-panels">
-          <SpecPanel state={state} extra={extra} />
+          <SpecPanel state={state} extra={extra} fieldSettings={fieldSettings} />
         </div>
       </details>
       <div className="kit-host" style={{ viewTransitionName: `sec-${safe(def.id)}` }}>
@@ -67,6 +68,7 @@ export type SectionProps<S extends AnySpec> = {
   page: string
   def: SectionDef<S>
   extra?: ReactNode
+  fieldSettings?: SpecPanelProps["fieldSettings"]
   // the knob drawer starts open unless told otherwise
   open?: boolean
   children: (v: ValuesOf<S>, ctx: SectionCtx<AnySpec>) => ReactNode
@@ -80,6 +82,7 @@ export function Section<S extends AnySpec>(props: SectionProps<S>): ReactNode {
       page={props.page}
       def={props.def as unknown as SectionDef<AnySpec>}
       extra={props.extra}
+      fieldSettings={props.fieldSettings}
       open={props.open}
       render={props.children as never}
     />

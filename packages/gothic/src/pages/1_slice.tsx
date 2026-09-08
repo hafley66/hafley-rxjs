@@ -18,6 +18,7 @@ import { playback, type PlaybackRuntime } from "../kit/1a_playback.js"
 import { AnimationControls } from "../ui/1b_AnimationControls.js"
 import { slicePaths } from "../lib/6a_slicePaths.js"
 import { paintSlice } from "../ui/1a_slicePose.js"
+import { propertyMotion } from "../kit/4_propertyMotion.js"
 import { Section } from "../ui/2_Section.js"
 
 const SPEC = {
@@ -175,13 +176,14 @@ function SliceBody({ v, state }: { v: V; state: SectionState<AnySpec> }) {
   }, [key])
 
   const params = state.values as unknown as Signal<V>
+  const input = propertyMotion(state.page).values(state) as unknown as Signal<V>
   const model = useMemo(() => {
     const runtime = Signal<PlaybackRuntime & { cells: Record<string, SVGSVGElement | null> }>({
       enabled: !reducedMotion, seek: null, cells: Object.fromEntries(insts.all.map(inst => [inst.label, null])),
     })
-    const clock = playback(params, insts.hero.T, { reducedMotion, landOnReduce: true, runtime: runtime as unknown as Signal<PlaybackRuntime> })
+    const clock = playback(params, insts.hero.T, { input, reducedMotion, landOnReduce: true, runtime: runtime as unknown as Signal<PlaybackRuntime> })
     return { runtime, clock }
-  }, [insts, params])
+  }, [insts, params, input])
   const { clock } = model
 
   const trace = insts.hero.strokes
@@ -203,21 +205,21 @@ function SliceBody({ v, state }: { v: V; state: SectionState<AnySpec> }) {
           chord-lengths, fading up over the first quarter of flight; angle only orders the sweep
         </h2>
         <div className="row flex flex-wrap items-end gap-5">
-          <Cell inst={insts.hero} ailen={v.ailen} params={params} clock={clock} node={model.runtime.cells.hero} base={insts.hero.T} />
+          <Cell inst={insts.hero} ailen={v.ailen} params={input} clock={clock} node={model.runtime.cells.hero} base={insts.hero.T} />
         </div>
       </section>
       <section>
         <h2 className="mb-2 font-medium text-muted">same seal at 32 / 48 / 64 / 96 / 160, each on its own cycle</h2>
         <div className="row flex flex-wrap items-end gap-5">
           {insts.sizes.map(inst => (
-            <Cell key={inst.size} inst={inst} ailen={v.ailen} params={params} clock={clock} node={model.runtime.cells[inst.label]} base={insts.hero.T} />
+            <Cell key={inst.size} inst={inst} ailen={v.ailen} params={input} clock={clock} node={model.runtime.cells[inst.label]} base={insts.hero.T} />
           ))}
         </div>
       </section>
       <section>
         <h2 className="mb-2 font-medium text-muted">polyline test shape: star, zigzag, spiral</h2>
         <div className="row flex flex-wrap items-end gap-5">
-          <Cell inst={insts.test} ailen={v.ailen} params={params} clock={clock} node={model.runtime.cells.polyline} base={insts.hero.T} />
+          <Cell inst={insts.test} ailen={v.ailen} params={input} clock={clock} node={model.runtime.cells.polyline} base={insts.hero.T} />
         </div>
       </section>
       <section>

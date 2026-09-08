@@ -74,7 +74,7 @@ describe("gothic single file", () => {
 
   it("an edit replaces the url, shuffle pushes, back restores the pre-shuffle values", async () => {
     await go("slice")
-    const key = await page.$eval(".kit-drawer .kit-row input[type=range]", el => (el as HTMLElement).dataset.key ?? "")
+    const key = await page.$eval(".kit-drawer .kit-row input[type=range][data-key]", el => (el as HTMLElement).dataset.key ?? "")
     const sel = `.kit-drawer .kit-row input[type=range][data-key="${key}"]`
     const max = await page.$eval(sel, el => (el as HTMLInputElement).max)
     const min = await page.$eval(sel, el => (el as HTMLInputElement).min)
