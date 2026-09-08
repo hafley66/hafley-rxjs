@@ -23,6 +23,7 @@ import { algoCtx, type Algo } from "../src/kit/2_algo.js"
 import { sealSvg, eye } from "../src/lib/index.js"
 import { border, plan } from "../src/lib/7_border.js"
 import { slicePaths } from "../src/lib/6a_slicePaths.js"
+import { variedSlicePose } from "../src/lib/7c_sliceVariation.js"
 import { SLICE_DEFAULTS } from "../src/kit/slice/0_spec.js"
 
 const SIZES = [96, 720]
@@ -96,6 +97,11 @@ describe("slice compile", () => {
   bench(`slicePaths fma2 cut=12 (hog)`, () => {
     slicePaths(paths, { seed: 1, cut: 12 })
   }, { time: 1500, warmupIterations: 1 })
+  const tl = slicePaths(paths, { seed: 1, cut })
+  say(`gun: fma2 cut=${cut} -> ${tl.strokes.length} strokes`)
+  bench(`variedSlicePose ${tl.strokes.length} strokes x1 frame`, () => {
+    for (const s of tl.strokes) variedSlicePose(s, 400, SLICE_DEFAULTS)
+  }, { time: 1500, warmupIterations: 2 })
 })
 
 describe("border", () => {
