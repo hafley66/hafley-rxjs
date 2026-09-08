@@ -38,7 +38,7 @@ Commands: `pnpm --filter @hafley66/gothic dev | build | build:single | typecheck
 
 ## Routes
 
-`/eye` `/slice` `/icons` `/border` `/fractal` `/circles` `/tiles` `/arches` `/frames`. `/` redirects to `/eye`.
+`/eye` `/slice` `/icons` `/border` `/fractal` `/circles` `/tiles` `/arches` `/frames` `/fma`. `/` redirects to `/eye`.
 
 ## Section contract
 

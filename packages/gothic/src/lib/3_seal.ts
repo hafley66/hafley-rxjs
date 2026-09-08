@@ -56,7 +56,7 @@ export const starPoly = (sc: Scene, pts: Pt[], st: number): void => {
     sc.path(poly(seq))
   }
 }
-const coprimes = (n: number): number[] => {
+export const coprimes = (n: number): number[] => {
   const o: number[] = []
   for (let k = 2; k <= (n - 1) / 2; k++) if (gcd(n, k) === 1) o.push(k)
   return o

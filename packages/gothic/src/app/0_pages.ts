@@ -10,6 +10,7 @@ import { PAGE as circles } from "../pages/5_circles.js"
 import { PAGE as tiles } from "../pages/6_tiles.js"
 import { PAGE as arches } from "../pages/7_arches.js"
 import { PAGE as frames } from "../pages/8_frames.js"
+import { PAGE as fma } from "../pages/9_fma.js"
 
 // specs = the sections that own url namespaces; anchors = extra sections that render without a bar
 export type PageSpec = {
@@ -28,7 +29,7 @@ const define = (p: PageSpec): PageDef => ({
   route: queryRoute(p.specs, p.path),
 })
 
-export const PAGES: readonly PageDef[] = [eye, slice, icons, border, fractal, circles, tiles, arches, frames].map(
+export const PAGES: readonly PageDef[] = [eye, slice, icons, border, fractal, circles, tiles, arches, frames, fma].map(
   define,
 )
 

@@ -34,6 +34,7 @@ pnpm --filter @hafley66/gothic check          # typecheck + vitest + build:singl
 | `/tiles` | islamic star, mosaic, blackwork | `islamic`, `mosaic`, `blackwork` |
 | `/arches` | arch families, tracery, buildings, grammar | `families` (page globals), `spread`, `lobes`, `anatomy`, `rose`, `panel`, plus 9 bar-less anchors driven by `families` |
 | `/frames` | frame compositions | `frames`, `sizer` |
+| `/fma` | fullmetal 2: a transmutation circle where one symmetry n drives the script band, the star {n/k}, n tangent satellites nested as circles of the same family, chords, the dual polygon and the core (`src/algos/2_fma.ts`) | `fma2`, `gallery` |
 
 `/` redirects to `/eye`. The page list is `PAGES` in `src/app/0_pages.ts`; tabs, routes, query schemas and anchors all derive from it.
 
@@ -112,7 +113,7 @@ Several sections on one page: one `Section` per spec, each with its own `id`; li
 
 Every kind takes `label`, `hint` (tooltip first line; the derived facts follow it), `group` (drawer column), `static: true` or `shuffle: false` (last column, no pin, no reroll). Hover any control for its tooltip; the e2e test fails on a control without one.
 
-**Algo** (`src/kit/2_algo.ts`): `{ name, spec, presets, run(params, { size, seed, minPx }) -> { paths: [{ d, z?, cls? }], caption, lod[] } }`. Drop one into `src/algos/`, then `<AlgoSection page="fractal" algo={myAlgo} sizes={[64, 128, 256]} />` renders a sizes row with LOD captions. `/fractal` is the reference.
+**Algo** (`src/kit/2_algo.ts`): `{ name, spec, presets, run(params, { size, seed, minPx }) -> { paths: [{ d, z?, cls? }], caption, lod[], raw?[] } }` (`raw`: textPath markup rendered after the paths). Drop one into `src/algos/`, then `<AlgoSection page="fractal" algo={myAlgo} sizes={[64, 128, 256]} />` renders a sizes row with LOD captions. `/fractal` is the reference.
 
 **Generator**: a pure function in `src/lib/` that returns SVG path strings (`d`), with `z` in 0..1 for depth. No React, no DOM. `src/lib/eye/` is the reference for a stateful model split into `0_shape`, `1_muscles`, `2_lids`, `3_lashes`, `4_scheduler`.
 

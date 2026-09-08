@@ -29,6 +29,8 @@ export function AlgoSvg({ out, size }: { out: AlgoOut; size: number }): ReactNod
           style={p.z === undefined ? undefined : ({ "--z": f(p.z) } as CSSProperties)}
         />
       ))}
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: generator-built textPath markup, no user input */}
+      {out.raw?.length ? <g dangerouslySetInnerHTML={{ __html: out.raw.join("") }} /> : null}
     </svg>
   )
 }

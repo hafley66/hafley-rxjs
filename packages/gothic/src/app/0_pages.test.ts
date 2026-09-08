@@ -13,6 +13,7 @@ describe("pages", () => {
       "tiles",
       "arches",
       "frames",
+      "fma",
     ])
     expect(PAGES.map(p => p.path)).toEqual(PAGES.map(p => `/${p.id}`))
   })

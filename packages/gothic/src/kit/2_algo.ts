@@ -2,7 +2,8 @@ import type { Presets, Spec } from "@hafley66/report-shell"
 
 export type AlgoCtx = { size: number; seed: number; minPx: number }
 export type AlgoPath = { d: string; z?: number; cls?: string }
-export type AlgoOut = { paths: AlgoPath[]; caption: string; lod: string[] }
+// raw: svg markup with no path form (textPath script bands); rendered after the paths
+export type AlgoOut = { paths: AlgoPath[]; caption: string; lod: string[]; raw?: string[] }
 export type Algo<P extends object> = {
   name: string
   spec: Spec<P>
