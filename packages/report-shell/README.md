@@ -53,12 +53,15 @@ Peer: `@hafley66/path`. Dependency: `zod`.
 ### kit components + `kit.css`
 
 `NavTabs` (tabs, section anchors, page title, an `end` slot for page-wide knobs; height into `--kit-top`),
-`SpecPanel` (rows of pin · label · control · value · reroll, groups as columns, statics apart), `StateCombo` (named
-states: type to load, Enter to fork or overwrite, ArrowUp/Down + Enter, star and delete per row), `Section` /
-`PlainSection` (each section owns a sticky `<details class="kit-drawer">` under the tabs whose summary is the
-section title and whose body is its `SpecPanel`; it scrolls away with its section; `open` prop; anchor timeline,
-scroll keep), and the hooks `stagger`, `useDrawIn`, `useResizeVar`,
-`useAnchor`. Styles live in `@hafley66/report-shell/kit.css` (tokens + `@layer components`), which `style.css`
+`SpecPanel` (rows of pin · label · control · value · reroll; the label toggles the pin, a manual edit pins its
+field; every group is a foldable `<details class="kit-group">`, statics apart; `edit` hook widens one edit's patch),
+`StateCombo` (named states: type to load, Enter to fork or overwrite, ArrowUp/Down + Enter, star and delete per
+row), `Section` / `PlainSection` (each section owns a `.kit-side`: a `<details class="kit-drawer">` whose summary
+is the section title plus the shuffle button, then the static front panel; wide screens (>= 900px) show the side as
+a sticky, natively resizable sidebar beside the host (`--kit-side`, persisted by `useSideWidth`), narrow ones keep
+the title line sticky and open the panel as a full-page sheet; `open` prop; anchor timeline, scroll keep), the
+`Sections` methods `activeStates()` and `shuffleAll()` (one push for every active section), and the hooks
+`stagger`, `useDrawIn`, `useResizeVar`, `useAnchor`, `useSideWidth`. Styles live in `@hafley66/report-shell/kit.css` (tokens + `@layer components`), which `style.css`
 imports before adding the report layout. Consumers map their palette onto `--bg --fg --muted --dim --accent
 --panel-bg --line --well --edge`; `kit.css` also defaults the 14 `--grid-*` names onto those tokens, so a grid
 `TreeTable` follows the theme with no per-app mapping. `@hafley66/report-shell/marbler.css` carries the

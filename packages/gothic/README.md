@@ -1,6 +1,6 @@
 # @hafley66/gothic
 
-Procedural gothic line art as one React SPA. Every route is a notebook: one sticky knob drawer per section derived from its spec (one row per field: pin, label, control, value, reroll), URL state per section, shuffle with pins, named states, draw-in animation, a shared header with scroll-driven anchors. The point of the package is to study a generator by turning its knobs and to add a new generator in one file.
+Procedural gothic line art as one React SPA. Every route is a notebook: one knob sidebar per section (sticky beside the art on wide screens, a full-page sheet on narrow ones) derived from its spec (one row per field: pin, label, control, value, reroll), URL state per section, shuffle with pins, named states, draw-in animation, a shared header with scroll-driven anchors. The point of the package is to study a generator by turning its knobs and to add a new generator in one file.
 
 ## TOC
 
@@ -50,11 +50,12 @@ GitHub Pages: [hafley66.github.io/hafley-rxjs](https://hafley66.github.io/hafley
 |---|---|---|
 | move a knob | section re-renders, `replaceState` | `?eye.seed=3&eye.segs=64` |
 | shuffle | every unpinned field rerolls from one seeded rng, `pushState` | same keys, new values |
-| pin (box next to a knob) | shuffle skips it; survives reload and back/forward | `?eye.pin=seed,shape` |
+| pin (box next to a knob) | shuffle skips it; survives reload and back/forward; clicking the row label toggles the pin; editing a field pins it | `?eye.pin=seed,shape` |
 | preset select | applies a partial value set, `pushState` | keys it touches |
 | state combobox | the shown name is the state receiving every edit (●). Type an existing name or pick it from the list to load it; type a new name and press Enter to fork the current values into it; list rows carry star and delete. localStorage `gothic.<page>.<section>.states` + `.selected` | none |
 | ↻ on a row | rerolls that one field, `pushState` | that key |
-| section title row | folds that section's drawer to one line (chevron); zDepth and draw-in sit at the end of the tab row | none |
+| section title row | folds that section's sidebar to one line (chevron) and carries its SHUFFLE button; zDepth, draw-in, page shuffle and SHUFFLE ALL sit at the end of the tab row | none |
+| SHUFFLE ALL (tab row) | every section on the page plus zDepth/draw-in reroll from one seed, one pushState | all namespaces |
 | autosave | every change lands in `gothic.<page>.<section>.current`; start order is defaults, then autosave, then URL keys present | none |
 | zDepth / draw-in (header) | page-global stroke fade by `data-z`, and draw-in time | `?page.z=0.4&page.draw=false` |
 
@@ -122,7 +123,7 @@ State and rendering continue through the existing kit: the signals JSX intercept
 | `bool` | boolean | `p` true-probability under shuffle |
 | `text` | string | `size` |
 
-Every kind takes `label`, `hint` (tooltip first line; the derived facts follow it), `group` (drawer column), a pin and an individual reroll. Pins are the only shuffle exclusion; text fields supply a `pool`, and numeric fields supply bounds. Hover any control for its tooltip; the e2e test fails on a control without one.
+Every kind takes `label`, `hint` (tooltip first line; the derived facts follow it), `group` (a foldable details in the sidebar), a pin and an individual reroll. Pins are the only shuffle exclusion; text fields supply a `pool`, and numeric fields supply bounds. Hover any control for its tooltip; the e2e test fails on a control without one.
 
 **Algo** (`src/kit/2_algo.ts`): `{ name, spec, presets, run(params, { size, seed, minPx }) -> { paths: [{ d, z?, cls? }], caption, lod[], raw?[] } }` (`raw`: textPath markup rendered after the paths). Drop one into `src/algos/`, then `<AlgoSection page="fractal" algo={myAlgo} sizes={[64, 128, 256]} />` renders a sizes row with LOD captions. `/fractal` is the reference.
 
@@ -142,7 +143,7 @@ Every kind takes `label`, `hint` (tooltip first line; the derived facts follow i
 | path | role |
 |---|---|
 | `src/app/` | page table, router (`loc` signal, history or hash), section state (values + pins signals, URL, autosave), view transitions, `App` |
-| `src/ui/` | `useClock`, `Section` (the kit `Section` bound to gothic's section factory: its own sticky drawer, then the art), `Header` (kit `NavTabs` + page knobs in the end slot), `AlgoSection`, `Raw` |
+| `src/ui/` | `useClock`, `Section` (the kit `Section` bound to gothic's section factory: its own sticky, resizable knob sidebar beside the art), `Header` (kit `NavTabs` + page knobs in the end slot), `AlgoSection`, `Raw` |
 | `src/kit/` | local Algo contract; shared specs, URL helpers, stores and UI live in `@hafley66/report-shell` |
 | `src/pages/` | one module per route exporting `PAGE` |
 | `src/lib/`, `src/algos/` | generators and algos, pure |

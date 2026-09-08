@@ -55,6 +55,10 @@ export type Sections = {
   syncFromUrl(search: string): void
   commit(mode: Mode, fn: () => void): void
   activeSearch(): string
+  // every mounted section of the active page plus the "*" page cells
+  activeStates(): SectionState<AnySpec>[]
+  // one push: every active section rolls its unpinned, non-static fields from one seeded rng
+  shuffleAll(): void
 }
 
 type Cell = {
@@ -76,6 +80,8 @@ export function createSections(host: SectionHost): Sections {
   let applying = false
   let written = ""
   let mode: Mode = "replace"
+  let depth = 0
+  let pending = false
 
   const activeCells = (): Cell[] => [...cells.values()].filter(c => c.page === active || c.page === "*")
 
@@ -90,22 +96,35 @@ export function createSections(host: SectionHost): Sections {
     return out
   }
 
+  // inside a commit every signal write is folded into one url write at its end
   function writeUrl(m: Mode): void {
     if (applying) return
+    if (depth > 0) {
+      pending = true
+      return
+    }
     const specs = nsSpecs()
     const search = mergeSearch(host.search(), printSearch(nsValues(), specs), specs)
     written = search
     host.write(search, m)
   }
 
-  // the values written inside fn travel as one history entry of this mode; everything else replaces
+  // the values written inside fn travel as one history entry of this mode; everything else replaces.
+  // Nested commits fold into the outermost one.
   function commit(m: Mode, fn: () => void): void {
     transition(() => {
+      const prev = mode
       mode = m
+      depth++
       try {
         fn()
       } finally {
-        mode = "replace"
+        depth--
+        mode = prev
+        if (depth === 0 && pending) {
+          pending = false
+          writeUrl(m)
+        }
       }
     })
   }
@@ -225,5 +244,13 @@ export function createSections(host: SectionHost): Sections {
     return state
   }
 
-  return { sectionState, setActivePage, syncFromUrl, commit, activeSearch: () => written }
+  const activeStates = (): SectionState<AnySpec>[] =>
+    [...made.values()].filter(s => s.page === active || s.page === "*")
+  const shuffleAll = (): void =>
+    commit("push", () => {
+      const rng = mulberry32(freshSeed())
+      for (const s of activeStates()) s.values.$(shuffle(s.spec, s.values.$(), rng, pinSet(s.pins.$())))
+    })
+
+  return { sectionState, setActivePage, syncFromUrl, commit, activeSearch: () => written, activeStates, shuffleAll }
 }

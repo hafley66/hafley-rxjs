@@ -28,10 +28,10 @@ describe("gothic single file", () => {
     for (const t of tabs) {
       await go(t)
       await expect($page.locator("svg").first()).toBeVisible()
-      await expect($page.locator(".kit-section > details.kit-drawer").first()).toBeAttached()
+      await expect($page.locator(".kit-section > .kit-side > details.kit-drawer").first()).toBeAttached()
       const svg = await $page.locator("svg").count()
       const anchors = await $page.locator("header .kit-anchor").count()
-      const panels = await $page.locator(".kit-section > .kit-drawer .kit-panel").count()
+      const panels = await $page.locator(".kit-section .kit-drawer .kit-panel").count()
       const untitled = await $page.$$eval(
         "header input, header select, header button, .kit-drawer input, .kit-drawer select, .kit-drawer button",
         els => els
@@ -79,6 +79,30 @@ describe("gothic single file", () => {
     await $page.dblclick(shuffle)
     await expect(seedInput).not.toHaveValue(s1)
     await expect(() => $page.evaluate(() => history.length).then(n => { if (n !== len + 2) throw new Error(`history ${n}`) })).toPass({ timeout: 2000 })
+  })
+
+  test("a label click pins its field, an edit auto-pins, shuffle all pushes once and keeps every pin", async () => {
+    await go("slice")
+    const key = await $page.$eval(".kit-drawer .kit-row input[type=range]", el => (el as HTMLElement).dataset.key ?? "")
+    const pin = $page.locator(`.kit-drawer input.kit-pin[data-pin="${key}"]`)
+    await expect(pin).not.toBeChecked()
+    await $page.click(`.kit-drawer .kit-row label[for="kit-slice-${key}-pin"]`)
+    await expect(pin).toBeChecked()
+    await expect($page).toHaveURL(new RegExp(`slice\\.pin=[^&]*${key}`))
+    await $page.click(`.kit-drawer .kit-row label[for="kit-slice-${key}-pin"]`)
+    await expect(pin).not.toBeChecked()
+    const sel = `.kit-drawer .kit-row input[type=range][data-key="${key}"]`
+    const max = await $page.$eval(sel, el => (el as HTMLInputElement).max)
+    await setRange(sel, max)
+    await expect(pin).toBeChecked()
+    const value = await $page.$eval(sel, el => (el as HTMLInputElement).value)
+    const len = await $page.evaluate(() => history.length)
+    const url = $page.url()
+    await $page.click("header button[data-shuffle-all]")
+    await expect($page).not.toHaveURL(url)
+    expect(await $page.evaluate(() => history.length)).toBe(len + 1)
+    await expect($page.locator(sel)).toHaveValue(value)
+    await expect(pin).toBeChecked()
   })
 
   test("a named state survives a reload and stays selected", async () => {

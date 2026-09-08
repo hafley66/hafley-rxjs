@@ -160,15 +160,16 @@
   .kit-anchor[data-active] { color: var(--accent); border-bottom-color: var(--accent) }
   .kit-page-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: normal; font-size: 11px; color: var(--dim) }
 
-  /* ============ Section: its own knob drawer, sticky under the tabs while the section is in view ============ */
-  .kit-section { display: grid; gap: 12px }
-  .kit-host { display: grid; gap: 20px; padding: 0 16px 16px }
+  /* ============ Section: knob sidebar (wide) or sticky drawer + full-page sheet (narrow) beside the host ============ */
+  .kit-section { display: grid; gap: 12px; align-items: start }
+  .kit-host { display: grid; gap: 20px; padding: 0 16px 16px; min-width: 0 }
   .kit-sec-title { margin: 0; font-weight: 500; font-size: inherit; color: var(--muted) }
 
-  /* ============ Drawer: sticky under the tabs, the summary is the section title, folds to that one line ============ */
+  /* ============ Drawer: the summary is the section title + shuffle, folds to that one line ============ */
+  .kit-side { display: flex; flex-direction: column; min-width: 0 }
   .kit-drawer {
     position: sticky; top: var(--kit-top); z-index: 9; background: var(--panel-bg);
-    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); min-height: 0;
   }
   .kit-drawer > summary {
     list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 5px 14px;
@@ -184,16 +185,52 @@
   .kit-panels { display: grid; gap: 8px; padding: 4px 14px 10px; max-height: 55vh; overflow: auto; scrollbar-width: thin }
   .kit-panel { display: grid; gap: 6px; padding: 6px 0 8px; border-top: 1px solid var(--line) }
   .kit-panel:first-child { border-top: 0 }
-  .kit-front { padding: 8px 12px; border: 1px solid var(--edge); background: var(--bg) }
+  .kit-front { padding: 8px 12px; border: 1px solid var(--edge); background: var(--bg); min-width: 0 }
   .kit-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
   .kit-title { font-weight: 500; color: var(--fg); max-width: 48ch; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
   .kit-head .kit-combo { width: 220px }
+  /* shuffle is the one loud control: accent fill, always in the summary line, so it shows while the drawer is folded */
+  .kit-shuffle, :is(.kit-drawer, .kit-front, .kit-page) button.kit-shuffle {
+    background: var(--accent); color: var(--bg); border: 1px solid var(--accent); border-radius: 4px; cursor: pointer;
+    font: inherit; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 12px; min-height: 24px;
+  }
+  .kit-shuffle:hover, :is(.kit-drawer, .kit-front, .kit-page) button.kit-shuffle:hover { filter: brightness(1.15); border-color: var(--fg) }
+  .kit-drawer > summary .kit-shuffle { margin-left: auto }
   :is(.kit-drawer, .kit-front) button, :is(.kit-drawer, .kit-front) select, :is(.kit-drawer, .kit-front) input[type="number"], :is(.kit-drawer, .kit-front) input[type="text"], .kit-combo input {
     background: var(--well); color: var(--fg); border: 1px solid var(--edge); border-radius: 4px;
     padding: 2px 6px; font: inherit; min-height: 22px; min-width: 0;
   }
   :is(.kit-drawer, .kit-front) button:hover, :is(.kit-drawer, .kit-front) select:hover, :is(.kit-drawer, .kit-front) input:hover { border-color: var(--muted) }
   :is(.kit-drawer, .kit-front) :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }
+
+  /* wide: the sidebar column is the knobs, sticky under the tabs for the length of its own section only; the
+     native resize handle sets --kit-side (persisted by useSideWidth), every section follows */
+  @media (min-width: 900px) {
+    .kit-section { grid-template-columns: auto minmax(0, 1fr); gap: 0 12px }
+    .kit-side {
+      position: sticky; top: var(--kit-top); z-index: 9; align-self: start;
+      width: var(--kit-side, 340px); min-width: 240px; max-width: 60vw; max-height: calc(100vh - var(--kit-top));
+      resize: horizontal; overflow: hidden;
+      border-right: 1px solid var(--line); background: var(--panel-bg);
+    }
+    /* column flex: the drawer shrinks and scrolls its panels, the front keeps its height at the foot */
+    .kit-side > .kit-front { order: 1; flex: none; border-width: 1px 0 0 }
+    .kit-drawer { position: static; border-top: 0; display: flex; flex-direction: column; flex: 0 1 auto; min-height: 0 }
+    .kit-drawer[open]::details-content { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: visible }
+    .kit-panels { max-height: none; min-height: 0; flex: 1 1 auto }
+    .kit-host { padding-top: 6px }
+  }
+  /* narrow: the drawer line stays sticky; open = the whole drawer becomes a full-page sheet under the tabs that
+     slides in, its summary line (title, shuffle, fold) on top and the panels scrolling beneath */
+  @media (max-width: 899.98px) {
+    .kit-drawer[open] {
+      position: fixed; inset: var(--kit-top) 0 0 0; z-index: 9; display: flex; flex-direction: column;
+      animation: kit-sheet 180ms ease-out; border-top: 0;
+    }
+    .kit-drawer[open]::details-content { flex: 1 1 auto; min-height: 0; overflow: auto }
+    .kit-panels { max-height: none }
+  }
+  @keyframes kit-sheet { from { transform: translateX(100%) } to { transform: none } }
 
   /* ============ StateCombo ============ */
   .kit-combo { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px; min-width: 0 }
@@ -216,8 +253,17 @@
 
   /* ============ SpecPanel rows: pin · label · control · value · reroll ============ */
   .kit-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 4px 20px; align-items: start }
+  /* every group is a foldable details: its summary is the legend line */
   .kit-group { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 1px }
-  .kit-group legend { padding: 0 4px; margin-bottom: 2px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim) }
+  .kit-group::details-content { transition: none }
+  .kit-group > summary {
+    list-style: none; cursor: pointer; user-select: none; padding: 0 4px; margin-bottom: 2px;
+    font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim);
+  }
+  .kit-group > summary::-webkit-details-marker { display: none }
+  .kit-group > summary::before { content: "▸"; display: inline-block; width: 1.4ch; transition: transform 120ms ease-out }
+  .kit-group[open] > summary::before { transform: rotate(90deg) }
+  .kit-group > summary:hover { color: var(--accent) }
   .kit-row { display: grid; grid-template-columns: 14px minmax(7ch, 10ch) 1fr 4.5ch 16px; align-items: center; gap: 7px; padding: 1px 4px; border-radius: 4px }
   .kit-row:hover { background: var(--well) }
   .kit-lbl { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }

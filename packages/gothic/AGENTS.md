@@ -29,7 +29,7 @@ Commands: `pnpm --filter @hafley66/gothic dev | scaffold | build | build:single 
 | `src/app/2_state.ts` | `sectionState(page, id, spec)`: values + pins signals, url read/write, autosave, shuffle, named states |
 | `src/app/3_view.ts` | `transition()`: `startViewTransition` around a `flushSync`, armed only after the first commit |
 | `src/app/4_App.tsx` | header + the matched page |
-| `src/ui/` | `0_hooks` (clock), `2_Section` (kit `Section` bound to `sections`: a sticky `<details class="kit-drawer">` per section whose summary is the title and whose body is the `SpecPanel`, then the host), `3_Header` (kit `NavTabs`: tabs, anchors, title, page knobs in the end slot), `4_Algo`, `5_Raw` |
+| `src/ui/` | `0_hooks` (clock), `2_Section` (kit `Section` bound to `sections`: a `.kit-side` per section = `<details class="kit-drawer">` whose summary is the title plus the shuffle button and whose body is the varying `SpecPanel`, then the static/front panel; wide screens (>= 900px) show it as a sticky, resizable sidebar beside the host, narrow ones as a sticky title line whose open state is a full-page sheet), `3_Header` (kit `NavTabs`: tabs, anchors, title, page knobs and `shuffle all` in the end slot), `4_Algo`, `5_Raw` |
 | `src/app/4_App.tsx` | header (`PagePanel` = zDepth/draw-in in the tab row end slot), then `<main>`; no page-level drawer, each section carries its own |
 | `src/kit/` | `2_algo` (Algo contract); specs, URL helpers, store and section state come from `@hafley66/report-shell` |
 | `src/pages/` | one module per route, each exporting `PAGE: PageSpec` |
@@ -46,7 +46,9 @@ Commands: `pnpm --filter @hafley66/gothic dev | scaffold | build | build:single 
 - Input = replaceState, shuffle / preset / chip load = pushState, popstate restores. Foreign query keys survive a write.
 - Start values: defaults, then the localStorage autosave, then the url keys that are present.
 - Specs derive everything: `kind` is `range | number | seed | select | bool | text`; geometry fields have a pin and reroll; playback and variation controls use `static: true`, stay above the drawer, and survive shuffle; `group` clusters it; `roll` narrows the shuffle window; `pool` supplies text choices or weights a select; `p` is a bool's true-probability.
-- Shuffle skips static and pinned fields and rolls everything else from one seeded rng.
+- Shuffle skips static and pinned fields and rolls everything else from one seeded rng. Three levels: `↻` per field, `shuffle` per section (in the drawer summary), `shuffle all` in the header (every active section plus the page controls, one history entry via `sections.shuffleAll()`).
+- Pins: the row label toggles the pin (its `for` targets the pin checkbox); a manual edit of an unpinned field pins it. A manual scrub of a static `time` field sets `run` false (`edit` hook in `2_Section`).
+- Every input group (`group`) is a `<details class="kit-group">` that folds; groups start open.
 - Depth: paths carrying `data-z` (0 near .. 1 far) fade and thin with the header's zDepth; sections opt in with `zDepth: true`.
 - Anchors: the header's row 2 lights each section on its own named view timeline, with an IntersectionObserver fallback.
 - Named states: `state.save(name)` creates or overwrites by name and selects it; while a state is selected every edit is written into it as well as the autosave; `state.roll(key)` rerolls one field.

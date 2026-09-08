@@ -42,7 +42,7 @@ it("keeps variation off by default, gates global and cascading settings, and hol
     await front.getByLabel("slice variation inheritance", { exact: true }).selectOption("cascade")
     const cascadeWidths = await widths()
     expect(cascadeWidths).not.toEqual(globalWidths)
-    await page.locator("#slice > .kit-drawer > summary").click()
+    await page.locator("#slice .kit-drawer > summary").click()
     expect(await page.locator('#slice .kit-front input[data-key="run"]').isVisible()).toBe(true)
     await front.getByRole("button", { name: "settings", exact: true }).click()
     const field = page.getByRole("dialog", { name: "finalWeight animation settings", exact: true })

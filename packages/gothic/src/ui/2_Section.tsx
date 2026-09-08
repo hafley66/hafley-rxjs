@@ -27,7 +27,9 @@ export function Section<S extends AnySpec>(props: {
   children: (v: ValuesOf<S>, ctx: SectionCtx<AnySpec>) => ReactNode
 }): ReactNode {
   const { slice, children, ...rest } = props
-  return <KitSection sections={sections} {...rest} front={state => <SectionVariation state={state} />} fieldSettings={(name, field, state) => <PropertySettings state={state} field={field} name={name} />}>{(_v, ctx) => {
+  // a manual scrub of the static time slider stops playback (autoplay off); the kit only knows the key it edited
+  const edit = (k: string, v: string | number | boolean, state: { spec: AnySpec }) => k === "time" && state.spec.run ? { time: v, run: false } : { [k]: v }
+  return <KitSection sections={sections} {...rest} edit={edit} front={state => <SectionVariation state={state} />} fieldSettings={(name, field, state) => <PropertySettings state={state} field={field} name={name} />}>{(_v, ctx) => {
     const v = propertyMotion(props.page).values(ctx.state).$()
     const body = children(v as ValuesOf<S>, ctx)
     if (!slice || !propertyMotion("*").values(pageState()).draw.$()) return body

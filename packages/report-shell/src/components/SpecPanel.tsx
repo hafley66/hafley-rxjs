@@ -8,9 +8,20 @@ import { StateCombo } from "./StateCombo.js"
 export const inputId = (section: string, key: string): string => `kit-${section}-${key}`
 
 type El = HTMLInputElement | HTMLSelectElement
-export type SpecPanelProps = { state: SectionState<AnySpec>; title?: string; extra?: ReactNode; fields?: "all" | "static" | "varying"; head?: boolean; fieldSettings?: (key: string, field: Field, state: SectionState<AnySpec>) => ReactNode }
+export type SpecPanelProps = {
+  state: SectionState<AnySpec>
+  title?: string
+  extra?: ReactNode
+  fields?: "all" | "static" | "varying"
+  head?: boolean
+  // the head's shuffle button; a host that renders its own (Section puts one in the drawer summary) turns it off
+  shuffle?: boolean
+  fieldSettings?: (key: string, field: Field, state: SectionState<AnySpec>) => ReactNode
+  // the patch one edit writes; default { [key]: value }. A host widens it (a time scrub that also stops playback)
+  edit?: (key: string, value: Val, state: SectionState<AnySpec>) => Record<string, Val>
+}
 
-type Val = string | number | boolean
+export type Val = string | number | boolean
 
 const readInput = (el: El, fd: Field): Val => {
   if (fd.kind === "bool") return (el as HTMLInputElement).checked
@@ -25,9 +36,9 @@ const writeInput = (el: El, fd: Field, v: Val): void => {
   else if (el.value !== String(v)) el.value = String(v)
 }
 
-// one panel per section: head (optional title, shuffle, state combobox, preset), one row per field grouped by fieldset
+// one panel per section: head (optional title, shuffle, state combobox, preset), one row per field grouped as a foldable details
 // as columns, statics in their own group, extra at the foot. Every row carries the field's tooltip.
-export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra, fieldSettings, fields = "all", head = true }: SpecPanelProps) {
+export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra, fieldSettings, edit, fields = "all", head = true, shuffle = true }: SpecPanelProps) {
   const { spec, id, presets } = state
   const values = state.values.$()
   const pins = pinSet(state.pins.$())
@@ -41,11 +52,16 @@ export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra, f
     if (el) inputs.current.set(k, el)
     else inputs.current.delete(k)
   }
-  const onInput = (k: string) => (e: { currentTarget: El }) =>
-    state.set({ [k]: readInput(e.currentTarget, spec[k]) }, "replace")
+  // a manual edit is a choice: the field pins itself so the next shuffle keeps it (statics have no pin)
+  const onInput = (k: string) => (e: { currentTarget: El }) => {
+    const v = readInput(e.currentTarget, spec[k])
+    state.set(edit ? edit(k, v, state) : { [k]: v }, "replace")
+    if (!isStatic(spec[k]) && !pinSet(state.pins.$()).has(k)) state.togglePin(k)
+  }
 
   const row = (k: string, fd: Field) => {
     const eid = inputId(id, k)
+    const pid = `${eid}-pin`
     const label = fd.label ?? k
     const fixed = isStatic(fd)
     const common = { title: describe(k, fd), id: eid, "data-key": k, ref: bind(k), onInput: onInput(k) }
@@ -97,6 +113,7 @@ export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra, f
           <input
             type="checkbox"
             className="kit-pin"
+            id={pid}
             data-pin={k}
             checked={pins.has(k)}
             aria-label={`pin ${k}`}
@@ -104,7 +121,7 @@ export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra, f
             onChange={() => state.togglePin(k)}
           />
         )}
-        <label htmlFor={eid} className="kit-lbl" title={describe(k, fd)}>
+        <label htmlFor={fixed ? eid : pid} className="kit-lbl" title={fixed ? describe(k, fd) : `click: pin ${label} (shuffle keeps it) · ${describe(k, fd)}`}>
           {label}
         </label>
         <span className="kit-ctl">{input}</span>
@@ -143,14 +160,14 @@ export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra, f
     <div className="kit-panel" data-section={id}>
       {head && <div className="kit-head">
         {title && <b className="kit-title">{title}</b>}
-        <button
+        {shuffle && <button
           type="button"
           className="kit-shuffle"
           title="reroll eligible unpinned fields from one fresh seed; adds a history entry"
           onClick={() => state.rollAll()}
         >
           shuffle
-        </button>
+        </button>}
         <StateCombo state={state} />
         {presetNames.length > 0 && (
           <select
@@ -169,14 +186,14 @@ export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra, f
         )}
       </div>}
       <div className="kit-groups">
-        {[...statics].map(([g, rows]) => <fieldset key={g} className="kit-group kit-static" data-group={g}>
-          <legend title={`${g}: shuffle keeps these controls`}>{g} · static</legend>{rows}
-        </fieldset>)}
+        {[...statics].map(([g, rows]) => <details key={g} className="kit-group kit-static" data-group={g} open>
+          <summary title={`${g}: shuffle keeps these controls; click to fold`}>{g} · static</summary>{rows}
+        </details>)}
         {[...groups].map(([g, rows]) => (
-          <fieldset key={g || "_"} className="kit-group" data-group={g}>
-            <legend title={g || "geometry inputs"}>{g || " "}</legend>
+          <details key={g || "_"} className="kit-group" data-group={g} open>
+            <summary title={`${g || "geometry inputs"}: click to fold`}>{g || "inputs"}</summary>
             {rows}
-          </fieldset>
+          </details>
         ))}
       </div>
       {extra && <div className="kit-extra">{extra}</div>}

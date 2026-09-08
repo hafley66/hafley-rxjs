@@ -3,7 +3,7 @@ import { useEffect } from "react"
 import { Header } from "../ui/3_Header.js"
 import { matchPage, PAGES } from "./0_pages.js"
 import { listen, loc } from "./1_router.js"
-import { pageState, setActivePage, syncFromUrl } from "./2_state.js"
+import { pageState, sections, setActivePage, syncFromUrl } from "./2_state.js"
 import { armTransitions } from "./3_view.js"
 import { propertyMotion } from "../kit/4_propertyMotion.js"
 import { PropertySettings, PropertyTransport } from "../ui/1d_PropertySettings.js"
@@ -56,6 +56,7 @@ function PagePanel() {
       <button type="button" className="kit-roll" title="reroll draw-in only" onClick={() => page.roll("draw")}>↻</button>
       <PropertySettings state={page as never} field={page.spec.draw} name="draw" />
       <button type="button" title="shuffle unpinned page controls" onClick={() => page.rollAll()}>shuffle</button>
+      <button type="button" className="kit-shuffle" data-shuffle-all title="shuffle all: every section on this page and the page controls reroll their unpinned fields from one seed; one history entry" onClick={() => sections.shuffleAll()}>shuffle all</button>
     </span>
   )
 }

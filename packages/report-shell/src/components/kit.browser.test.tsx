@@ -104,13 +104,31 @@ describe("SpecPanel rows", () => {
     expect(q("#kit-slice-cut + datalist").previousElementSibling).not.toBeNull()
     expect(q('.kit-row[data-kind="range"] output').textContent).toBe("20")
     expect(q('[data-testid="out"]').textContent).toBe("cut=20 seed=1")
-    expect(host.writes.at(-1)).toEqual(["?slice.cut=20", "replace"])
+    // a manual edit pins its field
+    expect(host.writes.at(-1)).toEqual(["?slice.cut=20&slice.pin=cut", "replace"])
+    expect(q<HTMLInputElement>('input.kit-pin[data-pin="cut"]').checked).toBe(true)
   })
 
-  it("a pinned field survives shuffle and prints in the url; reroll changes one field with one push", () => {
+  it("the label toggles the pin; the pin checkbox carries the label's htmlFor", () => {
+    const { q, state } = mountSection()
+    expect(q<HTMLLabelElement>('.kit-row[data-kind="range"] label.kit-lbl').htmlFor).toBe("kit-slice-cut-pin")
+    act(() => q<HTMLElement>('.kit-row[data-kind="range"] label.kit-lbl').click())
+    expect(state.pins.$().pin).toBe("cut")
+    act(() => q<HTMLElement>('.kit-row[data-kind="range"] label.kit-lbl').click())
+    expect(state.pins.$().pin).toBe("")
+  })
+
+  it("every group is a details that folds its rows", () => {
+    const { q } = mountSection()
+    const g = q<HTMLDetailsElement>('details.kit-group[data-group="look"]')
+    expect(g.open).toBe(true)
+    act(() => g.querySelector<HTMLElement>("summary")?.click())
+    expect(g.open).toBe(false)
+  })
+
+  it("an edited field is pinned, survives shuffle and prints in the url; reroll changes one field with one push", () => {
     const { q, state, host } = mountSection()
     act(() => setNative(q("#kit-slice-cut"), "33"))
-    act(() => q<HTMLInputElement>('input.kit-pin[data-pin="cut"]').click())
     expect(host.writes.at(-1)?.[0]).toBe("?slice.cut=33&slice.pin=cut")
     act(() => q<HTMLButtonElement>("button.kit-shuffle").click())
     expect(state.values.$().cut).toBe(33)
@@ -216,16 +234,22 @@ describe("Drawer + NavTabs", () => {
         </main>
       </>,
     )
-    const drawers = [...el.querySelectorAll<HTMLDetailsElement>("section.kit-section > details.kit-drawer")]
+    const drawers = [...el.querySelectorAll<HTMLDetailsElement>("section.kit-section > .kit-side > details.kit-drawer")]
     expect(drawers).toHaveLength(2)
+    expect(drawers.map(d => d.querySelector("summary button.kit-shuffle")).every(Boolean)).toBe(true)
     expect(el.querySelector("#kit-panels")).toBeNull()
     expect(drawers.map(d => d.querySelector("summary h2.kit-sec-title")?.textContent)).toEqual(["slice", "seal"])
-    expect(drawers.map(d => d.querySelectorAll(".kit-row").length)).toEqual([5, 5])
+    // varying rows in the drawer; the static row sits in the front beside it, visible while the drawer folds
+    expect(drawers.map(d => d.querySelectorAll(".kit-row").length)).toEqual([4, 4])
+    expect([...el.querySelectorAll(".kit-side > .kit-front .kit-row")]).toHaveLength(2)
     const px = (name: string) => Number.parseFloat(document.documentElement.style.getPropertyValue(name))
     await vi.waitFor(() => expect(px("--kit-top")).toBeGreaterThan(0))
+    // wide: the whole sidebar sticks; narrow: the drawer line sticks
+    const wide = innerWidth >= 900
     for (const d of drawers) {
-      expect(getComputedStyle(d).position).toBe("sticky")
-      expect(Number.parseFloat(getComputedStyle(d).top)).toBe(px("--kit-top"))
+      const sticky = wide ? (d.parentElement as HTMLElement) : d
+      expect(getComputedStyle(sticky).position).toBe("sticky")
+      expect(Number.parseFloat(getComputedStyle(sticky).top)).toBe(px("--kit-top"))
     }
     const first = drawers[0]
     const rows = () => drawers.map(d => (d.querySelector(".kit-row")?.checkVisibility() ? 1 : 0))

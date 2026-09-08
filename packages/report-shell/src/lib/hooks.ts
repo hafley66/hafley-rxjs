@@ -30,6 +30,27 @@ export function useResizeVar(ref: { current: HTMLElement | null }, name: string)
   }, [ref, name])
 }
 
+export const SIDE_MIN = 900
+export const wideScreen = (): boolean => typeof matchMedia !== "function" || matchMedia(`(min-width: ${SIDE_MIN}px)`).matches
+
+const SIDE_KEY = "kit.side"
+// the knob sidebar is resized with the native resize handle; a manual width lands on :root (--kit-side) and in storage
+export function useSideWidth(ref: { current: HTMLElement | null }): void {
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const saved = localStorage.getItem(SIDE_KEY)
+    if (saved) document.documentElement.style.setProperty("--kit-side", saved)
+    const ro = new ResizeObserver(() => {
+      if (!el.style.width) return
+      document.documentElement.style.setProperty("--kit-side", el.style.width)
+      localStorage.setItem(SIDE_KEY, el.style.width)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [ref])
+}
+
 const timelines = new Set<string>()
 const VIEW_TIMELINES = typeof CSS !== "undefined" && CSS.supports("animation-timeline: view()")
 let io: IntersectionObserver | null = null
