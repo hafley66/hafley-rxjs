@@ -22,7 +22,10 @@
   "bin": {
     "vitest-telemetry": "./dist/cli.js"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json && vite build -c vite.report.config.ts",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
@@ -44,6 +47,7 @@
     "@opentelemetry/exporter-logs-otlp-http": "0.222.0",
     "@opentelemetry/exporter-metrics-otlp-http": "0.222.0",
     "@opentelemetry/exporter-trace-otlp-http": "0.222.0",
+    "@opentelemetry/host-metrics": "0.39.0",
     "@opentelemetry/resources": "2.11.0",
     "@opentelemetry/sdk-logs": "0.222.0",
     "@opentelemetry/sdk-metrics": "2.11.0",

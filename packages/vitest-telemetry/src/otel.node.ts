@@ -8,6 +8,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http'
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics'
 import { resourceFromAttributes } from '@opentelemetry/resources'
+import { HostMetrics } from '@opentelemetry/host-metrics'
 import type { TelemetryDefine } from './index.js'
 
 function readTelemetryEnv(): TelemetryDefine {
@@ -56,4 +57,10 @@ const sdk = new NodeSDK({
   }),
 })
 sdk.start()
+// Per-process cpu/memory gauges (process.cpu.utilization, process.memory.usage) plus host-wide
+// system.cpu/system.memory, sampled on the same 500 ms reader; one series per worker pid.
+new HostMetrics({
+  name: `${cfg.root}-host`,
+  metricGroups: ['process.cpu', 'process.memory', 'system.cpu', 'system.memory'],
+}).start()
 export default sdk

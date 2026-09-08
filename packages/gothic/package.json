@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@hafley66/vitest-playwright": "workspace:*",
+    "@hafley66/vitest-telemetry": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",
     "@types/d3-contour": "3.0.6",
     "@types/d3-delaunay": "6.0.4",

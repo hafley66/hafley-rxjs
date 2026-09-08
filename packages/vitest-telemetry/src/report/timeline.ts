@@ -95,6 +95,7 @@ interface OtlpMetricPoint {
 interface OtlpMetric {
   name: string
   sum?: { dataPoints: OtlpMetricPoint[] }
+  gauge?: { dataPoints: OtlpMetricPoint[] }
   histogram?: { dataPoints: OtlpMetricPoint[] }
 }
 interface OtlpResource {
@@ -334,9 +335,10 @@ function metricEvents(batches: unknown[]): Event[] {
   const events: Event[] = []
   for (const batch of batches as OtlpMetricBatch[]) {
     for (const resourceMetrics of batch.resourceMetrics) {
+      const pid = pidOf(attr(resourceMetrics.resource?.attributes))
       for (const scopeMetrics of resourceMetrics.scopeMetrics) {
         for (const metric of scopeMetrics.metrics) {
-          const points = metric.sum?.dataPoints ?? metric.histogram?.dataPoints ?? []
+          const points = metric.sum?.dataPoints ?? metric.gauge?.dataPoints ?? metric.histogram?.dataPoints ?? []
           for (const point of points) {
             const pointAttrs = attr(point.attributes)
             events.push({
@@ -355,7 +357,7 @@ function metricEvents(batches: unknown[]): Event[] {
               traceId: null,
               spanId: null,
               parentSpanId: null,
-              pid: null,
+              pid,
               depth: 0,
               id: '',
               parentId: null,
