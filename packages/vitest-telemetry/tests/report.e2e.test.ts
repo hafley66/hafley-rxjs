@@ -99,6 +99,21 @@ describe('vitest-telemetry nav tree', () => {
     await page.keyboard.press('Escape')
   })
 
+  it('the popover column picker hides and restores a nav column', async () => {
+    const heads = page.locator('nav th[data-column]')
+    expect(await heads.count()).toBe(4)
+    await openPopover(page, '#status-legend-gear', 'status-legend-popover')
+    const events = page.locator('[data-testid=tree-visibility-item-events] input')
+    await events.click()
+    await page.waitForTimeout(100)
+    expect(await heads.count()).toBe(3)
+    expect(await page.locator('nav [data-testid=tree-row]').first().locator('td').count()).toBe(3)
+    await events.click()
+    await page.waitForTimeout(100)
+    expect(await heads.count()).toBe(4)
+    await page.keyboard.press('Escape')
+  })
+
   it('alt-click on a status cell pivots, and Back removes the pivot', async () => {
     await expandEverything(page)
     await page.locator('[data-testid=tree-row].test [data-testid=status-cell]').first().click({ modifiers: ['Alt'] })

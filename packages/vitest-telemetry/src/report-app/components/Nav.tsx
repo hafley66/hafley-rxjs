@@ -54,7 +54,7 @@ export function Nav({ model, prefs }: { model: Model; prefs: SignalType<Prefs> }
 
   return (
     <div className="nav-tree-wrap">
-      <NavStatusLegend />
+      <NavStatusLegend grid={grid} />
       <TreeTable
         grid={grid}
         density={density}
