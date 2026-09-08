@@ -14,6 +14,7 @@ function PagePanel() {
   useEffect(() => {
     document.documentElement.style.setProperty("--kit-zdepth", String(z))
     document.documentElement.style.setProperty("--kit-ms", draw ? "1400ms" : "0ms")
+    document.documentElement.style.setProperty("--kit-stagger", draw ? "25ms" : "0ms")
   }, [z, draw])
   return (
     <span className="kit-page">
