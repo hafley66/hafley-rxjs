@@ -6,19 +6,41 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
-    "./plugin": { "types": "./dist/1_plugin.d.ts", "import": "./dist/1_plugin.js" },
-    "./setup": { "types": "./dist/setup.d.ts", "import": "./dist/setup.js" },
-    "./test": { "types": "./dist/4_test.d.ts", "import": "./dist/4_test.js" },
-    "./global-setup": { "types": "./dist/2_global-setup.d.ts", "import": "./dist/2_global-setup.js" },
-    "./runner": { "types": "./dist/9_runner.d.ts", "import": "./dist/9_runner.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./plugin": {
+      "types": "./dist/1_plugin.d.ts",
+      "import": "./dist/1_plugin.js"
+    },
+    "./setup": {
+      "types": "./dist/setup.d.ts",
+      "import": "./dist/setup.js"
+    },
+    "./test": {
+      "types": "./dist/4_test.d.ts",
+      "import": "./dist/4_test.js"
+    },
+    "./global-setup": {
+      "types": "./dist/2_global-setup.d.ts",
+      "import": "./dist/2_global-setup.js"
+    },
+    "./runner": {
+      "types": "./dist/9_runner.d.ts",
+      "import": "./dist/9_runner.js"
+    }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "biome check src",
     "test": "vitest run",
-    "check": "pnpm typecheck && pnpm build && pnpm test"
+    "check": "pnpm lint && pnpm typecheck && pnpm build && pnpm test"
   },
   "dependencies": {
     "@hafley66/signals": "workspace:*",
@@ -33,8 +55,12 @@
     "vitest": "^4.1.11"
   },
   "peerDependenciesMeta": {
-    "@logtape/logtape": { "optional": true },
-    "@opentelemetry/api": { "optional": true }
+    "@logtape/logtape": {
+      "optional": true
+    },
+    "@opentelemetry/api": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@logtape/logtape": "2.3.3",
@@ -45,5 +71,21 @@
     "vitest": "4.1.11"
   },
   "license": "MIT",
-  "publishConfig": { "access": "public" }
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "vitest",
+    "playwright",
+    "e2e",
+    "fixtures",
+    "matchers",
+    "rxjs",
+    "signals"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hafley66/hafley-rxjs",
+    "directory": "packages/vitest-playwright"
+  }
 }

@@ -1,6 +1,6 @@
 // pkg:$page / pkg:$context: globalThis proxies to the running attempt's pw:Page / pw:BrowserContext.
 import type { BrowserContext, Page } from "playwright"
-import { active, als, type AttemptStore } from "./6_roots.js"
+import { type AttemptStore, active, als } from "./6_roots.js"
 
 /** Type anchor: importing this from index/setup keeps the `declare global` block in the emitted d.ts graph. */
 export type PageGlobals = { $page: Page; $context: BrowserContext }
@@ -12,7 +12,8 @@ declare global {
   var $context: BrowserContext
 }
 
-const HOW = "It resolves inside a test body, beforeEach or afterEach of a file that imports @hafley66/vitest-playwright/setup (the plugin does this)."
+const HOW =
+  "It resolves inside a test body, beforeEach or afterEach of a file that imports @hafley66/vitest-playwright/setup (the plugin does this)."
 
 /** The attempt store for the caller: its async context, else the single running attempt on this worker. */
 export function store(key: string): AttemptStore {
@@ -20,11 +21,16 @@ export function store(key: string): AttemptStore {
   if (s) {
     const phase = s.root.phase.$()
     if (phase === "run" || phase === "capture") return s
-    throw new Error(`$${key}: the attempt "${s.root.task.name.$()}" is in phase ${phase}; a callback from a finished test reached the bridge.`)
+    throw new Error(
+      `$${key}: the attempt "${s.root.task.name.$()}" is in phase ${phase}; a callback from a finished test reached the bridge.`,
+    )
   }
-  if (active.size === 1) return active.values().next().value!
+  const sole = active.values().next().value
+  if (active.size === 1 && sole) return sole
   if (active.size === 0) throw new Error(`$${key}: no running test. ${HOW}`)
-  throw new Error(`$${key}: ${active.size} tests are running concurrently and this callback carries no test context (pw: event or route handler); use the \`page\` fixture inside it.`)
+  throw new Error(
+    `$${key}: ${active.size} tests are running concurrently and this callback carries no test context (pw: event or route handler); use the \`page\` fixture inside it.`,
+  )
 }
 function current<K extends "page" | "context">(key: K) {
   const v = store(key).root[key].$()
@@ -35,14 +41,17 @@ type Of<K extends "page" | "context"> = K extends "page" ? Page : BrowserContext
 function proxy<K extends "page" | "context">(key: K): Of<K> {
   return new Proxy({} as Of<K>, {
     get(_t, prop) {
-      const target = current(key) as any
+      const target = current(key) as unknown as Record<PropertyKey, unknown>
       const v = target[prop]
       return typeof v === "function" ? v.bind(target) : v
     },
-    has(_t, prop) { return prop in (current(key) as any) },
+    has(_t, prop) {
+      return prop in (current(key) as object)
+    },
   })
 }
 export function installPageGlobals(): void {
   if (!("$page" in globalThis)) Object.defineProperty(globalThis, "$page", { value: proxy("page"), configurable: true })
-  if (!("$context" in globalThis)) Object.defineProperty(globalThis, "$context", { value: proxy("context"), configurable: true })
+  if (!("$context" in globalThis))
+    Object.defineProperty(globalThis, "$context", { value: proxy("context"), configurable: true })
 }
