@@ -12,7 +12,7 @@ export const SPEC = {
   shoulder: { kind: "range", hint: "height retained by the outer towers", min: 0.3, max: 1, step: 0.02, default: 0.58 },
   chaos: { kind: "range", hint: "seeded perturbation of tower heights", min: 0, max: 0.25, step: 0.01, default: 0.08 },
   crockets: { kind: "range", hint: "paired curled leaves climbing each needle", min: 0, max: 12, step: 1, default: 8 },
-  minPx: { kind: "range", hint: "smallest leaf or subsidiary spire in pixels", min: 1, max: 4, step: 0.5, default: 2, static: true },
+  minPx: { kind: "range", hint: "smallest leaf or subsidiary spire in pixels", min: 1, max: 4, step: 0.5, default: 2 },
   // scaffold:inputs
 } as const satisfies AnySpec
 export type Params = ValuesOf<typeof SPEC>

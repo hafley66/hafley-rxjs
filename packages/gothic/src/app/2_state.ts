@@ -17,8 +17,8 @@ export const { sectionState, setActivePage, syncFromUrl, commit } = sections
 
 // the page-global namespace: ?page.z, ?page.draw; every route keeps it
 export const PAGE_SPEC = {
-  z: { kind: "range", min: 0, max: 1, step: 0.05, default: 0, label: "zDepth", static: true },
-  draw: { kind: "bool", default: true, label: "draw-in", static: true },
+  z: { kind: "range", min: 0, max: 1, step: 0.05, default: 0, label: "zDepth" },
+  draw: { kind: "bool", default: true, label: "draw-in" },
 } as const satisfies AnySpec
 
 export const pageState = (): SectionState<typeof PAGE_SPEC> => sectionState("*", "page", PAGE_SPEC)

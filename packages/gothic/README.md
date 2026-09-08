@@ -45,7 +45,7 @@ pnpm --filter @hafley66/gothic check          # typecheck + vitest + build:singl
 | action | effect | URL |
 |---|---|---|
 | move a knob | section re-renders, `replaceState` | `?eye.seed=3&eye.segs=64` |
-| shuffle | every unpinned, non-static field rerolls from one seeded rng, `pushState` | same keys, new values |
+| shuffle | every unpinned field rerolls from one seeded rng, `pushState` | same keys, new values |
 | pin (box next to a knob) | shuffle skips it; survives reload and back/forward | `?eye.pin=seed,shape` |
 | preset select | applies a partial value set, `pushState` | keys it touches |
 | state combobox | the shown name is the state receiving every edit (●). Type an existing name or pick it from the list to load it; type a new name and press Enter to fork the current values into it; list rows carry star and delete. localStorage `gothic.<page>.<section>.states` + `.selected` | none |
@@ -73,7 +73,7 @@ pnpm dev                            # open /rose
 The script prints the files it touches. Numeric prefixes are selected from the current files. A new notebook has:
 
 - `src/algos/<n>_rose.ts`: `SPEC`, inferred `Params`, `generate(p, ctx): AlgoOut`, and `ALGO`.
-- `src/pages/<n>_rose.tsx`: `SignalReact`, `AlgoSection`, sizes `[48, 96, 160, 320]`, and `PAGE`.
+- `src/pages/<n>_rose.tsx`: the signals JSX interceptor, `AlgoSection`, sizes `[48, 96, 160, 320]`, and `PAGE`.
 - An import and entry in `src/app/0_pages.ts`: the tab, route, query schema and anchors follow.
 
 The initial generator draws a circle controlled by `radius`. Edit the field bounds, defaults, options and hints in `SPEC`, then write the geometry in `generate`. Every added field reaches `p` through `ValuesOf<typeof SPEC>`. The scaffold supplies the input; its effect on geometry is written in the generator body. Presets go in `ALGO.presets`.
@@ -103,7 +103,7 @@ Field kinds are `range`, `number`, `seed`, `select`, `bool`, `text`. Their liter
 
 The `.tpl` files in `scripts/templates/` are text templates containing TypeScript and named placeholders. Bash uses `sed` to substitute names and `awk` to insert lines at `scaffold:*` comments. Keep those comments and the generated import/export forms intact if later scaffold commands should edit that module. Creation refuses existing names; failed argument or marker checks leave source files unchanged; `--dry-run` prints a diff without writing source files.
 
-State and rendering continue through the existing kit: `SignalReact` → `AlgoSection` → `Section` → `createSections`. Values and pins use signals; autosave and named states use the kit's `storageSignal` stores. URL writes, shuffle, reroll, presets, tooltips, drawers and draw-in hooks come from the same components as the existing notebooks.
+State and rendering continue through the existing kit: the signals JSX interceptor → `AlgoSection` → `Section` → `createSections`. Values and pins use signals; autosave and named states use the kit's `storageSignal` stores. URL writes, shuffle, reroll, presets, tooltips, drawers and draw-in hooks come from the same components as the existing notebooks.
 
 ## 5. Make: a field, an algo, a generator
 
@@ -118,7 +118,7 @@ State and rendering continue through the existing kit: `SignalReact` → `AlgoSe
 | `bool` | boolean | `p` true-probability under shuffle |
 | `text` | string | `size` |
 
-Every kind takes `label`, `hint` (tooltip first line; the derived facts follow it), `group` (drawer column), `static: true` or `shuffle: false` (last column, no pin, no reroll). Hover any control for its tooltip; the e2e test fails on a control without one.
+Every kind takes `label`, `hint` (tooltip first line; the derived facts follow it), `group` (drawer column), a pin and an individual reroll. Pins are the only shuffle exclusion; text fields supply a `pool`, and numeric fields supply bounds. Hover any control for its tooltip; the e2e test fails on a control without one.
 
 **Algo** (`src/kit/2_algo.ts`): `{ name, spec, presets, run(params, { size, seed, minPx }) -> { paths: [{ d, z?, cls? }], caption, lod[], raw?[] } }` (`raw`: textPath markup rendered after the paths). Drop one into `src/algos/`, then `<AlgoSection page="fractal" algo={myAlgo} sizes={[64, 128, 256]} />` renders a sizes row with LOD captions. `/fractal` is the reference.
 
@@ -150,3 +150,29 @@ Every kind takes `label`, `hint` (tooltip first line; the derived facts follow i
 ## 8. Rules
 
 `AGENTS.md`: existing generators are never edited without an explicit ask; new behaviour is a new function; old rows in a notebook stay.
+
+## 9. Living reliquaries
+
+Open `/astrolabe` (or `dist/index.html#/astrolabe` in the single-file build).
+
+| section | interaction |
+|---|---|
+| Astrolabe Monstrance | drag the overlapping brass slit masks; slit count, lobe count, curl and aperture shape the moiré |
+| Ribcage Cathedral | play the staggered breathing cycle; drag across the nave; adjust bays, crown opening and delay |
+| Mycelial Rose Window | click a petal to seed a growth; filaments extend, anchor and calcify into new stone members |
+
+Each section has the kit's presets, pins, shuffle, URL state and named states. **Hold** records the visible frame in the URL, autosave and selected named state. The scrubber and the two study thumbnails also hold an exact frame. Arrow keys scrub a focused artwork. Motion pauses outside the viewport or in a hidden browser tab; reduced-motion preferences disable autoplay until Play is pressed.
+
+`src/algos/10_astrolabe.ts` through `12_lithic.ts` are pure SVG generators. The rose uses seeded curves with shared forks and exact boundary anchors; one growth cycle subdivides each petal. `src/ui/1_playback.ts` owns ephemeral time signals and the RxJS frame subscription. `src/ui/6_MovingAlgo.tsx` binds this playback to the existing section state and renders the animated stage. These sections were created with `pnpm scaffold`; their insertion markers remain available.
+
+## 10. Reusable slice and FMA studies
+
+The full slice animation toolkit is exported from `@hafley66/gothic/slice`, with `useSlice` at `@hafley66/gothic/slice/react`. [API and renderer examples](src/kit/slice/README.md) cover existing SVGs, path data, signal controls, clocks, seeking and teardown. `/slice` consumes the shared segmentation and poses.
+
+`/fma` keeps its original seal and gallery, then adds chord envelopes, braided ribbons, conformal pole grids, Voronoi cells and standing-wave contours. Each new section has four geometry controls, for 20 additions. Voronoi cells use `d3-delaunay`; contours use `d3-contour`.
+
+Every Gothic field can be pinned and rerolled. Shuffle changes unpinned fields; there is no static column. Text fields use seeded pools and number fields have explicit randomization bounds. The same controls apply to the page-level zDepth and draw-in settings.
+
+## Common controls and reactive animation
+
+[Shared input groups](src/kit/README.md) provide seed, playback, stroke weight, detail and presets. [Slice](src/kit/slice/README.md) exports reusable path timing and SVG binding. Vite enables `signalsJsx()`, so plain components read source signals to activate their streams. The [signals skill](../signals/skills/signals/SKILL.md) records the authoring conventions.

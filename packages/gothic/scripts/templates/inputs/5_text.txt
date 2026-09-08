@@ -1,1 +1,1 @@
-  @@KEY@@: { kind: "text", hint: "@@KEY@@", default: "", shuffle: false },
+  @@KEY@@: { kind: "text", hint: "@@KEY@@", default: "", pool: ["alpha", "beta", "gamma"] },

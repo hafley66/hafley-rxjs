@@ -1,3 +1,4 @@
+import { DETAIL_INPUTS } from "../kit/0_inputs.js"
 import type { Algo } from "../kit/2_algo.js"
 import { seal, sealCaption } from "../lib/3_seal.js"
 
@@ -8,15 +9,8 @@ export const sealAlgo: Algo<SealParams> = {
   name: "seal",
   spec: {
     seed: { kind: "seed", hint: "seed for the seal composition", default: 1 },
-    minPx: {
-      kind: "range",
-      hint: "smallest feature drawn, in px; bands and lobes under it are dropped (LOD)",
-      min: 1,
-      max: 6,
-      step: 0.5,
-      default: 2,
-    },
-    pupil: { kind: "bool", hint: "draw the pupil inside the eye band", default: true, static: true },
+    minPx: { ...DETAIL_INPUTS.minPx, hint: "smallest feature drawn, in px; bands and lobes under it are dropped (LOD)", },
+    pupil: { kind: "bool", hint: "draw the pupil inside the eye band", default: true },
   },
   presets: { fine: { minPx: 1 }, coarse: { minPx: 4 } },
   run(p, ctx) {

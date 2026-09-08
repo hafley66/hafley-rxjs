@@ -1,0 +1,356 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`seeks every reveal and easing directly and lands on an identity pose 1`] = `
+[
+  {
+    "blade": false,
+    "dash": 0.06,
+    "fease": "back",
+    "reveal": "draw",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": 0.01,
+    "fease": "spring",
+    "reveal": "draw",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": 0.13,
+    "fease": "cubic-out",
+    "reveal": "draw",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": 0.03,
+    "fease": "expo-out",
+    "reveal": "draw",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": 0,
+    "fease": "elastic",
+    "reveal": "draw",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": 0.5,
+    "fease": "linear",
+    "reveal": "draw",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": 0,
+    "fease": "cut",
+    "reveal": "draw",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": true,
+    "dash": 0,
+    "fease": "back",
+    "reveal": "cut",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": true,
+    "dash": 0,
+    "fease": "spring",
+    "reveal": "cut",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": true,
+    "dash": 0,
+    "fease": "cubic-out",
+    "reveal": "cut",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": true,
+    "dash": 0,
+    "fease": "expo-out",
+    "reveal": "cut",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": true,
+    "dash": 0,
+    "fease": "elastic",
+    "reveal": "cut",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": true,
+    "dash": 0.5,
+    "fease": "linear",
+    "reveal": "cut",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": true,
+    "dash": 0,
+    "fease": "cut",
+    "reveal": "cut",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": null,
+    "fease": "back",
+    "reveal": "slide",
+    "translation": [
+      -5,
+      -1,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": null,
+    "fease": "spring",
+    "reveal": "slide",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": null,
+    "fease": "cubic-out",
+    "reveal": "slide",
+    "translation": [
+      -1,
+      -0,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": null,
+    "fease": "expo-out",
+    "reveal": "slide",
+    "translation": [
+      -7,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": null,
+    "fease": "elastic",
+    "reveal": "slide",
+    "translation": [
+      -10,
+      -3,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": null,
+    "fease": "linear",
+    "reveal": "slide",
+    "translation": [
+      24,
+      6,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": null,
+    "fease": "cut",
+    "reveal": "slide",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": 0.06,
+    "fease": "back",
+    "reveal": "draw+slide",
+    "translation": [
+      -8,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": 0.01,
+    "fease": "spring",
+    "reveal": "draw+slide",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": 0.13,
+    "fease": "cubic-out",
+    "reveal": "draw+slide",
+    "translation": [
+      -6,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": 0.03,
+    "fease": "expo-out",
+    "reveal": "draw+slide",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": 0,
+    "fease": "elastic",
+    "reveal": "draw+slide",
+    "translation": [
+      -10,
+      -3,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": 0.5,
+    "fease": "linear",
+    "reveal": "draw+slide",
+    "translation": [
+      2,
+      1,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": 0,
+    "fease": "cut",
+    "reveal": "draw+slide",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": null,
+    "fease": "back",
+    "reveal": "glow",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": null,
+    "fease": "spring",
+    "reveal": "glow",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": null,
+    "fease": "cubic-out",
+    "reveal": "glow",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": null,
+    "fease": "expo-out",
+    "reveal": "glow",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": null,
+    "fease": "elastic",
+    "reveal": "glow",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": null,
+    "fease": "linear",
+    "reveal": "glow",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+  {
+    "blade": false,
+    "dash": null,
+    "fease": "cut",
+    "reveal": "glow",
+    "translation": [
+      -9,
+      -2,
+    ],
+  },
+]
+`;

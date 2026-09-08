@@ -10,9 +10,10 @@ import { PAGE as circles } from "../pages/5_circles.js"
 import { PAGE as tiles } from "../pages/6_tiles.js"
 import { PAGE as arches } from "../pages/7_arches.js"
 import { PAGE as frames } from "../pages/8_frames.js"
-import { PAGE as fma } from "../pages/9_fma.js"
+import { PAGE as fma } from "../pages/14_fma.js"
 import { PAGE as scaffold_guilloche } from "../pages/10_guilloche.js"
 import { PAGE as scaffold_architecture } from "../pages/11_architecture.js"
+import { PAGE as scaffold_astrolabe } from "../pages/12_astrolabe.js"
 // scaffold:imports
 
 // specs = the sections that own url namespaces; anchors = extra sections that render without a bar
@@ -45,6 +46,7 @@ export const PAGES: readonly PageDef[] = [
   fma,
   scaffold_guilloche,
   scaffold_architecture,
+  scaffold_astrolabe,
   // scaffold:pages
 ].map(define)
 

@@ -1,0 +1,6 @@
+export { SLICE_DEFAULTS, SLICE_SPEC, SLICE_PRESETS, SLICE_REVEAL_INPUTS, SLICE_CUT_INPUTS, SLICE_ORDER_INPUTS, SLICE_FLIGHT_INPUTS, type SliceParams } from "./0_spec.js"
+export { sliceClock } from "./1_clock.js"
+export { attachSlice, type SliceAttachOptions, type SliceController, type SliceTarget } from "./2_attach.js"
+export { slicePaths, splitPath, type PathInput, type SliceGeometryOptions, type SliceStroke, type SliceTimeline } from "../../lib/6a_slicePaths.js"
+export { slicePose, type SliceFrame } from "../../lib/6b_slicePose.js"
+export { alongPts, CURVES, FLY, GAPS, schedule, type SliceKnobs } from "../../lib/6_slice.js"

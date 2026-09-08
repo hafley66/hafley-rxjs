@@ -25,7 +25,6 @@ const SPEC = {
     max: 2,
     step: 0.05,
     default: 1,
-    static: true,
   },
   idle: {
     kind: "range",
@@ -34,9 +33,8 @@ const SPEC = {
     max: 1,
     step: 0.05,
     default: 0.55,
-    static: true,
   },
-  ink: { kind: "text", hint: "stroke colour, any css colour", default: "#e2c477", size: 8, static: true },
+  ink: { kind: "text", hint: "stroke colour, any css colour", default: "#e2c477", pool: ["#e2c477", "#90c7d2", "#caa1c7", "#c4d6ab", "#e0a891"], size: 8 },
 } as const satisfies AnySpec
 type V = ValuesOf<typeof SPEC>
 const SIZER = {

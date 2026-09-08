@@ -21,13 +21,19 @@
     "@thi.ng/colored-noise": "1.0.138",
     "@thi.ng/random": "4.1.54",
     "animejs": "4.5.0",
+    "d3-contour": "4.0.2",
+    "d3-delaunay": "6.0.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "rxjs": "^7.8.2",
+    "svg-path-properties": "2.1.0",
+    "svgpath": "2.6.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "@types/d3-contour": "3.0.6",
+    "@types/d3-delaunay": "6.0.4",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.0.5",
@@ -37,5 +43,11 @@
     "vite": "^8.2.1",
     "vite-plugin-singlefile": "2.3.3",
     "vitest": "^4.1.10"
+  },
+  "exports": {
+    "./inputs": "./src/kit/0_inputs.ts",
+    "./inputs/react": "./src/ui/1b_AnimationControls.tsx",
+    "./slice": "./src/kit/slice/index.ts",
+    "./slice/react": "./src/kit/slice/3_react.ts"
   }
 }

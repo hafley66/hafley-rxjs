@@ -1,4 +1,3 @@
-import { SignalReact } from "@hafley66/signals/react"
 import type { PageSpec } from "../app/0_pages.js"
 import { AlgoSection } from "../ui/4_Algo.js"
 import { ALGO as source_architecture } from "../algos/4_architecture.js"
@@ -18,7 +17,7 @@ const section_wheel = { ...source_wheel, name: "wheel" }
 const section_cloister = { ...source_cloister, name: "cloister" }
 // scaffold:bindings
 
-const NotebookPage = SignalReact(function NotebookPage() {
+function NotebookPage() {
   return (
     <>
       <AlgoSection page="architecture" algo={section_architecture} sizes={SIZES} title="branching lancet tracery" />
@@ -30,7 +29,7 @@ const NotebookPage = SignalReact(function NotebookPage() {
       {/* scaffold:sections */}
     </>
   )
-})
+}
 
 export const PAGE: PageSpec = {
   id: "architecture",

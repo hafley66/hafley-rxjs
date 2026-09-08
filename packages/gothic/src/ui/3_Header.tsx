@@ -1,5 +1,4 @@
 import { NavTabs } from "@hafley66/report-shell"
-import { SignalReact } from "@hafley66/signals/react"
 import type { ReactNode } from "react"
 import type { PageDef } from "../app/0_pages.js"
 import { hashMode, navigate, toHref } from "../app/1_router.js"
@@ -7,7 +6,7 @@ import { hashMode, navigate, toHref } from "../app/1_router.js"
 type Props = { pages: readonly PageDef[]; current: PageDef; end?: ReactNode }
 
 // the kit tab row over gothic's pages: tabs = files, anchors = the current page's sections, end = page knobs
-export const Header = SignalReact(function Header({ pages, current, end }: Props) {
+export function Header({ pages, current, end }: Props) {
   return (
     <NavTabs
       tabs={pages.map(p => ({
@@ -22,4 +21,4 @@ export const Header = SignalReact(function Header({ pages, current, end }: Props
       onNavigate={t => navigate(pages.find(p => p.id === t.id)?.path ?? t.href)}
     />
   )
-})
+}

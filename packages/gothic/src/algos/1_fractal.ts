@@ -31,7 +31,6 @@ export const apollonian: Algo<Ap> = {
       max: 12,
       step: 0.5,
       default: 2.5,
-      static: true,
     },
     seed: { kind: "seed", hint: "seed for the ring rotation", default: 1 },
   },
@@ -117,7 +116,7 @@ export const foils: Algo<Fo> = {
     child: { kind: "range", hint: "lobes of each child foil", min: 2, max: 8, step: 1, default: 3 },
     shrink: { kind: "range", hint: "child radius over parent radius", min: 0.2, max: 0.6, step: 0.02, default: 0.38 },
     depth: { kind: "range", hint: "recursion depth", min: 1, max: 5, step: 1, default: 3 },
-    minPx: { kind: "range", hint: "smallest foil drawn, in px", min: 1, max: 12, step: 0.5, default: 3, static: true },
+    minPx: { kind: "range", hint: "smallest foil drawn, in px", min: 1, max: 12, step: 0.5, default: 3 },
     seed: { kind: "seed", hint: "seed for the child placement", default: 1 },
   },
   presets: {
@@ -174,7 +173,6 @@ export const lsys: Algo<Ls> = {
       max: 8,
       step: 0.5,
       default: 1.5,
-      static: true,
     },
   },
   presets: Object.fromEntries(
@@ -254,7 +252,6 @@ export const cusping: Algo<Cu> = {
       max: 8,
       step: 0.5,
       default: 1.5,
-      static: true,
     },
   },
   presets: {
@@ -329,7 +326,7 @@ export const hilbert: Algo<Hi> = {
   spec: {
     order: { kind: "range", hint: "curve order; cells = 4^order", min: 1, max: 7, step: 1, default: 4, roll: [2, 6] },
     round: { kind: "range", hint: "corner rounding 0..1", min: 0, max: 1, step: 0.05, default: 0.35 },
-    minPx: { kind: "range", hint: "smallest cell drawn, in px", min: 0.5, max: 8, step: 0.5, default: 2, static: true },
+    minPx: { kind: "range", hint: "smallest cell drawn, in px", min: 0.5, max: 8, step: 0.5, default: 2 },
   },
   presets: { o3: { order: 3 }, o5: { order: 5, round: 0.5 }, sharp: { order: 4, round: 0 } },
   run(p, { size }) {

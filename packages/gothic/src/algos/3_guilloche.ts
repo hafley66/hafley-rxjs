@@ -14,9 +14,9 @@ export const SPEC = {
   bands: { kind: "range", hint: "concentric generations of the rosette", min: 1, max: 5, step: 1, default: 3, group: "nesting" },
   shrink: { kind: "range", hint: "radius of each generation relative to the previous one", min: 0.25, max: 0.8, step: 0.01, default: 0.46, group: "nesting" },
   twist: { kind: "range", hint: "rotation between generations in degrees", min: -45, max: 45, step: 1, default: 13, group: "nesting" },
-  ink: { kind: "select", hint: "ink colours across the woven strands", options: ["amber", "ice", "copper", "mono"], default: "amber", static: true },
-  rings: { kind: "bool", hint: "engraved guide rings around each generation", default: true, static: true },
-  minPx: { kind: "range", hint: "smallest visible feature in pixels; controls detail reduction", min: 0.5, max: 3, step: 0.25, default: 1, static: true },
+  ink: { kind: "select", hint: "ink colours across the woven strands", options: ["amber", "ice", "copper", "mono"], default: "amber" },
+  rings: { kind: "bool", hint: "engraved guide rings around each generation", default: true },
+  minPx: { kind: "range", hint: "smallest visible feature in pixels; controls detail reduction", min: 0.5, max: 3, step: 0.25, default: 1 },
   // scaffold:inputs
 } as const satisfies AnySpec
 export type Params = ValuesOf<typeof SPEC>

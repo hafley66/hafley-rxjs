@@ -10,7 +10,7 @@ const SIZES = [48, 96, 160, 240, 400]
 
 const GALLERY = {
   seeds: { kind: "range", hint: "how many seeds to draw, 1..N", min: 4, max: 24, step: 1, default: 12 },
-  size: { kind: "range", hint: "cell size in px", min: 96, max: 240, step: 8, default: 160, static: true },
+  size: { kind: "range", hint: "cell size in px", min: 96, max: 240, step: 8, default: 160 },
   depth: { kind: "range", hint: "nesting depth for every cell", min: 1, max: 3, step: 1, default: 2 },
   sat: {
     kind: "range",
@@ -21,7 +21,7 @@ const GALLERY = {
     step: 0.05,
     default: 0.9,
   },
-  minPx: { kind: "range", hint: "smallest feature drawn, in px", min: 1, max: 6, step: 0.5, default: 2, static: true },
+  minPx: { kind: "range", hint: "smallest feature drawn, in px", min: 1, max: 6, step: 0.5, default: 2 },
 } as const satisfies AnySpec
 type G = ValuesOf<typeof GALLERY>
 

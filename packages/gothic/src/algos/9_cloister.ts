@@ -10,7 +10,7 @@ export const SPEC = {
   horizon: { kind: "range", hint: "vertical vanishing point as a fraction of the cell", min: -0.2, max: 0.1, step: 0.01, default: -0.06 },
   mouldings: { kind: "range", hint: "outlines around each transverse vault rib", min: 1, max: 3, step: 1, default: 2 },
   paving: { kind: "range", hint: "longitudinal stone joints across the floor", min: 2, max: 10, step: 1, default: 6 },
-  minPx: { kind: "range", hint: "smallest projected bay width in pixels", min: 1, max: 4, step: 0.5, default: 2, static: true },
+  minPx: { kind: "range", hint: "smallest projected bay width in pixels", min: 1, max: 4, step: 0.5, default: 2 },
   // scaffold:inputs
 } as const satisfies AnySpec
 export type Params = ValuesOf<typeof SPEC>

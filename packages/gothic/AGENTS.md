@@ -13,7 +13,7 @@ Rules for agents editing this package (user-set 2026-09-07):
 |---|---|
 | app | one React 19 SPA, `index.html` -> `src/main.tsx`, vite |
 | routing | `@hafley66/path` (`route` / `queryRoute`) + `src/app/1_router.ts`; history under the dev server, hash under `file:` |
-| state | `@hafley66/signals` only (`SignalReact` for every reactive component). No useState for app state |
+| state | `@hafley66/signals` with `signalsJsx()` automatic JSX tracking; plain reactive components. No useState for app state |
 | storage | `@hafley66/report-shell` spec store, using signals' `storageSignal`: `gothic.<page>.<section>.current` autosave, `.states` named list, `.selected` = the state that receives every edit |
 | styles | Tailwind v4 via `@tailwindcss/vite`; `src/app.css` holds only the theme vars, keyframes, the `data-z` depth rule and `@view-transition` |
 | generators | `src/lib/**`, `src/lib/legacy/**`, `src/algos/**`: pure, no React, path strings only |
@@ -45,8 +45,8 @@ Commands: `pnpm --filter @hafley66/gothic dev | scaffold | build | build:single 
 - One section = one url namespace: `?<section>.<key>=`, pins at `?<section>.pin=a,b`, plus the page-global `?page.z` and `?page.draw`.
 - Input = replaceState, shuffle / preset / chip load = pushState, popstate restores. Foreign query keys survive a write.
 - Start values: defaults, then the localStorage autosave, then the url keys that are present.
-- Specs derive everything: `kind` is `range | number | seed | select | bool | text`; `static: true` or `shuffle: false` moves a field into the last column with no pin and no reroll; `group` clusters it; `roll` narrows the shuffle window; `pool` weights a select; `p` is a bool's true-probability.
-- Shuffle skips static and pinned fields and rolls everything else from one seeded rng.
+- Specs derive everything: `kind` is `range | number | seed | select | bool | text`; every field has a pin and reroll; do not add `static: true` or `shuffle: false`; `group` clusters it; `roll` narrows the shuffle window; `pool` supplies text choices or weights a select; `p` is a bool's true-probability.
+- Shuffle skips pinned fields and rolls everything else from one seeded rng.
 - Depth: paths carrying `data-z` (0 near .. 1 far) fade and thin with the header's zDepth; sections opt in with `zDepth: true`.
 - Anchors: the header's row 2 lights each section on its own named view timeline, with an IntersectionObserver fallback.
 - Named states: `state.save(name)` creates or overwrites by name and selects it; while a state is selected every edit is written into it as well as the autosave; `state.roll(key)` rerolls one field.
@@ -62,7 +62,7 @@ For requests to notebook something new, use `pnpm scaffold page <id>` first. The
 - `pnpm scaffold input --print <key> <kind>` prints the field template for a handwritten spec.
 - Add `--dry-run` to inspect an exact diff. Keep `scaffold:*` markers intact for subsequent edits.
 
-Generated pages use `SignalReact` and the existing `AlgoSection`/`Section`/`createSections` chain. Use its signal-backed values, pins, storage and kit controls. Generators stay pure in `src/lib/**` or `src/algos/**`. Run `pnpm check` after implementing the generator.
+Generated pages use plain JSX with the signals interceptor and the existing `AlgoSection`/`Section`/`createSections` chain. Use its signal-backed values, pins, storage and kit controls. Generators stay pure in `src/lib/**` or `src/algos/**`. Run `pnpm check` after implementing the generator.
 
 Adding sections to a handwritten page generates a wrapper around its existing `PAGE`. Existing generators and notebook rows remain in place. Composition via `use` renders separate sections; every section name must be unique within that page, including its inherited specs and anchors.
 
@@ -77,3 +77,13 @@ Adding sections to a handwritten page generates a wrapper around its existing `P
 ## Not ported
 
 - `arches`: the first six sections (families, spread, lobes, anatomy, rose, panel) carry bars; the remaining nine (flamboyant, pinnacle, vault, buttress, bands, facade, noisy, grammar, grammar2) render from the same generators on the families bar's globals. The `tex` section is dropped: it loaded textures.js from a CDN, which no single-file build can carry.
+
+## Slice reuse and shuffle (user-set 2026-09-08)
+
+The slice toolkit is exported from `src/kit/slice/index.ts`, with a separate React hook. Reuse its segmentation, schedule, gap distributions, poses and clock when requesting that animation. Each technique remains opt-in. FMA adds five distinct sections in `src/pages/14_fma.tsx`; its original notebook stays as the base.
+
+Every input is shuffleable and pinnable. Text fields need a `pool`; number fields need finite `min`/`max`. Use pins to hold values instead of a static field category.
+
+## Signals authoring
+
+Use the shipped [signals skill](../signals/skills/signals/SKILL.md). Group related state in one root and use nested path proxies. Source signals own RxJS connections; tracked JSX reads activate them. Animation components do not manually subscribe or use `useEffect` to connect producers. The editable skill source is `~/projects/claude-research/skills/signals/SKILL.md`.

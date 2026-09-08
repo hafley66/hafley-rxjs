@@ -13,8 +13,8 @@ export const SPEC = {
   stone: { kind: "range", hint: "mullion thickness relative to each opening", min: 0.02, max: 0.14, step: 0.01, default: 0.05 },
   asymmetry: { kind: "range", hint: "seeded difference between left and right child widths", min: 0, max: 0.3, step: 0.01, default: 0 },
   foils: { kind: "range", hint: "lobes in the crown lights", min: 3, max: 6, step: 1, default: 4 },
-  casings: { kind: "range", hint: "concentric stone mouldings around the outer window", min: 1, max: 4, step: 1, default: 3, static: true },
-  minPx: { kind: "range", hint: "smallest child opening in pixels", min: 1, max: 5, step: 0.5, default: 2, static: true },
+  casings: { kind: "range", hint: "concentric stone mouldings around the outer window", min: 1, max: 4, step: 1, default: 3 },
+  minPx: { kind: "range", hint: "smallest child opening in pixels", min: 1, max: 5, step: 0.5, default: 2 },
   // scaffold:inputs
 } as const satisfies AnySpec
 export type Params = ValuesOf<typeof SPEC>

@@ -1,4 +1,3 @@
-import { SignalReact } from "@hafley66/signals/react"
 import type { PageSpec } from "../app/0_pages.js"
 import { AlgoSection } from "../ui/4_Algo.js"
 import { PAGE as BASE } from "./@@BASE@@.js"
@@ -15,14 +14,14 @@ for (const id of Object.keys(SPECS)) {
   if (id in BASE.specs || BASE.anchors?.includes(id)) throw new Error(`duplicate section: ${BASE.id}.${id}`)
 }
 
-const NotebookPage = SignalReact(function NotebookPage() {
+function NotebookPage() {
   return (
     <>
       <BaseBody />
       {/* scaffold:sections */}
     </>
   )
-})
+}
 
 export const PAGE: PageSpec = {
   ...BASE,

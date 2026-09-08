@@ -1,0 +1,8 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`normalizes relative commands, implicit lineto, smooth curves, arcs and compound subpaths 1`] = `
+[
+  "M10 20L20 20H30V30Q40 50 50 30Q60 10 70 30",
+  "M110 30C110 50 130 50 130 30C130 10 150 10 150 30A10 10 0 0 1 160 40Z",
+]
+`;

@@ -3,7 +3,7 @@
 import { existsSync } from "node:fs"
 import { resolve } from "node:path"
 import { type Browser, chromium, type Page } from "playwright"
-import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest"
 
 const SINGLE = resolve(import.meta.dirname, "../dist/index.html")
 if (!existsSync(SINGLE)) throw new Error(`missing ${SINGLE}: run \`pnpm build:single\` in packages/gothic first`)
@@ -42,6 +42,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await browser.close()
 })
+afterEach(() => expect(pageErrors).toEqual([]))
 
 describe("gothic single file", () => {
   it("every tab renders svg, keeps the tab row fixed, mounts a drawer per section, and titles every control", async () => {

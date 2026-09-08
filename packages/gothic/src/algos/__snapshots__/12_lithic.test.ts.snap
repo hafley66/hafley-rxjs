@@ -1,0 +1,94 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`joins every grown rib to its fork or stone boundary and preserves aperture area 1`] = `
+[
+  {
+    "joints": [
+      [
+        -4,
+        -102,
+      ],
+      [
+        -58,
+        -183,
+      ],
+      [
+        58,
+        -183,
+      ],
+      [
+        0,
+        -300,
+      ],
+    ],
+    "open": 77,
+    "seed": 0,
+  },
+  {
+    "joints": [
+      [
+        3,
+        -102,
+      ],
+      [
+        -58,
+        -183,
+      ],
+      [
+        58,
+        -183,
+      ],
+      [
+        0,
+        -300,
+      ],
+    ],
+    "open": 77,
+    "seed": 17,
+  },
+  {
+    "joints": [
+      [
+        -6,
+        -102,
+      ],
+      [
+        -58,
+        -183,
+      ],
+      [
+        58,
+        -183,
+      ],
+      [
+        0,
+        -300,
+      ],
+    ],
+    "open": 77,
+    "seed": 51,
+  },
+  {
+    "joints": [
+      [
+        -1,
+        -102,
+      ],
+      [
+        -58,
+        -183,
+      ],
+      [
+        58,
+        -183,
+      ],
+      [
+        0,
+        -300,
+      ],
+    ],
+    "open": 77,
+    "seed": 2147483647,
+  },
+]
+`;

@@ -1,5 +1,6 @@
 import tailwind from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
+import { signalsJsx } from "@hafley66/signals/vite"
 import { viteSingleFile } from "vite-plugin-singlefile"
 import { fileURLToPath } from "node:url"
 import { defineConfig } from "vitest/config"
@@ -17,7 +18,7 @@ export default defineConfig(({ mode }) => ({
       { find: /^@hafley66\/report-shell\/(kit|style|marbler)\.css$/, replacement: `${kitSrc}$1.css` },
     ],
   },
-  plugins: [react(), tailwind(), ...(mode === "single" ? [viteSingleFile()] : [])],
+  plugins: [react(), signalsJsx(), tailwind(), ...(mode === "single" ? [viteSingleFile()] : [])],
   build: { outDir: "dist", emptyOutDir: true, chunkSizeWarningLimit: 4000 },
   test: { environment: "node", include: ["src/**/*.test.ts", "scripts/*.test.ts"] },
 }))

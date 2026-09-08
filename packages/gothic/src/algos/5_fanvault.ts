@@ -10,7 +10,7 @@ export const SPEC = {
   spread: { kind: "range", hint: "fan radius relative to the bay width", min: 0.48, max: 0.92, step: 0.01, default: 0.71 },
   bend: { kind: "range", hint: "curve of the fan ribs between pier and outer web", min: -0.18, max: 0.18, step: 0.01, default: 0.04 },
   liernes: { kind: "range", hint: "concentric star webs around the central boss", min: 0, max: 5, step: 1, default: 3 },
-  minPx: { kind: "range", hint: "spacing threshold for reducing ribs", min: 1, max: 4, step: 0.5, default: 2, static: true },
+  minPx: { kind: "range", hint: "spacing threshold for reducing ribs", min: 1, max: 4, step: 0.5, default: 2 },
   // scaffold:inputs
 } as const satisfies AnySpec
 export type Params = ValuesOf<typeof SPEC>

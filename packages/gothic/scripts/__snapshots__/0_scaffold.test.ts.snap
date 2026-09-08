@@ -12,7 +12,7 @@ export const SPEC = {
   field_seed: { kind: "seed", hint: "field_seed", default: 1 },
   field_select: { kind: "select", hint: "field_select", options: ["a", "b"], default: "a" },
   field_bool: { kind: "bool", hint: "field_bool", default: true },
-  field_text: { kind: "text", hint: "field_text", default: "", shuffle: false },
+  field_text: { kind: "text", hint: "field_text", default: "", pool: ["alpha", "beta", "gamma"] },
   // scaffold:inputs
 } as const satisfies AnySpec
 export type Params = ValuesOf<typeof SPEC>
@@ -33,8 +33,7 @@ export const ALGO: Algo<Params> = {
 
 exports[`Bash scaffold > creates typed kit pages, all field kinds, copies and compositions without editing source generators 2`] = `
 {
-  "src/pages/N_scaffold_receipt.tsx": "import { SignalReact } from "@hafley66/signals/react"
-import type { PageSpec } from "../app/0_pages.js"
+  "src/pages/N_scaffold_receipt.tsx": "import type { PageSpec } from "../app/0_pages.js"
 import { AlgoSection } from "../ui/4_Algo.js"
 import { ALGO as source_scaffold_receipt } from "../algos/N_scaffold_receipt.js"
 import { ALGO as source_scaffold_detail } from "../algos/N_scaffold_detail.js"
@@ -51,7 +50,7 @@ const section_packing = { ...source_packing, name: "packing" }
 const section_variant = { ...source_variant, name: "variant" }
 // scaffold:bindings
 
-const NotebookPage = SignalReact(function NotebookPage() {
+function NotebookPage() {
   return (
     <>
       <AlgoSection page="scaffold_receipt" algo={section_scaffold_receipt} sizes={SIZES} />
@@ -62,7 +61,7 @@ const NotebookPage = SignalReact(function NotebookPage() {
       {/* scaffold:sections */}
     </>
   )
-})
+}
 
 export const PAGE: PageSpec = {
   id: "scaffold_receipt",

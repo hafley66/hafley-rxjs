@@ -1,3 +1,4 @@
+import { DETAIL_INPUTS } from "../kit/0_inputs.js"
 import type { Algo, AlgoPath } from "../kit/2_algo.js"
 import {
   band,
@@ -253,22 +254,13 @@ export const fma2: Algo<Fma> = {
       step: 0.05,
       default: 0.9,
     },
-    minPx: {
-      kind: "range",
-      hint: "smallest feature drawn, in px; everything under it degrades one kind down (LOD)",
-      min: 1,
-      max: 6,
-      step: 0.5,
-      default: 2,
-      static: true,
-    },
+    minPx: { ...DETAIL_INPUTS.minPx, hint: "smallest feature drawn, in px; everything under it degrades one kind down (LOD)", },
     script: {
       kind: "bool",
       hint: "rune script on the root's outer band; off draws ticks",
       default: true,
-      static: true,
     },
-    pupil: { kind: "bool", hint: "fill the pupil of every eye core", default: true, static: true },
+    pupil: { kind: "bool", hint: "fill the pupil of every eye core", default: true },
   },
   presets: {
     penta: { n: 5, step: 2, depth: 2 },

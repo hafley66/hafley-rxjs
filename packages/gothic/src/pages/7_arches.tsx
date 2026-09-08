@@ -1,5 +1,4 @@
 import type { AnySpec } from "@hafley66/report-shell"
-import { SignalReact } from "@hafley66/signals/react"
 import type { ReactNode } from "react"
 import type { PageSpec } from "../app/0_pages.js"
 import { sectionState } from "../app/2_state.js"
@@ -67,7 +66,6 @@ const GLOBALS = {
     max: 24,
     default: 7,
     label: "min lobe px",
-    static: true,
   },
   minSub: {
     kind: "range",
@@ -77,7 +75,6 @@ const GLOBALS = {
     step: 2,
     default: 22,
     label: "min sub-arch px",
-    static: true,
   },
   weight: {
     kind: "range",
@@ -86,25 +83,23 @@ const GLOBALS = {
     max: 3,
     step: 0.25,
     default: 1,
-    static: true,
   },
   guides: {
     kind: "bool",
     hint: "draw the construction circles and centre lines",
     default: false,
     label: "show guides",
-    static: true,
   },
 } as const satisfies AnySpec
 
 const SPREAD = {
   axis: { kind: "select", hint: "which parameter the row sweeps", options: Object.keys(axes), default: "k" },
-  lo: { kind: "number", hint: "sweep start value", default: 0, step: 0.1, label: "from" },
-  hi: { kind: "number", hint: "sweep end value", default: 2, step: 0.1, label: "to" },
+  lo: { kind: "number", hint: "sweep start value", min: 0, max: 1, default: 0, step: 0.1, label: "from" },
+  hi: { kind: "number", hint: "sweep end value", min: 1, max: 3, default: 2, step: 0.1, label: "to" },
   m: { kind: "range", hint: "columns: parameter steps from..to", min: 2, max: 16, default: 7, label: "m steps" },
   n: { kind: "range", hint: "rows: sizes from big to small", min: 1, max: 10, default: 6, label: "n sizes" },
-  big: { kind: "number", hint: "largest size in px", default: 256, step: 16, label: "big px", static: true },
-  small: { kind: "number", hint: "smallest size in px", default: 16, step: 4, label: "small px", static: true },
+  big: { kind: "number", hint: "largest size in px", min: 128, max: 320, default: 256, step: 16, label: "big px" },
+  small: { kind: "number", hint: "smallest size in px", min: 12, max: 64, default: 16, step: 4, label: "small px" },
   base: {
     kind: "select",
     hint: "arch family the sweep starts from",
@@ -190,12 +185,12 @@ const archCells = (sizes: number[], makers: [string, Knobs][]): Made[] =>
     }),
   )
 
-const Families = SignalReact(function Families() {
+function Families() {
   useGlobals()
   return <Cells cells={archCells(SIZES, Object.entries(families) as [string, Knobs][])} />
-})
+}
 
-const Spread = SignalReact(function Spread({ v }: { v: Knobs }) {
+function Spread({ v }: { v: Knobs }) {
   useGlobals()
   const axis = String(v.axis)
   const lo = Number(v.lo)
@@ -219,9 +214,9 @@ const Spread = SignalReact(function Spread({ v }: { v: Knobs }) {
     }
   }
   return <Cells cells={cells} />
-})
+}
 
-const Lobes = SignalReact(function Lobes({ v }: { v: Knobs }) {
+function Lobes({ v }: { v: Knobs }) {
   useGlobals()
   const shapes = v.shape === "all" ? ["round", "pointed", "dagger", "eyelet"] : [String(v.shape)]
   const lancet = Number(v.lancet)
@@ -232,9 +227,9 @@ const Lobes = SignalReact(function Lobes({ v }: { v: Knobs }) {
     for (const n of [3, 5]) makers.push([`${shape} lancet ${n}`, S => head(S, n, shape, lancet)])
   }
   return <Cells cells={gen([160, 80, 40], makers)} />
-})
+}
 
-const Anatomy = SignalReact(function Anatomy({ v }: { v: Knobs }) {
+function Anatomy({ v }: { v: Knobs }) {
   useGlobals()
   const big = Number(v.big)
   const makers: [string, (S: number) => Cellish][] = [
@@ -260,9 +255,9 @@ const Anatomy = SignalReact(function Anatomy({ v }: { v: Knobs }) {
     ["fleuron 6", S => fleuron(S, { n: 6 })],
   ]
   return <Cells cells={gen([big, big / 2, big / 4], makers)} />
-})
+}
 
-const Rose = SignalReact(function Rose({ v }: { v: Knobs }) {
+function Rose({ v }: { v: Knobs }) {
   useGlobals()
   const makers: [string, (S: number) => Cellish][] = [
     ["rose 8·3", S => rose(S, { spokes: 8, rings: 3 })],
@@ -273,9 +268,9 @@ const Rose = SignalReact(function Rose({ v }: { v: Knobs }) {
     ["rose sliders", S => rose(S, v)],
   ]
   return <Cells cells={gen(GRID, makers)} />
-})
+}
 
-const Panel = SignalReact(function Panel({ v }: { v: Knobs }) {
+function Panel({ v }: { v: Knobs }) {
   useGlobals()
   const makers: [string, (S: number) => Cellish][] = [
     ["perp 4×2", S => panelTracery(S, { cols: 4, rows: 2 })],
@@ -285,10 +280,10 @@ const Panel = SignalReact(function Panel({ v }: { v: Knobs }) {
     ["perp sliders", S => panelTracery(S, v)],
   ]
   return <Cells cells={gen(GRID, makers)} />
-})
+}
 
 /* ============ the tail: the same generators without their own bars, on the families globals ============ */
-const Tail = SignalReact(function Tail({
+function Tail({
   makers,
   sizes,
 }: {
@@ -297,9 +292,9 @@ const Tail = SignalReact(function Tail({
 }) {
   useGlobals()
   return <Cells cells={gen(sizes, makers)} />
-})
+}
 
-const NoisyTail = SignalReact(function NoisyTail() {
+function NoisyTail() {
   useGlobals()
   const cells = [
     ...archCells(
@@ -319,7 +314,7 @@ const NoisyTail = SignalReact(function NoisyTail() {
     ),
   ]
   return <Cells cells={cells} />
-})
+}
 
 function ArchesPage() {
   return (

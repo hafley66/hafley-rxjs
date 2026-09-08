@@ -22,7 +22,7 @@ const SPEC = {
     hint: "one seal per word; the word hashes into that seal's seed",
     default: "github rxjs hn docs mail calendar grapht boop gothic tanstack vite playwright",
     size: 60,
-    shuffle: false,
+    pool: ["mercury salt sulphur silver iron gold", "nave apse vault rose lancet spire", "github rxjs hn docs mail calendar grapht boop gothic tanstack vite playwright"],
   },
   weight: {
     kind: "range",
@@ -31,14 +31,12 @@ const SPEC = {
     max: 2.5,
     step: 0.1,
     default: 1,
-    static: true,
   },
   anim: {
     kind: "bool",
     hint: "draw paths in along their length on every rerender",
     default: true,
     label: "draw-in",
-    static: true,
   },
 } as const satisfies AnySpec
 type V = ValuesOf<typeof SPEC>

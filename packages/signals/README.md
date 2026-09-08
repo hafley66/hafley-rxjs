@@ -142,3 +142,7 @@ pnpm typecheck   # tsgo --noEmit
 pnpm test        # vitest
 pnpm build       # vite build
 ```
+
+## Application authoring skill
+
+The npm package includes [skills/signals/SKILL.md](skills/signals/SKILL.md). It covers recursive signal paths, grouped state, automatic JSX tracking, cold producer connections and RxJS resource lifetimes. Use it when authoring applications with this library.

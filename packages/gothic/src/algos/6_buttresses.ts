@@ -10,7 +10,7 @@ export const SPEC = {
   lift: { kind: "range", hint: "height of the upper flying arch at the nave", min: 0.56, max: 0.78, step: 0.01, default: 0.7 },
   rake: { kind: "range", hint: "horizontal projection between repeated bays", min: 0.015, max: 0.055, step: 0.005, default: 0.035 },
   crockets: { kind: "range", hint: "paired leaf ornaments on the pier pinnacles", min: 0, max: 8, step: 1, default: 5 },
-  minPx: { kind: "range", hint: "smallest ornament size in pixels", min: 1, max: 4, step: 0.5, default: 2, static: true },
+  minPx: { kind: "range", hint: "smallest ornament size in pixels", min: 1, max: 4, step: 0.5, default: 2 },
   // scaffold:inputs
 } as const satisfies AnySpec
 export type Params = ValuesOf<typeof SPEC>

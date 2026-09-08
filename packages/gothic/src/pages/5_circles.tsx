@@ -53,7 +53,6 @@ const SHARED = {
     max: 24,
     default: 6,
     label: "min px",
-    static: true,
   },
   weight: {
     kind: "range",
@@ -62,14 +61,12 @@ const SHARED = {
     max: 3,
     step: 0.25,
     default: 1,
-    static: true,
   },
   anim: {
     kind: "bool",
     hint: "draw paths in along their length on every rerender",
     default: false,
     label: "draw-in",
-    static: true,
   },
 } as const satisfies AnySpec
 
@@ -81,7 +78,7 @@ const DIAGRAM = {
     default: "",
     size: 60,
     label: "spec json",
-    shuffle: false,
+    pool: [3, 5, 7, 11].map(seed => JSON.stringify(randomSpec(mulberry32(seed), 0.5))),
   },
   ms: {
     kind: "range",
@@ -90,7 +87,6 @@ const DIAGRAM = {
     max: 4000,
     step: 100,
     default: 1200,
-    static: true,
   },
 } as const satisfies AnySpec
 const FMA = SHARED

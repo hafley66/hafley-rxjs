@@ -1,4 +1,4 @@
-import { SignalReact } from "@hafley66/signals/react"
+import { pinSet } from "@hafley66/report-shell"
 import { useEffect } from "react"
 import { Header } from "../ui/3_Header.js"
 import { matchPage, PAGES } from "./0_pages.js"
@@ -7,15 +7,17 @@ import { pageState, setActivePage, syncFromUrl } from "./2_state.js"
 import { armTransitions } from "./3_view.js"
 
 // page-global knobs in the tab row end slot: depth fade and draw-in; both travel as ?page.z / ?page.draw
-const PagePanel = SignalReact(function PagePanel() {
+function PagePanel() {
   const page = pageState()
   const { z, draw } = page.values.$()
+  const pins = pinSet(page.pins.$())
   useEffect(() => {
     document.documentElement.style.setProperty("--kit-zdepth", String(z))
     document.documentElement.style.setProperty("--kit-ms", draw ? "1400ms" : "0ms")
   }, [z, draw])
   return (
     <span className="kit-page">
+      <input type="checkbox" className="kit-pin" data-pin="z" aria-label="pin zDepth" title="pin zDepth: page shuffle skips it" checked={pins.has("z")} onChange={() => page.togglePin("z")} />
       <label
         htmlFor="kit-page-z"
         title="depth fade: paths carrying data-z (0 near .. 1 far) lose opacity and width with z; 0 = flat. url ?page.z"
@@ -32,6 +34,8 @@ const PagePanel = SignalReact(function PagePanel() {
         />
         <output>{z}</output>
       </label>
+      <button type="button" className="kit-roll" title="reroll zDepth only" onClick={() => page.roll("z")}>↻</button>
+      <input type="checkbox" className="kit-pin" data-pin="draw" aria-label="pin draw-in" title="pin draw-in: page shuffle skips it" checked={pins.has("draw")} onChange={() => page.togglePin("draw")} />
       <label
         htmlFor="kit-page-draw"
         title="draw paths in along their length on every rerender; off renders instantly. url ?page.draw"
@@ -44,11 +48,13 @@ const PagePanel = SignalReact(function PagePanel() {
         />
         draw-in
       </label>
+      <button type="button" className="kit-roll" title="reroll draw-in only" onClick={() => page.roll("draw")}>↻</button>
+      <button type="button" title="shuffle unpinned page controls" onClick={() => page.rollAll()}>shuffle</button>
     </span>
   )
-})
+}
 
-export const App = SignalReact(function App() {
+export function App() {
   const l = loc.$()
   const page = matchPage(l.path)
   const Body = page.Component
@@ -73,4 +79,4 @@ export const App = SignalReact(function App() {
       </main>
     </>
   )
-})
+}

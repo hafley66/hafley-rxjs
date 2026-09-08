@@ -1,132 +1,66 @@
-# kit
+# Notebook kit
 
-Shared notebook framework: a spec drives the bar, the URL, shuffle, pins, named states, draw-in, and the algo contract. Nothing in this directory knows about seals, eyes, or slices.
+The shared `@hafley66/report-shell` spec derives inputs, URL state, shuffle, pins, presets, named states and section drawers. Gothic binds it to its router through `src/app/2_state.ts`.
 
-## TOC
-
-1. Files
-2. Spec and derived schema
-3. URL namespaces
-4. Bar: drawer panel, group columns, rows, shuffle, pins, reroll, presets, state combobox
-5. Section and page
-6. Depth contract (data-z / zDepth)
-7. Animation: draw-in and clock
-8. Algo contract
-9. Harvest
-
-## 1. Files
-
-| file | owns |
+| module | exports |
 |---|---|
-| `0_spec.ts` | `Field`, `Spec<P>`, `ValuesOf<S>`, zod derivation, `parseValues`, `shuffle`, pins helpers, local `mulberry32` |
-| `1_url.ts` | one `@hafley66/path` route per notebook, `queryRoute` / `parseSearch` / `printSearch` / `mergeSearch` |
-| `2_algo.ts` | `Algo<P>`, `AlgoOut`, `algoCtx` |
-| `3_store.ts` | localStorage autosave + named states |
+| `0_inputs.ts` | shared seed, playback, stroke and detail input groups and presets |
+| `1_browser.ts` | cold document visibility and viewport streams |
+| `1a_playback.ts` | shared observable-backed playback model |
+| `2_algo.ts` | `Algo`, `AlgoOut`, `algoCtx` |
+| `3_motion.ts` | compatibility export of the shared playback spec |
+| `slice/` | path segmentation, schedules, poses and reactive SVG bindings |
 
-The React side of the old kit lives outside this directory: `src/app/2_state.ts` (signals, url binding, autosave, shuffle), `src/ui/1_Bar.tsx` (the bar), `src/ui/2_Section.tsx` (section + anchors + scroll restore), `src/ui/0_hooks.ts` (`useClock`, `useDrawIn`, `useAnchor`, `stagger`), `src/ui/4_Algo.tsx` (`AlgoSection`), `src/app.css` (theme, depth rule, draw-in keyframes).
-
-## 2. Spec and derived schema
+## Compose common inputs
 
 ```ts
+import { PLAYBACK_INPUTS, PLAYBACK_PRESETS, SEED_INPUTS } from "@hafley66/gothic/inputs"
+
 const SPEC = {
-  seed: { kind: "seed", default: 3 },
-  shape: { kind: "select", options: ["human", "cat"], default: "human", pool: ["cat", "cat", "human"] },
-  segs: { kind: "range", min: 8, max: 160, default: 96, roll: [24, 160], group: "lids" },
-  auto: { kind: "bool", default: true, p: 0.8 },
-  weight: { kind: "range", min: 0.5, max: 2.5, step: 0.1, default: 1, static: true },
-  names: { kind: "text", default: "a b", shuffle: false },
+  ...SEED_INPUTS,
+  ...PLAYBACK_INPUTS,
+  speed: { ...PLAYBACK_INPUTS.speed, max: 3, default: 1 },
+  petals: { kind: "range", min: 3, max: 24, default: 8 },
 } as const satisfies AnySpec
-type V = ValuesOf<typeof SPEC>
-```
 
-| field key | meaning |
-|---|---|
-| `kind` | `range`, `number`, `seed`, `select`, `bool`, `text` |
-| `static: true` or `shuffle: false` | shuffle never touches it; rendered in the last column; no pin, no reroll |
-| `group` | drawer column label; first-appearance order |
-| `roll: [lo, hi]` | shuffle window inside `min..max` (ranges, numbers) |
-| `pool` | select shuffle draws uniformly from this list (repeat an option to weight it) |
-| `p` | bool shuffle true-probability (default .5) |
-| `hint` | first tooltip line; `describe(key, fd)` appends kind, window, default and the shuffle behaviour. The bar puts it on the row's `title`, so every input has a hover tooltip |
-
-Derived, never written twice: `schemaOf(spec)` gives a zod object; `parseValues(spec, raw)` safeParses per key, so a junk value falls to the field default and unknown keys are ignored.
-
-## 3. URL namespaces
-
-```mermaid
-flowchart LR
-  input[bar input] -->|commit replace| sig[Signal values]
-  shuffle[shuffle / preset / chip] -->|commit push| sig
-  sig -->|skip first| write[history replace/push]
-  pop[popstate] -->|parseSearch| sig
-  load[first load] -->|defaults ← autosave ← URL| sig
-```
-
-- One route per notebook (`route("/", z.object(shape), z.object({}))`); every key is `<section>.<key>` so `?eye.seed=3&eye.shape=cat&seal.minPx=4` carries several sections.
-- Pins travel as `<section>.pin=seed,shape`.
-- Only non-default values print. Foreign query keys survive writes.
-- `commit("push", fn)` in `app/2_state.ts` marks the writes inside `fn` as pushState; everything else is replaceState.
-
-## 4. Bar
-
-| element | class | behaviour |
-|---|---|---|
-| inputs | `[data-key]`, id `kit-<section>-<key>` | `input` event writes the values Signal |
-| pin | `.kit-pin[data-pin]` | toggles membership in the section pin set; pinned fields skip shuffle |
-| shuffle | `.kit-shuffle` | one seeded rng rolls every non-static, non-pinned field; one push |
-| preset | `.kit-preset` | `presets: Record<name, Partial<Values>>`; merges and pushes; shows the matching name |
-| extra | `.kit-extra` | notebook-owned slot (stats, scrub, custom buttons); persists across renders |
-| state combobox | `.kit-combo` | input shows the selected state (● synced); typing an existing name or clicking a row loads and selects it (push); Enter on a new name saves and selects; rows carry star and delete. `state.selected`, store `.selected` |
-| reroll | `.kit-roll` | one field, `state.roll(key)`, push |
-
-Inputs with `data-live="1"` are skipped by sync (an animation loop owns them).
-
-## 5. Section and page
-
-```tsx
-<Section page="eye" def={{ id: "eye", title: "eye", spec: SPEC, presets, zDepth: false }} extra={<Stats />}>
-  {(values, ctx) => <Body v={values} state={ctx.state} z={ctx.z} />}
-</Section>
-```
-
-- The body re-renders on every value change; memo the heavy geometry on the keys that change it.
-- Scroll: the section's viewport fraction is restored after each render.
-- Autosave: every value/pin change writes `gothic.<page>.<section>.current`; start order is defaults, then autosave, then URL keys present.
-- Header: file tabs (row 1) never move, zDepth and draw-in sit in their own column, section anchors are row 2, the page title is row 3. `--kit-top` tracks the header height so section bars stick under it.
-
-## 6. Depth contract
-
-- Any element with `data-z="0..1"` (0 near, 1 far) is styled by `app.css`: `stroke-opacity = 1 - 0.8·z·zDepth`, `stroke-width = --w · (1 - 0.6·z·zDepth)`.
-- `zDepth` is the global range in the header (`?page.z=`); 0 = flat. `applyDepth(root)` copies `data-z` into `--z` after each render.
-- Sections with `zDepth: true` re-render when zDepth changes and can read `ctx.zDepth`.
-
-## 7. Animation
-
-- Draw-in: give every path `pathLength="1"`, put class `kit-draw` on an ancestor, call `stagger(root)` (or `useDrawIn`) to number paths with `--i`. Tune with `--kit-ms` and `--kit-stagger`; the header's draw-in toggle sets `--kit-ms` to 0. Reduced motion disables it.
-- `useClock(frame, { tempo, running })`: rAF loop bound to the component's lifetime; `elapsed()` advances only while running, scaled by tempo; `run`, `seek`, `reset`, `stop`; `bindScrub(input, period)` mirrors elapsed into a 0..100 slider and seeks on input.
-
-## 8. Algo contract
-
-```ts
-type Algo<P> = {
-  name: string
-  spec: Spec<P>
-  presets: Record<string, Partial<P>>
-  run(params: P, ctx: { size: number; seed: number; minPx: number }): { paths: { d: string; z?: number; cls?: string }[]; caption: string; lod: string[] }
+const presets = {
+  ...PLAYBACK_PRESETS,
+  rose: { petals: 12, time: 0.5, run: false },
 }
-<AlgoCells algo={algo} sizes={sizes} params={v} />   // one cell per size: svg + "<size> · caption · lod"
-<AlgoSection page algo sizes title? />               // section keyed by algo.name, zDepth on
 ```
 
-`ctx.seed` and `ctx.minPx` come from `params.seed` / `params.minPx` when the spec has them.
+`STROKE_INPUTS`/`STROKE_PRESETS` provide weight; `DETAIL_INPUTS`/`DETAIL_PRESETS` provide `minPx`. Compose groups that the generator or renderer consumes. Local descriptors can override defaults, ranges, hints or grouping without duplicating the rest of the field definition.
 
-## 9. Harvest
+`SLICE_SPEC` and `SLICE_PRESETS` provide the complete path-animation panel. Its reveal, cut, order and flight groups are exported separately. See [slice/README.md](slice/README.md).
 
-Copy these files into another project:
+`AnimationControls` from `@hafley66/gothic/inputs/react` provides play/pause, seek, hold and restart. Slice and the moving artworks use it. Presets use the existing section preset dropdown; saved custom states use its state combobox.
 
+## State and randomization
+
+- One section owns one namespace: `?<section>.<key>=`; pins use `<section>.pin=a,b`.
+- Inputs replace history; shuffle, reroll, preset and saved-state selection push history. Foreign query keys survive writes.
+- Initial values merge defaults, local autosave and present URL keys. Back/forward restores state.
+- Every Gothic field has a pin and reroll. A pin holds the field during shuffle. Do not mark fields `static` or `shuffle: false`.
+- Numeric fields require bounds. `roll` narrows the shuffle window. Text fields require a `pool`; select pools can weight choices by repetition. Bool `p` sets its shuffle probability.
+- Named states use `state.save(name)`. Edits update the selected state and autosave.
+
+## Reactive rendering
+
+Vite enables `signalsJsx()`. Plain JSX components read signals with `.$()`; the interceptor tracks those reads and manages their subscriptions. Related runtime fields share a root and use nested path proxies. See the shipped [signals skill](../../../signals/skills/signals/SKILL.md).
+
+The playback model consumes an existing values signal and a duration in milliseconds or duration observable. It exposes one grouped `runtime` and one `frame` source signal. Reading `frame` in JSX activates its clock; dropping the last reader releases it. Visibility, pause, one-shot completion and replacement are RxJS stream behavior. Live frames remain ephemeral; explicit hold/seek writes the section's saved `time`.
+
+Native SVG bindings use cold sources and `finalize` for restoration. Components provide stable ref callbacks and read output signals. No component effect or manual subscription is needed for the animation graph.
+
+## Add a notebook
+
+Use the literal Bash scaffolder:
+
+```sh
+pnpm scaffold page rose
+pnpm scaffold input rose petals range
+pnpm scaffold section rose braid_study
+pnpm scaffold use rose existing_seal 0_seal:sealAlgo
 ```
-kit/0_spec.ts  kit/1_url.ts  kit/2_algo.ts  kit/3_store.ts  kit/index.ts
-app/2_state.ts  ui/0_hooks.ts  ui/1_Bar.tsx  ui/2_Section.tsx  ui/4_Algo.tsx  app.css
-```
 
-`kit/` needs two imports: `@hafley66/path` (`route`) and `zod`. The React layer adds `@hafley66/signals` (`Signal`, `SignalReact`), `rxjs` (`skip`), `react`, `react-dom` and Tailwind v4.
+Edit the emitted spec and generator, compose common input groups where needed, then run `pnpm check`. Generators remain pure; `AlgoSection` supplies the standard panel and SVG cells. Each new section has its own state namespace.

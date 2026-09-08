@@ -40,7 +40,7 @@ export type SelectField<O extends string = string> = Common & {
   pool?: readonly O[]
 }
 export type BoolField = Common & { kind: "bool"; default: boolean; p?: number }
-export type TextField = Common & { kind: "text"; default: string; size?: number }
+export type TextField = Common & { kind: "text"; default: string; size?: number; pool?: readonly string[] }
 export type Field = RangeField | NumberField | SeedField | SelectField | BoolField | TextField
 
 export type FieldOf<V> = [V] extends [boolean]
@@ -125,7 +125,7 @@ export function rollField(fd: Field, rng: Rng): unknown {
     case "bool":
       return rng() < (fd.p ?? 0.5)
     case "text":
-      return fd.default
+      return fd.pool?.length ? fd.pool[Math.floor(rng() * fd.pool.length)] : fd.default
   }
 }
 
@@ -162,7 +162,7 @@ export function describe(key: string, fd: Field): string {
   facts.push(`default ${fmt(fd.default)}`)
   if (isStatic(fd)) facts.push("static: shuffle keeps it, no pin")
   else if (fd.kind === "seed") facts.push("shuffle: fresh seed")
-  else if (fd.kind === "text") facts.push("shuffle: resets to default")
+  else if (fd.kind === "text") facts.push(fd.pool?.length ? `shuffle draws from ${fd.pool.length} text choices` : "shuffle: resets to default")
   else if ((fd.kind === "range" || fd.kind === "number") && fd.roll)
     facts.push(`shuffle rolls ${fd.roll[0]}..${fd.roll[1]}`)
   else if (fd.kind === "bool") facts.push(`shuffle: true with p ${fd.p ?? 0.5}`)

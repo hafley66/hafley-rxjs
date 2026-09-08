@@ -197,7 +197,7 @@ const SPEC = {
     p: 0.8,
     label: "auto expressions",
   },
-  dress: { kind: "bool", hint: "crease, lower-lid shadow, brow and crow's feet", default: true, static: true },
+  dress: { kind: "bool", hint: "crease, lower-lid shadow, brow and crow's feet", default: true },
   weight: {
     kind: "range",
     hint: "stroke width multiplier for every path in the section",
@@ -205,7 +205,6 @@ const SPEC = {
     max: 2.5,
     step: 0.1,
     default: 1,
-    static: true,
   },
   tempo: {
     kind: "range",
@@ -214,9 +213,8 @@ const SPEC = {
     max: 3,
     step: 0.05,
     default: 1,
-    static: true,
   },
-  run: { kind: "bool", hint: "advance the clock; off freezes at the scrubbed time", default: true, static: true },
+  run: { kind: "bool", hint: "advance the clock; off freezes at the scrubbed time", default: true },
 } as const satisfies AnySpec
 type V = ValuesOf<typeof SPEC>
 const SIZES = [16, 24, 32, 48, 64, 96, 160]

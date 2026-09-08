@@ -140,7 +140,7 @@ export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra }:
         <button
           type="button"
           className="kit-shuffle"
-          title="reroll every field that is neither static nor pinned, from one fresh seed; adds a history entry"
+          title="reroll eligible unpinned fields from one fresh seed; adds a history entry"
           onClick={() => state.rollAll()}
         >
           shuffle

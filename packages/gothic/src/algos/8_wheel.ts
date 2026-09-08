@@ -11,7 +11,7 @@ export const SPEC = {
   stagger: { kind: "range", hint: "rotation between successive wheels as a fraction of a sector", min: 0, max: 1, step: 0.05, default: 0.5 },
   foils: { kind: "range", hint: "lobes inside the outer crown lights", min: 3, max: 6, step: 1, default: 4 },
   mouldings: { kind: "range", hint: "stone outlines around each radial lancet", min: 1, max: 3, step: 1, default: 2 },
-  minPx: { kind: "range", hint: "smallest tracery light in pixels", min: 1, max: 4, step: 0.5, default: 2, static: true },
+  minPx: { kind: "range", hint: "smallest tracery light in pixels", min: 1, max: 4, step: 0.5, default: 2 },
   // scaffold:inputs
 } as const satisfies AnySpec
 export type Params = ValuesOf<typeof SPEC>

@@ -30,7 +30,6 @@ const SPEC = {
     max: 4,
     step: 0.1,
     default: 1.2,
-    static: true,
   },
   t: {
     kind: "range",
@@ -40,11 +39,10 @@ const SPEC = {
     step: 0.1,
     default: 100,
     label: "offset",
-    shuffle: false,
   },
-  ms: { kind: "number", hint: "one full pass of the pen, in ms", default: 4000, step: 250, shuffle: false },
-  ghost: { kind: "bool", hint: "show the finished path faintly under the ink", default: true, static: true },
-  pen: { kind: "bool", hint: "show the pen dot at the drawing tip", default: true, static: true },
+  ms: { kind: "number", hint: "one full pass of the pen, in ms", min: 500, max: 8000, default: 4000, step: 250 },
+  ghost: { kind: "bool", hint: "show the finished path faintly under the ink", default: true },
+  pen: { kind: "bool", hint: "show the pen dot at the drawing tip", default: true },
 } as const satisfies AnySpec
 type V = ValuesOf<typeof SPEC>
 const PRESETS = {

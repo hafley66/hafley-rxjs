@@ -15,7 +15,6 @@ const BASE = {
     max: 3,
     step: 0.25,
     default: 1,
-    static: true,
   },
   minPx: {
     kind: "range",
@@ -24,14 +23,12 @@ const BASE = {
     max: 24,
     default: 6,
     label: "min px",
-    static: true,
   },
   anim: {
     kind: "bool",
     hint: "draw paths in along their length on every rerender",
     default: false,
     label: "draw-in",
-    static: true,
   },
 } as const satisfies AnySpec
 
