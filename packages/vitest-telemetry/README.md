@@ -58,8 +58,8 @@ const log = Logger(import.meta.url) // category = [root, ...repo-relative path s
 | `otlp-logs[-<shard>].jsonl` | receiver |
 | `otlp-metrics[-<shard>].jsonl` | receiver |
 | `logs-node-<pid>.jsonl` | node realm LogTape file sink |
-| `junit-<shard>.xml` | vitest junit reporter (user config) |
-| `junit-merged.xml` | `vitest --merge-reports` (user config) |
+| `junit[-<shard>].xml` | vitest junit reporter, added by the plugin (`junit` option, `JUNIT_OUT` env); verdicts and failure text in the report come from here |
+| `junit-merged.xml` | the plugin under `vitest --merge-reports`; wins over the per-shard files |
 | `pw-debug.log` | optional `DEBUG_FILE` (user env) |
 | `timeline.jsonl` | `vitest-telemetry report` / `trace` |
 | `report.html` | `vitest-telemetry report` |
@@ -78,7 +78,7 @@ jobs:
     strategy:
       matrix: { shard: [1, 2, 3, 4] }
     steps:
-      - run: JUNIT_OUT=out/junit-${{ matrix.shard }}.xml vitest run --shard=${{ matrix.shard }}/4
+      - run: VITEST_SHARD=${{ matrix.shard }} vitest run --shard=${{ matrix.shard }}/4
       - uses: actions/upload-artifact@v4
         with: { name: out-${{ matrix.shard }}, path: out/ }
 
@@ -87,7 +87,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with: { pattern: out-*, path: out, merge-multiple: true }
-      - run: JUNIT_OUT=out/junit-merged.xml vitest run --merge-reports --experimental.openTelemetry.enabled=false --reporter=junit
+      - run: vitest run --merge-reports --experimental.openTelemetry.enabled=false
       - run: vitest-telemetry report
       - uses: actions/upload-artifact@v4
         with: { name: report, path: out/report.html }

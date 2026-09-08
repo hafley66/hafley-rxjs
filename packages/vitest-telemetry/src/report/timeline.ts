@@ -416,10 +416,20 @@ function unescapeXmlAttr(value: string): string {
   return value.replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&')
 }
 
+// junit-merged.xml (a --merge-reports run) wins; else every junit*.xml the plugin or the user wrote (shards
+// are disjoint, so their cases concatenate).
+function junitFiles(outDir: string): string[] {
+  const merged = join(outDir, 'junit-merged.xml')
+  if (existsSync(merged)) return [merged]
+  if (!existsSync(outDir)) return []
+  return readdirSync(outDir)
+    .filter((name) => /^junit.*\.xml$/.test(name))
+    .sort()
+    .map((name) => join(outDir, name))
+}
+
 function verdictEvents(outDir: string): Event[] {
-  const path = join(outDir, 'junit-merged.xml')
-  if (!existsSync(path)) return []
-  const xml = readFileSync(path, 'utf8')
+  const xml = junitFiles(outDir).map((path) => readFileSync(path, 'utf8')).join('\n')
   const events: Event[] = []
   for (const suiteChunk of xml.split('<testsuite ').slice(1)) {
     const file = suiteChunk.match(/name="([^"]+)"/)?.[1]
