@@ -9,7 +9,7 @@ import { defineConfig } from "vitest/config"
 // css subpaths follow; the marbler subpath stays on the package exports (unused here)
 const kitSrc = fileURLToPath(new URL("../report-shell/src/", import.meta.url))
 
-// mode "single": one inlined index.html that runs from file:// (the app switches to hash routing there)
+// mode "single": one inlined index.html with hash routes for file:// and static HTTP hosts
 export default defineConfig(({ mode }) => ({
   base: mode === "single" ? "./" : "/",
   resolve: {

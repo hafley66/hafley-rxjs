@@ -68,7 +68,7 @@ Adding sections to a handwritten page generates a wrapper around its existing `P
 
 ## file:// build
 
-`pnpm --filter @hafley66/gothic build:single` writes one inlined `dist/index.html` (vite-plugin-singlefile, `base: "./"`). Opened from `file:`, the router switches to hash urls (`dist/index.html#/eye?eye.seed=3`), so every route and every section's query state work without a server. `pnpm build` writes the same app as a normal asset build.
+`pnpm --filter @hafley66/gothic build:single` writes one inlined `dist/index.html` (vite-plugin-singlefile, `base: "./"`). Single builds use hash URLs on both HTTP and `file:` (`dist/index.html#/eye?eye.seed=3`), so every route and every section's query state work on static hosts. `pnpm build` writes the same app as a normal asset build. `pnpm publish:pages` builds and publishes the HTML to `origin`'s `gh-pages` branch, enabling GitHub Pages on its first run.
 
 ## Architectural studies
 

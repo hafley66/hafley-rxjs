@@ -19,8 +19,11 @@ Procedural gothic line art as one React SPA. Every route is a notebook: one stic
 ```bash
 pnpm --filter @hafley66/gothic dev            # http://localhost:5173/eye
 pnpm --filter @hafley66/gothic build:single   # dist/index.html, opens from file:// (hash routing)
+pnpm --filter @hafley66/gothic publish:pages # build and publish index.html to origin's gh-pages branch
 pnpm --filter @hafley66/gothic check          # typecheck + vitest + build:single + playwright e2e over dist/index.html
 ```
+
+GitHub Pages: [hafley66.github.io/hafley-rxjs](https://hafley66.github.io/hafley-rxjs/). The single-file build uses hash routes on HTTP and `file://`, so notebook links and reloads work under a repository path. Publishing requires authenticated `gh` and Git access; the command creates Pages on its first run and preserves the publishing branch history.
 
 ## 2. Routes
 

@@ -5,8 +5,8 @@ import { transition } from "./3_view.js"
 export type Loc = { path: string; search: string }
 export const HOME = "/eye"
 
-// file:// has no server to rewrite paths, so the single-file build routes in the hash
-export const hashMode = (): boolean => typeof location !== "undefined" && location.protocol === "file:"
+// A single-file host (including GitHub Pages) has no route rewrites.
+export const hashMode = (): boolean => import.meta.env.MODE === "single" || typeof location !== "undefined" && location.protocol === "file:"
 
 const normalise = (path: string): string => {
   const p = path.startsWith("/") ? path : `/${path}`

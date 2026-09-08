@@ -9,6 +9,7 @@
     "scaffold": "bash scripts/0_scaffold.sh",
     "build": "vite build",
     "build:single": "vite build --mode single",
+    "publish:pages": "bash scripts/1_publish-pages.sh",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "pnpm typecheck && pnpm test && pnpm build:single && pnpm test:e2e",
