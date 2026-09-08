@@ -1,5 +1,7 @@
 // Realm-detecting setupFile. The telemetry() plugin points every project at this one file;
-// vitest imports it once per worker (node) or once per page (browser).
+// vitest runs it once per test file. With `isolate: false` a worker keeps LogTape's global state
+// across files, so every configure() carries `reset: true` (the previous file's sinks were
+// disposed by its afterAll anyway).
 import { configure, dispose, getLogger, jsonLinesFormatter, type Config } from '@logtape/logtape'
 import { getConsoleSink } from '@logtape/logtape'
 import { getOpenTelemetrySink } from '@logtape/otel'
@@ -75,9 +77,9 @@ if (realm === 'node') {
           : logger,
       )
     : base.loggers
-  await configure({ ...base, sinks, loggers, contextLocalStorage: new AsyncLocalStorage() })
+  await configure({ ...base, sinks, loggers, contextLocalStorage: new AsyncLocalStorage(), reset: true })
 } else {
-  await configure(baseConfig())
+  await configure({ ...baseConfig(), reset: true })
 }
 
 installLifecycle()
