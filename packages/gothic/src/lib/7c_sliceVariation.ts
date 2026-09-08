@@ -12,7 +12,7 @@ export function variedSlicePose(s: Stroke, time: number, params: SliceParams, mo
   let key = identities.get(s)
   if (key === undefined) { key = hash(`${s.d}|${s.sub}|${s.cx}|${s.cy}`); identities.set(s, key) }
   const patches = Object.entries(motion?.fields ?? {}).filter(([name]) => STROKE_PROPERTIES.has(name)).map(([name, v]) =>
-    [name, variedField(SLICE_SPEC[name as keyof typeof SLICE_SPEC], v, motion!.time, key! ^ hash(name))])
+    [name, variedField(SLICE_SPEC[name as keyof typeof SLICE_SPEC], v, motion!.times?.[name] ?? motion!.time, key! ^ hash(name))])
   const k = patches.length ? { ...params, ...Object.fromEntries(patches) } : params
   const pose = slicePose(s, time, k), age = time - s.t0 - s.dur
   const length = s.diag * k.ailen, x = Math.cos(s.th) * length, y = Math.sin(s.th) * length

@@ -6,7 +6,9 @@ exports[`shares a cold stroke clock and applies global or cascading settings onl
     "base": {
       "weight": 1,
     },
+    "fieldTime": undefined,
     "listeners": 0,
+    "period": undefined,
     "seed": undefined,
     "time": 0,
     "values": {
@@ -17,7 +19,9 @@ exports[`shares a cold stroke clock and applies global or cascading settings onl
     "base": {
       "weight": 1,
     },
+    "fieldTime": 250,
     "listeners": 1,
+    "period": 4000,
     "seed": 17,
     "time": 250,
     "values": {
@@ -28,7 +32,9 @@ exports[`shares a cold stroke clock and applies global or cascading settings onl
     "base": {
       "weight": 1,
     },
+    "fieldTime": 500,
     "listeners": 1,
+    "period": 4000,
     "seed": 31,
     "time": 500,
     "values": {
@@ -39,7 +45,9 @@ exports[`shares a cold stroke clock and applies global or cascading settings onl
     "base": {
       "weight": 1,
     },
+    "fieldTime": 500,
     "listeners": 1,
+    "period": 4000,
     "seed": 23,
     "time": 500,
     "values": {
@@ -50,7 +58,48 @@ exports[`shares a cold stroke clock and applies global or cascading settings onl
     "base": {
       "weight": 1,
     },
+    "fieldTime": undefined,
+    "listeners": 1,
+    "period": undefined,
+    "seed": undefined,
+    "time": 500,
+    "values": {
+      "weight": 1,
+    },
+  },
+  {
+    "base": {
+      "weight": 1,
+    },
+    "fieldTime": 150,
+    "listeners": 1,
+    "period": 1000,
+    "seed": 23,
+    "time": 750,
+    "values": {
+      "weight": 1,
+    },
+  },
+  {
+    "base": {
+      "weight": 1,
+    },
+    "fieldTime": 650,
+    "listeners": 1,
+    "period": 2000,
+    "seed": 23,
+    "time": 750,
+    "values": {
+      "weight": 1,
+    },
+  },
+  {
+    "base": {
+      "weight": 1,
+    },
+    "fieldTime": undefined,
     "listeners": 0,
+    "period": undefined,
     "seed": undefined,
     "time": 0,
     "values": {

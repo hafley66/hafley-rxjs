@@ -10,7 +10,7 @@ export type Variation = {
   distribution: Distribution; secondary: Distribution; mix: number; depth: number
   min: number; max: number; period: number; harmonics: number; phase: number; seed: number
 }
-export type StrokeMotionFrame = { time: number; fields: Record<string, Variation> }
+export type StrokeMotionFrame = { time: number; fields: Record<string, Variation>; times?: Record<string, number> }
 export const STROKE_PROPERTIES = new Set(["weight", "finalWeight", "ailen", "aiOpacity", "aiFade", "stretch", "os"])
 
 // Target distributions are bounded to [0, 1]. Normal is clipped at three standard deviations.

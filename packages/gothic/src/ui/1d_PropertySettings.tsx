@@ -66,7 +66,7 @@ export function PropertySettings({ state, field, name }: { state: SectionState<A
   const id = `timeline-${state.page}-${state.id}-${name}`
   const effective = { ...sectionTiming, ...track.timing }
   const policy = track.variationPolicy ?? (track.variation ? "cascade" : "none")
-  const variation = resolveVariation(field, base, { ...track, enabled: true }, config.variation.$(), section.variation)
+  const variation = resolveVariation(field, base, { ...track, enabled: true }, { period: effective.duration, ...config.variation.$() }, section.variation)
   return <>
     <button type="button" className="kit-settings" popoverTarget={id} title={`${name} animation settings`} aria-label={`${name} animation settings`} data-active={track.enabled || undefined}>⚙</button>
     {createPortal(<div id={id} popover="auto" className="property-editor" role="dialog" aria-label={`${name} animation settings`}>

@@ -52,7 +52,7 @@ export function VariationDefaults({ page, state }: { page: string; state?: Secti
   const model = propertyMotion(page), root = model.config, section = state ? root.sections[state.id].$() ?? { timing: {}, fields: {} } : undefined
   const local = section ? section.variation ?? {} : root.variation.$() ?? {}
   const field = { kind: "range", min: 0, max: 1, step: 0.01, default: 0.5 } as const
-  const value = { ...defaultVariation(field, 0.5), ...root.variation.$(), ...local }
+  const value = { ...defaultVariation(field, 0.5), period: section?.timing.duration ?? root.timing.duration.$(), ...root.variation.$(), ...local }
   const label = state ? "Section variation" : "Global variation", id = `variation-defaults-${page}-${state?.id ?? "page"}`
   return <>
     <button type="button" popoverTarget={id} title={`${label} defaults; only properties allowing inheritance use these settings`}>{label}</button>
@@ -78,7 +78,7 @@ export function SectionVariation({ state }: { state: SectionState<AnySpec> }) {
   if (!field) return null
   const model = propertyMotion(state.page), section = model.config.sections[state.id].$() ?? { timing: {}, fields: {} }
   const track = section.fields[name]
-  const effective = track ? resolveVariation(field, state.values[name].$(), { ...track, enabled: true }, model.config.variation.$(), section.variation) : undefined
+  const effective = track ? resolveVariation(field, state.values[name].$(), { ...track, enabled: true }, { period: track.timing.duration ?? section.timing.duration ?? model.config.timing.duration.$(), ...model.config.variation.$() }, section.variation) : undefined
   const stroke = (state.id === "timing" || state.page === "slice") && STROKE_PROPERTIES.has(name)
   const put = (next: typeof track) => model.config.sections[state.id].$({ ...section, fields: { ...section.fields, [name]: next } })
   const start = (mode: Variation["mode"]) => {
