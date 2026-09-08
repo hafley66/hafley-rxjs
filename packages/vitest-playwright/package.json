@@ -1,0 +1,49 @@
+{
+  "name": "@hafley66/vitest-playwright",
+  "version": "0.0.1",
+  "description": "playwright/test folded into node-realm vitest: fixtures, $page, web-first matchers, route, clock, tracing, one interface for component, integration and e2e",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./plugin": { "types": "./dist/1_plugin.d.ts", "import": "./dist/1_plugin.js" },
+    "./setup": { "types": "./dist/setup.d.ts", "import": "./dist/setup.js" },
+    "./test": { "types": "./dist/4_test.d.ts", "import": "./dist/4_test.js" },
+    "./global-setup": { "types": "./dist/2_global-setup.d.ts", "import": "./dist/2_global-setup.js" },
+    "./runner": { "types": "./dist/9_runner.d.ts", "import": "./dist/9_runner.js" }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "check": "pnpm typecheck && pnpm build && pnpm test"
+  },
+  "dependencies": {
+    "@hafley66/signals": "workspace:*",
+    "@vitest/runner": "4.1.11",
+    "playwright": "1.62.1",
+    "rxjs": "^7.8.2"
+  },
+  "peerDependencies": {
+    "@logtape/logtape": "^2.3.3",
+    "@opentelemetry/api": "^1.9.0",
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11"
+  },
+  "peerDependenciesMeta": {
+    "@logtape/logtape": { "optional": true },
+    "@opentelemetry/api": { "optional": true }
+  },
+  "devDependencies": {
+    "@logtape/logtape": "2.3.3",
+    "@opentelemetry/api": "1.9.0",
+    "@types/node": "^25.0.8",
+    "typescript": "7.0.2",
+    "vite": "8.2.2",
+    "vitest": "4.1.11"
+  },
+  "license": "MIT",
+  "publishConfig": { "access": "public" }
+}
