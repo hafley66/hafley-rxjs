@@ -83,7 +83,7 @@ export function TreeTableRow<TData extends RowData>({
                     aria-hidden
                     data-testid="tree-indent"
                     style={{
-                      flex: "0 1 auto",
+                      flex: "none",
                       alignSelf: "stretch",
                       width: row.depth * indentUnit,
                       background: indentGuides

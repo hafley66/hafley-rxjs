@@ -201,6 +201,32 @@ describe("TreeTable", () => {
     host.remove()
   })
 
+  it("never shrinks the indent when a deep row's label is longer than the column", async () => {
+    const long = "a".repeat(200)
+    const deep: Node = { id: "d1", name: "dir-1", kind: "folder", size: 0, children: [
+      { id: "d2", name: "dir-2", kind: "folder", size: 0, children: [
+        { id: "d3", name: "dir-3", kind: "folder", size: 0, children: [{ id: "leaf", name: long, kind: "file", size: 1 }] },
+      ] },
+    ] }
+    const narrow: TreeColumn<Node>[] = [
+      { id: "name", header: "Name", tree: true, cell: (n) => n.name, size: 220 },
+      { id: "size", header: "Size", cell: (n) => String(n.size), size: 60 },
+    ]
+    const { host, grid, root } = mountTree([deep], narrow)
+    grid.onExpandedChange(true)
+    await act(async () => root.render(<TreeTable grid={grid} columns={narrow} indentUnit={14} />))
+    await act(settleLayout)
+
+    const indentOf = (id: string) => document.querySelector<HTMLElement>(`[data-row-id=${id}] [data-testid=tree-indent]`)!.getBoundingClientRect().width
+    expect(indentOf("d3")).toBe(28)
+    expect(indentOf("leaf")).toBe(42)
+    const leafLabel = document.querySelector<HTMLElement>("[data-row-id=leaf] td[data-column=name] span > span:last-child")!
+    expect(leafLabel.getBoundingClientRect().left).toBeGreaterThan(document.querySelector<HTMLElement>("[data-row-id=d3] td[data-column=name] span > span:last-child")!.getBoundingClientRect().left)
+
+    root.unmount()
+    host.remove()
+  })
+
   it("keeps the twisty inside a narrow tree column at depth 12", async () => {
     let node: Node = { id: "leaf", name: "leaf.ts", kind: "file", size: 1 }
     for (let depth = 12; depth > 0; depth--) node = { id: `d${depth}`, name: `dir-${depth}`, kind: "folder", size: 0, children: [node] }
