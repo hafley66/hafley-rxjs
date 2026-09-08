@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client"
+import { enableTips } from "@hafley66/report-shell"
 import { App } from "./app/4_App.js"
-import { enableTips } from "./kit/6_tips.js"
 import "@hafley66/report-shell/kit.css"
 import "./app.css"
 
