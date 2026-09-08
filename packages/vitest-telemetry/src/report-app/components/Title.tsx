@@ -1,7 +1,7 @@
-// Title/summary/failure box above the events panel, plus the × that clears the selection.
+// Title/summary/failure box above the events panel, plus the × that clears the selection and the pivot stack.
 import { SignalReact } from '@hafley66/signals/react'
 import { Truncated, formatDuration } from '@hafley66/report-shell'
-import { verdictOf, type Model } from '../model'
+import { clearSelection, verdictOf, type Model } from '../model'
 
 function TitleView({ model }: { model: Model }) {
   const { file, test } = model.selected.$()
@@ -29,7 +29,7 @@ function TitleView({ model }: { model: Model }) {
             <span className={`dot ${verdict.status}`} /> {verdict.status} {formatDuration(verdict.durationMs)}
           </small>
         )}
-        <button type="button" className="title-close" title="clear selection" onClick={() => model.selected.$({ file: null, test: null })}>
+        <button type="button" className="title-close" title="clear selection" onClick={() => clearSelection(model)}>
           ×
         </button>
       </h2>

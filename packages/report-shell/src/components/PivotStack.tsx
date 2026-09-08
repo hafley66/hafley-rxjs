@@ -58,6 +58,9 @@ function PivotStackView<T extends NavRow>({ pivotStack, baseGrid, onPop }: Pivot
             {entry.label}
           </button>
         ))}
+        <button type="button" className="pivot-close" title="close pivots" data-testid="pivot-close" onClick={() => onPop(0)}>
+          ×
+        </button>
       </nav>
       {grids.map((grid, index) => <PivotGrid key={index} grid={grid} />)}
     </div>

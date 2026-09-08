@@ -127,6 +127,7 @@
   .pivot-stack { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 6px }
   .breadcrumb { display: flex; gap: 4px; margin-bottom: 6px }
   .breadcrumb button { background: none; border: 1px solid var(--line); border-radius: 3px; color: var(--fg); cursor: pointer; font: inherit; padding: 1px 6px }
+  .breadcrumb .pivot-close { margin-left: auto; color: var(--dim); line-height: 1; &:hover { color: var(--fg) } }
   .pivot-grid { display: grid; grid-template-columns: minmax(0, 1fr) 60px 60px; margin-bottom: 6px; border: 1px solid var(--line) }
   .pivot-row { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; padding: 2px 6px; align-items: center }
   .pivot-header { color: var(--dim); border-bottom: 1px solid var(--line) }

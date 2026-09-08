@@ -9,7 +9,7 @@
 import { createMarbler, DEFAULT_PHASE_STYLES, type Marbler } from '@hafley66/marbler'
 import { map } from 'rxjs'
 import { Signal, storageSignal, urlAdapter, historyAdapter, type Signal as SignalType } from '@hafley66/signals'
-import { pivotStackSignal, type PivotEntry } from '@hafley66/report-shell'
+import { pivotStackSignal, popPivotsTo, type PivotEntry } from '@hafley66/report-shell'
 import { syncMarbler } from '@hafley66/report-shell/marbler'
 import type { Event } from '../report/timeline.js'
 import { timelineToMarble } from './adapter/timelineToMarble.js'
@@ -130,6 +130,18 @@ export function createModel(initialRows: Event[]): Model {
   )
 
   return { rows, continuous, selected, pivotStack, hoveredId, verdicts, eventsForSelected, nav, firstFailure, defaultViewHint, marbler, unsubscribe: () => marblerSync.unsubscribe() }
+}
+
+// A pivot is a drill-down over the nav for the current view; a new selection or the title × ends it.
+// Both writes are history entries, so Back undoes them one at a time (pivots first, then selection).
+export function clearSelection(model: Pick<Model, 'selected' | 'pivotStack'>): void {
+  if (model.pivotStack.$().length) popPivotsTo(model.pivotStack, 0)
+  model.selected.$({ ...DEFAULT_SELECTION })
+}
+export function selectNode(model: Pick<Model, 'selected' | 'pivotStack'>, node: NavNode): void {
+  if (node.kind !== 'file' && node.kind !== 'test') return
+  if (model.pivotStack.$().length) popPivotsTo(model.pivotStack, 0)
+  model.selected.$({ file: node.file ?? null, test: node.test ?? null })
 }
 
 export function dismissDefaultViewHint(model: Pick<Model, 'defaultViewHint'>): void {

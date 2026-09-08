@@ -109,6 +109,35 @@ describe('vitest-telemetry nav tree', () => {
     expect(await page.locator('[data-testid=pivot-stack]').count()).toBe(0)
   })
 
+  it('the pivot ×, the title ×, and a nav click each drop every pivot', async () => {
+    await expandEverything(page)
+    const status = page.locator('[data-testid=tree-row].test [data-testid=status-cell]')
+    const stack = page.locator('[data-testid=pivot-stack]')
+    await status.first().click({ modifiers: ['Alt'] })
+    await status.nth(1).click({ modifiers: ['Alt'] })
+    await page.waitForTimeout(200)
+    expect(await page.locator('.breadcrumb button').count()).toBe(4)
+    await page.locator('[data-testid=pivot-close]').click()
+    await page.waitForTimeout(200)
+    expect(await stack.count()).toBe(0)
+
+    await status.first().click({ modifiers: ['Alt'] })
+    await page.waitForTimeout(200)
+    expect(await stack.count()).toBe(1)
+    await page.locator('.title-close').click()
+    await page.waitForTimeout(200)
+    expect(await stack.count()).toBe(0)
+    expect(await page.locator('[data-testid=tree-row].selected').count()).toBe(0)
+
+    await status.first().click({ modifiers: ['Alt'] })
+    await page.waitForTimeout(200)
+    expect(await stack.count()).toBe(1)
+    await page.locator('[data-testid=tree-row].test .nav-name-primary').nth(1).click()
+    await page.waitForTimeout(200)
+    expect(await stack.count()).toBe(0)
+    expect(await page.locator('[data-testid=tree-row].test.selected').count()).toBe(1)
+  })
+
   it('never threw a page error', () => {
     expect(pageErrors).toEqual([])
   })

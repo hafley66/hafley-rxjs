@@ -6,7 +6,7 @@ import { createGrid, createDefaultGridState, compactSingleChildChains, type Grid
 import { TreeTable, treeColumnDefs } from '@hafley66/grid/react'
 import { Signal, useSignal, type Signal as SignalType } from '@hafley66/signals/react'
 import { usePivotEffect } from '@hafley66/report-shell'
-import type { Model, NavNode } from '../model'
+import { selectNode, type Model, type NavNode } from '../model'
 import type { Prefs } from '../prefs'
 import { expandedPathTo } from '../lib/expandedForSelection'
 import { NAV_COLUMNS } from './NavColumns'
@@ -15,11 +15,6 @@ import { NavStatusLegend } from './NavStatusLegend'
 function combineChain(chain: NavNode[], children: NavNode[]): NavNode {
   return { ...chain[chain.length - 1]!, label: chain.map((node) => node.label).join(' › '), children }
 }
-
-function selectNode(model: Model, node: NavNode): void {
-  if (node.kind === 'file' || node.kind === 'test') model.selected.$({ file: node.file ?? null, test: node.test ?? null })
-}
-
 
 // Default-view expansion: only the failing test's branch open, everything else collapsed. Falls
 // back to "open everything" (the historical default) once the hint's own load-time window passes.
