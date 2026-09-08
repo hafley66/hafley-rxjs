@@ -1,0 +1,26 @@
+[package]
+name = "gothic_vello"
+version = "0.1.0"
+edition = "2021"
+description = "Vello GPU stroke renderer for the gothic /vello notebook, compiled to wasm32-unknown-unknown"
+license = "MIT OR Apache-2.0"
+
+[lib]
+crate-type = ["cdylib"]
+name = "gothic_vello"
+
+[dependencies]
+vello = "0.10"
+wasm-bindgen = "=0.2.126"
+wasm-bindgen-futures = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+web-sys = { version = "0.3", features = ["HtmlCanvasElement", "Window", "Performance"] }
+svgtypes = "0.15"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
