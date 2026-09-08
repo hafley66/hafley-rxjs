@@ -1,7 +1,7 @@
 import { SignalReact } from "@hafley66/signals/react"
 import { type ReactNode, useLayoutEffect, useRef } from "react"
 import { useAnchor } from "../lib/hooks.js"
-import type { AnySpec, Presets, ValuesOf } from "../spec/0_spec.js"
+import { isStatic, type AnySpec, type Presets, type ValuesOf } from "../spec/0_spec.js"
 import type { SectionState, Sections } from "../spec/3_sections.js"
 import { SpecPanel, type SpecPanelProps } from "./SpecPanel.js"
 
@@ -47,13 +47,16 @@ const Shell = SignalReact(function Shell({ sections, page, def, extra, fieldSett
 
   return (
     <section id={def.id} ref={ref} className="kit-section">
+      {Object.values(def.spec).some(isStatic) && <div className="kit-front">
+        <SpecPanel state={state} fields="static" head={false} fieldSettings={fieldSettings} />
+      </div>}
       <details className="kit-drawer" open={open}>
         <summary title={`${def.title}: every knob of this section; click to fold`}>
           <span className="kit-drawer-icon" aria-hidden />
           <h2 className="kit-sec-title">{def.title}</h2>
         </summary>
         <div className="kit-panels">
-          <SpecPanel state={state} extra={extra} fieldSettings={fieldSettings} />
+          <SpecPanel state={state} fields="varying" extra={extra} fieldSettings={fieldSettings} />
         </div>
       </details>
       <div className="kit-host" style={{ viewTransitionName: `sec-${safe(def.id)}` }}>

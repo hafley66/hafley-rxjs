@@ -8,7 +8,7 @@ import { StateCombo } from "./StateCombo.js"
 export const inputId = (section: string, key: string): string => `kit-${section}-${key}`
 
 type El = HTMLInputElement | HTMLSelectElement
-export type SpecPanelProps = { state: SectionState<AnySpec>; title?: string; extra?: ReactNode; fieldSettings?: (key: string, field: Field, state: SectionState<AnySpec>) => ReactNode }
+export type SpecPanelProps = { state: SectionState<AnySpec>; title?: string; extra?: ReactNode; fields?: "all" | "static" | "varying"; head?: boolean; fieldSettings?: (key: string, field: Field, state: SectionState<AnySpec>) => ReactNode }
 
 type Val = string | number | boolean
 
@@ -27,7 +27,7 @@ const writeInput = (el: El, fd: Field, v: Val): void => {
 
 // one panel per section: head (optional title, shuffle, state combobox, preset), one row per field grouped by fieldset
 // as columns, statics in their own group, extra at the foot. Every row carries the field's tooltip.
-export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra, fieldSettings }: SpecPanelProps) {
+export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra, fieldSettings, fields = "all", head = true }: SpecPanelProps) {
   const { spec, id, presets } = state
   const values = state.values.$()
   const pins = pinSet(state.pins.$())
@@ -48,7 +48,7 @@ export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra, f
     const eid = inputId(id, k)
     const label = fd.label ?? k
     const fixed = isStatic(fd)
-    const common = { id: eid, "data-key": k, ref: bind(k), onInput: onInput(k) }
+    const common = { title: describe(k, fd), id: eid, "data-key": k, ref: bind(k), onInput: onInput(k) }
     let input: ReactNode
     if (fd.kind === "range")
       input = (
@@ -104,7 +104,7 @@ export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra, f
             onChange={() => state.togglePin(k)}
           />
         )}
-        <label htmlFor={eid} className="kit-lbl">
+        <label htmlFor={eid} className="kit-lbl" title={describe(k, fd)}>
           {label}
         </label>
         <span className="kit-ctl">{input}</span>
@@ -122,9 +122,14 @@ export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra, f
   }
 
   const groups = new Map<string, ReactNode[]>()
-  const statics: ReactNode[] = []
+  const statics = new Map<string, ReactNode[]>()
   for (const [k, fd] of Object.entries(spec)) {
-    if (isStatic(fd)) statics.push(row(k, fd))
+    if (fields === "static" && !isStatic(fd) || fields === "varying" && isStatic(fd)) continue
+    if (isStatic(fd)) {
+      const g = fd.group ?? "static"
+      if (!statics.has(g)) statics.set(g, [])
+      statics.get(g)?.push(row(k, fd))
+    }
     else {
       const g = fd.group ?? ""
       if (!groups.has(g)) groups.set(g, [])
@@ -136,7 +141,7 @@ export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra, f
 
   return (
     <div className="kit-panel" data-section={id}>
-      <div className="kit-head">
+      {head && <div className="kit-head">
         {title && <b className="kit-title">{title}</b>}
         <button
           type="button"
@@ -162,20 +167,17 @@ export const SpecPanel = SignalReact(function SpecPanel({ state, title, extra, f
             ))}
           </select>
         )}
-      </div>
+      </div>}
       <div className="kit-groups">
+        {[...statics].map(([g, rows]) => <fieldset key={g} className="kit-group kit-static" data-group={g}>
+          <legend title={`${g}: shuffle keeps these controls`}>{g} · static</legend>{rows}
+        </fieldset>)}
         {[...groups].map(([g, rows]) => (
           <fieldset key={g || "_"} className="kit-group" data-group={g}>
-            <legend>{g || " "}</legend>
+            <legend title={g || "geometry inputs"}>{g || " "}</legend>
             {rows}
           </fieldset>
         ))}
-        {statics.length > 0 && (
-          <fieldset className="kit-group kit-static">
-            <legend>static · not shuffled</legend>
-            {statics}
-          </fieldset>
-        )}
       </div>
       {extra && <div className="kit-extra">{extra}</div>}
     </div>

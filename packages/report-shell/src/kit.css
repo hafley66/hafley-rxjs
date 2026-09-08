@@ -184,15 +184,16 @@
   .kit-panels { display: grid; gap: 8px; padding: 4px 14px 10px; max-height: 55vh; overflow: auto; scrollbar-width: thin }
   .kit-panel { display: grid; gap: 6px; padding: 6px 0 8px; border-top: 1px solid var(--line) }
   .kit-panel:first-child { border-top: 0 }
+  .kit-front { padding: 8px 12px; border: 1px solid var(--edge); background: var(--bg) }
   .kit-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
   .kit-title { font-weight: 500; color: var(--fg); max-width: 48ch; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
   .kit-head .kit-combo { width: 220px }
-  .kit-drawer button, .kit-drawer select, .kit-drawer input[type="number"], .kit-drawer input[type="text"], .kit-combo input {
+  :is(.kit-drawer, .kit-front) button, :is(.kit-drawer, .kit-front) select, :is(.kit-drawer, .kit-front) input[type="number"], :is(.kit-drawer, .kit-front) input[type="text"], .kit-combo input {
     background: var(--well); color: var(--fg); border: 1px solid var(--edge); border-radius: 4px;
     padding: 2px 6px; font: inherit; min-height: 22px; min-width: 0;
   }
-  .kit-drawer button:hover, .kit-drawer select:hover, .kit-drawer input:hover { border-color: var(--muted) }
-  .kit-drawer :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }
+  :is(.kit-drawer, .kit-front) button:hover, :is(.kit-drawer, .kit-front) select:hover, :is(.kit-drawer, .kit-front) input:hover { border-color: var(--muted) }
+  :is(.kit-drawer, .kit-front) :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }
 
   /* ============ StateCombo ============ */
   .kit-combo { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px; min-width: 0 }
@@ -231,14 +232,14 @@
   .kit-row:hover .kit-roll { opacity: 1 }
   .kit-roll:hover { color: var(--accent) }
   span.kit-pin, span.kit-roll { visibility: hidden }
-  .kit-drawer input[type="range"] { width: 100%; height: 18px; margin: 0; accent-color: var(--accent); background: transparent }
-  .kit-drawer input[type="range"]::-webkit-slider-runnable-track { height: 3px; background: var(--edge); border-radius: 2px }
-  .kit-drawer input[type="range"]::-webkit-slider-thumb {
+  :is(.kit-drawer, .kit-front) input[type="range"] { width: 100%; height: 18px; margin: 0; accent-color: var(--accent); background: transparent }
+  :is(.kit-drawer, .kit-front) input[type="range"]::-webkit-slider-runnable-track { height: 3px; background: var(--edge); border-radius: 2px }
+  :is(.kit-drawer, .kit-front) input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none; width: 13px; height: 13px; margin-top: -5px; border-radius: 50%;
     background: var(--accent); border: 2px solid var(--bg); box-shadow: 0 0 0 1px var(--accent);
   }
-  .kit-drawer datalist { display: none }
-  .kit-drawer input[type="checkbox"] { accent-color: var(--accent) }
+  :is(.kit-drawer, .kit-front) datalist { display: none }
+  :is(.kit-drawer, .kit-front) input[type="checkbox"] { accent-color: var(--accent) }
   .kit-extra { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; color: var(--muted) }
   .kit-extra label { display: inline-flex; gap: 6px; align-items: center }
   .kit-extra input[type="range"] { width: 160px }

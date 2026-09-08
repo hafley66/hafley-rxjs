@@ -40,7 +40,7 @@ const presets = {
 - One section owns one namespace: `?<section>.<key>=`; pins use `<section>.pin=a,b`.
 - Inputs replace history; shuffle, reroll, preset and saved-state selection push history. Foreign query keys survive writes.
 - Initial values merge defaults, local autosave and present URL keys. Back/forward restores state.
-- Every Gothic field has a pin and reroll. A pin holds the field during shuffle. Do not mark fields `static` or `shuffle: false`.
+- Geometry fields have a pin and reroll. Playback and variation configuration use `static: true`; these stay visible above the drawer and survive shuffle. Every input label carries its descriptor tooltip.
 - Numeric fields require bounds. `roll` narrows the shuffle window. Text fields require a `pool`; select pools can weight choices by repetition. Bool `p` sets its shuffle probability.
 - Named states use `state.save(name)`. Edits update the selected state and autosave.
 

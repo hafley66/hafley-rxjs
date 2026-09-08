@@ -41,7 +41,7 @@ function ValueInput({ field, value, label, onChange }: { field: Field; value: Ti
     onChange={e => { if (Number.isFinite(e.currentTarget.valueAsNumber)) onChange(e.currentTarget.valueAsNumber) }} />
 }
 
-function PropertyTransport({ model }: { model: PropertyMotion }) {
+export function PropertyTransport({ model }: { model: PropertyMotion }) {
   const t = model.config.timing.$(), span = t.duration * (t.direction === "alternate" ? 2 : 1) + t.delay
   const frame = model.clock.frame.$()
   return <AnimationControls label="Property timeline" duration={span} time={frame.time} running={frame.active} loop={t.loop} holdTitle="Hold the property timeline at this frame"

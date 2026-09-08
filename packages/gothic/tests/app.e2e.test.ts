@@ -61,6 +61,7 @@ describe("gothic single file", () => {
             .filter(e => !((e as HTMLElement).title || e.closest("label")?.title || e.closest<HTMLElement>(".kit-row")?.title))
             .map(e => `${e.tagName.toLowerCase()}#${e.id || (e as HTMLElement).dataset.key || e.textContent?.trim().slice(0, 12)}`),
       )
+      expect(await page.locator("label").evaluateAll(labels => labels.filter(label => !label.title.trim()).map(label => label.textContent?.trim())), `/${t} label tooltips`).toEqual([])
       rows.push(`/${t} svg=${svg} anchors=${anchors} panels=${panels} untitled=${untitled.join(",")}`)
       expect(svg, `/${t} svg`).toBeGreaterThan(0)
       expect(await tabX(), `/${t} tab x`).toEqual(x0)

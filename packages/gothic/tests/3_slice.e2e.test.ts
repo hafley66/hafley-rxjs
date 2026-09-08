@@ -72,7 +72,7 @@ it("attaches the slice toolkit to arbitrary mounted SVGs and restores originals 
   } finally { await browser.close() }
 })
 
-it("renders the five FMA additions and exposes a lock and reroll on every field", async () => {
+it("renders the five FMA additions and keeps playback static and exposes locks and rerolls on geometry fields", async () => {
   const browser = await chromium.launch()
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } })
@@ -81,8 +81,8 @@ it("renders the five FMA additions and exposes a lock and reroll on every field"
     await page.goto(`${pathToFileURL(resolve("dist/index.html")).href}#/fma?page.draw=false`)
     await page.waitForSelector("#resonance svg path")
     expect(await page.locator("section.kit-section").count()).toBe(8)
-    expect(await page.locator(".kit-static").count()).toBe(0)
-    const fields = await page.locator(".kit-row").count()
+    expect(await page.locator(".kit-front input[data-key=run]").count()).toBe(1)
+    const fields = await page.locator(".kit-drawer .kit-row").count()
     expect(await page.locator(".kit-row input[data-pin]").count()).toBe(fields)
     expect(await page.locator(".kit-row button.kit-roll").count()).toBe(fields)
     const pupil = page.locator('#fma2 input[data-key="pupil"]')
@@ -104,7 +104,7 @@ it("renders the five FMA additions and exposes a lock and reroll on every field"
     }
     await page.goto(`${pathToFileURL(resolve("dist/index.html")).href}#/slice?slice.run=false`)
     await page.waitForSelector(".ink path")
-    expect(await page.locator(".kit-static").count()).toBe(0)
+    expect(await page.locator(".kit-front input[data-key=run]").count()).toBe(1)
     await page.locator("#slice select.kit-preset").selectOption("frame · end")
     await page.waitForFunction(() => [...document.querySelectorAll<SVGPathElement>(".ink path")].every(path => path.style.opacity === "1" && path.style.strokeDashoffset === "0"))
     await page.locator("#slice select.kit-preset").selectOption("frame · middle")
@@ -113,9 +113,9 @@ it("renders the five FMA additions and exposes a lock and reroll on every field"
     await page.reload()
     await page.waitForFunction(() => Number((document.querySelector('[aria-label="Slice time"]') as HTMLInputElement)?.value) > 0)
     expect(await page.locator(".ink").first().innerHTML()).toBe(heldSlice)
-    await page.getByRole("button", { name: "Restart", exact: true }).click()
+    await page.locator("#slice").getByRole("button", { name: "Restart", exact: true }).click()
     await page.waitForFunction(() => Number((document.querySelector('[aria-label="Slice time"]') as HTMLInputElement)?.value) > 20)
-    await page.getByRole("button", { name: "Hold", exact: true }).click()
+    await page.locator("#slice").getByRole("button", { name: "Hold", exact: true }).click()
     expect(await page.locator('#slice input[data-key="run"]').isChecked()).toBe(false)
     expect(errors).toEqual([])
   } finally { await browser.close() }

@@ -6,9 +6,9 @@ export const SEED_INPUTS = {
 } as const satisfies AnySpec
 
 export const PLAYBACK_INPUTS = {
-  time: { kind: "range", label: "time", hint: "saved position in the motion cycle; scrubbing holds a frame", min: 0, max: 1, step: 0.001, default: 0.24, group: "playback" },
-  speed: { kind: "range", label: "tempo", hint: "playback speed multiplier", min: 0.1, max: 2, step: 0.1, default: 0.6, group: "playback" },
-  run: { kind: "bool", label: "play", hint: "advance the animation clock", default: true, group: "playback" },
+  time: { kind: "range", label: "time", hint: "saved position in the motion cycle; scrubbing holds a frame", min: 0, max: 1, step: 0.001, default: 0.24, group: "playback", static: true },
+  speed: { kind: "range", label: "tempo", hint: "playback speed multiplier", min: 0.1, max: 2, step: 0.1, default: 0.6, group: "playback", static: true },
+  run: { kind: "bool", label: "play", hint: "advance the animation clock", default: true, group: "playback", static: true },
 } as const satisfies AnySpec
 export type PlaybackParams = ValuesOf<typeof PLAYBACK_INPUTS>
 export const PLAYBACK_PRESETS = {

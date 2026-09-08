@@ -45,8 +45,8 @@ Commands: `pnpm --filter @hafley66/gothic dev | scaffold | build | build:single 
 - One section = one url namespace: `?<section>.<key>=`, pins at `?<section>.pin=a,b`, plus the page-global `?page.z` and `?page.draw`.
 - Input = replaceState, shuffle / preset / chip load = pushState, popstate restores. Foreign query keys survive a write.
 - Start values: defaults, then the localStorage autosave, then the url keys that are present.
-- Specs derive everything: `kind` is `range | number | seed | select | bool | text`; every field has a pin and reroll; do not add `static: true` or `shuffle: false`; `group` clusters it; `roll` narrows the shuffle window; `pool` supplies text choices or weights a select; `p` is a bool's true-probability.
-- Shuffle skips pinned fields and rolls everything else from one seeded rng.
+- Specs derive everything: `kind` is `range | number | seed | select | bool | text`; geometry fields have a pin and reroll; playback and variation controls use `static: true`, stay above the drawer, and survive shuffle; `group` clusters it; `roll` narrows the shuffle window; `pool` supplies text choices or weights a select; `p` is a bool's true-probability.
+- Shuffle skips static and pinned fields and rolls everything else from one seeded rng.
 - Depth: paths carrying `data-z` (0 near .. 1 far) fade and thin with the header's zDepth; sections opt in with `zDepth: true`.
 - Anchors: the header's row 2 lights each section on its own named view timeline, with an IntersectionObserver fallback.
 - Named states: `state.save(name)` creates or overwrites by name and selects it; while a state is selected every edit is written into it as well as the autosave; `state.roll(key)` rerolls one field.
@@ -86,7 +86,7 @@ The slice toolkit is exported from `src/kit/slice/index.ts`, with a separate Rea
 
 Each spec input has a property-timeline settings slot. `src/kit/4_propertyMotion.ts` owns one grouped config and one cold clock per page, with section and field overrides. Source-signal projections sample live values without writing animation frames to saved inputs or shuffle pins. Timing tables persist separately in `gothic.<page>.timelines`. Field cycles run inside the page timeline. Header controls share the `*` page timeline. Do not replace the source projection with a computed signal that pins producer connections on a synchronous read.
 
-Every input is shuffleable and pinnable. Text fields need a `pool`; number fields need finite `min`/`max`. Use pins to hold values instead of a static field category.
+Geometry inputs are shuffleable and pinnable. Playback and variation configuration are static controls above the drawer. Every input label carries its own tooltip. Text fields need a `pool`; number fields need finite `min`/`max`.
 
 ## Signals authoring
 
