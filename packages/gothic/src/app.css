@@ -191,3 +191,24 @@ body.nopen .pen {
 .cell svg text {
   font-family: "Noto Sans Runic", "Segoe UI Symbol", "Apple Symbols", system-ui, sans-serif;
 }
+
+/* icons: seals and eyes react on hover; pure CSS, no JS */
+.icons svg {
+  transform-origin: center;
+  transition: transform 0.18s cubic-bezier(0.2, 0.7, 0.2, 1), color 0.18s;
+  cursor: pointer;
+}
+.icons a:hover svg {
+  transform: scale(1.45);
+  color: var(--color-fg);
+  filter: drop-shadow(0 0 6px oklch(84% 0.1 85 / 0.5));
+}
+.icons td:hover svg,
+.icons .cell:hover svg {
+  transform: scale(1.3) rotate(-3deg);
+  color: var(--color-fg);
+}
+.icons td svg,
+.icons .cell svg {
+  cursor: crosshair;
+}

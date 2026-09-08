@@ -110,7 +110,7 @@ function Icons({ v, stats }: { v: V; stats: RefObject<HTMLSpanElement | null> })
   })
 
   return (
-    <div ref={host} className={`grid gap-5 ${v.anim ? "kit-draw" : ""}`}>
+    <div ref={host} className={`icons grid gap-5 ${v.anim ? "kit-draw" : ""}`}>
       <section>
         <h2 className="mb-2 font-medium text-muted">favorites bar (16px, favicon set to the first)</h2>
         <div className="flex flex-wrap gap-1 rounded-md bg-well px-2 py-1.5">
