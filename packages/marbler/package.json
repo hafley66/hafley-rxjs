@@ -19,7 +19,8 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -p tsconfig.build.json && cp src/2_marbler.css dist/2_marbler.css",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
-    "test:browser": "vitest --config vitest.browser.config.ts"
+    "test": "vitest run",
+    "test:browser": "vitest run --config vitest.browser.config.ts"
   },
   "dependencies": {
     "@hafley66/grid": "workspace:*",

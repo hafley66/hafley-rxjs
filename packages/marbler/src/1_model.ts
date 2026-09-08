@@ -2,7 +2,8 @@ import { createGrid, type Grid } from "@hafley66/grid"
 import { Signal, type Signal as SignalValue } from "@hafley66/signals"
 import type { ExpandedState } from "@tanstack/react-table"
 import { DEFAULT_PHASE_STYLES, MarbleEventSchema, type EventFilter, type MarbleEvent, type PhaseStyle } from "./0_types.js"
-import { createTimeViewport, eventRange, type TimeViewport } from "./0a_TimeViewport.js"
+import { createTimeViewport, type TimeViewport } from "./0a_TimeViewport.js"
+import { extentRange } from "./1c_aggregate.js"
 
 function isRowExpanded(expanded: ExpandedState, id: string): boolean {
   return expanded === true || Boolean(expanded[id])
@@ -20,6 +21,8 @@ function flattenExpandedRows(rows: MarbleEvent[], expanded: ExpandedState): Marb
   return flattened
 }
 
+export type MarblerViewMode = "table" | "flame"
+
 export type MarblerOptions = {
   // Falls back to DEFAULT_PHASE_STYLES for any kind not listed.
   phaseStyles?: Record<string, PhaseStyle>
@@ -30,11 +33,14 @@ export type MarblerOptions = {
 export type Marbler = {
   source: SignalValue<MarbleEvent[]>
   filter: SignalValue<EventFilter>
+  view: SignalValue<MarblerViewMode>
   selectedId: SignalValue<string | null>
   hoveredId: SignalValue<string | null>
   viewport: SignalValue<TimeViewport>
   grid: Grid<MarbleEvent>
   rows: SignalValue<MarbleEvent[]>
+  // Filtered tree, before expansion collapses it: the flame view and the aggregate extents read this.
+  treeRows: SignalValue<MarbleEvent[]>
   phaseStyles: Record<string, PhaseStyle>
   filters: SignalValue<string[]>
 }
@@ -46,11 +52,12 @@ function distinctTypes(events: MarbleEvent[]): string[] {
 export function createMarbler(seed: MarbleEvent[], options: MarblerOptions = {}): Marbler {
   const source = Signal<MarbleEvent[]>(seed)
   const filter = Signal<EventFilter>("all")
+  const view = Signal<MarblerViewMode>("table")
   const phaseStyles = { ...DEFAULT_PHASE_STYLES, ...options.phaseStyles }
   const filters = Signal<string[]>(() => options.filters ?? distinctTypes(source.$()))
   const selectedId = Signal<string | null>(seed[0]?.id ?? null)
   const hoveredId = Signal<string | null>(null)
-  const viewport = Signal(createTimeViewport(eventRange(seed)))
+  const viewport = Signal(createTimeViewport(extentRange(seed)))
   const treeRows = Signal<MarbleEvent[]>(() => filter.$() === "all" ? source.$() : source.$().filter((row: MarbleEvent) => row.type === filter.$()))
   const grid = createGrid<MarbleEvent>({
     schema: MarbleEventSchema,
@@ -70,5 +77,5 @@ export function createMarbler(seed: MarbleEvent[], options: MarblerOptions = {})
     ],
   })
   const rows = Signal<MarbleEvent[]>(() => flattenExpandedRows(treeRows.$(), grid.state.$().expanded))
-  return { source, filter, selectedId, hoveredId, viewport, rows, grid, phaseStyles, filters }
+  return { source, filter, view, selectedId, hoveredId, viewport, rows, treeRows, grid, phaseStyles, filters }
 }

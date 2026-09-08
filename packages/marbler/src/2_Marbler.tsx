@@ -5,7 +5,10 @@ import { useGrid } from "@hafley66/grid/react"
 import { SignalReact } from "@hafley66/signals/react"
 import { useLayoutEffect, useMemo, useRef, useState } from "react"
 import type { MarbleEvent } from "./0_types.js"
+import type { AggregateExtent } from "./1c_aggregate.js"
 import { reduceTimeViewport, type TimelineMark } from "./0a_TimeViewport.js"
+import { aggregateExtents, displayDuration, flameNodes } from "./1c_aggregate.js"
+import { FlameChart } from "./1d_FlameChart.js"
 import { WaterfallPixi } from "./1a_WaterfallPixi.js"
 import { TimeNavigatorPixi } from "./1b_TimeNavigatorPixi.js"
 import type { Marbler } from "./1_model.js"
@@ -22,6 +25,22 @@ function showChips(embedded: EmbeddedOption): boolean {
   return embedded === false || (typeof embedded === "object" && embedded.chips === true)
 }
 
+// Selection can land on a row the table has collapsed, so the drawer resolves ids against the tree.
+function findEvent(rows: readonly MarbleEvent[], id: string | null): MarbleEvent | null {
+  if (id === null) return null
+  for (const row of rows) {
+    if (row.id === id) return row
+    const found = row.children ? findEvent(row.children, id) : null
+    if (found) return found
+  }
+  return null
+}
+
+function durationCell(event: MarbleEvent, extent?: AggregateExtent) {
+  const shown = displayDuration(event, extent)
+  return <>{shown === null ? "—" : `${shown} ms`}{event.duration !== null && event.duration !== shown && <small>{event.duration} ms</small>}</>
+}
+
 function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
 	model: Marbler
 	embedded?: EmbeddedOption
@@ -30,8 +49,9 @@ function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
 }) {
   const table = useGrid<MarbleEvent>(model.grid)
   const scrollerRef = useRef<HTMLDivElement>(null)
-  const selected = model.rows.$().find((row) => row.id === model.selectedId.$()) ?? null
-  const hovered = model.rows.$().find((row) => row.id === model.hoveredId.$()) ?? null
+  const tree = model.treeRows.$()
+  const selected = findEvent(tree, model.selectedId.$())
+  const hovered = findEvent(tree, model.hoveredId.$())
   const rows = table.getRowModel().rows
   const events = useMemo<MarbleEvent[]>(() => rows.map((row) => row.original), [rows])
   const hasTree = useMemo(() => rows.some((row) => row.getCanExpand()), [rows])
@@ -53,11 +73,14 @@ function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
     return () => observer.disconnect()
   })
   const waterfallLeft = measuredLeft ?? WATERFALL_LEFT + (hasTree ? TREE_GUTTER : 0)
+  const extents = useMemo(() => aggregateExtents(tree), [tree])
+  const flame = useMemo(() => flameNodes(tree, extents), [tree, extents])
   const timelineEvents = model.rows.$()
   const laneById = useMemo(() => new Map(timelineEvents.map((event, lane) => [event.id, lane])), [timelineEvents])
   const marks = useMemo<TimelineMark[]>(() => timelineEvents.flatMap((event, lane) => {
-    const eventMarks: TimelineMark[] = event.start !== null && event.duration !== null
-      ? [{ id: event.id, kind: "span", start: event.start, end: event.start + event.duration, lane }]
+    const extent = extents.get(event.id)
+    const eventMarks: TimelineMark[] = extent?.start != null && extent.end != null
+      ? [{ id: event.id, kind: "span", start: extent.start, end: extent.end, lane }]
       : []
     for (const frame of event.frames ?? []) {
       eventMarks.push({
@@ -73,7 +96,7 @@ function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
       }
     }
     return eventMarks
-  }), [laneById, timelineEvents])
+  }), [extents, laneById, timelineEvents])
   const viewport = model.viewport.$()
   const ticks = Array.from({ length: 6 }, (_, index) => viewport.visible[0] + (viewport.visible[1] - viewport.visible[0]) * index / 5)
   const filterChips = ["all", ...model.filters.$()]
@@ -82,7 +105,8 @@ function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
     <section className="network-panel">
       <div className="subtoolbar">
         {showChips(embedded) && filterChips.map((chip) => <button key={chip} className={model.filter.$() === chip ? "kind active" : "kind"} onClick={() => model.filter.$(chip)}>{chip}</button>)}
-        <span className="toolbar-spacer" />{hovered && <span className="hovered-event" data-testid="hovered-event">{hovered.name} · {hovered.duration} ms</span>}<span className="summary">{rows.length} events</span>
+        <span className="view-toggle">{(["table", "flame"] as const).map((mode) => <button key={mode} type="button" className={model.view.$() === mode ? "kind active" : "kind"} data-testid={`view-${mode}`} onClick={() => model.view.$(mode)}>{mode}</button>)}</span>
+        <span className="toolbar-spacer" />{hovered && <span className="hovered-event" data-testid="hovered-event">{hovered.name} · {displayDuration(hovered, extents.get(hovered.id))} ms</span>}<span className="summary">{rows.length} events</span>
         {!embedded && <span className="legend">{legendEntries.map(([kind, style]) => <span key={kind}><i style={{ background: style.color }} />{style.label} </span>)}</span>}
       </div>
       <TimeNavigatorPixi
@@ -94,7 +118,17 @@ function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
         onGesture={(gesture) => model.viewport.$(reduceTimeViewport(model.viewport.$(), gesture))}
         height={navigatorHeight}
       />
-      <div className="grid-scroller" ref={scrollerRef}>
+      {model.view.$() === "flame" ? <div className="flame-scroller" data-testid="flame-scroller">
+        <FlameChart
+          nodes={flame}
+          domain={viewport.visible}
+          phaseStyles={model.phaseStyles}
+          hoveredId={model.hoveredId.$()}
+          selectedId={model.selectedId.$()}
+          onNodeHover={(id) => model.hoveredId.$(id)}
+          onNodeSelect={(id) => model.selectedId.$(id)}
+        />
+      </div> : <div className="grid-scroller" ref={scrollerRef}>
         <div className="grid-sticky-head">
           <div className={hasTree ? "grid-header grid-row has-tree" : "grid-header grid-row"}>
             {table.getHeaderGroups()[0].headers.filter((header) => hasTree || header.column.id !== "__expand").map((header) => <div key={header.id} className={`cell col-${header.column.id}`} onClick={header.column.getToggleSortingHandler()}>{flexRender(header.column.columnDef.header, header.getContext())}</div>)}
@@ -107,6 +141,7 @@ function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
             scroller={scrollerRef}
             domain={viewport.visible}
             leftOffset={waterfallLeft}
+            extents={extents}
             phaseStyles={model.phaseStyles}
             onEventHover={(event) => model.hoveredId.$(event?.id ?? null)}
             onEventSelect={(event) => model.selectedId.$(event.id)}
@@ -126,11 +161,11 @@ function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
             <div className="cell col-type">{row.original.type}</div>
             <div className="cell col-initiator">{row.original.initiator}</div>
             <div className="cell col-size">{row.original.size}</div>
-            <div className="cell col-duration">{row.original.duration} ms</div>
+            <div className="cell col-duration">{durationCell(row.original, extents.get(row.id))}</div>
             <div className="cell col-waterfall" />
           </div>)}
         </div>
-      </div>
+      </div>}
       <footer className="statusbar"><span>{rows.length} / {model.source.$().length} events</span>{embedded
         ? summary?.map((item) => <span key={item}>{item}</span>)
         : <><span>2.8 kB transferred</span><span>Finish: 2.63 s</span><span className="dom">▯ DOMContentLoaded: 1.18 s</span><span className="load">▯ Load: 1.92 s</span></>}</footer>

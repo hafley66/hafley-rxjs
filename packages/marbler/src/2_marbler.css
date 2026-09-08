@@ -667,3 +667,50 @@ input {
 	border-left-color: var(--marbler-border, #383d47);
 	color: var(--marbler-ink, #bac1cb);
 }
+
+.view-toggle {
+	display: flex;
+	gap: 2px;
+	margin-left: 6px;
+}
+.col-duration {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: flex-end;
+	line-height: 1.15;
+}
+.col-duration small {
+	color: #6d7480;
+	font-size: 10px;
+}
+.flame-scroller {
+	flex: 1;
+	position: relative;
+	overflow: auto;
+	background: #101318;
+}
+.flame-chart {
+	min-height: 100%;
+	padding: 4px 0;
+}
+.flame-chart svg {
+	display: block;
+}
+.flame-node rect {
+	stroke: #101318;
+	stroke-width: 1;
+	cursor: pointer;
+}
+.flame-node text {
+	font: 10px ui-monospace, Menlo, monospace;
+	fill: #0e1116;
+	pointer-events: none;
+}
+.flame-node.hovered rect {
+	stroke: #d5dce5;
+}
+.flame-node.selected rect {
+	stroke: #ffffff;
+	stroke-width: 2;
+}

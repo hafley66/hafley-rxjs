@@ -5,11 +5,18 @@ import { useEffect, useRef } from "react"
 // on the page; the other marbler canvas then pulls a destroyed Batch on its next frame. Drop the view only.
 const DESTROY_RENDERER = { removeView: true } as const
 import { DEFAULT_PHASE_STYLES, FALLBACK_PHASE_STYLE, type MarbleEvent, type PhaseStyle } from "./0_types.js"
+import type { AggregateExtent } from "./1c_aggregate.js"
 
 const ROW_HEIGHT = 44
 const HEADER_HEIGHT = 55
 const WATERFALL_LEFT = 690
 const DEFAULT_DOMAIN = [0, 3000] as const
+const BAR_TOP = 6
+const BAR_HEIGHT = 32
+const BAR_DEPTH_STEP = 6
+const MIN_BAR_HEIGHT = 12
+const BAR_COLOR = 0x8ca4c2
+const BAR_RECEIPT_LIMIT = 40
 const FRAME_ERROR_COLOR = 0xd05050
 const FRAME_COLOR: Record<"in" | "out" | "self", number> = {
   in: 0x3f8dbd,
@@ -21,10 +28,18 @@ function hexNumber(color: string): number {
   return Number.parseInt(color.replace("#", ""), 16)
 }
 
+function barSpan(event: MarbleEvent, extent?: AggregateExtent): { start: number | null; end: number | null } {
+  if (extent) return { start: extent.start, end: extent.end }
+  if (event.start === null) return { start: null, end: null }
+  return { start: event.start, end: event.start + (event.duration ?? 0) }
+}
+
 export type WaterfallPixiProps = {
   rows: MarbleEvent[]
   scroller: React.RefObject<HTMLDivElement | null>
   domain?: readonly [number, number]
+  // Aggregate extents keyed by event id: a parent bar spans its subtree, stratified by tree depth.
+  extents?: ReadonlyMap<string, AggregateExtent>
   leftOffset?: number
   phaseStyles?: Record<string, PhaseStyle>
   onEventHover?: (event: MarbleEvent | null) => void
@@ -35,6 +50,7 @@ export function WaterfallPixi({
   rows,
   scroller,
   domain = DEFAULT_DOMAIN,
+  extents,
   leftOffset = WATERFALL_LEFT,
   phaseStyles = DEFAULT_PHASE_STYLES,
   onEventHover,
@@ -43,12 +59,14 @@ export function WaterfallPixi({
   const hostRef = useRef<HTMLDivElement>(null)
   const rowsRef = useRef(rows)
   const domainRef = useRef(domain)
+  const extentsRef = useRef(extents)
   const phaseStylesRef = useRef(phaseStyles)
   const callbacksRef = useRef({ onEventHover, onEventSelect })
   const renderRef = useRef<() => void>(() => {})
 
   rowsRef.current = rows
   domainRef.current = domain
+  extentsRef.current = extents
   phaseStylesRef.current = phaseStyles
   callbacksRef.current = { onEventHover, onEventSelect }
 
@@ -72,7 +90,8 @@ export function WaterfallPixi({
       if (!row) return null
       const currentDomain = domainRef.current
       const time = currentDomain[0] + ((event.clientX - bounds.left) / width) * (currentDomain[1] - currentDomain[0])
-      return row.start !== null && row.duration !== null && time >= row.start && time <= row.start + row.duration ? row : null
+      const { start, end } = barSpan(row, extentsRef.current?.get(row.id))
+      return start !== null && end !== null && time >= start && time <= end ? row : null
     }
     const pointerMove = (event: MouseEvent) => {
       const row = hitTest(event)
@@ -109,19 +128,33 @@ export function WaterfallPixi({
       mount.style.transform = `translateY(${scrollTop}px)`
       phasesGraphic.clear()
 
+      const receipts: string[] = []
       rowsRef.current.slice(first, last).forEach((event, visibleIndex) => {
         const y = (first + visibleIndex) * ROW_HEIGHT - scrollTop
+        const extent = extentsRef.current?.get(event.id)
+        const { start, end } = barSpan(event, extent)
+        const barHeight = Math.max(MIN_BAR_HEIGHT, BAR_HEIGHT - (extent?.depth ?? 0) * BAR_DEPTH_STEP)
+        const barY = y + BAR_TOP
+        if (start !== null && end !== null && x(end) >= 0 && x(start) <= width) {
+          const left = Math.max(-2, x(start))
+          const right = Math.min(width + 2, x(end))
+          phasesGraphic?.rect(left, barY, Math.max(2, right - left), barHeight).fill({ color: BAR_COLOR, alpha: 0.22 })
+          if (receipts.length < BAR_RECEIPT_LIMIT) receipts.push(`${event.id}:${Math.round(left)}:${Math.round(right)}`)
+        }
+        const phaseY = barY + 3
+        const phaseHeight = Math.max(4, barHeight - 6)
         event.phases.forEach((phase) => {
           if (phase.start === null || phase.end === null) return
           const left = x(phase.start)
           const style = phaseStylesRef.current[phase.kind] ?? FALLBACK_PHASE_STYLE
-          phasesGraphic?.rect(left, y + 16, Math.max(2, x(phase.end) - left), 12).fill({ color: hexNumber(style.color), alpha: 0.86 })
+          phasesGraphic?.rect(left, phaseY, Math.max(2, x(phase.end) - left), phaseHeight).fill({ color: hexNumber(style.color), alpha: 0.86 })
         })
         event.frames?.forEach((frame) => {
           const color = frame.severity === "error" ? FRAME_ERROR_COLOR : FRAME_COLOR[frame.direction]
-          phasesGraphic?.rect(x(frame.t), y + 16, 2, 12).fill({ color, alpha: 0.95 })
+          phasesGraphic?.rect(x(frame.t), barY, 2, barHeight).fill({ color, alpha: 0.95 })
         })
       })
+      mount.setAttribute("data-bars", receipts.join(","))
       app.renderer.render(app.stage)
     }
     renderRef.current = render
@@ -173,7 +206,7 @@ export function WaterfallPixi({
     }
   }, [scroller, leftOffset])
 
-  useEffect(() => renderRef.current(), [rows, domain[0], domain[1], phaseStyles])
+  useEffect(() => renderRef.current(), [rows, domain[0], domain[1], extents, phaseStyles])
 
   return <div ref={hostRef} className="waterfall-pixi" style={{ left: leftOffset }} />
 }
