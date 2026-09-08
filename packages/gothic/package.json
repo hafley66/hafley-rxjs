@@ -12,6 +12,7 @@
     "publish:pages": "bash scripts/1_publish-pages.sh",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "bench": "vitest bench --run",
     "check": "pnpm typecheck && pnpm test && pnpm build:single && pnpm test:e2e",
     "test:e2e": "vitest run -c vitest.e2e.config.ts"
   },

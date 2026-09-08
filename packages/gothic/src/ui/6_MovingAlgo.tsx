@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import { distinctUntilChanged, EMPTY, fromEvent, ignoreElements, merge, switchMap, takeUntil, tap } from "rxjs"
 import { sectionState } from "../app/2_state.js"
 import { type Algo, algoCtx } from "../kit/2_algo.js"
+import { timed } from "../kit/5_perf.js"
 import type { MotionParams } from "../kit/3_motion.js"
 import { PLAYBACK_PRESETS } from "../kit/0_inputs.js"
 import { playback, type PlaybackRuntime } from "../kit/1a_playback.js"
@@ -63,10 +64,10 @@ function MovingBody<P extends MotionParams>({
   const v = propertyMotion(state.page).values(state).$() as P
   const frame = motion.frame.$()
   const time = frame.time / (duration * 1000), running = frame.active
-  const out = algo.run({ ...v, time }, algoCtx(v, 720))
-  const studies = useMemo(() => [0, gesture === "seed" ? 1 : 0.5].map((time, i) => ({
+  const out = timed(`moving:${algo.name}`, () => algo.run({ ...v, time }, algoCtx(v, 720)))
+  const studies = useMemo(() => timed(`moving:${algo.name}:studies`, () => [0, gesture === "seed" ? 1 : 0.5].map((time, i) => ({
     time, out: algo.run({ ...v, time }, algoCtx(v, 256 + i)),
-  })), [algo, v])
+  }))), [algo, v])
   return (
     <div className="mx-auto max-w-[1060px] py-4">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">

@@ -2,6 +2,7 @@ import { type AnySpec, useDrawIn, type ValuesOf } from "@hafley66/report-shell"
 import type { CSSProperties, ReactNode } from "react"
 import { useRef } from "react"
 import { type Algo, type AlgoOut, algoCtx } from "../kit/2_algo.js"
+import { timed } from "../kit/5_perf.js"
 import { Section } from "./2_Section.js"
 
 const f = (n: number) => Math.round(n * 100) / 100
@@ -45,7 +46,7 @@ export function AlgoCells<P extends object>({
   params: P
 }): ReactNode {
   const ref = useRef<HTMLDivElement>(null)
-  const outs = sizes.map(size => algo.run(params, algoCtx(params, size)))
+  const outs = sizes.map(size => timed(`algo:${algo.name}:${size}`, () => algo.run(params, algoCtx(params, size))))
   useDrawIn(ref, [algo.name, JSON.stringify(params), sizes.join()])
   return (
     <div ref={ref} className="row flex flex-wrap items-end gap-5">

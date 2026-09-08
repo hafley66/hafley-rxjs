@@ -3,6 +3,7 @@ import { type RefObject, useEffect, useRef } from "react"
 import { sealAlgo } from "../algos/0_seal.js"
 import type { PageSpec } from "../app/0_pages.js"
 import { type EyeOpts, eye, hash, sealCaption, sealSvg } from "../lib/index.js"
+import { timed } from "../kit/5_perf.js"
 import { Section } from "../ui/2_Section.js"
 import { AlgoSection } from "../ui/4_Algo.js"
 import { Raw } from "../ui/5_Raw.js"
@@ -68,7 +69,7 @@ function Icons({ v, stats }: { v: V; stats: RefObject<HTMLSpanElement | null> })
   }, [v.weight])
 
   useEffect(() => {
-    const n = stagger(host.current)
+    const n = timed("icons:stagger", () => stagger(host.current))
     if (stats.current) stats.current.textContent = `${names.length} names · ${n} paths`
     const ico = host.current?.querySelector("svg")
     if (!ico) return
@@ -97,7 +98,7 @@ function Icons({ v, stats }: { v: V; stats: RefObject<HTMLSpanElement | null> })
               href="#/icons"
               className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-fg text-xs no-underline hover:bg-line"
             >
-              <Raw html={sealSvg(16, sd(n), v.minPx).svg} />
+              <Raw html={timed(`seal:16`, () => sealSvg(16, sd(n), v.minPx)).svg} />
               {n}
             </a>
           ))}
@@ -123,11 +124,11 @@ function Icons({ v, stats }: { v: V; stats: RefObject<HTMLSpanElement | null> })
                 <td className="whitespace-nowrap px-2.5 py-1.5 text-muted">{n}</td>
                 {SIZES.map(s => (
                   <td key={s} className="px-2.5 py-1.5">
-                    <Raw html={sealSvg(s, sd(n), v.minPx).svg} />
+                    <Raw html={timed(`seal:${s}`, () => sealSvg(s, sd(n), v.minPx)).svg} />
                   </td>
                 ))}
                 <td className="whitespace-nowrap px-2.5 py-1.5 text-muted">
-                  {sealCaption(sealSvg(96, sd(n), v.minPx))}
+                  {sealCaption(timed(`seal:96`, () => sealSvg(96, sd(n), v.minPx)))}
                 </td>
               </tr>
             ))}
@@ -145,7 +146,7 @@ function Icons({ v, stats }: { v: V; stats: RefObject<HTMLSpanElement | null> })
                 key={`${W}-${o.lobes}-${o.lash}`}
                 className="cell grid justify-items-center gap-1 text-[10px] text-muted"
               >
-                <Raw html={eye(W, H, o, v.minPx).svg} />
+                <Raw html={timed(`eye:${W}`, () => eye(W, H, o, v.minPx)).svg} />
                 <span>{`${W}×${H} f${o.lobes}${o.double ? " dbl" : ""}${o.lash === 0 ? " bare" : ""}`}</span>
               </div>
             )),

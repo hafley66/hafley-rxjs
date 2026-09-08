@@ -5,6 +5,7 @@ import { schedule } from "../../lib/6_slice.js"
 import { slicePaths, type SliceGeometryOptions, type SliceTimeline } from "../../lib/6a_slicePaths.js"
 import { paintSlice } from "../../ui/1a_slicePose.js"
 import { SLICE_DEFAULTS, type SliceParams } from "./0_spec.js"
+import { mark, setGauge } from "../5_perf.js"
 import { playback, type PlaybackRuntime } from "../1a_playback.js"
 import type { StrokeMotionFrame } from "../../lib/7a_variation.js"
 
@@ -46,7 +47,9 @@ function bindSlice(target: SliceTarget, params: SliceParams, options: SliceAttac
     sources = []
   }
   function paint(time: number, params: SliceParams, motion?: StrokeMotionFrame) {
+    const done0 = mark("slice:paint")
     paintSlice(timeline.strokes, time, params, motion)
+    done0()
     for (const source of sources) {
       const done = time >= source.end + Math.max(0, params.aiFade - 120) && !Object.keys(motion?.fields ?? {}).length
       source.group.style.display = done ? "none" : ""
@@ -62,6 +65,7 @@ function bindSlice(target: SliceTarget, params: SliceParams, options: SliceAttac
     }
   }
   function refresh() {
+    const done = mark("slice:refresh")
     restore()
     const roots: readonly Element[] = Array.isArray(target) ? target : [target as Element]
     const elements = roots.flatMap(root => [
@@ -74,7 +78,13 @@ function bindSlice(target: SliceTarget, params: SliceParams, options: SliceAttac
       visibility: element.style.getPropertyValue("visibility"), priority: element.style.getPropertyPriority("visibility") }))
     const styles = elements.map(el => getComputedStyle(el))
     const size = options.size ?? Math.max(1, ...elements.map(el => el.ownerSVGElement?.viewBox.baseVal.width || 240))
-    const compiled = slicePaths(elements.map(sourcePath), params, { ...options, size })
+    const done0 = mark("slice:compile")
+    const sources0 = mark("slice:sourcePath")
+    const paths = elements.map(sourcePath)
+    sources0()
+    const compiled = slicePaths(paths, params, { ...options, size })
+    done0()
+    setGauge("slice:strokes", compiled.strokes.length)
     // Scheduling sees screen-space centers, while each stroke's pose stays in its source's local coordinates.
     const matrices = elements.map(el => el.getScreenCTM())
     const screen = compiled.strokes.map(stroke => {
@@ -90,6 +100,7 @@ function bindSlice(target: SliceTarget, params: SliceParams, options: SliceAttac
       screen.forEach((s, i) => { compiled.strokes[i].t0 = s.t0; compiled.strokes[i].dur = s.dur; compiled.strokes[i].i = s.i })
     }
     try {
+      const done1 = mark("slice:dom")
       for (const [i, element] of elements.entries()) {
         const strokes = compiled.strokes.filter(s => s.source === i)
         if (!strokes.length) continue
@@ -125,6 +136,7 @@ function bindSlice(target: SliceTarget, params: SliceParams, options: SliceAttac
         }
       }
       timeline = compiled
+      done1()
     } catch (error) { restore(); throw error }
   }
   refresh()
