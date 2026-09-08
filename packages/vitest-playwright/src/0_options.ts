@@ -55,6 +55,9 @@ export interface VitestPlaywrightOptions {
   log?: { api?: boolean; page?: boolean; net?: boolean; failOnPageError?: boolean; failOnConsoleError?: boolean }
   serve?: ServeOptions
   testIdAttribute?: string
+  /** vitest test.maxWorkers when the user config leaves it unset. Default 2: every worker launches a browser, and
+   *  vitest's own default (cores - 1) puts that many chromiums on the host at t=0. A number or a "25%" string. */
+  workers?: number | `${number}%`
 }
 
 export interface ResolvedOptions {
@@ -75,6 +78,7 @@ export interface ResolvedOptions {
   log: { api: boolean; page: boolean; net: boolean; failOnPageError: boolean; failOnConsoleError: boolean }
   serveKind?: ServeOptions["kind"]
   testIdAttribute: string
+  workers: number | `${number}%`
 }
 
 /** vitest:provide serializes into workers; a function-valued option would silently vanish there. */
@@ -138,6 +142,7 @@ export function resolveOptions(o: VitestPlaywrightOptions = {}): ResolvedOptions
     },
     serveKind: o.serve?.kind,
     testIdAttribute: o.testIdAttribute ?? "data-testid",
+    workers: o.workers ?? 2,
   }
 }
 

@@ -66,6 +66,7 @@ The plugin fills `test.setupFiles`, `test.globalSetup`, `test.provide`, `test.ru
 | `log.page` / `net` / `api` / `failOnPageError` / `failOnConsoleError` | all true | tel: |
 | `serve` | none | pkg:globalSetup |
 | `testIdAttribute` | `data-testid` | pw: |
+| `workers` | 2 | vitest `test.maxWorkers` unless the user config sets it; one browser per worker, so vitest's `cores - 1` default means that many chromiums (playwright/test defaults to `"50%"`) |
 
 Every option crosses `vitest:provide` into workers, so it must be structured-cloneable; `resolveOptions` throws on the key that is not.
 

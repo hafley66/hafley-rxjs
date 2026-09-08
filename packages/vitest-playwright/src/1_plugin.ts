@@ -1,4 +1,4 @@
-// pkg:plugin in the tel:plugin shape: config() returns test.{setupFiles, globalSetup, provide, isolate, runner}
+// pkg:plugin in the tel:plugin shape: config() returns test.{setupFiles, globalSetup, provide, isolate, runner, maxWorkers}
 // and mirrors the serve options into process.env for the vitest:globalSetup process.
 import { fileURLToPath } from "node:url"
 import type { Plugin, UserConfig } from "vite"
@@ -9,6 +9,7 @@ import { KEY, resolveOptions, type VitestPlaywrightOptions } from "./0_options.j
 type TestBlock = {
   runner?: string
   isolate?: boolean
+  maxWorkers?: number | string
   setupFiles?: string[]
   globalSetup?: string[]
   provide?: Record<string, unknown>
@@ -44,6 +45,7 @@ export function vitestPlaywright(options: VitestPlaywrightOptions = {}): VitestP
           globalSetup: [siblingPath("2_global-setup")],
           provide: { [KEY.options]: resolved },
           isolate: user.test?.isolate ?? false,
+          maxWorkers: user.test?.maxWorkers ?? resolved.workers,
           runner,
         },
       }

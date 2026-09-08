@@ -16,6 +16,9 @@ describe("barrel", () => {
   })
   it("the plugin returns the tel:plugin shape", () => {
     const cfg = barrel.vitestPlaywright({ expect: { timeout: 1 } }).config({})
-    vitestExpect(Object.keys(cfg.test ?? {}).sort()).toEqual(["globalSetup", "isolate", "provide", "runner", "setupFiles"])
+    vitestExpect(cfg.test?.maxWorkers).toBe(2)
+    vitestExpect(barrel.vitestPlaywright({ workers: "25%" }).config({}).test?.maxWorkers).toBe("25%")
+    vitestExpect(barrel.vitestPlaywright().config({ test: { maxWorkers: 7 } }).test?.maxWorkers).toBe(7)
+    vitestExpect(Object.keys(cfg.test ?? {}).sort()).toEqual(["globalSetup", "isolate", "maxWorkers", "provide", "runner", "setupFiles"])
   })
 })
