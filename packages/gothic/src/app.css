@@ -212,3 +212,25 @@ body.nopen .pen {
 .icons .cell svg {
   cursor: crosshair;
 }
+
+/* the hover tooltip bubble: non-interactive, fixed, clamped by 6_tips.ts */
+.kit-tip {
+  position: fixed;
+  left: 0;
+  top: 0;
+  max-width: 340px;
+  padding: 6px 8px;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: var(--well);
+  color: var(--fg);
+  font: 11px / 1.45 system-ui, sans-serif;
+  white-space: pre-line;
+  pointer-events: none;
+  z-index: 90;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.kit-tip[data-show] {
+  opacity: 1;
+}
