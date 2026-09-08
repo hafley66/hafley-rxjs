@@ -35,6 +35,8 @@ pnpm --filter @hafley66/gothic check          # typecheck + vitest + build:singl
 | `/arches` | arch families, tracery, buildings, grammar | `families` (page globals), `spread`, `lobes`, `anatomy`, `rose`, `panel`, plus 9 bar-less anchors driven by `families` |
 | `/frames` | frame compositions | `frames`, `sizer` |
 | `/fma` | fullmetal 2: a transmutation circle where one symmetry n drives the script band, the star {n/k}, n tangent satellites nested as circles of the same family, chords, the dual polygon and the core (`src/algos/2_fma.ts`) | `fma2`, `gallery` |
+| `/guilloche` | woven spirograph rosettes, three harmonic wheels, nested bands; engraving/cathedral/solar/lacework presets | `guilloche` |
+| `/architecture` | branching lancet tracery, fan vaults, flying buttress frames, crocketed spires, radial wheel windows, perspective cloisters | `architecture`, `fanvault`, `buttresses`, `spires`, `wheel`, `cloister` |
 
 `/` redirects to `/eye`. The page list is `PAGES` in `src/app/0_pages.ts`; tabs, routes, query schemas and anchors all derive from it.
 
@@ -54,53 +56,58 @@ pnpm --filter @hafley66/gothic check          # typecheck + vitest + build:singl
 
 Only non-default values print to the URL. Foreign query keys survive a write. Copying the address bar reproduces the view.
 
-## 4. Make: a new page
+## 4. Make: a new notebook
 
-One file, one registration.
+Run the checked-in Bash scaffold from this package:
 
-```tsx
-// src/pages/9_rose.tsx
-import type { PageSpec } from "../app/0_pages.js"
-import type { AnySpec, ValuesOf } from "../kit/0_spec.js"
-import { Section } from "../ui/2_Section.js"
-import { roseWindow } from "../lib/8_rose.js"          // pure generator: params -> path strings
-
-const SPEC = {
-  seed: { kind: "seed", default: 7 },
-  petals: { kind: "range", hint: "petals around the eye", min: 6, max: 24, default: 12, roll: [8, 16] },
-  style: { kind: "select", options: ["plain", "foiled"], default: "plain" },
-  weight: { kind: "range", min: 0.5, max: 2.5, step: 0.1, default: 1, static: true },
-} as const satisfies AnySpec
-type V = ValuesOf<typeof SPEC>
-
-function RosePage() {
-  return (
-    <Section page="rose" def={{ id: "rose", title: "rose", spec: SPEC }}>
-      {v => {
-        const { paths, caption } = roseWindow(v as V, 320)
-        return (
-          <figure className="grid justify-items-center gap-1 text-[10px] text-muted">
-            <svg viewBox="-160 -160 320 320" width={320} height={320} className="kit-draw">
-              {paths.map((d, i) => <path key={i} d={d} pathLength={1} style={{ "--i": i } as never} />)}
-            </svg>
-            <figcaption>{caption}</figcaption>
-          </figure>
-        )
-      }}
-    </Section>
-  )
-}
-
-export const PAGE: PageSpec = { id: "rose", title: "gothic: rose window", path: "/rose", specs: { rose: SPEC }, Component: RosePage }
+```bash
+pnpm scaffold page rose --dry-run   # inspect the exact diff
+pnpm scaffold page rose             # create a generator, a page and its route registration
+pnpm scaffold input rose petals range
+pnpm dev                            # open /rose
 ```
 
-Then add `rose` to the `PAGES` array in `src/app/0_pages.ts`. Run `pnpm check`: `tests/app.e2e.test.ts` walks the new tab.
+`just scaffold ...` and `bash scripts/0_scaffold.sh ...` run the same script.
+`pnpm scaffold --help` lists its arguments.
 
-Several sections on one page: one `Section` per spec, each with its own `id`; list them all in `specs`. Bar-less sections use `PlainSection` and go in `anchors`.
+The script prints the files it touches. Numeric prefixes are selected from the current files. A new notebook has:
+
+- `src/algos/<n>_rose.ts`: `SPEC`, inferred `Params`, `generate(p, ctx): AlgoOut`, and `ALGO`.
+- `src/pages/<n>_rose.tsx`: `SignalReact`, `AlgoSection`, sizes `[48, 96, 160, 320]`, and `PAGE`.
+- An import and entry in `src/app/0_pages.ts`: the tab, route, query schema and anchors follow.
+
+The initial generator draws a circle controlled by `radius`. Edit the field bounds, defaults, options and hints in `SPEC`, then write the geometry in `generate`. Every added field reaches `p` through `ValuesOf<typeof SPEC>`. The scaffold supplies the input; its effect on geometry is written in the generator body. Presets go in `ALGO.presets`.
+
+```bash
+pnpm scaffold section rose petals                 # another new Algo and section on /rose
+pnpm scaffold input petals count range             # a control in that section's spec
+pnpm scaffold use rose comparison 2_fma:fma2        # existing FMA Algo alongside it
+pnpm scaffold use rose packing 1_fractal:apollonian
+pnpm scaffold copy petals petals2                  # independent copy of a scaffolded Algo
+# Use the numbered filename printed by copy, without .ts:
+pnpm scaffold use rose variant <n>_petals2:ALGO
+pnpm check
+```
+
+`use PAGE SECTION MODULE:EXPORT` mounts a directly exported `const NAME: Algo<...>` from `src/algos`. The supplied section name gives each use its own controls, URL namespace and storage, including repeated uses of the same Algo. Composition here means separate sections on one page.
+
+`section` and `use` also work on existing handwritten notebooks. On the first addition, the script creates a numbered wrapper importing the old `PAGE`, preserves its specs and anchors, renders its component, then renders the added sections. It updates that page's registration to the wrapper. Subsequent additions use that wrapper. Choose a section name absent from the base page's specs and anchors; inherited name collisions fail when the page module loads.
+
+`input` and `copy` operate on scaffolded Algos. For a handwritten spec, print a fixed field definition and paste it into the desired spec:
+
+```bash
+pnpm scaffold input --print petals range
+```
+
+Field kinds are `range`, `number`, `seed`, `select`, `bool`, `text`. Their literal defaults live in `scripts/templates/inputs/`; customize the emitted field before using it for domain values. IDs and keys use lowercase letters, digits and underscores, starting with a letter. `page`, `pin`, `constructor` and `prototype` are reserved.
+
+The `.tpl` files in `scripts/templates/` are text templates containing TypeScript and named placeholders. Bash uses `sed` to substitute names and `awk` to insert lines at `scaffold:*` comments. Keep those comments and the generated import/export forms intact if later scaffold commands should edit that module. Creation refuses existing names; failed argument or marker checks leave source files unchanged; `--dry-run` prints a diff without writing source files.
+
+State and rendering continue through the existing kit: `SignalReact` → `AlgoSection` → `Section` → `createSections`. Values and pins use signals; autosave and named states use the kit's `storageSignal` stores. URL writes, shuffle, reroll, presets, tooltips, drawers and draw-in hooks come from the same components as the existing notebooks.
 
 ## 5. Make: a field, an algo, a generator
 
-**Field kinds** (`src/kit/0_spec.ts`):
+**Field kinds** (`@hafley66/report-shell`, `src/spec/0_spec.ts`):
 
 | kind | value | extras |
 |---|---|---|
@@ -122,8 +129,8 @@ Every kind takes `label`, `hint` (tooltip first line; the derived facts follow i
 | command | proves |
 |---|---|
 | `pnpm --filter @hafley66/gothic typecheck` | `tsc --noEmit` clean |
-| `pnpm --filter @hafley66/gothic test` | vitest over spec, url, store, router, pages |
-| `pnpm --filter @hafley66/gothic test:e2e` | over `dist/index.html` from `file://`: every tab renders svg with zero console errors, tab x identical on every route, a drawer per section, every control titled; edit → shuffle → back restores values; a double-click on shuffle shuffles twice; a named state survives reload |
+| `pnpm --filter @hafley66/gothic test` | router, pages, FMA, Bash scaffold snapshots, failure cases and generated TypeScript compilation |
+| `pnpm --filter @hafley66/gothic test:e2e` | over `dist/index.html` from `file://`: every tab renders svg with zero console errors, tab x identical on every route, a drawer per section, every control titled; edit → shuffle → back restores values; a double-click on shuffle shuffles twice; a named state survives reload; a generated notebook composes Algos, updates geometry and persists signal edits |
 | `pnpm --filter @hafley66/gothic check` | all of the above plus `build:single` |
 
 ## 7. Where things live
@@ -132,12 +139,13 @@ Every kind takes `label`, `hint` (tooltip first line; the derived facts follow i
 |---|---|
 | `src/app/` | page table, router (`loc` signal, history or hash), section state (values + pins signals, URL, autosave), view transitions, `App` |
 | `src/ui/` | `useClock`, `Section` (the kit `Section` bound to gothic's section factory: its own sticky drawer, then the art), `Header` (kit `NavTabs` + page knobs in the end slot), `AlgoSection`, `Raw` |
-| `src/kit/` | framework with no gothic knowledge: spec, url, algo contract, store. `src/kit/README.md` is the contract and the harvest list |
+| `src/kit/` | local Algo contract; shared specs, URL helpers, stores and UI live in `@hafley66/report-shell` |
 | `src/pages/` | one module per route exporting `PAGE` |
 | `src/lib/`, `src/algos/` | generators and algos, pure |
 | `src/lib/legacy/` | the pre-kit single-file notebooks' generators, unchanged, with hand-written `.d.ts` |
 | `src/app.css` | Tailwind v4 theme, keyframes, `data-z` depth rule, `@view-transition` |
-| `tests/app.e2e.test.ts` | the playwright e2e (vitest, `vitest.e2e.config.ts`) |
+| `scripts/0_scaffold.sh`, `scripts/templates/` | fixed notebook scaffolding and input templates |
+| `tests/*.e2e.test.ts` | existing app and generated-notebook Playwright receipts |
 
 ## 8. Rules
 

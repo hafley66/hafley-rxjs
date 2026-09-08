@@ -1,0 +1,66 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renders the architectural studies and guilloche presets as finite SVG geometry 1`] = `
+[
+  {
+    "box": [
+      -182,
+      -206,
+      364,
+      417,
+    ],
+    "id": "architecture",
+    "paths": 32,
+  },
+  {
+    "box": [
+      -214,
+      -215,
+      429,
+      429,
+    ],
+    "id": "fanvault",
+    "paths": 89,
+  },
+  {
+    "box": [
+      -172,
+      -227,
+      344,
+      417,
+    ],
+    "id": "buttresses",
+    "paths": 120,
+  },
+  {
+    "box": [
+      -239,
+      -169,
+      477,
+      381,
+    ],
+    "id": "spires",
+    "paths": 390,
+  },
+  {
+    "box": [
+      -230,
+      -230,
+      459,
+      459,
+    ],
+    "id": "wheel",
+    "paths": 118,
+  },
+  {
+    "box": [
+      -202,
+      -214,
+      403,
+      420,
+    ],
+    "id": "cloister",
+    "paths": 136,
+  },
+]
+`;

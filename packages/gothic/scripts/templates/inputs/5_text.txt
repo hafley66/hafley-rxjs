@@ -1,0 +1,1 @@
+  @@KEY@@: { kind: "text", hint: "@@KEY@@", default: "", shuffle: false },

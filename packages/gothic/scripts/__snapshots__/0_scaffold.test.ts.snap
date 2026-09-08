@@ -1,0 +1,83 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Bash scaffold > creates typed kit pages, all field kinds, copies and compositions without editing source generators 1`] = `
+"import { type AnySpec, type ValuesOf } from "@hafley66/report-shell"
+import type { Algo, AlgoCtx, AlgoOut } from "../kit/2_algo.js"
+import { circle } from "../lib/1_geom.js"
+
+export const SPEC = {
+  radius: { kind: "range", hint: "radius as a fraction of the cell size", min: 0.1, max: 0.45, step: 0.01, default: 0.35 },
+  field_range: { kind: "range", hint: "field_range", min: 0, max: 100, step: 1, default: 50 },
+  field_number: { kind: "number", hint: "field_number", min: 0, max: 100, step: 1, default: 0 },
+  field_seed: { kind: "seed", hint: "field_seed", default: 1 },
+  field_select: { kind: "select", hint: "field_select", options: ["a", "b"], default: "a" },
+  field_bool: { kind: "bool", hint: "field_bool", default: true },
+  field_text: { kind: "text", hint: "field_text", default: "", shuffle: false },
+  // scaffold:inputs
+} as const satisfies AnySpec
+export type Params = ValuesOf<typeof SPEC>
+
+export function generate(p: Params, ctx: AlgoCtx): AlgoOut {
+  // Replace this body with the generator. Inputs arrive in p; return paths in cell coordinates.
+  return { paths: [{ d: circle(0, 0, ctx.size * p.radius), z: 0 }], caption: "scaffold_receipt", lod: [] }
+}
+
+export const ALGO: Algo<Params> = {
+  name: "scaffold_receipt",
+  spec: SPEC,
+  presets: {},
+  run: generate,
+}
+"
+`;
+
+exports[`Bash scaffold > creates typed kit pages, all field kinds, copies and compositions without editing source generators 2`] = `
+{
+  "src/pages/N_scaffold_receipt.tsx": "import { SignalReact } from "@hafley66/signals/react"
+import type { PageSpec } from "../app/0_pages.js"
+import { AlgoSection } from "../ui/4_Algo.js"
+import { ALGO as source_scaffold_receipt } from "../algos/N_scaffold_receipt.js"
+import { ALGO as source_scaffold_detail } from "../algos/N_scaffold_detail.js"
+import { fma2 as source_comparison } from "../algos/2_fma.js"
+import { apollonian as source_packing } from "../algos/1_fractal.js"
+import { ALGO as source_variant } from "../algos/N_scaffold_copy.js"
+// scaffold:imports
+
+const SIZES = [48, 96, 160, 320]
+const section_scaffold_receipt = { ...source_scaffold_receipt, name: "scaffold_receipt" }
+const section_scaffold_detail = { ...source_scaffold_detail, name: "scaffold_detail" }
+const section_comparison = { ...source_comparison, name: "comparison" }
+const section_packing = { ...source_packing, name: "packing" }
+const section_variant = { ...source_variant, name: "variant" }
+// scaffold:bindings
+
+const NotebookPage = SignalReact(function NotebookPage() {
+  return (
+    <>
+      <AlgoSection page="scaffold_receipt" algo={section_scaffold_receipt} sizes={SIZES} />
+      <AlgoSection page="scaffold_receipt" algo={section_scaffold_detail} sizes={SIZES} />
+      <AlgoSection page="scaffold_receipt" algo={section_comparison} sizes={SIZES} />
+      <AlgoSection page="scaffold_receipt" algo={section_packing} sizes={SIZES} />
+      <AlgoSection page="scaffold_receipt" algo={section_variant} sizes={SIZES} />
+      {/* scaffold:sections */}
+    </>
+  )
+})
+
+export const PAGE: PageSpec = {
+  id: "scaffold_receipt",
+  title: "gothic: scaffold_receipt",
+  path: "/scaffold_receipt",
+  specs: {
+    scaffold_receipt: section_scaffold_receipt.spec,
+    scaffold_detail: section_scaffold_detail.spec,
+    comparison: section_comparison.spec,
+    packing: section_packing.spec,
+    variant: section_variant.spec,
+    // scaffold:specs
+  },
+  Component: NotebookPage,
+}
+",
+}
+`;

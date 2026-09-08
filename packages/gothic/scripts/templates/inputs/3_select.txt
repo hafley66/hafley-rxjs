@@ -1,0 +1,1 @@
+  @@KEY@@: { kind: "select", hint: "@@KEY@@", options: ["a", "b"], default: "a" },

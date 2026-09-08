@@ -19,5 +19,5 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [react(), tailwind(), ...(mode === "single" ? [viteSingleFile()] : [])],
   build: { outDir: "dist", emptyOutDir: true, chunkSizeWarningLimit: 4000 },
-  test: { environment: "node", include: ["src/**/*.test.ts"] },
+  test: { environment: "node", include: ["src/**/*.test.ts", "scripts/*.test.ts"] },
 }))

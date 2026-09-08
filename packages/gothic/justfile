@@ -5,6 +5,10 @@ default:
 dev:
     pnpm dev
 
+# fixed Bash templates: just scaffold --help
+scaffold *args:
+    bash scripts/0_scaffold.sh {{args}}
+
 # one inlined dist/index.html that opens from file://
 single:
     pnpm build:single

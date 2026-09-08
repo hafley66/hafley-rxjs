@@ -1,0 +1,166 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`architectural studies > replays every preset with finite coordinates and bounded depth at icon and notebook sizes 1`] = `
+[
+  {
+    "algo": "guilloche",
+    "caption": "11 lobes · winding 4 · 2 bands",
+    "lod": [
+      "3→1 strands",
+      "3→2 bands",
+    ],
+    "paths": 5,
+    "size": 64,
+  },
+  {
+    "algo": "guilloche",
+    "caption": "11 lobes · winding 4 · 3 bands",
+    "lod": [
+      "3→2 strands",
+    ],
+    "paths": 10,
+    "size": 160,
+  },
+  {
+    "algo": "guilloche",
+    "caption": "11 lobes · winding 4 · 3 bands",
+    "lod": [],
+    "paths": 13,
+    "size": 480,
+  },
+  {
+    "algo": "architecture",
+    "caption": "2 lights · 4 generations",
+    "lod": [
+      "fine branches omitted",
+    ],
+    "paths": 8,
+    "size": 64,
+  },
+  {
+    "algo": "architecture",
+    "caption": "8 lights · 4 generations",
+    "lod": [],
+    "paths": 32,
+    "size": 160,
+  },
+  {
+    "algo": "architecture",
+    "caption": "8 lights · 4 generations",
+    "lod": [],
+    "paths": 32,
+    "size": 480,
+  },
+  {
+    "algo": "fanvault",
+    "caption": "1 bays · 6 ribs per fan",
+    "lod": [
+      "ribs reduced",
+    ],
+    "paths": 61,
+    "size": 64,
+  },
+  {
+    "algo": "fanvault",
+    "caption": "1 bays · 13 ribs per fan",
+    "lod": [],
+    "paths": 89,
+    "size": 160,
+  },
+  {
+    "algo": "fanvault",
+    "caption": "1 bays · 13 ribs per fan",
+    "lod": [],
+    "paths": 89,
+    "size": 480,
+  },
+  {
+    "algo": "buttresses",
+    "caption": "3 frames · 2 flying tiers",
+    "lod": [],
+    "paths": 60,
+    "size": 64,
+  },
+  {
+    "algo": "buttresses",
+    "caption": "3 frames · 2 flying tiers",
+    "lod": [],
+    "paths": 60,
+    "size": 160,
+  },
+  {
+    "algo": "buttresses",
+    "caption": "3 frames · 2 flying tiers",
+    "lod": [],
+    "paths": 120,
+    "size": 480,
+  },
+  {
+    "algo": "spires",
+    "caption": "5 pinnacles · 0 satellites",
+    "lod": [],
+    "paths": 30,
+    "size": 64,
+  },
+  {
+    "algo": "spires",
+    "caption": "5 pinnacles · 20 satellites",
+    "lod": [],
+    "paths": 230,
+    "size": 160,
+  },
+  {
+    "algo": "spires",
+    "caption": "5 pinnacles · 20 satellites",
+    "lod": [],
+    "paths": 390,
+    "size": 480,
+  },
+  {
+    "algo": "wheel",
+    "caption": "12 lights · 1 wheels",
+    "lod": [
+      "inner wheels omitted",
+    ],
+    "paths": 40,
+    "size": 64,
+  },
+  {
+    "algo": "wheel",
+    "caption": "12 lights · 2 wheels",
+    "lod": [
+      "inner wheels omitted",
+    ],
+    "paths": 79,
+    "size": 160,
+  },
+  {
+    "algo": "wheel",
+    "caption": "12 lights · 3 wheels",
+    "lod": [],
+    "paths": 118,
+    "size": 480,
+  },
+  {
+    "algo": "cloister",
+    "caption": "7 bays · receding arcade",
+    "lod": [],
+    "paths": 106,
+    "size": 64,
+  },
+  {
+    "algo": "cloister",
+    "caption": "10 bays · receding arcade",
+    "lod": [],
+    "paths": 136,
+    "size": 160,
+  },
+  {
+    "algo": "cloister",
+    "caption": "10 bays · receding arcade",
+    "lod": [],
+    "paths": 136,
+    "size": 480,
+  },
+]
+`;

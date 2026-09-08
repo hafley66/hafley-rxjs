@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "scaffold": "bash scripts/0_scaffold.sh",
     "build": "vite build",
     "build:single": "vite build --mode single",
     "typecheck": "tsc --noEmit",

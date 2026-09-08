@@ -14,11 +14,11 @@ Rules for agents editing this package (user-set 2026-09-07):
 | app | one React 19 SPA, `index.html` -> `src/main.tsx`, vite |
 | routing | `@hafley66/path` (`route` / `queryRoute`) + `src/app/1_router.ts`; history under the dev server, hash under `file:` |
 | state | `@hafley66/signals` only (`SignalReact` for every reactive component). No useState for app state |
-| storage | `src/kit/3_store.ts`: `gothic.<page>.<section>.current` autosave, `.states` named list, `.selected` = the state that receives every edit |
+| storage | `@hafley66/report-shell` spec store, using signals' `storageSignal`: `gothic.<page>.<section>.current` autosave, `.states` named list, `.selected` = the state that receives every edit |
 | styles | Tailwind v4 via `@tailwindcss/vite`; `src/app.css` holds only the theme vars, keyframes, the `data-z` depth rule and `@view-transition` |
 | generators | `src/lib/**`, `src/lib/legacy/**`, `src/algos/**`: pure, no React, path strings only |
 
-Commands: `pnpm --filter @hafley66/gothic dev | build | build:single | typecheck | test | smoke | check`. `check` = typecheck + test + build:single + smoke (`scripts/0_smoke.mjs`, playwright: every tab renders, zero console errors, tab x identical, file:// works). Human onboarding: `README.md` (run, study loop, add a page / field / algo).
+Commands: `pnpm --filter @hafley66/gothic dev | scaffold | build | build:single | typecheck | test | test:e2e | check`. `check` = typecheck + test + build:single + test:e2e (Playwright over local HTML, including a generated notebook). Human onboarding: `README.md` (run, study loop, scaffold commands).
 
 ## Layout
 
@@ -31,14 +31,14 @@ Commands: `pnpm --filter @hafley66/gothic dev | build | build:single | typecheck
 | `src/app/4_App.tsx` | header + the matched page |
 | `src/ui/` | `0_hooks` (clock), `2_Section` (kit `Section` bound to `sections`: a sticky `<details class="kit-drawer">` per section whose summary is the title and whose body is the `SpecPanel`, then the host), `3_Header` (kit `NavTabs`: tabs, anchors, title, page knobs in the end slot), `4_Algo`, `5_Raw` |
 | `src/app/4_App.tsx` | header (`PagePanel` = zDepth/draw-in in the tab row end slot), then `<main>`; no page-level drawer, each section carries its own |
-| `src/kit/` | `0_spec` (field format, shuffle, pins), `1_url` (namespaced query), `2_algo` (Algo contract), `3_store` |
+| `src/kit/` | `2_algo` (Algo contract); specs, URL helpers, store and section state come from `@hafley66/report-shell` |
 | `src/pages/` | one module per route, each exporting `PAGE: PageSpec` |
 | `src/lib/eye/` | the eye anatomy module (SHAPES, EXPR, AU, activate, frame, lidPts, lashSlots, lashLines, TIMING, scheduler, blinkAt); `/eye` has a `timing` section whose spec mirrors `TIMING`, so the route is the module's test rig |
 | `src/lib/legacy/` | the single-file notebooks' generators, moved unchanged (`.js` + a hand-written `.d.ts`) |
 
 ## Routes
 
-`/eye` `/slice` `/icons` `/border` `/fractal` `/circles` `/tiles` `/arches` `/frames` `/fma`. `/` redirects to `/eye`.
+`/eye` `/slice` `/icons` `/border` `/fractal` `/circles` `/tiles` `/arches` `/frames` `/fma` `/guilloche` `/architecture`. `/` redirects to `/eye`.
 
 ## Section contract
 
@@ -53,13 +53,26 @@ Commands: `pnpm --filter @hafley66/gothic dev | build | build:single | typecheck
 
 ## Adding a page
 
-1. `src/pages/<n>_<name>.tsx`: declare one `Spec` per section, render `<Section page="<name>" def={{ id, title, spec }}>{v => ...}</Section>`, export `PAGE: PageSpec` (`id`, `title`, `path`, `specs`, optional `anchors` for bar-less sections, `Component`).
-2. Add the module to `PAGES` in `src/app/0_pages.ts`. The tab, the route, the query schema and the anchors all follow from it.
-3. Generators go to `src/lib/**` or `src/algos/**`, never into the component.
+For requests to notebook something new, use `pnpm scaffold page <id>` first. The checked-in Bash script and templates determine the boilerplate. Then edit the emitted `SPEC` and `generate(p, ctx)` body. Do not invent another page, state, input or registration pattern.
+
+- `pnpm scaffold section <page> <id>` creates and mounts another Algo.
+- `pnpm scaffold input <algo> <key> <kind>` inserts a literal field template; edit its bounds, defaults, options and hint for the requested input.
+- `pnpm scaffold use <page> <section> <module>:<export>` mounts an existing Algo under a separate section namespace.
+- `pnpm scaffold copy <source> <id>` copies a scaffolded Algo for independent changes; mount the printed module with `use`.
+- `pnpm scaffold input --print <key> <kind>` prints the field template for a handwritten spec.
+- Add `--dry-run` to inspect an exact diff. Keep `scaffold:*` markers intact for subsequent edits.
+
+Generated pages use `SignalReact` and the existing `AlgoSection`/`Section`/`createSections` chain. Use its signal-backed values, pins, storage and kit controls. Generators stay pure in `src/lib/**` or `src/algos/**`. Run `pnpm check` after implementing the generator.
+
+Adding sections to a handwritten page generates a wrapper around its existing `PAGE`. Existing generators and notebook rows remain in place. Composition via `use` renders separate sections; every section name must be unique within that page, including its inherited specs and anchors.
 
 ## file:// build
 
 `pnpm --filter @hafley66/gothic build:single` writes one inlined `dist/index.html` (vite-plugin-singlefile, `base: "./"`). Opened from `file:`, the router switches to hash urls (`dist/index.html#/eye?eye.seed=3`), so every route and every section's query state work without a server. `pnpm build` writes the same app as a normal asset build.
+
+## Architectural studies
+
+`/architecture` adds six independent Algos in `src/algos/4_architecture.ts` through `9_cloister.ts`. Shared pointed-arch and spire geometry lives in `src/lib/2a_architecture.ts`. `/guilloche` uses `src/algos/3_guilloche.ts`. Each uses the existing AlgoSection and section state; the legacy arches and building generators retain their original rows.
 
 ## Not ported
 
