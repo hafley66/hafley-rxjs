@@ -1,4 +1,5 @@
 import { resolve } from "node:path"
+import { mkdirSync } from "node:fs"
 import { pathToFileURL } from "node:url"
 import { chromium } from "playwright"
 import { expect, it } from "vitest"
@@ -21,6 +22,43 @@ it("draw-in off reveals every FMA path immediately; enabled staggering has a bou
     await page.waitForSelector(".kit-draw path")
     const delays = await page.locator(".kit-draw path").evaluateAll(paths => paths.map(path => parseFloat(getComputedStyle(path).animationDelay)))
     expect(Math.max(...delays)).toBe(0.8)
+    expect(errors).toEqual([])
+  } finally { await browser.close() }
+})
+
+it("keeps the original Slice selectable, changes only geometry for core presets, and makes inscriptions opt-in", async () => {
+  const browser = await chromium.launch()
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+    const errors: string[] = []
+    page.on("pageerror", error => errors.push(error.message))
+    const url = pathToFileURL(resolve("dist/index.html")).href
+    await page.goto(`${url}#/slice?slice.run=false&slice.time=1`)
+    await page.waitForSelector(".ink path")
+    const drawing = () => page.locator(".ink").first().innerHTML()
+    const original = await drawing()
+    const shapes = []
+    for (const core of ["iris", "opposed blades", "rung lattice"]) {
+      await page.locator("#slice select.kit-preset").selectOption(`core · ${core}`)
+      shapes.push(await drawing())
+      expect(page.url()).toContain("slice.time=1")
+      expect(await page.locator('#slice input[data-key="run"]').isChecked()).toBe(false)
+      if (process.env.ART_SCREENSHOTS) {
+        mkdirSync(process.env.ART_SCREENSHOTS, { recursive: true })
+        await page.locator("#slice .row").first().screenshot({ path: resolve(process.env.ART_SCREENSHOTS, `slice-${core.replaceAll(" ", "-")}.png`), style: ".kit-top,.kit-drawer{visibility:hidden!important}" })
+      }
+    }
+    expect(new Set([original, ...shapes]).size).toBe(4)
+    await page.locator("#slice select.kit-preset").selectOption("core · original")
+    expect(await drawing()).toBe(original)
+    for (const route of ["fma", "circles"]) {
+      await page.goto(`${url}#/${route}?page.draw=false`)
+      await page.waitForSelector(".kit-section svg")
+      expect(await page.locator(".kit-section svg text").evaluateAll(texts => texts.filter(t => getComputedStyle(t).display !== "none").length)).toBe(0)
+      const id = route === "fma" ? "fma2" : "diagram"
+      await page.locator(`#${id} input[data-key="script"]`).check()
+      expect(await page.locator(`#${id} svg text`).evaluateAll(texts => texts.filter(t => getComputedStyle(t).display !== "none").length)).toBeGreaterThan(0)
+    }
     expect(errors).toEqual([])
   } finally { await browser.close() }
 })

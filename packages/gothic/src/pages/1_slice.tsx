@@ -10,8 +10,8 @@ import {
   type Part,
   polyShape,
   type Stroke,
-  seal,
 } from "../lib/index.js"
+import { sliceSeal, type CoreParams } from "../lib/3a_sealCore.js"
 import { reducedMotion } from "../ui/0_hooks.js"
 import { SLICE_SPEC, SLICE_PRESETS, type SliceParams } from "../kit/slice/0_spec.js"
 import { playback, type PlaybackRuntime } from "../kit/1a_playback.js"
@@ -20,11 +20,25 @@ import { slicePaths } from "../lib/6a_slicePaths.js"
 import { paintSlice } from "../ui/1a_slicePose.js"
 import { Section } from "../ui/2_Section.js"
 
-const SPEC = SLICE_SPEC
-type V = SliceParams
+const SPEC = {
+  ...SLICE_SPEC,
+  core: { kind: "select", options: ["original", "iris", "blades", "lattice"], default: "original", hint: "inner construction; original preserves the existing seal", group: "core" },
+  coreSides: { kind: "range", min: 2, max: 9, default: 5, label: "core sides", hint: "symmetry of the new core", group: "core" },
+  coreSize: { kind: "range", min: 0.16, max: 0.46, step: 0.01, default: 0.34, label: "core radius", hint: "fraction of the seal reserved for the new core", group: "core" },
+  coreTurn: { kind: "range", min: -90, max: 90, default: 18, label: "core turn", hint: "angular offset inside the core, in degrees", group: "core" },
+  coreFrame: { kind: "select", options: ["open", "circle", "polygon"], default: "open", label: "core frame", hint: "optional enclosing shape for the new core", group: "core" },
+} as const satisfies AnySpec
+const PRESETS = { ...SLICE_PRESETS,
+  "core · original": { core: "original" },
+  "core · iris": { core: "iris", coreSides: 5, coreTurn: 18, coreSize: 0.34, coreFrame: "open" },
+  "core · opposed blades": { core: "blades", coreSides: 2, coreTurn: -24, coreSize: 0.38, coreFrame: "open" },
+  "core · rung lattice": { core: "lattice", coreSides: 3, coreTurn: 42, coreSize: 0.4, coreFrame: "polygon" },
+} as const
+type V = SliceParams & CoreParams
 
 // the keys that only change how the strokes move, so the geometry is kept
 const HEAVY = [
+  "core", "coreSides", "coreSize", "coreTurn", "coreFrame",
   "seed",
   "cut",
   "angle",
@@ -152,9 +166,9 @@ function SliceBody({ v, state }: { v: V; state: SectionState<AnySpec> }) {
   const key = HEAVY.map(k => v[k]).join("|")
   // biome-ignore lint/correctness/useExhaustiveDependencies: key lists every value the geometry depends on
   const insts = useMemo(() => {
-    const hero = build(withD(seal(118, v.seed, { kFirst: true, pupil: false }).sc.parts), v, v.seed, 240, "hero")
+    const hero = build(withD(sliceSeal(118, v.seed, v).sc.parts), v, v.seed, 240, "hero")
     const sizes = SIZES.map((S, i) =>
-      build(withD(seal(S / 2 - 2, v.seed, { kFirst: true, pupil: false }).sc.parts), v, v.seed + i * 7919, S, `${S}`),
+      build(withD(sliceSeal(S / 2 - 2, v.seed, v).sc.parts), v, v.seed + i * 7919, S, `${S}`),
     )
     const test = build(polyShape(112), v, v.seed ^ 0x1d3, 240, "polyline")
     return { hero, sizes, test, all: [hero, ...sizes, test] }
@@ -225,7 +239,7 @@ function SliceBody({ v, state }: { v: V; state: SectionState<AnySpec> }) {
 
 function SlicePage() {
   return (
-    <Section page="slice" def={{ id: "slice", title: "slice", spec: SPEC, presets: SLICE_PRESETS }}>
+    <Section page="slice" def={{ id: "slice", title: "slice", spec: SPEC, presets: PRESETS }}>
       {(v, ctx) => <SliceBody v={v as V} state={ctx.state} />}
     </Section>
   )

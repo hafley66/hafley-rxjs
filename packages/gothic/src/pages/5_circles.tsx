@@ -22,6 +22,7 @@ import { SliceTiming } from "../ui/3a_SliceTiming.js"
 import { SLICE_SPEC } from "../kit/slice/0_spec.js"
 
 const SHARED = {
+  script: { kind: "bool", label: "inscriptions", hint: "show the generated text bands", default: false, p: 0.08 },
   seed: { kind: "seed", hint: "seed for every seal and diagram in the section", default: 7 },
   sym: {
     kind: "range",
@@ -109,10 +110,12 @@ function Cells({
   cells,
   anim,
   morphable = false,
+  script = false,
 }: {
   cells: { name: string; cell: Cell }[]
   anim: boolean
   morphable?: boolean
+  script?: boolean
 }) {
   const host = useRef<HTMLDivElement>(null)
   const prev = useRef<string[]>([])
@@ -130,7 +133,7 @@ function Cells({
     prev.current = svgs.map(s => s.outerHTML)
   })
   return (
-    <div ref={host} className={`row flex flex-wrap items-end gap-5 ${anim ? "kit-draw" : ""}`}>
+    <div ref={host} data-inscriptions={script ? "on" : "off"} className={`row flex flex-wrap items-end gap-5 ${anim ? "kit-draw" : ""}`}>
       {cells.map(({ name, cell }) => (
         <div key={name} className="cell cell-unit grid justify-items-center gap-1 text-[10px] text-muted">
           <Raw html={cell.sc.svg(cell.box)} />
@@ -185,7 +188,7 @@ function Diagram({ v, state }: { v: Knobs; state: SectionState<AnySpec> }) {
           <span className="whitespace-pre font-mono text-[10px] text-[oklch(70%_0.15_25)]">{error}</span>
         </span>
       </div>
-      <Cells cells={cells} anim={v.anim === true} morphable />
+      <Cells cells={cells} anim={v.anim === true} script={v.script === true} morphable />
     </>
   )
 }
@@ -199,7 +202,7 @@ function Fma({ v }: { v: Knobs }) {
     rows.push({ name: `fma sparse ${S}px`, cell: fma(S, { intensity: 0, salt: 12 }) })
     rows.push({ name: `fma sliders ${S}px`, cell: fma(S, { salt: 13 }) })
   }
-  return <Cells cells={rows} anim={v.anim === true} />
+  return <Cells cells={rows} anim={v.anim === true} script={v.script === true} />
 }
 
 function Sacred({ v }: { v: Knobs }) {

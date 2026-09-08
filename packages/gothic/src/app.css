@@ -100,6 +100,7 @@
   }
 }
 /* Slice owns reveal on these existing SVGs; the CSS draw-in must not keep a second clock. */
+[data-inscriptions="off"] text { display: none; }
 [data-slice-stage] .kit-draw :is(path, circle, polyline) {
   animation: none;
   stroke-dasharray: none;

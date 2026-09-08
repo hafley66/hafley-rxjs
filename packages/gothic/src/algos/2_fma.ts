@@ -258,7 +258,8 @@ export const fma2: Algo<Fma> = {
     script: {
       kind: "bool",
       hint: "rune script on the root's outer band; off draws ticks",
-      default: true,
+      default: false,
+      p: 0.08,
     },
     pupil: { kind: "bool", hint: "fill the pupil of every eye core", default: true },
   },

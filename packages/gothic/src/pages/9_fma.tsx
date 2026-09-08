@@ -11,6 +11,7 @@ import { SLICE_SPEC } from "../kit/slice/0_spec.js"
 const SIZES = [48, 96, 160, 240, 400]
 
 const GALLERY = {
+  script: { ...fma2.spec.script, label: "inscriptions" },
   seeds: { kind: "range", hint: "how many seeds to draw, 1..N", min: 4, max: 24, step: 1, default: 12 },
   size: { kind: "range", hint: "cell size in px", min: 96, max: 240, step: 8, default: 160 },
   depth: { kind: "range", hint: "nesting depth for every cell", min: 1, max: 3, step: 1, default: 2 },
@@ -32,7 +33,7 @@ function Gallery({ v }: { v: G }) {
   const ref = useRef<HTMLDivElement>(null)
   useDrawIn(ref, [JSON.stringify(v)])
   const cells = Array.from({ length: v.seeds }, (_, i) => {
-    const p = { seed: i + 1, n: 0, step: 0, depth: v.depth, sat: v.sat, minPx: v.minPx, script: true, pupil: true }
+    const p = { seed: i + 1, n: 0, step: 0, depth: v.depth, sat: v.sat, minPx: v.minPx, script: v.script, pupil: true }
     return { seed: i + 1, out: fma2.run(p, algoCtx(p, v.size)) }
   })
   return (
