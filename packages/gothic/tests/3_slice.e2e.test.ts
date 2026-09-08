@@ -26,6 +26,9 @@ it("attaches the slice toolkit to arbitrary mounted SVGs and restores originals 
         <path id="curve" d="m0 45q15 -45 30 0t30 0m15 0c0 -40 25 -40 25 0s25 40 25 0"/>
         <circle cx="30" cy="80" r="15"/><rect x="65" y="70" width="25" height="20" rx="4" style="fill:#526d77;stroke:none"/>
         <polygon points="105,70 130,75 120,100"/>
+        <ellipse cx="25" cy="25" rx="12" ry="8"/>
+        <line x1="55" y1="10" x2="90" y2="25"/>
+        <polyline points="100,10 115,30 130,10"/>
       </g></svg>`)
     await page.addScriptTag({ content: code })
     expect(errors).toEqual([])
@@ -39,7 +42,7 @@ it("attaches the slice toolkit to arbitrary mounted SVGs and restores originals 
         finite: w.animation.frame.timeline.$().strokes.every((s: any) => s.pts.every((p: number[]) => p.every(Number.isFinite))),
         hidden: getComputedStyle(document.querySelector("#curve")!).visibility }
     })
-    expect(receipt.sources).toBe(4)
+    expect(receipt.sources).toBe(7)
     expect(receipt.strokes).toBeGreaterThan(10)
     expect([receipt.finite, receipt.hidden]).toEqual([true, "hidden"])
     expect(await page.locator("defs [data-slice-overlay]").count()).toBe(0)
@@ -73,7 +76,7 @@ it("renders the five FMA additions and exposes a lock and reroll on every field"
     page.on("pageerror", error => errors.push(error.message))
     await page.goto(`${pathToFileURL(resolve("dist/index.html")).href}#/fma?page.draw=false`)
     await page.waitForSelector("#resonance svg path")
-    expect(await page.locator("section.kit-section").count()).toBe(7)
+    expect(await page.locator("section.kit-section").count()).toBe(8)
     expect(await page.locator(".kit-static").count()).toBe(0)
     const fields = await page.locator(".kit-row").count()
     expect(await page.locator(".kit-row input[data-pin]").count()).toBe(fields)

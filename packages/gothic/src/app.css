@@ -99,6 +99,13 @@
     opacity: 1;
   }
 }
+/* Slice owns reveal on these existing SVGs; the CSS draw-in must not keep a second clock. */
+[data-slice-stage] .kit-draw :is(path, circle, polyline) {
+  animation: none;
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+  opacity: 1;
+}
 @media (prefers-reduced-motion: reduce) {
   svg * {
     animation: none !important;

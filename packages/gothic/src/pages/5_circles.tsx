@@ -18,6 +18,8 @@ import {
 } from "../lib/legacy/0_circles.js"
 import { Section } from "../ui/2_Section.js"
 import { Raw } from "../ui/5_Raw.js"
+import { SliceTiming } from "../ui/3a_SliceTiming.js"
+import { SLICE_SPEC } from "../kit/slice/0_spec.js"
 
 const SHARED = {
   seed: { kind: "seed", hint: "seed for every seal and diagram in the section", default: 7 },
@@ -221,8 +223,10 @@ function Sacred({ v }: { v: Knobs }) {
 function CirclesPage() {
   return (
     <>
+      <SliceTiming page="circles" />
       <Section
         page="circles"
+        slice
         def={{
           id: "diagram",
           title:
@@ -234,6 +238,7 @@ function CirclesPage() {
       </Section>
       <Section
         page="circles"
+        slice
         def={{
           id: "fma",
           title:
@@ -245,6 +250,7 @@ function CirclesPage() {
       </Section>
       <Section
         page="circles"
+        slice
         def={{
           id: "sacred",
           title: "sacred geometry: flower of life, seed, metatron's cube, vesica lattice, spirographs",
@@ -261,6 +267,6 @@ export const PAGE: PageSpec = {
   id: "circles",
   title: "gothic: ring layouts, transmutation circles",
   path: "/circles",
-  specs: { diagram: DIAGRAM, fma: FMA, sacred: SACRED },
+  specs: { timing: SLICE_SPEC, diagram: DIAGRAM, fma: FMA, sacred: SACRED },
   Component: CirclesPage,
 }

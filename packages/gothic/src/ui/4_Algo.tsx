@@ -64,15 +64,18 @@ export function AlgoSection<P extends object>({
   algo,
   sizes,
   title = algo.name,
+  slice = false,
 }: {
   page: string
   algo: Algo<P>
   sizes: readonly number[]
   title?: string
+  slice?: boolean
 }): ReactNode {
   return (
     <Section
       page={page}
+      slice={slice}
       def={{
         id: algo.name,
         title,

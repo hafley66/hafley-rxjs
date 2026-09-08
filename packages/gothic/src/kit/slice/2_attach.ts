@@ -102,7 +102,7 @@ function bindSlice(target: SliceTarget, params: SliceParams, options: SliceAttac
             const path = document.createElementNS(NS, "path")
             path.setAttribute("d", d)
             Object.assign(path.style, { fill: "none", stroke: css.stroke === "none" ? css.fill === "none" ? css.color : css.fill : css.stroke,
-              strokeWidth: String(width), strokeLinecap: css.strokeLinecap, strokeLinejoin: css.strokeLinejoin,
+              strokeWidth: String(width), strokeLinecap: css.strokeLinecap, strokeLinejoin: css.strokeLinejoin, vectorEffect: "none",
               strokeOpacity: css.strokeOpacity, animation: "none", strokeDasharray: "none", strokeDashoffset: "0", opacity: "0" })
             group.append(path)
             return path

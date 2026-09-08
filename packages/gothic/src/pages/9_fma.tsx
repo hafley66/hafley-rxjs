@@ -5,6 +5,8 @@ import type { PageSpec } from "../app/0_pages.js"
 import { algoCtx } from "../kit/2_algo.js"
 import { Section } from "../ui/2_Section.js"
 import { AlgoSection, AlgoSvg } from "../ui/4_Algo.js"
+import { SliceTiming } from "../ui/3a_SliceTiming.js"
+import { SLICE_SPEC } from "../kit/slice/0_spec.js"
 
 const SIZES = [48, 96, 160, 240, 400]
 
@@ -48,13 +50,15 @@ function Gallery({ v }: { v: G }) {
 function FmaPage() {
   return (
     <>
+      <SliceTiming page="fma" />
       <AlgoSection
         page="fma"
+        slice
         algo={fma2}
         sizes={SIZES}
         title="fullmetal 2: one symmetry n drives script, star {n/k}, n nested satellites, chords, dual polygon, core"
       />
-      <Section page="fma" def={{ id: "gallery", title: "gallery: seeds 1..N, n and k from the seed", spec: GALLERY }}>
+      <Section page="fma" slice def={{ id: "gallery", title: "gallery: seeds 1..N, n and k from the seed", spec: GALLERY }}>
         {v => <Gallery v={v as G} />}
       </Section>
     </>
@@ -65,6 +69,6 @@ export const PAGE: PageSpec = {
   id: "fma",
   title: "gothic: fullmetal 2",
   path: "/fma",
-  specs: { fma2: fma2.spec as unknown as AnySpec, gallery: GALLERY },
+  specs: { timing: SLICE_SPEC, fma2: fma2.spec as unknown as AnySpec, gallery: GALLERY },
   Component: FmaPage,
 }

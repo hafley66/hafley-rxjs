@@ -35,6 +35,8 @@ Enable `signalsJsx()` from `@hafley66/signals/vite`. The frame read activates th
 
 For a React-owned instance, `useSlice(values, geometryVersion, options)` from `@hafley66/gothic/slice/react` provides stable allocation and a ref callback. Read its `frame` in JSX and pass its `ref` to the SVG. Change `geometryVersion` when React replaces source geometry. Its implementation uses no component effects or manual subscriptions.
 
+`src/ui/1c_SliceStage.tsx` wraps arbitrary SVG children with that hook and the shared transport. FMA and circles use it on every drawing section, with one `timing` namespace per page. `<Section slice>` and `<AlgoSection slice>` opt into that page's timeline. A page using these sections includes `<SliceTiming page={id} />` and `timing: SLICE_SPEC` in its specs. The existing generators receive their original inputs. The header draw-in switch releases Slice overlays and displays the complete SVG when disabled.
+
 `attachSlice` also accepts an already mounted SVG, group, geometry element, element containing SVGs, or an array of SVG geometry elements as its first argument. The binding remains cold until observed.
 
 Paths, circles, ellipses, rectangles, lines, polylines and polygons are supported. Definitions, clip geometry, masks, markers, patterns and symbols are excluded from the animated source set. Text, images, `<use>` instances and opaque Canvas `Path2D` objects are not converted into outlines.

@@ -33,11 +33,11 @@ function NotebookPage() {
   return (
     <>
       <BaseBody />
-      <AlgoSection page="fma" algo={section_envelope} sizes={SIZES} title="chord envelopes" />
-      <AlgoSection page="fma" algo={section_braid} sizes={SIZES} title="interlaced ribbons" />
-      <AlgoSection page="fma" algo={section_conformal} sizes={SIZES} title="conformal pole grid" />
-      <AlgoSection page="fma" algo={section_cells} sizes={SIZES} title="crystalline transmutation plate" />
-      <AlgoSection page="fma" algo={section_resonance} sizes={SIZES} title="standing-wave inscriptions" />
+      <AlgoSection page="fma" slice algo={section_envelope} sizes={SIZES} title="chord envelopes" />
+      <AlgoSection page="fma" slice algo={section_braid} sizes={SIZES} title="interlaced ribbons" />
+      <AlgoSection page="fma" slice algo={section_conformal} sizes={SIZES} title="conformal pole grid" />
+      <AlgoSection page="fma" slice algo={section_cells} sizes={SIZES} title="crystalline transmutation plate" />
+      <AlgoSection page="fma" slice algo={section_resonance} sizes={SIZES} title="standing-wave inscriptions" />
       {/* scaffold:sections */}
     </>
   )
