@@ -55,6 +55,7 @@
   @supports (position-anchor: --status-legend-anchor) {
     #status-legend-popover { position-anchor: --status-legend-anchor; position-area: block-end span-inline-start; top: auto; right: auto; position: absolute }
   }
-  .status-legend-popover p { display: flex; align-items: center; gap: 6px; margin: 3px 0; color: var(--fg) }
+  .status-legend-popover:popover-open { flex-direction: column; min-width: 240px }
+  .status-legend-popover p { display: flex; align-items: center; gap: 6px; margin: 3px 0; color: var(--fg); white-space: nowrap }
   .status-legend-hint { color: var(--dim); font-style: italic }
 }
