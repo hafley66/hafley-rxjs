@@ -18,6 +18,7 @@ type ShellProps = {
   page: string
   def: SectionDef<AnySpec>
   extra?: ReactNode
+  front?: (state: SectionState<AnySpec>) => ReactNode
   fieldSettings?: SpecPanelProps["fieldSettings"]
   open?: boolean
   render: (v: ValuesOf<AnySpec>, ctx: SectionCtx<AnySpec>) => ReactNode
@@ -25,7 +26,7 @@ type ShellProps = {
 
 const safe = (id: string) => id.replace(/[^a-z0-9_-]/gi, "_")
 
-const Shell = SignalReact(function Shell({ sections, page, def, extra, fieldSettings, open = true, render }: ShellProps) {
+const Shell = SignalReact(function Shell({ sections, page, def, extra, front, fieldSettings, open = true, render }: ShellProps) {
   const state = sections.sectionState(page, def.id, def.spec, def.presets)
   const values = state.values.$()
   const ref = useRef<HTMLElement>(null)
@@ -47,8 +48,9 @@ const Shell = SignalReact(function Shell({ sections, page, def, extra, fieldSett
 
   return (
     <section id={def.id} ref={ref} className="kit-section">
-      {Object.values(def.spec).some(isStatic) && <div className="kit-front">
-        <SpecPanel state={state} fields="static" head={false} fieldSettings={fieldSettings} />
+      {(front || Object.values(def.spec).some(isStatic)) && <div className="kit-front">
+        {Object.values(def.spec).some(isStatic) && <SpecPanel state={state} fields="static" head={false} fieldSettings={fieldSettings} />}
+        {front?.(state)}
       </div>}
       <details className="kit-drawer" open={open}>
         <summary title={`${def.title}: every knob of this section; click to fold`}>
@@ -71,6 +73,7 @@ export type SectionProps<S extends AnySpec> = {
   page: string
   def: SectionDef<S>
   extra?: ReactNode
+  front?: (state: SectionState<AnySpec>) => ReactNode
   fieldSettings?: SpecPanelProps["fieldSettings"]
   // the knob drawer starts open unless told otherwise
   open?: boolean
@@ -85,6 +88,7 @@ export function Section<S extends AnySpec>(props: SectionProps<S>): ReactNode {
       page={props.page}
       def={props.def as unknown as SectionDef<AnySpec>}
       extra={props.extra}
+      front={props.front}
       fieldSettings={props.fieldSettings}
       open={props.open}
       render={props.children as never}

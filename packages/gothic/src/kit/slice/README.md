@@ -48,7 +48,7 @@ Reduced motion lands the artwork and pauses. Explicit replay enables motion. Bro
 
 ## Reuse inputs and presets
 
-Pass `SLICE_SPEC` and `SLICE_PRESETS` to `Section` or `SpecPanel` under the new section's namespace. The existing kit derives pins, reroll, shuffle, URL state and named states. Every field is shuffleable; pins hold chosen values.
+Pass `SLICE_SPEC` and `SLICE_PRESETS` to `Section` or `SpecPanel` under the new section's namespace. The existing kit derives pins, reroll, shuffle, URL state and named states. Geometry fields are shuffleable; pins hold chosen values. Playback is static and stays above the drawer.
 
 For partial panels, compose `SLICE_REVEAL_INPUTS`, `SLICE_CUT_INPUTS`, `SLICE_ORDER_INPUTS`, and `SLICE_FLIGHT_INPUTS`. Seed, stroke weight, playback and common presets come from `@hafley66/gothic/inputs`. `AnimationControls` from `@hafley66/gothic/inputs/react` provides the shared transport.
 
@@ -79,3 +79,11 @@ const frames = timeline.strokes.map(stroke => slicePose(stroke, 450, params))
 - Reveals: draw, cut, slide, draw+slide and glow, with the original flight easing, overshoot, stretch, blade and afterimage equations.
 
 Path parsing uses [svgpath](https://github.com/fontello/svgpath); arc-length sampling uses [svg-path-properties](https://github.com/rveciana/svg-path-properties). Unit tests exercise the path core without a browser. Browser tests cover mounted geometry, nested groups, clipping, replay, reduced motion and restoration.
+
+## Independent stroke appearance
+
+`attachSlice(target, { params, motion })` optionally accepts `Signal<StrokeMotionFrame>` with `{ time, fields }`. Fields map appearance property names to resolved `Variation` settings. This signal uses the same cold observer lifetime as the SVG binding. `variedSlicePose(stroke, sliceTime, params, motion)` provides the same sampling without a DOM. Original `slicePose` remains exported and unchanged.
+
+`sampleVariation(settings, time, identity)` and `defaultVariation(field, base)` are exported from the Slice kit. Supported stroke fields are `weight`, `finalWeight`, `ailen`, `aiOpacity`, `aiFade`, `stretch`, and `os`. Weight follows the original moving-to-landed transition. Afterimage opacity and fade duration are independent channels. With stroke variation enabled, segmented overlays stay mounted after landing so individual final widths remain visible; disabling it restores the normal completed source path. Filled source shapes therefore retain their outlined representation during per-stroke variation.
+
+In the notebook, choose a property in the front strip, select None / Allow global / Allow cascade, and open settings. Harmonic, drift and steps explicitly enable a cascading field track and start the property clock. Geometry playback and property playback can be held separately.

@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import type { SliceController, SliceParams } from "../kit/slice/index.js"
 import { useSlice } from "../kit/slice/3_react.js"
 import { AnimationControls } from "./1b_AnimationControls.js"
+import type { StrokeMotionFrame } from "../lib/7a_variation.js"
 
 function Transport({ animation, label }: { animation: SliceController; label: string }) {
   const frame = animation.frame.$()
@@ -14,10 +15,10 @@ function Transport({ animation, label }: { animation: SliceController; label: st
 }
 
 // The source can contain any SVG geometry. Only the ref and geometry revision reach Slice.
-export function SliceStage({ params, input, revision, label, children }: {
-  params: Signal<SliceParams>; input?: Signal<SliceParams>; revision: unknown; label: string; children: ReactNode
+export function SliceStage({ params, input, motion, revision, label, children }: {
+  params: Signal<SliceParams>; input?: Signal<SliceParams>; motion?: Signal<StrokeMotionFrame>; revision: unknown; label: string; children: ReactNode
 }) {
-  const animation = useSlice(params, revision, { input })
+  const animation = useSlice(params, revision, { input, motion })
   return <div data-slice-stage={label}>
     <Transport animation={animation} label={label} />
     <div ref={animation.ref}>{children}</div>

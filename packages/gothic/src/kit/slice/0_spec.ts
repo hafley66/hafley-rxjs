@@ -204,6 +204,8 @@ export const SLICE_FLIGHT_INPUTS = {
     default: true,
     label: "afterimage",
   },
+  aiOpacity: { kind: "range", min: 0, max: 1, step: 0.01, default: 0.85, label: "ai opacity", hint: "afterimage peak opacity; its settings can vary independently per stroke", group: "fly" },
+  aiFade: { kind: "range", min: 20, max: 2000, step: 10, default: 120, label: "ai fade ms", hint: "afterimage lifetime after landing in milliseconds; its settings can vary independently per stroke", group: "fly" },
 } as const satisfies AnySpec
 
 export const SLICE_SPEC = {

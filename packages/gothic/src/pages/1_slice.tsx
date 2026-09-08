@@ -20,6 +20,7 @@ import { slicePaths } from "../lib/6a_slicePaths.js"
 import { paintSlice } from "../ui/1a_slicePose.js"
 import { propertyMotion } from "../kit/4_propertyMotion.js"
 import { Section } from "../ui/2_Section.js"
+import type { StrokeMotionFrame } from "../lib/7a_variation.js"
 
 const SPEC = {
   ...SLICE_SPEC,
@@ -53,7 +54,6 @@ const HEAVY = [
   "silence",
   "spread",
   "burst",
-  "ailen",
   "reveal",
 ] as const
 
@@ -68,8 +68,8 @@ function build(parts: Part[], k: V, seed: number, size: number, label: string): 
 /* ============ pose(t): pure per-frame transform, so the scrub slider and the clock share one path ============ */
 
 type Clock = ReturnType<typeof playback<V>>
-function Cell({ inst, ailen, params, clock, node, base }: {
-  inst: Inst; ailen: number; params: Signal<V>; clock: Clock; node: Signal<SVGSVGElement | null>; base: number
+function Cell({ inst, ailen, params, clock, node, base, motion }: {
+  inst: Inst; ailen: number; params: Signal<V>; clock: Clock; node: Signal<SVGSVGElement | null>; base: number; motion: Signal<StrokeMotionFrame>
 }) {
   const model = useMemo(() => {
     const painted = Signal(node.$.pipe(distinctUntilChanged(), switchMap(svg => svg ? defer(() => {
@@ -80,12 +80,12 @@ function Cell({ inst, ailen, params, clock, node, base }: {
         s.el = ink[i] ?? null; s.ai = ai[i] ?? null; s.bl = bl[i] ?? null
         s._op = undefined; s._tr = null; s._w = null; s._ao = null; s._dash = null; s._bd = undefined
       })
-      return combineLatest([clock.frame.$, params.$]).pipe(tap(([frame, values]) => {
-        paintSlice(inst.strokes, frame.time >= base ? inst.T : frame.time % inst.T, values)
+      return combineLatest([clock.frame.$, params.$, motion.$]).pipe(tap(([frame, values, variation]) => {
+        paintSlice(inst.strokes, frame.time >= base ? inst.T : frame.time % inst.T, values, variation)
       }), ignoreElements(), finalize(() => { for (const s of inst.strokes) { s.el = null; s.ai = null; s.bl = null } }))
     }) : EMPTY)), null)
     return { painted, ref(element: SVGSVGElement | null) { node.$(element) } }
-  }, [inst, clock, node, params, base])
+  }, [inst, clock, node, params, base, motion])
   model.painted.$()
   const S = inst.size + 4
   return (
@@ -177,6 +177,7 @@ function SliceBody({ v, state }: { v: V; state: SectionState<AnySpec> }) {
 
   const params = state.values as unknown as Signal<V>
   const input = propertyMotion(state.page).values(state) as unknown as Signal<V>
+  const motion = propertyMotion(state.page).strokes(state)
   const model = useMemo(() => {
     const runtime = Signal<PlaybackRuntime & { cells: Record<string, SVGSVGElement | null> }>({
       enabled: !reducedMotion, seek: null, cells: Object.fromEntries(insts.all.map(inst => [inst.label, null])),
@@ -205,21 +206,21 @@ function SliceBody({ v, state }: { v: V; state: SectionState<AnySpec> }) {
           chord-lengths, fading up over the first quarter of flight; angle only orders the sweep
         </h2>
         <div className="row flex flex-wrap items-end gap-5">
-          <Cell inst={insts.hero} ailen={v.ailen} params={input} clock={clock} node={model.runtime.cells.hero} base={insts.hero.T} />
+          <Cell inst={insts.hero} ailen={v.ailen} params={input} clock={clock} motion={motion} node={model.runtime.cells.hero} base={insts.hero.T} />
         </div>
       </section>
       <section>
         <h2 className="mb-2 font-medium text-muted">same seal at 32 / 48 / 64 / 96 / 160, each on its own cycle</h2>
         <div className="row flex flex-wrap items-end gap-5">
           {insts.sizes.map(inst => (
-            <Cell key={inst.size} inst={inst} ailen={v.ailen} params={input} clock={clock} node={model.runtime.cells[inst.label]} base={insts.hero.T} />
+            <Cell key={inst.size} inst={inst} ailen={v.ailen} params={input} clock={clock} motion={motion} node={model.runtime.cells[inst.label]} base={insts.hero.T} />
           ))}
         </div>
       </section>
       <section>
         <h2 className="mb-2 font-medium text-muted">polyline test shape: star, zigzag, spiral</h2>
         <div className="row flex flex-wrap items-end gap-5">
-          <Cell inst={insts.test} ailen={v.ailen} params={input} clock={clock} node={model.runtime.cells.polyline} base={insts.hero.T} />
+          <Cell inst={insts.test} ailen={v.ailen} params={input} clock={clock} motion={motion} node={model.runtime.cells.polyline} base={insts.hero.T} />
         </div>
       </section>
       <section>

@@ -64,3 +64,17 @@ pnpm scaffold use rose existing_seal 0_seal:sealAlgo
 ```
 
 Edit the emitted spec and generator, compose common input groups where needed, then run `pnpm check`. Generators remain pure; `AlgoSection` supplies the standard panel and SVG cells. Each new section has its own state namespace.
+
+## Property variation
+
+The page transport controls property animation. Each section has an always-visible property selector, inheritance policy, harmonic/drift/steps actions, settings and separate sample/distribution rerolls. Playback fields and this option set survive geometry shuffle.
+
+- **None** is the initial policy. Global or section defaults do not turn it on.
+- **Allow global** uses the page option set, ignoring section and field overrides.
+- **Allow cascade** applies page defaults, section overrides, then field overrides. Unchecking a setting inherits it again.
+
+The Global variation and Section variation popovers edit the parent sets. A property's settings combine the existing keyframe table with optional variation. Distribution controls mix normal, uniform, triangular, arcsine and exponential targets; depth varies their mixture and harmonic amplitude. Integer harmonics and independent phases are deterministic per identity. Drift interpolates random targets smoothly; steps holds each target. The same time, seed and identity give the same result regardless of frame order. Normal is clipped at three standard deviations; exponential is capped at four. Distributions describe targets/amplitudes, not the histogram of interpolated frames.
+
+Numeric bounds and step come from the input spec. Bool/select/text inputs sample choices; a text field's pool supplies its available strings. Each variation period runs within the page timeline; set page duration to a common multiple of field periods for seamless combined loops. Explicit holds and seeks reproduce the same samples.
+
+Slice appearance properties offer whole-input or each-stroke scope: weight, finalWeight, ailen, aiOpacity, aiFade, stretch and os. Persistent options live in `gothic.<page>.timelines`; live frames never write saved geometry values or pins.

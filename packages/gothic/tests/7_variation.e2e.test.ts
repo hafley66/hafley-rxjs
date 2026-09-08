@@ -1,0 +1,111 @@
+import { mkdirSync } from "node:fs"
+import { resolve } from "node:path"
+import { pathToFileURL } from "node:url"
+import { chromium, type Locator } from "playwright"
+import { expect, it } from "vitest"
+
+const seek = (input: Locator, value: number) => input.evaluate((el, value) => {
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(el, String(value))
+  el.dispatchEvent(new Event("input", { bubbles: true }))
+}, value)
+
+it("keeps variation off by default, gates global and cascading settings, and holds distinct stroke weights", async () => {
+  const browser = await chromium.launch()
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } })
+    const errors: string[] = []
+    page.on("pageerror", e => errors.push(e.message))
+    await page.goto(`${pathToFileURL(resolve("dist/index.html")).href}#/slice?slice.run=false&slice.time=1`)
+    await page.waitForSelector("#slice .ink path")
+    const front = page.locator('[data-section-variation="slice"]'), transport = page.locator('[data-property-transport="slice"]')
+    const widths = () => page.locator(".ink").first().locator("path").evaluateAll(paths => paths.map(p => (p as SVGPathElement).style.strokeWidth))
+    await front.getByLabel("slice variation property", { exact: true }).selectOption("finalWeight")
+    expect(await front.getByLabel("slice variation inheritance", { exact: true }).inputValue()).toBe("none")
+    const original = await widths()
+    expect([...new Set(original)]).toEqual(["1"])
+    await transport.getByRole("button", { name: "Global variation", exact: true }).click()
+    const global = page.getByRole("dialog", { name: "Global variation", exact: true })
+    await global.getByLabel("variation scope", { exact: true }).selectOption("stroke")
+    await global.getByLabel("variation seed", { exact: true }).fill("41")
+    await global.getByRole("button", { name: "close", exact: true }).click()
+    expect(await widths()).toEqual(original)
+    await front.getByLabel("slice variation inheritance", { exact: true }).selectOption("global")
+    await seek(transport.getByLabel("Property timeline time", { exact: true }), 500)
+    const globalWidths = await widths()
+    expect(new Set(globalWidths).size).toBeGreaterThan(1)
+    await front.getByRole("button", { name: "Section variation", exact: true }).click()
+    const section = page.getByRole("dialog", { name: "Section variation", exact: true })
+    await section.getByLabel("override variation seed", { exact: true }).check()
+    await section.getByLabel("variation seed", { exact: true }).fill("23")
+    await section.getByRole("button", { name: "close", exact: true }).click()
+    expect(await widths()).toEqual(globalWidths)
+    await front.getByLabel("slice variation inheritance", { exact: true }).selectOption("cascade")
+    const cascadeWidths = await widths()
+    expect(cascadeWidths).not.toEqual(globalWidths)
+    await page.locator("#slice > .kit-drawer > summary").click()
+    expect(await page.locator('#slice .kit-front input[data-key="run"]').isVisible()).toBe(true)
+    await front.getByRole("button", { name: "settings", exact: true }).click()
+    const field = page.getByRole("dialog", { name: "finalWeight animation settings", exact: true })
+    await field.getByLabel("override variation seed", { exact: true }).check()
+    await field.getByLabel("variation seed", { exact: true }).fill("31")
+    expect(await widths()).not.toEqual(cascadeWidths)
+    await field.getByLabel("override variation seed", { exact: true }).uncheck()
+    expect(await widths()).toEqual(cascadeWidths)
+    await field.getByRole("button", { name: "close", exact: true }).click()
+    await page.reload()
+    await page.waitForSelector("#slice .ink path")
+    expect(await widths()).toEqual(cascadeWidths)
+    await front.getByLabel("slice variation property", { exact: true }).selectOption("finalWeight")
+    const config = await page.evaluate(() => localStorage.getItem("gothic.slice.timelines"))
+    await page.locator('#slice input[data-pin="finalWeight"]').check()
+    await page.locator("#slice button.kit-shuffle").click()
+    expect(await page.locator('#slice input[data-key="run"]').isChecked()).toBe(false)
+    expect(await page.locator('#slice input[data-key="time"]').inputValue()).toBe("1")
+    expect(await page.evaluate(() => localStorage.getItem("gothic.slice.timelines"))).toBe(config)
+    await front.getByLabel("slice variation inheritance", { exact: true }).selectOption("none")
+    expect([...new Set(await widths())]).toEqual(["1"])
+    await front.getByRole("button", { name: "harmonic", exact: true }).click()
+    await page.waitForFunction(() => Number((document.querySelector('[data-property-transport="slice"] input[type="range"]') as HTMLInputElement).value) > 550)
+    await transport.getByRole("button", { name: "Hold", exact: true }).click()
+    const held = await widths()
+    await page.waitForTimeout(80)
+    expect(await widths()).toEqual(held)
+    expect(await page.locator('#slice input[data-key="finalWeight"]').inputValue()).toBe("1")
+    if (process.env.ART_SCREENSHOTS) {
+      mkdirSync(process.env.ART_SCREENSHOTS, { recursive: true })
+      await page.screenshot({ path: resolve(process.env.ART_SCREENSHOTS, "variation-controls.png"), fullPage: false })
+    }
+    expect(errors).toEqual([])
+  } finally { await browser.close() }
+})
+
+it("retains independent final weights on arbitrary SVG paths and varies afterimage opacity and fade on their own tracks", async () => {
+  const browser = await chromium.launch()
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } })
+    const errors: string[] = []
+    page.on("pageerror", e => errors.push(e.message))
+    await page.goto(`${pathToFileURL(resolve("dist/index.html")).href}#/fma?timing.run=false&timing.time=1&fma2.n=3`)
+    await page.waitForSelector("#fma2 [data-slice-stage]")
+    const front = page.locator('[data-section-variation="timing"]'), transport = page.locator('[data-property-transport="fma"]')
+    await front.getByLabel("timing variation property", { exact: true }).selectOption("finalWeight")
+    await front.getByRole("button", { name: "harmonic", exact: true }).click()
+    await seek(transport.getByLabel("Property timeline time", { exact: true }), 1500)
+    const overlays = page.locator("#fma2 [data-slice-overlay] path[pathLength]")
+    await page.waitForFunction(() => [...document.querySelectorAll('#fma2 [data-slice-overlay] path[pathLength]')].some(p => Number((p as SVGPathElement).style.strokeWidth) !== 1))
+    const weights = await overlays.evaluateAll(paths => paths.map(p => (p as SVGPathElement).style.strokeWidth))
+    expect(new Set(weights).size).toBeGreaterThan(1)
+    expect(await overlays.first().isVisible()).toBe(true)
+    await front.getByLabel("timing variation property", { exact: true }).selectOption("aiFade")
+    await front.getByRole("button", { name: "drift", exact: true }).click()
+    await front.getByLabel("timing variation property", { exact: true }).selectOption("aiOpacity")
+    await front.getByRole("button", { name: "harmonic", exact: true }).click()
+    await seek(transport.getByLabel("Property timeline time", { exact: true }), 1500)
+    const tracks = await page.evaluate(() => JSON.parse(localStorage.getItem("gothic.fma.timelines")!).sections.timing.fields)
+    expect(Object.fromEntries(Object.entries(tracks).map(([k, v]) => [k, (v as { variation: unknown }).variation]))).toEqual({
+      finalWeight: { scope: "stroke", mode: "harmonic" }, aiFade: { scope: "stroke", mode: "drift" }, aiOpacity: { scope: "stroke", mode: "harmonic" },
+    })
+    expect(await overlays.evaluateAll(paths => paths.map(p => (p as SVGPathElement).style.strokeWidth))).toEqual(weights)
+    expect(errors).toEqual([])
+  } finally { await browser.close() }
+})

@@ -91,3 +91,9 @@ Geometry inputs are shuffleable and pinnable. Playback and variation configurati
 ## Signals authoring
 
 Use the shipped [signals skill](../signals/skills/signals/SKILL.md). Group related state in one root and use nested path proxies. Source signals own RxJS connections; tracked JSX reads activate them. Animation components do not manually subscribe or use `useEffect` to connect producers. The editable skill source is `~/projects/claude-research/skills/signals/SKILL.md`.
+
+## Variation permissions (user-set 2026-09-08)
+
+Variation defaults to None. Per-property policies are `none`, `global`, and `cascade`: None blocks variation; global reads only the page option set; cascade overlays page, section, then explicit field overrides. Merely editing defaults never enables another property. Clearing an override returns it to inheritance. Timing and geometry shuffle remain separate from these stored options.
+
+`src/lib/7a_variation.ts` samples repeatable mixed distributions and harmonic, drift or held signals by time and identity. `src/lib/7b_propertyVariation.ts` applies them to typed inputs; `src/lib/7c_sliceVariation.ts` composes the original Slice pose with per-stroke appearance. Original Slice remains unchanged with variation disabled. The property clock and its stroke projections use the existing signal/RxJS ownership.

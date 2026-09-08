@@ -1,5 +1,65 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`shares a cold stroke clock and applies global or cascading settings only with field permission 1`] = `
+[
+  {
+    "base": {
+      "weight": 1,
+    },
+    "listeners": 0,
+    "seed": undefined,
+    "time": 0,
+    "values": {
+      "weight": 1,
+    },
+  },
+  {
+    "base": {
+      "weight": 1,
+    },
+    "listeners": 1,
+    "seed": 17,
+    "time": 250,
+    "values": {
+      "weight": 1,
+    },
+  },
+  {
+    "base": {
+      "weight": 1,
+    },
+    "listeners": 1,
+    "seed": 31,
+    "time": 500,
+    "values": {
+      "weight": 1,
+    },
+  },
+  {
+    "base": {
+      "weight": 1,
+    },
+    "listeners": 1,
+    "seed": 23,
+    "time": 500,
+    "values": {
+      "weight": 1,
+    },
+  },
+  {
+    "base": {
+      "weight": 1,
+    },
+    "listeners": 0,
+    "seed": undefined,
+    "time": 0,
+    "values": {
+      "weight": 1,
+    },
+  },
+]
+`;
+
 exports[`shares one cold clock across property projections and leaves saved inputs unchanged 1`] = `
 [
   [

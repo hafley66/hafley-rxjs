@@ -1,10 +1,11 @@
 import type { AnySpec, Field } from "@hafley66/report-shell"
 import { eases } from "animejs"
+import type { Variation, VariationPolicy } from "./7a_variation.js"
 
 export type TimelineValue = string | number | boolean
 export type Timing = { duration: number; delay: number; easing: "linear" | "inOutSine" | "inOutQuad"; direction: "normal" | "reverse" | "alternate"; loop: boolean }
-export type PropertyTrack = { enabled: boolean; timing: Partial<Timing>; frames: { at: number; value: TimelineValue }[] }
-export type SectionTracks = { timing: Partial<Timing>; fields: Record<string, PropertyTrack> }
+export type PropertyTrack = { enabled: boolean; timing: Partial<Timing>; frames: { at: number; value: TimelineValue }[]; variationPolicy?: VariationPolicy; variation?: Partial<Variation> }
+export type SectionTracks = { timing: Partial<Timing>; fields: Record<string, PropertyTrack>; variation?: Partial<Variation> }
 export const DEFAULT_TIMING: Timing = { duration: 4000, delay: 0, easing: "linear", direction: "normal", loop: true }
 
 export function sampleProperty(base: TimelineValue, field: Field, track: PropertyTrack, ms: number, timing: Timing): TimelineValue {

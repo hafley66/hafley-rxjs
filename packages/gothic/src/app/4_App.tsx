@@ -7,6 +7,7 @@ import { pageState, setActivePage, syncFromUrl } from "./2_state.js"
 import { armTransitions } from "./3_view.js"
 import { propertyMotion } from "../kit/4_propertyMotion.js"
 import { PropertySettings, PropertyTransport } from "../ui/1d_PropertySettings.js"
+import { VariationDefaults } from "../ui/1e_VariationControls.js"
 
 // page-global knobs in the tab row end slot: depth fade and draw-in; both travel as ?page.z / ?page.draw
 function PagePanel() {
@@ -80,6 +81,7 @@ export function App() {
     <>
       <Header pages={PAGES} current={page} end={<PagePanel />} />
       <div className="border-b border-edge bg-bg px-4" data-property-transport={page.id}>
+        <span title="Play, hold or scrub the property animation clock">Property animation</span>{" · "}<VariationDefaults page={page.id} />
         <PropertyTransport model={propertyMotion(page.id)} />
       </div>
       <main className="grid gap-6">
