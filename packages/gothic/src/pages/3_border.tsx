@@ -11,14 +11,14 @@ const SPEC = {
   seed: { kind: "seed", hint: "seed for the rails, the corners and the random rects", default: 7 },
   rail: {
     kind: "select",
-    hint: "edge motif repeated along each side; auto picks from the seed",
-    options: ["auto", "cusp", "ogee", "crenel", "dagger", "plain"],
+    hint: "edge motif repeated along each side; auto picks from the seed; the masonry rails (brick, dentil, chevron, plinth) are straight joints only",
+    options: ["auto", "brick", "dentil", "chevron", "plinth", "cusp", "ogee", "crenel", "dagger", "plain"],
     default: "auto",
   },
   corner: {
     kind: "select",
-    hint: "motif at each corner; auto picks from the seed",
-    options: ["auto", "loop", "point", "trefoil", "spiral", "none"],
+    hint: "motif at each corner; auto picks from the seed; block and mitre are the crisp masonry corners",
+    options: ["auto", "block", "mitre", "loop", "point", "trefoil", "spiral", "none"],
     default: "auto",
   },
   cell: { kind: "range", hint: "motif cell size in px", min: 8, max: 64, default: 22 },
@@ -48,6 +48,8 @@ type V = ValuesOf<typeof SPEC>
 const PRESETS = {
   cathedral: { rail: "cusp", corner: "trefoil", cell: 18, depth: 5 },
   castle: { rail: "crenel", corner: "point", cell: 28, depth: 8 },
+  masonry: { rail: "brick", corner: "block", cell: 24, depth: 14 },
+  cornice: { rail: "dentil", corner: "mitre", cell: 20, depth: 10 },
 } satisfies Record<string, Partial<V>>
 
 type Host = { el: HTMLElement; ink: SVGPathElement; pen: SVGCircleElement; len: number; p: Plan }

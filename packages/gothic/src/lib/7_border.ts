@@ -112,6 +112,44 @@ export const rails: Record<string, Rail> = {
     }
     return p
   },
+  // masonry family: straight joints only, no arcs; each rail's last stroke lands on (L, 0) so corners join
+  brick: (L, cell, d) => {
+    const { n, c } = fitCells(L, cell)
+    const half = d / 2
+    const p = rec()
+    for (let i = 0; i <= n; i++) p.M(i * c, 0).L(i * c, half)
+    for (let i = 0; i < n; i++) {
+      const x = Math.min(L, (i + 0.5) * c)
+      p.M(x, half).L(x, d)
+    }
+    p.M(0, d).L(L, d).M(0, half).L(L, half)
+    return p.M(0, 0).L(L, 0)
+  },
+  dentil: (L, cell, d) => {
+    const { n, c } = fitCells(L, cell)
+    const p = rec()
+    for (let i = 0; i < n; i++) {
+      const a = i * c + c * 0.2, b = i * c + c * 0.8
+      p.M(a, 0).L(b, 0).L(b, d).L(a, d).L(a, 0)
+    }
+    return p.M(0, 0).L(L, 0)
+  },
+  chevron: (L, cell, d) => {
+    const { n, c } = fitCells(L, cell)
+    const p = rec()
+    for (let i = 0; i <= n; i++) p.L(i * c, i % 2 ? d : 0)
+    if (n % 2) p.L(L, 0)
+    return p
+  },
+  plinth: (L, cell, d) => {
+    const { n, c } = fitCells(L, cell)
+    const p = rec()
+    for (let i = 0; i < n; i++) {
+      const u = i * c
+      p.L(u + c * 0.35, 0).L(u + c * 0.35, d).L(u + c * 0.65, d).L(u + c * 0.65, 0)
+    }
+    return p.L(L, 0)
+  },
 }
 
 // ---------- 3. corners: local frame at the corner, +x along the NEXT edge, +y inward ----------
@@ -144,6 +182,9 @@ export const corners: Record<string, Corner> = {
     }
     return p.L(m, 0)
   },
+  // masonry family: stepped and mitred corners, straight joints only
+  block: m => rec().L(0, m * 0.5).L(m * 0.5, m * 0.5).L(m * 0.5, 0).L(m, 0),
+  mitre: m => rec().L(m, 0),
 }
 
 // ---------- 4. border: one continuous path around a w x h rect ----------
