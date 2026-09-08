@@ -1,5 +1,9 @@
 import { Application, Container, Graphics } from "pixi.js"
 import { useEffect, useRef } from "react"
+
+// pixi: `app.destroy(true)` also means releaseGlobalResources, which clears the batch pool shared by every renderer
+// on the page; the other marbler canvas then pulls a destroyed Batch on its next frame. Drop the view only.
+const DESTROY_RENDERER = { removeView: true } as const
 import { densityBuckets, type TimelineGesture, type TimelineMark, type TimeViewport } from "./0a_TimeViewport.js"
 
 const LANE_HEIGHT = 14
@@ -159,7 +163,7 @@ export function TimeNavigatorPixi({ marks, viewport, highlightedId = null, laneL
 
     const initialize = async () => {
       await app.init({ width: 1, height: 1, autoStart: false, antialias: false, backgroundAlpha: 0, preference: "webgl" })
-      if (disposed) return app.destroy(true, { children: true })
+      if (disposed) return app.destroy(DESTROY_RENDERER, { children: true })
       app.canvas.setAttribute("data-testid", "time-navigator")
       app.canvas.setAttribute("aria-label", "Time overview and visible viewport")
       host.append(app.canvas)
@@ -247,7 +251,7 @@ export function TimeNavigatorPixi({ marks, viewport, highlightedId = null, laneL
       host.removeEventListener("wheel", wheel)
       host.removeEventListener("dblclick", fit)
       ;(app as Application & { __resize?: ResizeObserver }).__resize?.disconnect()
-      if (app.renderer) app.destroy(true, { children: true })
+      if (app.renderer) app.destroy(DESTROY_RENDERER, { children: true })
     }
   }, [])
 

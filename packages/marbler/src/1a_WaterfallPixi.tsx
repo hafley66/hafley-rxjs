@@ -1,5 +1,9 @@
 import { Application, Container, Graphics } from "pixi.js"
 import { useEffect, useRef } from "react"
+
+// pixi: `app.destroy(true)` also means releaseGlobalResources, which clears the batch pool shared by every renderer
+// on the page; the other marbler canvas then pulls a destroyed Batch on its next frame. Drop the view only.
+const DESTROY_RENDERER = { removeView: true } as const
 import { DEFAULT_PHASE_STYLES, FALLBACK_PHASE_STYLE, type MarbleEvent, type PhaseStyle } from "./0_types.js"
 
 const ROW_HEIGHT = 44
@@ -135,7 +139,7 @@ export function WaterfallPixi({
         preference: "webgl",
       })
       if (disposed) {
-        app.destroy(true, { children: true })
+        app.destroy(DESTROY_RENDERER, { children: true })
         return
       }
       app.canvas.className = "waterfall-canvas"
@@ -165,7 +169,7 @@ export function WaterfallPixi({
       interactionElement?.removeEventListener("mousemove", pointerMove)
       interactionElement?.removeEventListener("mouseleave", pointerLeave)
       interactionElement?.removeEventListener("click", pointerClick)
-      if (app.renderer) app.destroy(true, { children: true })
+      if (app.renderer) app.destroy(DESTROY_RENDERER, { children: true })
     }
   }, [scroller, leftOffset])
 
