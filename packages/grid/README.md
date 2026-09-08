@@ -324,9 +324,12 @@ every column stays auto-sized.
 `columnVisibility` slice; unchecking one hides it from both the header and
 every row without touching any other state slice.
 
-Left out of this port: `instant/src/treetableEdit.tsx` (inline cell editing)
-and drag-to-resize column handles, neither was requested for this pass, and
-folding them in would have pushed files over the 200-line budget.
+Each header carries a drag handle (`data-testid="resize-<column>"`, TanStack
+`columnResizingFeature`, `columnResizeMode: "onChange"`); dragging writes the
+column's px width into `columnSizing`, which is the drag half of the width-signal
+rule above. `enableResizing: false` on a column def removes its handle.
+
+Left out of this port: `instant/src/treetableEdit.tsx` (inline cell editing).
 
 ## GridTree
 

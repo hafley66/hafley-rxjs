@@ -149,6 +149,32 @@ describe("TreeTable", () => {
     host.remove()
   })
 
+  it("drags a header handle into columnSizing without toggling the sort", async () => {
+    const { host, grid, root } = mountTree(tree)
+    await act(async () => root.render(<TreeTable grid={grid} columns={columns} scrollMode="internal" />))
+    await act(settleLayout)
+
+    const handle = document.querySelector<HTMLElement>("[data-testid=resize-name]")!
+    const startSize = grid.state.$().columnSizing.name ?? 150
+    const mouse = (type: string, clientX: number) => new MouseEvent(type, { bubbles: true, clientX, clientY: 5, button: 0 })
+    await act(async () => {
+      handle.dispatchEvent(mouse("mousedown", 100))
+      document.dispatchEvent(mouse("mousemove", 160))
+      document.dispatchEvent(mouse("mouseup", 160))
+      handle.dispatchEvent(mouse("click", 160))
+      await settleLayout()
+    })
+
+    expect(grid.state.$().columnSizing).toEqual({ name: startSize + 60 })
+    expect(grid.state.$().sorting).toEqual([])
+    const col = document.querySelector<HTMLTableColElement>("colgroup col")!
+    expect(col.style.width).toBe(`${startSize + 60}px`)
+    expect(document.querySelector("table")!.style.tableLayout).toBe("fixed")
+
+    root.unmount()
+    host.remove()
+  })
+
   it("two TreeTables over one grid emit one select effect per click, none after unmount", async () => {
     const { host, grid, root } = mountTree(tree, columns)
     const gridOwned = createGrid<Node>({

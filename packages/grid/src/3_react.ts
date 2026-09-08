@@ -46,6 +46,8 @@ export function useGrid<TData extends RowData>(
     onColumnPinningChange: grid.onColumnPinningChange,
     onColumnVisibilityChange: grid.onColumnVisibilityChange,
     onColumnSizingChange: grid.onColumnSizingChange,
+    // Drag commits into columnSizing on every move; the transient columnResizing slice stays TanStack-owned.
+    columnResizeMode: "onChange",
     onRowPinningChange: grid.onRowPinningChange,
     onRowSelectionChange: grid.onRowSelectionChange,
     onExpandedChange: grid.onExpandedChange,

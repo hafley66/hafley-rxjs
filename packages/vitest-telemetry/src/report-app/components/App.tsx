@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
 import { z } from 'zod'
 import { createGrid } from '@hafley66/grid'
+import { treeColumnDefs } from '@hafley66/grid/react'
 import { Signal } from '@hafley66/signals/react'
 import type { Signal as SignalType } from '@hafley66/signals'
-import { PivotStack, ReportShell, NAV_RAIL_PX, popPivotsTo, useTheme, type Track } from '@hafley66/report-shell'
+import { PivotStack, ReportShell, NAV_RAIL_PX, pivotColumns, popPivotsTo, useTheme, type Track } from '@hafley66/report-shell'
 import { EventsPanel } from '@hafley66/report-shell/marbler'
 import { dismissDefaultViewHint, type Model, type NavNode } from '../model'
 import type { Prefs } from '../prefs'
@@ -33,11 +34,7 @@ export function App({ model, prefs, meta }: { model: Model; prefs: SignalType<Pr
         rows: Signal<NavNode[]>(() => flattenLeaves(model.nav.$())),
         getRowId: (node) => node.id,
         mode: 'client',
-        columnDefs: [
-          { id: 'label', header: 'name' },
-          { id: 'status', header: 'status' },
-          { id: 'durationMs', header: 'ms' },
-        ],
+        columnDefs: treeColumnDefs(pivotColumns<NavNode>()),
       }),
     [model],
   )

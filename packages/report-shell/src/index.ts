@@ -1,7 +1,7 @@
 export { type FsColumnsOptions, type FsRow, FsTree, type FsTreeProps, fsColumns } from "./components/FsTree"
 export { NavRail, type NavRailProps } from "./components/NavRail"
 export { type Anchor, NavTabs, type NavTabsProps, type Tab } from "./components/NavTabs"
-export { PivotStack, type PivotStackProps } from "./components/PivotStack"
+export { PivotStack, pivotColumns, type PivotStackProps } from "./components/PivotStack"
 export { GearButton, PopoverPanel } from "./components/Popover"
 export { PresetsMenu, type PresetsMenuProps } from "./components/PresetsMenu"
 export { ReportShell, type ReportShellProps, type ReportTracks } from "./components/ReportShell"
