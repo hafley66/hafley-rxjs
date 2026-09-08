@@ -83,13 +83,15 @@ export function layout(
   return { tracks: signals, unsubscribe: () => subscription.unsubscribe() }
 }
 
-export type GutterOptions = { commit?: 'frame' | 'release'; axis?: 'x' | 'y' }
+// `invert`: the track grows when the pointer moves toward the origin (a panel hung off the right or bottom edge).
+export type GutterOptions = { commit?: 'frame' | 'release'; axis?: 'x' | 'y'; invert?: boolean }
 
 // Pointer drag with setPointerCapture. 'release' (default): a transform on `el` moves during the
 // drag, the track signal writes once on pointerup; 'frame' writes the signal every frame instead.
 export function gutter(el: HTMLElement, track: SignalType<number>, options: GutterOptions = {}): () => void {
   const commit = options.commit ?? 'release'
   const axis = options.axis ?? 'x'
+  const sign = options.invert ? -1 : 1
   let dragging = false
   let startPoint = 0
   let startValue = 0
@@ -107,7 +109,7 @@ export function gutter(el: HTMLElement, track: SignalType<number>, options: Gutt
     const delta = pointOf(event) - startPoint
     if (commit === 'frame') {
       markManual(track)
-      track.$(startValue + delta)
+      track.$(startValue + sign * delta)
     } else {
       el.style.transform = axis === 'x' ? `translateX(${delta}px)` : `translateY(${delta}px)`
     }
@@ -119,7 +121,7 @@ export function gutter(el: HTMLElement, track: SignalType<number>, options: Gutt
     el.classList.remove('dragging')
     if (commit === 'release') {
       markManual(track)
-      track.$(startValue + (pointOf(event) - startPoint))
+      track.$(startValue + sign * (pointOf(event) - startPoint))
       el.style.transform = ''
     }
   }

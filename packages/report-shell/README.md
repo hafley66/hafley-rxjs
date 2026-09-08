@@ -19,13 +19,13 @@ through the generic parameter.
 | --- | --- | --- |
 | `layout(root, tracks, storage, sizing?)` | function | `{ tracks, unsubscribe }`: one `Signal<number>` per `Track`, persisted through a `Storage<string>`; an optional `SizingStore` records writes and seeds a viewport-appropriate start |
 | `ReportShell` | component | header / nav rail + nav + drag gutter / main over `layout()` tracks; `children(tracks)` render prop; tears the layout down on unmount |
-| `gutter(el, track, options)` | function | pointer-drag resize handle bound to a track signal, returns `unsubscribe` |
+| `gutter(el, track, options)` | function | pointer-drag resize handle bound to a track signal, returns `unsubscribe`; `invert` for panels hung off the right/bottom edge |
 | `createSizingStore(storage)` | function | reusable resize memory for pane tracks, grid columns, nav width; see Sizing below |
 | `Truncated` | component | overflow-aware label with a hover/click popover and copy button |
 | `SubTable` | component | `columns` + `rows` master/detail grid |
 | `GearButton`, `PopoverPanel` | components | gear button + native-popover shell primitives |
 | `PresetsMenu<T>` | component | apply/save/reset named `T` snapshots through a `Storage<string>` |
-| `PivotStack<T>` | component | breadcrumb + stacked `Grid<T>` pivots, `onPop(count)` callback |
+| `PivotStack<T>` | component | breadcrumb + stacked `Grid<T>` pivots as `TreeTable`s, `onPop(count)`, `heightTrack` adds a drag gutter |
 | `NavRail` | component | chevron toggle that collapses a nav `Track` signal to a 28px rail |
 | `formatAge(ms, now?)`, `formatDuration(ms)` | functions | shared time labels, see Time below |
 | `createNavCollapse(track, storage, expandedFallback)` | function | collapse/restore logic behind `NavRail`, usable standalone |
@@ -33,7 +33,10 @@ through the generic parameter.
 
 ### marbler subpath
 
-`@hafley66/report-shell/marbler` exports `EventsPanel`, `defaultEventDetail`, `EventsPanelProps` and `syncMarbler`. They
+`@hafley66/report-shell/marbler` exports `EventsPanel`, `defaultEventDetail`, `EventsPanelProps` and `syncMarbler`.
+`EventsPanel` takes three tracks: `overviewTrack` (navigator strip, y), `eventsTrack` (marbler height, y, replaces the
+60vh default), `drawerTrack` (detail drawer width, x); each renders a gutter (`overview-gutter`, `events-gutter`,
+`drawer-gutter`). They
 are the only pieces that import `@hafley66/marbler` (and pixi.js), so the marbler peer is optional: consumers that never
 import the subpath never carry pixi.
 

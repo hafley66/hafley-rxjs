@@ -16,6 +16,9 @@ import { Nav } from './Nav'
 const TRACKS: Track[] = [
   { name: 'nav', min: NAV_RAIL_PX, max: 720, fallback: 380, axis: 'x' },
   { name: 'overview', min: 48, max: 480, fallback: 160, axis: 'y' },
+  { name: 'events', min: 200, max: 2400, fallback: 520, axis: 'y' },
+  { name: 'drawer', min: 240, max: 1200, fallback: 390, axis: 'x' },
+  { name: 'pivot', min: 80, max: 1200, fallback: 320, axis: 'y' },
 ]
 
 function applyColumnPrefs(current: Prefs): void {
@@ -52,8 +55,8 @@ export function App({ model, prefs, meta }: { model: Model; prefs: SignalType<Pr
       {(tracks) => (
         <>
           <Title model={model} />
-          <EventsPanel marbler={model.marbler} overviewTrack={tracks.overview!} />
-          <PivotStack pivotStack={model.pivotStack} baseGrid={pivotBase} onPop={(count) => popPivotsTo(model.pivotStack, count)} />
+          <EventsPanel marbler={model.marbler} overviewTrack={tracks.overview!} eventsTrack={tracks.events} drawerTrack={tracks.drawer} />
+          <PivotStack pivotStack={model.pivotStack} baseGrid={pivotBase} onPop={(count) => popPivotsTo(model.pivotStack, count)} heightTrack={tracks.pivot} />
         </>
       )}
     </ReportShell>

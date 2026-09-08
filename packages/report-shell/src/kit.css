@@ -19,6 +19,9 @@
     --kit-top: 0px;
     --track-nav: 380px;
     --track-overview: 160px;
+    --track-events: 520px;
+    --track-drawer: 390px;
+    --track-pivot: 320px;
     /* @hafley66/grid reads these; defaults map its 14 names onto the kit tokens so a TreeTable
        inside any consumer follows the theme without a per-app mapping block. */
     --grid-bg: var(--panel-bg);
@@ -101,6 +104,8 @@
   .gutter-x { top: 0; right: -3px; width: 6px; height: 100%; cursor: ew-resize }
   .gutter-y { height: 6px; width: 100%; cursor: ns-resize; margin: -3px 0 }
   .gutter:hover, .gutter.dragging { background: var(--accent) }
+  .pivot-stack { position: relative }
+  .pivot-stack > .gutter-y { position: relative; margin: 0 0 -3px }
 
   .events-panel { flex: 1; overflow: auto; display: flex; flex-direction: column; min-height: 0; position: relative }
 

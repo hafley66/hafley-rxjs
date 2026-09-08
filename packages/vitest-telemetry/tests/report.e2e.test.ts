@@ -99,6 +99,44 @@ describe('vitest-telemetry nav tree', () => {
     await page.keyboard.press('Escape')
   })
 
+  it('events, drawer, and pivot gutters each resize their panel and persist the px', async () => {
+    const drag = async (testId: string, dx: number, dy: number) => {
+      const el = page.locator(`[data-testid=${testId}]`)
+      await el.scrollIntoViewIfNeeded()
+      const box = (await el.boundingBox())!
+      const x = box.x + box.width / 2
+      const y = box.y + box.height / 2
+      await page.mouse.move(x, y)
+      await page.mouse.down()
+      await page.mouse.move(x + dx, y + dy, { steps: 4 })
+      await page.mouse.up()
+      await page.waitForTimeout(100)
+    }
+    const track = (name: string) => page.evaluate((n) => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(`--track-${n}`)), name)
+    const shell = page.locator('[data-testid=marbler]')
+    const before = (await shell.boundingBox())!.height
+    await drag('events-gutter', 0, 120)
+    expect(await track('events')).toBe(before + 120)
+    expect((await shell.boundingBox())!.height).toBe(before + 120)
+
+    await page.locator('[data-testid=marbler] .grid-body .grid-row').first().click()
+    await page.waitForTimeout(100)
+    const drawer = page.locator('[data-testid=event-details]')
+    const drawerBefore = (await drawer.boundingBox())!.width
+    await drag('drawer-gutter', -100, 0)
+    expect(await track('drawer')).toBe(drawerBefore + 100)
+    expect((await drawer.boundingBox())!.width).toBe(drawerBefore + 100)
+
+    await expandEverything(page)
+    await page.locator('[data-testid=tree-row].test [data-testid=status-cell]').first().click({ modifiers: ['Alt'] })
+    await page.waitForTimeout(200)
+    const pivotBefore = await track('pivot')
+    await drag('pivot-gutter', 0, -60)
+    expect(await track('pivot')).toBe(pivotBefore - 60)
+    expect(JSON.parse(await page.evaluate(() => localStorage.getItem('vitest-telemetry.tracks') ?? '{}'))).toMatchObject({ events: before + 120, drawer: drawerBefore + 100, pivot: pivotBefore - 60 })
+    await page.locator('[data-testid=pivot-close]').click()
+  })
+
   it('the popover column picker hides and restores a nav column', async () => {
     const heads = page.locator('nav th[data-column]')
     expect(await heads.count()).toBe(4)

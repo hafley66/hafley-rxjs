@@ -1,12 +1,13 @@
 // Breadcrumb + a stack of pivoted grids, newest at the bottom. Pivoting is grid.pivot(columnId,
 // value) from @hafley66/grid; the domain owns when a push/pop happens (onPop). Every panel is the
 // same TreeTable the nav uses, so sorting, column resize, and visibility come from the grid.
-import { useMemo, type FC, type ReactElement } from 'react'
+import { useEffect, useMemo, useRef, type FC, type ReactElement } from 'react'
 import { SignalReact } from '@hafley66/signals/react'
 import type { Signal as SignalType } from '@hafley66/signals'
 import type { Grid } from '@hafley66/grid'
 import { TreeTable, type TreeColumn, type TreeTableDensity } from '@hafley66/grid/react'
 import { formatDuration } from '../lib/time'
+import { gutter } from '../layout'
 import type { NavRow, PivotEntry } from '../types'
 
 export type { PivotEntry }
@@ -40,10 +41,18 @@ export type PivotStackProps<T extends NavRow> = {
   onPop: (count: number) => void
   columns?: TreeColumn<T>[]
   density?: TreeTableDensity
+  // Panel height in px; a track signal adds a drag gutter under the stack.
+  heightTrack?: SignalType<number>
 }
 
-function PivotStackView<T extends NavRow>({ pivotStack, baseGrid, onPop, columns, density = 'compact' }: PivotStackProps<T>) {
+function PivotStackView<T extends NavRow>({ pivotStack, baseGrid, onPop, columns, density = 'compact', heightTrack }: PivotStackProps<T>) {
   const stack = pivotStack.$()
+  const maxHeight = heightTrack?.$() ?? 320
+  const gutterRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!gutterRef.current || !heightTrack) return
+    return gutter(gutterRef.current, heightTrack, { axis: 'y' })
+  }, [heightTrack, stack.length])
   const grids = useMemo(() => {
     let grid = baseGrid
     const chain: Grid<T>[] = []
@@ -74,10 +83,11 @@ function PivotStackView<T extends NavRow>({ pivotStack, baseGrid, onPop, columns
         const present = new Set(grid.columns.map(c => c.id))
         return (
           <div className="pivot-panel" data-testid="pivot-panel" key={index}>
-            <TreeTable grid={grid} columns={cols.filter(c => present.has(c.id))} density={density} scrollMode="internal" maxHeight={320} />
+            <TreeTable grid={grid} columns={cols.filter(c => present.has(c.id))} density={density} scrollMode="internal" maxHeight={maxHeight} />
           </div>
         )
       })}
+      {heightTrack && <div ref={gutterRef} className="gutter gutter-y" data-testid="pivot-gutter" title="drag to resize the pivot panels" />}
     </div>
   )
 }

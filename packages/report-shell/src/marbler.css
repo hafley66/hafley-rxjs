@@ -13,4 +13,6 @@
 
 /* Unlayered on purpose: marbler ships unlayered CSS (`.app-shell[data-embedded] { height: 100% }`),
    and any rule inside @layer loses to it regardless of specificity. */
-.events-panel > .app-shell[data-testid=marbler] { flex: none; height: 60vh }
+/* kit.css lays every <main> out as a column; marbler's shell is a <main> whose drawer hangs off the right. */
+.events-panel > .app-shell[data-testid=marbler] { flex: none; flex-direction: row; height: var(--track-events, 60vh) }
+.events-panel .app-shell[data-embedded="true"] .drawer { width: var(--track-drawer, 390px) }
