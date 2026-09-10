@@ -57,4 +57,4 @@ calls it.
 Absent and not yet decided: column virtualization, column autosize, clipboard, aria roles,
 localization, export, undo (`docs/1_parity.md`, "Not decided yet"). The transpose reaches the model
 and not the rendered cells: under `orientation: "columns"` the renderer builds the frame and
-`slots.cell` is never called, measured in `docs/6_why.md` section 6. Read that next.
+`slots.cell` is never called, measured on the site's "The seat table" page. Read that next.
