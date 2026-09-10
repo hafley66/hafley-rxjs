@@ -1,0 +1,1 @@
+import{at as e,it as t,t as n,vt as r}from"./chunks/framework.DkAysg6d.js";var i=JSON.parse(`{"title":"Install","description":"","frontmatter":{},"headers":[],"relativePath":"install.md","filePath":"pages/install.md"}`),a={name:`install.md`};function o(n,i,a,o,s,c){return r(),t(`div`,null,[...i[0]||=[e("",12)]])}var s=n(a,[[`render`,o]]);export{i as __pageData,s as default};
