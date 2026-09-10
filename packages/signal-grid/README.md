@@ -119,7 +119,7 @@ bare value; `toGridSignal` adopts a signal unchanged, both in the same file.
 | `view.flat` | `Signal<readonly FlatNode<RowId>[]>` | DFS honouring `state.expanded` |
 | `view.plan` | `Signal<RenderPlan<RowId>>` | `{ start, center, end, span, centerTotal, offsetTop, pageCount }` |
 | `view.cols` | `Signal<readonly FlatNode<ColId>[]>` | the column forest after hide and reorder |
-| `view.widths` | `Signal<ReadonlyMap<ColId, number>>` | flex resolution against `viewport.width` |
+| `view.widths` | `Signal<ReadonlyMap<ColId, number>>` | declared widths; the browser distributes flex |
 | `actions$`, `intent$`, `change$`, `effect$` | Observables | one bus, split by phase |
 | `query` | `Signal<QueryDescriptor>` | `{ sort, group, page, expand }`; `expand` is always `null` |
 | `page$` | `Observable<PageRequest>` | one emission per `page` change |
@@ -135,7 +135,7 @@ bare value; `toGridSignal` adopts a signal unchanged, both in the same file.
 | filtering, quick filter, filter logic | `filterAxis` and `buildRowPredicate` (`src/2_operators.ts`) have no call site; `GridState` carries no `filter` key |
 | a header group band | `view.cols` carries the group node, `src/10_render.ts` drops it before the header is built |
 | inline editing, column typing, aggregation | cut by decision, listed in `docs/1_parity.md` |
-| `rowOrder`, `selection` | state keys with no reader in `src/` |
+| `rowOrder` | state key with no reader in `src/` |
 
 ## Docs
 

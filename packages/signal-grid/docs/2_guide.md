@@ -312,7 +312,7 @@ something touches it, and a nested-path selector dedupes with `distinctShallow`
 | header group band | group nodes leave the leaf run before the header is built | `src/10_render.ts` |
 | `Slots.row`, `checkbox`, `headerGroup`, `resizeHandle`, `dragPreview`, `empty`, `loading`, `footer` | declared, unread | `Slots` in `src/0_types.ts` |
 | focus ring, inline editing | `state.focus` has no renderer; `state.editing` has no writer | `src/7_epics.ts`, `src/10_render.ts` |
-| `rowOrder`, `selection` | state keys with no reader in `src/` | `GridState` in `src/0_types.ts` |
+| `rowOrder` | state key with no reader in `src/` | `GridState` in `src/0_types.ts` |
 | `query.expand` | hardcoded `null`, so server tree loading has no kernel trigger | the `query` computed in `src/8_grid.ts` |
 | column virtualization, autosize, export, undo, a11y roles, i18n | not attempted | `docs/1_parity.md` |
 | aggregation, column typing, pivot | cut by decision | `docs/1_parity.md`, "Cut on purpose" |

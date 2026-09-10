@@ -361,7 +361,7 @@ stage is asserted without observing it (`src/8_grid.test.ts`).
 | inline editing | `state.editing` is read at `src/10_render.ts`, written by no epic | cut, the consumer owns the form lifecycle |
 | a header group band | `src/10_render.ts` drops group nodes before the header is built | not wired; `view.cols` does carry the node |
 | `mapAxis`, `FilterMode` | `mapAxis` has no caller; `ancestorsOf` is reached only through `filterAxis`, which has none | available, unused |
-| `rowOrder`, `selection` | state keys with no reader in `src/` | inert |
+| `rowOrder` | state key with no reader in `src/` | inert |
 | `query.expand` | hardcoded `null` in the `query` computed | lazy server tree loading has no trigger inside the kernel |
 | column virtualization | no code | not attempted |
 

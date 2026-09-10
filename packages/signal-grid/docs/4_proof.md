@@ -36,19 +36,14 @@ flowchart LR
   H -->|scripts/videos.mjs| I["out/visual/mp4/*.mp4"]
 ```
 
-`fixtures/main.ts` is the delegation receipt page: it hand-stamps divs and calls neither `grid()`
-nor `render()`. The visual suite therefore builds its own page from `src/index.ts` with a vite lib
-build in `beforeAll`, injects `src/theme.css` unmodified, and mounts a live grid per test. Nothing
-between the assertions and the library is a test double.
+`fixtures/main.ts` builds a fixed receipt page by calling `grid()` and `render()`
+(`fixtures/main.ts:107,126`). The visual suite builds its own page instead, from `src/index.ts` with
+a vite lib build in `beforeAll`, so it can inject `src/theme.css` unmodified and mount a live grid
+per test. Nothing between the assertions and the library is a test double.
 
-Two pieces of consumer glue live in the injected bootstrap, because `grid()` ships neither:
-
-| glue | why it is in the test and not in src | lines |
-| --- | --- | --- |
-| viewport sync | `grid()` accepts a `viewport` signal and subscribes to no producer for it; the scroll box belongs to the consumer | 8 |
-| resize drag | `grid()` builds `epics: []`, so no epic turns `header.pointerdown` into a `colWidth` change | 12 |
-
-The resize glue is assembled from parts the package already exports: the delegated
+`render()` installs the scroll and resize listeners that feed the viewport
+(`src/10_render.ts:583-604`), so the viewport needs no consumer wiring. The resize drag in the
+injected bootstrap is assembled from parts the package already exports: the delegated
 `gridDom(id).headerResize.route.pointerdown` stream, `drag()` from `src/6_gestures.ts`, and one
 `{ phase: "change", type: "colWidth" }` dispatch per move.
 
