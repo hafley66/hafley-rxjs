@@ -9,7 +9,7 @@ the pass, and `src/9_css.test.ts`, `src/10_render.test.ts`, `src/13_composite.te
 `src/14_measure.test.ts` all landed mid-read. Each is folded into the census, and the last three
 are left to the lanes still writing them.
 
-Unit tests stand at 465 across 17 files (from `out/stats/unit.json`). Browser tests are unchanged at 15.
+Unit tests stand at {{stats.tests.unit}} across {{stats.source.testFiles}} files (from `site/stats.json`, `tests.unit`). Browser tests are unchanged at 15.
 
 ## TOC
 

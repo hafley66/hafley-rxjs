@@ -52,7 +52,8 @@ release dates from `npm view <pkg> version license time.modified`; weights from
 included) plus one measured unpkg download. The site it must land on: a plain Vite
 TypeScript site (`site/`) published as static files to GitHub Pages, with no
 server at runtime and its bundle size published in `site/stats.json` (current
-index: 444,322 bytes raw / 148,215 gzip, from `site/stats.json` `bundle.site`).
+assets: {{stats.bundle.site.totalBytes}} bytes raw / {{stats.bundle.site.totalGzipBytes}} gzip across
+{{stats.bundle.site.fileCount}} files, from `site/stats.json` `bundle.site`).
 
 | candidate | what it does | license | weekly downloads | last release | install weight | no React | static Pages | one reason it loses |
 |---|---|---|---|---|---|---|---|---|
