@@ -5,6 +5,7 @@
 // `compositeColumn({ parts })` plus `listView: true` is MUI's `listViewColumn`, expressed from
 // parts already present rather than as a second rendering mode. A composite also has no fixed
 // height, which is why `14_measure.ts` exists.
+import { columnReader } from "./0_types.js"
 import type { CellCtx, ColId, ColumnDef, Side, Slot } from "./0_types.js"
 
 // --- Parts ------------------------------------------------------------------
@@ -85,11 +86,8 @@ export function compositeColumn<TRow>(opts: CompositeColumnOptions<TRow>): Compo
   const primary = parts.find((part) => part.rank === "primary") ?? parts[0]
   // Resolved per read rather than captured: `columns` may be a thunk over a schema still being
   // built, and a part's column can be removed while the composite outlives it.
-  const readPart = (part: CompositePart, row: TRow): unknown => {
-    const col = sourceMap(opts.columns)?.get(part.col)
-    const read = col?.value
-    return read === undefined ? (row as Record<string, unknown>)[part.col] : read(row)
-  }
+  const readPart = (part: CompositePart, row: TRow): unknown =>
+    columnReader(sourceMap(opts.columns)?.get(part.col), part.col)(row)
   const sortable = opts.sortable !== false && primary !== undefined
   const primaryCol = (): ColumnDef<TRow> | undefined =>
     primary === undefined ? undefined : sourceMap(opts.columns)?.get(primary.col)

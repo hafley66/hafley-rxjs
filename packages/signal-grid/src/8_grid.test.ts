@@ -15,7 +15,7 @@ import { Signal } from "@hafley66/signals"
 import { defaultState, grid, type Grid } from "./8_grid.js"
 import { COLUMNS, FLAT, TREE, flatGrid, keysOf, treeGrid, type Row } from "./test/0_kit.js"
 import { cellAttrs, expandAttrs, gridAttrs, rowAttrs } from "./3_paths.js"
-import type { Orientation } from "./0_types.js"
+import type { GridState, Orientation } from "./0_types.js"
 
 // `urlAdapter` reaches the window through `fromEvent`, so the leak is a listener count and the
 // only way to assert it is to count them. No engine publishes that tally, so the pair is wrapped
@@ -77,6 +77,73 @@ describe("state is one signal reached by proxy dots", () => {
     const g = flatGrid()
     g.state.colHidden.size.$(true)
     expect(keysOf(g.view.cols.$())).toEqual(["name"])
+  })
+})
+
+describe("a state source keeps emitting after the seed", () => {
+  const withState = (state: Partial<GridState> | Signal<Partial<GridState>>): Grid<Row> =>
+    grid<Row>({ id: "t", rows: FLAT, columns: COLUMNS, rowId: (r) => r.id, state })
+
+  it("seeds from the first value, as it always did", () => {
+    const g = withState({ density: "compact" })
+    expect(g.state.density.$()).toBe("compact")
+  })
+
+  it("a later emission reaches the grid's own state", () => {
+    const source = Signal<Partial<GridState>>({ density: "compact" })
+    const g = withState(source)
+    source.$({ density: "comfortable" })
+    expect(g.state.density.$()).toBe("comfortable")
+  })
+
+  it("an emission arrives as a change, so `change$` reports it", () => {
+    const source = Signal<Partial<GridState>>({})
+    const g = withState(source)
+    const seen: string[] = []
+    const sub = g.change$.subscribe((it) => seen.push(it.type))
+    source.$({ listView: true })
+    sub.unsubscribe()
+    expect(seen).toEqual(["listView"])
+  })
+
+  it("leaves a key the source never sends, so a sort the user made survives", () => {
+    const source = Signal<Partial<GridState>>({})
+    const g = withState(source)
+    g.state.sort.$([{ field: "size", sort: "asc" }])
+    source.$({ colHidden: { size: true } })
+    expect(g.state.sort.$()).toEqual([{ field: "size", sort: "asc" }])
+    expect(keysOf(g.view.cols.$())).toEqual(["name"])
+  })
+
+  it("wins on a key it does send, even one the user just changed", () => {
+    const source = Signal<Partial<GridState>>({})
+    const g = withState(source)
+    g.state.sort.$([{ field: "size", sort: "asc" }])
+    source.$({ sort: [{ field: "name", sort: "desc" }] })
+    expect(keysOf(g.view.flat.$())).toEqual(["c", "b", "a"])
+  })
+
+  it("takes an explicit undefined as no claim on the key rather than a reset", () => {
+    const source = Signal<Partial<GridState>>({})
+    const g = withState(source)
+    g.state.density.$("compact")
+    source.$({ density: undefined })
+    expect(g.state.density.$()).toBe("compact")
+  })
+
+  it("stops at close, so a source outliving the grid writes nothing", () => {
+    const source = Signal<Partial<GridState>>({})
+    const g = withState(source)
+    g.close()
+    source.$({ listView: true })
+    expect(g.state.listView.$()).toBe(false)
+  })
+
+  it("a plain object is still a seed and nothing more", () => {
+    const seed: Partial<GridState> = { density: "compact" }
+    const g = withState(seed)
+    g.state.density.$("comfortable")
+    expect(g.state.density.$()).toBe("comfortable")
   })
 })
 

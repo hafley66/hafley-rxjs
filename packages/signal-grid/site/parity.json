@@ -19,7 +19,7 @@
       "id": "col.formula",
       "declaration": "formula",
       "file": "src/0_types.ts",
-      "line": 221
+      "line": 226
     },
     {
       "id": "row.detail",
@@ -31,7 +31,7 @@
       "id": "view.slots",
       "declaration": "compositeParts",
       "file": "src/13_composite.ts",
-      "line": 55
+      "line": 56
     },
     {
       "id": "row.select",

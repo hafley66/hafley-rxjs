@@ -36,6 +36,7 @@ import {
 import { defaultEpics, type GridEpic, type GridEpicCtx } from "./7_epics.js"
 import { EMPTY_RANGE } from "./15_selection.js"
 import {
+  columnReader,
   GROUP_PREFIX,
   type Axis,
   type CellId,
@@ -193,7 +194,7 @@ export interface Grid<TRow> {
   /** The one door DOM events come in by. Returns the teardown for every listener it opened. */
   readonly bind: (root: HTMLElement) => () => void
   /**
-   * Releases what the constructor opened, which is the url sync listener and nothing else today.
+   * Releases what the constructor opened: the url sync listener and the state source subscription.
    * Idempotent, and unrelated to `bind` and `render`, which each hand back their own teardown.
    */
   readonly close: () => void
@@ -245,12 +246,16 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
     height: 0,
   })
 
-  // Every other input goes through `toGridSignal`, so a plain object here must too. Reading it only
-  // when `isSignal` held meant `state: { listView: true }` was accepted by the type and
-  // silently dropped at run time, which is the worst shape a config bug can take.
-  const seed = defaultState(
-    config.state === undefined ? undefined : toGridSignal<Partial<GridState>>(config.state, {}).$(),
-  )
+  // A column carrying both a `field` and a `value` says two things about one read, so the schema
+  // is rejected at construction rather than at whichever cell asks first.
+  for (const col of columns.$()) columnReader(col, col.id)
+
+  // Every other input goes through `toGridSignal`, so a plain object here must too. Three of the
+  // four shapes emit again, and the signal is kept so those emissions have somewhere to land.
+  const stateSource =
+    config.state === undefined ? undefined : toGridSignal<Partial<GridState>>(config.state, {})
+  const stateSeed = stateSource?.$()
+  const seed = defaultState(stateSeed)
   // Read once, outside every memo. Reading `id` inside one would put it on that memo's dependency
   // list while logging is on, and a write to the id would then recompute stages it never fed.
   const loggedId = id.$()
@@ -300,6 +305,25 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
     })
   }
 
+  // `Partial<GridState>` is the caller naming which keys are theirs. A key they never send stays
+  // untouched, so `colHidden` cannot undo a sort the user just made; a key they send wins over it.
+  if (stateSource !== undefined) {
+    let consumed = stateSeed
+    opened.add(
+      stateSource.$.subscribe((patch) => {
+        // The subject replays the seed to every new subscriber, and identity tells that apart.
+        if (patch === consumed) return
+        consumed = patch
+        const current = state.$()
+        for (const key of Object.keys(patch) as readonly (keyof GridState)[]) {
+          const next = patch[key]
+          if (next === undefined || Object.is(current[key], next)) continue
+          dispatch({ phase: "change", type: key, [key]: next } as unknown as GridChange)
+        }
+      }),
+    )
+  }
+
   // --- derivation, one computed signal per algebra stage ---------------------
 
   // Column lookup by id, hoisted. A linear `find` inside a comparator runs once per comparison,
@@ -307,11 +331,8 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
   const byId = Signal<ReadonlyMap<ColId, ColumnDef<TRow>>>(
     () => new Map(columns.$().map((it) => [it.id, it] as const)),
   )
-  const readerFor = (cols: ReadonlyMap<ColId, ColumnDef<TRow>>, field: ColId) => {
-    const col = cols.get(field)
-    const read = col?.value
-    return (row: TRow): unknown => (read ? read(row) : (row as Record<string, unknown>)[field])
-  }
+  const readerFor = (cols: ReadonlyMap<ColId, ColumnDef<TRow>>, field: ColId) =>
+    columnReader(cols.get(field), field)
 
   const base = Signal<Axis<RowId, TRow>>(() => {
     const data = rows.$()

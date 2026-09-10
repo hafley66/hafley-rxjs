@@ -65,8 +65,23 @@ grid<Row>({
 })
 ```
 
-The seed is read once. Handing in your own signal instead makes that signal the grid's state, which
-is how two grids share one state or a caller keeps sole ownership of it.
+The first value is the seed. `state` is a `GridSource`, so a signal, an observable, or a thunk keeps
+feeding the grid after that: each later emission lands as one `change` per key it carries, on the
+same bus a click uses, and `change$` reports it.
+
+Which keys move is the caller's declaration, because the type is `Partial<GridState>`:
+
+| the source emits | what happens to the grid |
+| --- | --- |
+| a key it has never sent | written |
+| a key the user has since changed by hand | written, the source wins |
+| a key absent from this emission | untouched, the user's value stands |
+| a key present and explicitly `undefined` | untouched, which reads as no claim rather than a reset |
+
+Sending `{ colHidden }` on every emission therefore cannot undo a sort a user just made. Sending
+`{ sort }` on every emission does overwrite their sort, so send the keys you mean to own.
+
+`close()` releases the subscription, so a source outliving its grid writes nothing.
 
 ## Persisting
 
