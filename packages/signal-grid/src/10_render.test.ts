@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+// Chromium under `vitest.browser.config.ts`.
 //
 // The renderer owns three of the package's subscriptions and every route the epics listen on, so
 // what is asserted here is the contract the rest of `src/` was written against: which slot wins,

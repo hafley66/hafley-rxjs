@@ -3,8 +3,9 @@ import { defineConfig } from "vitest/config"
 /**
  * The files whose subject is a document: an element that receives a write, a route that resolves
  * against a live query engine, a style property a real engine has to parse. Every one of them ran
- * under a `@vitest-environment jsdom` pragma until `vitest.browser.config.ts` picked them up, and
- * jsdom is banned in this package.
+ * against a simulated document until `vitest.browser.config.ts` picked them up, and a simulated
+ * document is what this package no longer keeps: it returns a zero for every measurement and
+ * stores a style property back without agreeing to it.
  *
  * Named one path at a time rather than globbed onto a `*.browser.test.ts` suffix, because `README.md`
  * and six pages under `docs/` cite these paths and `scripts/docs.mjs` fails a citation whose file is
@@ -16,6 +17,7 @@ import { defineConfig } from "vitest/config"
 export const DOM_TESTS: readonly string[] = [
   "src/8_grid.test.ts",
   "src/9_css.test.ts",
+  "src/10_render.test.ts",
   "src/13_composite.test.ts",
   "src/14_measure.test.ts",
   "src/16_menu.test.ts",
