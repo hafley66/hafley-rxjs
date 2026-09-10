@@ -296,6 +296,41 @@ function memoryGroup() {
   }
 }
 
+// --- memory per demo ---------------------------------------------------------
+
+/** Runs the examples check, which samples `JSHeapUsedSize` over CDP around every mount, and reads
+ * the file it writes. The gate lives in that script; this reads its numbers. */
+function demoMemoryGroup() {
+  const file = join(PKG, "out", "examples-memory.json")
+  const run = timed(process.execPath, [join(PKG, "scripts", "examples.mjs"), `--memory-json=${relative(PKG, file)}`])
+  if (!existsSync(file)) {
+    return {
+      method: null,
+      command: "node scripts/examples.mjs",
+      samples: null,
+      leakBytes: null,
+      examples: null,
+      retaining: null,
+      durationMs: run.ms,
+      reason: "node scripts/examples.mjs wrote no out/examples-memory.json; the browser pass did not finish",
+    }
+  }
+  const parsed = JSON.parse(readFileSync(file, "utf8"))
+  const examples = parsed.examples.filter((it) => it.reason === null || it.reason === undefined)
+  const retaining = examples.filter((it) => it.leaks === true).map((it) => it.id)
+  return {
+    method: parsed.method,
+    command: "node scripts/examples.mjs",
+    samples: parsed.samples,
+    leakBytes: parsed.leakBytes,
+    measuredAt: parsed.measuredAt,
+    examples,
+    retaining,
+    durationMs: run.ms,
+    reason: retaining.length === 0 ? null : `${retaining.length} example(s) hold heap after teardown: ${retaining.join(", ")}`,
+  }
+}
+
 // --- ledger -----------------------------------------------------------------
 
 const EPIC_PROBE = `
@@ -610,6 +645,7 @@ function fullRun() {
       statsMs: Date.now() - startedAt,
     },
     memory: memoryGroup(),
+    demoMemory: demoMemoryGroup(),
     bench: benchGroup(),
   }
 }
@@ -652,6 +688,9 @@ console.log(`  tests      ${stats.tests.unit.tests ?? "n/a"} unit in ${stats.tes
 console.log(`  epics      ${stats.epics.count ?? "n/a"} in defaultEpics()`)
 console.log(`  features   ${stats.features.tracked ?? "n/a"} tracked, ${stats.features.implemented ?? "n/a"} implemented, gate ${stats.features.gate ?? "n/a"}`)
 console.log(`  memory     ${stats.memory.retainedBytes === undefined ? "n/a" : kb(stats.memory.retainedBytes)} retained by a 100k-row grid`)
+console.log(
+  `  demos      ${stats.demoMemory.examples === null ? "n/a" : `${stats.demoMemory.examples.length} sampled, ${stats.demoMemory.retaining.length} retaining over ${kb(stats.demoMemory.leakBytes)}`}`,
+)
 const nulls = []
 if (stats.commit.reason !== null) nulls.push(`commit: ${stats.commit.reason}`)
 if (stats.bundle.library.reason !== null) nulls.push(`bundle.library: ${stats.bundle.library.reason}`)
@@ -662,6 +701,7 @@ if (stats.bundle.treemap.reason !== null) nulls.push(`bundle.treemap: ${stats.bu
 if (stats.sizeLimit.reason !== null) nulls.push(`sizeLimit: ${stats.sizeLimit.reason}`)
 if (stats.tests.browser.reason !== null) nulls.push(`tests.browser: ${stats.tests.browser.reason}`)
 if (stats.memory.reason !== null) nulls.push(`memory: ${stats.memory.reason}`)
+if (stats.demoMemory.reason !== null) nulls.push(`demoMemory: ${stats.demoMemory.reason}`)
 if (stats.bench.reason !== null) nulls.push(`bench: ${stats.bench.reason}`)
 if (stats.epics.reason !== null) nulls.push(`epics: ${stats.epics.reason}`)
 if (stats.features.reason !== null) nulls.push(`features: ${stats.features.reason}`)

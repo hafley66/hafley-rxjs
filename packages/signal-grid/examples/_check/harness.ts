@@ -200,14 +200,43 @@ async function run(): Promise<readonly ExampleCheck[]> {
   return results
 }
 
+// The heap pass is driven one step at a time from node, because the sample has to be taken over CDP
+// between the steps and a page-side loop leaves no seam to read `JSHeapUsedSize` in.
+const held = new Map<number, { readonly host: HTMLElement; readonly teardown: () => void }>()
+
+async function mountOne(index: number): Promise<number> {
+  const example = EXAMPLES[index]
+  if (example === undefined) return 0
+  const host = hostFor()
+  const teardown = example.mount(host)
+  await frame()
+  held.set(index, { host, teardown })
+  return host.querySelectorAll("[data-route='r']").length
+}
+
+async function teardownOne(index: number): Promise<number> {
+  const entry = held.get(index)
+  if (entry === undefined) return -1
+  entry.teardown()
+  await frame()
+  const left = entry.host.childElementCount
+  entry.host.remove()
+  held.delete(index)
+  return left
+}
+
 declare global {
   interface Window {
     __exampleCheck?: () => Promise<readonly ExampleCheck[]>
+    __exampleMount?: (index: number) => Promise<number>
+    __exampleTeardown?: (index: number) => Promise<number>
     __exampleIds?: readonly string[]
     __ready?: boolean
   }
 }
 
 window.__exampleCheck = run
+window.__exampleMount = mountOne
+window.__exampleTeardown = teardownOne
 window.__exampleIds = EXAMPLES.map((example) => example.id)
 window.__ready = true

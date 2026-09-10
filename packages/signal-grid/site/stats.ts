@@ -22,6 +22,21 @@ export interface SizeLimitEntry {
   readonly runningMs: number | null
 }
 
+/** One example's heap, sampled around its own mount and teardown. Every figure is a median. */
+export interface DemoHeap {
+  readonly id: string
+  readonly repeats: number
+  readonly baselineHeapBytes: number
+  readonly peakHeapBytes: number
+  readonly peakSpreadBytes: number
+  readonly retainedHeapBytes: number
+  readonly retainedSpreadBytes: number
+  readonly nodesAfterTeardown: number
+  readonly rowsRendered: number
+  readonly leaks: boolean
+  readonly reason: string | null
+}
+
 export interface Treemap {
   readonly method: string
   readonly envFlag: string
@@ -148,6 +163,17 @@ export interface Stats {
     readonly retainedBytes?: number
     readonly retainedBytesPerRow?: number
     readonly rssBytes?: number
+    readonly reason: string | null
+  }
+  readonly demoMemory: {
+    readonly method: string | null
+    readonly command: string
+    readonly samples: number | null
+    readonly leakBytes: number | null
+    readonly measuredAt?: string
+    readonly examples: readonly DemoHeap[] | null
+    readonly retaining: readonly string[] | null
+    readonly durationMs: number | null
     readonly reason: string | null
   }
   readonly bench: {
@@ -467,7 +493,7 @@ function timingSection(): Section {
 function memorySection(): Section {
   const memory = STATS.memory
   if (memory.measured === null || memory.retainedBytes === undefined) {
-    return { id: "memory", title: "Memory", nodes: [missing(memory.reason)] }
+    return { id: "memory", title: "Memory", nodes: [missing(memory.reason), ...demoMemoryNodes()] }
   }
   const nodes: HTMLElement[] = [
     el("p", "stats-measured", `What this measures: ${memory.measured}`),
@@ -487,7 +513,46 @@ function memorySection(): Section {
     }),
     method(memory.method),
   ]
+  nodes.push(...demoMemoryNodes())
   return { id: "memory", title: "Memory", nodes }
+}
+
+function demoMemoryNodes(): readonly HTMLElement[] {
+  const demos = STATS.demoMemory
+  const nodes: HTMLElement[] = [el("h3", "", "Per demo, in a real browser")]
+  if (demos.examples === null) {
+    nodes.push(missing(demos.reason))
+    return nodes
+  }
+  const ordered = [...demos.examples].sort((left, right) => right.peakHeapBytes - left.peakHeapBytes)
+  nodes.push(
+    table({
+      columns: ["demo", "peak heap", "retained after teardown", "nodes after teardown", "spread across runs"],
+      rows: ordered.map((it) => [
+        it.leaks ? `${it.id} (retains)` : it.id,
+        formatBytes(it.peakHeapBytes),
+        formatBytes(it.retainedHeapBytes),
+        it.nodesAfterTeardown,
+        `peak ±${formatBytes(it.peakSpreadBytes)}, retained ±${formatBytes(it.retainedSpreadBytes)}`,
+      ]),
+      numeric: [1, 2, 3],
+    }),
+  )
+  if (demos.retaining !== null && demos.retaining.length > 0) {
+    nodes.push(
+      el("p", "stats-missing", `These demos hold heap after teardown: ${demos.retaining.join(", ")}.`),
+    )
+  } else if (demos.leakBytes !== null) {
+    nodes.push(
+      el(
+        "p",
+        "stats-measured",
+        `No demo held more than ${formatBytes(demos.leakBytes)} over its own baseline after teardown.`,
+      ),
+    )
+  }
+  nodes.push(method(demos.method))
+  return nodes
 }
 
 function benchSection(): Section {
