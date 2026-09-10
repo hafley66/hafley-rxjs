@@ -237,3 +237,95 @@ describe("a span of 2 vertical and 3 horizontal, transposed, is 3 vertical and 2
     expect(gridOf().view.covered.$().size).toBe(0)
   })
 })
+
+// --- The acceptance test: one window, both seats, no branch -----------------
+
+/** Every entry is one square on both dimensions, so the window lands on the same index range down
+ * the page and across it and a difference in the rendered set can only come from the seating. */
+const SQUARE = 36
+
+const GRID_ROWS: readonly Row[] = Array.from({ length: 8 }, (_value, index) => ({
+  id: `r${index}`,
+  name: `n${index}`,
+  size: index,
+  note: `t${index}`,
+}))
+
+const GRID_COLUMNS: readonly ColumnDef<Row>[] = Array.from({ length: 6 }, (_value, index) => ({
+  id: `c${index}`,
+}))
+
+const SQUARE_EXTENT: Partial<GridState> = {
+  virtualize: { vertical: true, horizontal: true },
+  density: "standard",
+  rowHeight: Object.fromEntries(GRID_ROWS.map((it) => [it.id, SQUARE])),
+  colWidth: Object.fromEntries(GRID_COLUMNS.map((it) => [it.id, SQUARE])),
+}
+
+/** Three squares of viewport, offset by one, with no overscan: indices 1, 2 and 3 of each run. */
+const windowedGrid = (orientation: Orientation): Grid<Row> =>
+  grid<Row>({
+    id: `w-${orientation}`,
+    rows: GRID_ROWS,
+    columns: GRID_COLUMNS,
+    rowId: (row) => row.id,
+    state: { ...SQUARE_EXTENT, orientation },
+    viewport: { top: SQUARE, left: SQUARE, width: SQUARE * 3, height: SQUARE * 3 },
+    overscan: 0,
+  })
+
+/** Keyed the way `spans` is keyed, `cellId(verticalKey, horizontalKey)`, so the set a transposed
+ * grid renders is comparable to the set an upright one renders by swapping both halves. */
+const renderedCells = (gauge: Grid<Row>): ReadonlySet<CellId> => {
+  const down = gauge.view.plan.$()
+  const across = gauge.view.colPlan.$()
+  const cells = new Set<CellId>()
+  for (const vertical of [...down.start, ...down.center, ...down.end]) {
+    for (const horizontal of [...across.start, ...across.center, ...across.end]) {
+      cells.add(cellId(vertical, horizontal))
+    }
+  }
+  return cells
+}
+
+const sorted = (cells: ReadonlySet<CellId>): readonly CellId[] => [...cells].sort()
+
+describe("both seats virtualized, the rendered set transposes with the orientation", () => {
+  it("each seat windows to three of its run, so a 48 cell model renders 9", () => {
+    const gauge = windowedGrid("rows")
+    expect(gauge.view.plan.$().center).toEqual(["r1", "r2", "r3"])
+    expect(gauge.view.colPlan.$().center).toEqual(["c1", "c2", "c3"])
+    expect(renderedCells(gauge).size).toBe(9)
+    expect(GRID_ROWS.length * GRID_COLUMNS.length).toBe(48)
+  })
+
+  it("the transposed grid windows the opposite runs to the same three indices", () => {
+    const gauge = windowedGrid("columns")
+    expect(gauge.view.plan.$().center).toEqual(["c1", "c2", "c3"])
+    expect(gauge.view.colPlan.$().center).toEqual(["r1", "r2", "r3"])
+  })
+
+  it("writing the orientation transposes the rendered set of one live grid", () => {
+    const gauge = windowedGrid("rows")
+    const before = renderedCells(gauge)
+    gauge.state.orientation.$(transpose(gauge.state.orientation.$()))
+    const after = renderedCells(gauge)
+    expect(sorted(after)).toEqual(sorted(swapped(before)))
+    expect(sorted(swapped(after))).toEqual(sorted(before))
+  })
+
+  it("two grids seated opposite ways agree with each other, so nothing is stateful about it", () => {
+    expect(sorted(renderedCells(windowedGrid("columns")))).toEqual(
+      sorted(swapped(renderedCells(windowedGrid("rows")))),
+    )
+  })
+
+  it("turning either seat off puts that whole run back, and the other stays windowed", () => {
+    const gauge = windowedGrid("rows")
+    gauge.state.virtualize.horizontal.$(false)
+    expect(gauge.view.colPlan.$().center).toHaveLength(GRID_COLUMNS.length)
+    expect(gauge.view.plan.$().center).toEqual(["r1", "r2", "r3"])
+    gauge.state.virtualize.vertical.$(false)
+    expect(gauge.view.plan.$().center).toHaveLength(GRID_ROWS.length)
+  })
+})
