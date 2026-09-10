@@ -24,11 +24,11 @@ const run = (label, command, args) => {
 const bytes = (path) => (existsSync(path) ? statSync(path).size : 0)
 const kb = (value) => `${(value / 1024).toFixed(1)} kB`
 
-// One source for the public path: the vite config's `base`. A ship that guessed it would put the
-// demo under a prefix the site does not link to.
-const configSource = readFileSync(join(PKG, "site", "vite.config.ts"), "utf8")
+// One source for the public path: `site/content.ts`, which VitePress reads for its own `base`. A
+// ship that guessed it would put the demo under a prefix the site does not link to.
+const configSource = readFileSync(join(PKG, "site", "content.ts"), "utf8")
 const baseMatch = /export const BASE = "([^"]+)"/.exec(configSource)
-if (baseMatch === null) throw new Error("ship: site/vite.config.ts no longer exports a BASE string literal")
+if (baseMatch === null) throw new Error("ship: site/content.ts no longer exports a BASE string literal")
 const BASE = baseMatch[1]
 if (!BASE.startsWith("/") || !BASE.endsWith("/")) throw new Error(`ship: BASE must start and end with "/", found ${BASE}`)
 
@@ -53,7 +53,8 @@ function copyVideos() {
   return copied
 }
 
-const buildSite = (label) => run(label, "npx", ["vite", "build", "-c", "site/vite.config.ts"])
+// VitePress owns the site build, and `site:build` runs the content copy that feeds it first.
+const buildSite = (label) => run(label, "pnpm", ["site:build"])
 // Into the site's own tree so one directory is the whole artifact and relative links resolve.
 const buildDemo = (label) =>
   run(label, "npx", [

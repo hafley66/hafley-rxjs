@@ -5,6 +5,7 @@
 // by key: a row already in the document is moved, never rebuilt, which is the only reason
 // virtualization pays for itself. A cell rebuilds when the data behind it, the column run, or its
 // editing state changed, and nothing else touches it.
+// @no-features: the DOM pass. It renders what the view signals already decided, and each of those is tagged at its own stage
 import { Subscription, type Observable } from "rxjs"
 import { isSignal, Signal } from "@hafley66/signals"
 import {

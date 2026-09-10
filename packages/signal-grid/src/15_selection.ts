@@ -47,6 +47,7 @@ export const columnAnchor = (horizontal: string): CellId => cellId("", horizonta
 export const rowAnchor = (vertical: string): CellId => cellId(vertical, "")
 
 /** Widens the narrow `{ anchor, head }` the state declares until the `0_types.ts` patch lands. */
+/** A rectangular range over two ordered axes, with edges for the border. @feature cell.select */
 export function rangeOf(value: RangeSelection): GridSelection {
   const wide = value as RangeSelection & Partial<GridSelection>
   // Identity is kept when the state already holds the richer shape, so two reads compare equal.

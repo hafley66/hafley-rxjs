@@ -7,6 +7,7 @@
 // everything is neutral: a vertical seat and a horizontal seat. Orientation is the seating chart.
 // No function below the boundary may ask which seat holds a row, because the moment it can ask,
 // the transpose is a second code path again.
+// @no-features: the seat table both axes cross through; cell.span and view.list are tagged where the view exposes them
 import { cellId, cellParts } from "./0_types.js"
 import type { Axis, CellId, ColId, FlatNode, Orientation, RowId, Side } from "./0_types.js"
 

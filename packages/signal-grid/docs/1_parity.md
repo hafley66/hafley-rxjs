@@ -13,7 +13,7 @@ Generated. Every column below is derived, not asserted by hand.
 
 ## Counts
 
-47 features tracked. TanStack Table v9 covers 20, MUI X Data Grid covers 45 in full and 1 in part, signal-grid implements 21 and declares a further 9 as types nothing runs yet.
+47 features tracked. TanStack Table v9 covers 20, MUI X Data Grid covers 45 in full and 1 in part, signal-grid implements 22 and declares a further 9 as types nothing runs yet.
 
 | column | source |
 | --- | --- |
@@ -58,7 +58,7 @@ TanStack's 17 feature directories map onto 20 feature ids. Every directory is ma
 | `col.pin`<br>Keep chosen columns visible while the rest scroll sideways | The identifying column scrolls out and the remaining cells lose their label. | yes | [yes (pro)](https://mui.com/x/react-data-grid/column-pinning/) | yes | `src/4_slice.ts:23` |
 | `col.resize`<br>Drag a column edge to change its width | A truncated value can only be read by widening the whole window. | yes | [yes (mit)](https://mui.com/x/react-data-grid/column-dimensions/#resizing) | declared only | `src/0_types.ts:328` |
 | `col.size`<br>Resolve declared width, min, max, and flex into pixels | Columns either overflow the viewport or leave dead space to the right of the last one. | yes | [yes (mit)](https://mui.com/x/react-data-grid/column-dimensions/#fluid-width) | yes | `src/4_slice.ts:247` |
-| `col.autosize`<br>Fit a column to its widest rendered content | Reaching a readable width costs one manual drag per column, on every visit. | no | [yes (mit)](https://mui.com/x/react-data-grid/column-dimensions/#autosizing) | no |  |
+| `col.autosize`<br>Fit a column to its widest rendered content | Reaching a readable width costs one manual drag per column, on every visit. | no | [yes (mit)](https://mui.com/x/react-data-grid/column-dimensions/#autosizing) | declared only | `src/14_measure.ts:13` |
 | `col.group`<br>Nest columns under shared header groups | Related columns read as an undifferentiated run of headers. | no | [yes (mit)](https://mui.com/x/react-data-grid/column-groups/) | declared only | `src/0_types.ts:236` |
 | `col.type`<br>Attach a value type so editor, filter, and comparator follow from it | Every column restates the same comparator and operator wiring by hand. | no | [yes (mit)](https://mui.com/x/react-data-grid/custom-columns/) | no, by decision |  |
 | `col.formula`<br>Derive a column's value from other fields of the row | A computed column has to be materialised into the source data before it can be shown. | no | [yes (premium)](https://mui.com/x/react-data-grid/formulas/) | declared only | `src/0_types.ts:221` |
@@ -68,7 +68,7 @@ TanStack's 17 feature directories map onto 20 feature ids. Every directory is ma
 
 | feature | why it matters | TanStack v9 | MUI X | signal-grid | where |
 | --- | --- | --- | --- | --- | --- |
-| `cell.select`<br>Select a rectangular range of cells | Copying a block of numbers means selecting whole rows and trimming them afterwards. | yes | [yes (premium)](https://mui.com/x/react-data-grid/cell-selection/) | yes | `src/7_epics.ts:511` |
+| `cell.select`<br>Select a rectangular range of cells | Copying a block of numbers means selecting whole rows and trimming them afterwards. | yes | [yes (premium)](https://mui.com/x/react-data-grid/cell-selection/) | yes | `src/15_selection.ts:51`<br>`src/7_epics.ts:511` |
 | `cell.focus`<br>Move a focus ring cell by cell with the keyboard | The grid cannot be driven without a mouse. | no | [yes (mit)](https://mui.com/x/react-data-grid/accessibility/#keyboard-navigation) | declared only | `src/0_types.ts:335` |
 | `cell.edit`<br>Change a value in place | Correcting one field means leaving the grid for a separate form. | no | [yes (mit)](https://mui.com/x/react-data-grid/editing/) | no, by decision |  |
 | `cell.span`<br>Let one cell cover its neighbours across rows or columns | A value repeated down a run restates itself on every row and hides the run's boundary. | yes | [yes (mit)](https://mui.com/x/react-data-grid/column-spanning/) | yes | `src/8_grid.ts:452` |
@@ -91,7 +91,7 @@ TanStack's 17 feature directories map onto 20 feature ids. Every directory is ma
 | `view.scroll`<br>Treat scroll position as state the kernel can read and write | Nothing can be scrolled into view on demand, so a found row may be off screen. | no | [yes (mit)](https://mui.com/x/react-data-grid/scrolling/) | yes | `src/3_paths.ts:210` |
 | `view.density`<br>Switch row height between preset scales | Dense review and comfortable reading need two differently configured grids. | no | [yes (mit)](https://mui.com/x/react-data-grid/accessibility/#density) | declared only | `src/8_grid.ts:100` |
 | `view.list`<br>Collapse the column axis to one cell per row for narrow screens | A small viewport gets a table that can only be read by scrolling sideways. | no | [yes (pro)](https://mui.com/x/react-data-grid/list-view/) | yes | `src/8_grid.ts:422` |
-| `view.slots`<br>Replace any rendered part without forking the grid | Custom rendering means patching the library or wrapping every cell from outside. | no | [yes (mit)](https://mui.com/x/react-data-grid/components/#component-slots) | declared only | `src/0_types.ts:189` |
+| `view.slots`<br>Replace any rendered part without forking the grid | Custom rendering means patching the library or wrapping every cell from outside. | no | [yes (mit)](https://mui.com/x/react-data-grid/components/#component-slots) | yes | `src/13_composite.ts:55` |
 | `view.a11y`<br>Carry grid roles and aria state on every rendered part | A screen reader announces a pile of divs with no row, column, or selection state. | no | [yes (mit)](https://mui.com/x/react-data-grid/accessibility/) | no |  |
 | `view.i18n`<br>Serve every visible string from a replaceable table | The grid speaks English inside an application that does not. | no | [yes (mit)](https://mui.com/x/react-data-grid/localization/) | no |  |
 | `view.theme`<br>Drive every dimension and colour from CSS custom properties | Restyling means overriding generated class names and racing the library's own cascade. | no | [partial (mit)](https://mui.com/x/react-data-grid/style/) | yes | `src/3_paths.ts:361` |
@@ -127,7 +127,6 @@ A competitor ships it, this package neither implements it nor rules it out.
 
 | feature | TanStack v9 | MUI X |
 | --- | --- | --- |
-| `col.autosize` | no | [yes (mit)](https://mui.com/x/react-data-grid/column-dimensions/#autosizing) |
 | `cell.clipboard` | no | [yes (premium)](https://mui.com/x/react-data-grid/clipboard/) |
 | `view.virtualize.col` | no | [yes (mit)](https://mui.com/x/react-data-grid/virtualization/#column-virtualization) |
 | `view.a11y` | no | [yes (mit)](https://mui.com/x/react-data-grid/accessibility/) |

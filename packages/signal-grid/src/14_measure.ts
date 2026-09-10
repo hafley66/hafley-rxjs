@@ -9,6 +9,7 @@
 import { Observable, Subject } from "rxjs"
 import type { Sizer } from "./4_slice.js"
 
+/** Measures rendered extents, with no kernel stage reading them yet. @feature-declared col.autosize */
 export type MeasureDirection = "vertical" | "horizontal"
 
 export interface MeasureStore {

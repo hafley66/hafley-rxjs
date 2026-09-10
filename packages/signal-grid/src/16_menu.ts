@@ -24,6 +24,7 @@ const MENU_TYPES: ReadonlySet<GridIntent["type"]> = new Set([
 ])
 
 /** True for exactly the three contextmenu intents, so a consumer filters `g.intent$` in one call. */
+/** A context menu anchored to the cell it was raised on. @feature-declared view.slots */
 export const isMenuIntent = (
   intent: GridIntent,
 ): intent is Extract<GridIntent, { type: "cell.contextmenu" | "row.contextmenu" | "header.contextmenu" }> =>

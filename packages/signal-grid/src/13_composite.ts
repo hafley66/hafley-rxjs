@@ -51,6 +51,7 @@ export const isComposite = <TRow>(col: ColumnDef<TRow>): col is CompositeColumnD
   Array.isArray((col as { composite?: unknown }).composite)
 
 /** Resolved parts. With `columns`, parts naming a column the schema dropped are dropped too. */
+/** A cell stacks several columns as primary, secondary and tertiary parts. @feature view.slots */
 export function compositeParts<TRow>(
   def: ColumnDef<TRow>,
   columns?: ColumnSource<TRow>,

@@ -1,5 +1,6 @@
 // Changing a grid track triggers one full layout, so the cost of a resize is how often the track
 // list is written, not how it is built. No width is computed here.
+// @no-features: writes the custom properties the theme reads; the features that decide those numbers are tagged in 8_grid.ts and 4_slice.ts
 import { Signal } from "@hafley66/signals"
 import type { ColumnDef, Side } from "./0_types.js"
 import { rowHeightVar } from "./3_paths.js"

@@ -2,21 +2,17 @@
   "schema": 1,
   "generatedBy": "packages/signal-grid/scripts/parity.mjs",
   "features": 47,
-  "implemented": 21,
+  "implemented": 22,
   "declaredOnly": 9,
-  "tags": 43,
+  "tags": 47,
   "modules": 17,
-  "untagged": [
-    "10_render.ts",
-    "12_transpose.ts",
-    "13_composite.ts",
-    "14_measure.ts",
-    "15_selection.ts",
-    "16_menu.ts",
-    "6_gestures.ts",
-    "9_css.ts"
-  ],
-  "optedOut": {},
+  "untagged": [],
+  "optedOut": {
+    "10_render.ts": "the DOM pass. It renders what the view signals already decided, and each of those is tagged at its own stage",
+    "12_transpose.ts": "the seat table both axes cross through; cell.span and view.list are tagged where the view exposes them",
+    "6_gestures.ts": "a pointer lifetime, shared by resize, move and range drag; every feature that uses it is tagged where it is implemented",
+    "9_css.ts": "writes the custom properties the theme reads; the features that decide those numbers are tagged in 8_grid.ts and 4_slice.ts"
+  },
   "unread": [
     {
       "id": "col.formula",
@@ -29,6 +25,12 @@
       "declaration": "detailOnCellClick",
       "file": "src/11_detail.ts",
       "line": 169
+    },
+    {
+      "id": "view.slots",
+      "declaration": "compositeParts",
+      "file": "src/13_composite.ts",
+      "line": 55
     },
     {
       "id": "row.select",
@@ -62,11 +64,11 @@
     }
   ],
   "decidedOut": 8,
-  "undecided": 9,
+  "undecided": 8,
   "tanstack": 20,
   "mui": {
     "yes": 45,
     "partial": 1
   },
-  "ok": false
+  "ok": true
 }

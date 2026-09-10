@@ -1,5 +1,6 @@
 // Resize, column move, and row move are one gesture with three hit tests. Not signals: a drag is
 // `takeUntil` over a live pointer stream, a lifetime bounded by two events.
+// @no-features: a pointer lifetime, shared by resize, move and range drag; every feature that uses it is tagged where it is implemented
 import { defer, filter, fromEvent, map, merge, Observable, share, switchMap, take, takeUntil } from "rxjs"
 
 /** The two streams a drag listens to between down and up. Separate so a test can feed Subjects. */
