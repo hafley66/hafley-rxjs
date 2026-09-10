@@ -30,6 +30,10 @@ import { rowReorder } from "./21_row_reorder.js"
 import { rowHeight } from "./22_row_height.js"
 import { density } from "./23_density.js"
 import { scrollPosition } from "./24_scroll_position.js"
+import { tallRelation } from "./25_tall_relation.js"
+import { deepTree } from "./26_deep_tree.js"
+import { sortChurn } from "./27_sort_churn.js"
+import { wideSchema } from "./28_wide_schema.js"
 
 export type { Example, ExampleCheck } from "./0_types.js"
 export { VIDEOS, videoById, type Recording } from "./videos.js"
@@ -59,6 +63,10 @@ export const EXAMPLES: readonly Example[] = [
   theming,
   density,
   scrollPosition,
+  tallRelation,
+  deepTree,
+  sortChurn,
+  wideSchema,
 ]
 
 export const byId = (id: string): Example | undefined =>
