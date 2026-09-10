@@ -38,13 +38,13 @@ flowchart LR
 
 | what | receipt |
 | --- | --- |
-| One flatten serves tree rows and header groups. `flattenAxis` is called with the real `expanded` predicate for rows and with `() => true` for columns. | `src/8_grid.ts:328` and `src/8_grid.ts:371` |
+| One flatten serves tree rows and header groups. `flattenAxis` is called with the real `expanded` predicate for rows and with `() => true` for columns. | `src/8_grid.ts:327` and `src/8_grid.ts:370` |
 | One partition serves row pinning and column pinning. `Side` is `start`, `center`, `end` on both. | `partition` at `src/4_slice.ts:23`; the matrix credits `row.pin` and `col.pin` to the same line, `docs/1_parity.md` |
 | A flat list and a tree run the same path, because a flat grid is the case where every key is a root. | `axisOfEntries` `src/1_axis.ts:50`, `axisOfTree` `src/1_axis.ts:90` |
 | A cyclic parent map does not throw. A node standing on a cycle becomes a root. | `src/1_axis.ts:50`, and `src/1_axis.test.ts` covers cycles among its 38 cases |
 | Identity by reference is the skip condition. `filterAxis` returns its input when nothing was dropped, so downstream stages skip on `===`. | `src/1_axis.ts:225`; the same convention in `collapseToOneEntry`, `src/12_transpose.ts:88` |
-| A no-write read of the derived list costs 0.000131 ms against 0.000459 ms for `getRowModel`. | `bench/README.md:250` |
-| Expanding a 124,800-node tree at 10 percent open costs 0.162 ms against 0.594 ms. | `bench/README.md:248` |
+| A no-write read of the derived list costs 0.000137 ms against 0.000454 ms for `getRowModel`. | `bench/README.md:256` |
+| Expanding a 124,800-node tree at 10 percent open costs 0.214 ms against 0.651 ms. | `bench/README.md:254` |
 
 ## 3. The transpose, which is the payoff
 
@@ -70,10 +70,10 @@ rendering mode.
 | cost | receipt |
 | --- | --- |
 | No per-row and per-column handles. A key-and-map container answers with `ReadonlyMap` lookups where MUI and TanStack hand back `Row.getIsSelected()` and `Column.getCanPin()`. | `docs/3_competitors.md`, section 1, closing paragraph |
-| Grouping is slower. `groupAxis` rebuilds the forest above the data edges so a unit travels with its own subtree, and pays 42.7 ms against 34.3 ms at 100k rows, 1.24x. | `bench/README.md:252`, reason at `:221` |
-| `axisOfEntries(entries, parentOf)` is quadratic on a path-shaped relation: 500 nodes 6.3 ms, 4000 nodes 445 ms, 4.1x per doubling. A flat relation and `axisOfTree` never reach that walk. | `bench/README.md:391` |
+| Grouping is slower. `groupAxis` rebuilds the forest above the data edges so a unit travels with its own subtree, and pays 45.0 ms against 32.9 ms at 100k rows, 1.37x. | `bench/README.md:258`, reason at `:222` |
+| `axisOfEntries(entries, parentOf)` is quadratic on a path-shaped relation: 500 nodes 8.4 ms, 4000 nodes 417.0 ms, 3.3x to 4.2x per doubling. A flat relation and `axisOfTree` never reach that walk. | `bench/README.md:338` |
 | Two vocabularies meet at one file, and a `ColumnDef.span` returning `{ rows, cols }` has to be crossed into neutral counts. | `neutralSpan`, `src/12_transpose.ts:127` |
-| `renderPlan` is O(total rows) per scroll tick, virtualized or not: 1.91 ms at 100k with a uniform sizer. | `bench/README.md:443` |
+| `renderPlan` is O(total rows) per scroll tick, virtualized or not: 1.93 ms at 100k with a uniform sizer. | `bench/README.md:390` |
 
 ## 5. Three alternatives, rejected
 
@@ -95,12 +95,10 @@ is deleted (`docs/5_tests.md:246`). `trackList` (`src/4_slice.ts:247`) emits one
 `view.widths` now reports declared widths and says so in its own comment (`src/8_grid.ts:426`).
 
 The measured reason to keep width arithmetic out of the reactive chain, from this repo's own
-benchmark: a resize drag writes `state.colWidth` once per pointermove, and each write cost 0.74 ms
-at 1k rows and 165 ms at 100k rows with nothing subscribed, 0.88 ms and 203 ms with `view.plan`
-subscribed (`bench/README.md:318`). A 1000-write drag at 100k rows extrapolates to 165 seconds
-(`bench/README.md:325`). Two causes, both in `@hafley66/signals` and neither in this package
-(`bench/README.md:339`); the fix took one `colWidth` write at 50,000 rows from 76 ms to 0.0 ms
-(`.changeset/signals-distinct.md:7`, held by `packages/signals/src/4_assumptions.test.ts:19`).
+benchmark: a resize drag writes `state.colWidth` once per pointermove, and each write used to
+re-sort the whole row pipeline. The fix landed and one `colWidth` write at 100,000 rows now costs
+0.0126 ms (`bench/README.md:238`). Two causes, both in `@hafley66/signals` and neither in this
+package (`.changeset/signals-distinct.md:7`, held by `packages/signals/src/4_assumptions.test.ts:19`).
 
 Cost of the trade: nothing in the package can know what a flex column ends up occupying without
 measuring the DOM, so a caller wanting the painted width reads the element (`src/8_grid.ts:426`).
@@ -154,11 +152,11 @@ demonstrating it.
 
 ```sh
 cd packages/signal-grid
-npx vitest run                              # 418 tests, 16 files, 0 failed
+npx vitest run                              # 465 tests, 17 files, 0 failed
 npx vitest run -c vitest.e2e.config.ts      # 15 tests, 2 files, 0 failed
 node scripts/parity.mjs                     # 47 features, 43 tags, signal-grid 21
 grep -rnE "if *\(.*orientation|orientation *===|orientation *!==" src/   # no output, exit 1
 ```
 
 Numbers on this page were produced by those four commands on 2026-09-10, plus `bench/README.md`,
-which records its own machine at `bench/README.md:71` and its method at `:54`.
+which records its own machine at `bench/README.md:70` and its method at `:53`.

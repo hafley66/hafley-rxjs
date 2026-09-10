@@ -17,7 +17,6 @@ places signal-grid loses.
 | [where TanStack wins](#where-tanstack-wins) | the two losses, with the reason for each |
 | [reading the incremental rows](#reading-the-incremental-rows) | why the two sides are not doing equal work |
 | [reactive derivation](#reactive-derivation) | which write reaches which memo |
-| [the defect this run found](#the-defect-this-run-found) | a resize gesture recomputes the row pipeline |
 | [allocation](#allocation) | retained bytes per row after a forced gc |
 | [complexity claims checked](#complexity-claims-checked-against-the-numbers) | where a comment understates |
 | [known gaps](#known-gaps) | what is not measured |
@@ -46,9 +45,9 @@ p99 but no p95, and vitest 4.1.10 drops `benchmark.includeSamples` on the way to
 
 One consequence, stated up front: `4_report.ts` runs all three case lists in a single process, so
 every measurement carries the GC pressure of roughly a gigabyte of live fixtures. `vitest bench`
-isolates per file and reads faster on identical cases: `vitest bench` reported a 113.5 ms mean and a
-100.3 ms minimum for `sortAxis 1 key 100000`, and the same case in the kernel table has a 125.6 ms
-median and a 117.8 ms minimum. Ratios between two rows of one table are sound; the absolute numbers
+isolates per file and reads faster on identical cases: `vitest bench` reported a 190.3 ms mean and a
+121.6 ms minimum for `sortAxis 1 key 100000`, and the same case in the kernel table has a 139.9 ms
+median and a 127.8 ms minimum. Ratios between two rows of one table are sound; the absolute numbers
 are the pessimistic end.
 
 ## method
@@ -73,7 +72,11 @@ are the pessimistic end.
 - node v24.15.0, darwin arm64
 - 12 x Apple M2 Pro
 - 16 GiB RAM
+- commit df52c00
 - run 2026-09-10
+
+Every table in this file was measured on the machine and commit above, in one run of
+`bench/4_report.ts`.
 
 ## data
 
@@ -90,75 +93,75 @@ are the pessimistic end.
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| axisOf 1000 | 18,848 | 0.05192 | 0.06029 | 0.04867 | 200 | build the forest for 1000 flat rows: 2 passes, 4 maps, no parent edges |
-| axisOf 10000 | 1,485 | 0.64587 | 0.75004 | 0.60792 | 60 | build the forest for 10000 flat rows: 2 passes, 4 maps, no parent edges |
-| axisOf 100000 | 131 | 7.164 | 9.747 | 6.934 | 20 | build the forest for 100000 flat rows: 2 passes, 4 maps, no parent edges |
-| axisOf 1000000 | 4.81 | 204.0 | 219.7 | 199.3 | 7 | build the forest for 1000000 flat rows: 2 passes, 4 maps, no parent edges |
+| axisOf 1000 | 16,709 | 0.05800 | 0.06508 | 0.05488 | 200 | build the forest for 1000 flat rows: 2 passes, 4 maps, no parent edges |
+| axisOf 10000 | 1,293 | 0.69137 | 0.83092 | 0.64375 | 60 | build the forest for 10000 flat rows: 2 passes, 4 maps, no parent edges |
+| axisOf 100000 | 118 | 7.706 | 10.913 | 7.248 | 20 | build the forest for 100000 flat rows: 2 passes, 4 maps, no parent edges |
+| axisOf 1000000 | 3.30 | 253.9 | 577.9 | 241.0 | 7 | build the forest for 1000000 flat rows: 2 passes, 4 maps, no parent edges |
 
 ### axisOf, one chain of depth n
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| axisOf chain 500 | 168 | 6.276 | 6.444 | 5.237 | 5 | 500 nodes where every node's parent is the node before it |
-| axisOf chain 1000 | 39 | 25.703 | 26.354 | 25.351 | 5 | 1000 nodes where every node's parent is the node before it |
-| axisOf chain 2000 | 9.16 | 109.2 | 109.7 | 108.5 | 5 | 2000 nodes where every node's parent is the node before it |
-| axisOf chain 4000 | 2.25 | 445.1 | 448.6 | 438.7 | 5 | 4000 nodes where every node's parent is the node before it |
+| axisOf chain 500 | 127 | 8.385 | 8.552 | 7.039 | 5 | 500 nodes where every node's parent is the node before it |
+| axisOf chain 1000 | 35 | 27.758 | 33.035 | 27.442 | 5 | 1000 nodes where every node's parent is the node before it |
+| axisOf chain 2000 | 8.67 | 115.2 | 116.5 | 114.3 | 5 | 2000 nodes where every node's parent is the node before it |
+| axisOf chain 4000 | 2.40 | 417.0 | 423.7 | 414.0 | 5 | 4000 nodes where every node's parent is the node before it |
 
 ### sortAxis, one key
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| sortAxis 1 key 1000 | 1,891 | 0.52254 | 0.55000 | 0.50092 | 200 | re-sort 1000 roots on a numeric key, seats + Map.get per comparison |
-| sortAxis 1 key 10000 | 139 | 7.093 | 7.905 | 6.844 | 60 | re-sort 10000 roots on a numeric key, seats + Map.get per comparison |
-| sortAxis 1 key 100000 | 7.76 | 125.6 | 145.0 | 117.8 | 20 | re-sort 100000 roots on a numeric key, seats + Map.get per comparison |
-| sortAxis 1 key 1000000 | 0.27 | 3663.2 | 3803.6 | 3560.6 | 7 | re-sort 1000000 roots on a numeric key, seats + Map.get per comparison |
+| sortAxis 1 key 1000 | 1,725 | 0.55517 | 0.66125 | 0.52621 | 200 | re-sort 1000 roots on a numeric key, seats + Map.get per comparison |
+| sortAxis 1 key 10000 | 134 | 7.333 | 8.222 | 7.099 | 60 | re-sort 10000 roots on a numeric key, seats + Map.get per comparison |
+| sortAxis 1 key 100000 | 7.01 | 139.9 | 155.4 | 127.8 | 20 | re-sort 100000 roots on a numeric key, seats + Map.get per comparison |
+| sortAxis 1 key 1000000 | 0.23 | 4299.4 | 4791.4 | 3924.6 | 7 | re-sort 1000000 roots on a numeric key, seats + Map.get per comparison |
 
 ### sortAxis, three keys
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| sortAxis 3 keys 1000 | 1,095 | 0.89204 | 0.93625 | 0.86371 | 200 | same 1000 roots, comparator falls through string, number, string |
-| sortAxis 3 keys 10000 | 79 | 12.425 | 13.554 | 11.974 | 60 | same 10000 roots, comparator falls through string, number, string |
-| sortAxis 3 keys 100000 | 4.91 | 201.7 | 217.2 | 191.5 | 20 | same 100000 roots, comparator falls through string, number, string |
-| sortAxis 3 keys 1000000 | 0.20 | 4789.9 | 5365.5 | 4749.7 | 7 | same 1000000 roots, comparator falls through string, number, string |
+| sortAxis 3 keys 1000 | 1,037 | 0.94183 | 1.019 | 0.88804 | 200 | same 1000 roots, comparator falls through string, number, string |
+| sortAxis 3 keys 10000 | 73 | 13.399 | 14.636 | 12.600 | 60 | same 10000 roots, comparator falls through string, number, string |
+| sortAxis 3 keys 100000 | 4.35 | 226.5 | 248.1 | 205.9 | 20 | same 100000 roots, comparator falls through string, number, string |
+| sortAxis 3 keys 1000000 | 0.16 | 6099.6 | 7402.6 | 5596.9 | 7 | same 1000000 roots, comparator falls through string, number, string |
 
 ### groupAxis, one level
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| groupAxis dept 1000 | 3,487 | 0.26075 | 0.33346 | 0.24954 | 200 | 1000 rows into 8 dept groups, forest rebuilt above the data edges |
-| groupAxis dept 10000 | 299 | 3.154 | 4.706 | 2.984 | 60 | 10000 rows into 8 dept groups, forest rebuilt above the data edges |
-| groupAxis dept 100000 | 24 | 40.880 | 45.705 | 34.991 | 20 | 100000 rows into 8 dept groups, forest rebuilt above the data edges |
+| groupAxis dept 1000 | 2,892 | 0.28458 | 0.49846 | 0.25500 | 200 | 1000 rows into 8 dept groups, forest rebuilt above the data edges |
+| groupAxis dept 10000 | 251 | 3.244 | 6.585 | 3.000 | 60 | 10000 rows into 8 dept groups, forest rebuilt above the data edges |
+| groupAxis dept 100000 | 14 | 42.193 | 58.453 | 33.903 | 20 | 100000 rows into 8 dept groups, forest rebuilt above the data edges |
 
 ### groupAxis, two levels
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| groupAxis dept+tier 1000 | 2,064 | 0.47375 | 0.50133 | 0.45675 | 200 | 1000 rows into 8 x 4 groups, two JSON group keys minted per row |
-| groupAxis dept+tier 10000 | 178 | 5.317 | 7.524 | 4.998 | 60 | 10000 rows into 8 x 4 groups, two JSON group keys minted per row |
-| groupAxis dept+tier 100000 | 16 | 61.702 | 70.516 | 57.533 | 20 | 100000 rows into 8 x 4 groups, two JSON group keys minted per row |
+| groupAxis dept+tier 1000 | 1,958 | 0.49188 | 0.52554 | 0.46621 | 200 | 1000 rows into 8 x 4 groups, two JSON group keys minted per row |
+| groupAxis dept+tier 10000 | 179 | 5.361 | 7.776 | 5.080 | 60 | 10000 rows into 8 x 4 groups, two JSON group keys minted per row |
+| groupAxis dept+tier 100000 | 17 | 58.405 | 66.375 | 55.231 | 20 | 100000 rows into 8 x 4 groups, two JSON group keys minted per row |
 
 ### flattenAxis, tree
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| flattenAxis all open, 124800 nodes | 51 | 17.668 | 24.452 | 16.090 | 20 | emit every node of a 124800-node, depth-4 forest |
-| flattenAxis 10% open, 124800 nodes | 5,256 | 0.15142 | 0.25583 | 0.14179 | 200 | same forest, 2480 of 24800 internal nodes open |
+| flattenAxis all open, 124800 nodes | 46 | 19.820 | 27.869 | 17.218 | 20 | emit every node of a 124800-node, depth-4 forest |
+| flattenAxis 10% open, 124800 nodes | 3,888 | 0.20692 | 0.41971 | 0.18379 | 200 | same forest, 2480 of 24800 internal nodes open |
 
 ### renderPlan, end to end
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| renderPlan uniform 100000 | 463 | 1.911 | 4.373 | 1.771 | 40 | partition + paginate + window over 100000 keys, O(1) sizer |
-| renderPlan measured 100000 | 260 | 3.416 | 6.352 | 3.253 | 40 | same plan, sizer builds a 100001-entry prefix array every call |
+| renderPlan uniform 100000 | 478 | 1.925 | 3.783 | 1.790 | 40 | partition + paginate + window over 100000 keys, O(1) sizer |
+| renderPlan measured 100000 | 272 | 3.480 | 5.670 | 3.297 | 40 | same plan, sizer builds a 100001-entry prefix array every call |
 
 ### windowOf, 1M rows
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| windowOf measuredSizer 1M | 2,503,113 | 3.83e-4 | 5.01e-4 | 3.29e-4 | 200x500 | two binary searches over a 1,000,001-entry prefix array, random scroll offset |
-| windowOf uniformSizer 1M | 32,641,944 | 2.87e-5 | 3.53e-5 | 2.65e-5 | 200x500 | the same window through two divisions, the uniform-sizer control |
-| measuredSizer construction 1M | 56 | 17.562 | 20.660 | 17.397 | 10 | the one-time O(n) prefix pass that the binary search reads |
+| windowOf measuredSizer 1M | 2,690,004 | 3.56e-4 | 4.69e-4 | 3.35e-4 | 200x500 | two binary searches over a 1,000,001-entry prefix array, random scroll offset |
+| windowOf uniformSizer 1M | 33,838,188 | 2.89e-5 | 3.03e-5 | 2.82e-5 | 200x500 | the same window through two divisions, the uniform-sizer control |
+| measuredSizer construction 1M | 52 | 18.732 | 22.563 | 18.372 | 10 | the one-time O(n) prefix pass that the binary search reads |
 
 
 ## head to head with @tanstack/table-core 9.1.0
@@ -167,43 +170,43 @@ are the pessimistic end.
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| ours: sortAxis | 5.70 | 167.0 | 216.3 | 150.4 | 20 | sort 100k RowIds, seat index for stability, Map.get per value read |
-| tanstack: getSortedRowModel | 4.82 | 193.9 | 253.6 | 176.2 | 20 | sort 100k Row instances, row.index for stability, values already cached |
+| ours: sortAxis | 6.14 | 161.5 | 181.6 | 144.6 | 20 | sort 100k RowIds, seat index for stability, Map.get per value read |
+| tanstack: getSortedRowModel | 5.13 | 188.6 | 231.0 | 166.8 | 20 | sort 100k Row instances, row.index for stability, values already cached |
 
 ### group 100k, one level on dept
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| ours: groupAxis | 24 | 42.669 | 45.812 | 35.094 | 20 | 8 synthetic group keys, forest rebuilt, 100k rows re-parented |
-| tanstack: getGroupedRowModel | 27 | 34.343 | 44.953 | 31.246 | 20 | 8 group Rows constructed, 100k leaf rows distributed into subRows |
+| ours: groupAxis | 23 | 44.997 | 49.422 | 35.331 | 20 | 8 synthetic group keys, forest rebuilt, 100k rows re-parented |
+| tanstack: getGroupedRowModel | 29 | 32.940 | 44.406 | 27.759 | 20 | 8 group Rows constructed, 100k leaf rows distributed into subRows |
 
 ### expand 124800-node tree, 10% of internal nodes open
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| ours: flattenAxis | 6,161 | 0.16163 | 0.17554 | 0.14942 | 100 | walk the open frontier, allocate one FlatNode per visible row |
-| tanstack: getExpandedRowModel | 1,573 | 0.59400 | 0.62967 | 0.57954 | 100 | same frontier, push existing Row references into a new array |
+| ours: flattenAxis | 3,269 | 0.21429 | 0.74042 | 0.17408 | 100 | walk the open frontier, allocate one FlatNode per visible row |
+| tanstack: getExpandedRowModel | 1,248 | 0.65054 | 0.78067 | 0.61646 | 100 | same frontier, push existing Row references into a new array |
 
 ### incremental, change the sort key and re-derive
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| ours: state.sort write + view.flat read | 5.68 | 173.1 | 219.3 | 161.0 | 15 | sortAxis over 100k plus flattenAxis allocating 100k FlatNodes |
-| tanstack: sorting set + getRowModel | 5.06 | 195.8 | 248.3 | 185.4 | 15 | sorted stage reruns over 100k Rows, expanded and paginated stages hit cache |
+| ours: state.sort write + view.flat read | 4.44 | 218.1 | 358.7 | 164.0 | 15 | sortAxis over 100k plus flattenAxis allocating 100k FlatNodes |
+| tanstack: sorting set + getRowModel | 4.35 | 227.9 | 355.9 | 179.5 | 15 | sorted stage reruns over 100k Rows, expanded and paginated stages hit cache |
 
 ### incremental, change a key the row pipeline does not read
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| ours: state.colWidth write + view.flat read | 4.74 | 190.1 | 397.0 | 168.0 | 15 | one column width changes, then the flat row list is read back |
-| tanstack: columnSizing set + getRowModel | 632,853 | 0.00145 | 0.00317 | 9.83e-4 | 15x20 | same edit, no row-model memo dep moved, so every stage answers from cache |
+| ours: state.colWidth write + view.flat read | 54,298 | 0.01258 | 0.06542 | 0.00804 | 15 | one column width changes, then the flat row list is read back |
+| tanstack: columnSizing set + getRowModel | 502,196 | 0.00181 | 0.00446 | 8.87e-4 | 15x20 | same edit, no row-model memo dep moved, so every stage answers from cache |
 
 ### incremental, no write, read the derived list
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| ours: view.flat read | 5,184,200 | 1.31e-4 | 3.81e-4 | 9.75e-5 | 200x200 | a clean memo answers from its stored value |
-| tanstack: getRowModel | 2,115,371 | 4.59e-4 | 5.66e-4 | 4.28e-4 | 200x200 | the dep tuple is unchanged at every stage, so the cached model is returned |
+| ours: view.flat read | 7,173,291 | 1.37e-4 | 1.74e-4 | 8.73e-5 | 200x200 | a clean memo answers from its stored value |
+| tanstack: getRowModel | 2,109,139 | 4.54e-4 | 5.65e-4 | 4.27e-4 | 200x200 | the dep tuple is unchanged at every stage, so the cached model is returned |
 
 
 ### not compared, and why
@@ -218,7 +221,7 @@ Two rows in the head to head go against signal-grid.
 
 ### grouping 100k rows on one key
 
-TanStack is 1.24x faster: 34.3 ms against 42.7 ms at the median. `groupAxis` makes three full passes
+TanStack is 1.37x faster: 32.9 ms against 45.0 ms at the median. `groupAxis` makes three full passes
 over the axis before it places a single row. One collects the units, one copies `by` while dropping
 old group keys, one copies `parent` and `children` while dropping group edges. Then it walks the
 units and calls `JSON.stringify` on the path once per row per level to mint the group key.
@@ -227,15 +230,18 @@ instances and leaves the leaf rows alone. It never stringifies and it never rebu
 
 The difference is bought, not lost. `groupAxis` is total over tree data and idempotent, so a unit
 travels with its own subtree and the forest above it has to be rebuilt; TanStack's grouped model
-does not carry that property. The price of the guarantee is about 8 ms per 100k rows here. The
+does not carry that property. The price of the guarantee is about 12 ms per 100k rows here. The
 cheapest way to get most of it back without giving the guarantee up is to replace `groupKeyOf`'s
 `JSON.stringify` with a delimiter join over the level values, which is the same 8-group key space
 without a JSON encoder in the inner loop.
 
 ### changing a state key the row pipeline does not read
 
-TanStack is 131,000x faster: 0.00145 ms against 190.1 ms. It is the most important row in the file
-and the next section is about it.
+TanStack is 6.95x faster: 0.00181 ms against 0.01258 ms at the median. The write lands in
+`state.colWidth`, which no stage of the row pipeline reads, so the only work is the memo bookkeeping
+that still runs on every state write. This row used to be the headline: before the
+`distinctUntilChanged` fix described in `.changeset/signals-distinct.md`, one width write re-sorted
+100k rows and cost 190.1 ms. The fix landed and the write now costs 0.01258 ms.
 
 ### everything else
 
@@ -244,12 +250,12 @@ table, losses included:
 
 | operation | signal-grid median | table-core median | ratio |
 | --- | ---: | ---: | ---: |
-| sort 100k, one numeric key | 167.0 ms | 193.9 ms | 1.16x ours |
-| expand a 124,800-node tree, 10 percent open | 0.162 ms | 0.594 ms | 3.67x ours |
-| change the sort key and re-derive | 173.1 ms | 195.8 ms | 1.13x ours |
-| no write, read the derived list | 0.000131 ms | 0.000459 ms | 3.5x ours |
-| change a width and re-derive | 190.1 ms | 0.00145 ms | 131,000x theirs |
-| group 100k on one key | 42.7 ms | 34.3 ms | 1.24x theirs |
+| sort 100k, one numeric key | 161.5 ms | 188.6 ms | 1.17x ours |
+| expand a 124,800-node tree, 10 percent open | 0.214 ms | 0.651 ms | 3.04x ours |
+| change the sort key and re-derive | 218.1 ms | 227.9 ms | 1.04x ours |
+| no write, read the derived list | 0.000137 ms | 0.000454 ms | 3.31x ours |
+| change a width and re-derive | 0.0126 ms | 0.00181 ms | 6.95x theirs |
+| group 100k on one key | 45.0 ms | 32.9 ms | 1.37x theirs |
 
 Retained memory is the other margin: `axisOf` over 100k rows holds 46 bytes per row on top of the
 caller's own objects, against 786 bytes per row for `constructTable` plus its core row model, a 17x
@@ -261,12 +267,12 @@ same six rows as `vitest bench` reports them, per-file isolated rather than one 
 
 | operation | vitest bench ratio | `4_report.ts` ratio |
 | --- | --- | --- |
-| sort 100k, one numeric key | 1.56x ours | 1.16x ours |
-| expand a 124,800-node tree, 10 percent open | 4.06x ours | 3.67x ours |
-| change the sort key and re-derive | 1.24x ours | 1.13x ours |
-| no write, read the derived list | 3.84x ours | 3.5x ours |
-| change a width and re-derive | 367,046x theirs | 131,000x theirs |
-| group 100k on one key | 1.17x theirs | 1.24x theirs |
+| sort 100k, one numeric key | 1.72x ours | 1.17x ours |
+| expand a 124,800-node tree, 10 percent open | 3.69x ours | 3.04x ours |
+| change the sort key and re-derive | 1.42x ours | 1.04x ours |
+| no write, read the derived list | 3.55x ours | 3.31x ours |
+| change a width and re-derive | 7.15x theirs | 6.95x theirs |
+| group 100k on one key | 1.20x theirs | 1.37x theirs |
 
 ## reading the incremental rows
 
@@ -288,80 +294,21 @@ itself: one dirty flag against a dependency-tuple comparison at every stage of a
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| read view.flat, no write (1k rows) | 9,383,993 | 1.04e-4 | 1.38e-4 | 8.81e-5 | 200x200 | the clean-memo floor: one dirty check and a stored array |
-| state.sort write then view.flat read (1k rows) | 1,188 | 0.80429 | 0.92129 | 0.76512 | 60 | sortAxis plus flattenAxis, the work a sort change owes |
-| state.colWidth write then view.flat read (1k rows) | 1,207 | 0.80975 | 0.90729 | 0.75129 | 60 | a write no row-pipeline stage reads, then the flat list is read back |
-| 1000 sequential colWidth writes, nothing subscribed (1k rows) | 1.35 | 742.8 | 746.3 | 723.7 | 5 | 1000 pointermove-sized writes with no read between them |
-| 1000 sequential colWidth writes, view.plan subscribed (1k rows) | 1.13 | 878.0 | 905.0 | 867.3 | 5 | the same burst on a grid that is rendering, so every stage has an observer |
+| read view.flat, no write (1k rows) | 9,219,150 | 1.06e-4 | 1.29e-4 | 9.27e-5 | 200x200 | the clean-memo floor: one dirty check and a stored array |
+| state.sort write then view.flat read (1k rows) | 1,206 | 0.80463 | 0.88608 | 0.75367 | 60 | sortAxis plus flattenAxis, the work a sort change owes |
+| state.colWidth write then view.flat read (1k rows) | 144,825 | 0.00617 | 0.00846 | 0.00596 | 60 | a write no row-pipeline stage reads, then the flat list is read back |
+| 1000 sequential colWidth writes, nothing subscribed (1k rows) | 296 | 3.268 | 4.029 | 3.110 | 5 | 1000 pointermove-sized writes with no read between them |
+| 1000 sequential colWidth writes, view.plan subscribed (1k rows) | 285 | 3.374 | 4.198 | 3.164 | 5 | the same burst on a grid that is rendering, so every stage has an observer |
 
 ### reactive, 100k rows
 
 | benchmark | ops/s | median ms | p95 ms | min ms | n | what the number means |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| read view.flat, no write (100k rows) | 10,790,705 | 9.15e-5 | 9.88e-5 | 8.79e-5 | 200x200 | the clean-memo floor: one dirty check and a stored array |
-| state.sort write then view.flat read (100k rows) | 5.49 | 182.0 | 198.0 | 171.0 | 12 | sortAxis plus flattenAxis, the work a sort change owes |
-| state.colWidth write then view.flat read (100k rows) | 5.71 | 174.7 | 184.8 | 165.0 | 12 | a write no row-pipeline stage reads, then the flat list is read back |
-| 20 sequential colWidth writes, nothing subscribed (100k rows) | 0.30 | 3291.6 | 3530.4 | 3265.5 | 5 | 20 pointermove-sized writes with no read between them |
-| 20 sequential colWidth writes, view.plan subscribed (100k rows) | 0.24 | 4063.5 | 4829.7 | 4020.6 | 5 | the same burst on a grid that is rendering, so every stage has an observer |
-
-## the defect this run found
-
-`state.colWidth` is read by `view.widths` and by no stage of the row pipeline. A dependency-scoped
-memo should therefore answer `view.flat` from cache after a width change. It does not, and the two
-rows are the same number at both sizes:
-
-| size | sort write, then read `view.flat` | colWidth write, then read `view.flat` |
-| --- | ---: | ---: |
-| 1k rows | 0.804 ms | 0.810 ms |
-| 100k rows | 182.0 ms | 174.7 ms |
-
-Per write during a resize drag, which is one write per pointermove:
-
-| size | nothing subscribed | `view.plan` subscribed |
-| --- | ---: | ---: |
-| 1k rows | 0.74 ms | 0.88 ms |
-| 100k rows | 165 ms | 203 ms |
-
-The 100k figures are 20 writes measured and divided. A 1000-write drag extrapolates to 165 and
-203 seconds; the burst case is capped at 20 writes at that size because the full gesture does not
-finish inside a benchmark.
-
-The mechanism, measured directly rather than inferred:
-
-| observation | result |
-| --- | --- |
-| repeated `view.flat.$()` with no write | memo holds, about 100 ns |
-| write `state.b`, read a memo that only ever read `state.a` | memo recomputes |
-| subscribe `state.a.$`, write `state.b` three times | 3 emissions on the `state.a` selector |
-| the same with `distinctUntilChanged()` spliced into the selector | 0 emissions, and the one real write still emits |
-| chained memo, write an unrelated key, never read | the upstream memo recomputes at write time |
-
-Two causes, both in `@hafley66/signals`, neither in `packages/signal-grid`:
-
-1. `1_SignalCreator.ts` builds the nested-path selector as
-   `root$.pipe(map((i) => get(i, path)), tap(...), shareReplay(...))`. No `distinctUntilChanged`, so
-   every root push emits on every path signal whether or not the value at that path moved. immer
-   already preserves reference identity for untouched subtrees, so `===` is a sound comparison here
-   and the fix is one operator.
-2. `createComputedSignal.invalidate` recomputes eagerly whenever `subscriberCount > 0`, and a
-   downstream memo holds a subscription on its upstream memo. `sorted` therefore has a subscriber
-   even when nothing subscribes to `view.flat`. Cause 1 dirties it and cause 2 moves the recompute
-   to write time, which is why a 1000-write burst is expensive with no read anywhere in it.
-
-The patch for cause 1, exactly:
-
-```ts
-// packages/signals/src/1_SignalCreator.ts
-import { BehaviorSubject, distinctUntilChanged, filter, map, merge, Observable, shareReplay, Subject, tap } from "rxjs"
-// ...
-            autoSelector$ = root$.pipe(
-              map((i) => get(i, path)),
-              distinctUntilChanged(),
-              tap({
-```
-
-Cause 2 is a design call rather than a bug, and cause 1 on its own removes the spurious
-invalidations that make it expensive.
+| read view.flat, no write (100k rows) | 10,405,944 | 9.19e-5 | 1.12e-4 | 9.08e-5 | 200x200 | the clean-memo floor: one dirty check and a stored array |
+| state.sort write then view.flat read (100k rows) | 4.31 | 222.0 | 360.7 | 183.6 | 12 | sortAxis plus flattenAxis, the work a sort change owes |
+| state.colWidth write then view.flat read (100k rows) | 116,412 | 0.00379 | 0.05012 | 0.00354 | 12 | a write no row-pipeline stage reads, then the flat list is read back |
+| 20 sequential colWidth writes, nothing subscribed (100k rows) | 11,255 | 0.08571 | 0.12496 | 0.06158 | 5 | 20 pointermove-sized writes with no read between them |
+| 20 sequential colWidth writes, view.plan subscribed (100k rows) | 10,870 | 0.08933 | 0.12233 | 0.06954 | 5 | the same burst on a grid that is rendering, so every stage has an observer |
 
 ## allocation
 
@@ -379,13 +326,13 @@ invalidations that make it expensive.
 
 | operator | comment claims | measured | verdict |
 | --- | --- | --- | --- |
-| `axisOf`, no `parentOf` | "two passes" | 12.4x, 11.1x, then 28.5x per decade | claim holds, see note |
-| `axisOf`, with `parentOf` | "two passes" | 4.1x per doubling of a chain | **claim understates** |
-| `sortAxis` | stability via a seat index | 13.6x, 17.7x, 29.2x per decade | claim holds, see note |
-| `groupAxis` | one level per key function | a second level adds 51 to 82 percent, not 100 | claim holds |
-| `flattenAxis` | "skipping the subtree of a closed node" | 10 percent open is 117x cheaper than all open | claim holds |
+| `axisOf`, no `parentOf` | "two passes" | 11.9x, 11.1x, then 32.9x per decade | claim holds, see note |
+| `axisOf`, with `parentOf` | "two passes" | 3.3x, 4.2x, then 3.6x per doubling of a chain | **claim understates** |
+| `sortAxis` | stability via a seat index | 13.2x, 19.1x, then 30.7x per decade | claim holds, see note |
+| `groupAxis` | one level per key function | a second level adds 38 to 73 percent, not 100 | claim holds |
+| `flattenAxis` | "skipping the subtree of a closed node" | 10 percent open is 96x cheaper than all open | claim holds |
 | `uniformSizer` | "every method O(1), no allocation" | 29 ns per `windowOf` at 1M rows | claim holds |
-| `measuredSizer` | "O(n) once", "O(log n) binary search" | construction 17.6 ms at 1M, `windowOf` 13.3x the uniform path | claim holds |
+| `measuredSizer` | "O(n) once", "O(log n) binary search" | construction 18.7 ms at 1M, `windowOf` 12.3x the uniform path | claim holds |
 | `renderPlan` | no complexity claim | O(total rows) per call, virtualized or not | not a violated claim, see note |
 
 ### `axisOf` with `parentOf` is not two passes
@@ -393,8 +340,8 @@ invalidations that make it expensive.
 The second loop calls `returnsToSelf(key, raw)` for every key that names a known parent, and
 `returnsToSelf` allocates a `Set` and walks the whole ancestor chain. That is O(n * depth), which is
 O(n^2) on a path-shaped relation. Measured on a single chain where every node's parent is the node
-before it: 500 nodes 6.3 ms, 1000 nodes 25.7 ms, 2000 nodes 109 ms, 4000 nodes 445 ms. Each doubling
-costs 4.1x, which is the signature of a quadratic.
+before it: 500 nodes 8.4 ms, 1000 nodes 27.8 ms, 2000 nodes 115.2 ms, 4000 nodes 417.0 ms. Each
+doubling costs 3.3x, 4.2x, then 3.6x, which is the signature of a quadratic.
 
 A flat relation never reaches the walk, because `parentOf` is absent and `raw` stays empty, so
 `grid({ rows })` is unaffected. `grid({ rows, subRows })` goes through `fromTree` and is also
@@ -434,8 +381,8 @@ key agrees.
 
 ### the 100k to 1M step
 
-Both `axisOf` and `sortAxis` cost about 12 to 18x per decade up to 100k and about 29x for the last
-one. That is not an extra algorithmic pass; it is a `Map` with a million entries falling out of
+Both `axisOf` and `sortAxis` cost about 11 to 19x per decade up to 100k and about 31 to 33x for the
+last one. That is not an extra algorithmic pass; it is a `Map` with a million entries falling out of
 cache, plus the rehash growth on the way there. The comments do not claim otherwise. `sortAxis`
 could take most of it back by reading each key's sort value once into the seat instead of doing a
 `Map.get` per comparison, which turns O(n log n) map lookups into O(n).
@@ -444,7 +391,7 @@ could take most of it back by reading each key's sort value once into the seat i
 
 `partition` buckets the entire flat key list into three arrays on every call, and `8_grid.ts` maps
 `FlatNode[]` to a key array before calling it. Both are O(total rows), so a scroll event at 100k
-rows costs a full pass whether or not `virtualize` is on: 1.91 ms with a uniform sizer, 3.42 ms with
+rows costs a full pass whether or not `virtualize` is on: 1.93 ms with a uniform sizer, 3.48 ms with
 a measured one. Nothing in the comments claims O(1), so this is a note rather than a violated claim,
 but it is the ceiling on how large a virtualized grid can get before scrolling drops frames.
 
