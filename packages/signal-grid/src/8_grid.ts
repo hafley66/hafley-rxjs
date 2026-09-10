@@ -3,10 +3,18 @@
 import { fromEvent, isObservable, Observable, Subscription, filter as rxFilter, map, share } from "rxjs"
 import { ROUTE_BOUNDARY_ATTR } from "@hafley66/xdom"
 import { createSlice, isSignal, Signal, storageSignal, urlAdapter, type Signal as Sig } from "@hafley66/signals"
+import { CAT_FLATTEN, CAT_GROUP, CAT_INTENT, CAT_PLAN, CAT_SORT, LOG } from "./0_log.js"
 import { axisOfEntries, axisOfTree, flattenAxis, groupAxis, sortAxis } from "./1_axis.js"
 import { buildComparator } from "./2_operators.js"
 import { withDetail } from "./11_detail.js"
-import { measuredSizer, renderPlan, uniformSizer, type RenderPlan, type Sizer } from "./4_slice.js"
+import {
+  measuredSizer,
+  renderPlan,
+  uniformSizer,
+  type RenderPlan,
+  type RenderPlanInput,
+  type Sizer,
+} from "./4_slice.js"
 import { gridDom, intentOf } from "./3_paths.js"
 import {
   collapseToOneEntry,
@@ -232,6 +240,9 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
   const seed = defaultState(
     config.state === undefined ? undefined : toGridSignal<Partial<GridState>>(config.state, {}).$(),
   )
+  // Read once, outside every memo. Reading `id` inside one would put it on that memo's dependency
+  // list while logging is on, and a write to the id would then recompute stages it never fed.
+  const loggedId = id.$()
   const syncKey = config.sync === true ? id.$() : typeof config.sync === "string" ? config.sync : null
   const synced = syncKey === null ? null : storageSignal(urlAdapter(syncKey), seed)
   const store: Sig<GridState> = synced ?? Signal<GridState>(seed)
@@ -265,6 +276,19 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
   const state = slice.state
   const actions$ = slice.actions$
 
+  // One record per intent. A live render subscribes the frame, so the DOM pass the intent causes
+  // runs inside this call and the number covers the click through to the repaint.
+  const dispatch = (action: GridAction<TRow>): void => {
+    if (!LOG.on || action.phase !== "intent") return slice.dispatch(action)
+    const started = performance.now()
+    slice.dispatch(action)
+    LOG.emit(CAT_INTENT, "intent {type} {durationMs}ms", {
+      id: loggedId,
+      type: action.type,
+      durationMs: performance.now() - started,
+    })
+  }
+
   // --- derivation, one computed signal per algebra stage ---------------------
 
   // Column lookup by id, hoisted. A linear `find` inside a comparator runs once per comparison,
@@ -287,6 +311,9 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
 
   // Server mode already applied grouping and sorting upstream; re-running them locally over one
   // page would reorder that page against the rest of the result.
+  const groupValue = (path: readonly unknown[], key: RowId): TRow =>
+    ({ [GROUP_PREFIX]: key, path }) as unknown as TRow
+
   const grouped = Signal<Axis<RowId, TRow>>(() => {
     const axis = base.$()
     if (mode === "server") return axis
@@ -294,7 +321,18 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
     if (!keys.length) return axis
     const cols = byId.$()
     const readers = keys.map((field) => readerFor(cols, field))
-    return groupAxis(axis, readers, (path, key) => ({ [GROUP_PREFIX]: key, path } as unknown as TRow))
+    // The timed branch stands after every early return, so nothing above it is reached differently
+    // when the sink is on.
+    if (!LOG.on) return groupAxis(axis, readers, groupValue)
+    const started = performance.now()
+    const built = groupAxis(axis, readers, groupValue)
+    LOG.emit(CAT_GROUP, "group {id} {durationMs}ms", {
+      id: loggedId,
+      levels: keys.length,
+      count: built.by.size,
+      durationMs: performance.now() - started,
+    })
+    return built
   })
 
   // `sort` names a field, and the axis standing vertical is the one ordered by it. Under the
@@ -310,6 +348,21 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
 
   function sortBody(axis: Axis<RowId, TRow>, model: SortModel, defs: readonly ColumnDef<TRow>[]): Axis<RowId, TRow> {
     if (mode === "server") return axis
+    // The comparator build is inside the measurement because a 30-column schema pays for it on
+    // every sort write, and a demo asking what a sort cost is asking for both halves.
+    if (!LOG.on) return sortOnce(axis, model, defs)
+    const started = performance.now()
+    const built = sortOnce(axis, model, defs)
+    LOG.emit(CAT_SORT, "sort {id} {durationMs}ms", {
+      id: loggedId,
+      keys: model.length,
+      count: built.by.size,
+      durationMs: performance.now() - started,
+    })
+    return built
+  }
+
+  function sortOnce(axis: Axis<RowId, TRow>, model: SortModel, defs: readonly ColumnDef<TRow>[]): Axis<RowId, TRow> {
     const cols = new Map(defs.map((it) => [it.id, it] as const))
     const readers = new Map(model.map((item) => [item.field, readerFor(cols, item.field)] as const))
     const cmp = buildComparator<TRow>(model, defs, (row, field) =>
@@ -326,7 +379,17 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
 
   const flat = Signal<readonly FlatNode<RowId>[]>(() => {
     const open = state.expanded.$()
-    return flattenAxis(detailed.$(), (key) => open[key] === true)
+    const axis = detailed.$()
+    const isOpen = (key: RowId): boolean => open[key] === true
+    if (!LOG.on) return flattenAxis(axis, isOpen)
+    const started = performance.now()
+    const built = flattenAxis(axis, isOpen)
+    LOG.emit(CAT_FLATTEN, "flatten {id} {durationMs}ms", {
+      id: loggedId,
+      count: built.length,
+      durationMs: performance.now() - started,
+    })
+    return built
   })
 
   const NO_ORDER = (): null => null
@@ -402,7 +465,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
     const fallback = ROW_HEIGHT[state.density.$()]
     const port = viewport.$()
     const args = pageWindow(state.page.$())
-    return renderPlan<string>({
+    const input: RenderPlanInput<string> = {
       flat: seat.nodes.map((it) => it.key),
       side: (key) => seat.pinning[key],
       page: args.page,
@@ -415,7 +478,17 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
       sizer: (keys) => sizerFor(keys, seat.extent, fallback),
       viewport: { start: port.top, extent: port.height },
       overscan: config.overscan ?? 4,
+    }
+    if (!LOG.on) return renderPlan(input)
+    const started = performance.now()
+    const built = renderPlan(input)
+    LOG.emit(CAT_PLAN, "plan {id} {durationMs}ms", {
+      id: loggedId,
+      count: input.flat.length,
+      drawn: built.start.length + built.center.length + built.end.length,
+      durationMs: performance.now() - started,
     })
+    return built
   })
 
   /** @feature view.list */
@@ -525,8 +598,8 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
       map((it): PageRequest => ({ index: it.page.index, size: it.page.size })),
       share(),
     ),
-    dispatch: slice.dispatch,
-    bind: (root) => bindRoot(root, id, slice.dispatch, slice.epics$),
+    dispatch,
+    bind: (root) => bindRoot(root, id, dispatch, slice.epics$),
     close: () => opened.unsubscribe(),
     epics$: slice.epics$,
     slots: config.slots ?? {},

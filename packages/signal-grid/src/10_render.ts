@@ -28,6 +28,7 @@ import {
   type SortDirection,
   type SortModel,
 } from "./0_types.js"
+import { CAT_DOM, CAT_FRAME, LOG } from "./0_log.js"
 import { isBuiltIn } from "./5_columns.js"
 import {
   addressedEntry,
@@ -160,6 +161,21 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
   let headSort: SortModel = []
 
   const frame = Signal<Frame<TRow>>(() => {
+    if (!LOG.on) return frameBody()
+    const started = performance.now()
+    const built = frameBody()
+    LOG.emit(CAT_FRAME, "frame {id} {durationMs}ms", {
+      id: built.gridId,
+      verticalCount: built.verticalKeys.length,
+      horizontalCount: built.horizontalKeys.length,
+      durationMs: performance.now() - started,
+    })
+    return built
+  })
+
+  // The timed branch reads the id off the frame it just built rather than the signal, so the memo's
+  // dependency list is the same whether the sink is on or off.
+  function frameBody(): Frame<TRow> {
     const schema = grid.columns.$()
     const defs = new Map(schema.map((col) => [col.id, col] as const))
     const nodes = grid.view.cols.$()
@@ -210,7 +226,7 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       extent: down.extent,
       editing: grid.state.editing.$(),
     }
-  })
+  }
 
   // --- header ---------------------------------------------------------------
 
@@ -561,6 +577,18 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
   }
 
   function pass(current: Frame<TRow>): void {
+    if (!LOG.on) return passBody(current)
+    const started = performance.now()
+    passBody(current)
+    LOG.emit(CAT_DOM, "dom {id} {durationMs}ms", {
+      id: current.gridId,
+      drawn: current.plan.start.length + current.plan.center.length + current.plan.end.length,
+      held: rows.size,
+      durationMs: performance.now() - started,
+    })
+  }
+
+  function passBody(current: Frame<TRow>): void {
     if (stopped) return
     if (current.gridId !== gridId) {
       gridId = current.gridId

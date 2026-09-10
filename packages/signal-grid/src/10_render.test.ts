@@ -14,6 +14,7 @@ import {
   type Orientation,
   type RowCtx,
 } from "./0_types.js"
+import { disableGridLogging, setGridLogEmit, type LogFields } from "./0_log.js"
 import { selectorFor } from "./3_paths.js"
 import { conventionalParts } from "./12_transpose.js"
 import {
@@ -824,3 +825,56 @@ for (const crossing of CROSSINGS) {
     })
   })
 }
+
+// --- D9: the timed DOM pass -------------------------------------------------
+
+describe("the dom category", () => {
+  afterEach(() => disableGridLogging())
+
+  const taken = (): { category: readonly string[]; fields: LogFields }[] => {
+    const records: { category: readonly string[]; fields: LogFields }[] = []
+    setGridLogEmit((category, _message, fields) => {
+      records.push({ category, fields })
+    })
+    return records
+  }
+
+  const domOf = (
+    records: readonly { category: readonly string[]; fields: LogFields }[],
+  ): { category: readonly string[]; fields: LogFields }[] =>
+    records.filter((record) => record.category[1] === "dom")
+
+  // One record per pass, and a sort write currently drives five of them. The count is left
+  // unasserted because it is the pipeline's number to change, and this file is not its owner.
+  test("stamps every pass with the grid id and a duration", () => {
+    const harness = mountGrid()
+    const records = taken()
+    harness.grid.state.sort.$([{ field: "name", sort: "asc" }])
+    const seen = domOf(records)
+    expect(seen.length).toBeGreaterThan(0)
+    for (const record of seen) {
+      expect(record.category[0]).toBe("signal-grid")
+      expect(record.fields.id).toBe("sg-test")
+      expect(typeof record.fields.durationMs).toBe("number")
+      expect(record.fields.held).toBe(2)
+    }
+  })
+
+  test("draws the same document whether the sink is on or off", () => {
+    const first = mountGrid()
+    const drawnOff = first.root.innerHTML
+    first.handle.stop()
+    root.replaceChildren()
+    taken()
+    const second = mountGrid()
+    expect(second.root.innerHTML).toBe(drawnOff)
+  })
+
+  test("emits nothing once disabled", () => {
+    const harness = mountGrid()
+    const records = taken()
+    disableGridLogging()
+    harness.grid.state.sort.$([{ field: "size", sort: "desc" }])
+    expect(records).toHaveLength(0)
+  })
+})
