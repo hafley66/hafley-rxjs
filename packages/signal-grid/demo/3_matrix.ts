@@ -77,8 +77,6 @@ const headerSlot = (it: HeaderCtx<Metric>): Renderable =>
     ? it.data.region
     : (COLUMNS.find((col) => col.id === it.col)?.header ?? it.col)
 
-
-
 /** `cellId` joins with NUL, which no panel can print. Both halves come back readable. */
 const printCell = (id: CellId): string => {
   const parts = cellParts(id)

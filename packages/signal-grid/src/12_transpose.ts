@@ -155,6 +155,36 @@ export function conventionalParts(
   return [verticalOf(seats, orientation), horizontalOf(seats, orientation)]
 }
 
+/** The empty half of a one-axis address, which the header band stands on. No axis holds `""`. */
+export const NO_ENTRY = ""
+
+/** The four things a renderer wants off a seat pair. `def` and `data` are `undefined` on a seat
+ * holding `NO_ENTRY`, and on a live key the map has no entry for. */
+export interface AddressedEntry<TCol, TRow> {
+  readonly row: RowId
+  readonly col: ColId
+  readonly def: TCol | undefined
+  readonly data: TRow | undefined
+}
+
+/** `conventionalParts` with both lookups attached, so the key that addresses the data is chosen by
+ * the seat table once rather than once per caller. A second copy is a second code path. */
+export function addressedEntry<TCol, TRow>(
+  vertical: string,
+  horizontal: string,
+  orientation: Orientation,
+  defs: ReadonlyMap<ColId, TCol>,
+  by: ReadonlyMap<RowId, TRow>,
+): AddressedEntry<TCol, TRow> {
+  const [row, col] = conventionalParts(vertical, horizontal, orientation)
+  return {
+    row,
+    col,
+    def: col === NO_ENTRY ? undefined : defs.get(col),
+    data: row === NO_ENTRY ? undefined : by.get(row),
+  }
+}
+
 /** Swaps both halves of every entry. Applied twice it is the identity, which is the proof. */
 export function transposeSpans(spans: SpanRelation): SpanRelation {
   const out = new Map<CellId, CellSpan>()
