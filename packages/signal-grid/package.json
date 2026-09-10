@@ -45,7 +45,13 @@
     "@hafley66/path": ">=0.1.0",
     "@hafley66/signals": ">=0.1.0",
     "@hafley66/xdom": ">=0.1.0",
+    "@logtape/logtape": "^2.3.3",
     "rxjs": "^7.8.0"
+  },
+  "peerDependenciesMeta": {
+    "@logtape/logtape": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@hafley66/path": "workspace:*",
@@ -53,6 +59,7 @@
     "@hafley66/vitest-playwright": "workspace:*",
     "@hafley66/vitest-telemetry": "workspace:*",
     "@hafley66/xdom": "workspace:*",
+    "@logtape/logtape": "2.3.3",
     "@tanstack/react-virtual": "^3.14.9",
     "@tanstack/table-core": "9.1.0",
     "@types/react": "^19.0.0",

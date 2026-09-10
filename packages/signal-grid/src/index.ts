@@ -5,6 +5,7 @@
 // its copy module-local (the `slash` template) while 8_grid exports the constructor.
 // `features.ts` stays out: the feature ledger is documentation for this repo, not package API.
 export * from "./0_types.js"
+export * from "./0_log.js"
 export * from "./1_axis.js"
 export * from "./2_operators.js"
 export * from "./3_paths.js"
