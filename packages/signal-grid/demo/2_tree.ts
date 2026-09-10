@@ -75,7 +75,6 @@ export const treeDemo: DemoRoute = {
     "of thousands.",
   features: ["row.tree", "row.expand", "row.sort", "row.height", "view.virtualize.row", "view.scroll", "view.density", "view.slots"],
   defects: [
-    "The run expander is prepended into the first cell, so its route chain is g/r/c/expand and the g/r/expand template never matches: clicking it does nothing. This route re-raises expander.click itself.",
     "Alt-click on an expander opens the whole branch through descendantsOf, which walks 50,000 keys on the root volumes and blocks the frame.",
     "MeasureStore is exported and wired here, but no stage of the kernel reads it: extents and approaching$ feed nothing.",
   ],

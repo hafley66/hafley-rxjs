@@ -49,7 +49,6 @@ demo/1_everything.ts
 demo/2_tree.ts
 demo/3_matrix.ts
 demo/4_detail.ts
-demo/nested.ts      the two delegation workarounds
 demo/controls.ts    control primitives, each a lens over a signal
 demo/readout.ts     relation sizes, plan numbers, DOM counts, the actions$ log
 demo/data.ts        the seeded filesystem generator
@@ -74,28 +73,18 @@ __routes                                // slug, title, features, defects
 
 | # | Where | Symptom |
 | --- | --- | --- |
-| 1 | `src/10_render.ts:340` | The run expander is prepended into the first cell, so its chain is `g/r/c/expand` and no template matches. Clicking it does nothing. |
-| 2 | `packages/xdom/src/1_domTemplate.ts:76` | `fromDelegatedRoute` walks to the document, so a nested grid's cell reads `g/r/g/r/c`. A grid inside a grid receives no events. |
-| 3 | `src/10_render.ts:166`, `src/10_render.ts:457` | `Frame.data` is the row axis map, and `ensureRow` looks the vertical key up in it. Under `orientation: "columns"` the vertical key is a column id, so every cell renders empty. |
-| 4 | `src/10_render.ts:150` vs `src/9_css.ts:68` | Two definitions of "is this node an entry": the renderer keeps a header group as a leaf, the track writer drops it. Nine cells against eight tracks. |
-| 5 | `src/5_columns.ts:48` | `pinningFor` is exported and never called, so `ColumnDef.pin` seeds nothing. |
-| 6 | `src/8_grid.ts:390` | `view.vertical` does not notify on an `orientation` write, so `plan` and `cols` keep the previous seating. |
-| 7 | `src/10_render.ts:67` | `ColumnDef.movable` is read by the renderer and absent from the type. |
-| 8 | `src/0_types.ts:168` | Seven of the thirteen declared slots are never read by `10_render.ts`. |
-| 9 | `src/11_detail.ts:26` | The documented lazy-loading recipe calls `attach()`, which the package does not export. |
-| 10 | `src/3_paths.ts:251` | `header.pointerdown` measures `delegateElement`, which for a resize is the 6px handle. A 130px column dragged 120px right lands on 126px. |
-| 11 | `src/7_epics.ts:548` | `selectColumnsOnDrag` opens on a header part named `"select"`, and nothing in `bindRoot` ever stamps one, so column range selection is unreachable from the DOM. |
+| 1 | `src/10_render.ts:294` | A cell reads its value out of `current.data`, the row axis's own map, and under `orientation: "columns"` the vertical key is a column id, which owns no row value. Every cell renders empty. |
+| 2 | `src/5_columns.ts:48` | `pinningFor` is exported and never called by the kernel, so `ColumnDef.pin` seeds nothing until a consumer seeds `colPinning` itself. |
+| 3 | `src/10_render.ts:83` | `ColumnDef.movable` is read through a local patch type and is absent from `ColumnDef` in `src/0_types.ts`. |
+| 4 | `src/0_types.ts:167` | Eight of the thirteen declared slots are never read by `10_render.ts`: `headerGroup`, `row`, `checkbox`, `resizeHandle`, `dragPreview`, `empty`, `loading`, `footer`. |
+| 5 | `src/11_detail.ts:26` | The documented lazy-loading recipe calls `attach()`, which the package does not export. |
 
 ## Workarounds this directory carries
 
 | Workaround | For | Where |
 | --- | --- | --- |
-| `bindExpander` re-raises `expander.click` off `data-row-id` | 1 | `demo/nested.ts` |
-| `bindNested` re-raises header, cell and glyph intents inside a nested grid | 2 | `demo/nested.ts` |
-| `paintTransposed` writes cell text and row headings after each pass | 3 | `demo/3_matrix.ts` |
-| The header group toggle is off by default | 4 | `demo/1_everything.ts` |
-| `state.colPinning` seeded from `pinningFor(schema)` | 5 | `demo/1_everything.ts` |
-| `settleTranspose` writes `density` and `listView` twice after an orientation write | 6 | `demo/3_matrix.ts` |
-| The move grip is stamped by a header slot rather than by `movable: true` | 7 | `demo/1_everything.ts` |
-| Nested render handles are held in a Map and stopped from outside the slot | 8 | `demo/4_detail.ts` |
-| A local `attach` | 9 | `demo/4_detail.ts` |
+| `state.colPinning` seeded from `pinningFor(schema)` | 2 | `demo/1_everything.ts` |
+| The move grip is stamped by a header slot rather than by `movable: true` | 3 | `demo/1_everything.ts` |
+| `relabelRowHeaders` rewrites the transposed header band after each pass | 1 | `demo/3_matrix.ts` |
+| Nested render handles are held in a Map and stopped from outside the slot | 4 | `demo/4_detail.ts` |
+| A local `attach` | 5 | `demo/4_detail.ts` |
