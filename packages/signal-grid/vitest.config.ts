@@ -17,6 +17,7 @@ export const DOM_TESTS: readonly string[] = [
   "src/9_css.test.ts",
   "src/13_composite.test.ts",
   "src/14_measure.test.ts",
+  "src/16_menu.test.ts",
 ]
 
 // `tests/` holds browser e2e that needs the serve slot and a real chromium, which only

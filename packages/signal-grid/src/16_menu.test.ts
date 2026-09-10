@@ -1,6 +1,6 @@
-// @vitest-environment jsdom
+// Chromium under `vitest.browser.config.ts`. Two claims are under test.
 //
-// Two claims are under test. The first is that a right click resolves to exactly one part, which is
+// The first is that a right click resolves to exactly one part, which is
 // a property of the route chain the renderer stamps rather than of any listener order, so it is
 // asserted against a live `gridDom` and a real `contextmenu` event. The second is that a target
 // crosses the transpose and cleans up after itself.
