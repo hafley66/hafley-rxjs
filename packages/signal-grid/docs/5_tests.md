@@ -181,7 +181,7 @@ and `src/10_render.test.ts` (24 cases). What remains, ranked:
 | 4 | `bindRoot`, `src/8_grid.ts:576` | 30 lines | Two grids on one page share every delegated listener, and only the filter at `src/8_grid.ts:587` separates them. A click in grid A dispatching into grid B passes every test today, because `tests/0_delegation.e2e.test.ts` renders one grid. |
 | 5 | the teardown `bind` returns, `src/8_grid.ts:619` | 1 line | `close()` is covered at `src/8_grid.test.ts:244` and `:252`; the teardown `bind` hands back is not. A consumer that remounts accumulates one subscription set per mount, so the third mount dispatches every click three times. |
 | 6 | `expandColumn`'s indent, `src/5_columns.ts:222` | 12 lines | Nothing reads the `margin-inline-start: calc(var(--sg-depth, N) * var(--sg-indent, 16px))` this writes. `src/10_render.test.ts:221` asserts the column replaces the run's expander, not that it indents. A tree would render every row at depth zero. |
-| 7 | `ColumnDef.formula` and `FormulaApi`, `src/0_types.ts:210` | declared, no implementation | A consumer setting `formula` gets `undefined` in the cell with no error. Documented as cut at `docs/0_api.md:359`. |
+| 7 | `ColumnDef.formula` and `FormulaApi`, `src/0_types.ts:210` | declared, no implementation | A consumer setting `formula` gets `undefined` in the cell with no error. Documented as cut on the Alternatives rejected page. |
 
 None was filled. Holes 1, 2, and 6 belong inside `src/10_render.test.ts` and `src/5_columns.test.ts`
 against source two other lanes are still editing; holes 3 through 5 want a new file. They are named
@@ -205,7 +205,7 @@ here and left.
 
 ## 6. The unification proposal, and what it did
 
-`docs/0_api.md:343` has listed a test kit since the first day, and it was a table pointing at
+The API document listed a test kit since the first day, and it was a table pointing at
 helpers that lived inside whichever test file wrote them first. `src/test/0_kit.ts` is now that
 file. It holds the fixture (`Row`, `FLAT`, `TREE`, `COLUMNS`), the two grid factories, `keysOf`,
 `withEpics`, `pointerStreams`, `at`, and eight intent builders. Two rules govern it, stated at the
