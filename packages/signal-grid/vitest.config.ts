@@ -14,6 +14,7 @@ import { defineConfig } from "vitest/config"
  * runners or in neither.
  */
 export const DOM_TESTS: readonly string[] = [
+  "src/8_grid.test.ts",
   "src/9_css.test.ts",
   "src/13_composite.test.ts",
   "src/14_measure.test.ts",
