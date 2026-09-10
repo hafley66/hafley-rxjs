@@ -5,6 +5,7 @@
 // Axis whose every key is a root, so list data and tree data share one code path.
 // Type-only, so the cycle back into `15_selection.ts` is erased at compile time.
 import type { Observable } from "rxjs"
+import type { SignalPath, SignalPathValue } from "@hafley66/signals"
 import type { GridSelection } from "./15_selection.js"
 
 // --- Identity --------------------------------------------------------------
@@ -212,11 +213,15 @@ export interface FormulaApi<TRow> {
 }
 
 export interface ColumnDef<TRow, V = unknown> {
+  /** A DOM id and a state key, so it stays a loose string. `field` is the checked half. */
   readonly id: ColId
   readonly header?: string
   readonly type?: ColumnType
-  /** Reads the raw value. Defaults to `row[id]`. */
-  readonly value?: (row: TRow) => V
+  /** A dotted path into the row, checked against `TRow`, so a typo in any segment fails to
+   * compile. `"user.address.city"` reads three levels without a closure. */
+  readonly field?: SignalPath<TRow>
+  /** The escape hatch, deliberately unchecked. Carrying this and `field` is a config error. */
+  readonly value?: (it: TRow) => V
   /** Derived column, MUI "formulas": reads other fields through the api. @feature-declared col.formula */
   readonly formula?: (row: TRow, api: FormulaApi<TRow>) => V
   readonly width?: number
@@ -252,6 +257,59 @@ export interface ColumnDef<TRow, V = unknown> {
   readonly headerCell?: Slot<HeaderCtx<TRow>>
   /** Default pin side, seeding `colPinning`. State still wins, so a drag can unpin it. */
   readonly pin?: Side
+}
+
+// --- Reading a value off a row ----------------------------------------------
+
+/** A nullish hop ends the walk, so a path through an absent branch reads undefined. */
+const readPath = (root: unknown, segments: readonly string[]): unknown =>
+  segments.reduce<unknown>(
+    (value, key) =>
+      value === null || value === undefined ? undefined : (value as Record<string, unknown>)[key],
+    root,
+  )
+
+/** Reads one dotted path off a row, checked against `TRow` the same way `ColumnDef.field` is. */
+export const fieldValue = <TRow, Path extends SignalPath<TRow> & string>(
+  row: TRow,
+  field: Path,
+): SignalPathValue<TRow, Path> =>
+  readPath(row, field.split(".")) as SignalPathValue<TRow, Path>
+
+function buildReader<TRow>(col: ColumnDef<TRow>, colId: ColId): (row: TRow) => unknown {
+  const path = col.field
+  const read = col.value
+  // Two answers to one question, and picking either hides the half the schema also stated.
+  if (path !== undefined && read !== undefined) {
+    throw new Error(
+      `signal-grid: column "${col.id}" carries both field and value. Keep the path, or keep the reader.`,
+    )
+  }
+  if (read !== undefined) return read
+  if (path === undefined) return (it: TRow) => (it as Record<string, unknown>)[colId]
+  const segments = (path as string).split(".")
+  const [only] = segments
+  if (segments.length === 1 && only !== undefined) {
+    return (it: TRow) => (it as Record<string, unknown>)[only]
+  }
+  return (it: TRow) => readPath(it, segments)
+}
+
+/** Keyed by the def, because a rendered cell asks per cell and a dotted path must not `split`
+ * a million times. A schema that rebuilds its defs drops the old entries with them. */
+const readers = new WeakMap<object, (row: never) => unknown>()
+
+/** What a column reads off a row: `value`, else `field`, else the id. */
+export function columnReader<TRow>(
+  col: ColumnDef<TRow> | undefined,
+  colId: ColId,
+): (row: TRow) => unknown {
+  if (col === undefined) return (it: TRow) => (it as Record<string, unknown>)[colId]
+  const cached = readers.get(col)
+  if (cached !== undefined) return cached as (row: TRow) => unknown
+  const built = buildReader(col, colId)
+  readers.set(col, built as (row: never) => unknown)
+  return built
 }
 
 // --- State: everything the URL round-trips ----------------------------------

@@ -12,6 +12,7 @@ import {
   CELL_SEP,
   cellId,
   cellParts,
+  columnReader,
   type CellCtx,
   type CellId,
   type ColId,
@@ -760,15 +761,8 @@ const textOf = (value: unknown): string =>
       ? value.toString()
       : String(value)
 
-function readValue<TRow>(
-  def: ColumnDef<TRow> | undefined,
-  row: TRow,
-  colId: ColId,
-): unknown {
-  const read = def?.value
-  if (read !== undefined) return read(row)
-  return (row as Record<string, unknown>)[colId]
-}
+const readValue = <TRow>(def: ColumnDef<TRow> | undefined, row: TRow, colId: ColId): unknown =>
+  columnReader(def, colId)(row)
 
 // --- element helpers --------------------------------------------------------
 

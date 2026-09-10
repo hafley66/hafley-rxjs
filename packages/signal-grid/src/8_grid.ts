@@ -36,6 +36,7 @@ import {
 import { defaultEpics, type GridEpic, type GridEpicCtx } from "./7_epics.js"
 import { EMPTY_RANGE } from "./15_selection.js"
 import {
+  columnReader,
   GROUP_PREFIX,
   type Axis,
   type CellId,
@@ -245,6 +246,10 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
     height: 0,
   })
 
+  // A column carrying both a `field` and a `value` says two things about one read, so the schema
+  // is rejected at construction rather than at whichever cell asks first.
+  for (const col of columns.$()) columnReader(col, col.id)
+
   // Every other input goes through `toGridSignal`, so a plain object here must too. Reading it only
   // when `isSignal` held meant `state: { listView: true }` was accepted by the type and
   // silently dropped at run time, which is the worst shape a config bug can take.
@@ -307,11 +312,8 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
   const byId = Signal<ReadonlyMap<ColId, ColumnDef<TRow>>>(
     () => new Map(columns.$().map((it) => [it.id, it] as const)),
   )
-  const readerFor = (cols: ReadonlyMap<ColId, ColumnDef<TRow>>, field: ColId) => {
-    const col = cols.get(field)
-    const read = col?.value
-    return (row: TRow): unknown => (read ? read(row) : (row as Record<string, unknown>)[field])
-  }
+  const readerFor = (cols: ReadonlyMap<ColId, ColumnDef<TRow>>, field: ColId) =>
+    columnReader(cols.get(field), field)
 
   const base = Signal<Axis<RowId, TRow>>(() => {
     const data = rows.$()

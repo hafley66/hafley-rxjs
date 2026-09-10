@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, expectTypeOf } from 'vitest'
 import { Signal } from './2_Signal'
+import type { SignalPath, SignalPathValue } from './0_types'
 import { trackSubscription } from '../../../vitest.setup'
 
 describe('Signal', () => {
@@ -61,5 +62,63 @@ describe('Signal', () => {
 
       state.user.name.$('alice')
     })
+  })
+})
+
+// An interface, because `IsRecursive` calls one a leaf and `SignalPath` has to walk it anyway.
+interface Row {
+  readonly id: string
+  readonly user: { readonly city: string; readonly zip?: number }
+  readonly tags: readonly string[]
+  readonly born: Date
+  readonly kids?: readonly Row[]
+}
+
+describe('SignalPath', () => {
+  it('should accept a dotted path into an interface', () => {
+    expectTypeOf<'user.city'>().toMatchTypeOf<SignalPath<Row>>()
+    expectTypeOf<'id'>().toMatchTypeOf<SignalPath<Row>>()
+    expect(true).toBe(true)
+  })
+
+  it('should accept a numeric segment for an array seat', () => {
+    expectTypeOf<'tags.0'>().toMatchTypeOf<SignalPath<Row>>()
+    expectTypeOf<'kids.2.user.city'>().toMatchTypeOf<SignalPath<Row>>()
+    expect(true).toBe(true)
+  })
+
+  it('should reject a key the type does not carry', () => {
+    // @ts-expect-error `citty` is a typo
+    const typo: SignalPath<Row> = 'user.citty'
+    // @ts-expect-error a Date is a leaf, so its methods are not addressable
+    const method: SignalPath<Row> = 'born.getTime'
+    expect([typo, method]).toHaveLength(2)
+  })
+
+  it('should stop at a primitive rather than offering its members', () => {
+    // @ts-expect-error `length` belongs to the string, not to the row
+    const member: SignalPath<Row> = 'id.length'
+    expect(member).toBe('id.length')
+  })
+
+  it('should bound a self-recursive type by DepthLimit', () => {
+    expectTypeOf<'kids.0.kids.1.id'>().toMatchTypeOf<SignalPath<Row>>()
+    // @ts-expect-error six hops is past the default depth of five
+    const past: SignalPath<Row> = 'kids.0.kids.1.kids.2.kids.3.kids.4.kids.5.id'
+    expect(past).toContain('kids')
+  })
+})
+
+describe('SignalPathValue', () => {
+  it('should give the value at a dotted path', () => {
+    expectTypeOf<SignalPathValue<Row, 'user.city'>>().toEqualTypeOf<string>()
+    expectTypeOf<SignalPathValue<Row, 'born'>>().toEqualTypeOf<Date>()
+    expect(true).toBe(true)
+  })
+
+  it('should carry the undefined an optional hop introduces', () => {
+    expectTypeOf<SignalPathValue<Row, 'user.zip'>>().toEqualTypeOf<number | undefined>()
+    expectTypeOf<SignalPathValue<Row, 'kids.0.id'>>().toEqualTypeOf<string | undefined>()
+    expect(true).toBe(true)
   })
 })

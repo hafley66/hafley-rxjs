@@ -7,6 +7,8 @@ export type {
   Signal$,
   SignalCreatorOptions,
   SignalEvent,
+  SignalPath,
+  SignalPathValue,
 } from "./0_types.js"
 export * from "./0_log.js"
 export * from "./1_SignalCreator.js"

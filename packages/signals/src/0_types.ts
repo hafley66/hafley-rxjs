@@ -132,6 +132,60 @@ export type IsRecursive<T> = NonNullable<T> extends Record<string, unknown>
     ? 1
     : 0
 
+/** Where the key walk stops: members that are behaviour rather than data, so `modified.getTime`
+ * is never offered as an addressable key. */
+type SignalPathLeaf =
+  | Date
+  | RegExp
+  | Error
+  | Promise<unknown>
+  | ((...args: never[]) => unknown)
+  | ReadonlyMap<unknown, unknown>
+  | ReadonlySet<unknown>
+
+/** `IsRecursive` gates on an index signature, which an interface never carries. A path walks one
+ * anyway, so this answers 1 wherever `IsRecursive` does and widens by that case alone. */
+type SignalPathWalks<T> = NonNullable<T> extends SignalPathLeaf
+  ? 0
+  : IsRecursive<NonNullable<T>> extends 1
+    ? 1
+    : NonNullable<T> extends object
+      ? 1
+      : 0
+
+/** One key, alone and as the head of everything under it. A leaf child makes the tail `never`. */
+type SignalPathStep<T, K extends string | number, Depth extends number> =
+  | `${K}`
+  | `${K}.${SignalPath<GetNestedValue<T, K>, DepthLimit[Depth]>}`
+
+/** Every dotted path into `T`, as a string union. `DepthLimit` bounds it with the one counter
+ * `Signal<T>` already walks, which is what terminates a self-recursive type. */
+export type SignalPath<T, Depth extends number = 5> = [Depth] extends [never]
+  ? never
+  : SignalPathWalks<T> extends 1
+    ? NonNullable<T> extends readonly unknown[]
+      ? SignalPathStep<T, number, Depth>
+      : {
+          [K in keyof NonNullable<T> & string]: SignalPathStep<T, K, Depth>
+        }[keyof NonNullable<T> & string]
+    : never
+
+/** A numeric segment addresses an array seat, and `keyof` an array holds `number` and never `"0"`. */
+type SignalPathSegment<Segment extends string> = Segment extends `${infer Index extends number}`
+  ? Index
+  : Segment
+
+/** One hop, taking the segment as written when the type already keys by it. */
+type SignalPathHop<T, Segment extends string> = Segment extends keyof NonNullable<T>
+  ? GetNestedValue<T, Segment>
+  : GetNestedValue<T, SignalPathSegment<Segment>>
+
+/** What sits at one `SignalPath`, carrying the `undefined` a nullish hop introduces because
+ * `GetNestedValue` does. */
+export type SignalPathValue<T, Path extends string> = Path extends `${infer Head}.${infer Rest}`
+  ? SignalPathValue<SignalPathHop<T, Head>, Rest>
+  : SignalPathHop<T, Path>
+
 /**
  * Events emitted by the signal system for tracking/debugging/memo
  */

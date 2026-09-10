@@ -9,6 +9,7 @@ renders inside it.
 const columns: readonly ColumnDef<Row>[] = [
   { id: "name", header: "Name", width: 160, sortable: true, editable: true },
   { id: "size", header: "Size", type: "number", flex: 1 },
+  { id: "city", header: "City", field: "owner.address.city" },
   { id: "ratio", header: "Ratio", formula: (row, api) => Number(api.get(row, "size")) / 100 },
 ]
 ```
@@ -17,11 +18,34 @@ const columns: readonly ColumnDef<Row>[] = [
 
 | key | meaning |
 | --- | --- |
-| `id` | the column key, and the default field name on the row |
+| `id` | the column key, a DOM id and a state key, and the field name a column reads by default |
 | `header` | the plain-text label |
-| `value` | reads the raw value; the default reads the field named by the id |
+| `field` | a dotted path into the row, checked against `TRow` |
+| `value` | reads the raw value, unchecked; the escape hatch |
 | `formula` | a derived value reading other fields through the api handed in |
 | `type` | picks the default comparator and the default operator set |
+
+### `field`, and why the id stays loose
+
+`field` is typed `SignalPath<TRow>` from `@hafley66/signals`, which is the union of every dotted path
+into the row down to five levels. `field: "owner.address.citty"` fails to compile; `id: "citty"` does
+not, because an id is a DOM id and a state key rather than a claim about the row.
+
+```ts
+{ id: "city", field: "owner.address.city" }   // checked, no closure
+{ id: "loud", value: (it) => it.name.toUpperCase() }  // unchecked, arbitrary
+```
+
+An array seat takes a numeric segment: `field: "tags.0"`. A path through an absent branch reads
+`undefined` rather than throwing. `Date`, `Map`, `Set`, `RegExp`, `Promise`, and functions are leaves,
+so `field: "modified.getTime"` is not offered.
+
+A column carrying both `field` and `value` states two different reads, and `grid()` throws at
+construction naming the column. `columnReader` in `src/0_types.ts` is the one place all three stages
+(sort, group, cell render) resolve a column to its reader, and it compiles the path once per def.
+
+`fieldValue(row, "owner.address.city")` is the same read as a standalone call, typed by
+`SignalPathValue<TRow, Path>`, for a `value` callback or a slot that wants one nested value.
 
 ## Sizing
 
