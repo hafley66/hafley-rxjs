@@ -44,6 +44,8 @@ g.dispatch(header("size", { shift: true })) // appends, keeping name first
 `sortOnHeaderClick` (`src/7_epics.ts`) drops a column rather than storing a third direction, and
 `buildComparator` (`src/2_operators.ts`) folds the model into one comparator.
 
+<GridDemo id="multi-sort" />
+
 ## 3. Tree mode
 
 Supply `subRows`. That is the whole configuration.
