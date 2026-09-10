@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest"
 import type { Side } from "./0_types.js"
 import {
   measuredSizer,
+  NO_SPACERS,
   paginate,
   partition,
   renderPlan,
   sliceKeys,
+  spacersOf,
   trackList,
   uniformSizer,
   windowOf,
@@ -403,5 +405,113 @@ describe("trackList", () => {
   it("rounds a fractional width to two places and floors a negative one at zero", () => {
     expect(trackList([{ id: "a", width: 120.4567 }])).toBe("120.46px")
     expect(trackList([{ id: "a", width: -10 }])).toBe("0px")
+  })
+})
+
+// The horizontal seat runs the same `renderPlan`, handed `left` and `width` instead of `top` and
+// `height`. What these pin is that the arithmetic does not care which of the two it was handed.
+describe("the column window", () => {
+  const cols = keys(200)
+  const pinned = sideOf({ k00: "start", k01: "start", k199: "end" })
+  const plan = (left: number, width = 800, overscan = 4) =>
+    renderPlan({
+      flat: cols,
+      side: pinned,
+      page: { index: 0, size: 0 },
+      paginate: false,
+      virtualize: true,
+      sizer: (run) => uniformSizer(run.length, 100),
+      viewport: { start: left, extent: width },
+      overscan,
+    })
+
+  it("holds the columns the viewport covers at a given scroll offset", () => {
+    // 197 center columns at 100px. `left` 4000 puts center index 40 at the left edge, 8 fit in 800px,
+    // and 4 of overscan sit on each side, so the run is [36, 52).
+    const run = plan(4000)
+    expect(run.span).toEqual({ start: 36, end: 52 })
+    expect(run.center).toHaveLength(16)
+    expect(run.center[0]).toBe("k38")
+    expect(run.center[15]).toBe("k53")
+  })
+
+  it("steps the run forward by one column for each column scrolled", () => {
+    const steps = [0, 100, 200, 300].map((left) => plan(left, 800, 0).span)
+    expect(steps).toEqual([
+      { start: 0, end: 8 },
+      { start: 1, end: 9 },
+      { start: 2, end: 10 },
+      { start: 3, end: 11 },
+    ])
+  })
+
+  it("never drops a pinned column, at any offset or window size", () => {
+    for (const left of [0, 4000, 19_000, 999_999]) {
+      for (const width of [0, 1, 800, 100_000]) {
+        const run = plan(left, width)
+        expect(run.start).toEqual(["k00", "k01"])
+        expect(run.end).toEqual(["k199"])
+        expect(run.center).not.toContain("k00")
+        expect(run.center).not.toContain("k199")
+      }
+    }
+  })
+
+  it("answers the same run for a viewport that did not move", () => {
+    const first = plan(4000)
+    const second = plan(4000)
+    expect(second.span).toEqual(first.span)
+    expect(second.center).toEqual(first.center)
+    expect(spacersOf(second)).toEqual(spacersOf(first))
+  })
+
+  it("keeps the whole run when the window is off, whatever the scroll offset says", () => {
+    const off = renderPlan({
+      flat: cols,
+      side: pinned,
+      page: { index: 0, size: 0 },
+      paginate: false,
+      virtualize: false,
+      sizer: (run) => uniformSizer(run.length, 100),
+      viewport: { start: 4000, extent: 800 },
+    })
+    expect(off.center).toHaveLength(197)
+    expect(spacersOf(off)).toBe(NO_SPACERS)
+  })
+})
+
+describe("spacersOf", () => {
+  const plan = (left: number, virtualize = true) =>
+    renderPlan({
+      flat: keys(200),
+      side: () => undefined,
+      page: { index: 0, size: 0 },
+      paginate: false,
+      virtualize,
+      sizer: (run) => uniformSizer(run.length, 100),
+      viewport: { start: left, extent: 800 },
+      overscan: 4,
+    })
+
+  it("splits the skipped pixels either side of the window, summing to the whole run", () => {
+    const run = plan(4000)
+    const gap = spacersOf(run)
+    expect(gap).toEqual({ lead: 3600, trail: 14_800, tracked: true })
+    expect(gap.lead + run.center.length * 100 + gap.trail).toBe(run.centerTotal)
+  })
+
+  it("tracks a trailing gap alone at the head of the run", () => {
+    expect(spacersOf(plan(0))).toEqual({ lead: 0, trail: 18_800, tracked: true })
+  })
+
+  it("occupies no track when the window covers the whole run", () => {
+    expect(spacersOf(plan(0, false))).toBe(NO_SPACERS)
+  })
+
+  it("holds the lead at the last column's offset once the window reaches the end", () => {
+    const run = plan(19_200)
+    const gap = spacersOf(run)
+    expect(gap.trail).toBe(0)
+    expect(gap.lead).toBe(run.span.start * 100)
   })
 })

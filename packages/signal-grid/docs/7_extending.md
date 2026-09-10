@@ -90,7 +90,7 @@ const columns: readonly ColumnDef<Row>[] = [
 
 An epic is `(actions$, state, ctx) => Observable<GridAction>` (`src/7_epics.ts:47`). It reads the
 state signal and the derived view through `GridEpicCtx` (`src/7_epics.ts:38`), touches no DOM, and
-is never async. `config.epics` (`src/8_grid.ts:126`) replaces the whole list; absent installs
+is never async. `config.epics` (`src/8_grid.ts:139`) replaces the whole list; absent installs
 `defaultEpics()` (`src/8_grid.ts:262`).
 
 Twelve ship today, `src/7_epics.ts:574`:
@@ -142,7 +142,7 @@ grid<Row>({ ..., epics: noSort })
 
 ### Adding an opt-in epic
 
-`detailOnCellClick` (`src/11_detail.ts:175`) is written to be appended rather than installed:
+`detailOnCellClick` (`src/11_detail.ts:14`) is written to be appended rather than installed:
 
 ```ts
 grid<Row>({ ..., epics: [...defaultEpics<Row>(), detailOnCellClick({ columns: ["__detail"] })] })
@@ -152,7 +152,7 @@ grid<Row>({ ..., epics: [...defaultEpics<Row>(), detailOnCellClick({ columns: ["
 
 ## 3. Raw intents
 
-`g.intent$` (`src/8_grid.ts:519`) is every intent the DOM raised, after the gridId and root filter
+`g.intent$` (`src/8_grid.ts:185`) is every intent the DOM raised, after the gridId and root filter
 and before any epic ran. Subscribing to it is the door for behavior the kernel has no opinion about,
 and it needs no epic and no state key.
 
@@ -311,7 +311,7 @@ id appears in a selector.
 
 | Property | Default | Written by |
 |---|---|---|
-| `--sg-row-h` | `36px` | `src/theme.css:45` and `writeGridVars` (`src/9_css.ts:35`) from density |
+| `--sg-row-h` | `36px` | `src/theme.css:45` and `writeGridVars` (`src/9_css.ts:36`) from density |
 | `--sg-total-h` | `0px` | `src/9_css.ts:12`, the scroll spacer height |
 | `--sg-offset-y` | `0px` | `src/9_css.ts:14`, the virtualization translate |
 | `--sg-inline-tracks` | unset | `src/9_css.ts:17`, the `grid-template-columns` track list |
@@ -326,7 +326,7 @@ id appears in a selector.
 | `--sg-focus`, `--sg-range-bg`, `--sg-range-edge` | `light-dark(...)` | you |
 
 Per-entry sizes are properties named after the id, encoded to a valid ident by `encodeVarId`
-(`src/3_paths.ts:349`): `colWidthVar`, `rowHeightVar` (`src/3_paths.ts:366-367`). No stylesheet
+(`src/3_paths.ts:378`): `colWidthVar`, `rowHeightVar` (`src/3_paths.ts:366-367`). No stylesheet
 selector can spell those names, which is why the generic rules read an alias (`--sg-h`, `--sg-x`)
 written inline on the element that holds the value.
 
@@ -481,7 +481,7 @@ const slots: Slots<Row> = {
 
 ### A right click never disturbs a live range
 
-`rangeDrag` gates every gesture on `button === 0` (`src/7_epics.ts:448`), so a right click inside a
+`rangeDrag` gates every gesture on `button === 0` (`src/7_epics.ts:437`), so a right click inside a
 selected block raises the menu intent and leaves `selection` untouched. A menu acting on the
 selection reads `g.state.selection.$()` and gets the block the user could still see.
 
@@ -491,13 +491,13 @@ selection reads `g.state.selection.$()` and gets the block the user could still 
 
 | Not extensible | Why | The nearest door |
 |---|---|---|
-| The intent grammar | `GridIntent` is a closed union in `src/0_types.ts:364`, and `intentOf` (`src/3_paths.ts:199`) is keyed by the member name so a rename breaks the key rather than orphaning a handler | add a member and a `bindRoot` line, which is a library patch, or use `Dom(template).route.<event>` from section 6 for anything the kernel need not reduce |
+| The intent grammar | `GridIntent` is a closed union in `src/0_types.ts:389`, and `intentOf` (`src/3_paths.ts:210`) is keyed by the member name so a rename breaks the key rather than orphaning a handler | add a member and a `bindRoot` line, which is a library patch, or use `Dom(template).route.<event>` from section 6 for anything the kernel need not reduce |
 | The route templates | `PATHS` is frozen (`src/3_paths.ts:36`), because a mutated route map is a silently mis-delegating grid | compose your own template with `slash()` over your own attributes on your own slot content |
-| The reducer | `reduce` (`src/8_grid.ts:191`) writes exactly one `GridState` key per change and nothing else, so no consumer hook can widen a change into two | dispatch two changes, or write the second key directly through `g.state` |
+| The reducer | `reduce` (`src/8_grid.ts:211`) writes exactly one `GridState` key per change and nothing else, so no consumer hook can widen a change into two | dispatch two changes, or write the second key directly through `g.state` |
 | `GridState` keys | the type is the url contract; a consumer key would not round-trip through `urlAdapter` | hold your own signal beside the grid and derive from `g.state` |
 | Slot ctx fields | `CellCtx`, `RowCtx`, `HeaderCtx` are fixed shapes; a slot cannot ask for more | close over what you need, since a slot is an ordinary function in your own scope |
 | The three pinning runs | `Side` is `"start" \| "center" \| "end"` and the renderer builds exactly three run boxes (`src/10_render.ts:149`) | none |
-| Orientation beyond two | `SEATS` (`src/12_transpose.ts:27`) is a two-row table; a third orientation is a third row there and no other edit | patch the table |
+| Orientation beyond two | `SEATS` (`src/12_transpose.ts:28`) is a two-row table; a third orientation is a third row there and no other edit | patch the table |
 | Async epics | epics are documented synchronous, and the slice reduces in the same tick | subscribe `g.intent$` yourself and dispatch the result when it arrives, as section 3 does |
 | The menu widget | deliberate: the library ships the target and the anchor, never the list | section 8 |
 ```

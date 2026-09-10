@@ -229,6 +229,26 @@ export function renderPlan<K extends string>(input: RenderPlanInput<K>): RenderP
   }
 }
 
+/** The pixels a window left out, before `span.start` and after `span.end`. */
+export interface Spacers {
+  readonly lead: number
+  readonly trail: number
+  /** Whether the pair occupies two tracks. Read rather than restated, so no consumer disagrees
+   * about how many seats the rendered run covers. */
+  readonly tracked: boolean
+}
+
+export const NO_SPACERS: Spacers = { lead: 0, trail: 0, tracked: false }
+
+/** Read off the plan's own sizer, so a spacer can never describe a run other than the one that was
+ * windowed. @feature view.virtualize.col */
+export function spacersOf<K extends string>(plan: RenderPlan<K>): Spacers {
+  const lead = Math.max(0, plan.offsetTop)
+  const trail = Math.max(0, plan.centerTotal - plan.sizer.offsetOf(plan.span.end))
+  if (lead === 0 && trail === 0) return NO_SPACERS
+  return { lead, trail, tracked: true }
+}
+
 // --- Column tracks ----------------------------------------------------------
 
 /** One column's declared sizing. Nothing here is resolved: the browser owns the arithmetic. */

@@ -2,9 +2,9 @@
   "schema": 1,
   "generatedBy": "packages/signal-grid/scripts/parity.mjs",
   "features": 47,
-  "implemented": 22,
+  "implemented": 23,
   "declaredOnly": 9,
-  "tags": 47,
+  "tags": 50,
   "modules": 18,
   "untagged": [],
   "optedOut": {
@@ -65,7 +65,7 @@
     }
   ],
   "decidedOut": 8,
-  "undecided": 8,
+  "undecided": 7,
   "tanstack": 20,
   "mui": {
     "yes": 45,

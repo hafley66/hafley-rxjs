@@ -345,6 +345,9 @@ export type GridState = {
   readonly orientation: Orientation
   /** Off renders every visible row. The kernel is identical either way. */
   readonly virtualize: boolean
+  /** The same toggle for the run across the page, off by default because a schema narrow enough to
+   * fit pays the spacer tracks for nothing. @feature-declared view.virtualize.col */
+  readonly virtualizeCol: boolean
 }
 
 /**
