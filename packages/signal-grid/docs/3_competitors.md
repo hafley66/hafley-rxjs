@@ -219,7 +219,8 @@ pipeline order and the `plan` signal in `src/8_grid.ts` implements.
 
 ## 6. Tier and citation corrections applied
 
-Every base URL in `docs/parity.mui.json` was checked for a 200 (39 distinct pages, all 200) and
+Every base URL in `docs/parity.mui.json` was checked for a 200 (39 distinct pages, counted with
+`grep -o '"url": "[^"]*"' docs/parity.mui.json | sed 's/#.*//' | sort -u | wc -l`, all 200) and
 every fragment was checked against the heading ids on the fetched page.
 
 | id | was | now | evidence |
@@ -231,4 +232,6 @@ every fragment was checked against the heading ids on the fetched page.
 | `data.state` | tier `pro` | tier `mit` | no plan badge anywhere in the `state` page body; `exportState` and `restoreState` are not gated |
 | `page.server` | tier `pro` | tier `mit` | no badge on the `server-side-data` page; the Pro and Premium gates are on the lazy loading, tree data, row grouping, and aggregation extensions of the Data Source, not on `dataSource` itself |
 
-All 61 TanStack URLs cited in `docs/parity.tanstack.json` were checked for a 200.
+`docs/parity.tanstack.json` holds 30 http strings (counted with
+`grep -o '"url": "[^"]*"' docs/parity.tanstack.json | sort -u | wc -l`); no script checks them for a
+200.

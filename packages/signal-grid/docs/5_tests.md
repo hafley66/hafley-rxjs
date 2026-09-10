@@ -9,7 +9,7 @@ the pass, and `src/9_css.test.ts`, `src/10_render.test.ts`, `src/13_composite.te
 `src/14_measure.test.ts` all landed mid-read. Each is folded into the census, and the last three
 are left to the lanes still writing them.
 
-Unit tests went from 404 to 358. Browser tests are unchanged at 15.
+Unit tests stand at 465 across 17 files (from `out/stats/unit.json`). Browser tests are unchanged at 15.
 
 ## TOC
 
@@ -35,15 +35,18 @@ started.
 | `src/3_paths.test.ts` | 300 | 47 | 24 | templates, print/match round trip, attrs, selectors, `intentOf`, CSS var names | `src/3_paths.ts` | unit, node |
 | `src/4_slice.test.ts` | 407 | 46 | 46 | `partition`, `paginate`, both sizers, `windowOf`, `sliceKeys`, `renderPlan`, `trackList` | `src/4_slice.ts` | unit, node |
 | `src/5_columns.test.ts` | 261 | 27 | 26 | `selectAllState`, `toggleSelectAll`, six built-in factories, `pinningFor`, `rowSelectionMode` | `src/5_columns.ts` | unit, node |
-| `src/7_epics.test.ts` | 269 | 25 | 25 | nine epics, driven through `grid()` | `src/7_epics.ts`, `src/6_gestures.ts` | unit, node |
-| `src/8_grid.test.ts` | 273 | 27 | 25 | `GridSource<T>`, the state signal, the view chain, server mode, `close()` | `src/8_grid.ts` | unit, jsdom |
+| `src/7_epics.test.ts` | 269 | 25 | 43 | twelve epics, driven through `grid()` | `src/7_epics.ts`, `src/6_gestures.ts` | unit, node |
+| `src/8_grid.test.ts` | 273 | 27 | 32 | `GridSource<T>`, the state signal, the view chain, server mode, `close()` | `src/8_grid.ts` | unit, jsdom |
 | `src/9_css.test.ts` | 141 | 16 | 10 | `writeGridVars`: which entries become tracks, the write pass, the teardown | `src/9_css.ts` | unit, jsdom |
-| `src/10_render.test.ts` | 385 | 24 | 24 | slot precedence, built-in routes, detail rows, signal slots, `stop()` | `src/10_render.ts` | unit, jsdom |
+| `src/10_render.test.ts` | 385 | 24 | 50 | slot precedence, built-in routes, detail rows, signal slots, `stop()` | `src/10_render.ts` | unit, jsdom |
 | `src/11_detail.test.ts` | 264 | 27 | 26 | detail keys, `withDetail`, `detailHeights`, `detailOnCellClick` | `src/11_detail.ts` | unit, node |
 | `src/12_transpose.test.ts` | 239 | 31 | 19 | orientation, the two facets, `collapseToOneEntry`, spans, `coveredBy` | `src/12_transpose.ts` | unit, node |
 | `src/13_composite.test.ts` | 189 | 14 | 14 | part ranks, the default stack, composite sorting, list view | `src/13_composite.ts` | unit, jsdom |
 | `src/14_measure.test.ts` | 344 | 18 | 18 | one observer per store, measurement, estimate, buffer zone, scroll anchoring | `src/14_measure.ts` | unit, jsdom |
+| `src/15_selection.test.ts` | 270 | new | 32 | the range model: `beginAt`, `extendTo`, `commitBlock`, `clearSelection`, `selectionTest` | `src/15_selection.ts` | unit, node |
+| `src/16_menu.test.ts` | 368 | new | 19 | menu target resolution, anchor positioning | `src/16_menu.ts` | unit, jsdom |
 | `src/features.test.ts` | 57 | 8 | 8 | totality of the `FEATURES` ledger | `src/features.ts` | unit, node |
+| `src/theme.test.ts` | 87 | new | 5 | theme.css selectors held against what the router can address | `src/theme.css` | unit, node |
 | `src/test/0_kit.ts` | 187 | new | n/a | the fixture, the grid factories, the one `epics$` helper, the intent builders | none | helper |
 | `tests/0_delegation.e2e.test.ts` | 138 | 8 | 8 | delegated routing against a real hit test | `src/3_paths.ts`, `src/10_render.ts` | browser, chromium |
 | `tests/1_render.e2e.test.ts` | 251 | 7 | 7 | rendered geometry read back out of layout | `src/10_render.ts`, `src/9_css.ts` | browser, chromium |
@@ -53,7 +56,7 @@ started.
 `vitest.visual.config.ts` instead, so `npx vitest run -c vitest.e2e.config.ts` reports 15.
 
 Source with no test file of its own: `src/0_types.ts` (data only), `src/6_gestures.ts`,
-`src/index.ts`, `src/theme.css`.
+`src/index.ts`.
 
 ## 2. Duplicates
 

@@ -16,22 +16,30 @@ one typed action bus and an optional plain-DOM renderer.
 
 ## Status
 
-328 unit tests across 10 files (`npx vitest run`), 15 browser tests across 2 files
+465 unit tests across 17 files (`pnpm -F @hafley66/signal-grid test -- --run`, per-file counts read
+from `out/stats/unit.json`), 15 browser tests across 2 files
 (`npx vitest run -c vitest.e2e.config.ts`), all passing as of 2026-09-10. `pnpm receipts` is
 `typecheck && test && build`.
 
 | file | tests | covers |
 | --- | --- | --- |
 | `src/1_axis.test.ts` | 38 | the operators, cycles, restrict |
-| `src/2_operators.test.ts` | 56 | filter operators, comparators |
-| `src/3_paths.test.ts` | 47 | templates, attrs, routing, intents, css vars |
-| `src/4_slice.test.ts` | 42 | partition, paginate, sizers, window, flex widths |
-| `src/5_columns.test.ts` | 27 | the six built-in column factories |
-| `src/7_epics.test.ts` | 25 | the nine epics |
-| `src/8_grid.test.ts` | 25 | the constructor, the view chain, the `sync` listener |
-| `src/11_detail.test.ts` | 27 | detail keys, `withDetail`, the detail epic |
-| `src/12_transpose.test.ts` | 31 | the transpose lane's, undocumented here |
+| `src/2_operators.test.ts` | 55 | filter operators, comparators |
+| `src/3_paths.test.ts` | 24 | templates, attrs, routing, intents, css vars |
+| `src/4_slice.test.ts` | 46 | partition, paginate, sizers, window, trackList |
+| `src/5_columns.test.ts` | 26 | the six built-in column factories |
+| `src/7_epics.test.ts` | 43 | the twelve epics |
+| `src/8_grid.test.ts` | 32 | the constructor, the view chain, the `sync` listener |
+| `src/9_css.test.ts` | 10 | `writeGridVars`: which entries become tracks, the write pass, the teardown |
+| `src/10_render.test.ts` | 50 | slot precedence, built-in routes, detail rows, signal slots, `stop()` |
+| `src/11_detail.test.ts` | 26 | detail keys, `withDetail`, the detail epic |
+| `src/12_transpose.test.ts` | 19 | orientation, the two facets, `collapseToOneEntry`, spans |
+| `src/13_composite.test.ts` | 14 | part ranks, the default stack, composite sorting, list view |
+| `src/14_measure.test.ts` | 18 | one observer per store, measurement, estimate, buffer zone, scroll anchoring |
+| `src/15_selection.test.ts` | 32 | the range model, block selection arithmetic |
+| `src/16_menu.test.ts` | 19 | context-menu target resolution and anchor positioning |
 | `src/features.test.ts` | 8 | the feature ledger's own shape |
+| `src/theme.test.ts` | 5 | theme.css selectors held against what the router can address |
 | `tests/0_delegation.e2e.test.ts` | 8 | delegated routing against chromium |
 | `tests/1_render.e2e.test.ts` | 7 | rendered geometry read out of chromium |
 

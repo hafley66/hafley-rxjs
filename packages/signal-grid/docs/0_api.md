@@ -22,19 +22,20 @@ Two ordered forests, pure operators over them, a three-phase action grammar, and
 
 ## 0. Status
 
-Verified against source on 2026-09-10 by running `npx vitest run` (328 passed, 10 files) and
+Verified against source on 2026-09-10 by running `pnpm -F @hafley66/signal-grid test -- --run`
+(465 passed, 17 files, per-file counts from `out/stats/unit.json`) and
 `npx vitest run -c vitest.e2e.config.ts` (15 passed, 2 files).
 
 | area | state | evidence |
 | --- | --- | --- |
-| `GridSource<T>`, the constructor, the state signal, the view chain | built | `grid()` in `src/8_grid.ts`, 25 tests in `src/8_grid.test.ts` |
+| `GridSource<T>`, the constructor, the state signal, the view chain | built | `grid()` in `src/8_grid.ts`, 32 tests in `src/8_grid.test.ts` |
 | axis operators, tree, grouping | built | `src/1_axis.ts`, 38 tests |
-| partition, paginate, sizers, window, flex widths | built | `src/4_slice.ts`, 42 tests |
-| path templates, attrs, intents, CSS var names | built | `src/3_paths.ts`, 47 tests |
-| built-in columns: check, radio, expand, drag, detail, row number | built | `src/5_columns.ts`, 27 tests |
+| partition, paginate, sizers, window, trackList | built | `src/4_slice.ts`, 46 tests |
+| path templates, attrs, intents, CSS var names | built | `src/3_paths.ts`, 24 tests |
+| built-in columns: check, radio, expand, drag, detail, row number | built | `src/5_columns.ts`, 26 tests |
 | one `drag` operator serving resize, column move, row move | built | `src/6_gestures.ts`, driven by `src/7_epics.ts` |
-| nine epics, installed by default | built | `src/7_epics.ts`, 25 tests |
-| detail panels as row-axis nodes | built | `src/11_detail.ts`, 27 tests |
+| twelve epics, installed by default | built | `src/7_epics.ts`, 43 tests |
+| detail panels as row-axis nodes | built | `src/11_detail.ts`, 26 tests |
 | CSS custom property writer | built | `src/9_css.ts`, asserted through chromium at `tests/1_render.e2e.test.ts:155` |
 | DOM renderer and event binding | built | `src/10_render.ts`, `bindRoot` in `src/8_grid.ts`, 7 e2e tests |
 | theme | built | `src/theme.css`, exported as `./theme.css` in `package.json` |
@@ -291,7 +292,7 @@ Three phases, one bus (`GridIntent`, `GridChange`, `GridEffect` in `src/0_types.
 | `change` | one key of `GridState` was written | `{ phase, type: K } & { [K]: GridState[K] }`, reduced synchronously by `reduce` |
 | `effect` | leaves the grid; the consumer decides what it means | `activate`, `editCommit`, `editCancel`, `reorderRow`, `copy`, `paste`, `custom` |
 
-`defaultEpics()` (`src/7_epics.ts`) installs nine. `GridConfig.epics` replaces the list, which is
+`defaultEpics()` (`src/7_epics.ts`) installs twelve. `GridConfig.epics` replaces the list, which is
 how one is dropped or an opt-in one added.
 
 | epic | reads | writes | test |
@@ -305,6 +306,9 @@ how one is dropped or an opt-in one added.
 | `moveRowOnRowDrag` | `row.pointerdown` | effect `reorderRow`, on commit only | `src/7_epics.test.ts` |
 | `keyboardNav` | `key` | `focus`, `expanded`, `rowSelection`, effect `activate` | `src/7_epics.test.ts` |
 | `pageOnScrollNearEnd` | `viewport.scroll` | `page.index`, infinite mode only | `src/7_epics.test.ts` |
+| `selectCellsOnDrag` | `cell.pointerdown` | `selection` | `src/7_epics.test.ts` |
+| `selectRowsOnDrag` | `header.pointerdown` part `select` on the gutter | `selection` | `src/7_epics.test.ts` |
+| `selectColumnsOnDrag` | `header.pointerdown` part `select` | `selection` | `src/7_epics.test.ts` |
 
 `detailOnCellClick` (`src/11_detail.ts`) is opt-in, so a plain grid reduces a cell click to
 nothing but `activate`.
@@ -376,7 +380,7 @@ stage is asserted without observing it (`src/8_grid.test.ts`).
 | `4_slice.ts` | partition, paginate, sizers, window, flex widths |
 | `5_columns.ts` | the six built-in column factories |
 | `6_gestures.ts` | one `drag` operator and `landingIndex` |
-| `7_epics.ts` | intent to change and effect, nine epics plus `defaultEpics` |
+| `7_epics.ts` | intent to change and effect, twelve epics plus `defaultEpics` |
 | `8_grid.ts` | `grid()`, the state signal, the view chain, `bind` |
 | `9_css.ts` | the custom property writer, one frame, one write pass |
 | `10_render.ts` | plain-DOM renderer, key-based row reconciliation |
