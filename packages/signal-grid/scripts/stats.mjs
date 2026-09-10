@@ -70,9 +70,19 @@ function commitGroup() {
   const long = capture("git", ["rev-parse", "HEAD"])
   const short = capture("git", ["rev-parse", "--short", "HEAD"])
   const porcelain = capture("git", ["status", "--porcelain"])
-  const dirty = porcelain === null ? null : porcelain.split("\n").filter((it) => it.trim() !== "")
+  // The build writes these two, so measuring before writing them still reports the tree dirty on a
+  // clean checkout. Excluding a file this script itself produces is the only way the answer can be
+  // about the source rather than about the act of measuring it.
+  const GENERATED = ["packages/signal-grid/site/stats.json", "packages/signal-grid/docs/1_parity.md"]
+  const dirty =
+    porcelain === null
+      ? null
+      : porcelain
+          .split("\n")
+          .filter((it) => it.trim() !== "")
+          .filter((it) => !GENERATED.some((name) => it.endsWith(name)))
   return {
-    method: "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain, git rev-parse --abbrev-ref HEAD",
+    method: "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain excluding this script's own two outputs, git rev-parse --abbrev-ref HEAD",
     hash: long,
     short,
     subject: capture("git", ["log", "-1", "--format=%s"]),

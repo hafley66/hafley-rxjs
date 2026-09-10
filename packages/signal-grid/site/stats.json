@@ -2,38 +2,19 @@
   "schema": 1,
   "generatedBy": "packages/signal-grid/scripts/stats.mjs",
   "commit": {
-    "method": "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain, git rev-parse --abbrev-ref HEAD",
-    "hash": "2cd27171be5592631b2203181333d13d3549abc0",
-    "short": "2cd2717",
-    "subject": "vitest-telemetry: nav click 315 ms to 15 ms",
-    "authorDate": "2026-09-08T19:32:20-04:00",
+    "method": "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain excluding this script's own two outputs, git rev-parse --abbrev-ref HEAD",
+    "hash": "d975c0e3142e750dbbbab0ce0145b73527af247c",
+    "short": "d975c0e",
+    "subject": "signal-grid: a relational data grid kernel, and the library fixes it forced",
+    "authorDate": "2026-09-10T12:17:48-04:00",
     "branch": "main",
     "clean": false,
-    "dirtyCount": 78,
+    "dirtyCount": 1,
     "dirtyEntries": [
-      "M .changeset/config.json",
-      " M .gitignore",
-      " M chat_log/LATEST.md",
-      " M package.json",
-      " M packages/boop-adapters/package.json",
-      " M packages/d2/package.json",
-      " M packages/devtool-plugin/package.json",
-      " M packages/gothic/index.html",
-      " M packages/gothic/package.json",
-      " M packages/gothic/scripts/1_publish-pages.sh",
-      " M packages/grapht-model/package.json",
-      " M packages/grapht/adapters/0_layout_grid_worker/package.json",
-      " M packages/grapht/adapters/1_layout_grid_wasm/package.json",
-      " M packages/grapht/adapters/1_layout_grid_wasm/wasm/grapht_layout_wasm.wasm",
-      " M packages/grapht/adapters/2_render_cytoscape/package.json",
-      " M packages/grapht/adapters/3_render_canvaskit/package.json",
-      " M packages/grapht/adapters/4_render_sigma/package.json",
-      " M packages/grapht/adapters/5_render_vello_wgpu/package.json",
-      " M packages/grapht/adapters/6_render_pixijs/package.json",
-      " M packages/grapht/adapters/7_render_threejs/package.json"
+      " M packages/signal-grid/scripts/stats.mjs"
     ],
     "repository": "hafley66/hafley-rxjs",
-    "url": "https://github.com/hafley66/hafley-rxjs/commit/2cd27171be5592631b2203181333d13d3549abc0",
+    "url": "https://github.com/hafley66/hafley-rxjs/commit/d975c0e3142e750dbbbab0ce0145b73527af247c",
     "reason": null
   },
   "machine": {
@@ -44,7 +25,7 @@
     "cpuModel": "Apple M2 Pro",
     "cores": 12,
     "totalMemoryBytes": 17179869184,
-    "builtAt": "2026-09-10T15:18:48.148Z"
+    "builtAt": "2026-09-10T16:18:32.566Z"
   },
   "package": {
     "name": "@hafley66/signal-grid",
@@ -56,57 +37,57 @@
       "files": [
         {
           "file": "dist/index.js",
-          "bytes": 61948,
-          "gzipBytes": 18475
+          "bytes": 66189,
+          "gzipBytes": 19636
         },
         {
           "file": "dist/theme.css",
-          "bytes": 10067,
-          "gzipBytes": 3080
+          "bytes": 10504,
+          "gzipBytes": 3267
         }
       ],
-      "totalBytes": 72015,
-      "totalGzipBytes": 21555,
+      "totalBytes": 76693,
+      "totalGzipBytes": 22903,
       "reason": null
     },
     "siteMethod": "the same statSync and gzipSync pass, run after the site build and before the rebuild that ships this file; the shipped assets differ from these figures by the bytes this table adds to stats.json",
     "site": {
       "files": [
         {
-          "file": "site/dist/assets/index-DAn0QF95.js",
-          "bytes": 416957,
-          "gzipBytes": 138461
+          "file": "site/dist/assets/index-DA1_MH2K.js",
+          "bytes": 444322,
+          "gzipBytes": 148215
         },
         {
-          "file": "site/dist/assets/index-BC41ORaQ.css",
-          "bytes": 18948,
-          "gzipBytes": 4236
+          "file": "site/dist/assets/index-riLwRccH.css",
+          "bytes": 18988,
+          "gzipBytes": 4264
         },
         {
           "file": "site/dist/index.html",
           "bytes": 2636,
-          "gzipBytes": 1138
+          "gzipBytes": 1136
         }
       ],
-      "totalBytes": 438541,
-      "totalGzipBytes": 143835,
+      "totalBytes": 465946,
+      "totalGzipBytes": 153615,
       "reason": null
     },
     "demo": {
       "files": [
         {
-          "file": "site/dist/demo/assets/index-HBGTpkEu.js",
-          "bytes": 211473,
-          "gzipBytes": 71475
+          "file": "site/dist/demo/assets/index-By5ZAhXA.js",
+          "bytes": 211470,
+          "gzipBytes": 71594
         },
         {
-          "file": "site/dist/demo/assets/index-BgNQY4EJ.css",
-          "bytes": 17601,
-          "gzipBytes": 3761
+          "file": "site/dist/demo/assets/index-CrKy9QTB.css",
+          "bytes": 17641,
+          "gzipBytes": 3787
         }
       ],
-      "totalBytes": 229074,
-      "totalGzipBytes": 75236,
+      "totalBytes": 229111,
+      "totalGzipBytes": 75381,
       "reason": null
     },
     "videos": {
@@ -147,17 +128,22 @@
     "files": [
       {
         "file": "src/10_render.ts",
-        "lines": 680,
+        "lines": 744,
         "kind": "source"
       },
       {
+        "file": "src/10_render.test.ts",
+        "lines": 707,
+        "kind": "test"
+      },
+      {
         "file": "src/8_grid.ts",
-        "lines": 598,
+        "lines": 600,
         "kind": "source"
       },
       {
         "file": "src/7_epics.ts",
-        "lines": 588,
+        "lines": 589,
         "kind": "source"
       },
       {
@@ -168,11 +154,6 @@
       {
         "file": "src/7_epics.test.ts",
         "lines": 519,
-        "kind": "test"
-      },
-      {
-        "file": "src/10_render.test.ts",
-        "lines": 496,
         "kind": "test"
       },
       {
@@ -187,7 +168,7 @@
       },
       {
         "file": "src/2_operators.ts",
-        "lines": 432,
+        "lines": 433,
         "kind": "source"
       },
       {
@@ -201,13 +182,28 @@
         "kind": "source"
       },
       {
-        "file": "src/0_types.ts",
+        "file": "src/8_grid.test.ts",
         "lines": 399,
+        "kind": "test"
+      },
+      {
+        "file": "src/0_types.ts",
+        "lines": 396,
         "kind": "source"
       },
       {
+        "file": "src/3_paths.ts",
+        "lines": 382,
+        "kind": "source"
+      },
+      {
+        "file": "src/16_menu.test.ts",
+        "lines": 368,
+        "kind": "test"
+      },
+      {
         "file": "src/theme.css",
-        "lines": 350,
+        "lines": 363,
         "kind": "source"
       },
       {
@@ -216,24 +212,14 @@
         "kind": "test"
       },
       {
-        "file": "src/3_paths.ts",
-        "lines": 332,
-        "kind": "source"
-      },
-      {
         "file": "src/3_paths.test.ts",
-        "lines": 300,
+        "lines": 311,
         "kind": "test"
       },
       {
         "file": "src/5_columns.ts",
         "lines": 278,
         "kind": "source"
-      },
-      {
-        "file": "src/8_grid.test.ts",
-        "lines": 273,
-        "kind": "test"
       },
       {
         "file": "src/15_selection.test.ts",
@@ -261,13 +247,18 @@
         "kind": "test"
       },
       {
+        "file": "src/16_menu.ts",
+        "lines": 237,
+        "kind": "source"
+      },
+      {
         "file": "src/15_selection.ts",
         "lines": 233,
         "kind": "source"
       },
       {
         "file": "src/12_transpose.ts",
-        "lines": 219,
+        "lines": 207,
         "kind": "source"
       },
       {
@@ -307,7 +298,7 @@
       },
       {
         "file": "src/theme.test.ts",
-        "lines": 68,
+        "lines": 87,
         "kind": "test"
       },
       {
@@ -317,25 +308,25 @@
       },
       {
         "file": "src/index.ts",
-        "lines": 22,
+        "lines": 23,
         "kind": "source"
       }
     ],
-    "sourceFiles": 19,
-    "sourceLines": 5975,
-    "testFiles": 16,
-    "testLines": 4820
+    "sourceFiles": 20,
+    "sourceLines": 6329,
+    "testFiles": 17,
+    "testLines": 5555
   },
   "tests": {
     "method": "vitest run --reporter=json --outputFile=..., counts read from numTotalTests / numTotalTestSuites / numPassedTests / numFailedTests",
     "unit": {
       "label": "unit",
       "command": "vitest run",
-      "tests": 418,
-      "files": 124,
-      "passed": 418,
+      "tests": 465,
+      "files": 133,
+      "passed": 465,
       "failed": 0,
-      "durationMs": 1115,
+      "durationMs": 1784,
       "success": true,
       "reason": null
     },
@@ -352,15 +343,15 @@
   },
   "timing": {
     "method": "Date.now() around each execFileSync call in scripts/stats.mjs; site and demo build times are handed over by scripts/ship.mjs",
-    "typecheckMs": 249,
+    "typecheckMs": 679,
     "typecheckReason": null,
-    "libraryBuildMs": 281,
+    "libraryBuildMs": 495,
     "libraryBuildReason": null,
-    "unitTestsMs": 1115,
+    "unitTestsMs": 1784,
     "browserTestsMs": null,
-    "siteBuildMs": 352,
-    "demoBuildMs": 333,
-    "statsMs": 1761
+    "siteBuildMs": null,
+    "demoBuildMs": null,
+    "statsMs": 3098
   },
   "memory": {
     "method": "a child node --expose-gc process imports dist/index.js, allocates 100000 plain row objects, forces gc, reads process.memoryUsage().heapUsed, builds one grid and reads view.plan and view.flat, forces gc again, reads heapUsed again",
@@ -368,11 +359,11 @@
     "rows": 100000,
     "flatNodes": 100000,
     "windowedRows": 27,
-    "heapBeforeBytes": 24149264,
-    "heapAfterBytes": 36440896,
-    "retainedBytes": 12291632,
+    "heapBeforeBytes": 24166528,
+    "heapAfterBytes": 36458616,
+    "retainedBytes": 12292088,
     "retainedBytesPerRow": 122.9,
-    "rssBytes": 143556608,
+    "rssBytes": 147734528,
     "reason": null
   },
   "bench": {

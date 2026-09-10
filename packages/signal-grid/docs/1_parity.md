@@ -88,13 +88,13 @@ TanStack's 17 feature directories map onto 20 feature ids. Every directory is ma
 | --- | --- | --- | --- | --- | --- |
 | `view.virtualize.row`<br>Render only the rows inside the viewport | Ten thousand rows means ten thousand DOM subtrees and a frozen tab. | no | [yes (pro)](https://mui.com/x/react-data-grid/virtualization/) | yes | `src/4_slice.ts:146` |
 | `view.virtualize.col`<br>Render only the columns inside the viewport | A hundred-column schema pays for every column on every rendered row. | no | [yes (mit)](https://mui.com/x/react-data-grid/virtualization/#column-virtualization) | no |  |
-| `view.scroll`<br>Treat scroll position as state the kernel can read and write | Nothing can be scrolled into view on demand, so a found row may be off screen. | no | [yes (mit)](https://mui.com/x/react-data-grid/scrolling/) | yes | `src/3_paths.ts:198` |
+| `view.scroll`<br>Treat scroll position as state the kernel can read and write | Nothing can be scrolled into view on demand, so a found row may be off screen. | no | [yes (mit)](https://mui.com/x/react-data-grid/scrolling/) | yes | `src/3_paths.ts:210` |
 | `view.density`<br>Switch row height between preset scales | Dense review and comfortable reading need two differently configured grids. | no | [yes (mit)](https://mui.com/x/react-data-grid/accessibility/#density) | declared only | `src/8_grid.ts:99` |
 | `view.list`<br>Collapse the column axis to one cell per row for narrow screens | A small viewport gets a table that can only be read by scrolling sideways. | no | [yes (pro)](https://mui.com/x/react-data-grid/list-view/) | yes | `src/8_grid.ts:420` |
 | `view.slots`<br>Replace any rendered part without forking the grid | Custom rendering means patching the library or wrapping every cell from outside. | no | [yes (mit)](https://mui.com/x/react-data-grid/components/#component-slots) | declared only | `src/0_types.ts:167` |
 | `view.a11y`<br>Carry grid roles and aria state on every rendered part | A screen reader announces a pile of divs with no row, column, or selection state. | no | [yes (mit)](https://mui.com/x/react-data-grid/accessibility/) | no |  |
 | `view.i18n`<br>Serve every visible string from a replaceable table | The grid speaks English inside an application that does not. | no | [yes (mit)](https://mui.com/x/react-data-grid/localization/) | no |  |
-| `view.theme`<br>Drive every dimension and colour from CSS custom properties | Restyling means overriding generated class names and racing the library's own cascade. | no | [partial (mit)](https://mui.com/x/react-data-grid/style/) | yes | `src/3_paths.ts:349` |
+| `view.theme`<br>Drive every dimension and colour from CSS custom properties | Restyling means overriding generated class names and racing the library's own cascade. | no | [partial (mit)](https://mui.com/x/react-data-grid/style/) | yes | `src/3_paths.ts:361` |
 
 ### The relation as a whole
 
