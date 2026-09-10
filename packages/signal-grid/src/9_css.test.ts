@@ -1,7 +1,8 @@
-// @vitest-environment jsdom
+// Runs in chromium under `vitest.browser.config.ts`, so every property below is read back out of a
+// real style engine that had to parse it first.
 //
 // The one file in `src/` that owns a subscription to a DOM element, so the teardown is asserted
-// here rather than left to the renderer that happens to call it.
+// where the element lives rather than left to the renderer that happens to call it.
 import { describe, expect, it } from "vitest"
 import type { ColumnDef } from "./0_types.js"
 import { rowHeightVar } from "./3_paths.js"
