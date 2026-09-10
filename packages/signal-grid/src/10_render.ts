@@ -51,7 +51,7 @@ import {
   SG_DEPTH,
   rowHeightVar,
 } from "./3_paths.js"
-import { partition, type RenderPlan } from "./4_slice.js"
+import { type RenderPlan, type Spacers } from "./4_slice.js"
 import type { Grid } from "./8_grid.js"
 import { SG_ROW_H, SG_ROW_HEIGHT_SELF, writeGridVars } from "./9_css.js"
 
@@ -112,6 +112,8 @@ interface Frame<TRow> {
   /** The horizontal run's nodes: columns under `"rows"`, rows under the transpose. */
   readonly horizontalNodes: ReadonlyMap<string, FlatNode<string>>
   readonly runs: Partitioned<ColId>
+  /** The pixels the column window skipped, as the two tracks the center run has to cover. */
+  readonly spacers: Spacers
   readonly colRunSignature: string
   /** Keyed by the horizontal run's entries, which are columns under `"rows"` and rows under the transpose. */
   readonly pinning: Readonly<Record<string, Side>>
@@ -182,10 +184,16 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     const across = grid.view.horizontal.$()
     const down = grid.view.vertical.$()
     const pinning = across.pinning
-    // A group parent is a band over its leaves, not an entry of the run, and the axis is what says
-    // which is which: a def lookup would empty the run under the transpose, where entries are rows.
-    const leaves = nodes.filter((node) => across.axis.by.has(node.key)).map((node) => node.key)
-    const runs = partition<ColId>(leaves, (key) => pinning[key])
+    // The whole run, bands already dropped. The window cuts `runs.center` below; this list stays
+    // whole because a selection edge asks about the neighbour of a cell the window may not hold.
+    const leaves = grid.view.colLeaves.$()
+    const colPlan = grid.view.colPlan.$()
+    const spacers = grid.view.colSpacers.$()
+    const runs: Partitioned<ColId> = {
+      start: colPlan.start,
+      center: colPlan.center,
+      end: colPlan.end,
+    }
     const orientation = grid.state.orientation.$()
     const rowsVertical = rowsRunVertical(orientation)
     return {
@@ -194,7 +202,13 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       defs,
       horizontalNodes: new Map(nodes.map((node) => [node.key, node] as const)),
       runs,
-      colRunSignature: [runs.start, runs.center, runs.end].map((run) => run.join(CELL_SEP)).join("|"),
+      spacers,
+      // The spacer flag rides along: it decides how many tracks the center run spans, so a pass
+      // that flips it has to rebuild the runs even when the same keys are in the window.
+      colRunSignature: [runs.start, runs.center, runs.end]
+        .map((run) => run.join(CELL_SEP))
+        .join("|")
+        .concat(spacers.tracked ? "|gap" : ""),
       pinning,
       orientation,
       spans: grid.view.spans.$(),
@@ -282,7 +296,7 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     for (const side of SIDES) {
       const keys = current.runs[side]
       if (keys.length === 0) continue
-      const run = runBox(side, keys.length)
+      const run = openRun(side, keys.length, current.spacers)
       for (const colId of keys) run.append(headerCell(colId, current, headerSubs))
       runs.push(run)
     }
@@ -392,7 +406,7 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     for (const side of SIDES) {
       const keys = current.runs[side]
       if (keys.length === 0) continue
-      const run = runBox(side, keys.length)
+      const run = openRun(side, keys.length, current.spacers)
       const built: HTMLElement[] = []
       for (const across of keys) {
         const cell = cellFor(key, across, node, current, subs)
@@ -772,6 +786,15 @@ const runBox = (side: Side, tracks: number): HTMLElement => {
   el.setAttribute("data-side", side)
   el.style.gridColumn = `span ${Math.max(1, tracks)}`
   return el
+}
+
+/** An empty box takes the leading spacer track, so auto-placement puts every cell on the track its
+ * own column occupies and no index arithmetic here has to match `9_css.ts`. Center run only. */
+function openRun(side: Side, count: number, spacers: Spacers): HTMLElement {
+  if (side !== "center" || !spacers.tracked) return runBox(side, count)
+  const run = runBox(side, count + 2)
+  run.append(box("sg-spacer"))
+  return run
 }
 
 const ROUTE_ATTR = "data-route"

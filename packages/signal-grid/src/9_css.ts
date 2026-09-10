@@ -2,9 +2,9 @@
 // list is written, not how it is built. No width is computed here.
 // @no-features: writes the custom properties the theme reads; the features that decide those numbers are tagged in 8_grid.ts and 4_slice.ts
 import { Signal } from "@hafley66/signals"
-import type { ColumnDef, Side } from "./0_types.js"
+import type { ColId, ColumnDef } from "./0_types.js"
 import { rowHeightVar } from "./3_paths.js"
-import { partition, trackList, type TrackColumn } from "./4_slice.js"
+import { trackList, type RenderPlan, type Spacers, type TrackColumn } from "./4_slice.js"
 import { ROW_HEIGHT, type Grid } from "./8_grid.js"
 
 /** Density in pixels. The row box reads it, and so does the sticky top of the pinned row run. */
@@ -40,7 +40,9 @@ export function writeGridVars<TRow>(grid: Grid<TRow>, root: HTMLElement): () => 
     const across = grid.view.horizontal.$()
     const down = grid.view.vertical.$()
     return {
-      tracks: trackList(tracksOf(grid.view.cols.$(), across.pinning, across.extent, grid.columns.$())),
+      tracks: trackList(
+        tracksOf(grid.view.colPlan.$(), grid.view.colSpacers.$(), across.extent, grid.columns.$()),
+      ),
       rowHeight: ROW_HEIGHT[grid.state.density.$()],
       extent: down.extent,
       totalHeight: plan.centerTotal,
@@ -50,32 +52,52 @@ export function writeGridVars<TRow>(grid: Grid<TRow>, root: HTMLElement): () => 
   // An entry that leaves the axis must lose its property, or a stale height keeps answering the
   // fallback chain of a row that comes back later under the same id.
   let written = new Set<string>()
+  // The last value each property was set to. Every stage above reads the viewport, so a scroll
+  // recomputes this frame each time, and a property set to what it already holds still costs style.
+  const held = new Map<string, string>()
   const sub = frame.$.subscribe((next) => {
-    written = writeFrame(root, next, written)
+    written = writeFrame(root, next, written, held)
   })
   return () => sub.unsubscribe()
 }
 
-/** One track per rendered entry, in run order, so track N and cell N are the same entry and every
- * row inherits the one list through `subgrid` rather than carrying a width. */
+/** A skipped run as one fixed track. No column can be placed in it, so it carries no def. */
+const spacerTrack = (id: string, width: number): TrackColumn => ({ id, width })
+
+const SPACER_LEAD = "sg-lead"
+const SPACER_TRAIL = "sg-trail"
+
+/**
+ * @comment-ok: the column-window layout decision, weighed against a measured lab result that lives
+ * outside this repo and has no runtime home here
+ *
+ * One track per rendered entry, in run order, so track N and cell N are the same entry and every
+ * row inherits the one list through `subgrid` rather than carrying a width. The columns the window
+ * skipped keep their place as one leading and one trailing track.
+ *
+ * Spacer tracks rather than an absolute offset per cell. `subgrid`, `grid-column: span` for a
+ * spanning cell, and the two sticky pinned runs all read this list, so moving rendered cells out of
+ * it would need a second implementation of each, gated on one toggle. What that costs is one
+ * `grid-template-columns` write per window shift, and the measured price of that write scales with
+ * the rows in the document rather than with the relation: 1461 ms over 90 writes at 1000 rows
+ * against 8005 ms at 5000 (`~/projects/claude-research/labs/grid-resize-perf/RESULTS.md`). Row
+ * virtualization already holds the document at one viewport of rows, and `writeFrame` skips the
+ * write on every frame the string did not move, so a horizontal scroll reflows the rendered rows
+ * once per column crossed and never once per frame.
+ */
 function tracksOf<TRow>(
-  nodes: readonly { readonly key: string; readonly parent: string | null }[],
-  pinning: Readonly<Record<string, Side>>,
+  plan: RenderPlan<ColId>,
+  spacers: Spacers,
   extent: Readonly<Record<string, number>>,
   schema: readonly ColumnDef<TRow>[],
 ): readonly TrackColumn[] {
-  // A node the run itself calls parent is a band over its entries, not an entry: a header group
-  // draws across its leaves and occupies no track. Read off the run, so a transpose reads the same.
-  const bands = new Set<string>()
-  for (const node of nodes) {
-    if (node.parent !== null) bands.add(node.parent)
-  }
   const defs = new Map(schema.map((col) => [col.id, col] as const))
-  const entries = nodes.filter((node) => !bands.has(node.key)).map((node) => node.key)
-  const runs = partition<string>(entries, (key) => pinning[key])
-  return [...runs.start, ...runs.center, ...runs.end].map((key) =>
-    trackFor(key, extent[key], defs.get(key)),
-  )
+  const track = (key: string): TrackColumn => trackFor(key, extent[key], defs.get(key))
+  const windowed = plan.center.map(track)
+  const center = spacers.tracked
+    ? [spacerTrack(SPACER_LEAD, spacers.lead), ...windowed, spacerTrack(SPACER_TRAIL, spacers.trail)]
+    : windowed
+  return [...plan.start.map(track), ...center, ...plan.end.map(track)]
 }
 
 /** A declared extent is a resize the user performed, so it takes the flex with it: a dragged
@@ -94,22 +116,38 @@ function trackFor<TRow>(
   }
 }
 
+/** Writes only on the edge. A repeat of the value already there is one style invalidation for a
+ * frame that moved nothing, and the track list is the property that then reflows every row. */
+function setVar(
+  style: CSSStyleDeclaration,
+  held: Map<string, string>,
+  name: string,
+  value: string,
+): void {
+  if (held.get(name) === value) return
+  held.set(name, value)
+  style.setProperty(name, value)
+}
+
 function writeFrame(
   root: HTMLElement,
   frame: VarFrame,
   previous: ReadonlySet<string>,
+  held: Map<string, string>,
 ): Set<string> {
   const style = root.style
-  style.setProperty(SG_ROW_H, px(frame.rowHeight))
-  style.setProperty(SG_TOTAL_H, px(frame.totalHeight))
-  style.setProperty(SG_OFFSET_Y, px(frame.offsetY))
+  setVar(style, held, SG_ROW_H, px(frame.rowHeight))
+  setVar(style, held, SG_TOTAL_H, px(frame.totalHeight))
+  setVar(style, held, SG_OFFSET_Y, px(frame.offsetY))
   // The single column write of the pass. Every header row and body row reads it through `subgrid`.
-  style.setProperty(SG_INLINE_TRACKS, frame.tracks)
+  setVar(style, held, SG_INLINE_TRACKS, frame.tracks)
 
   const names = new Set<string>()
-  writeExtents(root, frame.extent, names)
+  writeExtents(root, frame.extent, names, held)
   for (const name of previous) {
-    if (!names.has(name)) style.removeProperty(name)
+    if (names.has(name)) continue
+    held.delete(name)
+    style.removeProperty(name)
   }
   return names
 }
@@ -120,10 +158,11 @@ function writeExtents(
   root: HTMLElement,
   extent: Readonly<Record<string, number>>,
   names: Set<string>,
+  held: Map<string, string>,
 ): void {
   for (const [key, height] of Object.entries(extent)) {
     const name = rowHeightVar(key)
-    root.style.setProperty(name, px(height))
+    setVar(root.style, held, name, px(height))
     names.add(name)
   }
 }

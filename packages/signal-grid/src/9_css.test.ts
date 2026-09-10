@@ -81,7 +81,7 @@ describe("the write pass", () => {
     release()
   })
 
-  it("sets the track list exactly once per pass, whatever the column count", () => {
+  it("sets the track list once when it moved and not at all on a pass it did not", () => {
     const { g, root, release } = mount([
       { id: "one", width: 10 },
       { id: "two", flex: 1 },
@@ -94,9 +94,13 @@ describe("the write pass", () => {
       real(name, value, priority)
     }
     g.dispatch({ phase: "change", type: "colWidth", colWidth: { two: 240 } })
-    // SG_ROW_H is written once per pass by construction, so an equal count is one write per pass.
-    expect(counts.get(SG_INLINE_TRACKS)).toBe(counts.get(SG_ROW_H))
-    expect(counts.get(SG_INLINE_TRACKS) ?? 0).toBeGreaterThan(0)
+    expect(counts.get(SG_INLINE_TRACKS)).toBe(1)
+    // A pass that rebuilt the frame and left the inline axis alone. Every scroll frame is this
+    // shape, and the track list is the property whose rewrite reflows every rendered row.
+    g.dispatch({ phase: "change", type: "rowHeight", rowHeight: { a: 64 } })
+    expect(counts.get(SG_INLINE_TRACKS)).toBe(1)
+    expect(counts.get(rowHeightVar("a"))).toBe(1)
+    expect(counts.get(SG_ROW_H)).toBe(undefined)
     release()
   })
 

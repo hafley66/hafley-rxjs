@@ -37,8 +37,8 @@
  * numbers into a grid. Scoped under `[data-route="g"]`, which is the same attribute delegation
  * matches on, so a page with two grids has two independent property scopes and no id in a selector.
  *
- * The renderer writes: --sg-row-h, --sg-total-h, --sg-offset-y, --sg-depth, and one width plus one
- * offset per visible column. Everything below is either one of those or a knob for the consumer.
+ * The renderer writes: --sg-row-h, --sg-total-h, --sg-offset-y, --sg-depth, --sg-inline-tracks, and
+ * one height per sized row. Everything below is either one of those or a knob for the consumer.
  */
 
 @layer signal-grid.theme {
@@ -129,9 +129,9 @@
   background: var(--sg-bg);
 }
 
-/* `--sg-h` is written inline per row as an alias of that row's height property, the same
-   indirection `--sg-x` uses for a cell offset: the property name is per row, so the fallback keeps
-   this one rule generic. Border-box because the kernel's total counts the border the row draws. */
+/* `--sg-h` is written inline per row as an alias of that row's height property: the property name
+   is per row, so the fallback keeps this one rule generic. Border-box because the kernel's total
+   counts the border the row draws. */
 [data-route="g"] .sg-row {
   display: grid;
   grid-template-columns: var(--sg-inline-tracks, none);
@@ -171,7 +171,13 @@
   text-overflow: ellipsis;
 }
 
-/* `--sg-x` is written inline per cell as an alias of that column's offset property. */
+/* The seat the leading spacer track holds when the column window skipped columns before this run.
+   It draws nothing and takes no pointer; its width is the track's, written into the track list. */
+[data-route="g"] .sg-spacer {
+  min-inline-size: 0;
+  pointer-events: none;
+}
+
 [data-route="g"] .sg-run[data-side="start"] {
   position: sticky;
   inset-inline-start: 0;
