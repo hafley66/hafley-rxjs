@@ -112,9 +112,18 @@ export function inEmitTurn<T>(run: () => T): T {
   } finally {
     emitDepth--
     if (emitDepth === 0 && pendingFlush.size) {
-      const due = [...pendingFlush]
-      pendingFlush.clear()
-      for (const flush of due) flush()
+      // The drain is a turn too, else a diamond's first leg recomputed the join inline and the
+      // second leg did it again.
+      emitDepth++
+      try {
+        while (pendingFlush.size) {
+          const [due] = pendingFlush
+          pendingFlush.delete(due)
+          due()
+        }
+      } finally {
+        emitDepth--
+      }
     }
   }
 }
@@ -552,7 +561,8 @@ export function createComputedSignal<T>(compute: () => T, name?: string): Signal
       pendingFlush.add(flush)
       return
     }
-    flush()
+    // An observable-backed dependency emits outside any turn, so the fan-out opens one.
+    inEmitTurn(flush)
   }
 
   const flush = () => {

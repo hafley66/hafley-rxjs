@@ -130,6 +130,24 @@ describe("Signal(fn) — automatic computed contract", () => {
     expect(activeSubscriptions).toBe(0)
   })
 
+  it("recomputes a diamond's join once per root write", () => {
+    const root = Signal(1)
+    const left = Signal(() => root.$() * 10)
+    const right = Signal(() => root.$() * 100)
+    let computations = 0
+    const join = Signal(() => {
+      computations++
+      return left.$() + right.$()
+    })
+    const values: number[] = []
+
+    trackSubscription(join.$.subscribe((value) => values.push(value)))
+    root.$(2)
+
+    expect(computations).toBe(2)
+    expect(values).toEqual([110, 220])
+  })
+
   it("does not permanently kill the memo after a computation throws", () => {
     const shouldThrow = Signal(false)
     const count = Signal(1)
