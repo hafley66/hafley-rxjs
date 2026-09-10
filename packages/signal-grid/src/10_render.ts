@@ -5,7 +5,7 @@
 // by key: a row already in the document is moved, never rebuilt, which is the only reason
 // virtualization pays for itself. A cell rebuilds when the data behind it, the column run, or its
 // editing state changed, and nothing else touches it.
-import { Subscription } from "rxjs"
+import { Subscription, type Observable } from "rxjs"
 import { isSignal, Signal } from "@hafley66/signals"
 import {
   CELL_SEP,
@@ -627,10 +627,12 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
  * writing into a node that now belongs to another row. */
 function mount(
   host: HTMLElement,
-  content: Renderable | { readonly $: unknown },
+  content: Renderable | { readonly $: Observable<Renderable> },
   subs: Subscription,
 ): void {
   if (!isSignal<unknown>(content)) {
+    // The cast survives the union change: `isSignal` narrows on `SignalType<unknown>`, so the
+    // `Renderable` members of the union stay reachable in this branch.
     append(host, content as Renderable)
     return
   }
@@ -640,7 +642,9 @@ function mount(
   host.append(anchor)
   let owned: readonly ChildNode[] = []
   subs.add(
-    content.$.subscribe((next: unknown) => {
+    // The cast is on the emission, not the stream: `isSignal` narrows `$` to `SignalType<unknown>`,
+    // so the callback parameter is typed `unknown` no matter what `Slot` declared.
+    content.$.subscribe((next) => {
       for (const node of owned) node.remove()
       const batch = document.createDocumentFragment()
       append(batch, next as Renderable)

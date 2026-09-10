@@ -4,6 +4,7 @@
 // Nothing here imports a table library or React. `Axis` is the only container; a flat grid is an
 // Axis whose every key is a root, so list data and tree data share one code path.
 // Type-only, so the cycle back into `15_selection.ts` is erased at compile time.
+import type { Observable } from "rxjs"
 import type { GridSelection } from "./15_selection.js"
 
 // --- Identity --------------------------------------------------------------
@@ -139,7 +140,7 @@ export type Renderable =
  *
  * There are no value/onChange pairs anywhere in this package. A signal is both halves already.
  */
-export type Slot<Ctx> = (ctx: Ctx) => Renderable | { readonly $: unknown }
+export type Slot<Ctx> = (ctx: Ctx) => Renderable | { readonly $: Observable<Renderable> }
 
 export interface CellCtx<TRow> {
   readonly row: RowId
