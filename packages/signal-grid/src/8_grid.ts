@@ -475,7 +475,10 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
     // The direction supplies the fallback, not the axis: a column standing on the y dimension is
     // one row height tall, because that is what the density setting is measuring.
     const fallback = ROW_HEIGHT[state.density.$()]
-    const port = viewport.$()
+    // The two fields by name, so a sideways scroll writes `left` and never wakes this stage. Reading
+    // the whole viewport put a full row replan on every horizontal frame.
+    const start = viewport.top.$()
+    const extent = viewport.height.$()
     const args = pageWindow(state.page.$())
     const input: RenderPlanInput<string> = {
       flat: seat.nodes.map((it) => it.key),
@@ -488,7 +491,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
       paginate: mode === "client" && args.enabled,
       virtualize: state.virtualize.$(),
       sizer: (keys) => sizerFor(keys, (it) => seat.extent[it], fallback),
-      viewport: { start: port.top, extent: port.height },
+      viewport: { start, extent },
       overscan: config.overscan ?? 4,
     }
     if (!LOG.on) return renderPlan(input)
@@ -539,7 +542,9 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
    * lifts pinned entries out first, so the window can never drop one. @feature view.virtualize.col */
   const colPlan = Signal<RenderPlan<ColId>>(() => {
     const seat = horizontal.$()
-    const port = viewport.$()
+    // The mirror of the row plan's read: a downward scroll writes `top` and leaves this window alone.
+    const start = viewport.left.$()
+    const extent = viewport.width.$()
     const resolved = widths.$()
     return renderPlan<ColId>({
       flat: colLeaves.$(),
@@ -550,7 +555,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
       // A resolved column width first, the seat's own override second: under the transpose this run
       // holds rows, which have no entry in a map keyed by column, so the chain falls through.
       sizer: (keys) => sizerFor(keys, (it) => resolved.get(it) ?? seat.extent[it], DEFAULT_COL_WIDTH),
-      viewport: { start: port.left, extent: port.width },
+      viewport: { start, extent },
       overscan: config.overscan ?? 4,
     })
   })
