@@ -591,7 +591,9 @@ export function createComputedSignal<T>(compute: () => T, name?: string): Signal
   }
 
   const readMemo = () => {
-    readPinned = true
+    // A read pins only while nobody subscribes, so a memo used purely by `.$()` stays wired and
+    // memoized. Subscribers own the lifetime once present, and the last one leaving releases it.
+    if (!subscriberCount) readPinned = true
     const result = dirty || !hasValue ? recompute("read") : value
     const frame = computingRanks.length - 1
     if (frame >= 0) computingRanks[frame] = Math.max(computingRanks[frame], rank + 1)
@@ -600,6 +602,7 @@ export function createComputedSignal<T>(compute: () => T, name?: string): Signal
 
   const observable = new Observable<T>((subscriber) => {
     subscriberCount++
+    readPinned = false
     observers.add(subscriber)
 
     try {

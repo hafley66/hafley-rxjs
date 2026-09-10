@@ -168,6 +168,24 @@ describe("Signal(fn) — automatic computed contract", () => {
     expect(values).toEqual([1, 11, 22])
   })
 
+  it("releases a torn-down consumer from its source, reads included", () => {
+    const rows = Signal([1, 2, 3])
+    const observersOnRows = () => (rows.$ as unknown as { observers: unknown[] }).observers.length
+    const start = observersOnRows()
+    const teardowns = [1, 2, 3].map(() => {
+      const sorted = Signal(() => [...rows.$()].sort())
+      const flat = Signal(() => sorted.$().length)
+      const binding = flat.$.subscribe(() => {})
+      sorted.$()
+      return () => binding.unsubscribe()
+    })
+
+    expect(observersOnRows()).toBe(start + 3)
+    for (const teardown of teardowns) teardown()
+
+    expect(observersOnRows()).toBe(start)
+  })
+
   it("does not permanently kill the memo after a computation throws", () => {
     const shouldThrow = Signal(false)
     const count = Signal(1)
