@@ -4,7 +4,7 @@
 
 Nested-path selectors dedupe by default, and gain a slot for the comparison.
 
-A write to any branch of a signal tree used to re-emit on every other branch's selector, so a subscribed computed downstream re-ran its whole body. Measured in `@hafley66/signal-grid`: one `colWidth` write at 50,000 rows cost 76 ms because it re-sorted every row through the `sort` selector. It now costs 0.0 ms.
+A write to any branch of a signal tree used to re-emit on every other branch's selector, so a subscribed computed downstream re-ran its whole body. Measured in `@hafley66/signal-grid`: one `colWidth` write at 100,000 rows cost 190.1 ms because it re-sorted every row through the `sort` selector. It now costs 0.0126 ms (`bench/README.md`).
 
 - `distinctShallow()` is the default at `SELECTOR_SLOT.distinct`. `shallowEqual` compares one level, which is exactly what immer's per-branch structural sharing gives you.
 - `SignalCreatorOptions.distinct` takes any `MonoTypeOperatorFunction`, or `null` for the previous behaviour.

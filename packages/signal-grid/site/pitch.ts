@@ -40,8 +40,8 @@ interface Claim {
 const CLAIMS: readonly Claim[] = [
   {
     claim: "One operator flattens both forests",
-    receipt: ["src/1_axis.ts:361", "src/8_grid.ts:328", "src/8_grid.ts:371"],
-    note: "flattenAxis runs over the row forest at 8_grid.ts:328 and over the column forest at :371. Same function, same signature, one Axis<K, T> for both.",
+    receipt: ["src/1_axis.ts:361", "src/8_grid.ts:327", "src/8_grid.ts:370"],
+    note: "flattenAxis runs over the row forest at 8_grid.ts:327 and over the column forest at :370. Same function, same signature, one Axis<K, T> for both.",
   },
   {
     claim: "No branch on orientation exists in src/",
@@ -266,7 +266,7 @@ export function renderPitchPage(host: HTMLElement): PitchMount {
     document.createTextNode(
       "Six operations, four of them ours and two of them theirs. The two losses are in this table and not in a footnote: grouping 100k rows on one key, and a write to a state key the row pipeline never reads. Source ",
     ),
-    code("bench/README.md:247"),
+    code("bench/README.md:251"),
     document.createTextNode(", carried here by "),
     code("site/stats.json"),
     document.createTextNode("."),
