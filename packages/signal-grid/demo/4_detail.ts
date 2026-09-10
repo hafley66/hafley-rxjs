@@ -113,7 +113,6 @@ export const detailDemo: DemoRoute = {
     "lives in is a real node of the outer row axis, so the scroll spacer has to account for it.",
   features: ["row.detail", "row.tree", "row.expand", "row.sort", "col.pin", "col.resize", "view.slots", "view.virtualize.row"],
   defects: [
-    "A nested grid is dead to the delegated router: fromDelegatedRoute joins every ancestor data-route, so a nested cell reads g/r/g/r/c. demo/nested.ts re-raises the intents by hand.",
     "A slot has no teardown hook, so the nested render handle has to be tracked outside the slot and stopped when the panel closes or the row rebuilds.",
     "Arrow keys inside the nested grid move both grids: each render() opens its own keydown listener on its own root and the event bubbles to the outer one.",
   ],

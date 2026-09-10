@@ -113,11 +113,8 @@ export const everythingDemo: DemoRoute = {
     "view.theme",
   ],
   defects: [
-    "col.group: a band def becomes a phantom data column, so tracks and cells disagree by one. Toggle it on to see the tear.",
     "ColumnDef.pin never seeds colPinning: this route calls pinningFor() itself.",
     "ColumnDef.movable is read by the renderer but absent from the type, so the move grip is stamped by a header slot.",
-    "The run expander's chain is g/r/c/expand, which no template declares, so tree shape needs the demo to re-raise expander.click.",
-    "A resize drag starts from the 6px handle, not the column: dragging a 130px column 120px right lands on 126px. Use the width slider for an exact width.",
   ],
   mount,
 }

@@ -87,10 +87,9 @@ export const matrixDemo: DemoRoute = {
     "2 by 3 span has to come back as 3 by 2 with both halves of its address swapped.",
   features: ["view.list", "cell.span", "col.pin", "col.resize", "row.pin", "row.sort", "view.slots", "view.theme"],
   defects: [
-    "Under orientation columns every cell renders empty: 10_render.ts looks the vertical key up in the row value map, and a vertical key is a column id. The values on screen are painted by this demo.",
-    "Under the transpose nothing renders the vertical entry's own label, so a matrix has no row headings. This demo prepends them.",
-    "Header cells under the transpose print raw row ids, because the header label falls back to the key when no ColumnDef carries it.",
-    "view.vertical never notifies on an orientation write, so plan and cols keep the previous seating. The toggle here writes density and listView twice to force them to recompute.",
+    "Under orientation columns every cell renders empty: 10_render.ts looks the vertical key up in the row value map, and a vertical key is a column id.",
+    "Under the transpose nothing renders the vertical entry's own label, so a matrix has no row headings. This demo relabels them.",
+    "Header cells under the transpose print raw row ids until relabelRowHeaders runs, because the header label falls back to the key when no ColumnDef carries it.",
   ],
   mount,
 }
