@@ -6,12 +6,12 @@
 // crosses the transpose and cleans up after itself.
 import { afterEach, beforeEach, describe, expect, test } from "vitest"
 import { Subscription } from "rxjs"
-import type { ColumnDef, GridState, Modifiers } from "./0_types.js"
+import type { ColumnDef, GridIntent, GridState, Modifiers } from "./0_types.js"
 import { gridDom, selectorFor } from "./3_paths.js"
 import { expandColumn } from "./5_columns.js"
 import { grid, type Grid } from "./8_grid.js"
 import { render, type RenderHandle } from "./10_render.js"
-import { anchorTo, menuTargetOf, supportsAnchorPositioning, type MenuIntent } from "./16_menu.js"
+import { anchorTo, menuTargetOf, supportsAnchorPositioning } from "./16_menu.js"
 
 interface Row {
   readonly id: string
@@ -33,7 +33,7 @@ const HEADER = selectorFor("header")
 
 const MODS: Modifiers = { alt: false, ctrl: false, meta: false, shift: false, button: 2 }
 
-const cellMenu = (row: string, col: string, x = 40, y = 60): MenuIntent => ({
+const cellMenu = (row: string, col: string, x = 40, y = 60): GridIntent => ({
   phase: "intent",
   type: "cell.contextmenu",
   row,
@@ -43,7 +43,7 @@ const cellMenu = (row: string, col: string, x = 40, y = 60): MenuIntent => ({
   mods: MODS,
 })
 
-const rowMenu = (row: string, x = 12, y = 24): MenuIntent => ({
+const rowMenu = (row: string, x = 12, y = 24): GridIntent => ({
   phase: "intent",
   type: "row.contextmenu",
   row,
@@ -52,7 +52,7 @@ const rowMenu = (row: string, x = 12, y = 24): MenuIntent => ({
   mods: MODS,
 })
 
-const headerMenu = (col: string, x = 8, y = 4): MenuIntent => ({
+const headerMenu = (col: string, x = 8, y = 4): GridIntent => ({
   phase: "intent",
   type: "header.contextmenu",
   col,

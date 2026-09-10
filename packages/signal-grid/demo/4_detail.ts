@@ -140,18 +140,9 @@ function mount(hosts: DemoHosts): DemoHandle {
   const pending = new Set<RowId>()
   // The nested grid needs no hand-wired delegation: `data-route-boundary` on its own root ends the
   // ancestor walk, so its cells compose `g/r/c` against it rather than `g/r/g/r/c` against the page.
-  const panels = new Map<RowId, { readonly handle: RenderHandle }>()
   let lastNested: unknown = null
 
-  const dropPanel = (row: RowId): void => {
-    const held = panels.get(row)
-    if (held === undefined) return
-    held.handle.stop()
-    panels.delete(row)
-  }
-
   const detailSlot = (ctx: RowCtx<OrderRow>) => {
-    dropPanel(ctx.row)
     const host = h("div", "nested-host")
     const head = h("div", "nested-head")
     head.append(
@@ -172,10 +163,11 @@ function mount(hosts: DemoHosts): DemoHandle {
       },
     })
     const handle = render(inner, into)
-    panels.set(ctx.row, { handle })
     lastNested = inner
     window.__demo["nested"] = inner
-    return host
+    // The slot hands back its own teardown, so the nested grid stops when its panel closes without
+    // a panel registry outside the slot.
+    return { content: host, unsubscribe: handle.stop }
   }
 
   const COLUMNS: readonly ColumnDef<OrderRow>[] = [
@@ -222,9 +214,6 @@ function mount(hosts: DemoHosts): DemoHandle {
       const same =
         keys.length === Object.keys(current).length && keys.every((it) => current[it] === next[it])
       if (!same) orders.state.rowHeight.$(next)
-      for (const row of [...panels.keys()]) {
-        if (open[row] === undefined) dropPanel(row)
-      }
       refresh()
     }),
   )
@@ -255,10 +244,6 @@ function mount(hosts: DemoHosts): DemoHandle {
       }),
   )
 
-  box.addEventListener("keydown", (event) => {
-    if (event.key.startsWith("Arrow") || event.key === " ") event.preventDefault()
-  })
-
   // --- panel ----------------------------------------------------------------
 
   const openRows = (): readonly RowId[] => Object.keys(orders.state.detail.$())
@@ -275,7 +260,7 @@ function mount(hosts: DemoHosts): DemoHandle {
       { label: "close every panel", run: () => orders.state.detail.$({}) },
     ]),
     readbackField("open panels", () => `${openRows().length}: ${openRows().slice(0, 2).join(", ")}`),
-    readbackField("nested grids alive", () => String(panels.size)),
+    readbackField("nested grids alive", () => String(openRows().length)),
     readbackField("detail row heights", () =>
       Object.keys(orders.state.rowHeight.$()).length === 0
         ? "none"
@@ -338,7 +323,6 @@ function mount(hosts: DemoHosts): DemoHandle {
     grid: orders,
     stop: () => {
       subs.unsubscribe()
-      for (const row of [...panels.keys()]) dropPanel(row)
       panelReadout.stop()
       handle.stop()
       orders.close()

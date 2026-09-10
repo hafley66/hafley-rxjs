@@ -29,7 +29,7 @@ const BUILT_IN_ID_SET: ReadonlySet<ColId> = new Set(Object.values(BUILT_IN_IDS))
 export interface BuiltInColumnDef<TRow> extends ColumnDef<TRow> {
   readonly builtIn: BuiltInId
   readonly cell: Slot<CellCtx<TRow>>
-  readonly headerCell: Slot<HeaderCtx>
+  readonly headerCell: Slot<HeaderCtx<TRow>>
 }
 
 /** By the discriminator first, because `opts.id` may rename any of them. */
@@ -99,7 +99,7 @@ export interface BuiltInColumnOptions<TRow> {
   readonly width?: number
   /** Default pin side. Read by `pinningFor`, never by the kernel. */
   readonly pin?: Side
-  readonly header?: Slot<HeaderCtx>
+  readonly header?: Slot<HeaderCtx<TRow>>
   readonly cell?: Slot<CellCtx<TRow>>
 }
 
@@ -132,7 +132,7 @@ const el = (
   return node
 }
 
-const EMPTY_HEADER: Slot<HeaderCtx> = () => ""
+const EMPTY_HEADER: Slot<HeaderCtx<unknown>> = () => ""
 
 const GLYPH_WIDTH = 36
 const NUMBER_WIDTH = 56
@@ -141,7 +141,7 @@ function builtInColumn<TRow>(
   builtIn: BuiltInId,
   width: number,
   side: Side | undefined,
-  header: Slot<HeaderCtx>,
+  header: Slot<HeaderCtx<TRow>>,
   cell: Slot<CellCtx<TRow>>,
   opts: BuiltInColumnOptions<TRow>,
 ): BuiltInColumnDef<TRow> {
@@ -178,7 +178,7 @@ const selectGlyph = <TRow>(kind: "check" | "radio"): Slot<CellCtx<TRow>> =>
 /** Multi-select. The header is a signal, so a selection click repaints one node. @feature row.select */
 export function checkboxColumn<TRow>(opts: SelectColumnOptions<TRow> = {}): BuiltInColumnDef<TRow> {
   const read = opts.grid
-  const header: Slot<HeaderCtx> = () => {
+  const header: Slot<HeaderCtx<TRow>> = () => {
     if (read === undefined) return SELECT_ALL_GLYPH.none
     const glyph: Sig<string> = Signal<string>(() => {
       const grid = read()

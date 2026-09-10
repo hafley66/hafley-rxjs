@@ -673,14 +673,26 @@ for (const crossing of CROSSINGS) {
       expect(marked[0]?.getAttribute("data-edge")).toBe("top bottom start end")
     })
 
-    test("the header band names the horizontal run, and a row header reads the row's id", () => {
+    test("the header slot is handed the horizontal entry under both seatings", () => {
       const harness = mountCrossed({ slots: { header: (ctx: HeaderCtx) => `head:${ctx.col}` } })
       const across = harness.grid.view.cols.$().map((node) => node.key)
       expect(headCellsOf().map((head) => head.getAttribute("data-col-id"))).toEqual([...across])
-      // A header slot is handed a column of the schema. Under the transpose this band labels rows,
-      // which carry no `header` string and no def, so each cell reads its row's id instead.
+      expect(headCellsOf().map((head) => head.textContent)).toEqual(across.map((key) => `head:${key}`))
+    })
+
+    test("a transposed header band labels its rows from the row's own data", () => {
+      mountCrossed({
+        slots: {
+          header: (ctx: HeaderCtx<Row>) =>
+            ctx.data === undefined ? `col:${ctx.col}` : `row:${ctx.row}:${ctx.data.name}`,
+        },
+      })
+      // Under "rows" the band holds columns and `data` is absent; under "columns" it holds rows and
+      // the slot reads the row it labels, which is the whole of the transpose's header story.
       expect(headCellsOf().map((head) => head.textContent)).toEqual(
-        crossing.rowsRunVertical ? ["head:name", "head:size"] : ["a", "b"],
+        crossing.rowsRunVertical
+          ? ["col:name", "col:size"]
+          : ["row:a:Alpha", "row:b:Beta"],
       )
     })
 

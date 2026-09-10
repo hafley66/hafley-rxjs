@@ -53,12 +53,6 @@ export const rowOfDetailKey = (key: DetailKey): RowId =>
 /** Which cell opened the panel. `true` is a panel opened by something other than a cell. */
 export type DetailOpen = Readonly<Record<RowId, ColId | true>>
 
-export type DetailState = { readonly detail: DetailOpen }
-
-// The intersection is what lets this module compile before `GridState` carries `detail`. Once the
-// schema patch lands the two collapse into one type and nothing here changes.
-export type GridStateWithDetail = GridState & DetailState
-
 export type DetailChange = { phase: "change"; type: "detail"; detail: DetailOpen }
 
 type HasDetail = { readonly detail: DetailOpen }
@@ -68,11 +62,11 @@ export function openDetail(
   state: HasDetail,
   row: RowId,
   col: ColId,
-): Partial<GridStateWithDetail> {
+): Partial<GridState> {
   return { detail: { ...state.detail, [row]: col } }
 }
 
-export function closeDetail(state: HasDetail, row: RowId): Partial<GridStateWithDetail> {
+export function closeDetail(state: HasDetail, row: RowId): Partial<GridState> {
   const detail: Record<RowId, ColId | true> = { ...state.detail }
   // Deleted rather than set false, so `Object.keys` is the open set and `withDetail` needs no filter.
   delete detail[row]
@@ -85,7 +79,7 @@ export function toggleDetail(
   state: HasDetail,
   row: RowId,
   col: ColId,
-): Partial<GridStateWithDetail> {
+): Partial<GridState> {
   return state.detail[row] === col ? closeDetail(state, row) : openDetail(state, row, col)
 }
 
@@ -163,11 +157,11 @@ export interface DetailEpicOptions {
   readonly mode?: "toggle" | "swap"
 }
 
-// Typed against the intersection rather than `GridEpic<TRow>` for the same reason as
-// `GridStateWithDetail`: after the schema patch the two signatures are the same signature.
+// Narrower than `GridEpic<TRow>`: it reads `GridState`, which already carries `detail`, and emits
+// only `DetailChange`, so a consumer installs it beside `defaultEpics()` without widening its type.
 export type DetailEpic<TRow> = (
   actions$: Observable<GridAction<TRow>>,
-  state: Sig<GridStateWithDetail>,
+  state: Sig<GridState>,
   ctx: GridEpicCtx<TRow>,
 ) => Observable<DetailChange>
 

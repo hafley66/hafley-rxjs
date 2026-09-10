@@ -19,9 +19,8 @@ import {
   withDetail,
   type DetailEpicOptions,
   type DetailOpen,
-  type GridStateWithDetail,
 } from "./11_detail.js"
-import type { RowCtx, Slot } from "./0_types.js"
+import type { GridState, RowCtx, Slot } from "./0_types.js"
 
 type Row = { id: string; name: string; kids?: Row[] }
 
@@ -38,7 +37,7 @@ const treeAxis = () => axisOfTree(TREE, (r) => r.id, (r) => r.kids)
 const keysOf = (axis: ReturnType<typeof flatAxis>, open: (key: string) => boolean = () => true) =>
   flattenAxis(axis, open).map((n) => n.key)
 
-const stateOf = (detail: DetailOpen): GridStateWithDetail => ({ ...defaultState(), detail })
+const stateOf = (detail: DetailOpen): GridState => ({ ...defaultState(), detail })
 
 describe("detail keys", () => {
   it("round-trips a row id", () => {

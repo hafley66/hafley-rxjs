@@ -140,7 +140,19 @@ export type Renderable =
  *
  * There are no value/onChange pairs anywhere in this package. A signal is both halves already.
  */
-export type Slot<Ctx> = (ctx: Ctx) => Renderable | { readonly $: Observable<Renderable> }
+export type Slot<Ctx> = (ctx: Ctx) => SlotContent
+
+/**
+ * A slot may also hand back a teardown alongside its content or signal. The teardown runs when the
+ * row or header that mounted the slot is torn down, which is how a detail slot stops a nested grid
+ * it rendered once the panel closes. `10_render.ts` joins it into the same `Subscription` as the
+ * content's own subscription, so the two teardown together.
+ */
+export type SlotContent =
+  | Renderable
+  | { readonly $: Observable<Renderable> }
+  | { readonly content: Renderable; readonly unsubscribe: () => void }
+  | { readonly $: Observable<Renderable>; readonly unsubscribe: () => void }
 
 export interface CellCtx<TRow> {
   readonly row: RowId
@@ -150,11 +162,20 @@ export interface CellCtx<TRow> {
   readonly node: FlatNode<RowId>
   readonly editing: boolean
 }
-export interface HeaderCtx {
+/**
+ * The header band labels the horizontal run. Under `"rows"` that run is the column axis, so `col`
+ * is a column id, `row` is null, and `data` is undefined. Under `"columns"` the run is the row
+ * axis, so `col` carries the row id, `row` carries that same id, and `data` is the row itself. A
+ * consumer labels either by reading `data` (the transpose) or by falling back to the column's own
+ * `header` string, which is why `data` is optional rather than a second discriminated slot type.
+ */
+export interface HeaderCtx<TRow = unknown> {
   readonly col: ColId
   readonly node: FlatNode<ColId>
   readonly sort: SortDirection | null
   readonly pinned: Side | undefined
+  readonly row: RowId | null
+  readonly data: TRow | undefined
 }
 export interface RowCtx<TRow> {
   readonly row: RowId
@@ -168,14 +189,14 @@ export interface RowCtx<TRow> {
 export interface Slots<TRow> {
   readonly cell?: Slot<CellCtx<TRow>>
   readonly editor?: Slot<CellCtx<TRow>>
-  readonly header?: Slot<HeaderCtx>
-  readonly headerGroup?: Slot<HeaderCtx>
+  readonly header?: Slot<HeaderCtx<TRow>>
+  readonly headerGroup?: Slot<HeaderCtx<TRow>>
   readonly row?: Slot<RowCtx<TRow>>
   readonly detail?: Slot<RowCtx<TRow>>
   readonly expander?: Slot<RowCtx<TRow>>
   readonly checkbox?: Slot<RowCtx<TRow>>
-  readonly resizeHandle?: Slot<HeaderCtx>
-  readonly dragPreview?: Slot<HeaderCtx | RowCtx<TRow>>
+  readonly resizeHandle?: Slot<HeaderCtx<TRow>>
+  readonly dragPreview?: Slot<HeaderCtx<TRow> | RowCtx<TRow>>
   readonly empty?: Slot<Record<string, never>>
   readonly loading?: Slot<Record<string, never>>
   readonly footer?: Slot<Record<string, never>>
@@ -228,7 +249,7 @@ export interface ColumnDef<TRow, V = unknown> {
   /** Per-column body slot. Beats `Slots.cell`, which stays the schema-wide default. */
   readonly cell?: Slot<CellCtx<TRow>>
   /** Per-column header slot. `header` above is the plain-text label. */
-  readonly headerCell?: Slot<HeaderCtx>
+  readonly headerCell?: Slot<HeaderCtx<TRow>>
   /** Default pin side, seeding `colPinning`. State still wins, so a drag can unpin it. */
   readonly pin?: Side
 }

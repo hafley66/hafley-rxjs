@@ -13,42 +13,20 @@
 // of the three ever fire together.
 import { conventionalParts, verticalOf, type AxisPair } from "./12_transpose.js"
 import { encodeVarId, selectorFor } from "./3_paths.js"
-import type { ColId, GridIntent, Modifiers, Orientation, RowId } from "./0_types.js"
+import type { ColId, GridIntent, Orientation, RowId } from "./0_types.js"
 
 // --- The intents ------------------------------------------------------------
 
-/** Mirrors the `GridIntent` patch, so this file compiles before the grammar carries the three.
- * `x` and `y` are client coordinates: anchor positioning ignores them, a hand-placed menu needs them. */
-export type MenuIntent =
-  | {
-      phase: "intent"
-      type: "cell.contextmenu"
-      row: RowId
-      col: ColId
-      x: number
-      y: number
-      mods: Modifiers
-    }
-  | { phase: "intent"; type: "row.contextmenu"; row: RowId; x: number; y: number; mods: Modifiers }
-  | {
-      phase: "intent"
-      type: "header.contextmenu"
-      col: ColId
-      x: number
-      y: number
-      mods: Modifiers
-    }
-
-export type MenuIntentType = MenuIntent["type"]
-
-const MENU_TYPES: ReadonlySet<string> = new Set<MenuIntentType>([
+const MENU_TYPES: ReadonlySet<GridIntent["type"]> = new Set([
   "cell.contextmenu",
   "row.contextmenu",
   "header.contextmenu",
 ])
 
-/** True for exactly the three above, so a consumer filters `g.intent$` in one call. */
-export const isMenuIntent = (intent: GridIntent | MenuIntent): intent is MenuIntent =>
+/** True for exactly the three contextmenu intents, so a consumer filters `g.intent$` in one call. */
+export const isMenuIntent = (
+  intent: GridIntent,
+): intent is Extract<GridIntent, { type: "cell.contextmenu" | "row.contextmenu" | "header.contextmenu" }> =>
   MENU_TYPES.has(intent.type)
 
 // --- The target -------------------------------------------------------------
@@ -113,7 +91,7 @@ function cellOwnedBy(root: HTMLElement, row: RowId): HTMLElement | null {
 /** The anchor and the address for one context-menu intent, or null when the element it named has
  * left the DOM, which is a menu that does not open rather than one that opens at the origin. */
 export function menuTargetOf(
-  intent: GridIntent | MenuIntent,
+  intent: GridIntent,
   root: HTMLElement,
   orientation: Orientation,
 ): MenuTarget | null {

@@ -40,6 +40,8 @@ const headerCtx = (col: string): HeaderCtx => ({
   node: { key: col, depth: 0, index: 0, parent: null, hasChildren: false },
   sort: null,
   pinned: undefined,
+  row: null,
+  data: undefined,
 })
 
 const cellCtx = (row: RowId, col: string, node: FlatNode<RowId>): CellCtx<Row> => ({

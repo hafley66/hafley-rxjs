@@ -3,16 +3,29 @@
   "generatedBy": "packages/signal-grid/scripts/stats.mjs",
   "commit": {
     "method": "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain excluding this script's own two outputs, git rev-parse --abbrev-ref HEAD",
-    "hash": "595de6a44075cc4d764d8f05827d4f1b6b889f2a",
-    "short": "595de6a",
-    "subject": "signal-grid: pitch and 6_why cite the remeasured bench",
-    "authorDate": "2026-09-10T13:29:46-04:00",
-    "branch": "fix/signal-grid-bench-truth",
-    "clean": true,
-    "dirtyCount": 0,
-    "dirtyEntries": [],
+    "hash": "852d598db97e0e7b436398bc63b3df3dd16c8811",
+    "short": "852d598",
+    "subject": "signal-grid: the benchmarks report what the current code does",
+    "authorDate": "2026-09-10T13:31:38-04:00",
+    "branch": "main",
+    "clean": false,
+    "dirtyCount": 12,
+    "dirtyEntries": [
+      "M packages/signal-grid/demo/3_matrix.ts",
+      " M packages/signal-grid/demo/4_detail.ts",
+      " M packages/signal-grid/src/0_types.ts",
+      " M packages/signal-grid/src/10_render.test.ts",
+      " M packages/signal-grid/src/10_render.ts",
+      " M packages/signal-grid/src/11_detail.test.ts",
+      " M packages/signal-grid/src/11_detail.ts",
+      " M packages/signal-grid/src/16_menu.test.ts",
+      " M packages/signal-grid/src/16_menu.ts",
+      " M packages/signal-grid/src/5_columns.test.ts",
+      " M packages/signal-grid/src/5_columns.ts",
+      " M packages/signal-grid/src/8_grid.ts"
+    ],
     "repository": "hafley66/hafley-rxjs",
-    "url": "https://github.com/hafley66/hafley-rxjs/commit/595de6a44075cc4d764d8f05827d4f1b6b889f2a",
+    "url": "https://github.com/hafley66/hafley-rxjs/commit/852d598db97e0e7b436398bc63b3df3dd16c8811",
     "reason": null
   },
   "machine": {
@@ -23,7 +36,7 @@
     "cpuModel": "Apple M2 Pro",
     "cores": 12,
     "totalMemoryBytes": 17179869184,
-    "builtAt": "2026-09-10T17:30:02.016Z"
+    "builtAt": "2026-09-10T17:31:46.820Z"
   },
   "package": {
     "name": "@hafley66/signal-grid",
@@ -35,8 +48,8 @@
       "files": [
         {
           "file": "dist/index.js",
-          "bytes": 66189,
-          "gzipBytes": 19636
+          "bytes": 66897,
+          "gzipBytes": 19859
         },
         {
           "file": "dist/theme.css",
@@ -44,28 +57,81 @@
           "gzipBytes": 3267
         }
       ],
-      "totalBytes": 76693,
-      "totalGzipBytes": 22903,
+      "totalBytes": 77401,
+      "totalGzipBytes": 23126,
       "reason": null
     },
     "siteMethod": "the same statSync and gzipSync pass, run after the site build and before the rebuild that ships this file; the shipped assets differ from these figures by the bytes this table adds to stats.json",
     "site": {
-      "files": null,
-      "totalBytes": null,
-      "totalGzipBytes": null,
-      "reason": "site/dist/assets does not exist; the site has not been built in this run"
+      "files": [
+        {
+          "file": "site/dist/assets/index-q84Kouc-.js",
+          "bytes": 444355,
+          "gzipBytes": 148229
+        },
+        {
+          "file": "site/dist/assets/index-riLwRccH.css",
+          "bytes": 18988,
+          "gzipBytes": 4264
+        },
+        {
+          "file": "site/dist/index.html",
+          "bytes": 2635,
+          "gzipBytes": 1133
+        }
+      ],
+      "totalBytes": 465978,
+      "totalGzipBytes": 153626,
+      "reason": null
     },
     "demo": {
-      "files": null,
-      "totalBytes": null,
-      "totalGzipBytes": null,
-      "reason": "site/dist/demo/assets does not exist; the demo has not been built in this run"
+      "files": [
+        {
+          "file": "site/dist/demo/assets/index-By5ZAhXA.js",
+          "bytes": 211470,
+          "gzipBytes": 71594
+        },
+        {
+          "file": "site/dist/demo/assets/index-CrKy9QTB.css",
+          "bytes": 17641,
+          "gzipBytes": 3787
+        }
+      ],
+      "totalBytes": 229111,
+      "totalGzipBytes": 75381,
+      "reason": null
     },
     "videos": {
-      "files": null,
-      "totalBytes": null,
-      "totalGzipBytes": null,
-      "reason": "site/dist/videos holds no recordings; run `pnpm test:visual && pnpm videos`"
+      "files": [
+        {
+          "file": "site/dist/videos/tests-2-visual-e2e-test__5000-rows-recycle-through-a-bounded-dom-and-turning-virtualization-off-renders-t.mp4",
+          "bytes": 172682,
+          "gzipBytes": 166284
+        },
+        {
+          "file": "site/dist/videos/tests-2-visual-e2e-test__dragging-the-resize-handle-with-a-real-pointer-widens-one-column-and-leaves-its-.mp4",
+          "bytes": 77836,
+          "gzipBytes": 76374
+        },
+        {
+          "file": "site/dist/videos/tests-2-visual-e2e-test__state-colorder-drives-the-header-band-and-every-row-band-from-one-model.mp4",
+          "bytes": 66247,
+          "gzipBytes": 63947
+        },
+        {
+          "file": "site/dist/videos/tests-2-visual-e2e-test__hiding-a-column-removes-it-from-both-bands-and-reflows-the-rest-and-unhiding-ret.mp4",
+          "bytes": 63235,
+          "gzipBytes": 61170
+        },
+        {
+          "file": "site/dist/videos/tests-2-visual-e2e-test__css-custom-properties-on-the-grid-root-retheme-live-rows-and-light-dark-flips-wi.mp4",
+          "bytes": 54339,
+          "gzipBytes": 50950
+        }
+      ],
+      "totalBytes": 434339,
+      "totalGzipBytes": 418725,
+      "reason": null
     }
   },
   "source": {
@@ -73,17 +139,17 @@
     "files": [
       {
         "file": "src/10_render.ts",
-        "lines": 744,
+        "lines": 787,
         "kind": "source"
       },
       {
         "file": "src/10_render.test.ts",
-        "lines": 707,
+        "lines": 717,
         "kind": "test"
       },
       {
         "file": "src/8_grid.ts",
-        "lines": 600,
+        "lines": 620,
         "kind": "source"
       },
       {
@@ -117,6 +183,11 @@
         "kind": "source"
       },
       {
+        "file": "src/0_types.ts",
+        "lines": 420,
+        "kind": "source"
+      },
+      {
         "file": "src/4_slice.test.ts",
         "lines": 407,
         "kind": "test"
@@ -130,11 +201,6 @@
         "file": "src/8_grid.test.ts",
         "lines": 399,
         "kind": "test"
-      },
-      {
-        "file": "src/0_types.ts",
-        "lines": 396,
-        "kind": "source"
       },
       {
         "file": "src/3_paths.ts",
@@ -163,7 +229,7 @@
       },
       {
         "file": "src/5_columns.ts",
-        "lines": 278,
+        "lines": 276,
         "kind": "source"
       },
       {
@@ -173,7 +239,12 @@
       },
       {
         "file": "src/11_detail.test.ts",
-        "lines": 264,
+        "lines": 263,
+        "kind": "test"
+      },
+      {
+        "file": "src/5_columns.test.ts",
+        "lines": 263,
         "kind": "test"
       },
       {
@@ -182,23 +253,18 @@
         "kind": "source"
       },
       {
-        "file": "src/5_columns.test.ts",
-        "lines": 261,
-        "kind": "test"
-      },
-      {
         "file": "src/12_transpose.test.ts",
         "lines": 239,
         "kind": "test"
       },
       {
-        "file": "src/16_menu.ts",
-        "lines": 237,
+        "file": "src/15_selection.ts",
+        "lines": 233,
         "kind": "source"
       },
       {
-        "file": "src/15_selection.ts",
-        "lines": 233,
+        "file": "src/16_menu.ts",
+        "lines": 215,
         "kind": "source"
       },
       {
@@ -207,14 +273,14 @@
         "kind": "source"
       },
       {
-        "file": "src/11_detail.ts",
-        "lines": 190,
-        "kind": "source"
-      },
-      {
         "file": "src/13_composite.test.ts",
         "lines": 189,
         "kind": "test"
+      },
+      {
+        "file": "src/11_detail.ts",
+        "lines": 184,
+        "kind": "source"
       },
       {
         "file": "src/14_measure.ts",
@@ -238,7 +304,7 @@
       },
       {
         "file": "src/6_gestures.ts",
-        "lines": 95,
+        "lines": 102,
         "kind": "source"
       },
       {
@@ -258,20 +324,49 @@
       }
     ],
     "sourceFiles": 20,
-    "sourceLines": 6329,
+    "sourceLines": 6393,
     "testFiles": 17,
-    "testLines": 5555
+    "testLines": 5566
+  },
+  "epics": {
+    "method": "a child node process imports defaultEpics from dist/index.js and reports the length of what it returns",
+    "count": 12,
+    "reason": null
+  },
+  "features": {
+    "method": "node scripts/parity.mjs, counts read back from site/parity.json",
+    "tracked": 47,
+    "implemented": 21,
+    "declaredOnly": 9,
+    "decidedOut": 8,
+    "undecided": 9,
+    "tags": 43,
+    "modules": 17,
+    "untagged": [
+      "10_render.ts",
+      "12_transpose.ts",
+      "13_composite.ts",
+      "14_measure.ts",
+      "15_selection.ts",
+      "16_menu.ts",
+      "6_gestures.ts",
+      "9_css.ts"
+    ],
+    "unread": 7,
+    "gate": "fail",
+    "durationMs": 344,
+    "reason": "the parity gate fails: 8 module(s) under src/ carry no feature tag"
   },
   "tests": {
     "method": "vitest run --reporter=json --outputFile=..., counts read from numTotalTests / numTotalTestSuites / numPassedTests / numFailedTests",
     "unit": {
       "label": "unit",
       "command": "vitest run",
-      "tests": 465,
+      "tests": 467,
       "files": 133,
-      "passed": 465,
+      "passed": 467,
       "failed": 0,
-      "durationMs": 3047,
+      "durationMs": 3928,
       "success": true,
       "reason": null
     },
@@ -288,15 +383,15 @@
   },
   "timing": {
     "method": "Date.now() around each execFileSync call in scripts/stats.mjs; site and demo build times are handed over by scripts/ship.mjs",
-    "typecheckMs": 1099,
+    "typecheckMs": 2035,
     "typecheckReason": null,
-    "libraryBuildMs": 1046,
+    "libraryBuildMs": 1729,
     "libraryBuildReason": null,
-    "unitTestsMs": 3047,
+    "unitTestsMs": 3928,
     "browserTestsMs": null,
     "siteBuildMs": null,
     "demoBuildMs": null,
-    "statsMs": 5364
+    "statsMs": 8322
   },
   "memory": {
     "method": "a child node --expose-gc process imports dist/index.js, allocates 100000 plain row objects, forces gc, reads process.memoryUsage().heapUsed, builds one grid and reads view.plan and view.flat, forces gc again, reads heapUsed again",
@@ -304,11 +399,11 @@
     "rows": 100000,
     "flatNodes": 100000,
     "windowedRows": 27,
-    "heapBeforeBytes": 24297264,
-    "heapAfterBytes": 36591464,
-    "retainedBytes": 12294200,
+    "heapBeforeBytes": 24168536,
+    "heapAfterBytes": 36460632,
+    "retainedBytes": 12292096,
     "retainedBytesPerRow": 122.9,
-    "rssBytes": 148176896,
+    "rssBytes": 146833408,
     "reason": null
   },
   "bench": {

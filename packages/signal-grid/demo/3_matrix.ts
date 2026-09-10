@@ -10,7 +10,9 @@ import {
   type CellId,
   type ColumnDef,
   type GridState,
+  type HeaderCtx,
   type Orientation,
+  type Renderable,
   type Viewport,
 } from "../src/index.js"
 import { actions, checkField, group, h, readbackField, segmentField, type Option } from "./controls.js"
@@ -68,6 +70,13 @@ const COLUMNS: readonly ColumnDef<Metric>[] = [
   { id: "note", header: "Note", width: 150, resizable: true },
 ]
 
+// The header band labels the horizontal run: columns under `"rows"`, rows under the transpose. The
+// slot reads the row's own `region` for the latter and the column's `header` string for the former.
+const headerSlot = (it: HeaderCtx<Metric>): Renderable =>
+  it.data !== undefined
+    ? it.data.region
+    : (COLUMNS.find((col) => col.id === it.col)?.header ?? it.col)
+
 
 
 /** `cellId` joins with NUL, which no panel can print. Both halves come back readable. */
@@ -87,9 +96,7 @@ export const matrixDemo: DemoRoute = {
     "2 by 3 span has to come back as 3 by 2 with both halves of its address swapped.",
   features: ["view.list", "cell.span", "col.pin", "col.resize", "row.pin", "row.sort", "view.slots", "view.theme"],
   defects: [
-    "Under orientation columns every cell renders empty: 10_render.ts looks the vertical key up in the row value map, and a vertical key is a column id.",
-    "Under the transpose nothing renders the vertical entry's own label, so a matrix has no row headings. This demo relabels them.",
-    "Header cells under the transpose print raw row ids until relabelRowHeaders runs, because the header label falls back to the key when no ColumnDef carries it.",
+    "view.vertical never notifies on an orientation write, so plan and cols keep the previous seating. The toggle here writes density and listView twice to force them to recompute.",
   ],
   mount,
 }
@@ -117,23 +124,10 @@ function mount(hosts: DemoHosts): DemoHandle {
       rowHeight: { north: 130, south: 130, east: 130, west: 130, alpine: 130, coastal: 130, delta: 130, plateau: 130 },
     }),
     viewport,
+    slots: { header: headerSlot },
   })
 
   const handle = render(metrics, box)
-
-  // The renderer honours the transpose now, so the cells paint themselves. What it cannot do is
-  // label the horizontal band: under `"columns"` that band holds rows, a row carries no header
-  // string, and the renderer skips `slots.header` there rather than handing it a row id.
-  const relabelRowHeaders = (): void => {
-    if (metrics.state.orientation.$() !== "columns") return
-    const byRow = metrics.view.detailed.$().by
-    for (const headEl of Array.from(box.getElementsByClassName("sg-head-cell"))) {
-      if (!(headEl instanceof HTMLElement)) continue
-      const rowId = headEl.getAttribute("data-col-id")
-      if (rowId === null) continue
-      headEl.textContent = byRow.get(rowId)?.region ?? rowId
-    }
-  }
 
   // --- readouts -------------------------------------------------------------
 
@@ -233,7 +227,6 @@ function mount(hosts: DemoHosts): DemoHandle {
     queued = true
     requestAnimationFrame(() => {
       queued = false
-      relabelRowHeaders()
       axisGroup.refresh()
       spanGroup.refresh()
       viewGroup.refresh()

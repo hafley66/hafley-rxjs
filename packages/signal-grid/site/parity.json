@@ -22,43 +22,43 @@
       "id": "col.formula",
       "declaration": "formula",
       "file": "src/0_types.ts",
-      "line": 199
+      "line": 221
     },
     {
       "id": "row.detail",
       "declaration": "detailOnCellClick",
       "file": "src/11_detail.ts",
-      "line": 175
+      "line": 169
     },
     {
       "id": "row.select",
       "declaration": "checkboxColumn",
       "file": "src/5_columns.ts",
-      "line": 181
+      "line": 179
     },
     {
       "id": "row.select",
       "declaration": "radioColumn",
       "file": "src/5_columns.ts",
-      "line": 202
+      "line": 200
     },
     {
       "id": "row.expand",
       "declaration": "expandColumn",
       "file": "src/5_columns.ts",
-      "line": 219
+      "line": 217
     },
     {
       "id": "row.order",
       "declaration": "dragColumn",
       "file": "src/5_columns.ts",
-      "line": 235
+      "line": 233
     },
     {
       "id": "row.detail",
       "declaration": "detailColumn",
       "file": "src/5_columns.ts",
-      "line": 249
+      "line": 247
     }
   ],
   "decidedOut": 8,

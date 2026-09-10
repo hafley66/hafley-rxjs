@@ -16,12 +16,14 @@ import {
   type ColId,
   type ColumnDef,
   type FlatNode,
+  type HeaderCtx,
   type Orientation,
   type Partitioned,
   type Renderable,
   type RowCtx,
   type RowId,
   type Side,
+  type SlotContent,
   type SortDirection,
   type SortModel,
 } from "./0_types.js"
@@ -72,6 +74,10 @@ const isExpandColumn = <TRow>(def: ColumnDef<TRow>): boolean => builtInOf(def) =
 // without this file keeping a second copy of that table.
 const ROW_SEAT = CELL_SEP + "row"
 const COL_SEAT = CELL_SEP + "col"
+
+// The empty half of a one-axis address, so the seat table can be asked which seat a horizontal
+// entry stands on. No axis holds "" as a key.
+const NONE = ""
 
 /**
  * True when the run that scrolls is the row axis. Only that axis flattens against `expanded`: the
@@ -212,7 +218,12 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
   function headerCell(colId: ColId, current: Frame<TRow>, subs: Subscription): HTMLElement {
     const cell = box("sg-head-cell")
     setAttrs(cell, headerAttrs(colId))
-    const def = current.defs.get(colId)
+    // The horizontal entry is a column under `"rows"` and a row under the transpose. Crossing it
+    // through the seat table resolves which, so the def lookup and the data lookup each read the one
+    // key they own rather than branching on the orientation string.
+    const [row, col] = conventionalParts(NONE, colId, current.orientation)
+    const def = col === NONE ? undefined : current.defs.get(col)
+    const data = row === NONE ? undefined : current.data.get(row)
     const direction = sortOf(current.sort, colId)
     if (direction !== null) {
       cell.setAttribute("aria-sort", direction === "asc" ? "ascending" : "descending")
@@ -225,10 +236,19 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     if (asksToMove(def)) setAttrs(label, moveAttrs())
     cell.append(label)
     const slot = def?.headerCell ?? grid.slots.header
-    // A header slot is handed a `ColumnDef`'s id, and under the transpose this band labels the row
-    // axis, where no def exists. A row carries no header string either, so the band reads the id.
-    if (slot !== undefined && node !== undefined && def !== undefined) {
-      mount(label, slot({ col: colId, node, sort: direction, pinned: current.pinning[colId] }), subs)
+    // The slot is handed the horizontal entry's id under both seatings. Under the transpose that
+    // entry is a row, so the slot also receives the row's id and data to label itself with; the
+    // `ColumnDef.header` fallback only answers when the band holds columns.
+    if (slot !== undefined && node !== undefined) {
+      const ctx: HeaderCtx<TRow> = {
+        col: colId,
+        node,
+        sort: direction,
+        pinned: current.pinning[colId],
+        row: row === NONE ? null : row,
+        data,
+      }
+      mount(label, slot(ctx), subs)
     } else {
       label.append(def?.header ?? colId)
     }
@@ -623,17 +643,39 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
 
 // --- content ----------------------------------------------------------------
 
+/** Pulls a teardown out of a slot's return, leaving the content or signal the branches below read. */
+const split = (
+  content: SlotContent,
+): {
+  readonly body: Renderable | { readonly $: Observable<Renderable> }
+  readonly unsubscribe: (() => void) | undefined
+} => {
+  if (typeof content === "object" && content !== null && "unsubscribe" in content) {
+    const held = content as {
+      readonly content?: Renderable
+      readonly $?: Observable<Renderable>
+      readonly unsubscribe: () => void
+    }
+    return {
+      body: held.$ !== undefined ? { $: held.$ } : (held.content as Renderable),
+      unsubscribe: held.unsubscribe,
+    }
+  }
+  return { body: content as Renderable | { readonly $: Observable<Renderable> }, unsubscribe: undefined }
+}
+
 /** A signal slot subscribes one node into the row's `Subscription`, so a recycled cell cannot keep
  * writing into a node that now belongs to another row. */
-function mount(
-  host: HTMLElement,
-  content: Renderable | { readonly $: Observable<Renderable> },
-  subs: Subscription,
-): void {
-  if (!isSignal<unknown>(content)) {
+function mount(host: HTMLElement, content: SlotContent, subs: Subscription): void {
+  const held = split(content)
+  // A slot's teardown joins the same Subscription as its content's, so a throwing content teardown
+  // cannot skip the rows below it and a row leaving tears both down together.
+  if (held.unsubscribe !== undefined) subs.add(held.unsubscribe)
+  const body = held.body
+  if (!isSignal<unknown>(body)) {
     // The cast survives the union change: `isSignal` narrows on `SignalType<unknown>`, so the
     // `Renderable` members of the union stay reachable in this branch.
-    append(host, content as Renderable)
+    append(host, body as Renderable)
     return
   }
   // An emission replaces only what the previous one inserted: the resize handle is appended after
@@ -644,7 +686,7 @@ function mount(
   subs.add(
     // The cast is on the emission, not the stream: `isSignal` narrows `$` to `SignalType<unknown>`,
     // so the callback parameter is typed `unknown` no matter what `Slot` declared.
-    content.$.subscribe((next) => {
+    body.$.subscribe((next) => {
       for (const node of owned) node.remove()
       const batch = document.createDocumentFragment()
       append(batch, next as Renderable)

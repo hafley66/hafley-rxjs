@@ -1,6 +1,7 @@
 // The constructor. Takes sources, returns signals. There are no value/onChange pairs anywhere:
 // a signal is both halves already, so "controlled" and "uncontrolled" stop being different things.
 import { fromEvent, isObservable, Observable, Subscription, filter as rxFilter, map, share } from "rxjs"
+import { ROUTE_BOUNDARY_ATTR } from "@hafley66/xdom"
 import { createSlice, isSignal, Signal, storageSignal, urlAdapter, type Signal as Sig } from "@hafley66/signals"
 import { axisOfEntries, axisOfTree, flattenAxis, groupAxis, sortAxis } from "./1_axis.js"
 import { buildComparator } from "./2_operators.js"
@@ -559,6 +560,17 @@ function sizerFor(
 
 type Routed = { readonly delegateElement: HTMLElement; readonly params: { readonly gridId: string } }
 
+/** True when the event's path from target to root (exclusive) crosses another grid's boundary, so a
+ * key raised inside a nested grid stays that grid's. The root itself is a boundary and is excluded. */
+function nestedBoundaryBetween(root: HTMLElement, target: EventTarget | null): boolean {
+  let node: Node | null = target instanceof Node ? target : null
+  while (node !== null && node !== root) {
+    if (node instanceof HTMLElement && node.hasAttribute(ROUTE_BOUNDARY_ATTR)) return true
+    node = node.parentNode
+  }
+  return false
+}
+
 // One table, one subscription per row. `Dom` delegates per template for the whole page, so both
 // the gridId param and the root are checked: two grids share every listener.
 function bindRoot<TRow>(
@@ -594,7 +606,14 @@ function bindRoot<TRow>(
   on(dom.cellExpander.route.click, intentOf["expander.click"])
   on(dom.rowCheck.route.click, intentOf["checkbox.click"])
   // No route: a key event has no part under it, and focus sits on the grid box itself.
-  subs.add(fromEvent<KeyboardEvent>(root, "keydown").subscribe((it) => dispatch(intentOf.key(it))))
+  // A key raised inside a nested grid still bubbles to this root, and both grids would move. The
+  // nested grid's own root carries `data-route-boundary`, so a key whose path passes through one
+  // belongs to the inner grid and this handler steps out of the way.
+  subs.add(
+    fromEvent<KeyboardEvent>(root, "keydown")
+      .pipe(rxFilter((it) => !nestedBoundaryBetween(root, it.target)))
+      .subscribe((it) => dispatch(intentOf.key(it))),
+  )
   // Epics are cold. Without this the intents above reduce nothing.
   subs.add(epics$.subscribe())
   return () => subs.unsubscribe()
