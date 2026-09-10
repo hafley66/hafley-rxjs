@@ -78,28 +78,28 @@ Two more operators keep the same identity-by-reference convention: `withDetail`
 (`src/11_detail.ts`) inserts one panel node per open row, and `renderPlan` (`src/4_slice.ts`)
 runs partition, then paginate, then window, in that order and once.
 
-Two constructors mint an axis: `axisOf` (`src/1_axis.ts`) from flat entries plus an optional
-`parentOf`, `fromTree` (`src/1_axis.ts`) from nested payloads. Both are total on a cyclic parent
+Two constructors mint an axis: `axisOfEntries` (`src/1_axis.ts`) from flat entries plus an optional
+`parentOf`, `axisOfTree` (`src/1_axis.ts`) from nested payloads. Both are total on a cyclic parent
 map: a node standing on a cycle becomes a root.
 
 ## Constructor inputs
 
-`GridConfig<TRow>` in `src/8_grid.ts`. `In<T>` accepts a `Signal`, an `Observable`, a thunk, or a
-bare value; `inSignal` adopts a signal unchanged, both in the same file.
+`GridConfig<TRow>` in `src/8_grid.ts`. `GridSource<T>` accepts a `Signal`, an `Observable`, a thunk, or a
+bare value; `toGridSignal` adopts a signal unchanged, both in the same file.
 
 | key | type | accepts |
 | --- | --- | --- |
-| `id` | `In<string>` | the `{gridId}` of every path template |
-| `rows` | `In<readonly TRow[]>` | array, signal, observable, or thunk; fallback `[]` |
-| `columns` | `In<readonly ColumnDef<TRow>[]>` | same shapes; `ColumnDef` in `src/0_types.ts` |
+| `id` | `GridSource<string>` | the `{gridId}` of every path template |
+| `rows` | `GridSource<readonly TRow[]>` | array, signal, observable, or thunk; fallback `[]` |
+| `columns` | `GridSource<readonly ColumnDef<TRow>[]>` | same shapes; `ColumnDef` in `src/0_types.ts` |
 | `rowId` | `(row: TRow) => RowId` | plain function, deliberately not reactive |
 | `subRows` | `(row: TRow) => readonly TRow[] \| undefined` | present means tree mode |
 | `mode` | `"client" \| "server"` | default `"client"` |
-| `rowCount` | `In<number \| null>` | server total, copied into `query.page.total` |
-| `state` | `In<Partial<GridState>>` | read once as a seed, through `inSignal` |
+| `rowCount` | `GridSource<number \| null>` | server total, copied into `query.page.total` |
+| `state` | `GridSource<Partial<GridState>>` | read once as a seed, through `toGridSignal` |
 | `sync` | `string \| boolean` | url query key; `true` uses `id.$()`; `storageSignal(urlAdapter(key))` |
 | `slots` | `Slots<TRow>` | `cell`, `editor`, `header`, `expander`, `detail` are read by the renderer |
-| `viewport` | `In<Viewport>` | `{ top, left, width, height }`; drives the window and flex widths |
+| `viewport` | `GridSource<Viewport>` | `{ top, left, width, height }`; drives the window |
 | `overscan` | `number` | rows padded on each side of the window, default 4 |
 | `epics` | `readonly GridEpic<TRow>[]` | absent installs `defaultEpics()` (`src/7_epics.ts`) |
 
@@ -112,7 +112,7 @@ bare value; `inSignal` adopts a signal unchanged, both in the same file.
 | `id`, `rows`, `columns`, `viewport` | signals | the adopted inputs |
 | `mode` | `GridMode` | plain value, fixed at construction |
 | `state` | `Signal<GridState>` | one signal, nested writes through proxy dots |
-| `view.base` | `Signal<Axis<RowId, TRow>>` | `axisOf` or `fromTree` over `rows` |
+| `view.base` | `Signal<Axis<RowId, TRow>>` | `axisOfEntries` or `axisOfTree` over `rows` |
 | `view.grouped` | same | identity in server mode or with no `group` keys |
 | `view.sorted` | same | identity in server mode |
 | `view.detailed` | same | `sorted` plus one node per open detail panel |
@@ -135,12 +135,7 @@ bare value; `inSignal` adopts a signal unchanged, both in the same file.
 | filtering, quick filter, filter logic | `filterAxis` and `buildRowPredicate` (`src/2_operators.ts`) have no call site; `GridState` carries no `filter` key |
 | a header group band | `view.cols` carries the group node, `src/10_render.ts` drops it before the header is built |
 | inline editing, column typing, aggregation | cut by decision, listed in `docs/1_parity.md` |
-| `rowOrder`, `rowSelectionCols`, `cellSelection` | state keys with no reader in `src/` |
-
-Two lanes were rewriting `src/` while this was written: transpose (`src/12_transpose.ts`,
-`GridState.orientation`, and the `vertical`, `horizontal`, `spans`, `covered` members of `GridView`)
-and column sizing (`flexWidths` moving to CSS grid tracks). Neither is documented here, and every
-citation into `src/` names a symbol rather than a line for the same reason.
+| `rowOrder`, `selection` | state keys with no reader in `src/` |
 
 ## Docs
 

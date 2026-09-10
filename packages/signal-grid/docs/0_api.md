@@ -23,9 +23,7 @@ Two ordered forests, pure operators over them, a three-phase action grammar, and
 ## 0. Status
 
 Verified against source on 2026-09-10 by running `npx vitest run` (328 passed, 10 files) and
-`npx vitest run -c vitest.e2e.config.ts` (15 passed, 2 files). Two other lanes, transpose and
-column sizing, were rewriting `src/` during that run, so every citation into `src/` names a symbol
-or a test rather than a line number.
+`npx vitest run -c vitest.e2e.config.ts` (15 passed, 2 files).
 
 | area | state | evidence |
 | --- | --- | --- |
@@ -44,7 +42,7 @@ or a test rather than a line number.
 | filtering in the view chain | not built | `filterAxis` (`src/1_axis.ts`) and `buildRowPredicate` (`src/2_operators.ts`) have no call site in `src/`; `GridState` has no `filter` key |
 | inline editing | cut | `GridState.editing` is read at `src/10_render.ts` and written by nothing |
 | aggregation, column typing, pivot | cut | `docs/1_parity.md`, "Cut on purpose" |
-| transpose: `src/12_transpose.ts`, `GridState.orientation`, `GridView.vertical`/`horizontal`/`spans`/`covered`, `listView` through `collapseToOneEntry` | landing from another lane while this was written | undocumented below; that lane owns it |
+| transpose: `orientation`, `view.vertical`/`horizontal`/`spans`/`covered`, `listView` through `collapseToOneEntry` | built | `src/12_transpose.ts` |
 
 ## 1. The five laws
 
@@ -109,7 +107,7 @@ g.state.colWidth.name.$(300)
 `GridState` lives in `src/0_types.ts`. Row axis: `sort`, `group`, `expanded`, `rowSelection`,
 `rowPinning`, `rowHeight`, `rowOrder`, `detail`, `page`. Column axis:
 `colOrder`, `colHidden`, `colWidth`, `colPinning`. Cross: `selection`, `focus`, `editing`.
-View: `density`, `listView`, `virtualize`, and an `orientation` key the transpose lane is adding.
+View: `density`, `listView`, `virtualize`, and `orientation`.
 
 `page` is one `Page` carrying `mode: "all" | "pages" | "infinite"`, `index`,
 `size`, and a server-only `total`.
@@ -278,10 +276,10 @@ disables it, `pages` passes the index through, `infinite` asks for index 0 with 
 lookup; `measuredSizer` is a prefix sum with a binary search, chosen by `sizerFor`
 when any key in the run carries a `rowHeight` override.
 
-`view.widths` resolves declared width, min, max, and flex against the viewport width: a column that
-hits a bound is frozen there and dropped from the pool so its share reflows. The solver lived in
-`flexWidths` (`src/4_slice.ts`) at the time of writing and another lane was replacing it with CSS
-grid tracks; `src/5_columns.test.ts` holds the assertions either way.
+`view.widths` reports declared widths, not resolved ones: the browser owns distribution through the
+CSS `trackList` grammar in `src/4_slice.ts`, which emits `fr` and `minmax()` into
+`grid-template-columns`, so a flex column reports its default and a caller wanting the painted width
+reads the element (`src/8_grid.ts:430`).
 
 ## 7. Action grammar and the epics
 
@@ -385,5 +383,5 @@ stage is asserted without observing it (`src/8_grid.test.ts`).
 | `11_detail.ts` | detail keys, `withDetail`, `detailOnCellClick` |
 | `index.ts` | the barrel, one `export *` per module |
 | `theme.css` | every custom property with a default, plus the layout |
-| `12_transpose.ts` | landing from another lane as this was written; undocumented here |
+| `12_transpose.ts` | transpose: `orientation`, the two facets, spans, `coveredBy` |
 | `features.ts` | the feature ledger `scripts/parity.mjs` reads; not package API |

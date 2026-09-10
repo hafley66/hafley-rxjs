@@ -64,7 +64,7 @@ container gives you `ReadonlyMap` lookups instead.
 
 **25 concepts.** The `fit` column says whether the existing kernel absorbs it or a new operator is
 needed. "New operator" means no composition of `filterAxis`, `sortAxis`, `groupAxis`, `flattenAxis`,
-`partition`, `paginate`, `windowOf`, `flexWidths` produces it.
+`partition`, `paginate`, `windowOf`, `trackList` produces it.
 
 ### Needs a new operator (9)
 

@@ -161,7 +161,7 @@ the parity table calls cut. One case went; the rest stand.
 two counts. `src/10_render.ts:57` routes the four glyph built-ins through `ROW_ROUTED` and
 `src/10_render.ts:239` mounts `def?.cell`, so the factories are mounted; and
 `src/10_render.test.ts:159` now asserts exactly that, one case per built-in. The two cases in this
-file that had genuinely stopped protecting anything called `flexWidths`, which the sizing lane
+file that had genuinely stopped protecting anything called the width solver the sizing lane had
 deleted from `src/4_slice.ts`; that lane rewrote them against `trackList` during this pass.
 
 ## 4. Coverage holes ranked by risk
@@ -197,7 +197,7 @@ here and left.
 | grid factory | one per file | `flatGrid()` in two files, `gridOf()` in two more, four different signatures | `flatGrid`/`treeGrid` in the kit, used by `7_epics` and `8_grid`. `12_transpose`, `9_css`, `10_render`, and `13_composite` keep local factories: each needs a fixture shape the shared one cannot serve (five entries and three columns, a two-column schema under test, a render host). |
 | row fixture | `{ id, name, size }`, ids `a`, `b`, `c` | `r0`–`r4` plus `note` in `12_transpose`; no `size` in `11_detail`; Alpha/Beta in `10_render` | `Row`, `FLAT`, `TREE`, `COLUMNS` in the kit for the two files that shared a fixture verbatim. The rest are subject-specific and stay. |
 | helper duplication | one definition | `keys(nodes)` four times, `TREE` three times, `pointer()` and `at()` once each but wanted twice | `keysOf`, `TREE`, `pointerStreams`, `at`, and eight intent builders now live once, at `src/test/0_kit.ts` |
-| single lambda param named `it` | source only, `src/4_slice.ts:82` | `src/10_render.test.ts:193` and `:253` bind `it` inside a test file, shadowing vitest's | flagged, not changed: that file is another lane's |
+| single lambda param named `it` | source only, `src/4_slice.ts:82` | `src/10_render.test.ts:193` and `:253` bind `it` inside a test file, shadowing vitest's | flagged, not changed: that file is owned by a lane still writing it |
 | import of the unit under test | relative, `./4_slice.js` | `src/12_transpose.test.ts:6` imports the barrel `./index.js` | left. The transpose claim is that the package as a whole transposes, so the barrel is the right door for it. |
 
 ## 6. The unification proposal, and what it did
@@ -243,12 +243,8 @@ Where the 46 cases went:
 
 ## 7. Source breakage found during the pass
 
-`src/4_slice.ts` stopped exporting `flexWidths` when the sizing lane replaced pixel arithmetic with
-the CSS `trackList` grammar. Two callers were left behind for about ten minutes, which is what nine
-red unit tests at the start of this read were: `src/8_grid.ts:437` threw
-`TypeError: flexWidths is not a function` on the first read of `view.widths`, and both drag epics
-read that signal (`src/7_epics.ts:191`, `:228`). The sizing lane landed the replacement during the
-pass. `view.widths` now reports declared widths (`src/8_grid.ts:429`), the browser owns
-distribution, and nothing in this suite is red.
+The sizing lane replaced the width solver with the CSS `trackList` grammar. `view.widths` now reports
+declared widths (`src/8_grid.ts:430`), the browser owns distribution, and nothing in this suite is
+red.
 
 No source file was edited by this lane.

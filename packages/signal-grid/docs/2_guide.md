@@ -316,4 +316,3 @@ something touches it, and a nested-path selector dedupes with `distinctShallow`
 | `query.expand` | hardcoded `null`, so server tree loading has no kernel trigger | the `query` computed in `src/8_grid.ts` |
 | column virtualization, autosize, export, undo, a11y roles, i18n | not attempted | `docs/1_parity.md` |
 | aggregation, column typing, pivot | cut by decision | `docs/1_parity.md`, "Cut on purpose" |
-| transpose: `orientation`, `view.vertical`/`horizontal`/`spans`/`covered`, `listView` | landing from another lane while this was written | `src/12_transpose.ts` |
