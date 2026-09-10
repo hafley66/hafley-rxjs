@@ -85,10 +85,10 @@ of the bundler runtime at mount and the slower first paint per demo.
 
 ## 4. Integration sketch
 
-Files touched: `site/embeds.ts` (the seam, currently `EMBEDS = {}` at
-`site/embeds.ts:10`), one new live.ts module in `site/`, and `package.json`
-for the two dev dependencies. `site/main.ts` already calls `EMBEDS[slug]` and
-catches a throwing embed (`site/main.ts:258-270`), so it changes nothing. The examples
+Files touched: `site/embeds.ts`, the seam where `MODULES` (`site/embeds.ts:11`) answers a demo's
+`require` and `evaluate` (`site/embeds.ts:41`) runs the edited module, plus `package.json`
+for the two dev dependencies. VitePress owns the page now, and the Vue component behind the
+`<GridDemo>` tag already calls `evaluate`, so it changes nothing. The examples
 already carry their own text (`source` via `?raw` self-import, declared in
 `examples/0_types.ts`) and a `mount`/teardown pair, registered in
 `examples/index.ts`.
