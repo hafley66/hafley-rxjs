@@ -1,0 +1,32 @@
+direction: right
+
+shards: "vitest shards 1..N\notlp + junit into out/" {shape: rectangle}
+otlp: "out/otlp-*.jsonl\nout/junit-*.xml" {shape: page}
+timeline: "buildTimeline(out)\nreport/timeline.ts" {shape: rectangle}
+tljsonl: "out/timeline.jsonl\nwiped by rm -rf out" {shape: page}
+rollup: "rollup(events)\nkey + status + ms + heap" {shape: rectangle}
+runs: ".vitest-telemetry/runs.ndjson\nappend one line per run" {shape: cylinder}
+nodes: ".vitest-telemetry/nodes/<runId>.ndjson\none line per node key" {shape: cylinder}
+prune: "pruneHistory(keep=50)\nunlink oldest node files" {shape: rectangle}
+trends: "buildTrends(limit=20)\nalign series to run axis" {shape: rectangle}
+render: "renderReport(events, trendSet)" {shape: rectangle}
+html: "out/report.html\nsingle file, trends inlined" {shape: page}
+col: "Nav column 'trend'\nSparkline per row" {shape: rectangle}
+pop: "hover popover\nrun-by-run table" {shape: rectangle}
+sect: "Runs section\nbig chart for selection" {shape: rectangle}
+
+shards -> otlp
+otlp -> timeline
+timeline -> tljsonl
+timeline -> rollup
+rollup -> runs
+rollup -> nodes
+nodes -> prune
+runs -> trends
+nodes -> trends
+trends -> render
+tljsonl -> render
+render -> html
+html -> col
+col -> pop
+html -> sect

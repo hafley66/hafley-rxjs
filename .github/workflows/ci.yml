@@ -1,0 +1,116 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Vitest picks run mode over watch mode from this.
+  CI: "1"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          # Restores and saves the pnpm store keyed on pnpm-lock.yaml.
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: audit
+        run: node scripts/audit-packages.mjs
+
+      - name: typecheck
+        run: pnpm -r typecheck
+
+      # Two packages compile Rust to wasm during build and need a cargo
+      # toolchain plus the wasm32-unknown-unknown target. They stay out until
+      # the workflow installs one. See docs/MONOREPO.md.
+      - name: build
+        run: >-
+          pnpm -r
+          --filter '!@hafley66/grapht-layout-grid-wasm'
+          --filter '!@hafley66/grapht-render-vello-chromium'
+          build
+
+      # Packages whose own `test` drives a real browser, a wasm renderer or an
+      # OTLP receiver stay out of CI. Every one of them has a `receipts` script
+      # that runs the full gate locally. See docs/MONOREPO.md.
+      - name: test
+        run: >-
+          pnpm -r
+          --filter '!@hafley66/boop-adapters'
+          --filter '!@hafley66/rxjs-debugger'
+          --filter '!@hafley66/vitest-playwright'
+          --filter '!@hafley66/vitest-telemetry'
+          --filter '!@hafley66/grapht-render-cytoscape'
+          --filter '!@hafley66/grapht-render-canvaskit'
+          --filter '!@hafley66/grapht-render-pixijs'
+          --filter '!@hafley66/grapht-render-threejs'
+          test
+
+  changeset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: pending release
+        run: pnpm exec changeset status
+
+  release:
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Opens or refreshes the "Version Packages" pull request that lists every
+      # pending release. Publishing stays manual (`just publish`) because npm
+      # two-factor lives on a person, not on a runner.
+      - uses: changesets/action@v1
+        with:
+          version: pnpm release:version
+          title: "Version Packages"
+          commit: "Version Packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

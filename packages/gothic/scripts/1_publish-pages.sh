@@ -38,9 +38,13 @@ else
   [[ "$status" == 2 ]] || exit "$status"
 fi
 
-cp "$package_dir/dist/index.html" "$publish_dir/site/index.html"
+# The branch root belongs to the monorepo shell (pages/, scripts/pages.mjs), which puts a tab
+# strip there and redirects a bookmarked gothic hash into this subdirectory. Writing the root
+# here would replace that shell and drop every other package's site off the nav.
+mkdir -p "$publish_dir/site/gothic"
+cp "$package_dir/dist/index.html" "$publish_dir/site/gothic/index.html"
 touch "$publish_dir/site/.nojekyll"
-git -C "$publish_dir/site" add -- index.html .nojekyll
+git -C "$publish_dir/site" add -- gothic/index.html .nojekyll
 if ! git -C "$publish_dir/site" diff --cached --quiet; then
   cat >"$publish_dir/message" <<EOF
 gothic: publish single HTML from $revision

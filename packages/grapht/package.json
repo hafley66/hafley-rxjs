@@ -28,7 +28,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "pnpm run build && vitest run tests",
     "renderer-fixture": "node scripts/0_generate_renderer_fixture.mjs",
-    "bench:fixture-memory": "node scripts/2_compare_fixture_memory.mjs"
+    "bench:fixture-memory": "node scripts/2_compare_fixture_memory.mjs",
+    "receipts": "pnpm run typecheck && pnpm run test"
   },
   "dependencies": {
     "@hafley66/grapht-model": "workspace:*",
@@ -40,5 +41,9 @@
     "typescript": "7.0.2",
     "vitest": "^4.1.10"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }

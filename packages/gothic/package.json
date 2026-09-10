@@ -15,8 +15,9 @@
     "bench": "vitest bench --run",
     "render:static": "RENDER_STATIC=1 vitest run scripts/2_render-static.test.ts",
     "build:vello": "bash scripts/3_vello-wasm.sh",
-    "check": "pnpm typecheck && pnpm test && pnpm build:single && pnpm test:e2e",
-    "test:e2e": "vitest run -c vitest.e2e.config.ts"
+    "check": "pnpm run receipts",
+    "test:e2e": "vitest run -c vitest.e2e.config.ts",
+    "receipts": "pnpm typecheck && pnpm test && pnpm build:single && pnpm test:e2e"
   },
   "dependencies": {
     "@hafley66/path": "workspace:*",

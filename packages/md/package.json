@@ -20,7 +20,8 @@
     "build": "vite build",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
   },
   "dependencies": {
     "@terrastruct/d2": "^0.1.33"

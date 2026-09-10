@@ -7,12 +7,16 @@
   },
   "scripts": {
     "build": "pnpm -r build",
-    "check:json-rx": "pnpm --filter @hafley66/json-rx check",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "receipts": "pnpm -r receipts",
+    "lint": "biome check .",
+    "verify": "pnpm -r typecheck && pnpm -r build && pnpm -r test",
+    "audit": "node scripts/audit-packages.mjs",
+    "check:json-rx": "pnpm --filter @hafley66/json-rx receipts",
     "generate": "pnpm --filter @hafley66/json-rx generate",
     "generate:check": "pnpm --filter @hafley66/json-rx generate:check",
-    "test": "pnpm -r test",
     "test:ui": "pnpm -r test:ui",
-    "typecheck": "pnpm -r typecheck",
     "dev": "pnpm -r test -- --watch",
     "docs": "typedoc",
     "changeset": "changeset",
@@ -32,7 +36,7 @@
     "test:sequence-local-documents": "vitest run packages/mmd/src/1_parse.test.ts packages/d2/src/1_parse.test.ts",
     "test:sequence-receipts": "vitest run scripts/2_sequenceRenderReceipts.test.ts",
     "test:sequence-renderers": "vitest run scripts/0_sequenceRendererSmoke.test.ts",
-    "receipts:ui": "pnpm --filter @hafley66/report-shell receipts && pnpm --filter @hafley66/report-shell test:browser && pnpm --filter @hafley66/gothic check && pnpm --filter @hafley66/vitest-telemetry receipts && pnpm --filter @hafley66/boop-adapters receipts"
+    "receipts:ui": "pnpm --filter @hafley66/report-shell receipts && pnpm --filter @hafley66/report-shell test:browser && pnpm --filter @hafley66/gothic receipts && pnpm --filter @hafley66/vitest-telemetry receipts && pnpm --filter @hafley66/boop-adapters receipts"
   },
   "devDependencies": {
     "@hafley66/d2": "workspace:*",

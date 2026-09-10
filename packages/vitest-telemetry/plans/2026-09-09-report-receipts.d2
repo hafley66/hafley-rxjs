@@ -1,0 +1,23 @@
+direction: right
+
+gen: "makeReportFixture(seed, sizes)\nsrc/report-app/fixtures/0_gen.ts"
+snap: "report.fixture.json\ncommitted Event[], frozen clock"
+render: "renderReport(events)\nsrc/report/html.ts"
+html: "out/report.fixture.html\nself-contained page"
+serve: "vitest-playwright serve\nkind: vite, serve: file"
+page: "page fixture\nchromium, fixed 1440x900 viewport"
+
+shot: "toHaveScreenshot\npixel baseline per view"
+tid: "testid census\nevery component root present"
+blow: "overflow probe\nscrollWidth > clientWidth + 1"
+net: "log.net\nurl/method/status only, no body"
+
+gen -> snap: seeded, deterministic
+snap -> render
+render -> html
+html -> serve
+serve -> page
+page -> shot
+page -> tid
+page -> blow
+page -> net: gap {style.stroke-dash: 3}

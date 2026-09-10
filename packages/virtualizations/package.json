@@ -18,7 +18,9 @@
     "build": "vite build",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "vitest"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.9"
@@ -49,5 +51,9 @@
     "tanstack",
     "reactive"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }

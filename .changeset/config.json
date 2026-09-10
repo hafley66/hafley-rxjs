@@ -3,9 +3,10 @@
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [],
-  "linked": [],
+  "linked": [["@hafley66/grapht-model", "@hafley66/grapht", "@hafley66/mmd", "@hafley66/d2"]],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": []
+  "ignore": [],
+  "privatePackages": { "version": false, "tag": false }
 }

@@ -19,10 +19,14 @@
     "build": "vite build",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "vitest",
-    "test:ui": "vitest --ui"
+    "test": "vitest run",
+    "test:ui": "vitest --ui",
+    "test:watch": "vitest",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@hafley66/rxjs-ext": "workspace:*",
     "snabbdom": "^3.6.2"
@@ -44,5 +48,9 @@
     "snabbdom",
     "vdom"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }

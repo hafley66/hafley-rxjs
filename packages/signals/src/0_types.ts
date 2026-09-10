@@ -1,5 +1,5 @@
 import type { Draft } from "immer"
-import type { BehaviorSubject, Observable } from "rxjs"
+import type { BehaviorSubject, MonoTypeOperatorFunction, Observable, OperatorFunction } from "rxjs"
 
 /**
  * Depth limiter for recursive proxy types.
@@ -45,6 +45,21 @@ export interface Signal$<T, Base extends object = object> extends BehaviorSubjec
     (setId: string): Signal<T, Base>
     (): string
   }
+  /**
+   * Run operators and wrap the result back into a Signal, inheriting this node's `distinct`
+   * slot. `pipe` returns an Observable for composition; `pipe$` returns something storable.
+   * A pipeline that emits synchronously seeds the result, otherwise it reads `undefined` first.
+   */
+  pipe$<A>(op1: OperatorFunction<T, A>): Signal<A>
+  pipe$<A, B>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>): Signal<B>
+  pipe$<A, B, C>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>): Signal<C>
+  pipe$<A, B, C, D>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>): Signal<D>
+  pipe$<A, B, C, D, E>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>): Signal<E>
+  pipe$<A, B, C, D, E, F>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>): Signal<F>
+  pipe$<A, B, C, D, E, F, G>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>): Signal<G>
+  pipe$<A, B, C, D, E, F, G, H>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>, op8: OperatorFunction<G, H>): Signal<H>
+  pipe$<A, B, C, D, E, F, G, H, I>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>, op8: OperatorFunction<G, H>, op9: OperatorFunction<H, I>): Signal<I>
+  pipe$<A, B, C, D, E, F, G, H, I, J>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>, op8: OperatorFunction<G, H>, op9: OperatorFunction<H, I>, op10: OperatorFunction<I, J>): Signal<J>
   /** React hook - auto re-renders on change. Only available with /react import */
   use?: () => T
 }
@@ -137,6 +152,11 @@ export type SignalCreatorOptions<T, Base extends object = object> = {
   event?: boolean
   /** Override synchronous reads (used by lazily evaluated memo signals). */
   read?: () => T
+  /**
+   * SELECTOR_SLOT.distinct: the operator a nested-path selector dedupes with. Defaults to
+   * `distinctShallow()`. `null` disables it, restoring re-emission on every root write.
+   */
+  distinct?: MonoTypeOperatorFunction<unknown> | null
   /** Factory to create Base extension for each node */
   createBase?: (root: Signal<T, Base>, path: string[]) => Base
 }

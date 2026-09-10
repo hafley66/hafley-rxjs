@@ -15,11 +15,18 @@ export type StorageOptions<T> = {
 }
 
 // Bind a signal to any Storage<string> backend; devalue-ready via {serialize, parse}.
+/**
+ * A signal bound to a storage backend. `close()` releases both subscriptions, and with them the
+ * window listener a backend such as `urlAdapter` opens. Without it every call left one live
+ * `popstate` listener whose closure pinned the signal and everything derived from it.
+ */
+export type StorageSignal<T> = SignalType<T> & { close: () => void }
+
 export function storageSignal<T>(
   backend: Storage<string>,
   fallback: T,
   options: StorageOptions<T> = {},
-): SignalType<T> {
+): StorageSignal<T> {
   const serialize = options.serialize ?? JSON.stringify
   const parse = options.parse ?? JSON.parse
   const decode = (raw: string | null): T => {
@@ -32,12 +39,16 @@ export function storageSignal<T>(
   const seedSub = backend.read.subscribe(raw => { seed = decode(raw) })
   seedSub.unsubscribe()
 
-  const signal = Signal<T>(seed)
-  signal.$.subscribe(value => backend.write.next(serialize(value)))
-  backend.read.subscribe(raw => {
+  const signal = Signal<T>(seed) as StorageSignal<T>
+  const writes = signal.$.subscribe(value => backend.write.next(serialize(value)))
+  const reads = backend.read.subscribe(raw => {
     const next = decode(raw)
     if (next !== signal.$()) signal.$(next)
   })
+  signal.close = () => {
+    writes.unsubscribe()
+    reads.unsubscribe()
+  }
   return signal
 }
 

@@ -22,10 +22,12 @@
     "build": "vite build",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
-    "check": "biome check src && tsc --noEmit",
+    "check": "pnpm run receipts",
     "test": "vitest run src",
     "test:perf": "playwright test -c e2e/0_perfLab.config.ts",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "lint": "biome check src",
+    "receipts": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build"
   },
   "dependencies": {
     "@hafley66/signals": "0.0.2"
@@ -60,5 +62,9 @@
     "rxjs",
     "signals"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }

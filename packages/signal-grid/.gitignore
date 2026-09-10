@@ -1,0 +1,5 @@
+demo/dist
+bench/results.json
+out/
+site/dist
+pages/dist

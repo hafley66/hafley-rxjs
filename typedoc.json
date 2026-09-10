@@ -3,7 +3,7 @@
     "packages/signals/src/index.ts",
     "packages/rxjs-ext/src/index.ts"
   ],
-  "out": "docs",
+  "out": "docs/api",
   "readme": "none",
   "hideGenerator": true,
   "sort": ["source-order"],

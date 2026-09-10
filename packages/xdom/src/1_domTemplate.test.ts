@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, expectTypeOf, it, vi } from "vitest"
-import { Dom } from "./1_domTemplate.js"
+import { Dom, ROUTE_BOUNDARY_ATTR } from "./1_domTemplate.js"
 
 describe("Dom template", () => {
   it("makes ordinary ids for repeated JSX rows", () => {
@@ -91,5 +91,69 @@ describe("Dom template", () => {
       "data-row-id": "42",
       "data-col-id": "name",
     })
+  })
+})
+
+// A component that can contain itself has no other way to route: the ancestor walk reaches the
+// document, so an inner instance would compose the outer chain and its own and match neither.
+describe("a route boundary ends the ancestor walk", () => {
+  const nested = Dom("/g/:gridId/r/:rowId/c/:colId")
+
+  const mount = (mark: string): void => {
+    document.body.innerHTML = `
+      <div data-route="g" data-grid-id="outer"${mark}>
+        <div data-route="r" data-row-id="1">
+          <div data-route="c" data-col-id="name" id="outer-cell">
+            <div data-route="g" data-grid-id="inner"${mark}>
+              <div data-route="r" data-row-id="9">
+                <div data-route="c" data-col-id="qty" id="inner-cell"><span id="glyph">+</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  }
+
+  const clickAndCollect = (selector: string): Record<string, string>[] => {
+    const seen: Record<string, string>[] = []
+    const subscription = nested.route.click.subscribe(event => seen.push({ ...event.params }))
+    document.querySelector<HTMLElement>(selector)?.dispatchEvent(
+      new MouseEvent("click", { bubbles: true }),
+    )
+    subscription.unsubscribe()
+    return seen
+  }
+
+  it("gives the inner instance its own chain", () => {
+    mount(` ${ROUTE_BOUNDARY_ATTR}=""`)
+    expect(clickAndCollect("#glyph")).toEqual([{ gridId: "inner", rowId: "9", colId: "qty" }])
+  })
+
+  it("leaves the outer instance reading the same as it always did", () => {
+    mount(` ${ROUTE_BOUNDARY_ATTR}=""`)
+    expect(clickAndCollect("#outer-cell")).toEqual([{ gridId: "outer", rowId: "1", colId: "name" }])
+  })
+
+  it("matches nothing without one, which is the defect it exists for", () => {
+    mount("")
+    expect(clickAndCollect("#glyph")).toEqual([])
+  })
+
+  it("collects params below it and none above it", () => {
+    document.body.innerHTML = `
+      <div data-route="g" data-grid-id="outer">
+        <div data-route="r" data-row-id="1">
+          <div data-route="c" data-col-id="name">
+            <div data-route="g" ${ROUTE_BOUNDARY_ATTR}="">
+              <div data-route="r" data-row-id="9">
+                <div data-route="c" data-col-id="qty" id="inner-cell">x</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+    expect(clickAndCollect("#inner-cell")).toEqual([])
   })
 })

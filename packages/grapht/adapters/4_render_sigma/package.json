@@ -14,7 +14,8 @@
     "benchmark:breakpoints": "node 6_renderer_breakpoints.mjs",
     "benchmark:screenshots": "GRAPHT_BREAKPOINT_SCREENSHOTS=1 node 6_renderer_breakpoints.mjs",
     "lab": "node ../../scripts/0_generate_renderer_fixture.mjs 1000 && node ../../scripts/0_generate_renderer_fixture.mjs 5000 && node ../../scripts/0_generate_renderer_fixture.mjs 10000 && playwright test -c playwright.config.ts",
-    "check": "tsc --noEmit && vitest run"
+    "check": "pnpm run receipts",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
   },
   "dependencies": {
     "graphology": "^0.26.0",

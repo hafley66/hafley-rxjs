@@ -14,16 +14,28 @@
   "bin": {
     "grapht-layout-grid-worker": "./bin/layout-grid-worker.mjs"
   },
-  "files": ["dist", "bin", "src", "test", "scripts", "LEARNINGS.md"],
+  "files": [
+    "dist",
+    "bin",
+    "src",
+    "test",
+    "scripts",
+    "LEARNINGS.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "node --test test/*.test.mjs",
-    "receipt": "node scripts/receipt.mjs"
+    "receipt": "node scripts/receipt.mjs",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
     "typescript": "7.0.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

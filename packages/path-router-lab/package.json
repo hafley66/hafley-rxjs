@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "tsc --noEmit"
+    "test": "vitest run --passWithNoTests",
+    "receipts": "pnpm run typecheck && pnpm run test"
   },
   "dependencies": {
     "@hafley66/path": "workspace:*",

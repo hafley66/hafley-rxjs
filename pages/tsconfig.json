@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "types": [],
+    "paths": {
+      "@hafley66/report-shell/tips": ["../packages/report-shell/dist/lib/tips.d.ts"],
+      "@hafley66/signals": ["../packages/signals/dist/index.d.ts"]
+    }
+  },
+  "include": ["manifest.ts", "main.ts", "strip.ts", "env.d.ts"]
+}

@@ -136,9 +136,10 @@ describe("createQuery", () => {
     trackSubscription(query.isLoadingEmpty.$.subscribe((value) => loading.push(value)))
     requests[0].response.next(response({ id: "1", profile: { name: "Chris" } }))
 
-    // Initialized state, query idle, and first-loading all have undefined data.
-    // Scoped Signals intentionally do not dedupe unchanged values.
-    expect(names).toEqual([undefined, undefined, undefined, "Chris"])
+    // Distinct-by-default collapses the identical undefineds: initialized, idle, and first-loading
+    // all read `undefined`, so only the transition to a value emits. Before 2026-09-10 each root
+    // write re-emitted on every nested selector, and this asserted four entries. See undefined data.
+    expect(names).toEqual([undefined, "Chris"])
     expect(loading).toContain(true)
     expect(query.data.profile.name.$()).toBe("Chris")
     expect(query.status.$()).toBe("success")

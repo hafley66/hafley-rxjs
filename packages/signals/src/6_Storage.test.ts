@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { StorageSignal, hashAdapter, historyAdapter, urlAdapter } from "./6_Storage.js"
+import { Observable } from "rxjs"
+import { StorageSignal, hashAdapter, historyAdapter, storageSignal, urlAdapter, type Storage } from "./6_Storage.js"
 
 describe("StorageSignal", () => {
   beforeEach(() => localStorage.clear())
@@ -70,5 +71,41 @@ describe("adapter listener lifetime", () => {
     expect(removed.mock.calls.filter(([name]) => name === "popstate").length).toBe(1)
     added.mockRestore()
     removed.mockRestore()
+  })
+})
+
+describe("storageSignal teardown", () => {
+  it("close releases the backend subscriptions, so a window listener does not outlive the signal", () => {
+    let reads = 0
+    let disposed = 0
+    const backend: Storage<string> = {
+      read: new Observable<string>((subscriber) => {
+        reads++
+        subscriber.next("1")
+        return () => {
+          disposed++
+        }
+      }),
+      write: { next() {}, error() {}, complete() {} },
+    }
+
+    const signal = storageSignal<string>(backend, "0")
+    // One subscription seeds and unsubscribes, one stays live to track changes.
+    expect(reads).toBe(2)
+    expect(disposed).toBe(1)
+
+    signal.close()
+    expect(disposed).toBe(2)
+  })
+
+  it("a closed signal still reads and writes its own value", () => {
+    const backend: Storage<string> = {
+      read: new Observable<string>((subscriber) => subscriber.next("1")),
+      write: { next() {}, error() {}, complete() {} },
+    }
+    const signal = storageSignal<string>(backend, "0")
+    signal.close()
+    signal.$("7")
+    expect(signal.$()).toBe("7")
   })
 })

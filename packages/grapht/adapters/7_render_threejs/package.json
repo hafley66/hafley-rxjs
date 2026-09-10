@@ -23,7 +23,8 @@
     "test:e2e": "node ../../scripts/0_generate_renderer_fixture.mjs 1000 && node ../../scripts/0_generate_renderer_fixture.mjs 5000 && node ../../scripts/0_generate_renderer_fixture.mjs 10000 && playwright test -c playwright.config.ts",
     "bench": "node --import tsx src/3_protocol_adapter.ts",
     "receipt": "printf '%s\\n' '{\"protocol\":\"grapht-bench/0\",\"runId\":\"threejs-receipt\",\"fixture\":\"grid-1k\",\"operation\":\"render\",\"outputDirectory\":\"receipts/generated\",\"parameters\":{\"renderer\":\"webgl\",\"representation\":\"retained\"}}' | node --import tsx src/3_protocol_adapter.ts",
-    "check": "tsc --noEmit && vitest run"
+    "check": "pnpm run receipts",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
   },
   "dependencies": {
     "@hafley66/grapht": "workspace:^",
@@ -38,5 +39,9 @@
     "vite": "^8.2.1",
     "vitest": "^4.1.10"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }

@@ -17,7 +17,9 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
   },
   "dependencies": {
     "@hafley66/grapht-model": "workspace:*"

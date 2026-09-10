@@ -1,6 +1,6 @@
 node_modules/
 dist/
-docs/
+docs/api/
 *.log
 .DS_Store
 *.tsbuildinfo
@@ -24,3 +24,5 @@ issues/mui-external-virtualization/
 **/out/pw/
 **/out/telemetry/
 **/out/static/
+out/pages/
+packages/gothic/wasm/vello_demo/target/

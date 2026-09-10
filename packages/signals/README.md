@@ -143,6 +143,50 @@ pnpm test        # vitest
 pnpm build       # vite build
 ```
 
+## Logging
+
+Every reactive step emits a structured record through [LogTape](https://logtape.org), an optional
+peer dependency. Nothing is installed by default: with no sink, each call site costs one boolean
+read and the graph runs exactly as it did before.
+
+| category | when | fields |
+| --- | --- | --- |
+| `["signals","write"]` | a `$(value)` set lands | `path`, `depth`, `hasSubscribers`, `durationMs` |
+| `["signals","emit"]` | the root subject emits | `path` (the writing branch), `observerCount` |
+| `["signals","selector"]` | a nested-path selector is built or resubscribed | `path`, `reason` |
+| `["signals","compute"]` | a computed body runs | `id`, `durationMs`, `depCount`, `depsAdded`, `depsRemoved`, `trigger` |
+| `["signals","invalidate"]` | a computed is marked dirty | `id`, `by`, `eager` |
+| `["signals","subscribe"]` / `["signals","unsubscribe"]` | dependency wiring changes | `id`, `path` |
+
+Fields are always structured values, never a pre-formatted line, so a sink can count them.
+
+```ts
+import { configure, getConsoleSink } from "@logtape/logtape"
+import { enableSignalLogTape } from "@hafley66/signals"
+
+await configure({
+  sinks: { console: getConsoleSink() },
+  loggers: [{ category: "signals", lowestLevel: "debug", sinks: ["console"] }],
+})
+await enableSignalLogTape()
+```
+
+`setSignalLogEmit(fn)` installs a raw counting sink instead, which is what a benchmark wants;
+`disableSignalLogging()` puts the boolean back to false.
+
+Each computed carries a stable id so a record traces to a call site. `createComputedSignal(fn)`
+numbers them `memo#1`, `memo#2`, and so on; pass `createComputedSignal(fn, "sorted")` to name one.
+
+### In tests
+
+`SIGNALS_LOG` gates `vitest.setup.ts`. Unset, the suite is silent.
+
+```sh
+SIGNALS_LOG=1 pnpm test              # debug and above to stdout
+SIGNALS_LOG=info pnpm test           # any LogTape level name works
+pnpm test:log                        # the same thing, spelled as a script
+```
+
 ## Application authoring skill
 
 The npm package includes [skills/signals/SKILL.md](skills/signals/SKILL.md). It covers recursive signal paths, grouped state, automatic JSX tracking, cold producer connections and RxJS resource lifetimes. Use it when authoring applications with this library.

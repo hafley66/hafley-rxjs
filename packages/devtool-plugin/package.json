@@ -17,18 +17,21 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
     "dev": "vite",
     "dev:test": "vite --config src/ui/__tests__/browser/vite.config.ts",
     "build": "vite build",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
-    "test": "vitest",
+    "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:browser": "vitest --config vitest.browser.config.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:watch": "vitest",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
   },
   "keywords": [
     "observable",
@@ -68,5 +71,9 @@
     "oxc-parser": "^0.105.0",
     "playwright": "^1.62.1",
     "vitest": "^4.1.10"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

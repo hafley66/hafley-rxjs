@@ -14,7 +14,10 @@
   "bin": {
     "boop-network": "./dist/9_cli.js"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json && vite build -c vite.report.config.ts",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
@@ -47,5 +50,9 @@
     "vite-plugin-singlefile": "^2.3.3",
     "vitest": "^4.1.10"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }

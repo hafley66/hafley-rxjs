@@ -9,7 +9,9 @@
     "build": "pnpm run wasm:build && vite build",
     "typecheck": "tsc --noEmit",
     "lab": "node ../../scripts/0_generate_renderer_fixture.mjs 1000 && pnpm run wasm:build && playwright test -c playwright.config.ts",
-    "check": "pnpm run typecheck && cargo test && cargo check --target wasm32-unknown-unknown"
+    "check": "pnpm run receipts",
+    "test": "vitest run --passWithNoTests --exclude 'e2e/**'",
+    "receipts": "pnpm run typecheck && cargo test && cargo check --target wasm32-unknown-unknown"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",

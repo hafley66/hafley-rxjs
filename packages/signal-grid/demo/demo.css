@@ -1,0 +1,777 @@
+/*
+ * Demo chrome. Two scales (space, type), one palette, and a single rule that hands the palette to
+ * the grid: every `--sg-*` the kernel reads is mapped to a `--demo-*` the theme switcher writes,
+ * so changing theme is a property write and nothing is rebuilt.
+ *
+ * `theme.css` scopes its defaults to `[data-route="g"]`, so the mapping rule below has to outrank
+ * it. `.demo [data-route="g"]` does, on specificity, without naming a grid id.
+ */
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --text--1: 0.6875rem;
+  --text-0: 0.8125rem;
+  --text-1: 0.9375rem;
+  --text-2: 1.125rem;
+  --text-3: 1.5rem;
+
+  --radius-1: 6px;
+  --radius-2: 10px;
+
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Pre-theme defaults, so the page is legible for the one frame before the switcher runs. */
+  --demo-scheme: light dark;
+  --demo-bg: light-dark(#ffffff, #14161a);
+  --demo-fg: light-dark(#16181d, #e6e8ea);
+  --demo-line: light-dark(#e2e6ec, #2a2f36);
+  --demo-head-bg: light-dark(#f4f6fa, #1b1e23);
+  --demo-hover-bg: light-dark(#eef3fb, #1f242b);
+  --demo-selected-bg: light-dark(#dbe9ff, #1d2b3d);
+  --demo-accent: light-dark(#1f5fd0, #6ea8fe);
+  --demo-shell-bg: light-dark(#e9edf3, #0c0e11);
+  --demo-panel-bg: light-dark(#ffffff, #14171c);
+  --demo-muted: light-dark(#59616f, #98a1af);
+  --demo-indent: 16px;
+  --demo-pad: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  block-size: 100%;
+}
+
+body {
+  font: var(--text-0) / 1.45 var(--sans);
+}
+
+/* --- Shell ---------------------------------------------------------------- */
+
+.demo {
+  color-scheme: var(--demo-scheme);
+  display: grid;
+  grid-template-columns: minmax(280px, 330px) minmax(0, 1fr) minmax(250px, 300px);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-3);
+  block-size: 100dvh;
+  background: var(--demo-shell-bg);
+  color: var(--demo-fg);
+}
+
+.demo-top {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding-inline: var(--space-1);
+}
+
+.demo-title {
+  margin: 0;
+  font-size: var(--text-3);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.demo-sub {
+  margin: 0;
+  color: var(--demo-muted);
+  font-size: var(--text-0);
+}
+
+.demo-sub code {
+  font-family: var(--mono);
+  font-size: var(--text--1);
+  padding: 1px 5px;
+  border-radius: var(--radius-1);
+  background: var(--demo-hover-bg);
+}
+
+.demo-panel,
+.demo-readout {
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-3);
+  border: 1px solid var(--demo-line);
+  border-radius: var(--radius-2);
+  background: var(--demo-panel-bg);
+  container-type: inline-size;
+  container-name: panel;
+}
+
+.demo-stage {
+  min-inline-size: 0;
+  display: grid;
+}
+
+#mount {
+  min-block-size: 0;
+  border: 1px solid var(--demo-line);
+  border-radius: var(--radius-2);
+  overflow: hidden;
+}
+
+/* --- The one mapping rule ------------------------------------------------- */
+
+.demo [data-route="g"] {
+  color-scheme: var(--demo-scheme);
+  --sg-bg: var(--demo-bg);
+  --sg-fg: var(--demo-fg);
+  --sg-line: var(--demo-line);
+  --sg-head-bg: var(--demo-head-bg);
+  --sg-hover-bg: var(--demo-hover-bg);
+  --sg-selected-bg: var(--demo-selected-bg);
+  --sg-focus: var(--demo-accent);
+  --sg-indent: var(--demo-indent);
+  --sg-pad: var(--demo-pad);
+  font: var(--text-0) / 1.4 var(--sans);
+}
+
+/* --- Grid content --------------------------------------------------------- */
+
+.cell-name,
+.cell-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-icon {
+  color: var(--demo-accent);
+  font-size: var(--text--1);
+}
+
+.cell-group {
+  font-weight: 620;
+}
+
+.cell-count {
+  color: var(--demo-muted);
+  font-family: var(--mono);
+  font-size: var(--text--1);
+  font-variant-numeric: tabular-nums;
+}
+
+.demo [data-route="g"] .sg-cell[data-col-id="size"],
+.demo [data-route="g"] .sg-cell[data-col-id="modified"] {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  justify-content: flex-end;
+}
+
+.demo [data-route="g"] .sg-head-cell {
+  gap: var(--space-2);
+  font-size: var(--text--1);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--demo-muted);
+}
+
+.head-grip {
+  cursor: grab;
+  color: var(--demo-line);
+  touch-action: none;
+}
+
+.demo [data-route="g"] .sg-head-cell:hover .head-grip {
+  color: var(--demo-accent);
+}
+
+.demo [data-route="g"] .sg-resize:hover {
+  background: var(--demo-accent);
+}
+
+/* List view: one line per row, no header, no column boxes. Row height is unchanged, because the
+   kernel sizes the scroll spacer from it and a taller row would drift from the plan. */
+.demo[data-list-view="true"] [data-route="g"] .sg-head {
+  display: none;
+}
+
+.demo[data-list-view="true"] [data-route="g"] .sg-cell {
+  inline-size: auto;
+  min-inline-size: 0;
+  flex: 0 1 auto;
+}
+
+.demo[data-list-view="true"] [data-route="g"] .sg-cell[data-col-id="name"] {
+  flex: 1 1 auto;
+  font-weight: 600;
+}
+
+.demo[data-list-view="true"] [data-route="g"] .sg-cell:not([data-col-id="name"]) {
+  color: var(--demo-muted);
+  font-size: var(--text--1);
+}
+
+/* --- Panel ---------------------------------------------------------------- */
+
+.group {
+  margin-block-end: var(--space-5);
+}
+
+.group-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text--1);
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--demo-muted);
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-1);
+  margin-block-end: var(--space-2);
+}
+
+.field-label {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text--1);
+  color: var(--demo-muted);
+}
+
+.field-value {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--demo-fg);
+}
+
+.field-check {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.field-check .field-label {
+  color: var(--demo-fg);
+  font-size: var(--text-0);
+}
+
+.field-readback .readback,
+.readback {
+  font-family: var(--mono);
+  font-size: var(--text--1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-1);
+  background: var(--demo-hover-bg);
+  /* Fixed height, so a model going from "none" to two entries moves nothing below it. */
+  min-block-size: 24px;
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.control {
+  font: inherit;
+  color: var(--demo-fg);
+  background: var(--demo-bg);
+  border: 1px solid var(--demo-line);
+  border-radius: var(--radius-1);
+  padding: var(--space-1) var(--space-2);
+  inline-size: 100%;
+  block-size: 28px;
+}
+
+.control-check {
+  inline-size: 16px;
+  block-size: 16px;
+  padding: 0;
+  accent-color: var(--demo-accent);
+}
+
+.control-range {
+  padding: 0;
+  border: 0;
+  background: none;
+  accent-color: var(--demo-accent);
+}
+
+.control-color {
+  padding: 2px;
+  inline-size: 44px;
+}
+
+.control-segment {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  block-size: 28px;
+  background: var(--demo-hover-bg);
+}
+
+.segment {
+  flex: 1;
+  font: inherit;
+  font-size: var(--text--1);
+  color: var(--demo-muted);
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.segment[aria-pressed="true"] {
+  color: var(--demo-bg);
+  background: var(--demo-accent);
+  font-weight: 600;
+}
+
+.control-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-block-end: var(--space-2);
+}
+
+.button,
+.scenario {
+  font: inherit;
+  font-size: var(--text--1);
+  color: var(--demo-fg);
+  background: var(--demo-bg);
+  border: 1px solid var(--demo-line);
+  border-radius: var(--radius-1);
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+}
+
+.button:hover,
+.scenario:hover {
+  border-color: var(--demo-accent);
+  color: var(--demo-accent);
+}
+
+.scenarios {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-1);
+  margin-block-end: var(--space-3);
+}
+
+.icon-button {
+  font: inherit;
+  color: var(--demo-muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  inline-size: 22px;
+  block-size: 22px;
+  padding: 0;
+}
+
+.icon-button:hover {
+  color: var(--demo-accent);
+  border-color: var(--demo-line);
+}
+
+/* --- Column cards --------------------------------------------------------- */
+
+.columns {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.column-card {
+  padding: var(--space-2);
+  border: 1px solid var(--demo-line);
+  border-radius: var(--radius-1);
+  background: var(--demo-bg);
+}
+
+.column-card:last-child {
+  margin-block-end: var(--space-2);
+}
+
+/* A hidden column dims itself off the checkbox rather than off a class the script maintains. */
+.column-card:has(.control-check:not(:checked)) {
+  opacity: 0.55;
+}
+
+.column-card[data-dragging="true"] {
+  opacity: 0.4;
+}
+
+.column-card[data-drop="true"] {
+  border-color: var(--demo-accent);
+  box-shadow: inset 0 2px 0 0 var(--demo-accent);
+}
+
+.column-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-end: var(--space-2);
+}
+
+.column-head .field {
+  flex: 1;
+  margin: 0;
+}
+
+.grip {
+  cursor: grab;
+  color: var(--demo-muted);
+}
+
+.column-card .field {
+  grid-template-columns: 64px 1fr;
+  align-items: center;
+}
+
+.column-card .field-check {
+  grid-template-columns: auto 1fr;
+}
+
+.column-card .field-label {
+  display: block;
+}
+
+/* --- Readout -------------------------------------------------------------- */
+
+.stats {
+  margin-block-end: var(--space-4);
+}
+
+.stat {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: var(--space-2);
+  /* Fixed row height plus tabular figures: a number going from 9 to 10,000 shifts nothing. */
+  min-block-size: 22px;
+}
+
+.stat-label {
+  color: var(--demo-muted);
+  font-size: var(--text--1);
+}
+
+.stat-value {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-0);
+}
+
+.log {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.log-line {
+  font-family: var(--mono);
+  font-size: var(--text--1);
+  color: var(--demo-muted);
+  /* Every line exists whether or not it carries text, so the panel never grows. */
+  block-size: 18px;
+  padding-inline: var(--space-1);
+  border-radius: 3px;
+  background: var(--demo-hover-bg);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.log-line:first-child {
+  color: var(--demo-fg);
+}
+
+/* --- Focus ---------------------------------------------------------------- */
+
+:focus-visible {
+  outline: 2px solid var(--demo-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-1);
+}
+
+/* --- Narrow panel --------------------------------------------------------- */
+
+@container panel (max-width: 300px) {
+  .scenarios {
+    grid-template-columns: 1fr;
+  }
+
+  .column-card .field {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .segment,
+  .button,
+  .scenario,
+  .icon-button {
+    transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+  }
+}
+
+/* The grid root is focusable so `keyboardNav` receives keys; the ring is the same one the panel
+   uses, drawn inside the rounded box rather than outside it. */
+#mount:focus-visible {
+  outline: 2px solid var(--demo-accent);
+  outline-offset: -2px;
+}
+
+.demo [data-route="g"] .sg-row[data-selected="true"] .cell-name {
+  font-weight: 600;
+}
+
+/* --- Four routes ---------------------------------------------------------- */
+
+.demo-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.demo-brand {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+
+.demo-nav {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.nav-link {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--demo-line);
+  border-radius: var(--radius-1);
+  color: var(--demo-fg);
+  text-decoration: none;
+  font-size: var(--text--1);
+}
+
+.nav-link:hover {
+  border-color: var(--demo-accent);
+  color: var(--demo-accent);
+}
+
+.nav-link[aria-current="page"] {
+  background: var(--demo-accent);
+  border-color: var(--demo-accent);
+  color: var(--demo-bg);
+  font-weight: 600;
+}
+
+.nav-slug {
+  font-family: var(--mono);
+  opacity: 0.7;
+}
+
+.demo-head-text {
+  min-inline-size: 0;
+}
+
+.route-title {
+  margin: 0;
+  font-size: var(--text-1);
+  font-weight: 650;
+}
+
+.route-blurb {
+  margin: 0;
+  color: var(--demo-muted);
+  font-size: var(--text--1);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.demo-theme {
+  inline-size: auto;
+  min-inline-size: 200px;
+}
+
+.demo-stage {
+  min-inline-size: 0;
+  display: grid;
+}
+
+.stage-box {
+  min-block-size: 0;
+  border: 1px solid var(--demo-line);
+  border-radius: var(--radius-2);
+  overflow: hidden;
+}
+
+.stage-box:focus-visible {
+  outline: 2px solid var(--demo-accent);
+  outline-offset: -2px;
+}
+
+/* --- The about card ------------------------------------------------------- */
+
+.about-line {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-0);
+}
+
+.about-features,
+.about-defects {
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.about-feature {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.about-id {
+  font-family: var(--mono);
+  font-size: var(--text--1);
+  color: var(--demo-accent);
+}
+
+.about-title {
+  color: var(--demo-muted);
+  font-size: var(--text--1);
+}
+
+.about-defect {
+  font-size: var(--text--1);
+  color: var(--demo-fg);
+  padding: var(--space-2);
+  border-inline-start: 2px solid var(--demo-accent);
+  background: var(--demo-hover-bg);
+  border-radius: var(--radius-1);
+}
+
+/* --- Route 2: the size bar ------------------------------------------------ */
+
+.size-bar {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  block-size: 10px;
+  border-radius: 5px;
+  background: var(--demo-hover-bg);
+  overflow: hidden;
+}
+
+.size-fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: var(--bar, 0%);
+  border-radius: 5px;
+  background: var(--demo-accent);
+  opacity: 0.55;
+}
+
+.size-bar[data-folder="true"] .size-fill {
+  opacity: 1;
+}
+
+/* --- Route 3: the matrix -------------------------------------------------- */
+
+.matrix-heading {
+  font-weight: 650;
+  color: var(--demo-accent);
+  margin-inline-end: var(--space-2);
+}
+
+.demo .stage-matrix [data-route="g"] .sg-cell {
+  justify-content: flex-end;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.demo .stage-matrix [data-route="g"] .sg-cell[data-span="true"] {
+  justify-content: center;
+  background: color-mix(in oklab, var(--demo-accent) 22%, var(--demo-bg));
+  border: 1px solid var(--demo-accent);
+  border-radius: var(--radius-1);
+}
+
+/* --- Route 4: the nested grid --------------------------------------------- */
+
+.nested-host {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-2);
+  block-size: 100%;
+  min-block-size: 0;
+}
+
+.nested-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.nested-title {
+  font-weight: 650;
+  font-size: var(--text-0);
+}
+
+.nested-note {
+  color: var(--demo-muted);
+  font-size: var(--text--1);
+}
+
+.nested-grid {
+  min-block-size: 0;
+  border: 1px solid var(--demo-line);
+  border-radius: var(--radius-1);
+  overflow: hidden;
+}
+
+/* --- 404 ------------------------------------------------------------------ */
+
+.missing {
+  align-self: center;
+  justify-self: center;
+  text-align: center;
+}
+
+.missing-code {
+  margin: 0;
+  font-size: var(--text-3);
+  font-family: var(--mono);
+  color: var(--demo-muted);
+}
+
+.missing-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}

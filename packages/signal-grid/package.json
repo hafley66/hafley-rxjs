@@ -1,0 +1,80 @@
+{
+  "name": "@hafley66/signal-grid",
+  "version": "0.1.0",
+  "description": "Relational data grid kernel: two ordered forests, five pure operators, RxJS intents, signal derivation. MUI X feature parity without a table library.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./theme.css": "./dist/theme.css"
+  },
+  "scripts": {
+    "build": "vite build && cp src/theme.css dist/",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
+    "typecheck": "tsc --noEmit",
+    "parity": "node scripts/parity.mjs",
+    "test": "vitest run",
+    "test:browser": "vitest run --config vitest.browser.config.ts --passWithNoTests",
+    "test:e2e": "vitest run -c vitest.e2e.config.ts",
+    "receipts": "pnpm typecheck && pnpm test && pnpm build",
+    "test:visual": "vitest run -c vitest.visual.config.ts",
+    "videos": "node scripts/videos.mjs",
+    "demo": "vite -c demo/vite.config.ts",
+    "demo:build": "vite build -c demo/vite.config.ts",
+    "demo:preview": "vite preview -c demo/vite.config.ts",
+    "bench": "vitest bench -c bench/vitest.bench.config.ts",
+    "typecheck:bench": "tsc --noEmit -p bench/tsconfig.json",
+    "site": "vite -c site/vite.config.ts",
+    "site:build": "vite build -c site/vite.config.ts",
+    "site:preview": "vite preview -c site/vite.config.ts",
+    "examples": "node scripts/examples.mjs",
+    "ship": "node scripts/ship.mjs"
+  },
+  "peerDependencies": {
+    "@hafley66/path": ">=0.1.0",
+    "@hafley66/signals": ">=0.1.0",
+    "@hafley66/xdom": ">=0.1.0",
+    "rxjs": "^7.8.0"
+  },
+  "devDependencies": {
+    "@hafley66/path": "workspace:*",
+    "@hafley66/signals": "workspace:*",
+    "@hafley66/vitest-playwright": "workspace:*",
+    "@hafley66/vitest-telemetry": "workspace:*",
+    "@hafley66/xdom": "workspace:*",
+    "@tanstack/react-virtual": "^3.14.9",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.5",
+    "@vitest/browser": "^4.1.10",
+    "@vitest/browser-playwright": "^4.1.10",
+    "playwright": "^1.62.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "typescript": "7.0.2",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10",
+    "@tanstack/table-core": "9.1.0",
+    "rxjs": "^7.8.2"
+  },
+  "keywords": [
+    "grid",
+    "table",
+    "rxjs",
+    "signals",
+    "relational",
+    "virtualization"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

@@ -1,0 +1,20 @@
+/* The hub. kit.css owns the tokens and the tab row; this file is only the card grid. */
+body { margin: 0 }
+
+.hub { max-width: 68ch; margin: 0 auto; padding: 28px 16px 64px; display: grid; gap: 10px }
+.hub-title { margin: 0; font-size: 20px; font-weight: 500 }
+.hub-lede { margin: 0 0 6px; color: var(--dim) }
+.hub-filter {
+  justify-self: start; min-width: 22ch; padding: 4px 8px; font: inherit;
+  background: var(--well); color: var(--fg); border: 1px solid var(--edge); border-radius: 3px;
+}
+.hub-cards { display: grid; gap: 10px; margin-top: 6px }
+.hub-card {
+  display: grid; gap: 4px; padding: 12px 14px; text-decoration: none; color: inherit;
+  background: var(--panel-bg); border: 1px solid var(--line); border-radius: 4px;
+}
+.hub-card:hover { border-color: var(--accent) }
+.hub-card-title { color: var(--accent) }
+.hub-card-blurb { color: var(--dim) }
+.hub-card-meta { color: var(--dim); font-size: 11px; opacity: .8 }
+.hub-empty { color: var(--dim); padding: 12px 0 }

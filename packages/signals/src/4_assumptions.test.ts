@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
+import { distinctUntilChanged } from 'rxjs'
 import { Signal } from './2_Signal'
+import { SignalCreator } from './1_SignalCreator'
 import { trackSubscription } from '../../../vitest.setup'
 
 /**
@@ -13,7 +15,7 @@ import { trackSubscription } from '../../../vitest.setup'
 describe('assumptions: SignalCreator', () => {
   // A. No dedupe on scoped selectors: a sibling write re-emits the unchanged
   //    value to a scoped subscriber (map + shareReplay, no distinctUntilChanged).
-  it('A: scoped selector re-emits unchanged value on a sibling write (no dedupe)', () => {
+  it('A: scoped selector stays quiet on a sibling write (distinctShallow by default)', () => {
     const state = Signal({ a: 1, b: 1 })
     const emissions: number[] = []
 
@@ -22,12 +24,39 @@ describe('assumptions: SignalCreator', () => {
 
     state.b.$(2) // write a SIBLING path
 
-    // CONFIRMED: the `a` subscriber sees a second emission of the unchanged 1.
+    // Before 2026-09-10 this re-emitted the unchanged 1. A subscribed computed downstream then
+    // re-ran its whole body, which cost 76 ms per write at 50k rows in @hafley66/signal-grid.
+    expect(emissions).toEqual([1])
+    state.a.$(2)
+    expect(emissions).toEqual([1, 2])
+  })
+
+  it('A2: the distinct slot takes null, restoring re-emission on every root write', () => {
+    const state = SignalCreator<{ a: number; b: number }>({ initialState: { a: 1, b: 1 }, distinct: null })
+    const emissions: number[] = []
+
+    trackSubscription(state.a.$.subscribe((v) => emissions.push(v)))
+    state.b.$(2)
+
     expect(emissions).toEqual([1, 1])
   })
 
+  it('A3: the distinct slot takes any operator, so a caller can widen or narrow equality', () => {
+    const state = SignalCreator<{ a: { n: number }; b: number }>({
+      initialState: { a: { n: 1 }, b: 1 },
+      distinct: distinctUntilChanged(() => true),
+    })
+    const emissions: Array<{ n: number }> = []
+
+    trackSubscription(state.a.$.subscribe((v) => emissions.push(v)))
+    state.a.$({ n: 2 })
+
+    // Always-equal swallows even a real change, which is the point: the slot is the caller's.
+    expect(emissions).toEqual([{ n: 1 }])
+  })
+
   // B. Writing an identical value re-emits (setter has no Object.is guard).
-  it('B: writing an identical nested value re-emits to subscribers', () => {
+  it('B: writing an identical nested value is swallowed', () => {
     const state = Signal({ a: 1 })
     const emissions: number[] = []
 
@@ -36,8 +65,22 @@ describe('assumptions: SignalCreator', () => {
 
     state.a.$(1) // identical value
 
-    // CONFIRMED: no equality guard, so it emits again.
-    expect(emissions).toEqual([1, 1])
+    // `distinctShallow` guards it. A distinct object of the same shape is also swallowed, which is
+    // what makes immer's per-branch structural sharing readable as "this branch did not move".
+    expect(emissions).toEqual([1])
+  })
+
+  it('B2: shallowEqual compares one level, so a nested change still emits', () => {
+    const state = Signal({ a: { n: 1, deep: { x: 1 } } })
+    const emissions: Array<{ n: number; deep: { x: number } }> = []
+
+    trackSubscription(state.a.$.subscribe((v) => emissions.push(v)))
+
+    state.a.$({ n: 1, deep: state.a.deep.$() }) // same keys, same references
+    expect(emissions).toHaveLength(1)
+
+    state.a.$({ n: 1, deep: { x: 2 } }) // one level down changed, and the reference with it
+    expect(emissions).toHaveLength(2)
   })
 
   it('B: writing the identical root object re-emits (BehaviorSubject.next has no guard)', () => {

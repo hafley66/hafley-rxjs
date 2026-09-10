@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>signal-grid render fixture</title>
+    <style>
+      /* The grid box is `block-size: 100%`, so the host has to declare a height or the scroll box
+         collapses and nothing can be scrolled, pinned, or measured. */
+      body { margin: 0; font: 14px system-ui, sans-serif }
+      #mount { block-size: 320px; inline-size: 900px }
+      #observed { padding: 8px; font-family: ui-monospace, monospace; white-space: pre-wrap }
+    </style>
+  </head>
+  <body>
+    <div id="mount"></div>
+    <pre id="observed"></pre>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

@@ -39,9 +39,12 @@
     "build": "vite build",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "vitest",
+    "test": "vitest run",
     "test:jsx-e2e": "vitest --config vitest.jsx-e2e.config.ts",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "test:log": "SIGNALS_LOG=debug vitest run",
+    "test:watch": "vitest",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
   },
   "dependencies": {
     "@hafley66/path": "workspace:*",
@@ -52,7 +55,8 @@
   },
   "peerDependencies": {
     "react": ">=18.0.0",
-    "vite": ">=5.0.0"
+    "vite": ">=5.0.0",
+    "@logtape/logtape": "^2.3.3"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -60,9 +64,13 @@
     },
     "vite": {
       "optional": true
+    },
+    "@logtape/logtape": {
+      "optional": true
     }
   },
   "devDependencies": {
+    "@logtape/logtape": "2.3.3",
     "@types/lodash": "^4.17.16",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

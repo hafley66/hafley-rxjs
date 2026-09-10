@@ -1,19 +1,17 @@
 import { Observable, share } from "rxjs"
 import { slash } from "@hafley66/path"
-import type { PathPart } from "@hafley66/path"
+import type { PathPart, ValuesOf } from "@hafley66/path"
 import type { HtmlEventIndex$ } from "./0_domEvents.js"
 
-export type Params<Path extends string> =
-  Path extends `${string}:${infer Param}/${infer Rest}`
-    ? Param | Params<`/${Rest}`>
-    : Path extends `${string}:${infer Param}`
-      ? Param
-      : never
+// Parsing lives in @hafley66/path, which already reads `:name`, `{name}`, `{name?}` and
+// `{name*}`. A second parser here read `:name` only, so brace templates typed `params` as an
+// empty record while matching correctly at runtime. One parser, one answer.
+export type Params<Path extends string> = keyof ValuesOf<Path> & string
 
-export type Values<Path extends string> = Record<Params<Path>, string | number>
+export type Values<Path extends string> = { [K in keyof ValuesOf<Path>]: string | number }
 export type EventWithParams<E, Path extends string> = E & {
   delegateElement: HTMLElement
-  params: Record<Params<Path>, string>
+  params: ValuesOf<Path>
 }
 export type Events<Path extends string> = {
   [K in keyof HtmlEventIndex$]: HtmlEventIndex$[K] extends Observable<infer E>
@@ -73,6 +71,13 @@ export function fromDelegatedEvent<Path extends string, K extends keyof HTMLElem
   })
 }
 
+// Where a relative walk stops climbing. Any component that can contain itself stamps this on its
+// own root, so an inner instance composes its own chain and not the outer one's plus its own.
+export const ROUTE_BOUNDARY_ATTR = "data-route-boundary"
+
+/** The same name as `dataset` spells it. */
+const ROUTE_BOUNDARY_KEY = "routeBoundary"
+
 // Relative mode: data-route segments compose up the parent chain, params inherit
 // from ancestor data-* attrs (closest wins). Emits on skeleton + param match.
 export function fromDelegatedRoute<Path extends string, K extends keyof HTMLElementEventMap>(
@@ -97,6 +102,9 @@ export function fromDelegatedRoute<Path extends string, K extends keyof HTMLElem
           const v = ds[key]
           if (v !== undefined && params[key] === undefined) params[key] = v
         }
+        // The boundary element is the outermost one this walk owns, so it contributes its own
+        // segment and params first and only then ends the climb.
+        if (ds[ROUTE_BOUNDARY_KEY] !== undefined) break
         el = el.parentElement
       }
       if (delegate && segments.join("/") === skeleton && keys.every((k) => k in params)) {

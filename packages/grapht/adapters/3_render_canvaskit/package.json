@@ -12,7 +12,8 @@
     "lab": "vitest run 8_lab.spec.ts",
     "scenario:test": "vitest run 9_scenario.test.ts",
     "scenario:shot": "node 12_scenario_shot.mjs",
-    "receipt": "node --experimental-strip-types bin/render-canvaskit.ts"
+    "receipt": "node --experimental-strip-types bin/render-canvaskit.ts",
+    "receipts": "pnpm run typecheck && pnpm run test"
   },
   "dependencies": {
     "canvaskit-wasm": "0.41.1",

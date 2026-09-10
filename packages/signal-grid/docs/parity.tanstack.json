@@ -1,0 +1,284 @@
+{
+  "row.sort": {
+    "status": "yes",
+    "api": "rowSortingFeature, TableState.sorting: SortingState, column.toggleSorting(), createSortedRowModel",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/rowSortingFeature",
+    "note": "SortingState is Array<{ id, desc }>. Per column: enableSorting, sortFn, sortDescFirst, sortUndefined, invertSorting."
+  },
+  "row.sort.multi": {
+    "status": "yes",
+    "api": "enableMultiSort, maxMultiSortColCount, isMultiSortEvent, enableMultiRemove, column.getSortIndex()",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/type-aliases/SortingState",
+    "note": "Multi-sort is the same SortingState array with more than one entry; the modifier-key policy is a replaceable predicate rather than a fixed rule."
+  },
+  "row.filter": {
+    "status": "yes",
+    "api": "columnFilteringFeature, TableState.columnFilters: ColumnFiltersState, column.setFilterValue(), createFilteredRowModel",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/columnFilteringFeature",
+    "note": "22 built-in filterFn_* predicates. filterFromLeafRows and maxLeafRowFilterDepth pick the tree filter mode."
+  },
+  "row.filter.quick": {
+    "status": "yes",
+    "api": "globalFilteringFeature, TableState.globalFilter, table.setGlobalFilter(), globalFilterFn, getColumnCanGlobalFilter",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/globalFilteringFeature",
+    "note": "globalFilter is typed any, not a term list, so whitespace splitting is the consumer's job."
+  },
+  "row.filter.logic": {
+    "status": "partial",
+    "api": "ColumnFiltersState = Array<{ id, value }>",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/type-aliases/ColumnFiltersState",
+    "note": "Items combine with an implicit conjunction. No logicOperator field anywhere in the installed .d.ts, so or is only reachable by writing one filterFn that ors internally."
+  },
+  "row.filter.facet": {
+    "status": "yes",
+    "api": "columnFacetingFeature, column.getFacetedUniqueValues(): Map<any, number>, column.getFacetedMinMaxValues(): [number, number], createFacetedRowModel",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/columnFacetingFeature",
+    "note": "Facets come from a separate row model that applies every filter except the column's own, plus global variants on the table."
+  },
+  "row.group": {
+    "status": "yes",
+    "api": "columnGroupingFeature, TableState.grouping: GroupingState, column.toggleGrouping(), createGroupedRowModel, groupedColumnMode",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/columnGroupingFeature",
+    "note": "groupedColumnMode is false | 'reorder' | 'remove', which decides what a grouped column does to the column axis. getGroupingValue supplies a group key that differs from the cell value."
+  },
+  "row.tree": {
+    "status": "yes",
+    "api": "TableOptions.getSubRows(originalRow, index), row.subRows, row.depth, row.getParentRows(), table.getMaxSubRowDepth()",
+    "url": "https://tanstack.com/table/latest/docs/guide/rows",
+    "note": "Tree data is a core rows option, not a directory under dist/features, so a feature-directory listing misses it. Source shape is nested, not a path array."
+  },
+  "row.expand": {
+    "status": "yes",
+    "api": "rowExpandingFeature, TableState.expanded: ExpandedState, row.toggleExpanded(), createExpandedRowModel, paginateExpandedRows",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/rowExpandingFeature",
+    "note": "ExpandedState is true | Record<string, boolean>, so expand-all is one literal rather than a filled map. paginateExpandedRows decides whether children count against the page."
+  },
+  "row.detail": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/rowExpandingFeature",
+    "note": "No detail-panel symbol exists in the installed dist. getRowCanExpand lets a consumer render a panel for a childless row, but the expanded row model still only emits subRows, so the panel is not a row the kernel knows about. scripts/parity.mjs currently maps row-expanding to row.detail, which overstates this."
+  },
+  "row.select": {
+    "status": "yes",
+    "api": "rowSelectionFeature, TableState.rowSelection: RowSelectionState, row.toggleSelected(value, { selectChildren, deselectParents }), enableRowRangeSelection, enableSubRowSelection",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/rowSelectionFeature",
+    "note": "RowSelectionState is Record<string, true>, an include set only. Parent and child propagation is per call through ToggleSelectedOptions rather than a table-level policy."
+  },
+  "row.pin": {
+    "status": "yes",
+    "api": "rowPinningFeature, TableState.rowPinning: RowPinningState, row.pin(position, includeLeafRows, includeParentRows), keepPinnedRows, table.getTopRows()/getCenterRows()/getBottomRows()",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/rowPinningFeature",
+    "note": "RowPinningState is { top: string[], bottom: string[] }, an ordered list per side, so pinned order is user-owned. keepPinnedRows keeps a pinned row visible after it leaves the filtered set."
+  },
+  "row.order": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/guide/rows",
+    "note": "No drag or reorder symbol in the installed dist. row.getDisplayIndex() and table.getRowsInDisplayOrder() read the pipeline's order; there is no user-owned row ranking to write back to."
+  },
+  "row.height": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/guide/features",
+    "note": "table-core emits no markup and holds no pixel state. Row height belongs to @tanstack/react-virtual, a separate package."
+  },
+  "row.aggregate": {
+    "status": "yes",
+    "api": "rowAggregationFeature, aggregationFns, columnDef.aggregationFn, column.getAggregationValue(), constructAggregationFn({ aggregate, merge })",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/rowAggregationFeature",
+    "note": "11 built-ins (count, extent, first, last, max, mean, median, min, sum, unique, uniqueCount). A definition may carry merge so a deep tree folds subtree results instead of rescanning leaves, and a column may declare an array of aggregations at once."
+  },
+  "col.visible": {
+    "status": "yes",
+    "api": "columnVisibilityFeature, TableState.columnVisibility: ColumnVisibilityState, column.toggleVisibility(), table.getVisibleLeafColumns()",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/columnVisibilityFeature",
+    "note": "Record<string, boolean>; an absent key means visible."
+  },
+  "col.order": {
+    "status": "yes",
+    "api": "columnOrderingFeature, TableState.columnOrder: ColumnOrderState, table.setColumnOrder(), table.getColumnIndexes()",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/columnOrderingFeature",
+    "note": "ColumnOrderState is a plain id array. getColumnIndexes answers per pinned section (all, start, center, end), so an index is meaningful inside its run."
+  },
+  "col.pin": {
+    "status": "yes",
+    "api": "columnPinningFeature, TableState.columnPinning: ColumnPinningState, column.pin('start' | 'end' | false), table.getStartVisibleLeafColumns()",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/columnPinningFeature",
+    "note": "Sides are start and end rather than left and right, so the model is direction-neutral before layout."
+  },
+  "col.resize": {
+    "status": "yes",
+    "api": "columnResizingFeature, TableState.columnResizing: columnResizingState, header.getResizeHandler(), columnResizeMode: 'onChange' | 'onEnd', columnResizeDirection: 'ltr' | 'rtl'",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/columnResizingFeature",
+    "note": "The in-flight gesture is its own state (columnSizingStart, deltaOffset, deltaPercentage, isResizingColumn, startOffset, startSize) held apart from the resolved size in columnSizingFeature."
+  },
+  "col.size": {
+    "status": "partial",
+    "api": "columnSizingFeature, columnDef.size/minSize/maxSize, column.getSize(), table.getColumnOffsets(), table.getTotalSize()",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/columnSizingFeature",
+    "note": "Absolute pixel sizes with clamping. No flex and no leftover-space distribution, so nothing fills the space right of the last column."
+  },
+  "col.autosize": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/guide/features",
+    "note": "Fitting a column to rendered content needs measurement, and table-core never touches the DOM."
+  },
+  "col.group": {
+    "status": "yes",
+    "api": "createColumnHelper().group(), GroupColumnDef, buildHeaderGroups(), table.getHeaderGroups(), header.colSpan, header.depth, header.isPlaceholder",
+    "url": "https://tanstack.com/table/latest/docs/guide/header-groups",
+    "note": "Header groups live in coreHeadersFeature, not dist/features, so a feature-directory listing misses them. Nesting comes from a columns array on a column def, and buildHeaderGroups turns that into one header row per depth."
+  },
+  "col.type": {
+    "status": "partial",
+    "api": "filterFn: 'auto' | FilterFnOption, sortFn: 'auto' | SortFnOption, column.getAutoFilterFn(), column.getAutoSortFn(), ColumnMeta",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/type-aliases/FilterFnOption",
+    "note": "'auto' picks a predicate and a comparator by looking at a sample value, so behaviour follows from the value rather than from a declared type. There is no editor, no formatter, and no operator list; ColumnMeta is an empty interface for the consumer to augment."
+  },
+  "col.formula": {
+    "status": "yes",
+    "api": "AccessorFn, createColumnHelper().accessor(row => ...), row.getValue(columnId), TransformDataValueFn",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/type-aliases/AccessorFn",
+    "note": "A derived column is an accessor function over the row, evaluated once per row and cached in row._valuesCache. It is a closure, not a user-editable expression, so there is no parser, no cell references, and no dependency graph."
+  },
+  "col.pivot": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/guide/features",
+    "note": "No pivot symbol in the installed dist. Grouping plus aggregation covers one axis; nothing turns distinct row values into columns."
+  },
+  "cell.select": {
+    "status": "yes",
+    "api": "cellSelectionFeature, TableState.cellSelection: CellSelectionState, table.selectCellRange(range, { mode, additive }), table.getCellSelectionBounds(), table.getSelectedCellRangesData()",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/cellSelectionFeature",
+    "note": "CellSelectionState is an array of rectangles, each carrying operation 'include' or 'exclude', so a hole in a selection is one more rectangle rather than an enumerated cell set. Rectangles expand to enclose merged cells through getCellSelectionMergeBounds."
+  },
+  "cell.focus": {
+    "status": "yes",
+    "api": "table.getFocusedCell(), table.setFocusedCell(rowId, columnId), table.moveCellSelection(direction), table.extendCellSelection(direction), cell.getIsFocused(), cell.getTabIndex()",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/cellSelectionFeature",
+    "note": "Focus ships inside cellSelectionFeature rather than as its own feature, so a directory listing files it under cell selection. cell.getTabIndex() gives the roving tabindex; the key handler itself is the consumer's."
+  },
+  "cell.edit": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/guide/table-and-column-meta",
+    "note": "No editing feature. The documented pattern is an updateData function hung on TableMeta, which the consumer declares and calls."
+  },
+  "cell.span": {
+    "status": "yes",
+    "api": "cellSpanningFeature, columnDef.spanColumns, columnDef.spanRows, cell.getColSpan(), cell.getRowSpan(), cell.getIsCovered(), table.getCellSpanIndex()",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/cellSpanningFeature",
+    "note": "spanRows is a predicate over (row, previousRow, anchorRow, value, anchorValue), so a run collapses by comparison rather than by a declared count. The span index is Int32Array per column."
+  },
+  "cell.clipboard": {
+    "status": "partial",
+    "api": "table.getSelectedCellRangesData(): Array<Array<Array<unknown>>>",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/cellSelectionFeature",
+    "note": "The selection hands back a row-major value grid per region. Its own doc comment states that serializing to clipboard text is left to userland, and there is no paste path at all."
+  },
+  "page.paginate": {
+    "status": "yes",
+    "api": "rowPaginationFeature, TableState.pagination: PaginationState, createPaginatedRowModel, table.setPageIndex(), table.getPageCount()",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/variables/rowPaginationFeature",
+    "note": "PaginationState is { pageIndex, pageSize }. firstPage, lastPage, nextPage, previousPage, and getCanNextPage ship as table methods."
+  },
+  "page.infinite": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/reference/index/interfaces/PaginationState",
+    "note": "Pagination is one page at a time. There is no accumulate mode and no scroll-driven page advance, because table-core does not know where the viewport is."
+  },
+  "page.server": {
+    "status": "yes",
+    "api": "manualFiltering, manualSorting, manualGrouping, manualExpanding, manualPagination, manualAggregation, pageCount, rowCount",
+    "url": "https://tanstack.com/table/latest/docs/guide/client-side-vs-server-side",
+    "note": "Each stage is skipped independently, so a table can sort on the server and group on the client. There is no query descriptor type; the consumer reads table.getState() and builds the request."
+  },
+  "view.virtualize.row": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/guide/features",
+    "note": "No viewport, no measurement, no window. Row virtualization is @tanstack/react-virtual, a package table-core does not depend on."
+  },
+  "view.virtualize.col": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/guide/features",
+    "note": "Same as the row axis. table.getColumnOffsets() gives cumulative starts and afters a consumer's own virtualizer can use, which is the closest symbol."
+  },
+  "view.scroll": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/guide/features",
+    "note": "Scroll position is not state table-core holds or can write."
+  },
+  "view.density": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/guide/features",
+    "note": "No pixel or spacing state of any kind."
+  },
+  "view.list": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/guide/features",
+    "note": "There is no layout to collapse. A consumer can read one cell per row from row.getVisibleCells() and lay it out however it likes."
+  },
+  "view.slots": {
+    "status": "partial",
+    "api": "flexRender(), ColumnDefTemplate, columnDef.cell, columnDef.header, columnDef.footer, columnDef.aggregatedCell",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/type-aliases/ColumnDefTemplate",
+    "note": "Four replaceable render points on a column def, resolved through flexRender. There is no chrome to replace because table-core renders no chrome, so there is no toolbar, panel, overlay, or checkbox slot."
+  },
+  "view.a11y": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/reference/static-functions/index",
+    "note": "No roles and no aria attributes are emitted, because nothing is emitted. cell_getTabIndex is the only accessibility-adjacent symbol in the whole surface, and it comes from cell selection."
+  },
+  "view.i18n": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/guide/features",
+    "note": "No user-visible strings ship, so there is nothing to translate."
+  },
+  "view.theme": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/guide/features",
+    "note": "No stylesheet and no class names."
+  },
+  "data.state": {
+    "status": "partial",
+    "api": "TableState, TableOptions.initialState, TableOptions.state, getInitialTableState(), table.reset(), cloneState(), table.atoms",
+    "url": "https://tanstack.com/table/latest/docs/reference/index/type-aliases/TableState",
+    "note": "TableState is one plain object built from the registered features, so JSON round-tripping works by construction. There is no encode or decode to a string, no url adapter, and no partial restore method."
+  },
+  "data.export": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/guide/features",
+    "note": "No file writer. table.getSelectedCellRangesData() and the row models are what a consumer serializes from."
+  },
+  "data.undo": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/reference/index/type-aliases/TableState",
+    "note": "No history. State is a single current value behind atoms; table.reset() returns to initialState and keeps no stack."
+  },
+  "data.charts": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/guide/features",
+    "note": "No chart integration. The grouped and aggregated row models are the data a consumer would hand to one."
+  },
+  "data.ai": {
+    "status": "no",
+    "api": null,
+    "url": "https://tanstack.com/table/latest/docs/guide/features",
+    "note": "No prompt surface in the library. The docs ship an Agent Skills page, which is instructions for coding agents writing TanStack Table code, not an assistant that drives a running table."
+  }
+}

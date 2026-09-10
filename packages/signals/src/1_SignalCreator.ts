@@ -1,25 +1,95 @@
 import {
   BehaviorSubject,
+  distinctUntilChanged,
   filter,
+  identity,
   map,
   merge,
   Observable,
   shareReplay,
   Subject,
   tap,
+  type MonoTypeOperatorFunction,
+  type OperatorFunction,
 } from "rxjs"
 import lodash from "lodash"
 import { Draft, produce, isDraftable } from "immer"
 import type { Signal, Signal$, SignalEvent, SignalCreatorOptions } from "./0_types.js"
+import {
+  CAT_COMPUTE,
+  CAT_EMIT,
+  CAT_INVALIDATE,
+  CAT_SELECTOR,
+  CAT_SUBSCRIBE,
+  CAT_UNSUBSCRIBE,
+  CAT_WRITE,
+  LOG,
+} from "./0_log.js"
 
 type ValidDraftReturn<T> = T | void | undefined
 
 const { get, set, isEqual } = lodash
 
+const ROOT_PATH: string[] = []
+
 /**
  * Global dispatch for signal events. Used by Signal.memo() to track dependencies.
  */
 export const signalDispatch = new Subject<SignalEvent<unknown>>()
+
+/** One level deep, which is what immer's structural sharing already gives per branch. */
+export function shallowEqual(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false
+  if (Array.isArray(a) !== Array.isArray(b)) return false
+  const ka = Object.keys(a as object)
+  const kb = Object.keys(b as object)
+  if (ka.length !== kb.length) return false
+  for (const key of ka) {
+    if (!Object.is((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])) return false
+  }
+  return true
+}
+
+/** The default distinction for a nested-path selector. */
+export const distinctShallow = <T>(): MonoTypeOperatorFunction<T> => distinctUntilChanged<T>(shallowEqual)
+
+/**
+ * The nested-path selector is a fixed pipeline and a slot is its pipe index, so a caller swaps one
+ * operator without restating the rest. `distinct` is the only slot today: pass `null` for the
+ * pre-2026-09-10 behaviour, where a sibling write re-emitted an unchanged branch.
+ */
+export const SELECTOR_SLOT = { project: 0, distinct: 1, track: 2, share: 3 } as const
+
+/**
+ * Wrap a piped stream back into a Signal, inheriting the parent's distinction slot.
+ *
+ * The seed probe subscribes once, keeps whatever the pipeline emits synchronously, and drops it.
+ * A pipeline of pure operators over a BehaviorSubject yields its value there and the result is a
+ * `Signal<O>` with a real current value. A pipeline that defers (debounceTime, switchMap over a
+ * request) yields nothing, and the result reads `undefined` until the first emission. An operator
+ * with a side effect runs once during the probe, which is the cost of a synchronous `.$()` read.
+ */
+export function signalFromObservable<O>(
+  source$: Observable<O>,
+  distinct: SignalCreatorOptions<O>["distinct"],
+): Signal<O> {
+  let seed: O | undefined
+  let seeded = false
+  const probe = source$.subscribe((value) => {
+    seed = value
+    seeded = true
+  })
+  probe.unsubscribe()
+  const signal = seeded
+    ? SignalCreator<O>({ initialState: seed as O, observable: source$, distinct })
+    : (SignalCreator<O>({ observable: source$, distinct }) as Signal<O>)
+  // Hot for its lifetime. The observable branch only refreshes the value inside a `tap` behind
+  // `refCount`, so an unobserved piped signal would answer `.$()` with its seed forever. A
+  // stateful operator such as `scan` also cannot survive being resubscribed per read.
+  signal.$.subscribe(() => {})
+  return signal
+}
 
 // Memo dependency tracking is stack-scoped rather than derived from the global
 // debug stream. With nested memos, only the innermost active computation owns
@@ -27,6 +97,27 @@ export const signalDispatch = new Subject<SignalEvent<unknown>>()
 // itself. A global subscription would make the outer computation accidentally
 // collect both layers and can create duplicate cascades.
 const dependencyCollectors: Array<(signal: Signal<unknown>) => void> = []
+
+// One root write emits into every nested-path selector a memo subscribed to, and each delivery
+// invalidates that memo separately. Recomputing inline ran a 50k-row sort once per dependency
+// instead of once per write. The emit turn brackets `state$.next`, so an invalidation raised
+// inside it records the memo and the drain runs each one exactly once, after the last delivery.
+let emitDepth = 0
+const pendingFlush = new Set<() => void>()
+
+export function inEmitTurn<T>(run: () => T): T {
+  emitDepth++
+  try {
+    return run()
+  } finally {
+    emitDepth--
+    if (emitDepth === 0 && pendingFlush.size) {
+      const due = [...pendingFlush]
+      pendingFlush.clear()
+      for (const flush of due) flush()
+    }
+  }
+}
 
 // Run `compute`, recording every `.$()` signal read into `sink`. Re-throws;
 // `sink` keeps deps observed before the throw so a caller can resubscribe.
@@ -63,9 +154,17 @@ export function SignalCreator<T, Base extends object = object>(
     : new BehaviorSubject(initialState as T)
   let latest = initialState as T
 
-  const pushState = (next: T) => {
+  // `from` is the path of the write that caused the emit, not of the subject, which always sits
+  // at the root: the whole point of the record is naming which branch moved.
+  const pushState = (next: T, from: string[] = ROOT_PATH) => {
     latest = next
-    state$.next(next)
+    if (LOG.on) {
+      LOG.emit(CAT_EMIT, "emit {path}", {
+        path: from,
+        observerCount: (state$ as Subject<T>).observers.length,
+      })
+    }
+    inEmitTurn(() => state$.next(next))
   }
 
   // If an observable source is provided, pipe it into the state
@@ -101,9 +200,9 @@ export function SignalCreator<T, Base extends object = object>(
     }
 
     // Direct setter - handles both root and nested paths
-    const setter = (n: T) => {
+    const applySet = (n: T) => {
       if (!depth) {
-        return pushState(n)
+        return pushState(n, path)
       }
 
       // Deep set with lodash on an immer draft
@@ -111,7 +210,23 @@ export function SignalCreator<T, Base extends object = object>(
         set(draft, path, n)
       })
 
-      return pushState(next as T)
+      return pushState(next as T, path)
+    }
+
+    // The branch is duplicated so the unlogged path costs exactly one boolean read.
+    const setter = (n: T) => {
+      if (!LOG.on) return applySet(n)
+
+      const started = performance.now()
+      const hasSubscribers = (state$ as Subject<T>).observers.length > 0 || activeSubs.length > 0
+      const result = applySet(n)
+      LOG.emit(CAT_WRITE, "write {path}", {
+        path,
+        depth,
+        hasSubscribers,
+        durationMs: performance.now() - started,
+      })
+      return result
     }
 
     // Getter - handles root, nested, and function values
@@ -184,6 +299,18 @@ export function SignalCreator<T, Base extends object = object>(
         if (p === "setImmer") return setterImmer
         if (p === "path") return path
 
+        // `pipe` hands back an Observable, which is right for composition and wrong for storage.
+        // `pipe$` runs the same operators and wraps the result, so a piped stream keeps `.$()`,
+        // the proxy dots, and this node's distinction slot.
+        if (p === "pipe$") {
+          return (...operators: Array<OperatorFunction<unknown, unknown>>) => {
+            const source$ = ($proxy as unknown as Observable<unknown>).pipe(
+              ...(operators as [OperatorFunction<unknown, unknown>]),
+            )
+            return signalFromObservable(source$, options.distinct as SignalCreatorOptions<unknown>["distinct"])
+          }
+        }
+
         // Meta events stream ($.$)
         if (p === "$") {
           return signalDispatch.pipe(
@@ -200,10 +327,19 @@ export function SignalCreator<T, Base extends object = object>(
 
           if (depth) {
             // Scoped selector for nested paths
+            if (LOG.on) LOG.emit(CAT_SELECTOR, "selector {path} {reason}", { path, reason: "create" })
+            // SELECTOR_SLOT.distinct. Without it a write to any branch re-emits every other
+            // branch's selector, and a computed downstream re-runs its whole body: one colWidth
+            // write was re-sorting 50k rows through the `sort` selector.
+            const distinct = options.distinct === undefined ? distinctShallow<unknown>() : options.distinct
             autoSelector$ = root$.pipe(
               map((i) => get(i, path)),
+              distinct === null ? identity : distinct,
               tap({
                 subscribe: () => {
+                  if (LOG.on) {
+                    LOG.emit(CAT_SELECTOR, "selector {path} {reason}", { path, reason: "resubscribe" })
+                  }
                   if (!activeSubs.includes(proxy)) {
                     activeSubs.push(proxy)
                   }
@@ -300,7 +436,10 @@ export function SignalCreator<T, Base extends object = object>(
  * is lazy, shared across readers, and keeps its last successful value when a
  * transient computation throws.
  */
-export function createComputedSignal<T>(compute: () => T): Signal<T> {
+let computedSeq = 0
+
+export function createComputedSignal<T>(compute: () => T, name?: string): Signal<T> {
+  const id = name ?? `memo#${++computedSeq}`
   let dirty = true
   let hasValue = false
   let value: T
@@ -308,21 +447,67 @@ export function createComputedSignal<T>(compute: () => T): Signal<T> {
   let lastRunFailed = false
   let subscriberCount = 0
   let readPinned = false
+  // `recompute("read")` clears `dirty` and notifies nobody, so a downstream pull between an
+  // invalidation and its drain would otherwise starve every subscriber of this memo.
+  let pushOwed = false
 
   const observers = new Set<{ next(value: T): void }>()
-  let dependencySubs: Array<{ unsubscribe(): void }> = []
+  // Keyed by dependency so a recompute diffs instead of rebuilding: tearing every subscription
+  // down and re-adding it re-emitted every BehaviorSubject on the way back in.
+  const dependencySubs = new Map<Signal<unknown>, { unsubscribe(): void }>()
 
   const clearDependencies = () => {
-    for (const sub of dependencySubs) sub.unsubscribe()
-    dependencySubs = []
+    for (const [dependency, sub] of dependencySubs) {
+      sub.unsubscribe()
+      if (LOG.on) LOG.emit(CAT_UNSUBSCRIBE, "unsubscribe {id} {path}", { id, path: dependency.$.path })
+    }
+    dependencySubs.clear()
   }
 
-  const recompute = (): T => {
+  // Returns the diff size so a compute record can say how much of the wiring actually moved.
+  const syncDependencies = (deps: Set<Signal<unknown>>) => {
+    let added = 0
+    let removed = 0
+    for (const [dependency, sub] of dependencySubs) {
+      if (deps.has(dependency)) continue
+      sub.unsubscribe()
+      dependencySubs.delete(dependency)
+      removed++
+      if (LOG.on) LOG.emit(CAT_UNSUBSCRIBE, "unsubscribe {id} {path}", { id, path: dependency.$.path })
+    }
+    for (const dependency of deps) {
+      if (dependencySubs.has(dependency)) continue
+      let initializing = true
+      const sub = dependency.$.subscribe(() => {
+        if (!initializing) invalidate(dependency)
+      })
+      initializing = false
+      dependencySubs.set(dependency, sub)
+      added++
+      if (LOG.on) LOG.emit(CAT_SUBSCRIBE, "subscribe {id} {path}", { id, path: dependency.$.path })
+    }
+    return { added, removed }
+  }
+
+  const recompute = (trigger: "read" | "invalidate"): T => {
     if (running) return value
     running = true
 
+    const started = LOG.on ? performance.now() : 0
     const dependencies = new Set<Signal<unknown>>()
     dependencyCollectors.push((dependency) => dependencies.add(dependency))
+
+    const report = (diff: { added: number; removed: number }) => {
+      if (!LOG.on) return
+      LOG.emit(CAT_COMPUTE, "compute {id} {durationMs}ms", {
+        id,
+        durationMs: performance.now() - started,
+        depCount: dependencies.size,
+        depsAdded: diff.added,
+        depsRemoved: diff.removed,
+        trigger,
+      })
+    }
 
     let next: T
     try {
@@ -336,15 +521,7 @@ export function createComputedSignal<T>(compute: () => T): Signal<T> {
       // Preserve the dependencies read before the throw so a later change can
       // recover the memo. A failed recomputation is not an Observable error:
       // it must not permanently terminate this or any composed memo.
-      clearDependencies()
-      for (const dependency of dependencies) {
-        let initializing = true
-        const sub = dependency.$.subscribe(() => {
-          if (!initializing) invalidate()
-        })
-        initializing = false
-        dependencySubs.push(sub)
-      }
+      report(syncDependencies(dependencies))
 
       if (hasValue) return value
       throw error
@@ -357,24 +534,31 @@ export function createComputedSignal<T>(compute: () => T): Signal<T> {
     dirty = false
     lastRunFailed = false
 
-    clearDependencies()
-    for (const dependency of dependencies) {
-      let initializing = true
-      const sub = dependency.$.subscribe(() => {
-        if (!initializing) invalidate()
-      })
-      initializing = false
-      dependencySubs.push(sub)
-    }
+    report(syncDependencies(dependencies))
 
     return value
   }
 
-  const invalidate = () => {
+  const invalidate = (by?: Signal<unknown>) => {
     dirty = true
-    if (!subscriberCount || running) return
+    const eager = !!subscriberCount && !running
+    if (LOG.on) {
+      LOG.emit(CAT_INVALIDATE, "invalidate {id} by {by}", { id, by: by ? by.$.path : null, eager })
+    }
+    if (!eager) return
+    pushOwed = true
+    // Inside an emit turn every sibling selector is still delivering. Recompute once at the end.
+    if (emitDepth > 0) {
+      pendingFlush.add(flush)
+      return
+    }
+    flush()
+  }
 
-    const next = recompute()
+  const flush = () => {
+    if (!dirty && !pushOwed) return
+    pushOwed = false
+    const next = dirty ? recompute("invalidate") : value
     // Downstream recomputation may unsubscribe and resubscribe while handling
     // this emission. Iterate a snapshot so a newly added observer is not visited
     // again in the same Set iteration (an infinite nested-memo cascade).
@@ -383,7 +567,7 @@ export function createComputedSignal<T>(compute: () => T): Signal<T> {
 
   const readMemo = () => {
     readPinned = true
-    return dirty || !hasValue ? recompute() : value
+    return dirty || !hasValue ? recompute("read") : value
   }
 
   const observable = new Observable<T>((subscriber) => {
@@ -391,7 +575,7 @@ export function createComputedSignal<T>(compute: () => T): Signal<T> {
     observers.add(subscriber)
 
     try {
-      subscriber.next(dirty || !hasValue ? recompute() : value)
+      subscriber.next(dirty || !hasValue ? recompute("read") : value)
     } catch (error) {
       observers.delete(subscriber)
       subscriberCount--

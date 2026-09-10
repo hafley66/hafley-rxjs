@@ -5,15 +5,39 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "bin": { "grapht-layout-grid-wasm": "./bin/layout-grid-wasm.mjs" },
-  "files": ["dist", "bin", "src", "test", "scripts", "wasm", "LEARNINGS.md"],
+  "bin": {
+    "grapht-layout-grid-wasm": "./bin/layout-grid-wasm.mjs"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "src",
+    "test",
+    "scripts",
+    "wasm",
+    "LEARNINGS.md"
+  ],
   "scripts": {
     "build:wasm": "cargo build --manifest-path Cargo.toml --target wasm32-unknown-unknown --release && mkdir -p wasm && cp target/wasm32-unknown-unknown/release/grapht_layout_wasm.wasm wasm/grapht_layout_wasm.wasm",
     "build": "pnpm build:wasm && tsc -p tsconfig.json",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "node --test test/*.test.mjs",
-    "receipt": "node scripts/receipt.mjs"
+    "receipt": "node scripts/receipt.mjs",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
   },
-  "devDependencies": { "@types/node": "^26.2.0", "typescript": "7.0.2" }
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "7.0.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  }
 }
