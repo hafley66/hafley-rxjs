@@ -1,0 +1,287 @@
+/* The two hand-rendered pages, mapped onto the default theme's variables. */
+
+:root {
+  --page: var(--vp-c-bg);
+  --panel: var(--vp-c-bg-soft);
+  --ink-dim: var(--vp-c-text-2);
+  --line: var(--vp-c-divider);
+  --line-soft: var(--vp-c-bg-soft);
+  --accent: var(--vp-c-brand-1);
+  --yes: light-dark(#1a7f4b, #64d29a);
+  --no: light-dark(#8a8f98, #838a95);
+  --partial: light-dark(#9a6212, #e0a854);
+  --declared: light-dark(#5b53c9, #a79dff);
+}
+
+/* --- Parity ---------------------------------------------------------------- */
+
+.parity {
+  margin-block: 1rem 2rem;
+}
+
+.parity-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+}
+
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.72rem;
+}
+
+.filter-label {
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-dim);
+}
+
+.filter select,
+.filter input {
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--page);
+  color: inherit;
+  font: inherit;
+  font-size: 0.84rem;
+}
+
+.filter-text {
+  flex: 1;
+  min-inline-size: 9rem;
+}
+
+.parity-count {
+  margin: 0.6rem 0;
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+}
+
+/* The grid measures nothing, so the box it renders into has to declare a height. */
+.parity-grid {
+  block-size: min(68dvh, 40rem);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  overflow: hidden;
+  font-size: 0.84rem;
+}
+
+.parity-grid .sg-cell,
+.parity-grid .sg-head-cell {
+  align-items: center;
+}
+
+.parity-id,
+.parity-where {
+  padding: 0.05em 0.3em;
+  border-radius: 4px;
+  background: var(--line-soft);
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.78em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.parity-cite {
+  text-decoration: none;
+}
+
+.parity-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pill {
+  display: inline-block;
+  padding: 0.05em 0.45em;
+  border-radius: 999px;
+  border: 1px solid currentcolor;
+  font-size: 0.74em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-inline-size: 100%;
+}
+
+.pill[data-tone="yes"] {
+  color: var(--yes);
+}
+
+.pill[data-tone="no"] {
+  color: var(--no);
+}
+
+.pill[data-tone="partial"] {
+  color: var(--partial);
+}
+
+.pill[data-tone="declared"] {
+  color: var(--declared);
+}
+
+/* --- Receipts --------------------------------------------------------------- */
+
+.stats-lede {
+  color: var(--ink-dim);
+  font-size: 0.92rem;
+}
+
+.vp-doc .stats-table {
+  margin: 0 0 1.2rem;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+.vp-doc .stats-table table {
+  display: table;
+  inline-size: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.vp-doc .stats-table th,
+.vp-doc .stats-table td {
+  padding: 0.4rem 0.7rem;
+  border: 0;
+  border-block-end: 1px solid var(--line-soft);
+  vertical-align: top;
+  text-align: start;
+}
+
+.vp-doc .stats-table th {
+  position: sticky;
+  inset-block-start: 0;
+  background: var(--line-soft);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+.vp-doc .stats-table tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+.vp-doc .stats-table td:first-child {
+  white-space: nowrap;
+  color: var(--ink-dim);
+}
+
+.vp-doc .stats-table .stats-num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stats-null {
+  color: var(--no);
+  font-style: italic;
+}
+
+.vp-doc .stats-method,
+.vp-doc .stats-measured {
+  margin: -0.6rem 0 1.4rem;
+  color: var(--ink-dim);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.vp-doc .stats-missing {
+  margin: 0 0 1.2rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px dashed var(--line);
+  border-radius: 9px;
+  color: var(--ink-dim);
+  font-size: 0.84rem;
+}
+
+.stats-warning {
+  margin: 0 0 1.4rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--partial);
+  border-inline-start-width: 4px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--partial) 12%, transparent);
+}
+
+.vp-doc .stats-warning p {
+  margin: 0.4rem 0 0;
+  font-size: 0.88rem;
+}
+
+.vp-doc .stats-dirty,
+.vp-doc .stats-machine {
+  margin: 0.5rem 0 0;
+  padding-inline-start: 1.1rem;
+  font-size: 0.8rem;
+  font-family: var(--vp-font-family-mono);
+  color: var(--ink-dim);
+}
+
+.stats-hash {
+  font-family: var(--vp-font-family-mono);
+  color: var(--accent);
+}
+
+.vp-doc .stats-section h3 {
+  margin-block: 1.4rem 0.6rem;
+  font-size: 1rem;
+}
+
+/* The strip every page carries, so the commit a page was built from is never more than a glance. */
+.receipts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  max-inline-size: 90rem;
+  margin-inline: auto;
+  padding: 0.7rem 1.5rem 1.2rem;
+  border-block-start: 1px solid var(--line);
+  color: var(--ink-dim);
+  font-size: 0.76rem;
+}
+
+.receipts-label {
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.receipts-hash {
+  font-family: var(--vp-font-family-mono);
+  color: var(--accent);
+}
+
+.receipts-sep {
+  opacity: 0.5;
+}
+
+.receipts-date {
+  font-variant-numeric: tabular-nums;
+}
+
+.receipts-clean {
+  color: var(--yes);
+}
+
+.receipts-dirty {
+  color: var(--partial);
+  font-weight: 600;
+}
+
+.receipts-more {
+  color: inherit;
+}

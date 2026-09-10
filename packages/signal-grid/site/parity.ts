@@ -1,11 +1,5 @@
-// The parity page, rendered by the grid this site documents.
-//
-// `docs/1_parity.md` is generated and eleven columns wide, which reads on a page as a horizontal
-// scrollbar over text nobody can filter. The tables are parsed back into rows, joined with the two
-// citation files the generator itself reads, and handed to `grid()` plus `render()` from `../src`.
-// Sorting is the `sortOnHeaderClick` epic that `bind()` installs, not code written here.
-//
-// The prose around the tables still renders as markdown. Only the three wide tables are replaced.
+// Reads the three wide tables of the rendered `docs/1_parity.md` back out of the DOM, hides them,
+// and mounts one live grid under the "The matrix" heading. Sorting is the epic `bind()` installs.
 import { Signal } from "@hafley66/signals"
 import {
   grid,
@@ -18,7 +12,6 @@ import {
 } from "../src/index.js"
 import muiRaw from "../docs/parity.mui.json?raw"
 import tanstackRaw from "../docs/parity.tanstack.json?raw"
-import { parseBlocks, plain, renderBlocks, type Block, type Heading } from "./md.js"
 
 interface Citation {
   readonly status?: string
@@ -48,34 +41,44 @@ export interface ParityRow {
 
 const SECTIONS = ["The matrix", "Cut on purpose", "Not decided yet"]
 
-const norm = (text: string): string => plain(text).trim().toLowerCase()
+/** Heading text without the anchor link the theme appends to every heading. */
+function headingText(heading: Element): string {
+  const copy = heading.cloneNode(true) as Element
+  for (const anchor of copy.querySelectorAll(".header-anchor")) anchor.remove()
+  return (copy.textContent ?? "").trim()
+}
+
+const norm = (text: string): string => text.trim().toLowerCase()
+
+const cellsOf = (row: Element): Element[] => [...row.querySelectorAll("th, td")]
 
 /** Reads a table under a known header set by column name, so a regenerated order still lands. */
-function columnIndex(header: readonly string[]): Record<string, number> {
+function columnIndex(header: readonly Element[]): Record<string, number> {
   const index: Record<string, number> = {}
   header.forEach((cell, position) => {
-    index[norm(cell)] = position
+    index[norm(cell.textContent ?? "")] = position
   })
   return index
 }
 
-const at = (row: readonly string[], position: number | undefined): string =>
-  position === undefined ? "" : (row[position] ?? "")
+const at = (row: readonly Element[], position: number | undefined): Element | undefined =>
+  position === undefined ? undefined : row[position]
 
-/** `` `row.sort`<br>Order rows by one column `` splits into the id and the sentence after it. */
-function featureCell(cell: string): { id: string; label: string } {
-  const code = /`([^`]+)`/.exec(cell)
-  const id = code?.[1] ?? plain(cell).trim()
-  const rest = cell.replace(/`[^`]+`/, "").replace(/<br\s*\/?>/gi, " ").trim()
-  return { id, label: plain(rest) }
+const textOf = (cell: Element | undefined): string => (cell?.textContent ?? "").replace(/\s+/g, " ").trim()
+
+/** `<code>row.sort</code><br>Order rows by one column` splits into the id and the sentence after it. */
+function featureCell(cell: Element | undefined): { id: string; label: string } {
+  if (cell === undefined) return { id: "", label: "" }
+  const code = cell.querySelector("code")
+  const id = (code?.textContent ?? textOf(cell)).trim()
+  const copy = cell.cloneNode(true) as Element
+  copy.querySelector("code")?.remove()
+  return { id, label: textOf(copy) }
 }
 
-const statusText = (cell: string): string => {
-  const link = /\[([^\]]+)\]/.exec(cell)
-  return plain(link?.[1] ?? cell).trim()
-}
+const statusText = (cell: Element | undefined): string => textOf(cell?.querySelector("a") ?? cell)
 
-const urlOf = (cell: string): string => /\]\(([^)]+)\)/.exec(cell)?.[1] ?? ""
+const urlOf = (cell: Element | undefined): string => cell?.querySelector("a")?.getAttribute("href") ?? ""
 
 function detailOf(id: string): string {
   const mui = MUI[id]
@@ -88,35 +91,51 @@ function detailOf(id: string): string {
   return lines.join("\n")
 }
 
-export function parseParity(source: string): ParityRow[] {
+interface Parsed {
+  readonly rows: ParityRow[]
+  /** The tables and the axis headings that only label them, which leave the page once the grid is up. */
+  readonly replaced: HTMLElement[]
+  readonly anchor: HTMLElement | null
+}
+
+export function parseParity(doc: HTMLElement): Parsed {
   const rows: ParityRow[] = []
+  const replaced: HTMLElement[] = []
+  let anchor: HTMLElement | null = null
   let section = ""
   let axis = ""
-  for (const block of parseBlocks(source)) {
-    if (block.kind === "heading" && block.level === 2) {
-      section = plain(block.text).trim()
+  for (const node of doc.querySelectorAll("h2, h3, table")) {
+    if (!(node instanceof HTMLElement)) continue
+    if (node.tagName === "H2") {
+      section = headingText(node)
       axis = ""
+      if (section === "The matrix") anchor = node
       continue
     }
-    if (block.kind === "heading" && block.level === 3) {
-      axis = plain(block.text).trim()
+    const inTables = SECTIONS.includes(section)
+    if (node.tagName === "H3") {
+      axis = headingText(node)
+      if (inTables) replaced.push(node)
       continue
     }
-    if (block.kind !== "table" || !SECTIONS.includes(section)) continue
-    const index = columnIndex(block.header)
+    if (!inTables) continue
+    const headerRow = node.querySelector("thead tr")
+    if (headerRow === null) continue
+    const index = columnIndex(cellsOf(headerRow))
     if (index["feature"] === undefined) continue
+    replaced.push(node)
     const group = section === "The matrix" ? (axis === "" ? "Matrix" : axis) : section
-    for (const cellRow of block.rows) {
+    for (const line of node.querySelectorAll("tbody tr")) {
+      const cellRow = cellsOf(line)
       const { id, label } = featureCell(at(cellRow, index["feature"]))
       if (id === "") continue
       const muiCell = at(cellRow, index["mui x"])
-      const reason = at(cellRow, index["reason"])
       rows.push({
         key: `${group}|${id}`,
         id,
         section: group,
         feature: label,
-        why: plain(at(cellRow, index["why it matters"])) || plain(reason),
+        why: textOf(at(cellRow, index["why it matters"])) || textOf(at(cellRow, index["reason"])),
         tanstack: statusText(at(cellRow, index["tanstack v9"])) || (TANSTACK[id]?.status ?? ""),
         mui: statusText(muiCell) || (MUI[id]?.status ?? ""),
         grid:
@@ -125,13 +144,13 @@ export function parseParity(source: string): ParityRow[] {
             : section === "Cut on purpose"
               ? "cut on purpose"
               : "not decided",
-        where: plain(at(cellRow, index["where"]).replace(/<br\s*\/?>/gi, " ")),
+        where: textOf(at(cellRow, index["where"])),
         muiUrl: MUI[id]?.url ?? urlOf(muiCell),
         detail: detailOf(id),
       })
     }
   }
-  return rows
+  return { rows, replaced, anchor }
 }
 
 // --- Cells ------------------------------------------------------------------
@@ -163,9 +182,8 @@ const COLUMNS: readonly ColumnDef<ParityRow>[] = [
   { id: "where", header: "Where", type: "string", width: 240, resizable: true },
 ]
 
-// One schema-wide slot dispatching on the column, rather than the per-column `ColumnDef.cell`
-// field: `src/10_render.ts:198` reads `g.slots.cell` and never looks at the column's own slot, so
-// a `cell` written on a `ColumnDef` renders as plain text. Reported to the kernel lane.
+// One schema-wide slot dispatching on the column: `src/10_render.ts:198` reads `g.slots.cell` and
+// never looks at the column's own slot, so a `cell` written on a `ColumnDef` renders as plain text.
 function cellSlot(ctx: CellCtx<ParityRow>): Renderable {
   const text = String(ctx.value ?? "")
   if (ctx.col === "id" || ctx.col === "where") {
@@ -197,7 +215,6 @@ function cellSlot(ctx: CellCtx<ParityRow>): Renderable {
 // --- The page ---------------------------------------------------------------
 
 export interface ParityMount {
-  readonly headings: readonly Heading[]
   readonly teardown: () => void
 }
 
@@ -224,45 +241,16 @@ function select(label: string, options: readonly string[], onPick: (value: strin
 }
 
 /**
- * Renders the whole parity document, with the three wide tables replaced by one live grid.
- * Returns null when the tables parse to nothing, which is the caller's cue to render the markdown
- * as written rather than to show an empty page.
+ * Replaces the three wide tables inside a rendered parity document with one live grid. Returns null
+ * when no table parsed, which leaves the document exactly as VitePress rendered it.
  */
-export function renderParityPage(source: string, host: HTMLElement): ParityMount | null {
-  const all = parseParity(source)
-  if (all.length === 0) return null
+export function mountParity(doc: HTMLElement): ParityMount | null {
+  const { rows: all, replaced, anchor } = parseParity(doc)
+  if (all.length === 0 || anchor === null) return null
 
-  const blocks = parseBlocks(source)
-  const seen = new Map<string, number>()
-  const headings: Heading[] = []
+  for (const node of replaced) node.hidden = true
   const mountHost = el("div", "parity")
-
-  let section = ""
-  let pending: Block[] = []
-  const flush = (): void => {
-    if (pending.length === 0) return
-    const rendered = renderBlocks(pending, seen)
-    host.append(rendered.node)
-    for (const heading of rendered.headings) headings.push(heading)
-    pending = []
-  }
-  for (const block of blocks) {
-    if (block.kind === "heading" && block.level === 2) {
-      const next = plain(block.text).trim()
-      pending.push(block)
-      if (next === "The matrix") {
-        flush()
-        host.append(mountHost)
-      }
-      section = next
-      continue
-    }
-    const inTables = SECTIONS.includes(section)
-    // The three generated tables and the axis headings that only label them leave the prose.
-    if (inTables && (block.kind === "table" || (block.kind === "heading" && block.level === 3))) continue
-    pending.push(block)
-  }
-  flush()
+  anchor.insertAdjacentElement("afterend", mountHost)
 
   // --- filters --------------------------------------------------------------
 
@@ -378,7 +366,6 @@ export function renderParityPage(source: string, host: HTMLElement): ParityMount
   })
 
   return {
-    headings,
     teardown: () => {
       countSub.unsubscribe()
       observer.disconnect()
@@ -386,6 +373,8 @@ export function renderParityPage(source: string, host: HTMLElement): ParityMount
       gridHost.removeEventListener("keydown", onKey)
       unbind()
       handle.stop()
+      mountHost.remove()
+      for (const node of replaced) node.hidden = false
     },
   }
 }

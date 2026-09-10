@@ -2,5 +2,9 @@ demo/dist
 bench/results.json
 out/
 site/dist
+site/.vitepress/cache
+site/pages
+site/benchmarks.md
+site/demo-guide.md
 pages/dist
 docs/dist

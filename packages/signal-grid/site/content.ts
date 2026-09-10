@@ -1,66 +1,34 @@
-// The page list, one line per page. `checkPages` in `vite.config.ts` fails the build when a listed
-// path has no file, and `sourceOf` throws at module load with the same message in a dev server.
+// One row per page; `site/.vitepress/config.ts` derives the sidebar and the route rewrites from it.
+// `scripts/ship.mjs` reads the slugs back with a regular expression, so each stays `slug: "..."`.
 
-const RAW = import.meta.glob(
-  ["../README.md", "../docs/*.md", "../bench/*.md", "../demo/*.md", "../out/visual/*.md"],
-  { query: "?raw", import: "default", eager: true },
-) as Record<string, string>
-
-/** How a page reaches the screen. `parity` reads the tables; `stats` builds itself from stats.json. */
-export type PageView = "markdown" | "parity" | "stats"
+/** github.io serves gothic at `/hafley-rxjs/`, so this site takes a subdirectory under it. */
+export const BASE = "/hafley-rxjs/signal-grid/"
 
 export interface SitePage {
   readonly slug: string
   readonly title: string
-  /** 1-based position in the nav, which is the order of the list below. */
-  readonly order: number
-  /** Empty for a view that builds its own content, which is why `source` is empty too. */
-  readonly path: string
+  /** Relative to `site/`. `pages/`, `benchmarks.md`, and `demo-guide.md` are copied in by `pnpm site:content`. */
   readonly source: string
-  readonly view: PageView
 }
 
-function sourceOf(path: string): string {
-  const source = RAW[path]
-  if (source === undefined) {
-    const known = Object.keys(RAW).sort().join("\n  ")
-    throw new Error(`site/content.ts lists ${path}, which has no file. Files found:\n  ${known}`)
-  }
-  return source
-}
-
-interface PageSpec {
-  readonly slug: string
-  readonly title: string
-  readonly path?: string
-  readonly view?: PageView
-}
-
-// The order of this array is the order of the nav.
-const SPECS: readonly PageSpec[] = [
-  { slug: "overview", title: "Overview", path: "../README.md" },
-  { slug: "guide", title: "Guide", path: "../docs/2_guide.md" },
-  { slug: "api", title: "API", path: "../docs/0_api.md" },
-  { slug: "parity", title: "Parity", path: "../docs/1_parity.md", view: "parity" },
-  { slug: "competitors", title: "Competitors", path: "../docs/3_competitors.md" },
-  { slug: "proof", title: "Proof", path: "../docs/4_proof.md" },
-  { slug: "benchmarks", title: "Benchmarks", path: "../bench/README.md" },
-  // Slug is `demo-guide`, not `demo`: the built demo app occupies `demo/` in the same tree, so a
-  // cold load of `/demo` would hit the app rather than this page and the doc would be unreachable.
-  { slug: "demo-guide", title: "Demo", path: "../demo/README.md" },
-  { slug: "stats", title: "Receipts", view: "stats" },
+// The order of this array is the order of the sidebar.
+export const PAGES: readonly SitePage[] = [
+  { slug: "overview", title: "Overview", source: "pages/README.md" },
+  { slug: "guide", title: "Guide", source: "pages/2_guide.md" },
+  { slug: "api", title: "API", source: "pages/0_api.md" },
+  { slug: "parity", title: "Parity", source: "pages/1_parity.md" },
+  { slug: "competitors", title: "Competitors", source: "pages/3_competitors.md" },
+  { slug: "proof", title: "Proof", source: "pages/4_proof.md" },
+  { slug: "benchmarks", title: "Benchmarks", source: "benchmarks.md" },
+  // `demo/` is the built demo app inside the same tree, so the doc page cannot take that slug.
+  { slug: "demo-guide", title: "Demo", source: "demo-guide.md" },
+  { slug: "stats", title: "Receipts", source: "stats.md" },
 ]
 
-export const PAGES: readonly SitePage[] = SPECS.map((spec, index) => ({
-  slug: spec.slug,
-  title: spec.title,
-  order: index + 1,
-  path: spec.path ?? "",
-  source: spec.path === undefined ? "" : sourceOf(spec.path),
-  view: spec.view ?? "markdown",
-}))
+export const HOME = "overview"
 
-export const HOME: string = PAGES[0]?.slug ?? "overview"
+/** The route a page is served at, relative to `BASE`. */
+export const routeOf = (page: SitePage): string => (page.slug === HOME ? "/" : `/${page.slug}`)
 
-export const pageBySlug = (slug: string): SitePage | undefined =>
-  PAGES.find((page) => page.slug === slug)
+/** The file VitePress writes for a page, relative to `site/`. */
+export const targetOf = (page: SitePage): string => (page.slug === HOME ? "index.md" : `${page.slug}.md`)
