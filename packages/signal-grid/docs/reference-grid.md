@@ -22,7 +22,7 @@ const g = grid<Row>({ id: "files", rows: ROWS, columns: COLUMNS, rowId: (it) => 
 | `subRows` | `(row: TRow) => readonly TRow[] \| undefined` | present means tree mode |
 | `mode` | `"client" \| "server"` | defaults to client |
 | `rowCount` | `GridSource<number \| null>` | the server total, copied into the published page |
-| `state` | `GridSource<Partial<GridState>>` | the first value seeds, every later one lands as a change per key |
+| `state` | `GridSource<Partial<GridState>>` | a signal is controlled both ways; any other shape seeds |
 | `sync` | `string \| boolean` | a url query key; `true` uses the grid id |
 | `slots` | `Slots<TRow>` | covered on [Slots](/reference-slots) |
 | `viewport` | `GridSource<Viewport>` | top, left, width, height; drives the window |

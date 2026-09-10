@@ -1,7 +1,7 @@
 # Signals instead of value and onChange
 
-There is no controlled and uncontrolled distinction in this package, because a signal is both halves
-in one object.
+Controlled here is one signal you hold, and the grid writes back into it. A signal is both halves in
+one object, so there is no pair to re-join and no default for the join to pick.
 
 ## The pair, and what it forces
 
@@ -27,8 +27,9 @@ g.state.sort.$.subscribe(handle)
 | to own it entirely | hand your own signal in as `config.state` |
 | to persist it | `sync`, which round-trips the whole state through the url |
 
-Owning it entirely is the same object either way. You hold the signal the grid holds, so there is no
-third state to reconcile.
+Owning it entirely is controlled in both directions. Your write reaches the grid and the grid writes
+what the user did back into the same object, so there is no third state to reconcile and no
+`onSortModelChange` to pair with the value. See [GridState](/reference-grid-state).
 
 ## Why one deep signal rather than many
 

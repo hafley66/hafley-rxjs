@@ -43,9 +43,8 @@ rebuilds. Worked through on [Slots that are signals](/cells-signal-slots).
 
 ## No value and onChange pairs
 
-There is no controlled and uncontrolled distinction anywhere in the package, because a signal is
-both halves in one object. The argument is on
-[Signals instead of value and onChange](/why-signals).
+Controlled is one signal you hold rather than two props you pair, because a signal is both halves in
+one object. The argument is on [Signals instead of value and onChange](/why-signals).
 
 ## The reference live slot
 

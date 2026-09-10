@@ -10,10 +10,23 @@
 // Every assertion is a synchronous `.$()` read. Computed signals recompute lazily on read, so a
 // pipeline stage is asserted without observing it, which is why nothing here subscribes.
 import { describe, expect, it } from "vitest"
-import { Subscription, type Observable } from "rxjs"
+import { Subscription, skip, type Observable } from "rxjs"
 import { Signal } from "@hafley66/signals"
 import { defaultState, grid, type Grid } from "./8_grid.js"
-import { COLUMNS, FLAT, TREE, flatGrid, keysOf, treeGrid, type Row } from "./test/0_kit.js"
+import {
+  COLUMNS,
+  FLAT,
+  TREE,
+  at,
+  flatGrid,
+  headerClick,
+  headerDown,
+  keysOf,
+  pointerStreams,
+  treeGrid,
+  withEpics,
+  type Row,
+} from "./test/0_kit.js"
 import { cellAttrs, expandAttrs, gridAttrs, rowAttrs } from "./3_paths.js"
 import type { GridState, Orientation } from "./0_types.js"
 
@@ -80,7 +93,7 @@ describe("state is one signal reached by proxy dots", () => {
   })
 })
 
-describe("a state source keeps emitting after the seed", () => {
+describe("a state signal is controlled in both directions", () => {
   const withState = (state: Partial<GridState> | Signal<Partial<GridState>>): Grid<Row> =>
     grid<Row>({ id: "t", rows: FLAT, columns: COLUMNS, rowId: (r) => r.id, state })
 
@@ -131,12 +144,43 @@ describe("a state source keeps emitting after the seed", () => {
     expect(g.state.density.$()).toBe("compact")
   })
 
-  it("stops at close, so a source outliving the grid writes nothing", () => {
-    const source = Signal<Partial<GridState>>({})
-    const g = withState(source)
+  it("a user's sort reaches the caller's signal", () => {
+    const held = Signal<Partial<GridState>>({})
+    const { g } = withEpics(withState(held))
+    g.dispatch(headerClick("size"))
+    expect(held.$().sort).toEqual([{ field: "size", sort: "asc" }])
+  })
+
+  it("a user's resize reaches the caller's signal", () => {
+    const held = Signal<Partial<GridState>>({})
+    const { move$ } = pointerStreams()
+    const { g } = withEpics(withState(held))
+    g.dispatch(headerDown("name", "resize", 0))
+    move$.next(at({ clientX: 30 }))
+    expect(held.$().colWidth).toEqual({ name: 150 })
+  })
+
+  it("one header click is one emission, because the write back cannot come round again", () => {
+    const held = Signal<Partial<GridState>>({})
+    const { g } = withEpics(withState(held))
+    const seen: Partial<GridState>[] = []
+    // `skip(1)` drops the replay every subscriber of a state signal receives on arrival.
+    const sub = held.$.pipe(skip(1)).subscribe((it: Partial<GridState>) => seen.push(it))
+    g.dispatch(headerClick("size"))
+    sub.unsubscribe()
+    expect(seen.length).toBe(1)
+    expect(seen[0]?.sort).toEqual([{ field: "size", sort: "asc" }])
+  })
+
+  it("stops both directions at close, so neither side reaches the other", () => {
+    const held = Signal<Partial<GridState>>({})
+    const { g } = withEpics(withState(held))
     g.close()
-    source.$({ listView: true })
+    held.$({ listView: true })
     expect(g.state.listView.$()).toBe(false)
+    g.dispatch(headerClick("size"))
+    expect(g.state.sort.$()).toEqual([{ field: "size", sort: "asc" }])
+    expect(held.$().sort).toBeUndefined()
   })
 
   it("a plain object is still a seed and nothing more", () => {
@@ -144,6 +188,7 @@ describe("a state source keeps emitting after the seed", () => {
     const g = withState(seed)
     g.state.density.$("comfortable")
     expect(g.state.density.$()).toBe("comfortable")
+    expect(seed).toEqual({ density: "compact" })
   })
 })
 

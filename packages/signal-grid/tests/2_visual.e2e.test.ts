@@ -117,7 +117,7 @@ function mount(config) {
     rows,
     columns: config.columns,
     rowId: (row) => row.id,
-    // 8_grid reads config.state only when it is a signal, so a plain seed object would be dropped.
+    // A signal, so every case here runs the controlled path a consumer takes.
     state: toGridSignal(config.state ?? {}, {}),
     subRows: tree ? (row) => row.children : undefined,
   })
