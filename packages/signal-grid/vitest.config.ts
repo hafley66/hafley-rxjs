@@ -13,7 +13,7 @@ import { defineConfig } from "vitest/config"
  * `vitest.browser.config.ts` imports the same array as its include, so a file can never sit in both
  * runners or in neither.
  */
-export const DOM_TESTS: readonly string[] = ["src/9_css.test.ts"]
+export const DOM_TESTS: readonly string[] = ["src/9_css.test.ts", "src/13_composite.test.ts"]
 
 // `tests/` holds browser e2e that needs the serve slot and a real chromium, which only
 // vitest.e2e.config.ts provides. Without this exclude, a bare `vitest run` collects those files
