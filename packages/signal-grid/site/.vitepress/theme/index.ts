@@ -1,6 +1,8 @@
+import TwoslashFloatingVue from "@shikijs/vitepress-twoslash/client"
 import DefaultTheme from "vitepress/theme"
 import { h } from "vue"
 import type { Theme } from "vitepress"
+import "@shikijs/vitepress-twoslash/style.css"
 import "../../../src/theme.css"
 import "./site.css"
 import FpsMeter from "./FpsMeter.vue"
@@ -19,6 +21,7 @@ const theme: Theme = {
   enhanceApp({ app }) {
     app.component("ReceiptsSection", ReceiptsSection)
     app.component("GridDemo", GridDemo)
+    app.use(TwoslashFloatingVue)
   },
 }
 
