@@ -164,27 +164,8 @@ function mount(hosts: DemoHosts): DemoHandle {
     return `${covered.size}: ${[...covered].map(printCell).join(", ")}`
   }
 
-  // Workaround for defect 6. `view.vertical` does not notify when `orientation` moves, so `plan`
-  // and `cols` keep the previous seating until a key they do track changes and back.
-  const settleTranspose = (): void => {
-    requestAnimationFrame(() => {
-      metrics.view.vertical.$()
-      metrics.view.horizontal.$()
-      const density = metrics.state.density.$()
-      const list = metrics.state.listView.$()
-      metrics.state.density.$(density === "compact" ? "standard" : "compact")
-      metrics.state.listView.$(!list)
-      requestAnimationFrame(() => {
-        metrics.state.density.$(density)
-        metrics.state.listView.$(list)
-        refresh()
-      })
-    })
-  }
-
   const setOrientation = (next: Orientation): void => {
     metrics.state.orientation.$(next)
-    settleTranspose()
   }
 
   const ORIENTATIONS: readonly Option<Orientation>[] = [
