@@ -3,16 +3,23 @@
   "generatedBy": "packages/signal-grid/scripts/stats.mjs",
   "commit": {
     "method": "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain excluding this script's own two outputs, git rev-parse --abbrev-ref HEAD",
-    "hash": "8c5d8a9e8802288a4840de1fb7934e9b46d39aac",
-    "short": "8c5d8a9",
-    "subject": "signal-grid: the eight untagged modules carry a tag or a reason, and ship builds the vitepress site",
-    "authorDate": "2026-09-10T14:16:09-04:00",
-    "branch": "main",
-    "clean": true,
-    "dirtyCount": 0,
-    "dirtyEntries": [],
+    "hash": "50d24e3d9c1c87e0dfce593890d5e5438b71a34b",
+    "short": "50d24e3",
+    "subject": "signal-grid: four demos that put the kernel under load",
+    "authorDate": "2026-09-10T16:24:26-04:00",
+    "branch": "feature/signal-grid-stress-receipts",
+    "clean": false,
+    "dirtyCount": 6,
+    "dirtyEntries": [
+      "M packages/signal-grid/package.json",
+      " M packages/signal-grid/scripts/stats.mjs",
+      " M packages/signal-grid/site/stats.ts",
+      " M packages/signal-grid/vite.config.ts",
+      " M pnpm-lock.yaml",
+      "?? packages/signal-grid/.size-limit.json"
+    ],
     "repository": "hafley66/hafley-rxjs",
-    "url": "https://github.com/hafley66/hafley-rxjs/commit/8c5d8a9e8802288a4840de1fb7934e9b46d39aac",
+    "url": "https://github.com/hafley66/hafley-rxjs/commit/50d24e3d9c1c87e0dfce593890d5e5438b71a34b",
     "reason": null
   },
   "machine": {
@@ -23,805 +30,109 @@
     "cpuModel": "Apple M2 Pro",
     "cores": 12,
     "totalMemoryBytes": 17179869184,
-    "builtAt": "2026-09-10T18:19:31.061Z"
+    "builtAt": "2026-09-10T20:28:45.571Z"
   },
   "package": {
     "name": "@hafley66/signal-grid",
     "version": "0.1.0"
   },
   "bundle": {
-    "method": "statSync().size for raw bytes and zlib.gzipSync(readFileSync(file)).length for gzip, over the same file",
+    "method": "statSync().size summed for raw bytes and zlib.gzipSync(readFileSync(file)).length summed for gzip, over every file in the directory; totals and a file count only, because a per-file listing of a build output answers nothing",
     "library": {
-      "files": [
-        {
-          "file": "dist/index.js",
-          "bytes": 67077,
-          "gzipBytes": 19938
-        },
-        {
-          "file": "dist/theme.css",
-          "bytes": 10504,
-          "gzipBytes": 3267
-        }
-      ],
-      "totalBytes": 77581,
-      "totalGzipBytes": 23205,
+      "fileCount": 3,
+      "totalBytes": 101354,
+      "totalGzipBytes": 29035,
       "reason": null
     },
     "siteMethod": "the same statSync and gzipSync pass, run after the site build and before the rebuild that ships this file; the shipped assets differ from these figures by the bytes this table adds to stats.json",
     "site": {
-      "files": [
-        {
-          "file": "site/dist/assets/chunks/chunk-FOHPRMQF.CoA4358r.js",
-          "bytes": 662096,
-          "gzipBytes": 142203
-        },
-        {
-          "file": "site/dist/assets/chunks/cytoscape.esm.BsO9fSUN.js",
-          "bytes": 434701,
-          "gzipBytes": 136762
-        },
-        {
-          "file": "site/dist/assets/chunks/katex.ZlcWpGUi.js",
-          "bytes": 258685,
-          "gzipBytes": 76719
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-WYO6CB5R.B3tRqnjt.js",
-          "bytes": 234442,
-          "gzipBytes": 35394
-        },
-        {
-          "file": "site/dist/assets/chunks/parity.rRLdxTAd.js",
-          "bytes": 203023,
-          "gzipBytes": 66521
-        },
-        {
-          "file": "site/dist/assets/chunks/@localSearchIndexroot.vxOfgdGw.js",
-          "bytes": 169837,
-          "gzipBytes": 37968
-        },
-        {
-          "file": "site/dist/assets/chunks/architectureDiagram-ZJ3FMSHR.D1GSO3ym.js",
-          "bytes": 148478,
-          "gzipBytes": 40795
-        },
-        {
-          "file": "site/dist/assets/inter-italic-latin-ext.Dm0n7MN1.woff2",
-          "bytes": 141024,
-          "gzipBytes": 141087
-        },
-        {
-          "file": "site/dist/assets/inter-roman-latin-ext.Cjca3GLw.woff2",
-          "bytes": 128212,
-          "gzipBytes": 128258
-        },
-        {
-          "file": "site/dist/assets/app.Cds2Fef8.js",
-          "bytes": 116863,
-          "gzipBytes": 35307
-        },
-        {
-          "file": "site/dist/assets/chunks/sequenceDiagram-DBY2YBRQ.DHtqfEGu.js",
-          "bytes": 115736,
-          "gzipBytes": 30372
-        },
-        {
-          "file": "site/dist/assets/chunks/framework.DkAysg6d.js",
-          "bytes": 115139,
-          "gzipBytes": 44229
-        },
-        {
-          "file": "site/dist/assets/style.PXnnym2C.css",
-          "bytes": 114872,
-          "gzipBytes": 20733
-        },
-        {
-          "file": "site/dist/assets/chunks/swimlanes-5IMT3BWC.BlCl4luq.js",
-          "bytes": 114073,
-          "gzipBytes": 38695
-        },
-        {
-          "file": "site/dist/assets/chunks/theme.BcX2TQv_.js",
-          "bytes": 106885,
-          "gzipBytes": 31750
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-ZGVPDNZ5.07T-r15W.js",
-          "bytes": 101850,
-          "gzipBytes": 24710
-        },
-        {
-          "file": "site/dist/assets/inter-italic-symbols.DUl242AY.woff2",
-          "bytes": 92720,
-          "gzipBytes": 92768
-        },
-        {
-          "file": "site/dist/assets/inter-roman-symbols.CQZtw9ew.woff2",
-          "bytes": 83572,
-          "gzipBytes": 83620
-        },
-        {
-          "file": "site/dist/assets/chunks/cose-bilkent-JH36ORCC.DjkMZXhS.js",
-          "bytes": 81251,
-          "gzipBytes": 21382
-        },
-        {
-          "file": "site/dist/assets/inter-italic-latin.Duvr4T3O.woff2",
-          "bytes": 80180,
-          "gzipBytes": 80223
-        },
-        {
-          "file": "site/dist/assets/chunks/blockDiagram-677ZJIJ3.gIuP5j_9.js",
-          "bytes": 72715,
-          "gzipBytes": 20633
-        },
-        {
-          "file": "site/dist/assets/inter-roman-latin.q5rAVC0E.woff2",
-          "bytes": 72544,
-          "gzipBytes": 72587
-        },
-        {
-          "file": "site/dist/assets/chunks/c4Diagram-LMCZKHZV.ALN2VpUC.js",
-          "bytes": 69161,
-          "gzipBytes": 19192
-        },
-        {
-          "file": "site/dist/assets/chunks/ganttDiagram-NO4QXBWP.nOtXsQ9B.js",
-          "bytes": 68899,
-          "gzipBytes": 22647
-        },
-        {
-          "file": "site/dist/assets/chunks/VPLocalSearchBox.BIBqAzLf.js",
-          "bytes": 61854,
-          "gzipBytes": 21118
-        },
-        {
-          "file": "site/dist/assets/guide.md.Dvd5bEK6.js",
-          "bytes": 60303,
-          "gzipBytes": 8578
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-PUDLZKDR.DWHCqno2.js",
-          "bytes": 60107,
-          "gzipBytes": 19160
-        },
-        {
-          "file": "site/dist/assets/benchmarks.md.CD8sq4z3.js",
-          "bytes": 59688,
-          "gzipBytes": 11333
-        },
-        {
-          "file": "site/dist/assets/api.md.6zAq9Sd7.js",
-          "bytes": 52379,
-          "gzipBytes": 10846
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-V7JOEXUC.Dr2cLD25.js",
-          "bytes": 48772,
-          "gzipBytes": 15476
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-Q4XR5HBZ.0-a5yFZ6.js",
-          "bytes": 46833,
-          "gzipBytes": 14662
-        },
-        {
-          "file": "site/dist/assets/chunks/src.QN9XHvqB.js",
-          "bytes": 45680,
-          "gzipBytes": 15907
-        },
-        {
-          "file": "site/dist/assets/inter-italic-cyrillic-ext._yYvJxaO.woff2",
-          "bytes": 43828,
-          "gzipBytes": 43861
-        },
-        {
-          "file": "site/dist/assets/competitors.md.CpIDaXdA.js",
-          "bytes": 42315,
-          "gzipBytes": 12777
-        },
-        {
-          "file": "site/dist/assets/chunks/xychartDiagram-FW5EYKEG.BlZXhdDy.js",
-          "bytes": 41586,
-          "gzipBytes": 11627
-        },
-        {
-          "file": "site/dist/assets/chunks/vennDiagram-L72KCM5P.CUk7EKbZ.js",
-          "bytes": 41150,
-          "gzipBytes": 14996
-        },
-        {
-          "file": "site/dist/assets/inter-roman-cyrillic-ext.BIKsGeDD.woff2",
-          "bytes": 41120,
-          "gzipBytes": 41153
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-EX3LRPZG.hZCSWbjl.js",
-          "bytes": 37676,
-          "gzipBytes": 12232
-        },
-        {
-          "file": "site/dist/assets/chunks/quadrantDiagram-ABIIQ3AL.Moip5_rl.js",
-          "bytes": 33515,
-          "gzipBytes": 9703
-        },
-        {
-          "file": "site/dist/assets/inter-italic-greek.BeK1HKg-.woff2",
-          "bytes": 32212,
-          "gzipBytes": 32240
-        },
-        {
-          "file": "site/dist/assets/chunks/dagre.DuN1Ia_D.js",
-          "bytes": 32062,
-          "gzipBytes": 11469
-        },
-        {
-          "file": "site/dist/assets/inter-italic-cyrillic.CR0FzlVp.woff2",
-          "bytes": 31228,
-          "gzipBytes": 31256
-        },
-        {
-          "file": "site/dist/assets/chunks/requirementDiagram-TGXJPOKE.CIQztMUM.js",
-          "bytes": 30953,
-          "gzipBytes": 9682
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-ICXQ74PX.CFpdtvcI.js",
-          "bytes": 30755,
-          "gzipBytes": 8492
-        },
-        {
-          "file": "site/dist/assets/chunks/timeline-definition-FHXFAJF6.D_u5PLOQ.js",
-          "bytes": 30361,
-          "gzipBytes": 9916
-        },
-        {
-          "file": "site/dist/assets/inter-roman-greek.brO7ZQXV.woff2",
-          "bytes": 29528,
-          "gzipBytes": 29556
-        },
-        {
-          "file": "site/dist/assets/chunks/gitGraphDiagram-IHSO6WYX.DjZCUT3M.js",
-          "bytes": 29013,
-          "gzipBytes": 8541
-        },
-        {
-          "file": "site/dist/assets/inter-roman-cyrillic.R72SAhgh.woff2",
-          "bytes": 28948,
-          "gzipBytes": 28976
-        },
-        {
-          "file": "site/dist/assets/chunks/rough.esm.Dy-Kn_BL.js",
-          "bytes": 27109,
-          "gzipBytes": 8785
-        },
-        {
-          "file": "site/dist/assets/chunks/erDiagram-Q63AITRT.wnu0RjDi.js",
-          "bytes": 27053,
-          "gzipBytes": 9365
-        },
-        {
-          "file": "site/dist/assets/chunks/wardleyDiagram-EHGQE667.Bexsrc3X.js",
-          "bytes": 25194,
-          "gzipBytes": 6536
-        },
-        {
-          "file": "site/dist/assets/parity.md.BhzcH4yJ.js",
-          "bytes": 24981,
-          "gzipBytes": 5853
-        },
-        {
-          "file": "site/dist/assets/chunks/graphlib.DS17s2tU.js",
-          "bytes": 23904,
-          "gzipBytes": 8276
-        },
-        {
-          "file": "site/dist/assets/chunks/mindmap-definition-LN4V7U3C.DqKgthnN.js",
-          "bytes": 23667,
-          "gzipBytes": 8052
-        },
-        {
-          "file": "site/dist/assets/chunks/journeyDiagram-5HDEW3XC.DbkOqyrd.js",
-          "bytes": 23157,
-          "gzipBytes": 8129
-        },
-        {
-          "file": "site/dist/assets/chunks/sankeyDiagram-HTMAVEWB.CM4kk4jT.js",
-          "bytes": 22792,
-          "gzipBytes": 8217
-        },
-        {
-          "file": "site/dist/assets/chunks/kanban-definition-HUTT4EX6.CQOn67IG.js",
-          "bytes": 20213,
-          "gzipBytes": 7098
-        },
-        {
-          "file": "site/dist/assets/index.md.fCKB0OU6.js",
-          "bytes": 18949,
-          "gzipBytes": 4892
-        },
-        {
-          "file": "site/dist/assets/inter-italic-greek-ext.DngHnpzC.woff2",
-          "bytes": 17480,
-          "gzipBytes": 17508
-        },
-        {
-          "file": "site/dist/assets/chunks/ishikawaDiagram-FXEZZL3T.BZetX2Cx.js",
-          "bytes": 17303,
-          "gzipBytes": 6497
-        },
-        {
-          "file": "site/dist/assets/chunks/mermaid-parser.core.B_wagd5D.js",
-          "bytes": 16703,
-          "gzipBytes": 3930
-        },
-        {
-          "file": "site/dist/assets/inter-roman-greek-ext.CXd8zwEg.woff2",
-          "bytes": 16300,
-          "gzipBytes": 16323
-        },
-        {
-          "file": "site/dist/assets/proof.md.B_tyQjsR.js",
-          "bytes": 16080,
-          "gzipBytes": 5270
-        },
-        {
-          "file": "site/dist/assets/chunks/diagram-G47NLZAW.DBELTGoS.js",
-          "bytes": 15747,
-          "gzipBytes": 5501
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-MOJQB5TN.BnYggwqR.js",
-          "bytes": 15636,
-          "gzipBytes": 4334
-        },
-        {
-          "file": "site/dist/assets/inter-italic-vietnamese.CNdtrOX_.woff2",
-          "bytes": 14944,
-          "gzipBytes": 14967
-        },
-        {
-          "file": "site/dist/assets/inter-roman-vietnamese.DaEDpkt8.woff2",
-          "bytes": 14264,
-          "gzipBytes": 14287
-        },
-        {
-          "file": "site/dist/assets/chunks/diagram-FQU43EPY.1lEACzms.js",
-          "bytes": 10662,
-          "gzipBytes": 4115
-        },
-        {
-          "file": "site/dist/assets/chunks/stateDiagram-2N3HPSRC.DE-ivkh7.js",
-          "bytes": 10599,
-          "gzipBytes": 3712
-        },
-        {
-          "file": "site/dist/assets/demo-guide.md.1Mgl7LZt.js",
-          "bytes": 10500,
-          "gzipBytes": 2955
-        },
-        {
-          "file": "site/dist/assets/chunks/cynefinDiagram-TSTJHNR4.DKcpHRFm.js",
-          "bytes": 9930,
-          "gzipBytes": 3511
-        },
-        {
-          "file": "site/dist/assets/chunks/dagre-VKFMJZFB.CHbj1bba.js",
-          "bytes": 8800,
-          "gzipBytes": 3405
-        },
-        {
-          "file": "site/dist/assets/chunks/diagram-OA4YK3LP.BooJ-3eD.js",
-          "bytes": 8305,
-          "gzipBytes": 3693
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-RYQCIY6F.kl3pATDz.js",
-          "bytes": 7020,
-          "gzipBytes": 2671
-        },
-        {
-          "file": "site/dist/assets/chunks/pieDiagram-ENE6RG2P.C2T21R48.js",
-          "bytes": 6208,
-          "gzipBytes": 2589
-        },
-        {
-          "file": "site/dist/assets/chunks/diagram-WEI45ONY.CwwEN8yb.js",
-          "bytes": 5914,
-          "gzipBytes": 2488
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-HOUHSVGY.CEIWbOOc.js",
-          "bytes": 5833,
-          "gzipBytes": 2677
-        },
-        {
-          "file": "site/dist/assets/chunks/linear.DL6qLStJ.js",
-          "bytes": 5517,
-          "gzipBytes": 2254
-        },
-        {
-          "file": "site/dist/assets/chunks/map.BqjDHnM0.js",
-          "bytes": 5032,
-          "gzipBytes": 2044
-        },
-        {
-          "file": "site/dist/assets/chunks/defaultLocale.YZUHGh8n.js",
-          "bytes": 4495,
-          "gzipBytes": 2064
-        },
-        {
-          "file": "site/dist/assets/chunks/diagram-NH7WQ7WH.DRCJtPwO.js",
-          "bytes": 4272,
-          "gzipBytes": 1846
-        },
-        {
-          "file": "site/dist/assets/chunks/arc.CDR8dtPe.js",
-          "bytes": 3474,
-          "gzipBytes": 1466
-        },
-        {
-          "file": "site/dist/assets/chunks/path.fybaL0A-.js",
-          "bytes": 2278,
-          "gzipBytes": 977
-        },
-        {
-          "file": "site/dist/assets/stats.md.CtGid3ou.js",
-          "bytes": 2187,
-          "gzipBytes": 826
-        },
-        {
-          "file": "site/dist/assets/chunks/dist.Cacb5LoD.js",
-          "bytes": 2173,
-          "gzipBytes": 980
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-7BUUIJ7U.CAhmNhj7.js",
-          "bytes": 2105,
-          "gzipBytes": 830
-        },
-        {
-          "file": "site/dist/assets/chunks/ebnfDiagram-CCIWWBDH.BXFUcms8.js",
-          "bytes": 2061,
-          "gzipBytes": 894
-        },
-        {
-          "file": "site/dist/assets/chunks/pegDiagram-2B236MQR.VQ__cK6g.js",
-          "bytes": 2008,
-          "gzipBytes": 940
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-32BRIVSS.61kowziv.js",
-          "bytes": 1972,
-          "gzipBytes": 886
-        },
-        {
-          "file": "site/dist/assets/competitors.md.CpIDaXdA.lean.js",
-          "bytes": 1859,
-          "gzipBytes": 912
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-C7G6YPKG.Cqq10KqW.js",
-          "bytes": 1849,
-          "gzipBytes": 903
-        },
-        {
-          "file": "site/dist/assets/chunks/abnfDiagram-VRR7QNED.tCsp72oB.js",
-          "bytes": 1848,
-          "gzipBytes": 898
-        },
-        {
-          "file": "site/dist/assets/stats.md.CtGid3ou.lean.js",
-          "bytes": 1682,
-          "gzipBytes": 597
-        },
-        {
-          "file": "site/dist/assets/chunks/railroadDiagram-RFXS5EU6.BOdONYnB.js",
-          "bytes": 1661,
-          "gzipBytes": 776
-        },
-        {
-          "file": "site/dist/assets/proof.md.B_tyQjsR.lean.js",
-          "bytes": 1363,
-          "gzipBytes": 780
-        },
-        {
-          "file": "site/dist/assets/vp-icons.139f4833.css",
-          "bytes": 1282,
-          "gzipBytes": 700
-        },
-        {
-          "file": "site/dist/assets/chunks/metadata.afd3c4cd.js",
-          "bytes": 1278,
-          "gzipBytes": 620
-        },
-        {
-          "file": "site/dist/assets/chunks/ordinal.BAxfPAgN.js",
-          "bytes": 1174,
-          "gzipBytes": 562
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-OGEWGWER.DaPYqEMK.js",
-          "bytes": 968,
-          "gzipBytes": 591
-        },
-        {
-          "file": "site/dist/assets/chunks/line.DUDc3Wst.js",
-          "bytes": 943,
-          "gzipBytes": 468
-        },
-        {
-          "file": "site/dist/assets/chunks/sizeCapture-X5ZJPWSS.BLIUHMgQ.js",
-          "bytes": 875,
-          "gzipBytes": 510
-        },
-        {
-          "file": "site/dist/assets/chunks/swimlanesDiagram-G3AALYLV.C8qOBqxs.js",
-          "bytes": 789,
-          "gzipBytes": 466
-        },
-        {
-          "file": "site/dist/assets/chunks/stateDiagram-v2-6OUMAXLB.Bxf9jYA5.js",
-          "bytes": 736,
-          "gzipBytes": 436
-        },
-        {
-          "file": "site/dist/assets/chunks/classDiagram-OUVF2IWQ.aPPnd6gu.js",
-          "bytes": 733,
-          "gzipBytes": 433
-        },
-        {
-          "file": "site/dist/assets/chunks/classDiagram-v2-EOCWNBFH.aPPnd6gu.js",
-          "bytes": 733,
-          "gzipBytes": 433
-        },
-        {
-          "file": "site/dist/assets/chunks/infoDiagram-FWYZ7A6U.D4t9neAZ.js",
-          "bytes": 648,
-          "gzipBytes": 423
-        },
-        {
-          "file": "site/dist/assets/chunks/rolldown-runtime.CbXtAM7H.js",
-          "bytes": 589,
-          "gzipBytes": 368
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-VR4S4FIN.BdENHa22.js",
-          "bytes": 574,
-          "gzipBytes": 400
-        },
-        {
-          "file": "site/dist/assets/chunks/flowDiagram-23GEKE2U.BeinmqXI.js",
-          "bytes": 530,
-          "gzipBytes": 295
-        },
-        {
-          "file": "site/dist/assets/parity.md.BhzcH4yJ.lean.js",
-          "bytes": 406,
-          "gzipBytes": 306
-        },
-        {
-          "file": "site/dist/assets/benchmarks.md.CD8sq4z3.lean.js",
-          "bytes": 395,
-          "gzipBytes": 292
-        },
-        {
-          "file": "site/dist/assets/api.md.6zAq9Sd7.lean.js",
-          "bytes": 394,
-          "gzipBytes": 306
-        },
-        {
-          "file": "site/dist/assets/demo-guide.md.1Mgl7LZt.lean.js",
-          "bytes": 390,
-          "gzipBytes": 292
-        },
-        {
-          "file": "site/dist/assets/index.md.fCKB0OU6.lean.js",
-          "bytes": 386,
-          "gzipBytes": 305
-        },
-        {
-          "file": "site/dist/assets/guide.md.Dvd5bEK6.lean.js",
-          "bytes": 383,
-          "gzipBytes": 295
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-5VM5RSS4.TOl2eSYi.js",
-          "bytes": 362,
-          "gzipBytes": 271
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-XXDRQBXY.BTiQUmv6.js",
-          "bytes": 262,
-          "gzipBytes": 227
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-JWPE2WC7.A3RzWITa.js",
-          "bytes": 223,
-          "gzipBytes": 172
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-2Q5K7J3B.BsaEqoYJ.js",
-          "bytes": 191,
-          "gzipBytes": 164
-        },
-        {
-          "file": "site/dist/assets/chunks/chunk-Y2CYZVJY.DsF7k-Jl.js",
-          "bytes": 155,
-          "gzipBytes": 143
-        },
-        {
-          "file": "site/dist/assets/chunks/init.C-OQMol4.js",
-          "bytes": 140,
-          "gzipBytes": 125
-        },
-        {
-          "file": "site/dist/assets/chunks/eventmodeling-NTZA5JFV.B4VXwtS3.js",
-          "bytes": 132,
-          "gzipBytes": 138
-        },
-        {
-          "file": "site/dist/assets/chunks/architecture-7GRP2DOG.DlOafSen.js",
-          "bytes": 131,
-          "gzipBytes": 135
-        },
-        {
-          "file": "site/dist/assets/chunks/railroad-abnf-HS5TGJTU.CUp1KCr9.js",
-          "bytes": 131,
-          "gzipBytes": 137
-        },
-        {
-          "file": "site/dist/assets/chunks/railroad-ebnf-LZEXJU2U.DYAHw6rL.js",
-          "bytes": 131,
-          "gzipBytes": 137
-        },
-        {
-          "file": "site/dist/assets/chunks/railroad-peg-WCYAUIDC.BCwO4iHS.js",
-          "bytes": 130,
-          "gzipBytes": 136
-        },
-        {
-          "file": "site/dist/assets/chunks/gitGraph-4MIJSDKK.ClGmNxls.js",
-          "bytes": 127,
-          "gzipBytes": 134
-        },
-        {
-          "file": "site/dist/assets/chunks/railroad-74A4TZTK.BXUp2HSN.js",
-          "bytes": 127,
-          "gzipBytes": 134
-        },
-        {
-          "file": "site/dist/assets/chunks/treeView-Q6P3EWNA.saMAyV2a.js",
-          "bytes": 127,
-          "gzipBytes": 133
-        },
-        {
-          "file": "site/dist/assets/chunks/cynefin-OW5HDTMX.CFsj9-8R.js",
-          "bytes": 126,
-          "gzipBytes": 133
-        },
-        {
-          "file": "site/dist/assets/chunks/treemap-WGGIJYW6.GaBDO_mV.js",
-          "bytes": 126,
-          "gzipBytes": 132
-        },
-        {
-          "file": "site/dist/assets/chunks/wardley-WFR3VGLG.GYrR4STA.js",
-          "bytes": 126,
-          "gzipBytes": 134
-        },
-        {
-          "file": "site/dist/assets/chunks/packet-AYTQ26CC.DEkIR0wA.js",
-          "bytes": 125,
-          "gzipBytes": 132
-        },
-        {
-          "file": "site/dist/assets/chunks/radar-RG4KPBEZ.Bqr3kuty.js",
-          "bytes": 124,
-          "gzipBytes": 131
-        },
-        {
-          "file": "site/dist/assets/chunks/info-A6RAGUB7.BEdFshWC.js",
-          "bytes": 123,
-          "gzipBytes": 131
-        },
-        {
-          "file": "site/dist/assets/chunks/pie-WAS4IAKB.Dem9vIXP.js",
-          "bytes": 122,
-          "gzipBytes": 131
-        },
-        {
-          "file": "site/dist/assets/chunks/channel.DzbVYE0Z.js",
-          "bytes": 114,
-          "gzipBytes": 124
-        },
-        {
-          "file": "site/dist/assets/chunks/array.BifhSqXX.js",
-          "bytes": 107,
-          "gzipBytes": 112
-        },
-        {
-          "file": "site/dist/assets/chunks/virtual_mermaid-config.B8sn6s3U.js",
-          "bytes": 66,
-          "gzipBytes": 86
-        },
-        {
-          "file": "site/dist/index.html",
-          "bytes": 30281,
-          "gzipBytes": 7221
-        }
-      ],
-      "totalBytes": 5339922,
-      "totalGzipBytes": 2113775,
-      "reason": null
+      "fileCount": null,
+      "totalBytes": null,
+      "totalGzipBytes": null,
+      "reason": "site/dist/assets does not exist; the site has not been built in this run"
     },
     "demo": {
-      "files": [
-        {
-          "file": "site/dist/demo/assets/index-jNp4DGim.js",
-          "bytes": 209673,
-          "gzipBytes": 70930
-        },
-        {
-          "file": "site/dist/demo/assets/index-CrKy9QTB.css",
-          "bytes": 17641,
-          "gzipBytes": 3787
-        }
-      ],
-      "totalBytes": 227314,
-      "totalGzipBytes": 74717,
-      "reason": null
+      "fileCount": null,
+      "totalBytes": null,
+      "totalGzipBytes": null,
+      "reason": "site/dist/demo/assets does not exist; the demo has not been built in this run"
     },
     "videos": {
-      "files": [
-        {
-          "file": "site/dist/videos/tests-2-visual-e2e-test__5000-rows-recycle-through-a-bounded-dom-and-turning-virtualization-off-renders-t.mp4",
-          "bytes": 172682,
-          "gzipBytes": 166284
-        },
-        {
-          "file": "site/dist/videos/tests-2-visual-e2e-test__dragging-the-resize-handle-with-a-real-pointer-widens-one-column-and-leaves-its-.mp4",
-          "bytes": 77836,
-          "gzipBytes": 76374
-        },
-        {
-          "file": "site/dist/videos/tests-2-visual-e2e-test__state-colorder-drives-the-header-band-and-every-row-band-from-one-model.mp4",
-          "bytes": 66247,
-          "gzipBytes": 63947
-        },
-        {
-          "file": "site/dist/videos/tests-2-visual-e2e-test__hiding-a-column-removes-it-from-both-bands-and-reflows-the-rest-and-unhiding-ret.mp4",
-          "bytes": 63235,
-          "gzipBytes": 61170
-        },
-        {
-          "file": "site/dist/videos/tests-2-visual-e2e-test__css-custom-properties-on-the-grid-root-retheme-live-rows-and-light-dark-flips-wi.mp4",
-          "bytes": 54339,
-          "gzipBytes": 50950
-        }
-      ],
-      "totalBytes": 434339,
-      "totalGzipBytes": 418725,
+      "fileCount": null,
+      "totalBytes": null,
+      "totalGzipBytes": null,
+      "reason": "site/dist/videos holds no recordings; run `pnpm test:visual && pnpm videos`"
+    },
+    "treemap": {
+      "method": "rollup-plugin-visualizer, wired into vite.config.ts behind SIGNAL_GRID_TREEMAP=1 because it takes the bundle step from 24 ms to 84 ms; this script does not set the flag",
+      "envFlag": "SIGNAL_GRID_TREEMAP=1",
+      "command": "SIGNAL_GRID_TREEMAP=1 npx vite build",
+      "file": "out/treemap.html",
+      "bytes": 183180,
       "reason": null
     }
+  },
+  "sizeLimit": {
+    "method": "npx size-limit --json, read as json rather than parsed out of its human output; @size-limit/preset-small-lib bundles each entry with esbuild and gzips it, @size-limit/time replays it on a throttled connection and in headless chrome",
+    "config": ".size-limit.json",
+    "entries": [
+      {
+        "name": "published javascript, dist/*.js",
+        "sizeBytes": 26503,
+        "limitBytes": 29000,
+        "headroomBytes": 2497,
+        "passed": true,
+        "loadingMs": 518,
+        "runningMs": 177
+      },
+      {
+        "name": "the eager half, dist/index.js",
+        "sizeBytes": 22161,
+        "limitBytes": 24000,
+        "headroomBytes": 1839,
+        "passed": true,
+        "loadingMs": 433,
+        "runningMs": 82
+      },
+      {
+        "name": "grid() and render() imported",
+        "sizeBytes": 14002,
+        "limitBytes": 15500,
+        "headroomBytes": 1498,
+        "passed": true,
+        "loadingMs": 273,
+        "runningMs": 47
+      },
+      {
+        "name": "theme.css",
+        "sizeBytes": 1391,
+        "limitBytes": 1600,
+        "headroomBytes": 209,
+        "passed": true,
+        "loadingMs": 27,
+        "runningMs": 0
+      }
+    ],
+    "passed": true,
+    "durationMs": 6705,
+    "reason": null
   },
   "source": {
     "method": "readFileSync over src/*.{ts,css}, lines counted as \\n occurrences; a name containing .test. is a test file",
     "files": [
       {
         "file": "src/10_render.test.ts",
-        "lines": 826,
+        "lines": 880,
         "kind": "test"
       },
       {
         "file": "src/10_render.ts",
-        "lines": 784,
+        "lines": 812,
         "kind": "source"
       },
       {
         "file": "src/8_grid.ts",
-        "lines": 620,
+        "lines": 693,
         "kind": "source"
       },
       {
@@ -965,6 +276,11 @@
         "kind": "source"
       },
       {
+        "file": "src/0_log.test.ts",
+        "lines": 152,
+        "kind": "test"
+      },
+      {
         "file": "src/9_css.test.ts",
         "lines": 142,
         "kind": "test"
@@ -990,20 +306,25 @@
         "kind": "test"
       },
       {
+        "file": "src/0_log.ts",
+        "lines": 57,
+        "kind": "source"
+      },
+      {
         "file": "src/features.test.ts",
         "lines": 57,
         "kind": "test"
       },
       {
         "file": "src/index.ts",
-        "lines": 23,
+        "lines": 24,
         "kind": "source"
       }
     ],
-    "sourceFiles": 20,
-    "sourceLines": 6427,
-    "testFiles": 18,
-    "testLines": 5804
+    "sourceFiles": 21,
+    "sourceLines": 6586,
+    "testFiles": 19,
+    "testLines": 6010
   },
   "epics": {
     "method": "a child node process imports defaultEpics from dist/index.js and reports the length of what it returns",
@@ -1018,11 +339,11 @@
     "decidedOut": 8,
     "undecided": 8,
     "tags": 47,
-    "modules": 17,
+    "modules": 18,
     "untagged": [],
     "unread": 8,
     "gate": "pass",
-    "durationMs": 191,
+    "durationMs": 210,
     "reason": null
   },
   "tests": {
@@ -1030,11 +351,11 @@
     "unit": {
       "label": "unit",
       "command": "vitest run",
-      "tests": 328,
-      "files": 91,
-      "passed": 328,
+      "tests": 340,
+      "files": 95,
+      "passed": 340,
       "failed": 0,
-      "durationMs": 847,
+      "durationMs": 1147,
       "success": true,
       "reason": null
     },
@@ -1051,15 +372,15 @@
   },
   "timing": {
     "method": "Date.now() around each execFileSync call in scripts/stats.mjs; site and demo build times are handed over by scripts/ship.mjs",
-    "typecheckMs": 258,
+    "typecheckMs": 698,
     "typecheckReason": null,
-    "libraryBuildMs": 302,
+    "libraryBuildMs": 412,
     "libraryBuildReason": null,
-    "unitTestsMs": 847,
+    "unitTestsMs": 1147,
     "browserTestsMs": null,
-    "siteBuildMs": 2771,
-    "demoBuildMs": 367,
-    "statsMs": 1923
+    "siteBuildMs": null,
+    "demoBuildMs": null,
+    "statsMs": 9404
   },
   "memory": {
     "method": "a child node --expose-gc process imports dist/index.js, allocates 100000 plain row objects, forces gc, reads process.memoryUsage().heapUsed, builds one grid and reads view.plan and view.flat, forces gc again, reads heapUsed again",
@@ -1067,11 +388,11 @@
     "rows": 100000,
     "flatNodes": 100000,
     "windowedRows": 27,
-    "heapBeforeBytes": 24174808,
-    "heapAfterBytes": 36461464,
-    "retainedBytes": 12286656,
-    "retainedBytesPerRow": 122.9,
-    "rssBytes": 146948096,
+    "heapBeforeBytes": 24326288,
+    "heapAfterBytes": 36623768,
+    "retainedBytes": 12297480,
+    "retainedBytesPerRow": 123,
+    "rssBytes": 144703488,
     "reason": null
   },
   "bench": {

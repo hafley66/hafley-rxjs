@@ -1,6 +1,6 @@
 // Every number the site prints about itself, written to `site/stats.json`. Each field names the
 // command it came from in a sibling `method`, and a missing source yields `null` plus a `reason`.
-import { execFileSync } from "node:child_process"
+import { execFileSync, spawnSync } from "node:child_process"
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs"
 import { cpus, totalmem } from "node:os"
 import { dirname, join, relative, resolve } from "node:path"
@@ -47,20 +47,21 @@ const timed = (command, args) => {
 /** Raw and gzip bytes of one file. gzip runs over the same buffer `statSync` sized. */
 function weigh(path) {
   const raw = readFileSync(path)
-  return { file: relative(PKG, path), bytes: statSync(path).size, gzipBytes: gzipSync(raw).length }
+  return { bytes: statSync(path).size, gzipBytes: gzipSync(raw).length }
 }
 
+/** Totals and a file count. The per-file listing this used to carry answered nothing and is gone. */
 function weighDir(dir) {
   if (!existsSync(dir)) return null
   const entries = readdirSync(dir, { recursive: true })
     .map((it) => join(dir, String(it)))
     .filter((it) => statSync(it).isFile())
   if (entries.length === 0) return null
-  const files = entries.map(weigh).sort((left, right) => right.bytes - left.bytes)
+  const weighed = entries.map(weigh)
   return {
-    files,
-    totalBytes: files.reduce((sum, it) => sum + it.bytes, 0),
-    totalGzipBytes: files.reduce((sum, it) => sum + it.gzipBytes, 0),
+    fileCount: weighed.length,
+    totalBytes: weighed.reduce((sum, it) => sum + it.bytes, 0),
+    totalGzipBytes: weighed.reduce((sum, it) => sum + it.gzipBytes, 0),
   }
 }
 
@@ -450,6 +451,73 @@ function benchGroup() {
   }
 }
 
+// --- size-limit --------------------------------------------------------------
+
+const SIZE_LIMIT_METHOD =
+  "npx size-limit --json, read as json rather than parsed out of its human output; @size-limit/preset-small-lib bundles each entry with esbuild and gzips it, @size-limit/time replays it on a throttled connection and in headless chrome"
+
+/** stdout of a command that is expected to exit non-zero when a gate fails, so the payload survives. */
+function captureEvenOnFailure(command, args) {
+  const run = spawnSync(command, args, { cwd: PKG, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] })
+  return { stdout: run.stdout ?? "", status: run.status, error: run.error }
+}
+
+function sizeLimitGroup() {
+  const config = join(PKG, ".size-limit.json")
+  if (!existsSync(config)) {
+    return { method: null, config: ".size-limit.json", entries: null, passed: null, durationMs: null, reason: ".size-limit.json is absent, so there are no budgets to run" }
+  }
+  const started = Date.now()
+  const run = captureEvenOnFailure("npx", ["size-limit", "--json"])
+  const durationMs = Date.now() - started
+  // The spinner writes to stderr but the runner is free to prefix stdout, so the payload starts at
+  // the first bracket rather than at byte zero.
+  const opened = run.stdout.indexOf("[")
+  if (opened === -1) {
+    return { method: null, config: ".size-limit.json", entries: null, passed: null, durationMs, reason: `npx size-limit --json printed no json array (exit ${run.status ?? "none"})` }
+  }
+  let parsed = null
+  try {
+    parsed = JSON.parse(run.stdout.slice(opened))
+  } catch (error) {
+    return { method: null, config: ".size-limit.json", entries: null, passed: null, durationMs, reason: `npx size-limit --json printed unparseable json: ${String(error).split("\n")[0]}` }
+  }
+  const entries = parsed.map((it) => ({
+    name: it.name,
+    sizeBytes: it.size ?? null,
+    limitBytes: it.sizeLimit ?? null,
+    headroomBytes: it.size === undefined || it.sizeLimit === undefined ? null : it.sizeLimit - it.size,
+    passed: it.passed === true,
+    loadingMs: it.loading === undefined ? null : Math.round(it.loading * 1000),
+    runningMs: it.running === undefined ? null : Math.round(it.running * 1000),
+  }))
+  const failed = entries.filter((it) => !it.passed)
+  return {
+    method: SIZE_LIMIT_METHOD,
+    config: ".size-limit.json",
+    entries,
+    passed: failed.length === 0,
+    durationMs,
+    reason: failed.length === 0 ? null : `${failed.length} entr(y|ies) over budget: ${failed.map((it) => it.name).join(", ")}`,
+  }
+}
+
+const TREEMAP_METHOD =
+  "rollup-plugin-visualizer, wired into vite.config.ts behind SIGNAL_GRID_TREEMAP=1 because it takes the bundle step from 24 ms to 84 ms; this script does not set the flag"
+
+const treemapGroup = () => {
+  const file = join(PKG, "out", "treemap.html")
+  const present = existsSync(file)
+  return {
+    method: TREEMAP_METHOD,
+    envFlag: "SIGNAL_GRID_TREEMAP=1",
+    command: "SIGNAL_GRID_TREEMAP=1 npx vite build",
+    file: "out/treemap.html",
+    bytes: present ? statSync(file).size : null,
+    reason: present ? null : "out/treemap.html is absent; the last build ran without SIGNAL_GRID_TREEMAP=1",
+  }
+}
+
 // --- bundle -----------------------------------------------------------------
 
 function libraryBundle() {
@@ -461,7 +529,7 @@ function libraryBundle() {
   return { ...weighed, reason: null }
 }
 
-const emptyBundle = () => ({ files: null, totalBytes: null, totalGzipBytes: null })
+const emptyBundle = () => ({ fileCount: null, totalBytes: null, totalGzipBytes: null })
 
 function siteBundles() {
   const dist = join(PKG, "site", "dist")
@@ -473,7 +541,7 @@ function siteBundles() {
     assets === null
       ? { ...emptyBundle(), reason: "site/dist/assets does not exist; the site has not been built in this run" }
       : {
-          files: [...assets.files, ...html],
+          fileCount: assets.fileCount + html.length,
           totalBytes: assets.totalBytes + html.reduce((sum, it) => sum + it.bytes, 0),
           totalGzipBytes: assets.totalGzipBytes + html.reduce((sum, it) => sum + it.gzipBytes, 0),
           reason: null,
@@ -495,7 +563,8 @@ const packageVersion = () => {
   return { name: manifest.name, version: manifest.version }
 }
 
-const BUNDLE_METHOD = "statSync().size for raw bytes and zlib.gzipSync(readFileSync(file)).length for gzip, over the same file"
+const BUNDLE_METHOD =
+  "statSync().size summed for raw bytes and zlib.gzipSync(readFileSync(file)).length summed for gzip, over every file in the directory; totals and a file count only, because a per-file listing of a build output answers nothing"
 const SITE_METHOD =
   "the same statSync and gzipSync pass, run after the site build and before the rebuild that ships this file; the shipped assets differ from these figures by the bytes this table adds to stats.json"
 
@@ -521,7 +590,9 @@ function fullRun() {
       site: bundles.site,
       demo: bundles.demo,
       videos: bundles.videos,
+      treemap: treemapGroup(),
     },
+    sizeLimit: sizeLimitGroup(),
     source: sourceGroup(),
     epics: epicsGroup(),
     features: featuresGroup(),
@@ -570,6 +641,11 @@ console.log("")
 console.log(`  stats      ${relative(PKG, OUT)}${bundlesOnly ? " (bundles refreshed)" : ""}`)
 console.log(`  commit     ${stats.commit.short ?? "unknown"} ${stats.commit.clean === true ? "clean" : "DIRTY"}`)
 console.log(`  library    ${kb(stats.bundle.library.totalBytes)} raw, ${kb(stats.bundle.library.totalGzipBytes)} gzip`)
+for (const entry of stats.sizeLimit.entries ?? []) {
+  console.log(
+    `  size-limit ${entry.passed ? "pass" : "OVER"} ${kb(entry.sizeBytes)} of ${kb(entry.limitBytes)}  ${entry.name}`,
+  )
+}
 console.log(`  site       ${kb(stats.bundle.site.totalBytes)} raw, ${kb(stats.bundle.site.totalGzipBytes)} gzip`)
 console.log(`  demo       ${kb(stats.bundle.demo.totalBytes)} raw, ${kb(stats.bundle.demo.totalGzipBytes)} gzip`)
 console.log(`  tests      ${stats.tests.unit.tests ?? "n/a"} unit in ${stats.tests.unit.durationMs ?? "n/a"} ms`)
@@ -582,6 +658,8 @@ if (stats.bundle.library.reason !== null) nulls.push(`bundle.library: ${stats.bu
 if (stats.bundle.site.reason !== null) nulls.push(`bundle.site: ${stats.bundle.site.reason}`)
 if (stats.bundle.demo.reason !== null) nulls.push(`bundle.demo: ${stats.bundle.demo.reason}`)
 if (stats.bundle.videos.reason !== null) nulls.push(`bundle.videos: ${stats.bundle.videos.reason}`)
+if (stats.bundle.treemap.reason !== null) nulls.push(`bundle.treemap: ${stats.bundle.treemap.reason}`)
+if (stats.sizeLimit.reason !== null) nulls.push(`sizeLimit: ${stats.sizeLimit.reason}`)
 if (stats.tests.browser.reason !== null) nulls.push(`tests.browser: ${stats.tests.browser.reason}`)
 if (stats.memory.reason !== null) nulls.push(`memory: ${stats.memory.reason}`)
 if (stats.bench.reason !== null) nulls.push(`bench: ${stats.bench.reason}`)

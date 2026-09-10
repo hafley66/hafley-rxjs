@@ -4,16 +4,30 @@ import raw from "./stats.json"
 
 // --- Shape ------------------------------------------------------------------
 
-export interface Weighed {
-  readonly file: string
-  readonly bytes: number
-  readonly gzipBytes: number
-}
-
 export interface Bundle {
-  readonly files: readonly Weighed[] | null
+  readonly fileCount: number | null
   readonly totalBytes: number | null
   readonly totalGzipBytes: number | null
+  readonly reason: string | null
+}
+
+/** One `.size-limit.json` entry, as size-limit's own `--json` output reports it. */
+export interface SizeLimitEntry {
+  readonly name: string
+  readonly sizeBytes: number | null
+  readonly limitBytes: number | null
+  readonly headroomBytes: number | null
+  readonly passed: boolean
+  readonly loadingMs: number | null
+  readonly runningMs: number | null
+}
+
+export interface Treemap {
+  readonly method: string
+  readonly envFlag: string
+  readonly command: string
+  readonly file: string
+  readonly bytes: number | null
   readonly reason: string | null
 }
 
@@ -92,6 +106,15 @@ export interface Stats {
     readonly site: Bundle
     readonly demo: Bundle
     readonly videos: Bundle
+    readonly treemap: Treemap
+  }
+  readonly sizeLimit: {
+    readonly method: string | null
+    readonly config: string
+    readonly entries: readonly SizeLimitEntry[] | null
+    readonly passed: boolean | null
+    readonly durationMs: number | null
+    readonly reason: string | null
   }
   readonly source: {
     readonly method: string
@@ -308,29 +331,71 @@ function machineSection(): Section {
   }
 }
 
-function bundleTable(bundle: Bundle): HTMLElement {
-  if (bundle.files === null || bundle.totalBytes === null || bundle.totalGzipBytes === null) {
-    return missing(bundle.reason)
-  }
-  const rows: Cell[][] = bundle.files.map((it) => [it.file, formatBytes(it.bytes), formatBytes(it.gzipBytes)])
-  rows.push(["total", formatBytes(bundle.totalBytes), formatBytes(bundle.totalGzipBytes)])
-  return table({ columns: ["file", "raw", "gzip"], rows, numeric: [1, 2] })
+const bundleRow = (label: string, bundle: Bundle): Cell[] =>
+  bundle.totalBytes === null || bundle.totalGzipBytes === null
+    ? [label, null, null, null]
+    : [label, bundle.fileCount, formatBytes(bundle.totalBytes), formatBytes(bundle.totalGzipBytes)]
+
+function sizeLimitTable(): HTMLElement {
+  const sizeLimit = STATS.sizeLimit
+  if (sizeLimit.entries === null) return missing(sizeLimit.reason)
+  const rows: Cell[][] = sizeLimit.entries.map((it) => [
+    it.name,
+    it.sizeBytes === null ? null : formatBytes(it.sizeBytes),
+    it.limitBytes === null ? null : formatBytes(it.limitBytes),
+    it.headroomBytes === null ? null : formatBytes(it.headroomBytes),
+    it.loadingMs === null ? null : formatMs(it.loadingMs),
+    it.runningMs === null ? null : formatMs(it.runningMs),
+    it.passed ? "pass" : "over budget",
+  ])
+  return table({
+    columns: ["entry", "gzip", "budget", "headroom", "slow 3G load", "run on a Snapdragon 410", "gate"],
+    rows,
+    numeric: [1, 2, 3, 4, 5],
+  })
 }
 
 function bundleSection(): Section {
   const bundle = STATS.bundle
+  const sizeLimit = STATS.sizeLimit
   const nodes: HTMLElement[] = [
-    el("h3", "", "Library, dist/"),
-    bundleTable(bundle.library),
-    el("h3", "", "Site, site/dist/"),
-    bundleTable(bundle.site),
-    el("h3", "", "Demo, site/dist/demo/"),
-    bundleTable(bundle.demo),
-    el("h3", "", "Recordings, site/dist/videos/"),
-    bundleTable(bundle.videos),
+    el("h3", "", "Budgets, per entry point"),
+    sizeLimitTable(),
+    el(
+      "p",
+      "stats-measured",
+      `The gate is \`npx size-limit\`, run from ${sizeLimit.config}. It exits non-zero when an entry passes its budget, so a regression fails the build instead of appearing in a table.`,
+    ),
+    method(sizeLimit.method),
+    el("h3", "", "Build outputs, totals"),
+    table({
+      columns: ["output", "files", "raw", "gzip"],
+      rows: [
+        bundleRow("library, dist/", bundle.library),
+        bundleRow("site, site/dist/", bundle.site),
+        bundleRow("demo, site/dist/demo/", bundle.demo),
+        bundleRow("recordings, site/dist/videos/", bundle.videos),
+      ],
+      numeric: [1, 2, 3],
+    }),
     method(bundle.method),
     method(bundle.siteMethod),
+    el("h3", "", "What is inside the bundle"),
+    bundle.treemap.bytes === null
+      ? missing(bundle.treemap.reason)
+      : table({
+          columns: ["field", "value"],
+          rows: [
+            ["command", bundle.treemap.command],
+            ["file", bundle.treemap.file],
+            ["size", formatBytes(bundle.treemap.bytes)],
+          ],
+        }),
+    method(bundle.treemap.method),
   ]
+  for (const bundleEntry of [bundle.library, bundle.site, bundle.demo, bundle.videos]) {
+    if (bundleEntry.reason !== null) nodes.push(el("p", "stats-missing", bundleEntry.reason))
+  }
   return { id: "bundle", title: "Bundle", nodes }
 }
 
