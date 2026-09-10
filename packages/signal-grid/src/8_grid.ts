@@ -10,10 +10,12 @@ import { withDetail } from "./11_detail.js"
 import {
   measuredSizer,
   renderPlan,
+  spacersOf,
   uniformSizer,
   type RenderPlan,
   type RenderPlanInput,
   type Sizer,
+  type Spacers,
 } from "./4_slice.js"
 import { gridDom, intentOf } from "./3_paths.js"
 import {
@@ -100,9 +102,13 @@ export function defaultState(over: Partial<GridState> = {}): GridState {
     listView: false,
     orientation: "rows",
     virtualize: true,
+    virtualizeCol: false,
     ...over,
   }
 }
+
+/** The horizontal run is never the axis a pager retains, so its plan is handed the identity page. */
+const NO_PAGE = { index: 0, size: 0 } as const
 
 /** @feature-declared view.density */
 export const ROW_HEIGHT: Record<GridState["density"], number> = {
@@ -154,6 +160,12 @@ export interface GridView<TRow> {
   readonly plan: Sig<RenderPlan<RowId>>
   /** The horizontal run, one cell of every vertical entry. */
   readonly cols: Sig<readonly FlatNode<ColId>[]>
+  /** `cols` with the header bands dropped, so every entry left holds a seat. */
+  readonly colLeaves: Sig<readonly ColId[]>
+  /** The horizontal run partitioned into its three sticky runs, its center windowed. */
+  readonly colPlan: Sig<RenderPlan<ColId>>
+  /** The pixels `colPlan` skipped, as the two tracks that hold the window's place. */
+  readonly colSpacers: Sig<Spacers>
   readonly widths: Sig<ReadonlyMap<ColId, number>>
   /** Spanning as a relation over the cross, keyed vertical/horizontal so it transposes. */
   readonly spans: Sig<SpanRelation>
@@ -475,7 +487,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
       // `pages` does not, and the two modes must not disagree about who did the cut.
       paginate: mode === "client" && args.enabled,
       virtualize: state.virtualize.$(),
-      sizer: (keys) => sizerFor(keys, seat.extent, fallback),
+      sizer: (keys) => sizerFor(keys, (it) => seat.extent[it], fallback),
       viewport: { start: port.top, extent: port.height },
       overscan: config.overscan ?? 4,
     }
@@ -515,6 +527,35 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
     }
     return declared
   })
+
+  /** The horizontal run's entries with the bands dropped. A node the axis holds no value for is a
+   * band over its leaves and occupies no seat, which is one test under either seating. */
+  const colLeaves = Signal<readonly ColId[]>(() => {
+    const across = horizontal.$()
+    return cols.$().filter((it) => across.axis.by.has(it.key)).map((it) => it.key)
+  })
+
+  /** The same `renderPlan` the vertical seat runs, handed the other viewport dimension. `partition`
+   * lifts pinned entries out first, so the window can never drop one. @feature view.virtualize.col */
+  const colPlan = Signal<RenderPlan<ColId>>(() => {
+    const seat = horizontal.$()
+    const port = viewport.$()
+    const resolved = widths.$()
+    return renderPlan<ColId>({
+      flat: colLeaves.$(),
+      side: (key) => seat.pinning[key],
+      page: NO_PAGE,
+      paginate: false,
+      virtualize: state.virtualizeCol.$(),
+      // A resolved column width first, the seat's own override second: under the transpose this run
+      // holds rows, which have no entry in a map keyed by column, so the chain falls through.
+      sizer: (keys) => sizerFor(keys, (it) => resolved.get(it) ?? seat.extent[it], DEFAULT_COL_WIDTH),
+      viewport: { start: port.left, extent: port.width },
+      overscan: config.overscan ?? 4,
+    })
+  })
+
+  const colSpacers = Signal<Spacers>(() => spacersOf(colPlan.$()))
 
   /**
    * `ColumnDef.span` is the source; this relation is what the kernel reads. The callback is
@@ -568,6 +609,9 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
     horizontal,
     plan,
     cols,
+    colLeaves,
+    colPlan,
+    colSpacers,
     widths,
     spans,
     covered,
@@ -612,17 +656,17 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
 // Keyed by position in `keys`, which is the page run renderPlan is about to window, not the flat
 // list. Taking the keys rather than a count is what removes the index translation: pinning lifts
 // entries out and paging drops others, so a flat-list index named a different entry than the
-// sizer read. `extents` is `rowHeight` when rows stand vertical and `colWidth` when columns do.
+// sizer read. A lookup rather than a record: a second sizer builder is a second windowing path.
 function sizerFor(
   keys: readonly string[],
-  extents: Readonly<Record<string, number>>,
+  extentOf: (key: string) => number | undefined,
   fallback: number,
 ): Sizer {
   const measured = new Map<number, number>()
   for (let index = 0; index < keys.length; index++) {
     const key = keys[index]
     if (key === undefined) continue
-    const extent = extents[key]
+    const extent = extentOf(key)
     if (extent !== undefined) measured.set(index, extent)
   }
   if (measured.size === 0) return uniformSizer(keys.length, fallback)
