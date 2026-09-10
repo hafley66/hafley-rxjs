@@ -114,6 +114,7 @@ export const GROUPS: readonly SiteGroup[] = [
       { slug: "showcase-tree", title: "Filesystem tree", source: "pages/showcase-tree.md" },
       { slug: "showcase-matrix", title: "Matrix", source: "pages/showcase-matrix.md" },
       { slug: "showcase-detail", title: "Master detail", source: "pages/showcase-detail.md" },
+      { slug: "showcase-sheet", title: "Million-row sheet", source: "pages/showcase-sheet.md" },
     ],
   },
 ]
