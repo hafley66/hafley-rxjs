@@ -11,7 +11,7 @@
 // observers are opened together and torn down together. It is the only `subscribe` a test may use.
 //
 // Nothing here reaches a document. Every helper imports clean into a node environment, so a file
-// takes the jsdom pragma only when its own subject needs one.
+// moves to the chromium runner in `DOM_TESTS` only when its own subject needs one.
 import { Subject, Subscription } from "rxjs"
 import { onTestFinished } from "vitest"
 import { Signal } from "@hafley66/signals"

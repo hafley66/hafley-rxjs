@@ -1,8 +1,9 @@
-// @vitest-environment jsdom
-//
-// jsdom carries neither observer, so both are stubbed here rather than pulled in as a dependency.
-// Each stub records its instances and its targets, which is how "one observer for the whole store"
-// and "the release detaches from both" become assertions rather than claims.
+// Chromium under `vitest.browser.config.ts` supplies the elements and both observers for real.
+// Both observers are still stubbed over, because what this file asserts is how many the store
+// constructs and which targets each holds, and a real observer publishes neither tally and
+// delivers its entries a frame later. The stubs record their instances and their targets and fire
+// on the call, which is how "one observer for the whole store" and "the release detaches from
+// both" become assertions rather than claims.
 import { beforeEach, describe, expect, test } from "vitest"
 import {
   anchorAdjustment,

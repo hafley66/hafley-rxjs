@@ -1,7 +1,7 @@
-// @vitest-environment jsdom
-//
-// jsdom because `sync` opens a window listener, and the leak this file guards against is exactly
-// that listener outliving the grid. Every other assertion here is environment-free.
+// Chromium under `vitest.browser.config.ts`, because `sync` opens a window listener and the leak
+// this file guards against is exactly that listener outliving the grid, and because the last
+// describe clicks a glyph through a real delegation chain. Every other assertion here is
+// environment-free.
 //
 // This file owns the shape of the default orientation for the whole suite: what a sort write, a
 // page write, a pin, a hide, and server mode each do to the view chain. `12_transpose.test.ts`
@@ -18,7 +18,8 @@ import { cellAttrs, expandAttrs, gridAttrs, rowAttrs } from "./3_paths.js"
 import type { Orientation } from "./0_types.js"
 
 // `urlAdapter` reaches the window through `fromEvent`, so the leak is a listener count and the
-// only way to assert it is to count them. jsdom keeps no public tally, so the pair is wrapped.
+// only way to assert it is to count them. No engine publishes that tally, so the pair is wrapped
+// and the assertions read a delta across one construction rather than an absolute.
 let live = 0
 const realAdd = window.addEventListener.bind(window)
 const realRemove = window.removeEventListener.bind(window)

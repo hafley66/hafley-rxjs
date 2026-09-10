@@ -1,6 +1,5 @@
-// @vitest-environment jsdom
-//
-// jsdom because the default cell slot builds DOM. Every other assertion reads the def.
+// Chromium under `vitest.browser.config.ts`, because the default cell slot builds DOM and the
+// stack it builds is asserted through a real query engine. Every other assertion reads the def.
 import { describe, expect, test } from "vitest"
 import {
   COMPOSITE_PREFIX,

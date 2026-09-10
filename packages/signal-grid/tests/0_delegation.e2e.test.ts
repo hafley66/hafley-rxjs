@@ -1,6 +1,7 @@
-// Delegated routing asserted where it actually runs. A jsdom `dispatchEvent` proves the listener
-// chain and nothing else: it never asks whether a real pointer at those coordinates reaches the
-// element the route claims. Chromium hit-tests, so a cell that is not clickable fails here.
+// Delegated routing asserted where it actually runs. A synthetic `dispatchEvent` proves the
+// listener chain and nothing else: it never asks whether a real pointer at those coordinates
+// reaches the element the route claims. This file drives a real pointer against a page served over
+// http, so a cell that some other element covers fails here.
 import type { Locator } from "playwright"
 import { describe, expect, test } from "@hafley66/vitest-playwright"
 import { beforeEach, inject } from "vitest"
