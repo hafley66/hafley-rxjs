@@ -9,6 +9,7 @@ import {
   detailHeights,
   detailOnCellClick,
   grid,
+  isDetailKey,
   render,
   type ColumnDef,
   type GridIntent,
@@ -246,7 +247,7 @@ function mount(hosts: DemoHosts): DemoHandle {
   const openRows = (): readonly RowId[] => Object.keys(orders.state.detail.$())
 
   const openFirst = (): void => {
-    const first = orders.view.plan.$().center.find((it) => !it.includes(" "))
+    const first = orders.view.plan.$().center.find((it) => !isDetailKey(it))
     if (first === undefined) return
     orders.state.detail.$({ ...orders.state.detail.$(), [first]: BUILT_IN_IDS.detail })
   }
