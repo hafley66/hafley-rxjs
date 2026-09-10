@@ -95,9 +95,7 @@ export const matrixDemo: DemoRoute = {
     "The transpose. One state, two seatings, and the library's own acceptance test made visible: a " +
     "2 by 3 span has to come back as 3 by 2 with both halves of its address swapped.",
   features: ["view.list", "cell.span", "col.pin", "col.resize", "row.pin", "row.sort", "view.slots", "view.theme"],
-  defects: [
-    "view.vertical never notifies on an orientation write, so plan and cols keep the previous seating. The toggle here writes density and listView twice to force them to recompute.",
-  ],
+  defects: [],
   mount,
 }
 
