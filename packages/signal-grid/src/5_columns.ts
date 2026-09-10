@@ -1,7 +1,6 @@
 // Two rules hold for every factory here, enforced in code: a built-in is never `groupable`, and it
 // never carries `flex` (min and max are pinned to width, so the pool cannot reopen).
 import { Signal } from "@hafley66/signals"
-import type { Signal as Sig } from "@hafley66/signals"
 import { isGroupKey } from "./0_types.js"
 import type { CellCtx, ColId, ColumnDef, HeaderCtx, RowId, Side, Slot } from "./0_types.js"
 import { isDetailKey } from "./11_detail.js"
@@ -180,7 +179,7 @@ export function checkboxColumn<TRow>(opts: SelectColumnOptions<TRow> = {}): Buil
   const read = opts.grid
   const header: Slot<HeaderCtx<TRow>> = () => {
     if (read === undefined) return SELECT_ALL_GLYPH.none
-    const glyph: Sig<string> = Signal<string>(() => {
+    const glyph: Signal<string> = Signal<string>(() => {
       const grid = read()
       if (grid === undefined) return SELECT_ALL_GLYPH.none
       // A group header and a detail panel are not selectable rows, so counting them would leave

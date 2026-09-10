@@ -2,7 +2,7 @@
 // a signal is both halves already, so a caller's signal is controlled by holding it and nothing else.
 import { fromEvent, isObservable, Observable, Subscription, filter as rxFilter, map, share } from "rxjs"
 import { ROUTE_BOUNDARY_ATTR } from "@hafley66/xdom"
-import { createSlice, isSignal, Signal, storageSignal, urlAdapter, type Signal as Sig } from "@hafley66/signals"
+import { createSlice, isSignal, Signal, storageSignal, urlAdapter } from "@hafley66/signals"
 import { CAT_FLATTEN, CAT_GROUP, CAT_INTENT, CAT_PLAN, CAT_SORT, LOG } from "./0_log.js"
 import { axisOfEntries, axisOfTree, flattenAxis, groupAxis, sortAxis } from "./1_axis.js"
 import { buildComparator } from "./2_operators.js"
@@ -65,9 +65,9 @@ import {
  * `@hafley66/signals` already carries this as `SignalSource`; the grid adds a fallback so a live
  * source that has not emitted yet still has a first value to derive from.
  */
-export type GridSource<T> = Sig<T> | Observable<T> | (() => T) | T
+export type GridSource<T> = Signal<T> | Observable<T> | (() => T) | T
 
-export function toGridSignal<T>(source: GridSource<T>, fallback: T): Sig<T> {
+export function toGridSignal<T>(source: GridSource<T>, fallback: T): Signal<T> {
   if (isSignal<T>(source)) return source
   if (isObservable(source)) return Signal<T>(source as Observable<T>, fallback)
   if (typeof source === "function") return Signal<T>(source as () => T)
@@ -149,49 +149,49 @@ export interface GridConfig<TRow> {
 
 export interface GridView<TRow> {
   /** Source rows as an ordered forest. Flat when `subRows` is absent. */
-  readonly base: Sig<Axis<RowId, TRow>>
-  readonly grouped: Sig<Axis<RowId, TRow>>
-  readonly sorted: Sig<Axis<RowId, TRow>>
+  readonly base: Signal<Axis<RowId, TRow>>
+  readonly grouped: Signal<Axis<RowId, TRow>>
+  readonly sorted: Signal<Axis<RowId, TRow>>
   /** `sorted` plus one node per open panel. What `flat` walks. @feature-declared row.detail */
-  readonly detailed: Sig<Axis<RowId, TRow>>
-  readonly flat: Sig<readonly FlatNode<RowId>[]>
+  readonly detailed: Signal<Axis<RowId, TRow>>
+  readonly flat: Signal<readonly FlatNode<RowId>[]>
   /**
    * The two seats, already assigned. `vertical` is whatever `orientation` put on the y dimension,
    * so a consumer that wants the axis that scrolls asks for it by direction and never by name.
    */
-  readonly vertical: Sig<AxisFacet<string, unknown>>
-  readonly horizontal: Sig<AxisFacet<string, unknown>>
+  readonly vertical: Signal<AxisFacet<string, unknown>>
+  readonly horizontal: Signal<AxisFacet<string, unknown>>
   /** The windowed vertical run. Rows under `"rows"`, columns under `"columns"`. */
-  readonly plan: Sig<RenderPlan<RowId>>
+  readonly plan: Signal<RenderPlan<RowId>>
   /** The horizontal run, one cell of every vertical entry. */
-  readonly cols: Sig<readonly FlatNode<ColId>[]>
+  readonly cols: Signal<readonly FlatNode<ColId>[]>
   /** `cols` with the header bands dropped, so every entry left holds a seat. */
-  readonly colLeaves: Sig<readonly ColId[]>
+  readonly colLeaves: Signal<readonly ColId[]>
   /** The horizontal run partitioned into its three sticky runs, its center windowed. */
-  readonly colPlan: Sig<RenderPlan<ColId>>
+  readonly colPlan: Signal<RenderPlan<ColId>>
   /** The pixels `colPlan` skipped, as the two tracks that hold the window's place. */
-  readonly colSpacers: Sig<Spacers>
-  readonly widths: Sig<ReadonlyMap<ColId, number>>
+  readonly colSpacers: Signal<Spacers>
+  readonly widths: Signal<ReadonlyMap<ColId, number>>
   /** Spanning as a relation over the cross, keyed vertical/horizontal so it transposes. */
-  readonly spans: Sig<SpanRelation>
+  readonly spans: Signal<SpanRelation>
   /** Cells a neighbour's span already occupies. A covered cell renders nothing. */
-  readonly covered: Sig<ReadonlySet<CellId>>
+  readonly covered: Signal<ReadonlySet<CellId>>
 }
 
 export interface Grid<TRow> {
-  readonly id: Sig<string>
+  readonly id: Signal<string>
   readonly mode: GridMode
-  readonly state: Sig<GridState>
-  readonly rows: Sig<readonly TRow[]>
-  readonly columns: Sig<readonly ColumnDef<TRow>[]>
+  readonly state: Signal<GridState>
+  readonly rows: Signal<readonly TRow[]>
+  readonly columns: Signal<readonly ColumnDef<TRow>[]>
   readonly view: GridView<TRow>
-  readonly viewport: Sig<Viewport>
+  readonly viewport: Signal<Viewport>
   readonly actions$: Observable<GridAction<TRow>>
   readonly intent$: Observable<GridIntent>
   readonly change$: Observable<GridChange>
   readonly effect$: Observable<GridEffect<TRow>>
   /** Server mode reads this and fetches. Client mode ignores it. */
-  readonly query: Sig<QueryDescriptor>
+  readonly query: Signal<QueryDescriptor>
   /** Fires when an infinite page boundary is crossed. Nothing in the kernel waits on it. */
   readonly page$: Observable<PageRequest>
   readonly dispatch: (action: GridAction<TRow>) => void
@@ -267,7 +267,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
   const loggedId = id.$()
   const syncKey = config.sync === true ? id.$() : typeof config.sync === "string" ? config.sync : null
   const synced = syncKey === null ? null : storageSignal(urlAdapter(syncKey), seed)
-  const store: Sig<GridState> = synced ?? Signal<GridState>(seed)
+  const store: Signal<GridState> = synced ?? Signal<GridState>(seed)
 
   // What the constructor opened, the constructor hands back. `bind` and `render` each release what
   // they opened themselves, but `urlAdapter` puts a `popstate` listener on the window before either
@@ -756,7 +756,7 @@ function nestedBoundaryBetween(root: HTMLElement, target: EventTarget | null): b
 // the gridId param and the root are checked: two grids share every listener.
 function bindRoot<TRow>(
   root: HTMLElement,
-  id: Sig<string>,
+  id: Signal<string>,
   dispatch: (action: GridAction<TRow>) => void,
   epics$: Observable<never>,
 ): () => void {

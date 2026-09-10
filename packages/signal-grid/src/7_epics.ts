@@ -1,7 +1,7 @@
 // Where an intent becomes a change or an effect. Nothing here touches the DOM and nothing here is
 // async: an epic reads the state signal, reads the derived view, and returns the next action.
 import { filter, map, merge, Observable } from "rxjs"
-import type { Epic, Signal as Sig } from "@hafley66/signals"
+import type { Epic, Signal } from "@hafley66/signals"
 import { descendantsOf } from "./1_axis.js"
 import { isBuiltIn, rowSelectionMode, type BuiltInId } from "./5_columns.js"
 import { drag, landingIndex, type DragStreams } from "./6_gestures.js"
@@ -37,8 +37,8 @@ import type { GridView } from "./8_grid.js"
 /** What an epic is allowed to read besides state: the derived view and the schema behind it. */
 export interface GridEpicCtx<TRow> {
   readonly view: GridView<TRow>
-  readonly columns: Sig<readonly ColumnDef<TRow>[]>
-  readonly viewport: Sig<Viewport>
+  readonly columns: Signal<readonly ColumnDef<TRow>[]>
+  readonly viewport: Signal<Viewport>
   /** Pixels of one row. Density lives in `grid()`, so the resolved height is handed down. */
   readonly rowHeight: (row: RowId) => number
   readonly overscan: number
@@ -315,7 +315,7 @@ const firstCol = <TRow>(ctx: GridEpicCtx<TRow>): ColId | undefined => colOrderOf
 // splitting them into four epics would repeat it four times.
 function keyAction<TRow>(
   intent: Intent<"key">,
-  state: Sig<GridState>,
+  state: Signal<GridState>,
   ctx: GridEpicCtx<TRow>,
 ): GridAction<TRow> | null {
   const flat = ctx.view.flat.$()
@@ -422,7 +422,7 @@ const selectionChange = <TRow>(range: GridSelection): GridAction<TRow> => ({
 })
 
 /** Conventional going in, neutral coming out: a range is keyed by the two seats, never by name. */
-const addressOf = (state: Sig<GridState>, row: RowId, col: ColId): CellId =>
+const addressOf = (state: Signal<GridState>, row: RowId, col: ColId): CellId =>
   neutralCell(row, col, state.orientation.$())
 
 /** What one range gesture reads off its own down intent. A null address rejects the down. */
@@ -438,7 +438,7 @@ function rangeDrag<TRow, I>(
   down$: Observable<I>,
   open: RangeOpen<I>,
   actions$: Observable<GridAction<TRow>>,
-  state: Sig<GridState>,
+  state: Signal<GridState>,
   streams: DragStreams | undefined,
 ): Observable<GridAction<TRow>> {
   // Gesture state, not grid state: null between gestures is what gates a plain hover out, since a
@@ -496,7 +496,7 @@ function rangeDrag<TRow, I>(
 /** Escape clears whatever mode wrote the range, so it rides with the epic nobody drops. */
 const clearOnEscape = <TRow>(
   actions$: Observable<GridAction<TRow>>,
-  state: Sig<GridState>,
+  state: Signal<GridState>,
 ): Observable<GridAction<TRow>> =>
   intents<TRow, "key">(actions$, "key").pipe(
     filter((it) => it.key === "Escape"),

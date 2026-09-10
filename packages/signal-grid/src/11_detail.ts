@@ -26,8 +26,8 @@
 //     source.$(attach(source.$(), row, kids))
 //     orders.dispatch({ phase: "change", type: "expanded", expanded: { ...g.state.expanded.$(), [row]: true } })
 //   })
+import type { Signal } from "@hafley66/signals"
 import { filter, map, type Observable } from "rxjs"
-import type { Signal as Sig } from "@hafley66/signals"
 import { CELL_SEP } from "./0_types.js"
 import type { Axis, ColId, GridAction, GridIntent, GridState, RowId } from "./0_types.js"
 import type { GridEpicCtx } from "./7_epics.js"
@@ -161,7 +161,7 @@ export interface DetailEpicOptions {
 // only `DetailChange`, so a consumer installs it beside `defaultEpics()` without widening its type.
 export type DetailEpic<TRow> = (
   actions$: Observable<GridAction<TRow>>,
-  state: Sig<GridState>,
+  state: Signal<GridState>,
   ctx: GridEpicCtx<TRow>,
 ) => Observable<DetailChange>
 
