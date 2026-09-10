@@ -67,6 +67,18 @@ describe("the log surface", () => {
   })
 })
 
+describe("the barrel", () => {
+  it("carries the surface, so a page reads records with no logtape installed", async () => {
+    const barrel = await import("./index.js")
+    expect(typeof barrel.setGridLogEmit).toBe("function")
+    expect(typeof barrel.enableGridLogTape).toBe("function")
+    expect(typeof barrel.disableGridLogging).toBe("function")
+    expect(typeof barrel.isGridLogging).toBe("function")
+    expect(barrel.CAT_INTENT).toEqual(["signal-grid", "intent"])
+    expect(barrel.LOG.on).toBe(false)
+  })
+})
+
 const named = (records: readonly Taken[], stage: string): Taken[] =>
   records.filter((record) => record.category[1] === stage)
 
