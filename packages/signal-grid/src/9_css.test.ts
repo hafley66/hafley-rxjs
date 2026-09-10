@@ -4,9 +4,13 @@
 // The one file in `src/` that owns a subscription to a DOM element, so the teardown is asserted
 // where the element lives rather than left to the renderer that happens to call it.
 import { describe, expect, it } from "vitest"
+// The one file here that reads a laid-out box rather than a written property, so it is the one that
+// needs the stylesheet. Every other assertion below reads an inline property off a detached root.
+import "./theme.css"
 import type { ColumnDef } from "./0_types.js"
-import { rowHeightVar } from "./3_paths.js"
+import { rowHeightVar, selectorFor } from "./3_paths.js"
 import { grid } from "./8_grid.js"
+import { render } from "./10_render.js"
 import {
   SG_INLINE_TRACKS,
   SG_OFFSET_Y,
@@ -142,5 +146,109 @@ describe("the teardown", () => {
     const { release } = mount([{ id: "name", width: 120 }])
     release()
     expect(release).not.toThrow()
+  })
+})
+
+// --- The window, laid out ---------------------------------------------------
+
+const WIDE_COLS: readonly ColumnDef<Row>[] = Array.from({ length: 200 }, (_value, index) => ({
+  id: `c${String(index).padStart(3, "0")}`,
+  width: 100,
+}))
+
+const WIDE_ROWS: readonly Row[] = Array.from({ length: 40 }, (_value, index) => ({
+  id: `r${index}`,
+  name: `row ${index}`,
+}))
+
+const nextFrame = (): Promise<void> =>
+  new Promise((resolve) => {
+    requestAnimationFrame(() => resolve())
+  })
+
+/** Mounts into the document, because a track only has a width once an engine has laid it out. */
+const mountWide = async (virtualizeCol: boolean, scrollLeft: number) => {
+  const host = document.createElement("div")
+  host.style.inlineSize = "800px"
+  host.style.blockSize = "400px"
+  document.body.append(host)
+  const g = grid<Row>({
+    id: "wide",
+    rows: WIDE_ROWS,
+    columns: WIDE_COLS,
+    rowId: (it) => it.id,
+    state: { virtualizeCol },
+  })
+  const handle = render(g, host)
+  const scroll = host.querySelector(".sg-scroll") as HTMLElement
+  // The viewport arrives from a ResizeObserver, and a zero width empties the window.
+  for (let tick = 0; tick < 20 && g.viewport.$().width === 0; tick++) await nextFrame()
+  scroll.scrollLeft = scrollLeft
+  scroll.dispatchEvent(new Event("scroll"))
+  await nextFrame()
+  await nextFrame()
+  return {
+    g,
+    scroll,
+    host,
+    /** The cell's left edge in the scroller's own content space, which is what a column offset is. */
+    xOf: (colId: string): number | null => {
+      const cell = host.querySelector(`.sg-row ${selectorFor("cell", { colId })}`)
+      if (cell === null) return null
+      return (
+        cell.getBoundingClientRect().left - scroll.getBoundingClientRect().left + scroll.scrollLeft
+      )
+    },
+    cellsPerRow: host.querySelector(".sg-row")?.querySelectorAll(".sg-cell").length ?? 0,
+    release: () => {
+      handle.stop()
+      host.remove()
+    },
+  }
+}
+
+describe("a windowed column run laid out by a real engine", () => {
+  it("puts a rendered cell at the x its column's offset implies", async () => {
+    const view = await mountWide(true, 4000)
+    // 200 columns at 100px, so column 40 begins at 4000 and column 45 at 4500, windowed or not.
+    expect(view.xOf("c040")).toBe(4000)
+    expect(view.xOf("c045")).toBe(4500)
+    view.release()
+  })
+
+  it("gives the scroller the width of every column, not of the rendered ones", async () => {
+    const view = await mountWide(true, 4000)
+    expect(view.scroll.scrollWidth).toBe(200 * 100)
+    expect(view.cellsPerRow).toBeLessThan(200)
+    view.release()
+  })
+
+  it("agrees with the unwindowed run about where a column sits", async () => {
+    const windowed = await mountWide(true, 4000)
+    const whole = await mountWide(false, 4000)
+    expect(windowed.xOf("c040")).toBe(whole.xOf("c040"))
+    expect(windowed.scroll.scrollWidth).toBe(whole.scroll.scrollWidth)
+    expect(whole.cellsPerRow).toBe(200)
+    windowed.release()
+    whole.release()
+  })
+
+  it("renders no cell for a column the window left out", async () => {
+    const view = await mountWide(true, 4000)
+    expect(view.xOf("c000")).toBe(null)
+    expect(view.xOf("c199")).toBe(null)
+    view.release()
+  })
+
+  it("holds the head cell over the body cell of the same column", async () => {
+    const view = await mountWide(true, 4000)
+    const head = view.host.querySelector(`.sg-head ${selectorFor("header", { colId: "c040" })}`)
+    const body = view.host.querySelector(`.sg-row ${selectorFor("cell", { colId: "c040" })}`)
+    expect(head).not.toBe(null)
+    expect(body).not.toBe(null)
+    // The two bands each carry their own spacer seat, so a disagreement here is the header sitting
+    // one track off the cells under it, which is the whole failure the spacer track exists to avoid.
+    expect(head?.getBoundingClientRect().left).toBe(body?.getBoundingClientRect().left)
+    view.release()
   })
 })

@@ -101,7 +101,7 @@ again through `grid()` plus `writeGridVars`.
 | a bare column defaults to `100px` | `9_css.test.ts:63` | `4_slice.test.ts:358` |
 | a mixed run joins in order | `9_css.test.ts:69` | `4_slice.test.ts:392` |
 
-`src/9_css.test.ts:40` is now `describe("what becomes a track")` and holds only what `tracksOf`
+`src/9_css.test.ts:43` is now `describe("what becomes a track")` and holds only what `tracksOf`
 adds: run order start/center/end (`:41`), a header group taking no track (`:56`), and a committed
 resize freezing a flex column (`:65`).
 
@@ -143,14 +143,14 @@ The same `TREE` literal was typed out at `src/7_epics.test.ts:30`, `src/8_grid.t
 | `src/11_detail.test.ts:258` | **deleted** | Asserted `typeof slot === "function"` and `undefined === undefined`. It imported nothing from `11_detail.ts` and would have passed with the module deleted. The assignability it wanted is a `tsc --noEmit` claim, which `pnpm typecheck` already runs. Nothing else now asserts it, and nothing needs to. |
 | `src/8_grid.test.ts:147` | **rewritten** | `expect(plan.center.length).toBeLessThanOrEqual(3)` over a three-row grid passed for every possible value. Now at `src/8_grid.test.ts:116`, asserting the actual claim: an unmeasured viewport renders nothing, the span is empty at the scroll anchor, and the spacer still measures the whole run. |
 | `src/2_operators.test.ts:227` | **absorbed** | `dateTimeOperators.map(name)` compared against `dateOperators.map(name)` was true by construction: `dateSet(grain)` at `src/2_operators.ts:196` builds both from one literal. The name list is now pinned outright for both sets at `src/2_operators.test.ts:279`, which can fail. |
-| `src/11_detail.test.ts:268` | **rewritten** | `const ctx = () => undefined as never` passed `undefined` where a `GridEpicCtx` was declared, and worked only because `detailOnCellClick` never reads `ctx` (`src/11_detail.ts:169`). The three epic cases now install the epic beside `defaultEpics()` and read `state.detail` back off the grid, which is the path a consumer takes. |
+| `src/11_detail.test.ts:268` | **rewritten** | `const ctx = () => undefined as never` passed `undefined` where a `GridEpicCtx` was declared, and worked only because `detailOnCellClick` never reads `ctx` (`src/11_detail.ts:165`). The three epic cases now install the epic beside `defaultEpics()` and read `state.detail` back off the grid, which is the path a consumer takes. |
 
 ### The two accusations, checked before condemning
 
 **`src/2_operators.test.ts`, 56 tests against a cut feature.** The cut is real.
 `docs/1_parity.md:115` records `row.filter` as "no, by decision", and `buildRowPredicate` has no
 caller in `src/`: the only import of `2_operators.js` outside its own test is `src/8_grid.ts:7`,
-which takes `buildComparator` alone (`src/8_grid.ts:315`, `:342`). Roughly 44 of the 56 exercise
+which takes `buildComparator` alone (`src/8_grid.ts:380`, `:342`). Roughly 44 of the 56 exercise
 unwired code.
 
 Not condemned. `src/index.ts:11` re-exports the module wholesale, so every operator set is package
@@ -161,7 +161,7 @@ The finding is disproportion, not deadness: this one file is 15 percent of the s
 the parity table calls cut. One case went; the rest stand.
 
 **`src/5_columns.test.ts`, 27 tests against factories no renderer could mount.** No longer true, on
-two counts. `src/10_render.ts:61` routes the four glyph built-ins through `ROW_ROUTED` and
+two counts. `src/10_render.ts:65` routes the four glyph built-ins through `ROW_ROUTED` and
 `src/10_render.ts:328` mounts `def?.cell`, so the factories are mounted; and
 `src/10_render.test.ts:170` now asserts exactly that, one case per built-in. The two cases in this
 file that had genuinely stopped protecting anything called the width solver the sizing lane had
@@ -177,7 +177,7 @@ and `src/10_render.test.ts` (24 cases). What remains, ranked:
 | --- | --- | ---: | --- |
 | 1 | row reconciliation by key, `src/10_render.ts:544` | 30 lines | `reconcile` moves a row element with `insertBefore` rather than rebuilding it, which is the whole reason virtualization pays for itself. No test holds an element across two passes and asserts `toBe`: `grep -c "toBe(row\|toBe(first\|toBe(el" src/10_render.test.ts` answers 0. A scroll that rebuilt every row instead of moving it would tear down and rebuild every cell-level signal subscription per frame, and an editing cell would lose focus mid-keystroke, with the whole suite still green. |
 | 2 | the orphan sweep, `src/10_render.ts:584` | 7 lines | A row that leaves the plan must have `record.subs.unsubscribe()` called. `src/10_render.test.ts:357` covers the stop-from-inside-a-slot case; the ordinary case, a row scrolling out of the window, is untested. A long scroll accumulates one live subscription per row ever rendered. |
-| 3 | `src/6_gestures.ts` `drag` and `landingIndex` | 95 lines, 0 direct tests | The `merge` versus `concat` choice at `src/6_gestures.ts:55` decides whether the commit fires on the first pointerup or the second. It is reached only through `src/7_epics.test.ts`, so when that file broke on an unrelated source change the entire gesture layer was unprotected for the length of the break. `landingIndex`'s half-of-the-neighbour rule has no direct case at all. |
+| 3 | `src/6_gestures.ts` `drag` and `landingIndex` | 95 lines, 0 direct tests | The `merge` versus `concat` choice at `src/6_gestures.ts:56` decides whether the commit fires on the first pointerup or the second. It is reached only through `src/7_epics.test.ts`, so when that file broke on an unrelated source change the entire gesture layer was unprotected for the length of the break. `landingIndex`'s half-of-the-neighbour rule has no direct case at all. |
 | 4 | `bindRoot`, `src/8_grid.ts:576` | 30 lines | Two grids on one page share every delegated listener, and only the filter at `src/8_grid.ts:587` separates them. A click in grid A dispatching into grid B passes every test today, because `tests/0_delegation.e2e.test.ts` renders one grid. |
 | 5 | the teardown `bind` returns, `src/8_grid.ts:619` | 1 line | `close()` is covered at `src/8_grid.test.ts:244` and `:252`; the teardown `bind` hands back is not. A consumer that remounts accumulates one subscription set per mount, so the third mount dispatches every click three times. |
 | 6 | `expandColumn`'s indent, `src/5_columns.ts:222` | 12 lines | Nothing reads the `margin-inline-start: calc(var(--sg-depth, N) * var(--sg-indent, 16px))` this writes. `src/10_render.test.ts:221` asserts the column replaces the run's expander, not that it indents. A tree would render every row at depth zero. |

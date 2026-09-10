@@ -20,7 +20,7 @@ line, a passing test, or a command that printed a number was cut rather than sof
 | rows | a pipeline of row models | `Axis<RowId, TRow>` (`src/0_types.ts:40`) |
 | columns | an array plus a grouping model | `Axis<ColId, ColumnDef>`, the same interface |
 | the operators | one set per axis | `axisOfEntries` `src/1_axis.ts:50`, `filterAxis` `:225`, `sortAxis` `:245`, `groupAxis` `:284`, `flattenAxis` `:361`, `mapAxis` `:430` |
-| which axis scrolls | fixed when the library was written | `state.orientation` (`src/0_types.ts:323`), read through two lookup tables |
+| which axis scrolls | fixed when the library was written | `state.orientation` (`src/0_types.ts:345`), read through two lookup tables |
 
 `docs/3_competitors.md` states the comparison it is drawn against: MUI X and TanStack v9 are both
 one-axis systems with a bolt-on for the other, and neither expresses column ordering and row
@@ -55,8 +55,8 @@ the kernel speaks of a vertical seat and a horizontal seat and never asks which 
 | receipt | what it shows |
 | --- | --- |
 | `grep -rnE "if *\(.*orientation\|orientation *===\|orientation *!==" src/` prints nothing and exits 1 | no branch on orientation anywhere in `src/`, tests included |
-| `src/12_transpose.ts:27` `SEATS`, `src/12_transpose.ts:32` `FLIPPED` | the two tables that carry it. A third orientation is a third row and no other edit |
-| `src/12_transpose.ts:35` `transpose` | its own inverse, which is what a round trip rests on |
+| `src/12_transpose.ts:28` `SEATS`, `src/12_transpose.ts:33` `FLIPPED` | the two tables that carry it. A third orientation is a third row and no other edit |
+| `src/12_transpose.ts:36` `transpose` | its own inverse, which is what a round trip rests on |
 | `src/12_transpose.test.ts:190` "a span of 2 vertical and 3 horizontal, transposed, is 3 vertical and 2 horizontal" | the acceptance test. `:194` asserts the relation, `:203` asserts that transposing by hand lands on the relation the transposed grid built, `:212` asserts the covered set swaps with it |
 | `src/12_transpose.test.ts:115` "a transpose twice returns the original plan" | the round trip |
 | `src/8_grid.ts:307`, `:368`, `:391`, `:456` | the four reads of `state.orientation` in the grid constructor, every one an index into the seat table |
@@ -90,9 +90,9 @@ Kept from the rejected option: nothing. Section 4 is the whole bill.
 ### 5.2 A pixel width solver in the package
 
 `flexWidths` resolved declared width, min, max, and flex into pixels against the viewport width. It
-is deleted (`docs/5_tests.md:246`). `trackList` (`src/4_slice.ts:247`) emits one
+is deleted (`docs/5_tests.md:246`). `trackList` (`src/4_slice.ts:267`) emits one
 `grid-template-columns` value using `fr` and `minmax()`, and the browser distributes.
-`view.widths` now reports declared widths and says so in its own comment (`src/8_grid.ts:426`).
+`view.widths` now reports declared widths and says so in its own comment (`src/8_grid.ts:520`).
 
 The measured reason to keep width arithmetic out of the reactive chain, from this repo's own
 benchmark: a resize drag writes `state.colWidth` once per pointermove, and each write used to
