@@ -29,7 +29,9 @@ import {
 } from "./0_types.js"
 import { isBuiltIn } from "./5_columns.js"
 import {
+  addressedEntry,
   conventionalParts,
+  NO_ENTRY,
   verticalOf,
   type AxisPair,
   type SpanRelation,
@@ -74,10 +76,6 @@ const isExpandColumn = <TRow>(def: ColumnDef<TRow>): boolean => builtInOf(def) =
 // without this file keeping a second copy of that table.
 const ROW_SEAT = CELL_SEP + "row"
 const COL_SEAT = CELL_SEP + "col"
-
-// The empty half of a one-axis address, so the seat table can be asked which seat a horizontal
-// entry stands on. No axis holds "" as a key.
-const NONE = ""
 
 /**
  * True when the run that scrolls is the row axis. Only that axis flattens against `expanded`: the
@@ -218,12 +216,10 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
   function headerCell(colId: ColId, current: Frame<TRow>, subs: Subscription): HTMLElement {
     const cell = box("sg-head-cell")
     setAttrs(cell, headerAttrs(colId))
-    // The horizontal entry is a column under `"rows"` and a row under the transpose. Crossing it
-    // through the seat table resolves which, so the def lookup and the data lookup each read the one
-    // key they own rather than branching on the orientation string.
-    const [row, col] = conventionalParts(NONE, colId, current.orientation)
-    const def = col === NONE ? undefined : current.defs.get(col)
-    const data = row === NONE ? undefined : current.data.get(row)
+    // The horizontal entry is a column under `"rows"` and a row under the transpose, and the band
+    // stands on no vertical entry at all, so the seat it does not hold is `NO_ENTRY`.
+    const entry = addressedEntry(NO_ENTRY, colId, current.orientation, current.defs, current.data)
+    const def = entry.def
     const direction = sortOf(current.sort, colId)
     if (direction !== null) {
       cell.setAttribute("aria-sort", direction === "asc" ? "ascending" : "descending")
@@ -245,8 +241,8 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
         node,
         sort: direction,
         pinned: current.pinning[colId],
-        row: row === NONE ? null : row,
-        data,
+        row: entry.row === NO_ENTRY ? null : entry.row,
+        data: entry.data,
       }
       mount(label, slot(ctx), subs)
     } else {
@@ -289,8 +285,8 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     // seats, while a slot is handed the row and the column it has always been handed.
     const address = cellId(key, across)
     if (current.covered.has(address)) return null
-    const [row, col] = conventionalParts(key, across, current.orientation)
-    const def = current.defs.get(col)
+    const entry = addressedEntry(key, across, current.orientation, current.defs, current.data)
+    const { row, col, def } = entry
     // A glyph built-in carries its own row-level route, and a `c` segment above it would read
     // `g/r/c/check`, which no template declares, so those four cells stay routeless.
     const glyph = carriesRowRoute(def)
@@ -308,7 +304,7 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     }
     // Keyed by the conventional row, because `detailed` is the row axis's own map and a vertical
     // key under the transpose is a column, which owns no row value.
-    const data = current.data.get(row)
+    const data = entry.data
     if (data === undefined) return cell
     const editing = current.editing === cellId(row, col)
     if (editing) cell.setAttribute("data-editing", "true")
