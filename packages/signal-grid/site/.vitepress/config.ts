@@ -44,6 +44,17 @@ export default withMermaid(
     vite: {
       server: { port: 5180, strictPort: true },
       preview: { port: 5181, strictPort: true },
+      // `vitepress-plugin-mermaid` asks to pre-bundle these under their bare names, which pnpm does
+      // not place beside this package; the `>` form points the optimizer at mermaid's own copy.
+      optimizeDeps: {
+        include: [
+          "mermaid > @braintree/sanitize-url",
+          "mermaid > cytoscape",
+          "mermaid > cytoscape-cose-bilkent",
+          "mermaid > dayjs",
+          "mermaid > debug",
+        ],
+      },
     },
   }),
 )

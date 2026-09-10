@@ -285,3 +285,159 @@
 .receipts-more {
   color: inherit;
 }
+
+/* --- Demos ------------------------------------------------------------------ */
+
+.demo {
+  margin-block: 1.4rem 2rem;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--panel);
+}
+
+.demo-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.7rem 0.9rem;
+  border-block-end: 1px solid var(--line);
+}
+
+.demo-title {
+  font-weight: 600;
+  font-size: 0.94rem;
+}
+
+.demo-summary {
+  color: var(--ink-dim);
+  font-size: 0.82rem;
+}
+
+/* The grid measures nothing, so the box it renders into has to declare a height. */
+.demo-stage {
+  background: var(--page);
+  overflow: hidden;
+}
+
+.demo-error {
+  margin: 0;
+  padding: 0.55rem 0.9rem;
+  border-block-start: 1px solid var(--line);
+  background: color-mix(in srgb, var(--partial) 12%, transparent);
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+}
+
+.demo-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.9rem;
+  padding: 0.4rem 0.9rem;
+  border-block-start: 1px solid var(--line);
+  color: var(--ink-dim);
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.demo-timing b {
+  color: var(--vp-c-text-1);
+  font-weight: 600;
+}
+
+.demo-timing i {
+  font-style: normal;
+  opacity: 0.7;
+}
+
+.demo-quiet {
+  opacity: 0.6;
+}
+
+.demo-fps {
+  margin-inline-start: auto;
+  color: var(--accent);
+}
+
+.demo-tabs {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border-block-start: 1px solid var(--line);
+}
+
+.demo-tabs button {
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--page);
+  color: inherit;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.demo-tabs button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.demo-tabs button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.demo-reset {
+  margin-inline-start: auto;
+}
+
+.demo-run {
+  border-color: var(--partial);
+  color: var(--partial);
+}
+
+.demo-editor {
+  border-block-start: 1px solid var(--line);
+  max-block-size: 26rem;
+  overflow: auto;
+}
+
+.demo-editor .cm-editor {
+  font-size: 0.8rem;
+}
+
+.demo-editor .cm-focused {
+  outline: none;
+}
+
+.vp-doc .demo-missing {
+  margin-block: 1.4rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--partial);
+  border-inline-start-width: 4px;
+  border-radius: 9px;
+  font-size: 0.84rem;
+}
+
+.fps-meter {
+  position: fixed;
+  inset-block-end: 0.8rem;
+  inset-inline-end: 0.8rem;
+  z-index: 40;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink-dim);
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.fps-meter b {
+  color: var(--accent);
+}
