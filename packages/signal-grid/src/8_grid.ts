@@ -206,11 +206,12 @@ export function pageWindow(page: Page): { page: { index: number; size: number };
 }
 
 
-// `Signal(() => ...)` recomputes whenever a dependency emits, and a nested signal emits on every
-// root write whether or not its own branch moved (`packages/signals/src/1_SignalCreator.ts:202`,
-// no `distinctUntilChanged`). Sorting 50k rows on a colWidth write cost 157 ms per pointermove.
-// Holding the inputs and returning the previous output when every one is reference-identical
-// makes the expensive stages skip work the cheap ones cannot avoid triggering.
+// `Signal(() => ...)` recomputes whenever a dependency emits. A nested-path selector pipes
+// `distinctShallow` by default (`packages/signals/src/1_SignalCreator.ts:55`, applied at
+// `1_SignalCreator.ts:334`), so a sibling write reaches a derived stage only when that branch's
+// value changed shallowly. Holding the inputs and returning the previous output when every one is
+// reference-identical keeps the expensive stages from re-running on the writes that still get
+// through.
 export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
   const mode: GridMode = config.mode ?? "client"
   const id = toGridSignal(config.id, "grid")

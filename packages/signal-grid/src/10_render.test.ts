@@ -36,8 +36,6 @@ interface Row {
   readonly kids?: readonly Row[]
 }
 
-type MovableColumn = ColumnDef<Row> & { readonly movable?: boolean }
-
 const ROWS: readonly Row[] = [
   { id: "a", name: "Alpha", size: 1 },
   { id: "b", name: "Beta", size: 2 },
@@ -236,7 +234,7 @@ describe("built-in columns reach their routes", () => {
   })
 
   test("a movable column stamps the move route on its header label, and nothing else does", () => {
-    const movable: MovableColumn = { ...NAME, movable: true }
+    const movable: ColumnDef<Row> = { ...NAME, movable: true }
     mountGrid({ columns: [movable, SIZE] })
     const name = root.querySelector(selectorFor("header", { colId: "name" }))
     const size = root.querySelector(selectorFor("header", { colId: "size" }))

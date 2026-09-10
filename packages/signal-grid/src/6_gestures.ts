@@ -25,7 +25,14 @@ export interface DragSpec<S, A, D = DragDown> {
 // for a subscribe rather than run at module load.
 export const WINDOW_DRAG: DragStreams = {
   move$: defer(() => fromEvent<PointerEvent>(window, "pointermove")),
-  up$: defer(() => fromEvent<PointerEvent>(window, "pointerup")),
+  // `pointercancel` merged with `up` rather than branched: a cancelled touch or pen drag must take
+  // the same terminal path as a lift, or the drag stays open until some unrelated pointerup lands.
+  up$: defer(() =>
+    merge(
+      fromEvent<PointerEvent>(window, "pointerup"),
+      fromEvent<PointerEvent>(window, "pointercancel"),
+    ),
+  ),
 }
 
 let active: DragStreams = WINDOW_DRAG

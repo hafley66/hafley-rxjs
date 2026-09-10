@@ -24,12 +24,10 @@ export const BUILT_IN_IDS: Readonly<Record<BuiltInId, ColId>> = Object.freeze({
 
 const BUILT_IN_ID_SET: ReadonlySet<ColId> = new Set(Object.values(BUILT_IN_IDS))
 
-// Declared here rather than on `ColumnDef` so this module compiles before the schema patch lands.
-// Both slots are shaped as the patched `ColumnDef` declares them, so nothing changes when it does.
+// The two required slots are why the interface exists: a built-in always carries both, a plain
+// `ColumnDef` leaves them optional.
 export interface BuiltInColumnDef<TRow> extends ColumnDef<TRow> {
   readonly builtIn: BuiltInId
-  /** Seeds `GridState.colPinning`. State still wins, so a user drag can unpin it. */
-  readonly pin?: Side
   readonly cell: Slot<CellCtx<TRow>>
   readonly headerCell: Slot<HeaderCtx>
 }
