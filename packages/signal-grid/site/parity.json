@@ -5,9 +5,10 @@
   "implemented": 22,
   "declaredOnly": 9,
   "tags": 47,
-  "modules": 17,
+  "modules": 18,
   "untagged": [],
   "optedOut": {
+    "0_log.ts": "the timing surface. It measures stages the other modules own, and each of those is tagged at its own stage",
     "10_render.ts": "the DOM pass. It renders what the view signals already decided, and each of those is tagged at its own stage",
     "12_transpose.ts": "the seat table both axes cross through; cell.span and view.list are tagged where the view exposes them",
     "6_gestures.ts": "a pointer lifetime, shared by resize, move and range drag; every feature that uses it is tagged where it is implemented",
