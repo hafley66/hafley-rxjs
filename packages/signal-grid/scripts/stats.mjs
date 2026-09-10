@@ -73,7 +73,11 @@ function commitGroup() {
   // The build writes these two, so measuring before writing them still reports the tree dirty on a
   // clean checkout. Excluding a file this script itself produces is the only way the answer can be
   // about the source rather than about the act of measuring it.
-  const GENERATED = ["packages/signal-grid/site/stats.json", "packages/signal-grid/docs/1_parity.md"]
+  const GENERATED = [
+    "packages/signal-grid/site/stats.json",
+    "packages/signal-grid/site/parity.json",
+    "packages/signal-grid/docs/1_parity.md",
+  ]
   const dirty =
     porcelain === null
       ? null
@@ -291,6 +295,64 @@ function memoryGroup() {
   }
 }
 
+// --- ledger -----------------------------------------------------------------
+
+const EPIC_PROBE = `
+import { defaultEpics } from ${JSON.stringify(pathToFileURL(join(PKG, "dist", "index.js")).href)}
+process.stdout.write(String(defaultEpics().length))
+`
+
+/** Called rather than regex-counted: a helper returning two epics reads as one `epic(` to a scanner.
+ * The child process is what lets this synchronous script import an ES module. */
+function epicsGroup() {
+  const built = join(PKG, "dist", "index.js")
+  if (!existsSync(built)) {
+    return { method: null, count: null, reason: "dist/index.js is absent, so defaultEpics() could not be imported; run the library build first" }
+  }
+  let raw = null
+  try {
+    raw = execFileSync(process.execPath, ["--input-type=module", "-e", EPIC_PROBE], {
+      cwd: PKG,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    })
+  } catch (error) {
+    return { method: null, count: null, reason: `importing defaultEpics from dist/index.js failed: ${String(error).split("\n")[0]}` }
+  }
+  const count = Number(raw.trim())
+  return {
+    method: "a child node process imports defaultEpics from dist/index.js and reports the length of what it returns",
+    count: Number.isFinite(count) ? count : null,
+    reason: Number.isFinite(count) ? null : `defaultEpics().length printed ${JSON.stringify(raw)}`,
+  }
+}
+
+/** `parity.mjs` exits non-zero while a module is untagged and still writes its counts, so a failing
+ * gate is reported here rather than erasing the numbers. */
+function featuresGroup() {
+  const data = join(PKG, "site", "parity.json")
+  const run = timed(process.execPath, [join(PKG, "scripts", "parity.mjs")])
+  if (!existsSync(data)) {
+    return { method: null, tracked: null, reason: "node scripts/parity.mjs wrote no site/parity.json" }
+  }
+  const parsed = JSON.parse(readFileSync(data, "utf8"))
+  return {
+    method: "node scripts/parity.mjs, counts read back from site/parity.json",
+    tracked: parsed.features,
+    implemented: parsed.implemented,
+    declaredOnly: parsed.declaredOnly,
+    decidedOut: parsed.decidedOut,
+    undecided: parsed.undecided,
+    tags: parsed.tags,
+    modules: parsed.modules,
+    untagged: parsed.untagged,
+    unread: parsed.unread.length,
+    gate: parsed.ok ? "pass" : "fail",
+    durationMs: run.ms,
+    reason: parsed.ok ? null : `the parity gate fails: ${parsed.untagged.length} module(s) under src/ carry no feature tag`,
+  }
+}
+
 // --- bench ------------------------------------------------------------------
 
 const cell = (text) => text.trim()
@@ -461,6 +523,8 @@ function fullRun() {
       videos: bundles.videos,
     },
     source: sourceGroup(),
+    epics: epicsGroup(),
+    features: featuresGroup(),
     tests,
     timing: {
       method: "Date.now() around each execFileSync call in scripts/stats.mjs; site and demo build times are handed over by scripts/ship.mjs",
@@ -509,6 +573,8 @@ console.log(`  library    ${kb(stats.bundle.library.totalBytes)} raw, ${kb(stats
 console.log(`  site       ${kb(stats.bundle.site.totalBytes)} raw, ${kb(stats.bundle.site.totalGzipBytes)} gzip`)
 console.log(`  demo       ${kb(stats.bundle.demo.totalBytes)} raw, ${kb(stats.bundle.demo.totalGzipBytes)} gzip`)
 console.log(`  tests      ${stats.tests.unit.tests ?? "n/a"} unit in ${stats.tests.unit.durationMs ?? "n/a"} ms`)
+console.log(`  epics      ${stats.epics.count ?? "n/a"} in defaultEpics()`)
+console.log(`  features   ${stats.features.tracked ?? "n/a"} tracked, ${stats.features.implemented ?? "n/a"} implemented, gate ${stats.features.gate ?? "n/a"}`)
 console.log(`  memory     ${stats.memory.retainedBytes === undefined ? "n/a" : kb(stats.memory.retainedBytes)} retained by a 100k-row grid`)
 const nulls = []
 if (stats.commit.reason !== null) nulls.push(`commit: ${stats.commit.reason}`)
@@ -519,5 +585,7 @@ if (stats.bundle.videos.reason !== null) nulls.push(`bundle.videos: ${stats.bund
 if (stats.tests.browser.reason !== null) nulls.push(`tests.browser: ${stats.tests.browser.reason}`)
 if (stats.memory.reason !== null) nulls.push(`memory: ${stats.memory.reason}`)
 if (stats.bench.reason !== null) nulls.push(`bench: ${stats.bench.reason}`)
+if (stats.epics.reason !== null) nulls.push(`epics: ${stats.epics.reason}`)
+if (stats.features.reason !== null) nulls.push(`features: ${stats.features.reason}`)
 for (const note of nulls) console.log(`  null       ${note}`)
 console.log("")

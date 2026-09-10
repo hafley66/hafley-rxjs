@@ -3,18 +3,23 @@
   "generatedBy": "packages/signal-grid/scripts/stats.mjs",
   "commit": {
     "method": "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain excluding this script's own two outputs, git rev-parse --abbrev-ref HEAD",
-    "hash": "d975c0e3142e750dbbbab0ce0145b73527af247c",
-    "short": "d975c0e",
-    "subject": "signal-grid: a relational data grid kernel, and the library fixes it forced",
-    "authorDate": "2026-09-10T12:17:48-04:00",
+    "hash": "df52c003fcaca09b6499ad01ae69dce86b3177ca",
+    "short": "df52c00",
+    "subject": "signal-grid: the receipts page stops reporting its own output as dirt",
+    "authorDate": "2026-09-10T12:18:53-04:00",
     "branch": "main",
     "clean": false,
-    "dirtyCount": 1,
+    "dirtyCount": 6,
     "dirtyEntries": [
-      " M packages/signal-grid/scripts/stats.mjs"
+      "M packages/signal-grid/.gitignore",
+      " M packages/signal-grid/package.json",
+      " M packages/signal-grid/scripts/parity.mjs",
+      " M packages/signal-grid/scripts/stats.mjs",
+      " M packages/signal-grid/site/index.html",
+      "?? packages/signal-grid/scripts/docs.mjs"
     ],
     "repository": "hafley66/hafley-rxjs",
-    "url": "https://github.com/hafley66/hafley-rxjs/commit/d975c0e3142e750dbbbab0ce0145b73527af247c",
+    "url": "https://github.com/hafley66/hafley-rxjs/commit/df52c003fcaca09b6499ad01ae69dce86b3177ca",
     "reason": null
   },
   "machine": {
@@ -25,7 +30,7 @@
     "cpuModel": "Apple M2 Pro",
     "cores": 12,
     "totalMemoryBytes": 17179869184,
-    "builtAt": "2026-09-10T16:18:32.566Z"
+    "builtAt": "2026-09-10T16:50:09.922Z"
   },
   "package": {
     "name": "@hafley66/signal-grid",
@@ -54,9 +59,9 @@
     "site": {
       "files": [
         {
-          "file": "site/dist/assets/index-DA1_MH2K.js",
-          "bytes": 444322,
-          "gzipBytes": 148215
+          "file": "site/dist/assets/index-q84Kouc-.js",
+          "bytes": 444355,
+          "gzipBytes": 148229
         },
         {
           "file": "site/dist/assets/index-riLwRccH.css",
@@ -65,12 +70,12 @@
         },
         {
           "file": "site/dist/index.html",
-          "bytes": 2636,
-          "gzipBytes": 1136
+          "bytes": 2635,
+          "gzipBytes": 1133
         }
       ],
-      "totalBytes": 465946,
-      "totalGzipBytes": 153615,
+      "totalBytes": 465978,
+      "totalGzipBytes": 153626,
       "reason": null
     },
     "demo": {
@@ -317,6 +322,35 @@
     "testFiles": 17,
     "testLines": 5555
   },
+  "epics": {
+    "method": "a child node process imports defaultEpics from dist/index.js and reports the length of what it returns",
+    "count": 12,
+    "reason": null
+  },
+  "features": {
+    "method": "node scripts/parity.mjs, counts read back from site/parity.json",
+    "tracked": 47,
+    "implemented": 21,
+    "declaredOnly": 9,
+    "decidedOut": 8,
+    "undecided": 9,
+    "tags": 43,
+    "modules": 17,
+    "untagged": [
+      "10_render.ts",
+      "12_transpose.ts",
+      "13_composite.ts",
+      "14_measure.ts",
+      "15_selection.ts",
+      "16_menu.ts",
+      "6_gestures.ts",
+      "9_css.ts"
+    ],
+    "unread": 7,
+    "gate": "fail",
+    "durationMs": 229,
+    "reason": "the parity gate fails: 8 module(s) under src/ carry no feature tag"
+  },
   "tests": {
     "method": "vitest run --reporter=json --outputFile=..., counts read from numTotalTests / numTotalTestSuites / numPassedTests / numFailedTests",
     "unit": {
@@ -326,7 +360,7 @@
       "files": 133,
       "passed": 465,
       "failed": 0,
-      "durationMs": 1784,
+      "durationMs": 1768,
       "success": true,
       "reason": null
     },
@@ -343,15 +377,15 @@
   },
   "timing": {
     "method": "Date.now() around each execFileSync call in scripts/stats.mjs; site and demo build times are handed over by scripts/ship.mjs",
-    "typecheckMs": 679,
+    "typecheckMs": 701,
     "typecheckReason": null,
-    "libraryBuildMs": 495,
+    "libraryBuildMs": 408,
     "libraryBuildReason": null,
-    "unitTestsMs": 1784,
+    "unitTestsMs": 1768,
     "browserTestsMs": null,
     "siteBuildMs": null,
     "demoBuildMs": null,
-    "statsMs": 3098
+    "statsMs": 3386
   },
   "memory": {
     "method": "a child node --expose-gc process imports dist/index.js, allocates 100000 plain row objects, forces gc, reads process.memoryUsage().heapUsed, builds one grid and reads view.plan and view.flat, forces gc again, reads heapUsed again",
@@ -359,11 +393,11 @@
     "rows": 100000,
     "flatNodes": 100000,
     "windowedRows": 27,
-    "heapBeforeBytes": 24166528,
-    "heapAfterBytes": 36458616,
-    "retainedBytes": 12292088,
+    "heapBeforeBytes": 24166576,
+    "heapAfterBytes": 36458832,
+    "retainedBytes": 12292256,
     "retainedBytesPerRow": 122.9,
-    "rssBytes": 147734528,
+    "rssBytes": 146374656,
     "reason": null
   },
   "bench": {

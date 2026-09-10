@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "generatedBy": "packages/signal-grid/scripts/parity.mjs",
+  "features": 47,
+  "implemented": 21,
+  "declaredOnly": 9,
+  "tags": 43,
+  "modules": 17,
+  "untagged": [
+    "10_render.ts",
+    "12_transpose.ts",
+    "13_composite.ts",
+    "14_measure.ts",
+    "15_selection.ts",
+    "16_menu.ts",
+    "6_gestures.ts",
+    "9_css.ts"
+  ],
+  "optedOut": {},
+  "unread": [
+    {
+      "id": "col.formula",
+      "declaration": "formula",
+      "file": "src/0_types.ts",
+      "line": 199
+    },
+    {
+      "id": "row.detail",
+      "declaration": "detailOnCellClick",
+      "file": "src/11_detail.ts",
+      "line": 175
+    },
+    {
+      "id": "row.select",
+      "declaration": "checkboxColumn",
+      "file": "src/5_columns.ts",
+      "line": 181
+    },
+    {
+      "id": "row.select",
+      "declaration": "radioColumn",
+      "file": "src/5_columns.ts",
+      "line": 202
+    },
+    {
+      "id": "row.expand",
+      "declaration": "expandColumn",
+      "file": "src/5_columns.ts",
+      "line": 219
+    },
+    {
+      "id": "row.order",
+      "declaration": "dragColumn",
+      "file": "src/5_columns.ts",
+      "line": 235
+    },
+    {
+      "id": "row.detail",
+      "declaration": "detailColumn",
+      "file": "src/5_columns.ts",
+      "line": 249
+    }
+  ],
+  "decidedOut": 8,
+  "undecided": 9,
+  "tanstack": 20,
+  "mui": {
+    "yes": 45,
+    "partial": 1
+  },
+  "ok": false
+}

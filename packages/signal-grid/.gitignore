@@ -3,3 +3,4 @@ bench/results.json
 out/
 site/dist
 pages/dist
+docs/dist

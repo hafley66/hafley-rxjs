@@ -9,24 +9,15 @@ import * as ast from "typescript/unstable/ast"
 const PKG = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const SRC = join(PKG, "src")
 const OUT = join(PKG, "docs", "1_parity.md")
+const DATA = join(PKG, "site", "parity.json")
 
-// The files allowed to carry a claim. Anything outside them is not a tagging surface, so a tag that
-// drifts into a test is simply never collected. A file that ships behaviour has to be listed here or
-// its tags are dropped in silence, which is how 5_columns.ts and 11_detail.ts went uncounted.
-const TAGGED_FILES = [
-  "0_types.ts",
-  "1_axis.ts",
-  "2_operators.ts",
-  "3_paths.ts",
-  "4_slice.ts",
-  "5_columns.ts",
-  "6_gestures.ts",
-  "7_epics.ts",
-  "8_grid.ts",
-  "9_css.ts",
-  "10_render.ts",
-  "11_detail.ts",
-]
+// A hand-written list is how 5_columns.ts, then 12_transpose.ts through 16_menu.ts, went uncounted.
+// Every module the program compiles under src/ is a surface; the only way out is to say so in it.
+const OPT_OUT = /^\/\/ @no-features:\s*(.+)$/
+
+// `index.ts` re-exports and `features.ts` is the ledger's own vocabulary, so neither ships behaviour
+// a feature id could name. `src/test/` is a fixture kit, and a test never carries a claim.
+const NEVER_TAGGED = new Set(["index.ts", "features.ts"])
 
 // `@feature` is a behaviour claim: a user can run it. `@feature-declared` is the type that names the
 // shape and does nothing yet. Splitting them is what stops a field on an interface from rendering as
@@ -155,6 +146,19 @@ const nameOf = (node) => {
   return found ?? ast.formatSyntaxKind(node.kind)
 }
 
+// The reference search needs the identifier itself, not its text, and a `VariableStatement` hides
+// one two levels down. Returns `undefined` for a declaration with no name to point the search at.
+const nameNodeOf = (node) => {
+  if (node.name !== undefined && node.name.kind === ast.SyntaxKind.Identifier) return node.name
+  let found
+  node.forEachChild((child) => {
+    if (found !== undefined) return
+    if (child.name !== undefined && child.name.kind === ast.SyntaxKind.Identifier) found = child.name
+    else if (child.kind === ast.SyntaxKind.VariableDeclarationList) found = nameNodeOf(child)
+  })
+  return found
+}
+
 // A modifier and a declaration list share their statement's full start, so both would answer with
 // the statement's own tag. Only these kinds are a claim; everything else is a fragment of one.
 const CLAIMABLE = new Set([
@@ -187,6 +191,7 @@ const claimsIn = (name) => {
         id,
         kind: tagName === BEHAVIOUR_TAG ? "behaviour" : "declared",
         code: carriesCode(node),
+        nameNode: nameNodeOf(node),
         file: name,
         line: lineOf(file, node.getStart(file)),
         tagLine: lineOf(file, tag.pos),
@@ -199,7 +204,52 @@ const claimsIn = (name) => {
 
 const FEATURE_IDS = readFeatureIds()
 const known = new Set(FEATURE_IDS)
-const claims = TAGGED_FILES.flatMap(claimsIn)
+
+// --- Which files are tagging surfaces ---------------------------------------
+
+const SRC_PREFIX = `${SRC}/`.toLowerCase()
+
+/** Modules the program compiled under `src/`, as `1_axis.ts`-style names, in sorted order. */
+const programModules = () =>
+  project.program
+    .getSourceFileNames()
+    .filter((path) => path.toLowerCase().startsWith(SRC_PREFIX))
+    .map((path) => path.slice(SRC_PREFIX.length))
+    .filter((name) => name.endsWith(".ts") && !name.endsWith(".test.ts"))
+    .filter((name) => !name.startsWith("test/") && !NEVER_TAGGED.has(name))
+    .sort()
+
+/** The `// @no-features:` reason, read from the leading comment block only, or `undefined`. */
+const optOutReason = (name) => {
+  const text = readFileSync(join(SRC, name), "utf8")
+  for (const line of text.split("\n")) {
+    const trimmed = line.trim()
+    if (trimmed === "") continue
+    if (!trimmed.startsWith("//")) return undefined
+    const match = OPT_OUT.exec(trimmed)
+    if (match !== null) return match[1].trim()
+  }
+  return undefined
+}
+
+const modules = programModules()
+const claims = modules.flatMap(claimsIn)
+const optedOut = new Map()
+const untagged = []
+
+for (const name of modules) {
+  const reason = optOutReason(name)
+  if (reason !== undefined) {
+    optedOut.set(name, reason)
+    if (claims.some((claim) => claim.file === name)) {
+      fail(`src/${name} carries a feature tag and also opts out with @no-features`)
+    }
+    continue
+  }
+  if (claims.some((claim) => claim.file === name)) continue
+  untagged.push(name)
+  fail(`src/${name} is in the program and carries no feature tag and no @no-features reason`)
+}
 
 for (const claim of claims) {
   if (!known.has(claim.id)) {
@@ -214,6 +264,35 @@ for (const claim of claims) {
     )
   }
 }
+
+// --- Last caller ------------------------------------------------------------
+
+// Warned rather than failed: `tsconfig.json` excludes the tests and `demo/`, `site/`, `bench/`, and
+// `tests/` are separate projects, so an export called only from there is correct code, invisible here.
+const lastCallerStarted = Date.now()
+const orphans = []
+for (const claim of claims) {
+  if (claim.nameNode === undefined) continue
+  const file = sourceOf(claim.file)
+  const entries = project.checker.getReferencedSymbolsForNode(
+    claim.nameNode,
+    claim.nameNode.getStart(file),
+  )
+  // The declaration's own name is in the answer, so one reference means nothing reads it. A
+  // module-local helper counts its callers inside its own file, which is why the file is not filtered.
+  const uses = entries
+    .flatMap((entry) => entry.references)
+    .map((reference) => String(reference.path).toLowerCase())
+    .filter((path) => path.startsWith(SRC_PREFIX) && !path.endsWith(".test.ts"))
+  if (uses.length <= 1) {
+    orphans.push(claim)
+    process.stderr.write(
+      `parity: warning: "${claim.id}" is tagged on "${claim.declaration}" at ` +
+        `src/${claim.file}:${claim.line} and nothing under src/ reads it\n`,
+    )
+  }
+}
+const lastCallerMs = Date.now() - lastCallerStarted
 
 const byId = new Map(FEATURE_IDS.map((id) => [id, []]))
 const declaredById = new Map(FEATURE_IDS.map((id) => [id, []]))
@@ -451,11 +530,46 @@ say(
 say()
 
 writeFileSync(OUT, lines.join("\n"))
+
+// `stats.mjs` takes `features` from this and `docs.mjs` resolves `{{parity.*}}` against it, so a
+// number in a document cannot disagree with the matrix. Written even when the run fails.
+writeFileSync(
+  DATA,
+  `${JSON.stringify(
+    {
+      schema: 1,
+      generatedBy: "packages/signal-grid/scripts/parity.mjs",
+      features: FEATURE_IDS.length,
+      implemented: claimed.length,
+      declaredOnly: declaredOnly.length,
+      tags: claims.length,
+      modules: modules.length,
+      untagged,
+      optedOut: Object.fromEntries(optedOut),
+      unread: orphans.map((claim) => ({
+        id: claim.id,
+        declaration: claim.declaration,
+        file: `src/${claim.file}`,
+        line: claim.line,
+      })),
+      decidedOut: Object.keys(DECIDED_OUT).length,
+      undecided: undecided.length,
+      tanstack: tanstackYes.length,
+      mui: { yes: muiYes.length, partial: muiPartial.length },
+      ok: process.exitCode === undefined || process.exitCode === 0,
+    },
+    null,
+    2,
+  )}\n`,
+)
 api.close()
 
 process.stdout.write(
-  `parity: ${FEATURE_IDS.length} features, ${claims.length} tags, ` +
+  `parity: ${FEATURE_IDS.length} features, ${claims.length} tags over ${modules.length} modules, ` +
     `tanstack ${tanstackYes.length}, mui ${muiYes.length} yes and ${muiPartial.length} partial, ` +
-    `signal-grid ${claimed.length}\n`,
+    `signal-grid ${claimed.length} implemented and ${declaredOnly.length} declared only\n`,
 )
-process.stdout.write(`parity: wrote ${relative(PKG, OUT)}\n`)
+process.stdout.write(
+  `parity: last-caller warnings ${orphans.length} of ${claims.length} in ${lastCallerMs} ms\n`,
+)
+process.stdout.write(`parity: wrote ${relative(PKG, OUT)} and ${relative(PKG, DATA)}\n`)
