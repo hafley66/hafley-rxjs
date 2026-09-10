@@ -148,6 +148,26 @@ describe("Signal(fn) — automatic computed contract", () => {
     expect(values).toEqual([110, 220])
   })
 
+  it("flushes an input before the memo that pulls it, whatever order they wired in", () => {
+    const root = Signal(1)
+    const viaMemo = Signal(false)
+    const tenfold = Signal(() => root.$() * 10)
+    let computations = 0
+    const sum = Signal(() => {
+      computations++
+      return viaMemo.$() ? root.$() + tenfold.$() : root.$()
+    })
+    const values: number[] = []
+
+    trackSubscription(sum.$.subscribe((value) => values.push(value)))
+    viaMemo.$(true)
+    computations = 0
+    root.$(2)
+
+    expect(computations).toBe(1)
+    expect(values).toEqual([1, 11, 22])
+  })
+
   it("does not permanently kill the memo after a computation throws", () => {
     const shouldThrow = Signal(false)
     const count = Signal(1)
