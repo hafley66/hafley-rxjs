@@ -141,7 +141,7 @@ g.page$               // Observable<PageRequest>, one per page change
 
 ```ts
 const stop = g.bind(root)            // bindRoot in src/8_grid.ts: delegated listeners, keydown, epics
-const handle = render(g, root)       // src/10_render.ts, calls bind itself at line 348
+const handle = render(g, root)       // src/10_render.ts, calls bind itself at line 597
 handle.stop()
 ```
 
@@ -280,7 +280,7 @@ when any key in the run carries a `rowHeight` override.
 `view.widths` reports declared widths, not resolved ones: the browser owns distribution through the
 CSS `trackList` grammar in `src/4_slice.ts`, which emits `fr` and `minmax()` into
 `grid-template-columns`, so a flex column reports its default and a caller wanting the painted width
-reads the element (`src/8_grid.ts:430`).
+reads the element (`src/8_grid.ts:432`).
 
 ## 7. Action grammar and the epics
 

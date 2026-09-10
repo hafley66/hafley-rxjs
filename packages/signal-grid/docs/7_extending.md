@@ -38,14 +38,14 @@ flowchart LR
 ## 1. Slots
 
 A slot is one function. It takes a ctx and returns anything `Renderable`, or a signal of one
-(`src/0_types.ts:143`). Thirteen of them are declared on `Slots<TRow>` (`src/0_types.ts:168`).
+(`src/0_types.ts:143`). Thirteen of them are declared on `Slots<TRow>` (`src/0_types.ts:189`).
 
 ### A slot that returns a signal
 
 Returning a signal is how a single cell gets live content without the grid minting a signal per
 cell. The renderer subscribes that one node into the row's `Subscription`, inserts at a comment
 anchor, and replaces only what the previous emission inserted, so the resize handle appended after
-it survives (`src/10_render.ts:617`).
+it survives (`src/10_render.ts:669`).
 
 ```ts
 // src/10_render.test.ts, "a slot returning a signal subscribes one node"
@@ -61,14 +61,14 @@ now belongs to another row.
 ### A per-column slot beating the schema-wide one
 
 `ColumnDef.cell` (`src/0_types.ts:227`) is the per-column body slot and `Slots.cell` is the
-schema-wide default. The pick order is one line, `src/10_render.ts:299`:
+schema-wide default. The pick order is one line, `src/10_render.ts:328`:
 
 ```ts
 const slot = (editing ? g.slots.editor : undefined) ?? def?.cell ?? g.slots.cell
 ```
 
 Read it as three rules: an editor wins while the cell is editing, the column beats the schema, and
-absent means the built-in text path. Headers follow the same shape at `src/10_render.ts:231`, where
+absent means the built-in text path. Headers follow the same shape at `src/10_render.ts:238`, where
 `ColumnDef.headerCell` beats `Slots.header` and `ColumnDef.header` is only the plain-text label.
 
 ```ts
@@ -80,9 +80,9 @@ const columns: readonly ColumnDef<Row>[] = [
 
 | Ctx | Fields | Declared at |
 |---|---|---|
-| `CellCtx` | `row, col, data, value, node, editing` | `src/0_types.ts:145` |
-| `HeaderCtx` | `col, node, sort, pinned` | `src/0_types.ts:153` |
-| `RowCtx` | `row, data, node, selected, open` | `src/0_types.ts:159` |
+| `CellCtx` | `row, col, data, value, node, editing` | `src/0_types.ts:157` |
+| `HeaderCtx` | `col, node, sort, pinned` | `src/0_types.ts:172` |
+| `RowCtx` | `row, data, node, selected, open` | `src/0_types.ts:180` |
 
 ---
 
@@ -91,7 +91,7 @@ const columns: readonly ColumnDef<Row>[] = [
 An epic is `(actions$, state, ctx) => Observable<GridAction>` (`src/7_epics.ts:47`). It reads the
 state signal and the derived view through `GridEpicCtx` (`src/7_epics.ts:38`), touches no DOM, and
 is never async. `config.epics` (`src/8_grid.ts:126`) replaces the whole list; absent installs
-`defaultEpics()` (`src/8_grid.ts:261`).
+`defaultEpics()` (`src/8_grid.ts:262`).
 
 Twelve ship today, `src/7_epics.ts:574`:
 
@@ -152,11 +152,11 @@ grid<Row>({ ..., epics: [...defaultEpics<Row>(), detailOnCellClick({ columns: ["
 
 ## 3. Raw intents
 
-`g.intent$` (`src/8_grid.ts:518`) is every intent the DOM raised, after the gridId and root filter
+`g.intent$` (`src/8_grid.ts:519`) is every intent the DOM raised, after the gridId and root filter
 and before any epic ran. Subscribing to it is the door for behavior the kernel has no opinion about,
 and it needs no epic and no state key.
 
-Lazy tree loading, the example written at the top of `src/11_detail.ts:18-28`, against a source
+Lazy tree loading, the example written at the top of `src/11_detail.ts:17-28`, against a source
 signal the consumer owns:
 
 ```ts
@@ -212,9 +212,9 @@ you hold the same signal the grid holds.
 | to write it | `g.state.sort.$([{ field: "name", sort: "asc" }])` |
 | to observe it | `g.state.sort.$.subscribe(...)` |
 | to own it entirely | pass your own signal or observable as `config.state` (`src/8_grid.ts:119`) |
-| to persist it | `sync: true`, which round-trips through the url (`src/8_grid.ts:234`) |
+| to persist it | `sync: true`, which round-trips through the url (`src/8_grid.ts:236`) |
 
-The store is one signal, chosen at `src/8_grid.ts:236`: a `storageSignal(urlAdapter(key), seed)`
+The store is one signal, chosen at `src/8_grid.ts:237`: a `storageSignal(urlAdapter(key), seed)`
 when `sync` is set, a plain `Signal(seed)` otherwise. Both are written the same way.
 
 ---
@@ -257,7 +257,7 @@ state keys as any other column.
 ## 6. Your own delegated event
 
 The renderer stamps a `data-route` skeleton plus one `data-*` per path param onto every part
-(`src/3_paths.ts:14` for the segments, `src/3_paths.ts:34` for the composed templates). `Dom(template)`
+(`src/3_paths.ts:14` for the segments, `src/3_paths.ts:36` for the composed templates). `Dom(template)`
 gives back a `route` proxy whose properties are observables of any DOM event name, resolved by
 composing the `data-route` chain up the ancestors (`packages/xdom/src/1_domTemplate.ts:76`).
 
@@ -293,7 +293,7 @@ The chains available today:
 | `g/r/move` | the row drag handle | `gridId, rowId` |
 | `g/r/c` | a data cell | `gridId, rowId, colId` |
 
-`selectorFor(part, values)` (`src/3_paths.ts:166`) builds the CSS selector from the same
+`selectorFor(part, values)` (`src/3_paths.ts:177`) builds the CSS selector from the same
 `routeAttrs` the renderer stamps, so a selector cannot describe an element the renderer never
 produces. Use it in tests and in any `querySelector` you write.
 
@@ -492,11 +492,11 @@ selection reads `g.state.selection.$()` and gets the block the user could still 
 | Not extensible | Why | The nearest door |
 |---|---|---|
 | The intent grammar | `GridIntent` is a closed union in `src/0_types.ts:364`, and `intentOf` (`src/3_paths.ts:199`) is keyed by the member name so a rename breaks the key rather than orphaning a handler | add a member and a `bindRoot` line, which is a library patch, or use `Dom(template).route.<event>` from section 6 for anything the kernel need not reduce |
-| The route templates | `PATHS` is frozen (`src/3_paths.ts:34`), because a mutated route map is a silently mis-delegating grid | compose your own template with `slash()` over your own attributes on your own slot content |
+| The route templates | `PATHS` is frozen (`src/3_paths.ts:36`), because a mutated route map is a silently mis-delegating grid | compose your own template with `slash()` over your own attributes on your own slot content |
 | The reducer | `reduce` (`src/8_grid.ts:191`) writes exactly one `GridState` key per change and nothing else, so no consumer hook can widen a change into two | dispatch two changes, or write the second key directly through `g.state` |
 | `GridState` keys | the type is the url contract; a consumer key would not round-trip through `urlAdapter` | hold your own signal beside the grid and derive from `g.state` |
 | Slot ctx fields | `CellCtx`, `RowCtx`, `HeaderCtx` are fixed shapes; a slot cannot ask for more | close over what you need, since a slot is an ordinary function in your own scope |
-| The three pinning runs | `Side` is `"start" \| "center" \| "end"` and the renderer builds exactly three run boxes (`src/10_render.ts:56`) | none |
+| The three pinning runs | `Side` is `"start" \| "center" \| "end"` and the renderer builds exactly three run boxes (`src/10_render.ts:149`) | none |
 | Orientation beyond two | `SEATS` (`src/12_transpose.ts:27`) is a two-row table; a third orientation is a third row there and no other edit | patch the table |
 | Async epics | epics are documented synchronous, and the slice reduces in the same tick | subscribe `g.intent$` yourself and dispatch the result when it arrives, as section 3 does |
 | The menu widget | deliberate: the library ships the target and the anchor, never the list | section 8 |
