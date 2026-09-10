@@ -130,6 +130,62 @@ describe("Signal(fn) — automatic computed contract", () => {
     expect(activeSubscriptions).toBe(0)
   })
 
+  it("recomputes a diamond's join once per root write", () => {
+    const root = Signal(1)
+    const left = Signal(() => root.$() * 10)
+    const right = Signal(() => root.$() * 100)
+    let computations = 0
+    const join = Signal(() => {
+      computations++
+      return left.$() + right.$()
+    })
+    const values: number[] = []
+
+    trackSubscription(join.$.subscribe((value) => values.push(value)))
+    root.$(2)
+
+    expect(computations).toBe(2)
+    expect(values).toEqual([110, 220])
+  })
+
+  it("flushes an input before the memo that pulls it, whatever order they wired in", () => {
+    const root = Signal(1)
+    const viaMemo = Signal(false)
+    const tenfold = Signal(() => root.$() * 10)
+    let computations = 0
+    const sum = Signal(() => {
+      computations++
+      return viaMemo.$() ? root.$() + tenfold.$() : root.$()
+    })
+    const values: number[] = []
+
+    trackSubscription(sum.$.subscribe((value) => values.push(value)))
+    viaMemo.$(true)
+    computations = 0
+    root.$(2)
+
+    expect(computations).toBe(1)
+    expect(values).toEqual([1, 11, 22])
+  })
+
+  it("releases a torn-down consumer from its source, reads included", () => {
+    const rows = Signal([1, 2, 3])
+    const observersOnRows = () => (rows.$ as unknown as { observers: unknown[] }).observers.length
+    const start = observersOnRows()
+    const teardowns = [1, 2, 3].map(() => {
+      const sorted = Signal(() => [...rows.$()].sort())
+      const flat = Signal(() => sorted.$().length)
+      const binding = flat.$.subscribe(() => {})
+      sorted.$()
+      return () => binding.unsubscribe()
+    })
+
+    expect(observersOnRows()).toBe(start + 3)
+    for (const teardown of teardowns) teardown()
+
+    expect(observersOnRows()).toBe(start)
+  })
+
   it("does not permanently kill the memo after a computation throws", () => {
     const shouldThrow = Signal(false)
     const count = Signal(1)

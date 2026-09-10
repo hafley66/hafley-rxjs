@@ -103,7 +103,7 @@ const dependencyCollectors: Array<(signal: Signal<unknown>) => void> = []
 // instead of once per write. The emit turn brackets `state$.next`, so an invalidation raised
 // inside it records the memo and the drain runs each one exactly once, after the last delivery.
 let emitDepth = 0
-const pendingFlush = new Set<() => void>()
+const pendingFlush = new Map<() => void, number>()
 
 export function inEmitTurn<T>(run: () => T): T {
   emitDepth++
@@ -112,12 +112,32 @@ export function inEmitTurn<T>(run: () => T): T {
   } finally {
     emitDepth--
     if (emitDepth === 0 && pendingFlush.size) {
-      const due = [...pendingFlush]
-      pendingFlush.clear()
-      for (const flush of due) flush()
+      // The drain is a turn too, else a diamond's first leg recomputed the join inline and the
+      // second leg did it again. Lowest rank first: an input pulled early would deliver again.
+      emitDepth++
+      try {
+        while (pendingFlush.size) {
+          let due!: () => void
+          let lowest = Infinity
+          for (const [flush, rank] of pendingFlush) {
+            if (rank < lowest) {
+              lowest = rank
+              due = flush
+            }
+          }
+          pendingFlush.delete(due)
+          due()
+        }
+      } finally {
+        emitDepth--
+      }
     }
   }
 }
+
+// A memo's rank is one above the highest rank it read; a plain signal reads as 0. The stack holds
+// the rank being built for each compute in flight, and a memo read adds itself to the top frame.
+const computingRanks: number[] = []
 
 // Run `compute`, recording every `.$()` signal read into `sink`. Re-throws;
 // `sink` keeps deps observed before the throw so a caller can resubscribe.
@@ -450,6 +470,7 @@ export function createComputedSignal<T>(compute: () => T, name?: string): Signal
   // `recompute("read")` clears `dirty` and notifies nobody, so a downstream pull between an
   // invalidation and its drain would otherwise starve every subscriber of this memo.
   let pushOwed = false
+  let rank = 0
 
   const observers = new Set<{ next(value: T): void }>()
   // Keyed by dependency so a recompute diffs instead of rebuilding: tearing every subscription
@@ -496,6 +517,7 @@ export function createComputedSignal<T>(compute: () => T, name?: string): Signal
     const started = LOG.on ? performance.now() : 0
     const dependencies = new Set<Signal<unknown>>()
     dependencyCollectors.push((dependency) => dependencies.add(dependency))
+    computingRanks.push(0)
 
     const report = (diff: { added: number; removed: number }) => {
       if (!LOG.on) return
@@ -514,6 +536,7 @@ export function createComputedSignal<T>(compute: () => T, name?: string): Signal
       next = compute()
     } catch (error) {
       dependencyCollectors.pop()
+      rank = computingRanks.pop()!
       running = false
       dirty = true
       lastRunFailed = true
@@ -528,6 +551,7 @@ export function createComputedSignal<T>(compute: () => T, name?: string): Signal
     }
 
     dependencyCollectors.pop()
+    rank = computingRanks.pop()!
     running = false
     value = next
     hasValue = true
@@ -549,10 +573,11 @@ export function createComputedSignal<T>(compute: () => T, name?: string): Signal
     pushOwed = true
     // Inside an emit turn every sibling selector is still delivering. Recompute once at the end.
     if (emitDepth > 0) {
-      pendingFlush.add(flush)
+      pendingFlush.set(flush, rank)
       return
     }
-    flush()
+    // An observable-backed dependency emits outside any turn, so the fan-out opens one.
+    inEmitTurn(flush)
   }
 
   const flush = () => {
@@ -566,12 +591,18 @@ export function createComputedSignal<T>(compute: () => T, name?: string): Signal
   }
 
   const readMemo = () => {
-    readPinned = true
-    return dirty || !hasValue ? recompute("read") : value
+    // A read pins only while nobody subscribes, so a memo used purely by `.$()` stays wired and
+    // memoized. Subscribers own the lifetime once present, and the last one leaving releases it.
+    if (!subscriberCount) readPinned = true
+    const result = dirty || !hasValue ? recompute("read") : value
+    const frame = computingRanks.length - 1
+    if (frame >= 0) computingRanks[frame] = Math.max(computingRanks[frame], rank + 1)
+    return result
   }
 
   const observable = new Observable<T>((subscriber) => {
     subscriberCount++
+    readPinned = false
     observers.add(subscriber)
 
     try {
