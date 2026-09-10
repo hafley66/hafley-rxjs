@@ -42,7 +42,7 @@ const gridOf = (over: Partial<GridState> = {}, columns = COLUMNS): Grid<Row> =>
     rows: ROWS,
     columns,
     rowId: (row) => row.id,
-    state: { virtualize: false, ...over },
+    state: { virtualize: { vertical: false, horizontal: false }, ...over },
   })
 
 // --- The transpose ----------------------------------------------------------

@@ -116,13 +116,13 @@ Grid: 5000 flat rows, columns Name / Size / Kind, scroll box 620 px tall, `overs
 | wheel 2 of 3 | 6 x `mouse.wheel(0, 340)` | 26 | `r109` |
 | wheel 3 of 3 | 6 x `mouse.wheel(0, 340)` | 26 | `r166` |
 | jump to the end | `scrollTop = 1e6`, clamped | 21 | `r4979` |
-| `state.virtualize = false` | none | **5000** | `r0` |
-| `state.virtualize = true` | none | 21 | `r4979` |
+| `state.virtualize.vertical = false` | none | **5000** | `r0` |
+| `state.virtualize.vertical = true` | none | 21 | `r4979` |
 
 Assertions: `__grid.flat() === 5000` throughout; every windowed count under 60; every first key
 distinct across the five scroll steps, which is the recycling claim; `plan.center.length` equal to
 the DOM count at each step, so the model and the document never disagree; the clamped end contains
-`r4999`; and `virtualize: false` puts all 5000 rows in the document and in `plan.center`.
+`r4999`; and `virtualize.vertical: false` puts all 5000 rows in the document and in `plan.center`.
 
 Peak ratio: 5000 model rows to 26 DOM rows, 192 to 1.
 

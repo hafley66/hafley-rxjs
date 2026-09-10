@@ -330,7 +330,7 @@ export function mountParity(doc: HTMLElement): ParityMount | null {
     rows,
     columns: COLUMNS,
     rowId: (row) => row.key,
-    state: Signal<Partial<GridState>>({ virtualize: true }),
+    state: Signal<Partial<GridState>>({ virtualize: { vertical: true, horizontal: false } }),
     viewport,
     overscan: 6,
     slots: { cell: cellSlot },

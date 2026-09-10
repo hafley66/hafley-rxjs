@@ -101,8 +101,7 @@ export function defaultState(over: Partial<GridState> = {}): GridState {
     density: "standard",
     listView: false,
     orientation: "rows",
-    virtualize: true,
-    virtualizeCol: false,
+    virtualize: { vertical: true, horizontal: false },
     ...over,
   }
 }
@@ -247,7 +246,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
   })
 
   // Every other input goes through `toGridSignal`, so a plain object here must too. Reading it only
-  // when `isSignal` held meant `state: { virtualize: false }` was accepted by the type and
+  // when `isSignal` held meant `state: { listView: true }` was accepted by the type and
   // silently dropped at run time, which is the worst shape a config bug can take.
   const seed = defaultState(
     config.state === undefined ? undefined : toGridSignal<Partial<GridState>>(config.state, {}).$(),
@@ -489,7 +488,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
       // `infinite` happens to agree, because the caller returns the whole `[0, loaded)` prefix;
       // `pages` does not, and the two modes must not disagree about who did the cut.
       paginate: mode === "client" && args.enabled,
-      virtualize: state.virtualize.$(),
+      virtualize: state.virtualize.vertical.$(),
       sizer: (keys) => sizerFor(keys, (it) => seat.extent[it], fallback),
       viewport: { start, extent },
       overscan: config.overscan ?? 4,
@@ -551,7 +550,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
       side: (key) => seat.pinning[key],
       page: NO_PAGE,
       paginate: false,
-      virtualize: state.virtualizeCol.$(),
+      virtualize: state.virtualize.horizontal.$(),
       // A resolved column width first, the seat's own override second: under the transpose this run
       // holds rows, which have no entry in a map keyed by column, so the chain falls through.
       sizer: (keys) => sizerFor(keys, (it) => resolved.get(it) ?? seat.extent[it], DEFAULT_COL_WIDTH),

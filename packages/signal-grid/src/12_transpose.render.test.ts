@@ -28,7 +28,7 @@ const gridOf = (orientation: Orientation): Grid<Metric> =>
     rows: ROWS,
     columns: COLUMNS,
     rowId: (it) => it.id,
-    state: { virtualize: false, orientation } satisfies Partial<GridState>,
+    state: { virtualize: { vertical: false, horizontal: false }, orientation } satisfies Partial<GridState>,
   })
 
 const defsOf = (gauge: Grid<Metric>): ReadonlyMap<string, ColumnDef<Metric>> =>

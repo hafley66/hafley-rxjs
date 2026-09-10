@@ -167,7 +167,7 @@ const nextFrame = (): Promise<void> =>
   })
 
 /** Mounts into the document, because a track only has a width once an engine has laid it out. */
-const mountWide = async (virtualizeCol: boolean, scrollLeft: number) => {
+const mountWide = async (horizontal: boolean, scrollLeft: number) => {
   const host = document.createElement("div")
   host.style.inlineSize = "800px"
   host.style.blockSize = "400px"
@@ -177,7 +177,7 @@ const mountWide = async (virtualizeCol: boolean, scrollLeft: number) => {
     rows: WIDE_ROWS,
     columns: WIDE_COLS,
     rowId: (it) => it.id,
-    state: { virtualizeCol },
+    state: { virtualize: { vertical: true, horizontal } },
   })
   const handle = render(g, host)
   const scroll = host.querySelector(".sg-scroll") as HTMLElement

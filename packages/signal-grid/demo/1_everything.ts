@@ -186,7 +186,7 @@ function mount(hosts: DemoHosts): DemoHandle {
     columns: schema,
     rowId: (it) => it.id,
     subRows: (it) => it.children,
-    state: Signal<Partial<GridState>>({ virtualize: true, colPinning: { ...seedPinning } }),
+    state: Signal<Partial<GridState>>({ virtualize: { vertical: true, horizontal: false }, colPinning: { ...seedPinning } }),
     viewport,
     overscan: 6,
     slots: { cell: cellSlot, header: headerSlot },
@@ -559,8 +559,8 @@ function mount(hosts: DemoHosts): DemoHandle {
       () => files.state.density.$(),
       (next) => files.state.density.$(next),
     ),
-    checkField("virtualize rows", () => files.state.virtualize.$(), (next) =>
-      files.state.virtualize.$(next),
+    checkField("virtualize rows", () => files.state.virtualize.vertical.$(), (next) =>
+      files.state.virtualize.vertical.$(next),
     ),
     checkField("list view", () => files.state.listView.$(), (next) => files.state.listView.$(next)),
     rangeField(

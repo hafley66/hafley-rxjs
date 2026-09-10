@@ -514,8 +514,8 @@ describe.skipIf(base === undefined)("signal-grid on video", () => {
     measured.virtualRowCounts = counts
     measured.virtualFirstKeys = heads
 
-    await step($page, "state.virtualize = false: the same model renders every row", async () => {
-      await setState("virtualize", false)
+    await step($page, "state.virtualize.vertical = false: the same model renders every row", async () => {
+      await setState("virtualize", { vertical: false, horizontal: false })
     })
     const full = await rowKeys()
     expect(full).toHaveLength(5000)
@@ -524,8 +524,8 @@ describe.skipIf(base === undefined)("signal-grid on video", () => {
     expect(full[4999]).toBe("r4999")
     measured.unvirtualizedRowCount = full.length
 
-    await step($page, "state.virtualize = true: back to a bounded window", async () => {
-      await setState("virtualize", true)
+    await step($page, "state.virtualize.vertical = true: back to a bounded window", async () => {
+      await setState("virtualize", { vertical: true, horizontal: false })
     })
     const rebounded = await rowKeys()
     expect(rebounded.length).toBeLessThan(60)

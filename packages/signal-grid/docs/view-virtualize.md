@@ -7,8 +7,12 @@ list in the document.
 
 ## The switch
 
+`virtualize` carries one flag per seat, keyed the way `CellSpan` is keyed. `vertical` gates the run
+that scrolls and pages, `horizontal` gates the run across the page, and `orientation` decides which
+axis is sitting in each seat.
+
 ```ts
-g.state.virtualize.$(false)
+g.state.virtualize.vertical.$(false)
 g.view.plan.$().center     // every row in the page
 ```
 
@@ -39,10 +43,14 @@ Pinning lifts rows out of the middle and paging drops others, so an index into t
 different row than the same index into the run being windowed. Building the sizer over the page run
 keeps the arithmetic honest at the only place the pixels are used.
 
-## Column virtualization
+## The other seat
 
-Not wired. The same `windowOf` on the other axis is what it would be, and no code calls it, so every
-visible column renders whatever the horizontal scroll position.
+`g.state.virtualize.horizontal.$(true)` runs the same `renderPlan` over the horizontal run, which
+`src/8_grid.ts:542` builds as `colPlan`. It is off by default, because a schema narrow enough to fit
+pays the two spacer tracks for nothing.
+
+Under `orientation: "columns"` the vertical seat holds columns and the horizontal seat holds rows, so
+neither flag is named after an axis: the seat is what each one gates.
 
 ## Measured content
 

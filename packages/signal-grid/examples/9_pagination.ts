@@ -49,7 +49,7 @@ export const pagination: Example = {
       rows: ROWS,
       columns: COLUMNS,
       rowId: (row) => row.id,
-      state: { page: { mode: "pages", index: 0, size: PAGE_SIZE, total: null }, virtualize: false },
+      state: { page: { mode: "pages", index: 0, size: PAGE_SIZE, total: null }, virtualize: { vertical: false, horizontal: false } },
     })
     const handle = render(g, root)
     const subs = new Subscription()

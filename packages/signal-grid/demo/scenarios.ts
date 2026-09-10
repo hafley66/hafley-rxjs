@@ -97,7 +97,7 @@ export const SCENARIOS: readonly Scenario[] = [
       rowPinning: Object.fromEntries(firstLeaves(2).map((id) => [id, "start" as const])),
       page: { mode: "infinite", index: 0, size: 500, total: null },
       density: "compact",
-      virtualize: true,
+      virtualize: { vertical: true, horizontal: false },
     },
   },
 ]

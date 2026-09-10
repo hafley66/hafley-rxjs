@@ -48,11 +48,15 @@ export const virtualization: Example = {
     const handle = render(g, root)
     const subs = new Subscription()
     subs.add(g.view.plan.$.subscribe((plan) => {
-      const on = g.state.virtualize.$()
+      const on = g.state.virtualize.vertical.$()
       toggle.textContent = on ? "virtualize: on" : "virtualize: off"
       label.textContent = `${ROWS.length} rows in the model, ${plan.center.length} rendered`
     }))
-    subs.add(fromEvent(toggle, "click").subscribe(() => g.state.virtualize.$(!g.state.virtualize.$())))
+    subs.add(
+      fromEvent(toggle, "click").subscribe(() =>
+        g.state.virtualize.vertical.$(!g.state.virtualize.vertical.$()),
+      ),
+    )
     return () => {
       subs.unsubscribe()
       handle.stop()

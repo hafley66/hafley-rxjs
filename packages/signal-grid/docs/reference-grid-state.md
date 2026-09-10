@@ -48,7 +48,7 @@ g.state.colHidden.size.$.subscribe(handle)
 | `density` | compact, standard, or comfortable | [Density](/view-density) |
 | `listView` | boolean | [List view and the transpose](/view-list) |
 | `orientation` | rows or columns | the same page |
-| `virtualize` | boolean | [Virtualization](/view-virtualize) |
+| `virtualize` | `{ vertical, horizontal }`, one boolean per seat | [Virtualization](/view-virtualize) |
 
 ## Why it is a type alias
 
@@ -59,7 +59,10 @@ typechecking, so the alias is the reason the proxy dots exist at all.
 ## Seeding
 
 ```ts
-grid<Row>({ ...config, state: { virtualize: false, colHidden: { mtime: true } } })
+grid<Row>({
+  ...config,
+  state: { virtualize: { vertical: false, horizontal: false }, colHidden: { mtime: true } },
+})
 ```
 
 The seed is read once. Handing in your own signal instead makes that signal the grid's state, which

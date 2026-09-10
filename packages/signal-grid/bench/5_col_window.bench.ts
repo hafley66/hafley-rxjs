@@ -23,14 +23,14 @@ const ROWS: readonly WideRow[] = Array.from({ length: ROW_COUNT }, (_value, inde
   id: `r${index}`,
 }))
 
-const gridOf = (virtualizeCol: boolean): Grid<WideRow> =>
+const gridOf = (horizontal: boolean): Grid<WideRow> =>
   grid<WideRow>({
-    id: `wide-${String(virtualizeCol)}`,
+    id: `wide-${String(horizontal)}`,
     rows: ROWS,
     columns: COLUMNS,
     rowId: (it) => it.id,
     viewport: { ...VIEWPORT },
-    state: { virtualize: true, virtualizeCol },
+    state: { virtualize: { vertical: true, horizontal } },
   })
 
 const defsById = new Map(COLUMNS.map((it) => [it.id, it] as const))

@@ -343,11 +343,12 @@ export type GridState = {
   readonly listView: boolean
   /** Rows down the page, or columns down it. Every stage below reads the seat, not the name. */
   readonly orientation: Orientation
-  /** Off renders every visible row. The kernel is identical either way. */
-  readonly virtualize: boolean
-  /** The same toggle for the run across the page, off by default because a schema narrow enough to
-   * fit pays the spacer tracks for nothing. @feature-declared view.virtualize.col */
-  readonly virtualizeCol: boolean
+  /** One window, two seats, keyed like `CellSpan`, because `orientation` decides which axis each
+   * seat holds. Off renders every visible entry. @feature-declared view.virtualize.col */
+  readonly virtualize: {
+    readonly vertical: boolean
+    readonly horizontal: boolean
+  }
 }
 
 /**
