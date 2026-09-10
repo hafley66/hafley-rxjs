@@ -97,6 +97,33 @@ const locate = (cited) => {
   return undefined
 }
 
+// --- blocks that name someone else's repository -----------------------------
+
+const EXTERNAL_URL = /https?:\/\//
+
+/** One flag per line: whether the block it sits in carries an external url. A block is a run of
+ * non-blank lines, which is what separates one list, table, or paragraph from the next. */
+const externalBlocks = (lines) => {
+  const flagged = new Array(lines.length).fill(false)
+  let from = 0
+  const close = (to) => {
+    let found = false
+    for (let index = from; index < to; index++) if (EXTERNAL_URL.test(lines[index])) found = true
+    if (found) for (let index = from; index < to; index++) flagged[index] = true
+  }
+  for (let index = 0; index < lines.length; index++) {
+    if (lines[index].trim() !== "") continue
+    close(index)
+    from = index + 1
+  }
+  close(lines.length)
+  return flagged
+}
+
+// A bare file name in a block that links out names a file in that repository, which this one has no
+// answer for. A path carrying a directory is still a claim about this tree and stays checked.
+const namesAnotherRepository = (cited, external) => external && !cited.includes("/")
+
 // --- exported symbols -------------------------------------------------------
 
 const api = new API({ cwd: PKG })
@@ -287,12 +314,13 @@ const locateSymbol = (absolute, symbol) => {
   return declaration === 0 ? hits[0] : declaration
 }
 
-const checkCitations = (file, lineNumber, line, spans) => {
+const checkCitations = (file, lineNumber, line, spans, external) => {
   for (const span of spans) {
     if (span.kind !== "citation") continue
     const absolute = locate(span.path)
     if (absolute === undefined) {
-      if (!namesNoFile(span.path)) report("missing-file", file, lineNumber, `names ${span.path} which does not exist`)
+      if (namesNoFile(span.path) || namesAnotherRepository(span.path, external)) continue
+      report("missing-file", file, lineNumber, `names ${span.path} which does not exist`)
       continue
     }
     const symbol = nearestIdentifier(spans, span, line)
@@ -317,10 +345,11 @@ const checkCitations = (file, lineNumber, line, spans) => {
   }
 }
 
-const checkPaths = (file, lineNumber, spans) => {
+const checkPaths = (file, lineNumber, spans, external) => {
   for (const span of spans) {
     if (span.kind !== "path") continue
     if (namesNoFile(span.path)) continue
+    if (namesAnotherRepository(span.path, external)) continue
     if (locate(span.path) !== undefined) continue
     report("missing-file", file, lineNumber, `names ${span.path} which does not exist`)
   }
@@ -472,6 +501,7 @@ const checkTestNames = (file, lineNumber, line, fenced) => {
 for (const file of documents()) {
   const absolute = absoluteOf(file)
   const lines = linesOf(absolute)
+  const external = externalBlocks(lines)
   let fenced = false
   for (let index = 0; index < lines.length; index++) {
     const line = lines[index]
@@ -481,8 +511,8 @@ for (const file of documents()) {
     }
     const lineNumber = index + 1
     const spans = spansOf(line).map(classify)
-    checkCitations(file, lineNumber, line, spans)
-    checkPaths(file, lineNumber, spans)
+    checkCitations(file, lineNumber, line, spans, external[index])
+    checkPaths(file, lineNumber, spans, external[index])
     checkExports(file, lineNumber, line, spans)
     checkTestNames(file, lineNumber, line, fenced)
     // A fence shows syntax rather than asserting a value, so a placeholder and a digit inside one

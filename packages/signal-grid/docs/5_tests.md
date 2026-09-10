@@ -9,7 +9,7 @@ the pass, and `src/9_css.test.ts`, `src/10_render.test.ts`, `src/13_composite.te
 `src/14_measure.test.ts` all landed mid-read. Each is folded into the census, and the last three
 are left to the lanes still writing them.
 
-Unit tests stand at 465 across 17 files (from `out/stats/unit.json`). Browser tests are unchanged at 15.
+Unit tests stand at {{stats.tests.unit}} across {{stats.source.testFiles}} files (from `site/stats.json`, `tests.unit`). Browser tests are unchanged at 15.
 
 ## TOC
 
@@ -150,7 +150,7 @@ The same `TREE` literal was typed out at `src/7_epics.test.ts:30`, `src/8_grid.t
 **`src/2_operators.test.ts`, 56 tests against a cut feature.** The cut is real.
 `docs/1_parity.md:115` records `row.filter` as "no, by decision", and `buildRowPredicate` has no
 caller in `src/`: the only import of `2_operators.js` outside its own test is `src/8_grid.ts:7`,
-which takes `buildComparator` alone (`src/8_grid.ts:380`, `:342`). Roughly 44 of the 56 exercise
+which takes `buildComparator` alone (`src/8_grid.ts:379`, `:342`). Roughly 44 of the 56 exercise
 unwired code.
 
 Not condemned. `src/index.ts:11` re-exports the module wholesale, so every operator set is package

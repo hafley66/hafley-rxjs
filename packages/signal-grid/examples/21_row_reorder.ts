@@ -40,7 +40,7 @@ export const rowReorder: Example = {
       rows,
       columns: [dragColumn<Row>(), ...DATA],
       rowId: (row) => row.id,
-      state: { virtualize: false },
+      state: { virtualize: { vertical: false, horizontal: false } },
     })
     const handle = render(g, root)
     const subs = new Subscription()

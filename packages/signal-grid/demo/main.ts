@@ -1,4 +1,4 @@
-// The shell. Four routes over one set of boxes, each route a module that mounts a grid and hands
+// The shell. Five routes over one set of boxes, each route a module that mounts a grid and hands
 // back the teardown, so switching route stops the previous grid before the next one is built.
 import { Route, Signal } from "@hafley66/signals"
 import { grid, render } from "../src/index.js"
@@ -9,9 +9,10 @@ import { everythingDemo } from "./1_everything.js"
 import { treeDemo } from "./2_tree.js"
 import { matrixDemo } from "./3_matrix.js"
 import { detailDemo } from "./4_detail.js"
+import { sheetDemo } from "./5_sheet.js"
 import type { DemoHandle, DemoHosts, DemoRoute } from "./0_shell.js"
 
-const ROUTES: readonly DemoRoute[] = [everythingDemo, treeDemo, matrixDemo, detailDemo]
+const ROUTES: readonly DemoRoute[] = [everythingDemo, treeDemo, matrixDemo, detailDemo, sheetDemo]
 
 const shell = must("#demo")
 const panel = must("#panel")
@@ -149,7 +150,7 @@ const markReady = (slug: string, started: number, token: number): void => {
 const missing = (slug: string): void => {
   const wrap = h("section", "missing")
   wrap.append(h("p", "missing-code", "404"))
-  wrap.append(h("p", "missing-line", `No demo at /${slug}. Four exist:`))
+  wrap.append(h("p", "missing-line", `No demo at /${slug}. ${ROUTES.length} exist:`))
   const list = h("ul", "missing-list")
   for (const entry of ROUTES) {
     const item = document.createElement("li")

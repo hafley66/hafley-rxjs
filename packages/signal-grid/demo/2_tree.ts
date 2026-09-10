@@ -100,7 +100,7 @@ function mount(hosts: DemoHosts): DemoHandle {
     rowId: (it) => it.id,
     subRows: (it) => it.children,
     state: Signal<Partial<GridState>>({
-      virtualize: true,
+      virtualize: { vertical: true, horizontal: false },
       expanded: { ...ALL_OPEN },
       sort: [{ field: "size", sort: "desc" }],
     }),
@@ -235,8 +235,8 @@ function mount(hosts: DemoHosts): DemoHandle {
       () => files.state.density.$(),
       (next) => files.state.density.$(next),
     ),
-    checkField("virtualize rows", () => files.state.virtualize.$(), (next) =>
-      files.state.virtualize.$(next),
+    checkField("virtualize rows", () => files.state.virtualize.vertical.$(), (next) =>
+      files.state.virtualize.vertical.$(next),
     ),
     readbackField("sort model", () => {
       const model = files.state.sort.$()

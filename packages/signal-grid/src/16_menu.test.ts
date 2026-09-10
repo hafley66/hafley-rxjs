@@ -96,7 +96,7 @@ function mount(options: {
     rows: ROWS,
     columns: options.columns ?? [NAME, SIZE],
     rowId: (row) => row.id,
-    state: { virtualize: false, ...options.state },
+    state: { virtualize: { vertical: false, horizontal: false }, ...options.state },
   })
   live.push(render(made, root))
   return { root, grid: made }

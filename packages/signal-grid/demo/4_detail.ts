@@ -155,7 +155,7 @@ function mount(hosts: DemoHosts): DemoHandle {
       columns: LINE_COLUMNS,
       rowId: (it) => it.id,
       state: {
-        virtualize: false,
+        virtualize: { vertical: false, horizontal: false },
         sort: [{ field: "amount", sort: "desc" }],
         colPinning: { item: "start" },
       },
@@ -190,7 +190,7 @@ function mount(hosts: DemoHosts): DemoHandle {
     columns: COLUMNS,
     rowId: (it) => it.id,
     subRows: (it) => it.children,
-    state: Signal<Partial<GridState>>({ virtualize: true, colPinning: { [BUILT_IN_IDS.detail]: "start" } }),
+    state: Signal<Partial<GridState>>({ virtualize: { vertical: true, horizontal: false }, colPinning: { [BUILT_IN_IDS.detail]: "start" } }),
     viewport,
     overscan: 4,
     epics: [
@@ -303,8 +303,8 @@ function mount(hosts: DemoHosts): DemoHandle {
         },
       },
     ]),
-    checkField("virtualize rows", () => orders.state.virtualize.$(), (next) =>
-      orders.state.virtualize.$(next),
+    checkField("virtualize rows", () => orders.state.virtualize.vertical.$(), (next) =>
+      orders.state.virtualize.vertical.$(next),
     ),
   ])
 

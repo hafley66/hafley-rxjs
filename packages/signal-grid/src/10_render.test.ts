@@ -107,7 +107,7 @@ function mountGrid(options: Options = {}): Harness {
     columns: options.columns ?? [NAME, SIZE],
     rowId: (item) => item.id,
     subRows: options.subRows,
-    state: { virtualize: false, ...options.state },
+    state: { virtualize: { vertical: false, horizontal: false }, ...options.state },
     viewport: { top: 0, left: 0, width: 600, height: 400 },
     slots: options.slots,
   })
@@ -360,7 +360,7 @@ describe("a key pressed inside a nested grid", () => {
             rows: LINES,
             columns: [NAME],
             rowId: (item) => item.id,
-            state: { virtualize: false },
+            state: { virtualize: { vertical: false, horizontal: false } },
             viewport: { top: 0, left: 0, width: 300, height: 100 },
           })
           inner = made

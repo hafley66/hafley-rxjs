@@ -13,16 +13,16 @@ command that printed the number.
 | A 2 by 3 span transposes to 3 by 2, and the set of cells it covers swaps with it. | `src/12_transpose.test.ts:190`, cases at `:194`, `:203`, `:212` |
 | No layout algorithm. `trackList` emits one `grid-template-columns` value and the browser distributes the width. | `src/4_slice.ts:247`; the pixel solver it replaced is deleted, `docs/5_tests.md:246`, `src/8_grid.ts:426` |
 
-## Counts, from runs on 2026-09-10
+## Counts, measured on every ship
 
 | number | command |
 | --- | --- |
-| 465 unit tests, 17 files, 0 failed | `npx vitest run` |
+| 0 failed of {{stats.tests.unit}} unit tests across {{stats.source.testFiles}} files | `npx vitest run` |
 | 15 browser tests, 2 files, 0 failed | `npx vitest run -c vitest.e2e.config.ts` |
-| 47 features tracked, 21 implemented, 9 declared as types nothing runs | `node scripts/parity.mjs` |
-| 66,189 B of JS, 19,636 B gzipped, plus 10,504 B of CSS | `site/stats.json`, `bundle.library` |
+| {{parity.features}} features tracked, {{parity.implemented}} implemented, {{parity.declaredOnly}} declared as types nothing runs | `node scripts/parity.mjs` |
+| {{stats.bundle.library.totalBytes}} B of published output, {{stats.bundle.library.totalGzipBytes}} B gzipped, across {{stats.bundle.library.fileCount}} files | `site/stats.json`, `bundle.library` |
 
-The matrix reports 21 rather than 30 because a `@feature` tag sitting on a declaration with no
+The matrix reports {{parity.implemented}} rather than 30 because a `@feature` tag sitting on a declaration with no
 function and no call inside it fails the run: `scripts/parity.mjs:40` decides what carries code,
 `:208` fails on the ones that do not. Nine ids carry `@feature-declared` instead and print in their
 own column. A feature listed as cut fails the same run if it is ever tagged (`scripts/parity.mjs:240`).

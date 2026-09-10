@@ -1,12 +1,12 @@
 # signal-grid demos
 
-Four routes over one shell. Each route mounts a grid, fills the control panel and the readout, and
+Five routes over one shell. Each route mounts a grid, fills the control panel and the readout, and
 hands back a teardown, so switching route stops the previous grid before the next one is built.
 
 ## Contents
 
 - [Run it](#run-it)
-- [The four routes](#the-four-routes)
+- [The five routes](#the-five-routes)
 - [Shape](#shape)
 - [Console](#console)
 - [Defects found](#defects-found)
@@ -21,13 +21,13 @@ npx vite build -c demo/vite.config.ts    # demo/dist
 npx vite preview -c demo/vite.config.ts
 ```
 
-Routing is `Route("/:demo")` from `@hafley66/signals` over `location.pathname`, the way
-`site/main.ts` does it, so `base` is `/` and vite's SPA fallback serves every route.
+Routing is `Route("/:demo")` from `@hafley66/signals` over `location.pathname`, so `base` is `/`
+and vite's SPA fallback serves every route.
 
 No dependency is added. Every route imports `../src/index.js` and `../src/theme.css` directly, so
 an edit in `src/` shows up without a package build.
 
-## The four routes
+## The five routes
 
 | Route | Data | What it is stressing |
 | --- | --- | --- |
@@ -35,6 +35,7 @@ an edit in `src/` shows up without a package build.
 | `/tree` | 6 volumes, 636 directories, 50,000 files, five levels | Tree flattening and virtualization at the same time |
 | `/matrix` | 8 regions by 7 columns | `orientation: "columns"`, live, with a 2 by 3 span becoming 3 by 2 |
 | `/detail` | 400 orders, lines on demand | A second `grid()` inside a detail row, and the lazy path beside it |
+| `/sheet` | 1,000,000 rows by 240 columns, minted from the index | Both seats of the window at once, and the ratio between the model and the document |
 
 Each panel opens with a card naming the `FeatureId`s the route exercises, read from
 `src/features.ts` through `FEATURES`, so a renamed feature fails the build rather than the prose.
@@ -49,6 +50,8 @@ demo/1_everything.ts
 demo/2_tree.ts
 demo/3_matrix.ts
 demo/4_detail.ts
+demo/5_sheet.ts
+demo/5_sheet.test.ts  the chromium test behind /sheet, listed in DOM_TESTS
 demo/controls.ts    control primitives, each a lens over a signal
 demo/readout.ts     relation sizes, plan numbers, DOM counts, the actions$ log
 demo/data.ts        the seeded filesystem generator
@@ -66,6 +69,7 @@ __grid.state.sort.$([{ field: "size", sort: "desc" }])
 __grid.view.plan.$().span
 __demo.applyScenario("Everything")      // /everything only
 __demo.nested.state.sort.$([])          // /detail only, the newest nested grid
+__demo.cellCount()                      // /sheet only, cells in the document right now
 __routes                                // slug, title, features, defects
 ```
 

@@ -115,7 +115,7 @@ function mount(hosts: DemoHosts): DemoHandle {
     columns: COLUMNS,
     rowId: (it) => it.id,
     state: Signal<Partial<GridState>>({
-      virtualize: false,
+      virtualize: { vertical: false, horizontal: false },
       orientation: "rows",
       rowHeight: { north: 130, south: 130, east: 130, west: 130, alpine: 130, coastal: 130, delta: 130, plateau: 130 },
     }),

@@ -104,7 +104,7 @@ describe("paging is one operator with three retention rules", () => {
     const g = flatGrid()
     // virtualize off: this asserts the paging window, and a zero-height viewport would
     // otherwise empty the render window for reasons that have nothing to do with paging.
-    g.state.virtualize.$(false)
+    g.state.virtualize.vertical.$(false)
     g.state.page.$({ mode: "pages", index: 1, size: 2, total: null })
     expect(g.view.plan.$().center).toEqual(["b"])
   })
@@ -113,7 +113,7 @@ describe("paging is one operator with three retention rules", () => {
 describe("virtualization is a toggle over the same kernel", () => {
   it("off renders every row in the page", () => {
     const g = flatGrid()
-    g.state.virtualize.$(false)
+    g.state.virtualize.vertical.$(false)
     expect(g.view.plan.$().center).toEqual(["c", "a", "b"])
   })
 
@@ -130,7 +130,7 @@ describe("virtualization is a toggle over the same kernel", () => {
   it("the toggle changes nothing else in the chain", () => {
     const g = flatGrid()
     const before = keysOf(g.view.flat.$())
-    g.state.virtualize.$(false)
+    g.state.virtualize.vertical.$(false)
     expect(keysOf(g.view.flat.$())).toEqual(before)
   })
 })
@@ -138,7 +138,7 @@ describe("virtualization is a toggle over the same kernel", () => {
 describe("pinning survives paging", () => {
   it("a pinned row stays pinned on a page it does not belong to", () => {
     const g = flatGrid()
-    g.state.virtualize.$(false)
+    g.state.virtualize.vertical.$(false)
     // rows are c, a, b. Pin `b`, then ask for the first page of one row.
     g.state.rowPinning.b.$("end")
     g.state.page.$({ mode: "pages", index: 0, size: 1, total: null })
@@ -149,7 +149,7 @@ describe("pinning survives paging", () => {
 
   it("pinning is lifted out before paging, so the page still holds `size` unpinned rows", () => {
     const g = flatGrid()
-    g.state.virtualize.$(false)
+    g.state.virtualize.vertical.$(false)
     g.state.rowPinning.c.$("start")
     g.state.page.$({ mode: "pages", index: 0, size: 2, total: null })
     const plan = g.view.plan.$()
@@ -184,7 +184,7 @@ describe("server mode skips the stages the server already ran", () => {
       rows: FLAT,
       columns: COLUMNS,
       rowId: (r) => r.id,
-      state: { virtualize: false },
+      state: { virtualize: { vertical: false, horizontal: false } },
     })
     // The caller asked upstream for page 1 of size 2 and appended what came back. Paginating that
     // answer again takes `[2, 4)` of a three-row response, which used to render nothing.
@@ -199,7 +199,7 @@ describe("server mode skips the stages the server already ran", () => {
       rows: FLAT,
       columns: COLUMNS,
       rowId: (r) => r.id,
-      state: { virtualize: false },
+      state: { virtualize: { vertical: false, horizontal: false } },
     })
     g.state.page.$({ mode: "pages", index: 1, size: 2, total: null })
     g.state.rowPinning.a.$("start")
@@ -272,7 +272,7 @@ describe("the constructor hands back what it opened", () => {
 describe("defaults", () => {
   it("a fresh state is inert: no sort, no group, everything visible", () => {
     const s = defaultState()
-    expect([s.sort.length, s.group.length, s.page.mode, s.virtualize]).toEqual([0, 0, "all", true])
+    expect([s.sort.length, s.group.length, s.page.mode, s.virtualize.vertical]).toEqual([0, 0, "all", true])
   })
 })
 

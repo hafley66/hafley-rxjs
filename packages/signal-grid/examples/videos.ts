@@ -93,8 +93,8 @@ export const VIDEOS: readonly Recording[] = [
       "planned() equals the DOM count at each step, so the plan and the document never disagree",
       "the five first-row keys are all distinct, which is the recycling claim",
       'the clamped end window contains "r4999" and scrollTop clears 170,000',
-      "virtualize: false puts 5000 rows in the document and 5000 in plan.center, first r0 and last r4999",
-      "virtualize: true rebounds to under 60 rows, starting at the key it left from",
+      "virtualize.vertical: false puts 5000 rows in the document and 5000 in plan.center, first r0 and last r4999",
+      "virtualize.vertical: true rebounds to under 60 rows, starting at the key it left from",
     ],
     measured: [
       "5000 flat rows, scroll box 620 px tall, overscan 4",

@@ -21,7 +21,7 @@ cell, paging, virtualization, density, and keyboard navigation all run together.
 | selection | `state.rowSelection` and `state.selection` |
 | pinning | `state.rowPinning` and `state.colPinning` |
 | paging mode | `state.page` |
-| virtualization, density, list view | `state.virtualize`, `state.density`, `state.listView` |
+| virtualization, density, list view | `state.virtualize.vertical`, `state.density`, `state.listView` |
 
 Preset states are plain data in `demo/scenarios.ts`, so a scenario is one state write rather than a
 script.

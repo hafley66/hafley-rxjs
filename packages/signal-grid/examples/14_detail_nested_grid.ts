@@ -55,7 +55,7 @@ export const detailNestedGrid: Example = {
         rows: LINES(row),
         columns: LINE_COLUMNS,
         rowId: (line) => line.id,
-        state: { virtualize: false },
+        state: { virtualize: { vertical: false, horizontal: false } },
       })
       panels.set(row, render(inner, into))
     }

@@ -114,7 +114,7 @@ const g = grid<FileRow>({
   state: Signal<Partial<GridState>>({
     // Off so the rendered run equals the page run. A test that measures every row the plan named
     // would otherwise be measuring whatever the scroll position happened to leave mounted.
-    virtualize: false,
+    virtualize: { vertical: false, horizontal: false },
     // A third column that starts hidden, so the load-time cell count stays at two per row and the
     // column tests still have something to unhide.
     colHidden: { mtime: true },
