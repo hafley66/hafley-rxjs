@@ -1,7 +1,6 @@
 // The receipts page and the footer strip, both fed by `stats.json`, which `scripts/stats.mjs`
 // measures at build time and vite inlines, so nothing on this page is fetched and nothing is typed.
 import raw from "./stats.json"
-import type { Heading } from "./md.js"
 
 // --- Shape ------------------------------------------------------------------
 
@@ -471,45 +470,31 @@ function benchSection(): Section {
 
 // --- Page -------------------------------------------------------------------
 
-/** Renders the stats page into `host` and hands back the headings the table of contents reads. */
-export function renderStatsPage(host: HTMLElement): { readonly headings: readonly Heading[] } {
-  const headings: Heading[] = []
-  const title = el("h1", "", "Receipts")
-  title.id = "receipts"
-  headings.push({ level: 1, text: "Receipts", id: "receipts" })
-  host.append(title)
-  host.append(
-    el(
-      "p",
-      "stats-lede",
-      `Every number on this page was measured by scripts/stats.mjs during the build and inlined into the bundle. Nothing on it is fetched, and a source that was unavailable reads "null" with the reason beside it.`,
-    ),
-  )
+const SECTIONS: Readonly<Record<string, () => Section>> = {
+  commit: commitSection,
+  machine: machineSection,
+  bundle: bundleSection,
+  source: sourceSection,
+  tests: testsSection,
+  timing: timingSection,
+  memory: memorySection,
+  bench: benchSection,
+}
 
-  for (const section of [
-    commitSection(),
-    machineSection(),
-    bundleSection(),
-    sourceSection(),
-    testsSection(),
-    timingSection(),
-    memorySection(),
-    benchSection(),
-  ]) {
-    const heading = el("h2", "", section.title)
-    heading.id = section.id
-    headings.push({ level: 2, text: section.title, id: section.id })
-    host.append(heading)
-    for (const node of section.nodes) {
-      if (node.tagName === "H3") {
-        const anchor = `${section.id}-${(node.textContent ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`
-        node.id = anchor
-        headings.push({ level: 3, text: node.textContent ?? "", id: anchor })
-      }
-      host.append(node)
-    }
+/** Renders one section of the receipts page into `host`; `site/stats.md` writes the heading above it. */
+export function renderStatsSection(id: string, host: HTMLElement): void {
+  const build = SECTIONS[id]
+  if (build === undefined) {
+    host.append(el("p", "stats-missing", `site/stats.md asks for a section "${id}" that site/stats.ts does not define`))
+    return
   }
-  return { headings }
+  const section = build()
+  for (const node of section.nodes) {
+    if (node.tagName === "H3") {
+      node.id = `${section.id}-${(node.textContent ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`
+    }
+    host.append(node)
+  }
 }
 
 // --- Footer strip -----------------------------------------------------------
@@ -537,7 +522,6 @@ export function statsFooter(hrefFor: (slug: string) => string): HTMLElement {
   const more = document.createElement("a")
   more.href = hrefFor("stats")
   more.className = "receipts-more"
-  more.dataset.nav = ""
   more.textContent = "all receipts"
   footer.append(more)
   return footer
