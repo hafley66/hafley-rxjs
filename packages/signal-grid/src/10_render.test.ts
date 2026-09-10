@@ -280,6 +280,115 @@ describe("detail rows", () => {
   })
 })
 
+// --- D3: a slot's own teardown ----------------------------------------------
+//
+// A detail slot that renders a nested grid has to stop it when the panel closes, and before this
+// channel existed the demo kept a registry of handles outside the slot to do that by hand.
+
+describe("a slot handing back its own teardown", () => {
+  const withTeardown = (torn: string[]) => (ctx: RowCtx<Row>) => ({
+    content: `panel:${ctx.row}`,
+    unsubscribe: () => torn.push(ctx.row),
+  })
+
+  test("runs it when the panel closes and not before", () => {
+    const torn: string[] = []
+    const harness = mountGrid({ slots: { detail: withTeardown(torn) }, state: { detail: { a: true } } })
+    expect(root.querySelector(".sg-detail-panel")?.textContent).toBe("panel:a")
+    expect(torn).toEqual([])
+    harness.grid.state.detail.$({})
+    expect(torn).toEqual(["a"])
+    expect(root.querySelector(".sg-detail-panel")).toBeNull()
+  })
+
+  test("runs it once on stop() for every panel still open", () => {
+    const torn: string[] = []
+    const harness = mountGrid({
+      slots: { detail: withTeardown(torn) },
+      state: { detail: { a: true, b: true } },
+    })
+    harness.handle.stop()
+    expect([...torn].sort()).toEqual(["a", "b"])
+    harness.handle.stop()
+    expect(torn.length).toBe(2)
+  })
+
+  test("a cell slot's teardown runs when its row rebuilds", () => {
+    const torn: string[] = []
+    const source = Signal<readonly Row[]>([ROWS[0] as Row])
+    mountGrid({
+      rows: source,
+      columns: [NAME],
+      slots: {
+        cell: (ctx: CellCtx<Row>) => ({
+          content: String(ctx.value),
+          unsubscribe: () => torn.push(`${ctx.row}/${ctx.col}`),
+        }),
+      },
+    })
+    expect(torn).toEqual([])
+    // A new data identity rebuilds the row's cells, and the old cell's teardown goes with them.
+    source.$([{ id: "a", name: "Alpha prime", size: 1 }])
+    expect(torn).toEqual(["a/name"])
+    expect(textOfCell("a", "name")).toBe("Alpha prime")
+  })
+})
+
+// --- a grid inside a grid ---------------------------------------------------
+//
+// Each render() listens for keydown on its own root and the event bubbles, so before the boundary
+// check a key inside the nested grid moved both. The nested root carries `data-route-boundary`,
+// which is what `bindRoot` reads to step out of the way.
+
+describe("a key pressed inside a nested grid", () => {
+  const LINES: readonly Row[] = [{ id: "x", name: "Line x", size: 9 }]
+
+  const arrowDown = (target: Element): void => {
+    target.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }))
+  }
+
+  const mountNested = (): { outer: Harness; inner: Grid<Row>; innerRoot: HTMLElement } => {
+    let inner: Grid<Row> | null = null
+    const innerRoot = document.createElement("div")
+    const outer = mountGrid({
+      state: { detail: { a: true } },
+      slots: {
+        detail: () => {
+          const made = grid<Row>({
+            id: "sg-inner",
+            rows: LINES,
+            columns: [NAME],
+            rowId: (item) => item.id,
+            state: { virtualize: false },
+            viewport: { top: 0, left: 0, width: 300, height: 100 },
+          })
+          inner = made
+          const handle = render(made, innerRoot)
+          live.push(handle)
+          return { content: innerRoot, unsubscribe: handle.stop }
+        },
+      },
+    })
+    if (inner === null) throw new Error("the detail slot never ran")
+    return { outer, inner, innerRoot }
+  }
+
+  test("moves focus in the nested grid only", () => {
+    const { outer, inner, innerRoot } = mountNested()
+    expect(innerRoot.hasAttribute("data-route-boundary")).toBe(true)
+    arrowDown(innerRoot)
+    expect(inner.state.focus.$()).toBe(cellId("x", "name"))
+    expect(outer.grid.state.focus.$()).toBeNull()
+  })
+
+  test("a key on the outer root still moves the outer grid", () => {
+    const { outer, inner } = mountNested()
+    arrowDown(outer.root)
+    expect(outer.grid.state.focus.$()).toBe(cellId("a", "name"))
+    expect(inner.state.focus.$()).toBeNull()
+  })
+})
+
 // --- the content writer -----------------------------------------------------
 
 describe("mounting a signal slot", () => {
