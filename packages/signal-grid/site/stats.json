@@ -3,26 +3,16 @@
   "generatedBy": "packages/signal-grid/scripts/stats.mjs",
   "commit": {
     "method": "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain excluding this script's own two outputs, git rev-parse --abbrev-ref HEAD",
-    "hash": "b41a39241f70ff21497e13318b776a7e99d575cc",
-    "short": "b41a392",
-    "subject": "signal-grid: the docs site is bought, not built",
-    "authorDate": "2026-09-10T14:13:14-04:00",
+    "hash": "8c5d8a9e8802288a4840de1fb7934e9b46d39aac",
+    "short": "8c5d8a9",
+    "subject": "signal-grid: the eight untagged modules carry a tag or a reason, and ship builds the vitepress site",
+    "authorDate": "2026-09-10T14:16:09-04:00",
     "branch": "main",
-    "clean": false,
-    "dirtyCount": 9,
-    "dirtyEntries": [
-      " M packages/signal-grid/scripts/ship.mjs",
-      " M packages/signal-grid/src/10_render.ts",
-      " M packages/signal-grid/src/12_transpose.ts",
-      " M packages/signal-grid/src/13_composite.ts",
-      " M packages/signal-grid/src/14_measure.ts",
-      " M packages/signal-grid/src/15_selection.ts",
-      " M packages/signal-grid/src/16_menu.ts",
-      " M packages/signal-grid/src/6_gestures.ts",
-      " M packages/signal-grid/src/9_css.ts"
-    ],
+    "clean": true,
+    "dirtyCount": 0,
+    "dirtyEntries": [],
     "repository": "hafley66/hafley-rxjs",
-    "url": "https://github.com/hafley66/hafley-rxjs/commit/b41a39241f70ff21497e13318b776a7e99d575cc",
+    "url": "https://github.com/hafley66/hafley-rxjs/commit/8c5d8a9e8802288a4840de1fb7934e9b46d39aac",
     "reason": null
   },
   "machine": {
@@ -33,7 +23,7 @@
     "cpuModel": "Apple M2 Pro",
     "cores": 12,
     "totalMemoryBytes": 17179869184,
-    "builtAt": "2026-09-10T18:15:55.046Z"
+    "builtAt": "2026-09-10T18:19:31.061Z"
   },
   "package": {
     "name": "@hafley66/signal-grid",
@@ -92,9 +82,9 @@
           "gzipBytes": 37968
         },
         {
-          "file": "site/dist/assets/chunks/architectureDiagram-ZJ3FMSHR.BJys5Lx3.js",
+          "file": "site/dist/assets/chunks/architectureDiagram-ZJ3FMSHR.D1GSO3ym.js",
           "bytes": 148478,
-          "gzipBytes": 40797
+          "gzipBytes": 40795
         },
         {
           "file": "site/dist/assets/inter-italic-latin-ext.Dm0n7MN1.woff2",
@@ -107,14 +97,14 @@
           "gzipBytes": 128258
         },
         {
-          "file": "site/dist/assets/app.BKKYf8yC.js",
+          "file": "site/dist/assets/app.Cds2Fef8.js",
           "bytes": 116863,
-          "gzipBytes": 35301
+          "gzipBytes": 35307
         },
         {
-          "file": "site/dist/assets/chunks/sequenceDiagram-DBY2YBRQ.DhQ52UWN.js",
+          "file": "site/dist/assets/chunks/sequenceDiagram-DBY2YBRQ.DHtqfEGu.js",
           "bytes": 115736,
-          "gzipBytes": 30373
+          "gzipBytes": 30372
         },
         {
           "file": "site/dist/assets/chunks/framework.DkAysg6d.js",
@@ -127,14 +117,14 @@
           "gzipBytes": 20733
         },
         {
-          "file": "site/dist/assets/chunks/swimlanes-5IMT3BWC.Daac5IKd.js",
+          "file": "site/dist/assets/chunks/swimlanes-5IMT3BWC.BlCl4luq.js",
           "bytes": 114073,
-          "gzipBytes": 38697
+          "gzipBytes": 38695
         },
         {
-          "file": "site/dist/assets/chunks/theme.CfDP0qGM.js",
-          "bytes": 107224,
-          "gzipBytes": 31779
+          "file": "site/dist/assets/chunks/theme.BcX2TQv_.js",
+          "bytes": 106885,
+          "gzipBytes": 31750
         },
         {
           "file": "site/dist/assets/chunks/chunk-ZGVPDNZ5.07T-r15W.js",
@@ -182,7 +172,7 @@
           "gzipBytes": 22647
         },
         {
-          "file": "site/dist/assets/chunks/VPLocalSearchBox.INpvhjMs.js",
+          "file": "site/dist/assets/chunks/VPLocalSearchBox.BIBqAzLf.js",
           "bytes": 61854,
           "gzipBytes": 21118
         },
@@ -192,9 +182,9 @@
           "gzipBytes": 8578
         },
         {
-          "file": "site/dist/assets/chunks/chunk-PUDLZKDR.Bt9yqMTf.js",
+          "file": "site/dist/assets/chunks/chunk-PUDLZKDR.DWHCqno2.js",
           "bytes": 60107,
-          "gzipBytes": 19162
+          "gzipBytes": 19160
         },
         {
           "file": "site/dist/assets/benchmarks.md.CD8sq4z3.js",
@@ -207,9 +197,9 @@
           "gzipBytes": 10846
         },
         {
-          "file": "site/dist/assets/chunks/chunk-V7JOEXUC.DXgn-YgU.js",
+          "file": "site/dist/assets/chunks/chunk-V7JOEXUC.Dr2cLD25.js",
           "bytes": 48772,
-          "gzipBytes": 15478
+          "gzipBytes": 15476
         },
         {
           "file": "site/dist/assets/chunks/chunk-Q4XR5HBZ.0-a5yFZ6.js",
@@ -232,14 +222,14 @@
           "gzipBytes": 12777
         },
         {
-          "file": "site/dist/assets/chunks/xychartDiagram-FW5EYKEG.B7X-ZtEv.js",
+          "file": "site/dist/assets/chunks/xychartDiagram-FW5EYKEG.BlZXhdDy.js",
           "bytes": 41586,
-          "gzipBytes": 11629
+          "gzipBytes": 11627
         },
         {
-          "file": "site/dist/assets/chunks/vennDiagram-L72KCM5P.C74rdkmn.js",
+          "file": "site/dist/assets/chunks/vennDiagram-L72KCM5P.CUk7EKbZ.js",
           "bytes": 41150,
-          "gzipBytes": 14997
+          "gzipBytes": 14996
         },
         {
           "file": "site/dist/assets/inter-roman-cyrillic-ext.BIKsGeDD.woff2",
@@ -247,9 +237,9 @@
           "gzipBytes": 41153
         },
         {
-          "file": "site/dist/assets/chunks/chunk-EX3LRPZG.Dc_M7j9G.js",
+          "file": "site/dist/assets/chunks/chunk-EX3LRPZG.hZCSWbjl.js",
           "bytes": 37676,
-          "gzipBytes": 12234
+          "gzipBytes": 12232
         },
         {
           "file": "site/dist/assets/chunks/quadrantDiagram-ABIIQ3AL.Moip5_rl.js",
@@ -272,9 +262,9 @@
           "gzipBytes": 31256
         },
         {
-          "file": "site/dist/assets/chunks/requirementDiagram-TGXJPOKE.C2kM-me_.js",
+          "file": "site/dist/assets/chunks/requirementDiagram-TGXJPOKE.CIQztMUM.js",
           "bytes": 30953,
-          "gzipBytes": 9683
+          "gzipBytes": 9682
         },
         {
           "file": "site/dist/assets/chunks/chunk-ICXQ74PX.CFpdtvcI.js",
@@ -282,9 +272,9 @@
           "gzipBytes": 8492
         },
         {
-          "file": "site/dist/assets/chunks/timeline-definition-FHXFAJF6.D6Rj14fe.js",
+          "file": "site/dist/assets/chunks/timeline-definition-FHXFAJF6.D_u5PLOQ.js",
           "bytes": 30361,
-          "gzipBytes": 9918
+          "gzipBytes": 9916
         },
         {
           "file": "site/dist/assets/inter-roman-greek.brO7ZQXV.woff2",
@@ -307,14 +297,14 @@
           "gzipBytes": 8785
         },
         {
-          "file": "site/dist/assets/chunks/erDiagram-Q63AITRT.MBZ0bSFF.js",
+          "file": "site/dist/assets/chunks/erDiagram-Q63AITRT.wnu0RjDi.js",
           "bytes": 27053,
-          "gzipBytes": 9366
+          "gzipBytes": 9365
         },
         {
-          "file": "site/dist/assets/chunks/wardleyDiagram-EHGQE667.xcg_W5TX.js",
+          "file": "site/dist/assets/chunks/wardleyDiagram-EHGQE667.Bexsrc3X.js",
           "bytes": 25194,
-          "gzipBytes": 6538
+          "gzipBytes": 6536
         },
         {
           "file": "site/dist/assets/parity.md.BhzcH4yJ.js",
@@ -327,9 +317,9 @@
           "gzipBytes": 8276
         },
         {
-          "file": "site/dist/assets/chunks/mindmap-definition-LN4V7U3C.Ue5VxCDv.js",
+          "file": "site/dist/assets/chunks/mindmap-definition-LN4V7U3C.DqKgthnN.js",
           "bytes": 23667,
-          "gzipBytes": 8054
+          "gzipBytes": 8052
         },
         {
           "file": "site/dist/assets/chunks/journeyDiagram-5HDEW3XC.DbkOqyrd.js",
@@ -342,9 +332,9 @@
           "gzipBytes": 8217
         },
         {
-          "file": "site/dist/assets/chunks/kanban-definition-HUTT4EX6.BevWqfxR.js",
+          "file": "site/dist/assets/chunks/kanban-definition-HUTT4EX6.CQOn67IG.js",
           "bytes": 20213,
-          "gzipBytes": 7099
+          "gzipBytes": 7098
         },
         {
           "file": "site/dist/assets/index.md.fCKB0OU6.js",
@@ -357,9 +347,9 @@
           "gzipBytes": 17508
         },
         {
-          "file": "site/dist/assets/chunks/ishikawaDiagram-FXEZZL3T.B-_PrdT5.js",
+          "file": "site/dist/assets/chunks/ishikawaDiagram-FXEZZL3T.BZetX2Cx.js",
           "bytes": 17303,
-          "gzipBytes": 6499
+          "gzipBytes": 6497
         },
         {
           "file": "site/dist/assets/chunks/mermaid-parser.core.B_wagd5D.js",
@@ -377,14 +367,14 @@
           "gzipBytes": 5270
         },
         {
-          "file": "site/dist/assets/chunks/diagram-G47NLZAW.Cvn1Pqb4.js",
+          "file": "site/dist/assets/chunks/diagram-G47NLZAW.DBELTGoS.js",
           "bytes": 15747,
-          "gzipBytes": 5502
+          "gzipBytes": 5501
         },
         {
-          "file": "site/dist/assets/chunks/chunk-MOJQB5TN.BQtlWpMf.js",
+          "file": "site/dist/assets/chunks/chunk-MOJQB5TN.BnYggwqR.js",
           "bytes": 15636,
-          "gzipBytes": 4335
+          "gzipBytes": 4334
         },
         {
           "file": "site/dist/assets/inter-italic-vietnamese.CNdtrOX_.woff2",
@@ -402,7 +392,7 @@
           "gzipBytes": 4115
         },
         {
-          "file": "site/dist/assets/chunks/stateDiagram-2N3HPSRC.ClMxaLHP.js",
+          "file": "site/dist/assets/chunks/stateDiagram-2N3HPSRC.DE-ivkh7.js",
           "bytes": 10599,
           "gzipBytes": 3712
         },
@@ -412,19 +402,19 @@
           "gzipBytes": 2955
         },
         {
-          "file": "site/dist/assets/chunks/cynefinDiagram-TSTJHNR4.Cue9hylQ.js",
+          "file": "site/dist/assets/chunks/cynefinDiagram-TSTJHNR4.DKcpHRFm.js",
           "bytes": 9930,
-          "gzipBytes": 3512
+          "gzipBytes": 3511
         },
         {
-          "file": "site/dist/assets/chunks/dagre-VKFMJZFB.DwROTuSB.js",
+          "file": "site/dist/assets/chunks/dagre-VKFMJZFB.CHbj1bba.js",
           "bytes": 8800,
-          "gzipBytes": 3406
+          "gzipBytes": 3405
         },
         {
-          "file": "site/dist/assets/chunks/diagram-OA4YK3LP.CcLY7U75.js",
+          "file": "site/dist/assets/chunks/diagram-OA4YK3LP.BooJ-3eD.js",
           "bytes": 8305,
-          "gzipBytes": 3695
+          "gzipBytes": 3693
         },
         {
           "file": "site/dist/assets/chunks/chunk-RYQCIY6F.kl3pATDz.js",
@@ -432,14 +422,14 @@
           "gzipBytes": 2671
         },
         {
-          "file": "site/dist/assets/chunks/pieDiagram-ENE6RG2P.BcXTBxVw.js",
+          "file": "site/dist/assets/chunks/pieDiagram-ENE6RG2P.C2T21R48.js",
           "bytes": 6208,
-          "gzipBytes": 2590
+          "gzipBytes": 2589
         },
         {
-          "file": "site/dist/assets/chunks/diagram-WEI45ONY.C_dESYfw.js",
+          "file": "site/dist/assets/chunks/diagram-WEI45ONY.CwwEN8yb.js",
           "bytes": 5914,
-          "gzipBytes": 2489
+          "gzipBytes": 2488
         },
         {
           "file": "site/dist/assets/chunks/chunk-HOUHSVGY.CEIWbOOc.js",
@@ -462,9 +452,9 @@
           "gzipBytes": 2064
         },
         {
-          "file": "site/dist/assets/chunks/diagram-NH7WQ7WH.DRM8VKN9.js",
+          "file": "site/dist/assets/chunks/diagram-NH7WQ7WH.DRCJtPwO.js",
           "bytes": 4272,
-          "gzipBytes": 1847
+          "gzipBytes": 1846
         },
         {
           "file": "site/dist/assets/chunks/arc.CDR8dtPe.js",
@@ -492,14 +482,14 @@
           "gzipBytes": 830
         },
         {
-          "file": "site/dist/assets/chunks/ebnfDiagram-CCIWWBDH.vRaD3Fwv.js",
+          "file": "site/dist/assets/chunks/ebnfDiagram-CCIWWBDH.BXFUcms8.js",
           "bytes": 2061,
-          "gzipBytes": 895
+          "gzipBytes": 894
         },
         {
-          "file": "site/dist/assets/chunks/pegDiagram-2B236MQR.e7Gke8vm.js",
+          "file": "site/dist/assets/chunks/pegDiagram-2B236MQR.VQ__cK6g.js",
           "bytes": 2008,
-          "gzipBytes": 941
+          "gzipBytes": 940
         },
         {
           "file": "site/dist/assets/chunks/chunk-32BRIVSS.61kowziv.js",
@@ -517,9 +507,9 @@
           "gzipBytes": 903
         },
         {
-          "file": "site/dist/assets/chunks/abnfDiagram-VRR7QNED.CFFaodAT.js",
+          "file": "site/dist/assets/chunks/abnfDiagram-VRR7QNED.tCsp72oB.js",
           "bytes": 1848,
-          "gzipBytes": 899
+          "gzipBytes": 898
         },
         {
           "file": "site/dist/assets/stats.md.CtGid3ou.lean.js",
@@ -527,7 +517,7 @@
           "gzipBytes": 597
         },
         {
-          "file": "site/dist/assets/chunks/railroadDiagram-RFXS5EU6.DE8zhr9J.js",
+          "file": "site/dist/assets/chunks/railroadDiagram-RFXS5EU6.BOdONYnB.js",
           "bytes": 1661,
           "gzipBytes": 776
         },
@@ -567,29 +557,29 @@
           "gzipBytes": 510
         },
         {
-          "file": "site/dist/assets/chunks/swimlanesDiagram-G3AALYLV.t1Kix99g.js",
+          "file": "site/dist/assets/chunks/swimlanesDiagram-G3AALYLV.C8qOBqxs.js",
           "bytes": 789,
-          "gzipBytes": 468
+          "gzipBytes": 466
         },
         {
-          "file": "site/dist/assets/chunks/stateDiagram-v2-6OUMAXLB.n1g1ozXJ.js",
+          "file": "site/dist/assets/chunks/stateDiagram-v2-6OUMAXLB.Bxf9jYA5.js",
           "bytes": 736,
-          "gzipBytes": 437
+          "gzipBytes": 436
         },
         {
-          "file": "site/dist/assets/chunks/classDiagram-OUVF2IWQ.nNn3lo1x.js",
+          "file": "site/dist/assets/chunks/classDiagram-OUVF2IWQ.aPPnd6gu.js",
           "bytes": 733,
           "gzipBytes": 433
         },
         {
-          "file": "site/dist/assets/chunks/classDiagram-v2-EOCWNBFH.nNn3lo1x.js",
+          "file": "site/dist/assets/chunks/classDiagram-v2-EOCWNBFH.aPPnd6gu.js",
           "bytes": 733,
           "gzipBytes": 433
         },
         {
-          "file": "site/dist/assets/chunks/infoDiagram-FWYZ7A6U.DQSbRR7v.js",
+          "file": "site/dist/assets/chunks/infoDiagram-FWYZ7A6U.D4t9neAZ.js",
           "bytes": 648,
-          "gzipBytes": 424
+          "gzipBytes": 423
         },
         {
           "file": "site/dist/assets/chunks/rolldown-runtime.CbXtAM7H.js",
@@ -602,9 +592,9 @@
           "gzipBytes": 400
         },
         {
-          "file": "site/dist/assets/chunks/flowDiagram-23GEKE2U.Csktysju.js",
+          "file": "site/dist/assets/chunks/flowDiagram-23GEKE2U.BeinmqXI.js",
           "bytes": 530,
-          "gzipBytes": 298
+          "gzipBytes": 295
         },
         {
           "file": "site/dist/assets/parity.md.BhzcH4yJ.lean.js",
@@ -759,11 +749,11 @@
         {
           "file": "site/dist/index.html",
           "bytes": 30281,
-          "gzipBytes": 7222
+          "gzipBytes": 7221
         }
       ],
-      "totalBytes": 5340261,
-      "totalGzipBytes": 2113843,
+      "totalBytes": 5339922,
+      "totalGzipBytes": 2113775,
       "reason": null
     },
     "demo": {
@@ -1032,7 +1022,7 @@
     "untagged": [],
     "unread": 8,
     "gate": "pass",
-    "durationMs": 190,
+    "durationMs": 191,
     "reason": null
   },
   "tests": {
@@ -1044,7 +1034,7 @@
       "files": 91,
       "passed": 328,
       "failed": 0,
-      "durationMs": 858,
+      "durationMs": 847,
       "success": true,
       "reason": null
     },
@@ -1063,13 +1053,13 @@
     "method": "Date.now() around each execFileSync call in scripts/stats.mjs; site and demo build times are handed over by scripts/ship.mjs",
     "typecheckMs": 258,
     "typecheckReason": null,
-    "libraryBuildMs": 294,
+    "libraryBuildMs": 302,
     "libraryBuildReason": null,
-    "unitTestsMs": 858,
+    "unitTestsMs": 847,
     "browserTestsMs": null,
-    "siteBuildMs": 2819,
-    "demoBuildMs": 378,
-    "statsMs": 1890
+    "siteBuildMs": 2771,
+    "demoBuildMs": 367,
+    "statsMs": 1923
   },
   "memory": {
     "method": "a child node --expose-gc process imports dist/index.js, allocates 100000 plain row objects, forces gc, reads process.memoryUsage().heapUsed, builds one grid and reads view.plan and view.flat, forces gc again, reads heapUsed again",
@@ -1077,11 +1067,11 @@
     "rows": 100000,
     "flatNodes": 100000,
     "windowedRows": 27,
-    "heapBeforeBytes": 24169352,
-    "heapAfterBytes": 36461448,
-    "retainedBytes": 12292096,
+    "heapBeforeBytes": 24174808,
+    "heapAfterBytes": 36461464,
+    "retainedBytes": 12286656,
     "retainedBytesPerRow": 122.9,
-    "rssBytes": 145637376,
+    "rssBytes": 146948096,
     "reason": null
   },
   "bench": {
