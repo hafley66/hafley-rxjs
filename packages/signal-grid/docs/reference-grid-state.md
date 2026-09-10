@@ -81,7 +81,35 @@ Which keys move is the caller's declaration, because the type is `Partial<GridSt
 Sending `{ colHidden }` on every emission therefore cannot undo a sort a user just made. Sending
 `{ sort }` on every emission does overwrite their sort, so send the keys you mean to own.
 
-`close()` releases the subscription, so a source outliving its grid writes nothing.
+## Controlled
+
+A signal handed in is controlled in both directions, the way a controlled prop is in React, except
+that one object is both halves:
+
+```ts
+const held = Signal<Partial<GridState>>({})
+const g = grid<Row>({ ...config, state: held })
+
+held.sort.$([{ field: "size", sort: "asc" }])   // the caller writes, the grid sorts
+g.dispatch(headerClick("size"))                 // the user sorts, `held.$().sort` moved
+```
+
+| the grid changes a key | what the caller's signal does |
+| --- | --- |
+| a key the caller carries | rewritten in place |
+| a key the caller never sent | added, so the object gains the keys that moved |
+| a key nothing moved | absent, and `Partial` keeps meaning the keys that are theirs |
+
+One click is one emission on that signal. The two shapes meet at a mirror inside `grid()`: the grid
+keeps the full `GridState` and writes the moved keys out, because a `Partial` read behind a default
+would hand a hole to `view.plan` and every other stage that reads one key and has no fallback. The
+write out re-enters the reader above, which finds every key equal and dispatches nothing, so the
+round trip stops one hop out rather than oscillating.
+
+Only a signal is written back to. An observable, a thunk, and a plain object all seed a signal the
+grid alone holds, so there is nowhere for a write out to land, and they behave as they always have.
+
+`close()` releases both directions, so neither side reaches the other afterwards.
 
 ## Persisting
 

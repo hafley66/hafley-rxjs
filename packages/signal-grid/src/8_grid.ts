@@ -1,5 +1,5 @@
 // The constructor. Takes sources, returns signals. There are no value/onChange pairs anywhere:
-// a signal is both halves already, so "controlled" and "uncontrolled" stop being different things.
+// a signal is both halves already, so a caller's signal is controlled by holding it and nothing else.
 import { fromEvent, isObservable, Observable, Subscription, filter as rxFilter, map, share } from "rxjs"
 import { ROUTE_BOUNDARY_ATTR } from "@hafley66/xdom"
 import { createSlice, isSignal, Signal, storageSignal, urlAdapter, type Signal as Sig } from "@hafley66/signals"
@@ -107,6 +107,9 @@ export function defaultState(over: Partial<GridState> = {}): GridState {
   }
 }
 
+/** Every key of `GridState`, read off the defaults so a new one joins the mirror by existing. */
+const STATE_KEYS = Object.keys(defaultState()) as readonly (keyof GridState)[]
+
 /** The horizontal run is never the axis a pager retains, so its plan is handed the identity page. */
 const NO_PAGE = { index: 0, size: 0 } as const
 
@@ -130,6 +133,8 @@ export interface GridConfig<TRow> {
   readonly mode?: GridMode
   /** Server mode: total rows behind the query, so the scrollbar can measure the whole result. */
   readonly rowCount?: GridSource<number | null>
+  /** A signal is controlled in both directions, and every other shape seeds and stops there. The
+   * grid keeps its own full state and mirrors, since a `Partial` behind the read is a hole. */
   readonly state?: GridSource<Partial<GridState>>
   /** A url query key. `true` uses the grid id. @feature-declared data.state */
   readonly sync?: string | boolean
@@ -194,7 +199,8 @@ export interface Grid<TRow> {
   /** The one door DOM events come in by. Returns the teardown for every listener it opened. */
   readonly bind: (root: HTMLElement) => () => void
   /**
-   * Releases what the constructor opened: the url sync listener and the state source subscription.
+   * Releases what the constructor opened: the url sync listener and both directions of the state
+   * mirror.
    * Idempotent, and unrelated to `bind` and `render`, which each hand back their own teardown.
    */
   readonly close: () => void
@@ -308,6 +314,31 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
   // `Partial<GridState>` is the caller naming which keys are theirs. A key they never send stays
   // untouched, so `colHidden` cannot undo a sort the user just made; a key they send wins over it.
   if (stateSource !== undefined) {
+    // Only a signal the caller still holds is worth writing back to. The other three shapes
+    // produce one the grid alone holds, and a write out would land where nobody reads it.
+    const held = isSignal<Partial<GridState>>(config.state) ? config.state : undefined
+    let mirrored = state.$()
+    // What goes out is the keys the caller carries plus the keys this change moved, so `Partial`
+    // keeps meaning the keys that are theirs after a click adds one.
+    const mirrorOut = (): void => {
+      if (held === undefined) return
+      const before = mirrored
+      const next = state.$()
+      mirrored = next
+      const outward = held.$()
+      const outgoing: Record<string, unknown> = {}
+      let moved = false
+      for (const key of STATE_KEYS) {
+        if (!(key in outward) && Object.is(before[key], next[key])) continue
+        outgoing[key] = next[key]
+        if (!Object.is(outward[key], next[key])) moved = true
+      }
+      if (moved) held.$(outgoing as Partial<GridState>)
+    }
+    // The loop closes on values. A write out re-enters the reader below, which finds every key
+    // already equal and dispatches nothing, so one change costs the caller's signal one emission.
+    let applying = false
+    if (held !== undefined) opened.add(state.$.subscribe(() => { if (!applying) mirrorOut() }))
     let consumed = stateSeed
     opened.add(
       stateSource.$.subscribe((patch) => {
@@ -315,11 +346,19 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
         if (patch === consumed) return
         consumed = patch
         const current = state.$()
-        for (const key of Object.keys(patch) as readonly (keyof GridState)[]) {
-          const next = patch[key]
-          if (next === undefined || Object.is(current[key], next)) continue
-          dispatch({ phase: "change", type: key, [key]: next } as unknown as GridChange)
+        applying = true
+        // One pass out after the whole patch lands, so a two-key emission cannot mirror the first
+        // key back beside the default of the second.
+        try {
+          for (const key of Object.keys(patch) as readonly (keyof GridState)[]) {
+            const next = patch[key]
+            if (next === undefined || Object.is(current[key], next)) continue
+            dispatch({ phase: "change", type: key, [key]: next } as unknown as GridChange)
+          }
+        } finally {
+          applying = false
         }
+        mirrorOut()
       }),
     )
   }

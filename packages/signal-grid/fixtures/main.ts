@@ -110,7 +110,7 @@ const g = grid<FileRow>({
   columns: COLUMNS,
   rowId: (row) => row.id,
   subRows: (row) => row.kids,
-  // A plain object is dropped: `grid()` only reads `config.state` when it is a signal.
+  // A signal rather than the plain object it seeds with, so this fixture is controlled both ways.
   state: Signal<Partial<GridState>>({
     // Off so the rendered run equals the page run. A test that measures every row the plan named
     // would otherwise be measuring whatever the scroll position happened to leave mounted.
