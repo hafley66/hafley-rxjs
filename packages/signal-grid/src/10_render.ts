@@ -80,11 +80,8 @@ const COL_SEAT = CELL_SEP + "col"
 const rowsRunVertical = (orientation: Orientation): boolean =>
   conventionalParts(ROW_SEAT, COL_SEAT, orientation)[0] === ROW_SEAT
 
-/** Mirrors the `ColumnDef.movable` patch, so this file compiles before the schema carries it. */
-type MovableDef = { readonly movable?: boolean }
-
 const asksToMove = <TRow>(def: ColumnDef<TRow> | undefined): boolean =>
-  (def as (ColumnDef<TRow> & MovableDef) | undefined)?.movable === true
+  def?.movable === true
 
 /** A row never rendered yet, distinct from a row whose data is genuinely absent. */
 const UNRENDERED = Symbol("unrendered")

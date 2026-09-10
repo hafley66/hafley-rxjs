@@ -206,6 +206,8 @@ export interface ColumnDef<TRow, V = unknown> {
   readonly filterable?: boolean
   readonly groupable?: boolean
   readonly resizable?: boolean
+  /** Stamps the move route on the header label. Read by `asksToMove` in `10_render.ts`. */
+  readonly movable?: boolean
   readonly editable?: boolean
   readonly pinnable?: boolean
   /** Header group membership: this column's parent key in the column axis. @feature-declared col.group */
