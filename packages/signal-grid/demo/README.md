@@ -49,7 +49,6 @@ demo/1_everything.ts
 demo/2_tree.ts
 demo/3_matrix.ts
 demo/4_detail.ts
-demo/nested.ts      the two delegation workarounds
 demo/controls.ts    control primitives, each a lens over a signal
 demo/readout.ts     relation sizes, plan numbers, DOM counts, the actions$ log
 demo/data.ts        the seeded filesystem generator
@@ -90,12 +89,8 @@ __routes                                // slug, title, features, defects
 
 | Workaround | For | Where |
 | --- | --- | --- |
-| `bindExpander` re-raises `expander.click` off `data-row-id` | 1 | `demo/nested.ts` |
-| `bindNested` re-raises header, cell and glyph intents inside a nested grid | 2 | `demo/nested.ts` |
-| `paintTransposed` writes cell text and row headings after each pass | 3 | `demo/3_matrix.ts` |
-| The header group toggle is off by default | 4 | `demo/1_everything.ts` |
+| `relabelRowHeaders` rewrites the transposed header band after each pass | 3 | `demo/3_matrix.ts` |
 | `state.colPinning` seeded from `pinningFor(schema)` | 5 | `demo/1_everything.ts` |
-| `settleTranspose` writes `density` and `listView` twice after an orientation write | 6 | `demo/3_matrix.ts` |
 | The move grip is stamped by a header slot rather than by `movable: true` | 7 | `demo/1_everything.ts` |
 | Nested render handles are held in a Map and stopped from outside the slot | 8 | `demo/4_detail.ts` |
 | A local `attach` | 9 | `demo/4_detail.ts` |
