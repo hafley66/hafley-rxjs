@@ -39,6 +39,7 @@ import {
 import { grid, type Grid } from "./8_grid.js"
 import { render, type RenderHandle } from "./10_render.js"
 import { headerGroup } from "./18_bands.js"
+import { flatList } from "../examples/1_flat_list.js"
 import type { Slots } from "./0_types.js"
 
 interface Row {
@@ -939,6 +940,21 @@ describe("range selection restamps without rebuilding", () => {
     // Four columns each on three leaves, and nothing on the two headings between them.
     expect(root.querySelectorAll(`${CELL}[data-selected]`).length).toBe(12)
     expect(root.querySelectorAll('[data-group="true"] [data-selected]').length).toBe(0)
+  })
+})
+
+describe("the second rendering an example offers", () => {
+  // `examples/0_react.tsx` draws `flatList` with React off the same signals `render` reads, and the
+  // one thing a test can ask of it is whether a row of the relation reached the document.
+  test("paints a cell whose text is the row the DOM rendering draws", () => {
+    const host = document.createElement("div")
+    host.style.blockSize = "320px"
+    document.body.append(host)
+    const stop = flatList.alternate?.mount(host) ?? (() => {})
+    const drawn = [...host.querySelectorAll(".sg-row .sg-cell")].map((cell) => cell.textContent)
+    stop()
+    host.remove()
+    expect(drawn).toContain("file-000")
   })
 })
 

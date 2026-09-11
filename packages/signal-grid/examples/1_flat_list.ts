@@ -1,7 +1,8 @@
 // The smallest thing that renders: rows in, columns in, one element out.
 // `flex` is on two of the three columns so the width resolution is visible without any state.
-import { grid, render, type ColumnDef } from "../src/index.js"
+import { grid, render, type ColumnDef, type Grid } from "../src/index.js"
 import source from "./1_flat_list.ts?raw"
+import { reactMount } from "./0_react.js"
 import type { Example } from "./0_types.js"
 
 interface Row {
@@ -26,6 +27,11 @@ const COLUMNS: readonly ColumnDef<Row>[] = [
   { id: "kind", header: "Kind", flex: 1, minWidth: 100 },
 ]
 
+// One factory for both renderings. A second `grid()` call with the same fields written again would
+// make the two panels a claim about the signals layer rather than evidence of it.
+const open = (): Grid<Row> =>
+  grid<Row>({ id: "flat-list", rows: ROWS, columns: COLUMNS, rowId: (row) => row.id })
+
 export const flatList: Example = {
   id: "flat-list",
   title: "Flat list",
@@ -36,7 +42,7 @@ export const flatList: Example = {
     const root = document.createElement("div")
     root.style.blockSize = "320px"
     host.append(root)
-    const g = grid<Row>({ id: "flat-list", rows: ROWS, columns: COLUMNS, rowId: (row) => row.id })
+    const g = open()
     const handle = render(g, root)
     return () => {
       handle.stop()
@@ -44,4 +50,5 @@ export const flatList: Example = {
       root.remove()
     }
   },
+  alternate: { label: "React", mount: reactMount(open, 320) },
 }
