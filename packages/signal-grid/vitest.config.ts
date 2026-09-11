@@ -21,6 +21,7 @@ export const DOM_TESTS: readonly string[] = [
   "src/13_composite.test.ts",
   "src/14_measure.test.ts",
   "src/16_menu.test.ts",
+  "src/17_in_view.test.ts",
   // The one entry outside `src/`: it mounts a demo route, and `src/**/*.test.ts` below never
   // collects it, so naming it here puts it in the browser runner and in no other.
   "demo/5_sheet.test.ts",
