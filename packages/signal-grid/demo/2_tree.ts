@@ -1,7 +1,7 @@
 // Route 2. Tree flattening and virtualization together: 636 directories over five levels holding
 // 50,000 leaves, with the DOM row count printed against the flat length on every frame.
 import { Signal } from "@hafley66/signals"
-import { Subscription } from "rxjs"
+import { map, merge, share, Subscription, tap } from "rxjs"
 import {
   createMeasureStore,
   grid,
@@ -17,7 +17,16 @@ import {
   type RowId,
   type Viewport,
 } from "../src/index.js"
-import { actions, checkField, group, h, readbackField, segmentField } from "./controls.js"
+import {
+  actions,
+  afterPaint,
+  checkField,
+  group,
+  h,
+  paintedText,
+  readbackField,
+  segmentField,
+} from "./controls.js"
 import { directoryIds, formatDate, formatSize, tree, type FsRow } from "./data.js"
 import { readout } from "./readout.js"
 import { aboutPanel, stageBox, type DemoHandle, type DemoHosts, type DemoRoute } from "./0_shell.js"
@@ -165,8 +174,8 @@ function mount(hosts: DemoHosts): DemoHandle {
     root: scroll instanceof HTMLElement ? scroll : null,
     bufferPx: 240,
   })
-  let approaching = 0
-  subs.add(runWhenInView(store.approaching$, (keys) => { approaching = keys.length }))
+  // Cold: the batch size is counted only while the readback that prints it is bound.
+  const approaching = Signal<number>(store.approaching$.pipe(map((it) => it.length)), 0)
   subs.add(() => store.close())
 
   const observed = new Map<string, () => void>()
@@ -191,6 +200,11 @@ function mount(hosts: DemoHosts): DemoHandle {
 
   const domRows = (): number => box.getElementsByClassName("sg-row").length
 
+  const painted$ = afterPaint(files.view.plan.$)
+  // The observation runs upstream of the numbers that report it, so a frame never prints a count
+  // taken before the rows it describes were observed.
+  const measured$ = painted$.pipe(tap(observeRendered), share())
+
   const rowGroup = group("Tree", [
     actions([
       { label: "expand all", title: "636 directories", run: expandAll },
@@ -199,31 +213,37 @@ function mount(hosts: DemoHosts): DemoHandle {
       { label: "depth 2", run: () => expandToDepth(2) },
       { label: "depth 3", run: () => expandToDepth(3) },
     ]),
-    readbackField("open directories", () => openCount().toLocaleString("en-US")),
-    readbackField("flat length", () => files.view.flat.$().length.toLocaleString("en-US")),
-    readbackField("rows in the document", () => domRows().toLocaleString("en-US")),
-    readbackField("DOM rows / flat length", () => {
-      const flat = files.view.flat.$().length
-      const shown = domRows()
-      const share = flat === 0 ? 0 : (shown / flat) * 100
-      return `${shown} / ${flat.toLocaleString("en-US")} (${share.toFixed(3)}%)`
-    }),
-    readbackField("deepest rendered depth", () => {
-      let deepest = 0
-      for (const el of Array.from(box.getElementsByClassName("sg-row"))) {
-        if (!(el instanceof HTMLElement)) continue
-        const depth = Number(el.style.getPropertyValue("--sg-depth"))
-        if (Number.isFinite(depth) && depth > deepest) deepest = depth
-      }
-      return String(deepest)
-    }),
+    readbackField("open directories", Signal<string>(() => openCount().toLocaleString("en-US"))),
+    readbackField("flat length", Signal<string>(() => files.view.flat.$().length.toLocaleString("en-US"))),
+    readbackField("rows in the document", paintedText(painted$, () => domRows().toLocaleString("en-US"))),
+    readbackField(
+      "DOM rows / flat length",
+      paintedText(painted$, () => {
+        const flat = files.view.flat.$().length
+        const shown = domRows()
+        const percent = flat === 0 ? 0 : (shown / flat) * 100
+        return `${shown} / ${flat.toLocaleString("en-US")} (${percent.toFixed(3)}%)`
+      }),
+    ),
+    readbackField(
+      "deepest rendered depth",
+      paintedText(painted$, () => {
+        let deepest = 0
+        for (const el of Array.from(box.getElementsByClassName("sg-row"))) {
+          if (!(el instanceof HTMLElement)) continue
+          const depth = Number(el.style.getPropertyValue("--sg-depth"))
+          if (Number.isFinite(depth) && depth > deepest) deepest = depth
+        }
+        return String(deepest)
+      }),
+    ),
   ])
 
   const measureGroup = group("MeasureStore (read only)", [
-    readbackField("observed rows", () => String(observed.size)),
-    readbackField("measured extents", () => String(store.extents.size)),
-    readbackField("rolling estimate", () => `${store.estimate().toFixed(1)} px`),
-    readbackField("last approaching$ batch", () => String(approaching)),
+    readbackField("observed rows", paintedText(measured$, () => String(observed.size))),
+    readbackField("measured extents", paintedText(measured$, () => String(store.extents.size))),
+    readbackField("rolling estimate", paintedText(measured$, () => `${store.estimate().toFixed(1)} px`)),
+    readbackField("last approaching$ batch", Signal<string>(() => String(approaching.$()))),
   ])
 
   const viewGroup = group("View", [
@@ -234,16 +254,16 @@ function mount(hosts: DemoHosts): DemoHandle {
         { value: "standard", label: "standard" },
         { value: "comfortable", label: "roomy" },
       ],
-      () => files.state.density.$(),
-      (next) => files.state.density.$(next),
+      files.state.density,
     ),
-    checkField("virtualize rows", () => files.state.virtualize.vertical.$(), (next) =>
-      files.state.virtualize.vertical.$(next),
+    checkField("virtualize rows", files.state.virtualize.vertical),
+    readbackField(
+      "sort model",
+      Signal<string>(() => {
+        const model = files.state.sort.$()
+        return model.length === 0 ? "none" : model.map((it) => `${it.field} ${it.sort}`).join(", ")
+      }),
     ),
-    readbackField("sort model", () => {
-      const model = files.state.sort.$()
-      return model.length === 0 ? "none" : model.map((it) => `${it.field} ${it.sort}`).join(", ")
-    }),
     actions([
       { label: "sort by size desc", run: () => files.state.sort.$([{ field: "size", sort: "desc" }]) },
       { label: "sort by name asc", run: () => files.state.sort.$([{ field: "name", sort: "asc" }]) },
@@ -256,22 +276,8 @@ function mount(hosts: DemoHosts): DemoHandle {
   const panelReadout = readout(files, box)
   hosts.readout.append(panelReadout.el)
 
-  let queued = false
-  const refresh = (): void => {
-    if (queued) return
-    queued = true
-    requestAnimationFrame(() => {
-      queued = false
-      observeRendered()
-      rowGroup.refresh()
-      measureGroup.refresh()
-      viewGroup.refresh()
-    })
-  }
-
-  subs.add(runWhenInView(files.state.$, refresh))
-  subs.add(runWhenInView(files.view.plan.$, refresh))
-  refresh()
+  const panel$ = merge(rowGroup.bind$, measureGroup.bind$, viewGroup.bind$)
+  subs.add(runWhenInView(panel$))
 
   return {
     grid: files,
