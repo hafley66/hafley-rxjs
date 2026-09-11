@@ -1,5 +1,26 @@
 # JSON-RX bootstrap and authoring rules
 
+## `.subscribe()` is `ReactDOM.render`
+
+It is the call that turns a description into a running thing. React has one per
+application, at the root. RxJS is the same and the ecosystem forgot, so every library
+ships its own and an app ends up with hundreds of roots it cannot see.
+
+| rule | broken means |
+| --- | --- |
+| a library NEVER calls `.subscribe()` | it owns a lifetime the caller cannot name, cancel, or compose |
+| an application calls it ONCE, at its boundary | two roots and no single place that knows what is running |
+| a docs example NEVER shows it | the example teaches the defect |
+| a test may, because the test IS the boundary | nothing |
+
+An effect goes in the stream as `tap`, and the stream is returned to the boundary. A
+function that takes a callback is the same defect wearing a hat: the caller puts effects
+in the callback instead of in the pipeline, and the pipeline is built forwards from its
+input instead of backwards from its output.
+
+Expected count of `.subscribe(` in a library package, in `examples/`, in `docs/` and in
+`demo/`: zero. Full rule in the `rxjs` skill.
+
 ## Lifecycle teardown naming
 
 Name lifecycle teardown `unsubscribe` throughout this repository. Public return
@@ -93,7 +114,7 @@ Sources:
 
 ## In-progress design: grid + pulse routes
 
-Reactive-grid and typed-route work in flight. Doctrine for the underlying signal and RxJS primitives lives in the `rxjs` skill, not here. This section is product shape only.
+Reactive-grid and typed-route work in flight. Doctrine for the underlying signal and RxJS primitives lives in the `rxjs` and `signals` skills, not here. This section is product shape only.
 
 ### Grid
 
