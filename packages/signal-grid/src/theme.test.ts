@@ -81,7 +81,13 @@ describe("theme.css targets only what the router can address", () => {
       if (name !== undefined) read.add(name)
     }
     // Written by the renderer rather than the stylesheet, so they are declared elsewhere by design.
-    const fromJs = new Set(["--sg-h", "--sg-inline-tracks", "--sg-span-vertical", "--sg-span-horizontal"])
+    const fromJs = new Set([
+      "--sg-h",
+      "--sg-head-rows",
+      "--sg-inline-tracks",
+      "--sg-span-vertical",
+      "--sg-span-horizontal",
+    ])
     expect([...read].filter((name) => !declared.has(name) && !fromJs.has(name)).sort()).toEqual([])
   })
 })

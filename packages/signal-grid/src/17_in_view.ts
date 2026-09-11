@@ -1,4 +1,5 @@
 // @comment-ok: the host-binding contract and the one-observer-per-page contract are the two invariants this file exists to hold
+// @no-features: decides when a demo's subscriptions run on a docs page; the grid features those demos exercise are tagged at their own stages
 // The reversal. A demo names a source; the page decides when it runs. A docs page mounting
 // twenty-four grids holds subscriptions for the grids a reader can see and none for the rest.
 //

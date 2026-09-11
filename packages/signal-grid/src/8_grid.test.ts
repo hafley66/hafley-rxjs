@@ -13,6 +13,7 @@ import { describe, expect, it } from "vitest"
 import { Subscription, skip, type Observable } from "rxjs"
 import { Signal } from "@hafley66/signals"
 import { defaultState, grid, type Grid } from "./8_grid.js"
+import { headerGroup } from "./18_bands.js"
 import {
   COLUMNS,
   FLAT,
@@ -339,7 +340,11 @@ describe("columns are the same five operators on the other axis", () => {
       id: "t",
       rows: FLAT,
       rowId: (r) => r.id,
-      columns: [{ id: "meta" }, { id: "name", group: "meta" }, { id: "size", group: "meta" }],
+      columns: [
+        headerGroup<Row>({ id: "meta" }),
+        { id: "name", group: "meta" },
+        { id: "size", group: "meta" },
+      ],
     })
     const nodes = g.view.cols.$()
     expect(nodes.map((n) => [n.key, n.depth])).toEqual([["meta", 0], ["name", 1], ["size", 1]])

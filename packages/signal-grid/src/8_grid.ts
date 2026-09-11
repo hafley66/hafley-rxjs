@@ -33,6 +33,7 @@ import {
   type FacetPair,
   type SpanRelation,
 } from "./12_transpose.js"
+import { checkBands, isHeaderGroup } from "./18_bands.js"
 import { defaultEpics, type GridEpic, type GridEpicCtx } from "./7_epics.js"
 import { EMPTY_RANGE } from "./15_selection.js"
 import {
@@ -255,6 +256,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
   // A column carrying both a `field` and a `value` says two things about one read, so the schema
   // is rejected at construction rather than at whichever cell asks first.
   for (const col of columns.$()) columnReader(col, col.id)
+  checkBands(columns.$())
 
   // Every other input goes through `toGridSignal`, so a plain object here must too. Three of the
   // four shapes emit again, and the signal is kept so those emissions have somewhere to land.
@@ -539,8 +541,12 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
     const start = viewport.top.$()
     const extent = viewport.height.$()
     const args = pageWindow(state.page.$())
+    // The mirror of `colLeaves` on the other seat: under the transpose the column axis stands here,
+    // and a band holds no seat on either axis, so it renders no entry of the run that scrolls.
     const input: RenderPlanInput<string> = {
-      flat: seat.nodes.map((it) => it.key),
+      flat: seat.nodes
+        .filter((it) => !isHeaderGroup(seat.axis.by.get(it.key)))
+        .map((it) => it.key),
       side: (key) => seat.pinning[key],
       page: args.page,
       // Server mode already answered with exactly the page it was asked for, so slicing here takes
@@ -582,19 +588,23 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
     // The column axis rather than the horizontal run: a width is column geometry, and under the
     // transpose the horizontal run holds rows, which have no width to resolve.
     const declared = new Map<ColId, number>()
+    // A band takes no track, so a width for one would be a number the track list never spends.
     for (const node of colNodes.$()) {
       const col = defs.get(node.key)
-      if (col === undefined) continue
+      if (col === undefined || isHeaderGroup(col)) continue
       declared.set(col.id, override[col.id] ?? col.width ?? DEFAULT_COL_WIDTH)
     }
     return declared
   })
 
-  /** The horizontal run's entries with the bands dropped. A node the axis holds no value for is a
-   * band over its leaves and occupies no seat, which is one test under either seating. */
+  /** The horizontal run's entries with the bands dropped. A band labels its leaves and occupies no
+   * seat, and a row carries no marker, so the one marker test serves under either seating. */
   const colLeaves = Signal<readonly ColId[]>(() => {
     const across = horizontal.$()
-    return cols.$().filter((it) => across.axis.by.has(it.key)).map((it) => it.key)
+    return cols
+      .$()
+      .filter((it) => across.axis.by.has(it.key) && !isHeaderGroup(across.axis.by.get(it.key)))
+      .map((it) => it.key)
   })
 
   /** The same `renderPlan` the vertical seat runs, handed the other viewport dimension. `partition`

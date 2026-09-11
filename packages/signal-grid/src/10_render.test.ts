@@ -27,6 +27,7 @@ import {
 } from "./5_columns.js"
 import { grid, type Grid } from "./8_grid.js"
 import { render, type RenderHandle } from "./10_render.js"
+import { headerGroup } from "./18_bands.js"
 import type { Slots } from "./0_types.js"
 
 interface Row {
@@ -651,9 +652,9 @@ const TREE: readonly Row[] = [
 ]
 
 /** A header group, so the column axis has the `parent` edges and the row axis has none. An
- * unknown parent is a root, so the band itself has to be a column of the schema. */
+ * unknown parent is a root, so the band itself has to be an entry of the schema. */
 const GROUPED: readonly ColumnDef<Row>[] = [
-  { id: "info", header: "Info" },
+  headerGroup<Row>({ id: "info", header: "Info" }),
   { ...NAME, group: "info" },
   { ...SIZE, group: "info" },
 ]

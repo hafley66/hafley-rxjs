@@ -86,13 +86,22 @@
   position: sticky;
   inset-block-start: 0;
   z-index: 3;
+  display: block;
+  inline-size: max-content;
+  min-inline-size: 100%;
+  block-size: calc(var(--sg-row-h) * var(--sg-head-rows, 1));
+  background: var(--sg-head-bg);
+  border-block-end: 1px solid var(--sg-line);
+}
+
+/* One row per band level, written by `10_render.ts` as `--sg-head-rows` because the count is the
+   schema's band depth and no selector can count elements. */
+[data-route="g"] .sg-head-row {
   display: grid;
   grid-template-columns: var(--sg-inline-tracks, none);
   inline-size: max-content;
   min-inline-size: 100%;
   block-size: var(--sg-row-h);
-  background: var(--sg-head-bg);
-  border-block-end: 1px solid var(--sg-line);
 }
 
 /* The scroll spacer. Its height is the paginated center run, whatever fraction of it renders. */
@@ -117,7 +126,7 @@
 
 [data-route="g"] .sg-pinned-start {
   position: sticky;
-  inset-block-start: var(--sg-row-h);
+  inset-block-start: calc(var(--sg-row-h) * var(--sg-head-rows, 1));
   z-index: 2;
   background: var(--sg-bg);
 }
@@ -195,6 +204,18 @@
 [data-route="g"] .sg-head-cell {
   font-weight: 600;
   user-select: none;
+}
+
+/* A band's box is the sum of its leaves' tracks, and the lines are what show that extent. */
+[data-route="g"] .sg-head-band {
+  justify-content: center;
+  border-block-end: 1px solid var(--sg-line);
+  border-inline-end: 1px solid var(--sg-line);
+}
+
+/* The seat above a leaf no band covers. It draws nothing and takes no pointer. */
+[data-route="g"] .sg-head-filler {
+  pointer-events: none;
 }
 
 [data-route="g"] .sg-head-cell[data-sort="asc"]::after {

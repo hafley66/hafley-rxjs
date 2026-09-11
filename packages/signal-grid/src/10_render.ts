@@ -39,6 +39,7 @@ import {
   type AxisPair,
   type SpanRelation,
 } from "./12_transpose.js"
+import { bandDepth, bandRow, SG_HEAD_ROWS, type BandCell } from "./18_bands.js"
 import { rangeOf, selectionTest } from "./15_selection.js"
 import { isDetailKey, rowOfDetailKey } from "./11_detail.js"
 import {
@@ -116,6 +117,10 @@ interface Frame<TRow> {
   /** The pixels the column window skipped, as the two tracks the center run has to cover. */
   readonly spacers: Spacers
   readonly colRunSignature: string
+  /** The header, outermost band row first, each row cut into the three sticky runs. The last row
+   * holds the leaves, so a schema with no band is one row and the header this package always drew. */
+  readonly band: readonly Readonly<Record<Side, readonly BandCell[]>>[]
+  readonly bandSignature: string
   /** Keyed by the horizontal run's entries, which are columns under `"rows"` and rows under the transpose. */
   readonly pinning: Readonly<Record<string, Side>>
   readonly orientation: Orientation
@@ -161,6 +166,7 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
   let headerSubs = new Subscription()
   // Null until the first pass, so an empty schema still builds its (empty) header once.
   let headKey: string | null = null
+  let headBand: string | null = null
   let headSort: SortModel = []
 
   const frame = Signal<Frame<TRow>>(() => {
@@ -197,7 +203,26 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     }
     const orientation = grid.state.orientation.$()
     const rowsVertical = rowsRunVertical(orientation)
+    // Depth off the whole run and cells off the window, so scrolling sideways moves what a band
+    // covers and never how tall the header is.
+    const rows = bandDepth(across.axis, leaves)
+    const band: Readonly<Record<Side, readonly BandCell[]>>[] = []
+    for (let depth = 0; depth < rows; depth++) {
+      band.push({
+        start: bandRow(across.axis, runs.start, depth, rows),
+        center: bandRow(across.axis, runs.center, depth, rows),
+        end: bandRow(across.axis, runs.end, depth, rows),
+      })
+    }
     return {
+      band,
+      // Adding a band over columns that already render moves no leaf, so `colRunSignature` alone
+      // would leave the old one-row header in the document.
+      bandSignature: band
+        .map((row) =>
+          SIDES.map((side) => row[side].map((it) => `${it.key ?? ""}+${it.span}`).join(",")).join("|"),
+        )
+        .join("/"),
       gridId: grid.id.$(),
       plan: grid.view.plan.$(),
       defs,
@@ -290,18 +315,69 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     return cell
   }
 
+  // Routeless in both shapes: every header intent names an entry that occupies a track, and a band
+  // occupies none, so a click on one raises nothing rather than sorting a field no row carries.
+  function bandCell(cell: BandCell, current: Frame<TRow>, subs: Subscription): HTMLElement {
+    const key = cell.key
+    const el = box(key === null ? "sg-head-cell sg-head-filler" : "sg-head-cell sg-head-band")
+    el.style.gridColumn = `span ${cell.span}`
+    if (key === null) return el
+    el.setAttribute("data-band", key)
+    const entry = addressedEntry(NO_ENTRY, key, current.orientation, current.defs, current.data)
+    const node = current.horizontalNodes.get(key)
+    const label = box("sg-head-label")
+    el.append(label)
+    // `Slots.headerGroup` rather than `Slots.header`: the schema-wide header slot labels a column
+    // that reads a value, and the band is the seat that slot key was declared for.
+    const slot = entry.def?.headerCell ?? grid.slots.headerGroup
+    if (slot !== undefined && node !== undefined) {
+      const ctx: HeaderCtx<TRow> = {
+        col: key,
+        node,
+        sort: null,
+        pinned: current.pinning[key],
+        row: entry.row === NO_ENTRY ? null : entry.row,
+        data: entry.data,
+      }
+      mount(label, slot(ctx), subs)
+    } else {
+      label.append(entry.def?.header ?? key)
+    }
+    return el
+  }
+
+  // One row element per band level, each carrying the same track list the body rows carry, so the
+  // band and the cells under it read one `subgrid` and can never disagree about a track.
   function buildHeader(current: Frame<TRow>): void {
     headerSubs.unsubscribe()
     headerSubs = new Subscription()
-    const runs: HTMLElement[] = []
-    for (const side of SIDES) {
-      const keys = current.runs[side]
-      if (keys.length === 0) continue
-      const run = openRun(side, keys.length, current.spacers)
-      for (const colId of keys) run.append(headerCell(colId, current, headerSubs))
-      runs.push(run)
+    const last = current.band.length - 1
+    const rows: HTMLElement[] = []
+    for (let depth = 0; depth < current.band.length; depth++) {
+      const cells = current.band[depth]
+      if (cells === undefined) continue
+      const runs: HTMLElement[] = []
+      for (const side of SIDES) {
+        const keys = current.runs[side]
+        if (keys.length === 0) continue
+        const run = openRun(side, keys.length, current.spacers)
+        for (const cell of cells[side]) {
+          const key = cell.key
+          run.append(
+            depth === last && key !== null
+              ? headerCell(key, current, headerSubs)
+              : bandCell(cell, current, headerSubs),
+          )
+        }
+        runs.push(run)
+      }
+      const row = box("sg-head-row")
+      row.replaceChildren(...runs)
+      rows.push(row)
     }
-    head.replaceChildren(...runs)
+    head.replaceChildren(...rows)
+    // The header's height and the sticky offset under it, which no selector can count for itself.
+    root.style.setProperty(SG_HEAD_ROWS, String(Math.max(1, rows.length)))
   }
 
   // --- cells ----------------------------------------------------------------
@@ -609,9 +685,14 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       gridId = current.gridId
       setAttrs(root, gridAttrs(gridId))
     }
-    if (current.colRunSignature !== headKey || current.sort !== headSort) {
+    if (
+      current.colRunSignature !== headKey ||
+      current.bandSignature !== headBand ||
+      current.sort !== headSort
+    ) {
       buildHeader(current)
       headKey = current.colRunSignature
+      headBand = current.bandSignature
       headSort = current.sort
     }
     const seen = new Set<RowId>()
@@ -664,6 +745,7 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
   // a slot whose teardown throws cannot leave the rows below it subscribed.
   subscription.add(writeGridVars(grid, root))
   subscription.add(() => headerSubs.unsubscribe())
+  subscription.add(() => root.style.removeProperty(SG_HEAD_ROWS))
   subscription.add(() => {
     // Gathered under one parent so a throwing cell teardown cannot skip the rows after it.
     const held = new Subscription()

@@ -12,6 +12,7 @@ import {
   conventionalParts,
   defaultState,
   grid,
+  headerGroup,
   neutralCell,
   transpose,
   transposeSpans,
@@ -144,7 +145,7 @@ describe("list view collapses the horizontal axis", () => {
 
   it("the survivor is a leaf, not the header group standing over it", () => {
     const gauge = gridOf({ listView: true }, [
-      { id: "meta" },
+      headerGroup<Row>({ id: "meta" }),
       { id: "name", group: "meta" },
       { id: "size", group: "meta" },
     ])
