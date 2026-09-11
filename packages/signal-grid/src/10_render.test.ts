@@ -26,7 +26,12 @@ import {
   radioColumn,
   rowNumberColumn,
 } from "./5_columns.js"
-import { expandOnExpanderClick, selectRowsOnCellClick, type GridEpic } from "./7_epics.js"
+import {
+  expandOnCellDoubleClick,
+  expandOnExpanderClick,
+  selectRowsOnCellClick,
+  type GridEpic,
+} from "./7_epics.js"
 import { grid, type Grid } from "./8_grid.js"
 import { render, type RenderHandle } from "./10_render.js"
 import type { Slots } from "./0_types.js"
@@ -286,6 +291,31 @@ describe("selecting by clicking the row", () => {
     click(root.querySelector(selectorFor("expander")))
     expect(made.state.expanded.$()).toEqual({ a: true })
     expect(made.state.rowSelection.$()).toEqual({})
+  })
+})
+
+// What the browser actually sends: two clicks, then the dblclick, all bubbling from one element.
+const doubleClick = (target: Element | null): void => {
+  click(target)
+  click(target)
+  target?.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }))
+}
+
+describe("double clicking a tree row", () => {
+  const treeGrid = (epics: readonly GridEpic<Row>[]): Harness =>
+    mountGrid({ rows: TREE, subRows: (it) => it.kids, epics })
+
+  test("opens the row, and the select epic beside it leaves that row selected", () => {
+    const { grid: made } = treeGrid([expandOnCellDoubleClick<Row>(), selectRowsOnCellClick<Row>()])
+    doubleClick(cellAt("a", "name"))
+    expect(made.state.expanded.$()).toEqual({ a: true })
+    expect(made.state.rowSelection.$()).toEqual({ a: true })
+  })
+
+  test("a double click on the glyph is the two clicks under it and nothing more", () => {
+    const { grid: made } = treeGrid([expandOnCellDoubleClick<Row>(), expandOnExpanderClick<Row>()])
+    doubleClick(root.querySelector(selectorFor("expander")))
+    expect(made.state.expanded.$()).toEqual({ a: false })
   })
 })
 

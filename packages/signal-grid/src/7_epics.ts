@@ -101,20 +101,43 @@ export function sortOnHeaderClick<TRow>(): GridEpic<TRow> {
 
 // --- Expand -----------------------------------------------------------------
 
+// Alt is the whole-branch modifier every file tree has, and the only reader of `descendantsOf`.
+// One body, because the glyph and the double click mean the same thing about the same row.
+function flipOpen<TRow>(
+  state: Signal<GridState>,
+  ctx: GridEpicCtx<TRow>,
+  row: RowId,
+  mods: Modifiers,
+): GridAction<TRow> {
+  const open = state.expanded.$()
+  const next = open[row] !== true
+  const expanded: Record<RowId, boolean> = { ...open, [row]: next }
+  if (mods.alt) {
+    for (const key of descendantsOf(ctx.view.sorted.$(), row)) expanded[key] = next
+  }
+  return { phase: "change", type: "expanded", expanded }
+}
+
 export function expandOnExpanderClick<TRow>(): GridEpic<TRow> {
   return (actions$, state, ctx) =>
     intents<TRow, "expander.click">(actions$, "expander.click").pipe(
-      map((it): GridAction<TRow> => {
-        const open = state.expanded.$()
-        const next = open[it.row] !== true
-        const expanded: Record<RowId, boolean> = { ...open, [it.row]: next }
-        // Alt is the whole-branch modifier every file tree has, and the only reader of
-        // `descendantsOf`.
-        if (it.mods.alt) {
-          for (const key of descendantsOf(ctx.view.sorted.$(), it.row)) expanded[key] = next
-        }
-        return { phase: "change", type: "expanded", expanded }
-      }),
+      map((it): GridAction<TRow> => flipOpen<TRow>(state, ctx, it.row, it.mods)),
+    )
+}
+
+const hasChildren = <TRow>(ctx: GridEpicCtx<TRow>, row: RowId): boolean =>
+  ctx.view.flat.$().find((it) => it.key === row)?.hasChildren === true
+
+/** The second way into a tree, for a schema that draws no glyph. Opt-in, and it composes with
+ * `expandOnExpanderClick`, because a double click on the glyph arrives `interactive`. */
+export function expandOnCellDoubleClick<TRow>(): GridEpic<TRow> {
+  return (actions$, state, ctx) =>
+    intents<TRow, "cell.dblclick">(actions$, "cell.dblclick").pipe(
+      filter((it) => !it.interactive && it.mods.button === 0),
+      // A leaf has nothing to open, and writing `expanded[leaf]` would grow a key the flatten walk
+      // reads on every frame for a row that can never use it.
+      filter((it) => hasChildren(ctx, it.row)),
+      map((it): GridAction<TRow> => flipOpen<TRow>(state, ctx, it.row, it.mods)),
     )
 }
 

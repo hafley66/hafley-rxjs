@@ -131,7 +131,7 @@ the rule rather than after the member.
 
 ### 2.6 Fixtures duplicated rather than shared
 
-The same `TREE` literal was typed out at `src/7_epics.test.ts:30`, `src/8_grid.test.ts:26`, and
+The same `TREE` literal was typed out at `src/7_epics.test.ts:20`, `src/8_grid.test.ts:26`, and
 `src/12_transpose.test.ts:34`. The same `keys(nodes)` one-liner was redefined at
 `src/1_axis.test.ts:46`, `src/8_grid.test.ts:34`, `src/11_detail.test.ts:37`, and
 `src/12_transpose.test.ts:54`. All now come from `src/test/0_kit.ts`.

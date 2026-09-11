@@ -68,7 +68,7 @@
       "id": "row.select",
       "declaration": "selectRowsOnCellClick",
       "file": "src/7_epics.ts",
-      "line": 176
+      "line": 199
     }
   ],
   "decidedOut": 8,

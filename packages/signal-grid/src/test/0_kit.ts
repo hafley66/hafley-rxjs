@@ -181,6 +181,20 @@ export const cellClick = (
   interactive,
 })
 
+export const cellDoubleClick = (
+  row: string,
+  col: string,
+  over: Partial<Modifiers> = {},
+  interactive = false,
+): GridIntent => ({
+  phase: "intent",
+  type: "cell.dblclick",
+  row,
+  col,
+  mods: mods(over),
+  interactive,
+})
+
 export const keyPress = (name: string): GridIntent => ({
   phase: "intent",
   type: "key",
