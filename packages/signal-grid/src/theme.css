@@ -21,15 +21,20 @@
   inherits: true;
   initial-value: 36px;
 }
-@property --sg-glyph {
+@property --sg-hit {
   syntax: "<length>";
   inherits: true;
   initial-value: 24px;
 }
-@property --sg-sort-glyph {
+@property --sg-glyph {
   syntax: "<length>";
   inherits: true;
   initial-value: 16px;
+}
+@property --sg-sort-glyph {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 11px;
 }
 @property --sg-pad {
   syntax: "<length>";
@@ -58,8 +63,9 @@
   --sg-offset-y: 0px;
   --sg-depth: 0;
   --sg-indent: 16px;
-  --sg-glyph: 24px;
-  --sg-sort-glyph: 16px;
+  --sg-hit: 24px;
+  --sg-glyph: 16px;
+  --sg-sort-glyph: 11px;
   --sg-col-w: 100px;
   --sg-pad: 8px;
   --sg-line: light-dark(#e3e6ea, #2a2f36);
@@ -233,7 +239,8 @@
 }
 
 /* The sort mark is an indicator inside a run of label text rather than a control the pointer aims
-   at, so it takes its own size and stays near the text it annotates. */
+   at, so it takes its own size and never `--sg-hit`. U+2191 inks 73 per cent of its em, so 11px
+   draws 8px of arrow beside a label the reader is already scanning. */
 [data-route="g"] .sg-head-cell[data-sort="asc"]::after,
 [data-route="g"] .sg-head-cell[data-sort="desc"]::after {
   flex: none;
@@ -258,15 +265,18 @@
   touch-action: none;
 }
 
-/* Tree indent. Depth is written once per row and read here by the one box ahead of the cells. */
+/* Tree indent. Depth is written once per row and read here by the one box ahead of the cells.
+   The box is `--sg-hit` and the mark inside it is `--sg-glyph`: a target and the thing drawn in it
+   are two jobs, and one token doing both is what put a 15px triangle in a 27px row. */
 [data-route="g"] .sg-expander {
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  inline-size: var(--sg-glyph);
-  /* `line-height: 1` is what keeps the box at one em: a compact row is 28px with a 1px border, so
-     a 24px glyph clears it and normal line height, around 1.2, would grow the row instead. */
+  inline-size: var(--sg-hit);
+  block-size: var(--sg-hit);
+  /* `line-height: 1` keeps the mark's line box off the row's height, so the 24px box is the only
+     thing the compact row's 27px of content has to clear. */
   font-size: var(--sg-glyph);
   line-height: 1;
   margin-inline-start: calc(var(--sg-depth) * var(--sg-indent));
@@ -279,8 +289,8 @@
   cursor: default;
 }
 
-/* U+25B6 and U+25BC rather than the small U+25B8 and U+25BE pair: the small triangles ink at 27
-   per cent of their em, so they stay 6px however far the box is scaled up. */
+/* U+25B6 and U+25BC rather than the small U+25B8 and U+25BE pair: the small triangles ink 27 per
+   cent of their em against these two at 61, so at a 16px mark they would draw 4px, not 10px. */
 [data-route="g"] .sg-row[data-open="false"] .sg-expander[data-leaf="false"]::before {
   content: "\25B6";
 }
@@ -342,6 +352,8 @@
   justify-content: center;
 }
 
+/* These three fill their cell, so the cell is already the target and `--sg-hit` is only the floor
+   under a column narrower than one. The mark inside is `--sg-glyph` like the expander's. */
 [data-route="g"] .sg-check,
 [data-route="g"] .sg-drag,
 [data-route="g"] .sg-detail-toggle {
@@ -350,6 +362,7 @@
   align-items: center;
   justify-content: center;
   block-size: 100%;
+  min-inline-size: var(--sg-hit);
   font-size: var(--sg-glyph);
   line-height: 1;
   cursor: pointer;

@@ -7,9 +7,9 @@ import { describe, expect, it } from "vitest"
 // The one file here that reads a laid-out box rather than a written property, so it is the one that
 // needs the stylesheet. Every other assertion below reads an inline property off a detached root.
 import "./theme.css"
-import type { ColumnDef } from "./0_types.js"
+import type { ColumnDef, GridState } from "./0_types.js"
 import { rowHeightVar, selectorFor } from "./3_paths.js"
-import { checkboxColumn, detailColumn, dragColumn } from "./5_columns.js"
+import { checkboxColumn, detailColumn, dragColumn, radioColumn } from "./5_columns.js"
 import { grid, ROW_HEIGHT } from "./8_grid.js"
 import { render } from "./10_render.js"
 import {
@@ -213,8 +213,19 @@ const mountWide = async (horizontal: boolean, scrollLeft: number) => {
 
 // The compact row is the tightest case a glyph has to fit: 28px with a 1px border, so 27px of
 // content. A glyph box that grew the row would move every offset the plan computed.
-describe("the glyph boxes inside a compact row", () => {
-  const mountGlyphs = () => {
+//
+// The pair asserted here is a target and a mark, and they are deliberately different numbers. One
+// token drove both until this block was rewritten, which is what put a 15px triangle in that 27px.
+const HIT_BOX = 24
+const MARK = 16
+
+const DENSITIES: readonly GridState["density"][] = ["compact", "standard", "comfortable"]
+
+describe("the glyph boxes inside a row", () => {
+  const mountGlyphs = (
+    density: GridState["density"] = "compact",
+    sort: GridState["sort"] = [],
+  ) => {
     const host = document.createElement("div")
     host.style.inlineSize = "600px"
     host.style.blockSize = "300px"
@@ -222,10 +233,10 @@ describe("the glyph boxes inside a compact row", () => {
     const g = grid<Row & { kids?: readonly Row[] }>({
       id: "glyphs",
       rows: [{ id: "a", name: "alice", kids: [{ id: "a/1", name: "one" }] }, { id: "b", name: "bob" }],
-      columns: [checkboxColumn(), dragColumn(), detailColumn(), { id: "name", flex: 1 }],
+      columns: [checkboxColumn(), radioColumn({ id: "pick" }), dragColumn(), detailColumn(), { id: "name", flex: 1 }],
       rowId: (it) => it.id,
       subRows: (it) => it.kids,
-      state: { density: "compact", virtualize: { vertical: false, horizontal: false } },
+      state: { density, sort, virtualize: { vertical: false, horizontal: false } },
     })
     const handle = render(g, host)
     return { host, release: () => { handle.stop(); host.remove() } }
@@ -240,26 +251,56 @@ describe("the glyph boxes inside a compact row", () => {
     view.release()
   })
 
-  it("sizes every glyph off one token, and each box clears the row it sits in", () => {
+  for (const density of DENSITIES) {
+    it(`draws the expander's box and its mark at different sizes under ${density}`, () => {
+      const view = mountGlyphs(density)
+      const glyph = view.host.querySelector(".sg-expander")
+      expect(glyph).not.toBe(null)
+      if (glyph === null) return
+      const style = getComputedStyle(glyph)
+      expect(style.fontSize).toBe(`${MARK}px`)
+      // `line-height: 1` keeps the mark's line box off the row: normal would ask for about 19px.
+      expect(style.lineHeight).toBe(`${MARK}px`)
+      // The box is the target and does not follow the mark, which is the whole split.
+      expect(style.inlineSize).toBe(`${HIT_BOX}px`)
+      expect(style.blockSize).toBe(`${HIT_BOX}px`)
+      expect(glyph.getBoundingClientRect().height).toBe(HIT_BOX)
+      expect(glyph.getBoundingClientRect().height).toBeGreaterThan(MARK)
+      // A target below 24px is one the pointer misses, whatever the row around it is.
+      expect(HIT_BOX).toBeGreaterThanOrEqual(24)
+      expect(heightsOf(view.host, ".sg-row").every((it) => it === ROW_HEIGHT[density])).toBe(true)
+      view.release()
+    })
+  }
+
+  it("draws every other mark at the same size, inside a box the pointer can still hit", () => {
     const view = mountGlyphs()
-    const boxes = [".sg-expander", ".sg-check", ".sg-drag", ".sg-detail-toggle"]
-    for (const selector of boxes) {
+    const marks = [".sg-check", ".sg-check-radio", ".sg-drag", ".sg-detail-toggle"]
+    for (const selector of marks) {
       const glyph = view.host.querySelector(selector)
       expect(glyph, selector).not.toBe(null)
       if (glyph === null) continue
-      expect(getComputedStyle(glyph).fontSize, selector).toBe("24px")
-      // `line-height: 1` is the whole reason 24px fits: normal line height would ask for 28.8px.
-      expect(getComputedStyle(glyph).lineHeight, selector).toBe("24px")
+      const style = getComputedStyle(glyph)
+      expect(style.fontSize, selector).toBe(`${MARK}px`)
+      expect(style.lineHeight, selector).toBe(`${MARK}px`)
+      // These three fill their cell, so the box is the row's height and never the mark's.
+      const box = glyph.getBoundingClientRect()
+      expect(box.height, selector).toBeGreaterThanOrEqual(MARK)
+      expect(box.width, selector).toBeGreaterThanOrEqual(HIT_BOX)
     }
     expect(heightsOf(view.host, ".sg-expander").every((it) => it <= ROW_HEIGHT.compact)).toBe(true)
     view.release()
   })
 
-  it("keeps the sort mark at text size rather than at control size", () => {
-    const view = mountGlyphs()
+  // Sorted, because the `::after` rule is gated on `data-sort` and an unsorted header answers with
+  // the inherited text size. The previous assertion read 16px off exactly that fallback.
+  it("keeps the sort mark smaller still, because it annotates a label rather than being a target", () => {
+    const view = mountGlyphs("compact", [{ field: "name", sort: "asc" }])
     const head = view.host.querySelector(selectorFor("header", { colId: "name" }))
-    expect(head).not.toBe(null)
-    expect(head === null ? "" : getComputedStyle(head, "::after").fontSize).toBe("16px")
+    expect(head?.getAttribute("data-sort")).toBe("asc")
+    const size = head === null ? "" : getComputedStyle(head, "::after").fontSize
+    expect(size).toBe("11px")
+    expect(Number.parseFloat(size)).toBeLessThan(MARK)
     view.release()
   })
 })
