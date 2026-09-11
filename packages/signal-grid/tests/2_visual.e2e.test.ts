@@ -12,7 +12,8 @@ import { fileURLToPath } from "node:url"
 import { build } from "vite"
 import { beforeAll, beforeEach, inject } from "vitest"
 import { describe, expect, test } from "@hafley66/vitest-playwright"
-import { colWidthVar, selectorFor } from "../src/3_paths.js"
+import { selectorFor } from "../src/3_paths.js"
+import { SG_INLINE_TRACKS } from "../src/9_css.js"
 import { beat, caption, cursor, step } from "./helpers/record.js"
 
 // vitest 4 re-exports `ProvidedContext` from an internal chunk, so the plugin's `declare module`
@@ -448,7 +449,8 @@ describe.skipIf(base === undefined)("signal-grid on video", () => {
     const afterSize = await boxOf(sizeCell)
     expect(afterSize.width).toBe(240)
     expect((await widths()).size).toBe(240)
-    expect(await cssOf(GRID_ROOT, colWidthVar("size"))).toBe("240px")
+    // One string for the whole run, which is what `subgrid` reads: the resized column is track 2.
+    expect(await cssOf(GRID_ROOT, SG_INLINE_TRACKS)).toBe("220px 240px 140px 160px")
     expect((await boxOf(nameCell)).width).toBe(220)
     expect((await boxOf(nameCell)).x).toBe(beforeName.x)
     expect((await boxOf(kindCell)).width).toBe(140)

@@ -68,9 +68,12 @@ describe("what becomes a track", () => {
   })
 
   it("freezes a resized column at the width the drag committed", () => {
-    const { g, root, release } = mount([{ id: "name", flex: 1, minWidth: 80 }])
+    const { g, root, release } = mount([{ id: "name", flex: 1, minWidth: 80, maxWidth: 300 }])
+    expect(tracks(root)).toBe("minmax(80px, 300px)")
     g.dispatch({ phase: "change", type: "colWidth", colWidth: { name: 240 } })
-    expect(tracks(root)).toBe("minmax(80px, 240px)")
+    // One fixed track. A `minmax()` around it would leave the browser free to answer 80 or 300,
+    // which is the schema's sizing answering a question the drag already settled.
+    expect(tracks(root)).toBe("240px")
     release()
   })
 })

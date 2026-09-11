@@ -373,9 +373,8 @@ export const decodeVarId = (encoded: string): string =>
     String.fromCodePoint(Number.parseInt(hex, 16)),
   )
 
-// `h` and `r` are read from the same templates delegation reads, so renaming a segment renames its
-// variables in the same edit.
-export const colWidthVar = (colId: ColId): string => `--sg-${HEADER_SEGMENT}-w-${encodeVarId(colId)}`
+// `r` is read from the same template delegation reads. The column axis has no partner to this: a
+// width travels in the one `--sg-inline-tracks` string `src/9_css.ts` writes.
 export const rowHeightVar = (rowId: RowId): string => `--sg-${ROW_SEGMENT}-h-${encodeVarId(rowId)}`
 
 /** Tree indent. Written once per row, read by every cell in it. */

@@ -100,19 +100,22 @@ function tracksOf<TRow>(
   return [...plan.start.map(track), ...center, ...plan.end.map(track)]
 }
 
-/** A declared extent is a resize the user performed, so it takes the flex with it: a dragged
- * column stays put rather than resuming the competition for leftover space. */
+/** A declared extent is a resize the user performed, so it answers alone and the track is that many
+ * pixels. The bounds belong to the gesture, which clamped to them before writing the extent. */
 function trackFor<TRow>(
   key: string,
   declared: number | undefined,
   def: ColumnDef<TRow> | undefined,
 ): TrackColumn {
+  // Carrying `minWidth` through would put the extent in the high slot of a `minmax()` whose low slot
+  // outranks it, and the column would paint the schema's number while the state held the drag's.
+  if (declared !== undefined) return { id: key, width: declared }
   return {
     id: key,
-    width: declared ?? def?.width,
+    width: def?.width,
     minWidth: def?.minWidth,
     maxWidth: def?.maxWidth,
-    flex: declared === undefined ? def?.flex : undefined,
+    flex: def?.flex,
   }
 }
 
