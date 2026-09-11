@@ -2,7 +2,7 @@
 // `flex` is on two of the three columns so the width resolution is visible without any state.
 import { grid, render, type ColumnDef, type Grid } from "../src/index.js"
 import source from "./1_flat_list.ts?raw"
-import { reactMount } from "./0_react.js"
+import { flatListReact } from "./1_flat_list_react.js"
 import type { Example } from "./0_types.js"
 
 interface Row {
@@ -29,7 +29,7 @@ const COLUMNS: readonly ColumnDef<Row>[] = [
 
 // One factory for both renderings. A second `grid()` call with the same fields written again would
 // make the two panels a claim about the signals layer rather than evidence of it.
-const open = (): Grid<Row> =>
+export const open = (): Grid<Row> =>
   grid<Row>({ id: "flat-list", rows: ROWS, columns: COLUMNS, rowId: (row) => row.id })
 
 export const flatList: Example = {
@@ -50,5 +50,5 @@ export const flatList: Example = {
       root.remove()
     }
   },
-  alternate: { label: "React", mount: reactMount(open, 320) },
+  alternate: flatListReact,
 }

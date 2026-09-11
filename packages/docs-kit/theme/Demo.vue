@@ -2,10 +2,12 @@
 // An edited demo keeps its `import` lines and the site's embed table answers them from the copy of
 // the library this page already loaded, so the editor's text stays the file you would commit.
 import { javascript } from "@codemirror/lang-javascript"
+import { HighlightStyle, syntaxHighlighting } from "@codemirror/language"
+import { tags } from "@lezer/highlight"
 import { EditorView, basicSetup } from "codemirror"
 import { transform } from "sucrase"
 import { onMounted, onUnmounted, ref, shallowRef, watch } from "vue"
-import type { Example } from "../src/0_types.ts"
+import type { AltRenderer, Example } from "../src/0_types.ts"
 import type { Evaluated } from "../src/2_embeds.ts"
 import { exampleOf } from "../src/2_embeds.ts"
 import { fps, retainMeters, type Meters, type Timing } from "../src/3_meters.ts"
@@ -23,7 +25,13 @@ const renderer = ref<"dom" | "alternate">("dom")
 const error = ref<string | null>(null)
 const overBudget = ref<number | null>(null)
 const edited = ref(false)
-const text = ref(example?.source ?? "")
+
+/** The file behind whichever button the strip is on. A panel printing the other one would make the
+ * button a claim about code the reader cannot see. */
+const sourceFor = (which: "dom" | "alternate"): string =>
+  (which === "alternate" ? example?.alternate?.source : undefined) ?? example?.source ?? ""
+
+const text = ref(sourceFor("dom"))
 
 let view: EditorView | null = null
 let meters: Meters | null = null
@@ -58,9 +66,32 @@ function mountExample(into: HTMLElement, subject: Example): () => void {
   return (chosen ?? subject).mount(into)
 }
 
+const isAlternate = (value: unknown): value is AltRenderer =>
+  typeof value === "object" &&
+  value !== null &&
+  typeof (value as AltRenderer).label === "string" &&
+  typeof (value as AltRenderer).mount === "function"
+
+/** The editor holds the file for the button the strip is on, so an edited second rendering exports a
+ * label and a mount with no `id`, and `exampleOf` would find nothing to run. */
+function mountEdited(into: HTMLElement, exports: Readonly<Record<string, unknown>>): (() => void) | null {
+  if (renderer.value === "alternate") {
+    const alternate = Object.values(exports).find(isAlternate)
+    if (alternate !== undefined) {
+      meters?.reset()
+      return alternate.mount(into)
+    }
+  }
+  const found = exampleOf(exports)
+  return found === undefined ? null : mountExample(into, found)
+}
+
+// `jsx` is on for every demo rather than only for a second rendering: a package may write one in a
+// syntax the TypeScript parser alone rejects, and the transform is inert on a file holding none.
 function transpile(source: string): { code: string } | { error: string } {
+  const options = { transforms: ["jsx", "typescript", "imports"], jsxRuntime: "automatic" } as const
   try {
-    return { code: transform(source, { transforms: ["typescript", "imports"], filePath: `${props.id}.ts` }).code }
+    return { code: transform(source, { ...options, filePath: `${props.id}.tsx` }).code }
   } catch (thrown) {
     return { error: messageOf(thrown) }
   }
@@ -76,9 +107,13 @@ function runEdited(code: string): void {
   try {
     const evaluated = host.evaluate(code, text.value)
     sandbox = evaluated
-    const found = exampleOf(evaluated.exports)
-    if (found === undefined) error.value = "No example is exported. Export a value with an `id` and a `mount`."
-    else mountTeardown = mountExample(into, found)
+    mountTeardown = mountEdited(into, evaluated.exports)
+    if (mountTeardown === null) {
+      error.value =
+        renderer.value === "alternate"
+          ? "No rendering is exported. Export a value with a `label` and a `mount`."
+          : "No example is exported. Export a value with an `id` and a `mount`."
+    }
   } catch (thrown) {
     error.value = messageOf(thrown)
   }
@@ -115,13 +150,26 @@ const runNow = (): void => {
   runFromEditor()
 }
 
-// The editor's text survives the switch, so a reader who changed a column and then asked for the
-// other renderer sees their own change drawn twice rather than the committed file drawn twice.
+/** Puts a committed file in the editor without the listener reading it as the reader's keystroke. */
+function load(insert: string): void {
+  text.value = insert
+  if (view === null) return
+  quiet = true
+  view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert } })
+  quiet = false
+}
+
+// An edit is the reader's, so it survives the switch and their own change is what gets drawn twice.
+// An unedited panel follows the button, since one file printed under both answers with the wrong one.
 const pick = (next: "dom" | "alternate"): void => {
   if (renderer.value === next) return
   renderer.value = next
-  if (edited.value) runFromEditor()
-  else runOriginal()
+  if (edited.value) {
+    runFromEditor()
+    return
+  }
+  load(sourceFor(next))
+  runOriginal()
 }
 
 // A half-typed line fails to parse, so what is on screen keeps running until the next edit parses.
@@ -132,17 +180,62 @@ const schedule = (): void => {
 }
 
 function reset(): void {
-  if (example === undefined || view === null) {
-    runOriginal()
-    return
-  }
-  quiet = true
-  view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: example.source } })
-  quiet = false
-  text.value = example.source
+  load(sourceFor(renderer.value))
   window.clearTimeout(debounce)
   runOriginal()
 }
+
+/** Every colour is a VitePress variable rather than a literal, which is what makes the editor follow
+ * the site's light and dark toggle with nothing in JavaScript watching for the class to change. */
+const siteTheme = EditorView.theme({
+  "&": { color: "var(--vp-c-text-1)", backgroundColor: "var(--vp-code-block-bg)" },
+  ".cm-content": { caretColor: "var(--vp-c-brand-1)" },
+  ".cm-cursor, .cm-dropCursor": { borderInlineStartColor: "var(--vp-c-brand-1)" },
+  "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {
+    backgroundColor: "var(--vp-c-brand-soft)",
+  },
+  ".cm-activeLine": { backgroundColor: "var(--vp-c-default-soft)" },
+  ".cm-gutters": {
+    backgroundColor: "var(--vp-code-block-bg)",
+    color: "var(--vp-c-text-3)",
+    borderInlineEnd: "1px solid var(--vp-c-divider)",
+  },
+  ".cm-activeLineGutter": { backgroundColor: "transparent", color: "var(--vp-c-brand-1)" },
+  ".cm-foldPlaceholder": { backgroundColor: "transparent", border: "none", color: "var(--vp-c-text-3)" },
+  ".cm-panels, .cm-tooltip": {
+    backgroundColor: "var(--vp-c-bg-elv)",
+    color: "var(--vp-c-text-1)",
+    border: "1px solid var(--vp-c-divider)",
+  },
+  ".cm-tooltip-autocomplete > ul > li[aria-selected]": {
+    backgroundColor: "var(--vp-c-brand-soft)",
+    color: "var(--vp-c-text-1)",
+  },
+  ".cm-searchMatch": { backgroundColor: "var(--vp-c-yellow-soft)" },
+  ".cm-selectionMatch": { backgroundColor: "var(--vp-c-default-soft)" },
+})
+
+/** Six hues VitePress redefines on both sides of the toggle, so a token keeps its role in either. */
+const siteHighlight = HighlightStyle.define([
+  { tag: [tags.comment, tags.lineComment, tags.blockComment, tags.docComment], color: "var(--vp-c-text-3)", fontStyle: "italic" },
+  {
+    tag: [tags.keyword, tags.modifier, tags.operatorKeyword, tags.controlKeyword, tags.moduleKeyword, tags.self],
+    color: "var(--vp-c-purple-1)",
+  },
+  { tag: [tags.string, tags.special(tags.string), tags.regexp, tags.escape], color: "var(--vp-c-green-1)" },
+  { tag: [tags.number, tags.bool, tags.null, tags.atom, tags.unit], color: "var(--vp-c-orange-1)" },
+  { tag: [tags.typeName, tags.className, tags.namespace, tags.typeOperator], color: "var(--vp-c-yellow-1)" },
+  {
+    tag: [tags.function(tags.variableName), tags.function(tags.definition(tags.variableName)), tags.labelName, tags.macroName],
+    color: "var(--vp-c-brand-1)",
+  },
+  {
+    tag: [tags.propertyName, tags.attributeName, tags.variableName, tags.definition(tags.variableName)],
+    color: "var(--vp-c-text-1)",
+  },
+  { tag: [tags.operator, tags.punctuation, tags.separator, tags.bracket, tags.derefOperator], color: "var(--vp-c-text-2)" },
+  { tag: tags.invalid, color: "var(--vp-c-red-1)" },
+])
 
 const openEditor = (): void => {
   tab.value = "edit"
@@ -153,6 +246,8 @@ const openEditor = (): void => {
     parent: into,
     extensions: [
       basicSetup,
+      siteTheme,
+      syntaxHighlighting(siteHighlight),
       javascript({ typescript: true }),
       EditorView.updateListener.of((update) => {
         if (!update.docChanged || quiet) return

@@ -3,7 +3,7 @@
 // first cell run, so no column is needed to make a row openable.
 import { grid, render, type ColumnDef, type Grid } from "../src/index.js"
 import source from "./3_tree_expand.ts?raw"
-import { reactMount } from "./0_react.js"
+import { treeExpandReact } from "./3_tree_expand_react.js"
 import type { Example } from "./0_types.js"
 
 interface Node {
@@ -34,7 +34,7 @@ const COLUMNS: readonly ColumnDef<Node>[] = [
 
 // One factory and one seed for both renderings. The expander is a glyph carrying `expandAttrs()` in
 // either panel, so what opens a branch is the same epic reading the same `expanded` record.
-const open = (): Grid<Node> =>
+export const open = (): Grid<Node> =>
   grid<Node>({
     id: "tree-expand",
     rows: TREE,
@@ -62,5 +62,5 @@ export const treeExpand: Example = {
       root.remove()
     }
   },
-  alternate: { label: "React", mount: reactMount(open, 340) },
+  alternate: treeExpandReact,
 }
