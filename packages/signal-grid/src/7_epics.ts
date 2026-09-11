@@ -20,6 +20,7 @@ import {
 import {
   cellId,
   cellParts,
+  isPlainClick,
   type CellId,
   type ColId,
   type ColumnDef,
@@ -58,10 +59,6 @@ const intents = <TRow, T extends GridIntent["type"]>(
 
 const emitted = <TRow>() =>
   filter((action: GridAction<TRow> | null): action is GridAction<TRow> => action !== null)
-
-/** A plain click: no chord, primary button. Anything else belongs to another gesture. */
-export const isPlainClick = (mods: Modifiers): boolean =>
-  !mods.alt && !mods.ctrl && !mods.meta && !mods.shift && mods.button === 0
 
 const clamp = (value: number, low: number, high: number): number =>
   value < low ? low : value > high ? high : value
@@ -123,34 +120,65 @@ export function expandOnExpanderClick<TRow>(): GridEpic<TRow> {
 
 // --- Select -----------------------------------------------------------------
 
+/** What a click with no chord means. The gutter toggles the row it names; the row body replaces the
+ * whole selection, which is what a list with no gutter does. */
+type PlainSelect = (
+  current: Readonly<Record<RowId, boolean>>,
+  row: RowId,
+) => Record<RowId, boolean>
+
+const toggleOne: PlainSelect = (current, row) => ({ ...current, [row]: current[row] !== true })
+
+const onlyOne: PlainSelect = (_current, row) => ({ [row]: true })
+
+// One gesture, two doors. The range anchor is gesture state, not grid state: it is not in the URL,
+// and a reload has no last click to remember, so it is a closure per epic instance.
+function rowPicker<TRow>(
+  state: Signal<GridState>,
+  ctx: GridEpicCtx<TRow>,
+  plain: PlainSelect,
+): (pick: { readonly row: RowId; readonly mods: Modifiers }) => GridAction<TRow> {
+  let anchor: RowId | null = null
+  return (pick) => {
+    const current = state.rowSelection.$()
+    const order = ctx.view.flat.$().map((it) => it.key)
+    const from = anchor === null ? -1 : order.indexOf(anchor)
+    const to = order.indexOf(pick.row)
+    if (pick.mods.shift && from !== -1 && to !== -1) {
+      const rowSelection: Record<RowId, boolean> = { ...current }
+      for (let index = Math.min(from, to); index <= Math.max(from, to); index++) {
+        const key = order[index]
+        if (key !== undefined) rowSelection[key] = true
+      }
+      return { phase: "change", type: "rowSelection", rowSelection }
+    }
+    anchor = pick.row
+    // A radio column means one row rather than one more row, so single select replaces the map
+    // instead of extending it. Read from the schema because a checkbox intent carries no column.
+    if (rowSelectionMode(ctx.columns.$()) === "single") {
+      return { phase: "change", type: "rowSelection", rowSelection: { [pick.row]: true } }
+    }
+    const chord = pick.mods.ctrl || pick.mods.meta
+    const rowSelection = chord ? toggleOne(current, pick.row) : plain(current, pick.row)
+    return { phase: "change", type: "rowSelection", rowSelection }
+  }
+}
+
 export function selectRowsOnCheckboxClick<TRow>(): GridEpic<TRow> {
   return (actions$, state, ctx) => {
-    // The range anchor is gesture state, not grid state: it is not in the URL, and a reload has no
-    // last click to remember.
-    let anchor: RowId | null = null
-    return intents<TRow, "checkbox.click">(actions$, "checkbox.click").pipe(
-      map((intent): GridAction<TRow> => {
-        const current = state.rowSelection.$()
-        const order = ctx.view.flat.$().map((it) => it.key)
-        const from = anchor === null ? -1 : order.indexOf(anchor)
-        const to = order.indexOf(intent.row)
-        if (intent.mods.shift && from !== -1 && to !== -1) {
-          const rowSelection: Record<RowId, boolean> = { ...current }
-          for (let index = Math.min(from, to); index <= Math.max(from, to); index++) {
-            const key = order[index]
-            if (key !== undefined) rowSelection[key] = true
-          }
-          return { phase: "change", type: "rowSelection", rowSelection }
-        }
-        anchor = intent.row
-        // A radio column means one row, not one more row, so single select replaces the map
-        // rather than extending it. Read from the schema because the intent carries no column.
-        if (rowSelectionMode(ctx.columns.$()) === "single") {
-          return { phase: "change", type: "rowSelection", rowSelection: { [intent.row]: true } }
-        }
-        const rowSelection = { ...current, [intent.row]: current[intent.row] !== true }
-        return { phase: "change", type: "rowSelection", rowSelection }
-      }),
+    const pick = rowPicker<TRow>(state, ctx, toggleOne)
+    return intents<TRow, "checkbox.click">(actions$, "checkbox.click").pipe(map(pick))
+  }
+}
+
+/** Selection for a schema with no checkbox column. Opt-in: a cell holding a link or a button wants
+ * that click, and `interactive` is the intent saying one took it. @feature row.select */
+export function selectRowsOnCellClick<TRow>(): GridEpic<TRow> {
+  return (actions$, state, ctx) => {
+    const pick = rowPicker<TRow>(state, ctx, onlyOne)
+    return intents<TRow, "cell.click">(actions$, "cell.click").pipe(
+      filter((it) => !it.interactive && it.mods.button === 0),
+      map(pick),
     )
   }
 }

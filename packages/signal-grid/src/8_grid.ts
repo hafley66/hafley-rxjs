@@ -17,7 +17,7 @@ import {
   type Sizer,
   type Spacers,
 } from "./4_slice.js"
-import { gridDom, intentOf } from "./3_paths.js"
+import { browserOwnsClick, gridDom, intentOf } from "./3_paths.js"
 import {
   collapseToOneEntry,
   coveredBy,
@@ -769,7 +769,9 @@ function bindRoot<TRow>(
         .subscribe((it) => dispatch(to(it))),
     )
   }
-  on(dom.cell.route.click, intentOf["cell.click"])
+  // A command-click, a shift-click, or a middle-click on a link opens it somewhere else, and an
+  // epic acting on a row the user is opening in another tab is acting on the wrong screen.
+  on(dom.cell.route.click.pipe(rxFilter((it) => !browserOwnsClick(it))), intentOf["cell.click"])
   on(dom.cell.route.pointerdown, intentOf["cell.pointerdown"])
   // `pointerenter` does not bubble, and delegation listens on the document, so the hover edge
   // arrives as `pointerover` and the route resolves it to the cell underneath.

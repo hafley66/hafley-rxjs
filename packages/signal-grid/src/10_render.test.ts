@@ -25,6 +25,7 @@ import {
   radioColumn,
   rowNumberColumn,
 } from "./5_columns.js"
+import { expandOnExpanderClick, selectRowsOnCellClick, type GridEpic } from "./7_epics.js"
 import { grid, type Grid } from "./8_grid.js"
 import { render, type RenderHandle } from "./10_render.js"
 import type { Slots } from "./0_types.js"
@@ -64,6 +65,8 @@ interface Options {
   readonly slots?: Slots<Row>
   readonly state?: Partial<GridState>
   readonly hold?: (made: Grid<Row>) => void
+  /** Absent installs `defaultEpics()`, which is what every test above the interaction ones wants. */
+  readonly epics?: readonly GridEpic<Row>[]
 }
 
 let root: HTMLElement
@@ -110,6 +113,7 @@ function mountGrid(options: Options = {}): Harness {
     state: { virtualize: { vertical: false, horizontal: false }, ...options.state },
     viewport: { top: 0, left: 0, width: 600, height: 400 },
     slots: options.slots,
+    epics: options.epics,
   })
   options.hold?.(made)
   const handle = render(made, root)
@@ -241,6 +245,44 @@ describe("built-in columns reach their routes", () => {
     const size = root.querySelector(selectorFor("header", { colId: "size" }))
     expect(name?.querySelector(".sg-head-label")?.getAttribute("data-route")).toBe("move")
     expect(size?.querySelector(".sg-head-label")?.hasAttribute("data-route")).toBe(false)
+  })
+})
+
+// --- what a real pointer reaches --------------------------------------------
+
+const click = (target: Element | null, init: MouseEventInit = {}): void => {
+  target?.dispatchEvent(new MouseEvent("click", { bubbles: true, ...init }))
+}
+
+describe("selecting by clicking the row", () => {
+  const clicking = (): readonly GridEpic<Row>[] => [selectRowsOnCellClick<Row>()]
+
+  test("a plain click replaces the selection and a ctrl-click adds one row", () => {
+    const { grid: made } = mountGrid({ epics: clicking() })
+    click(cellAt("a", "name"))
+    expect(made.state.rowSelection.$()).toEqual({ a: true })
+    click(cellAt("b", "size"), { ctrlKey: true })
+    expect(made.state.rowSelection.$()).toEqual({ a: true, b: true })
+    click(cellAt("b", "size"))
+    expect(made.state.rowSelection.$()).toEqual({ b: true })
+  })
+
+  test("a shift-click fills the range from the row the last plain click anchored", () => {
+    const { grid: made } = mountGrid({ epics: clicking() })
+    click(cellAt("a", "name"))
+    click(cellAt("b", "name"), { shiftKey: true })
+    expect(made.state.rowSelection.$()).toEqual({ a: true, b: true })
+  })
+
+  test("a click on the expander glyph opens the row and selects nothing", () => {
+    const { grid: made } = mountGrid({
+      rows: TREE,
+      subRows: (it) => it.kids,
+      epics: [expandOnExpanderClick<Row>(), ...clicking()],
+    })
+    click(root.querySelector(selectorFor("expander")))
+    expect(made.state.expanded.$()).toEqual({ a: true })
+    expect(made.state.rowSelection.$()).toEqual({})
   })
 })
 

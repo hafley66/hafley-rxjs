@@ -5,6 +5,7 @@ import { slash } from "@hafley66/path"
 import type { PathPart, ValuesOf } from "@hafley66/path"
 import { Dom, ROUTE_BOUNDARY_ATTR } from "@hafley66/xdom"
 import type { DomTemplate } from "@hafley66/xdom"
+import { isPlainClick } from "./0_types.js"
 import type { ColId, GridIntent, Modifiers, RowId } from "./0_types.js"
 
 // --- Templates --------------------------------------------------------------
@@ -204,6 +205,42 @@ export const modifiersOf = (event: MouseEvent | PointerEvent | KeyboardEvent): M
   button: "button" in event ? event.button : 0,
 })
 
+// A cell holds whatever a slot put in it, and some of that answers a click already. The cell itself
+// carries `data-route`, so a match has to sit strictly below the element the template matched.
+const INTERACTIVE = [
+  "a[href]",
+  "button",
+  "input",
+  "select",
+  "textarea",
+  '[contenteditable]:not([contenteditable="false"])',
+  "[data-route]",
+].join(", ")
+
+// The same guard `10_render.ts` uses on `Node`: these two run in a node test with no document, and
+// a bare `instanceof` against an undeclared global throws rather than answering false.
+const elementOf = (target: EventTarget | null | undefined): Element | null =>
+  typeof Element !== "undefined" && target instanceof Element ? target : null
+
+const interactiveIn = (event: {
+  readonly target: EventTarget | null
+  readonly delegateElement?: HTMLElement
+}): boolean => {
+  const host = event.delegateElement
+  const target = elementOf(event.target)
+  if (host === undefined || target === null) return false
+  const found = target.closest(INTERACTIVE)
+  return found !== null && found !== host && host.contains(found)
+}
+
+/** A modified click on a link is the browser's: a new tab, a download, a saved target. The grid
+ * raises nothing for it, and `8_grid.ts` is where that filter sits. */
+export const browserOwnsClick = (event: MouseEvent): boolean => {
+  const target = elementOf(event.target)
+  if (target === null) return false
+  return target.closest("a[href]") !== null && !isPlainClick(modifiersOf(event))
+}
+
 // Keyed by the intent type itself, so a renamed member of `GridIntent` breaks the key rather than
 // producing an intent nothing handles.
 /** @feature view.scroll */
@@ -214,6 +251,7 @@ export const intentOf = Object.freeze({
     row: event.params.rowId,
     col: event.params.colId,
     mods: modifiersOf(event),
+    interactive: interactiveIn(event),
   }),
   "cell.dblclick": (event: Delegated<CellValues, MouseEvent>): Intent<"cell.dblclick"> => ({
     phase: "intent",
@@ -221,6 +259,7 @@ export const intentOf = Object.freeze({
     row: event.params.rowId,
     col: event.params.colId,
     mods: modifiersOf(event),
+    interactive: interactiveIn(event),
   }),
   "cell.pointerdown": (event: Delegated<CellValues, PointerEvent>): Intent<"cell.pointerdown"> => ({
     phase: "intent",

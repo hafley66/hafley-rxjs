@@ -444,10 +444,16 @@ export type Modifiers = {
   readonly button: number
 }
 
-/** The DOM saw something. No state has moved. Every entry comes from an xdom path template. */
+/** A plain click: no chord, primary button. Declared beside `Modifiers`, because `3_paths.ts` and
+ * `7_epics.ts` both ask it and a second copy is a second answer. */
+export const isPlainClick = (mods: Modifiers): boolean =>
+  !mods.alt && !mods.ctrl && !mods.meta && !mods.shift && mods.button === 0
+
+/** The DOM saw something. No state has moved. Every entry comes from an xdom path template.
+ * `interactive` marks a click that landed on an anchor, a form control, or a routed glyph. */
 export type GridIntent =
-  | { phase: "intent"; type: "cell.click"; row: RowId; col: ColId; mods: Modifiers }
-  | { phase: "intent"; type: "cell.dblclick"; row: RowId; col: ColId; mods: Modifiers }
+  | { phase: "intent"; type: "cell.click"; row: RowId; col: ColId; mods: Modifiers; interactive: boolean }
+  | { phase: "intent"; type: "cell.dblclick"; row: RowId; col: ColId; mods: Modifiers; interactive: boolean }
   | { phase: "intent"; type: "cell.pointerdown"; row: RowId; col: ColId; mods: Modifiers }
   | { phase: "intent"; type: "cell.pointerenter"; row: RowId; col: ColId }
   | { phase: "intent"; type: "cell.contextmenu"; row: RowId; col: ColId; x: number; y: number; mods: Modifiers }

@@ -25,10 +25,10 @@ import {
 import { Signal } from "@hafley66/signals"
 import { cellId } from "./0_types.js"
 import type { ColumnDef, GridIntent, GridState, Modifiers } from "./0_types.js"
-import { rowNumberColumn } from "./5_columns.js"
+import { radioColumn, rowNumberColumn } from "./5_columns.js"
 import { grid, type Grid } from "./8_grid.js"
 import { rangeOf, selectionTest } from "./15_selection.js"
-import { selectColumnsOnDrag, type GridEpic } from "./7_epics.js"
+import { selectColumnsOnDrag, selectRowsOnCellClick, type GridEpic } from "./7_epics.js"
 
 describe("sortOnHeaderClick", () => {
   it("cycles one column asc, desc, off", () => {
@@ -122,6 +122,60 @@ describe("selectRowsOnCheckboxClick", () => {
     g.dispatch(checkboxClick("a"))
     g.dispatch(checkboxClick("b", { shift: true }))
     expect(g.state.rowSelection.$()).toEqual({ a: true, b: true })
+  })
+})
+
+describe("selectRowsOnCellClick", () => {
+  const clickGrid = (columns: readonly ColumnDef<Row>[] = COLUMNS): Grid<Row> =>
+    grid<Row>({
+      id: "t",
+      rows: FLAT,
+      columns,
+      rowId: (row) => row.id,
+      epics: [selectRowsOnCellClick<Row>()],
+    })
+
+  it("replaces the selection on a plain click", () => {
+    const { g } = withEpics(clickGrid())
+    g.dispatch(cellClick("c", "name"))
+    expect(g.state.rowSelection.$()).toEqual({ c: true })
+    g.dispatch(cellClick("a", "size"))
+    expect(g.state.rowSelection.$()).toEqual({ a: true })
+  })
+
+  it("toggles one row on ctrl and on meta, leaving the rest alone", () => {
+    const { g } = withEpics(clickGrid())
+    g.dispatch(cellClick("c", "name"))
+    g.dispatch(cellClick("a", "name", { ctrl: true }))
+    expect(g.state.rowSelection.$()).toEqual({ c: true, a: true })
+    g.dispatch(cellClick("a", "name", { meta: true }))
+    expect(g.state.rowSelection.$()).toEqual({ c: true, a: false })
+  })
+
+  it("fills the range from the anchor the last plain click left", () => {
+    const { g } = withEpics(clickGrid())
+    g.dispatch(cellClick("c", "name"))
+    g.dispatch(cellClick("b", "name", { shift: true }))
+    expect(g.state.rowSelection.$()).toEqual({ c: true, a: true, b: true })
+  })
+
+  it("selects one row at a time behind a radio column", () => {
+    const { g } = withEpics(clickGrid([radioColumn<Row>(), ...COLUMNS]))
+    g.dispatch(cellClick("c", "name"))
+    g.dispatch(cellClick("a", "name", { ctrl: true }))
+    expect(g.state.rowSelection.$()).toEqual({ a: true })
+  })
+
+  it("leaves a click that landed on a link or a glyph to the control", () => {
+    const { g } = withEpics(clickGrid())
+    g.dispatch(cellClick("c", "name", {}, true))
+    expect(g.state.rowSelection.$()).toEqual({})
+  })
+
+  it("leaves a secondary button alone", () => {
+    const { g } = withEpics(clickGrid())
+    g.dispatch(cellClick("c", "name", { button: 2 }))
+    expect(g.state.rowSelection.$()).toEqual({})
   })
 })
 
