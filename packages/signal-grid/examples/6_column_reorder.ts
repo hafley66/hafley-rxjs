@@ -2,7 +2,7 @@
 // `moveAttrs()`. Its route chain is `g/h/move`, which is the template `moveColumnOnHeaderDrag`
 // already listens on, so the epic needs no configuration to pick the gesture up.
 import { Subscription } from "rxjs"
-import { grid, moveAttrs, render } from "../src/index.js"
+import { grid, mountInView, moveAttrs, render, runWhenInView } from "../src/index.js"
 import type { ColumnDef, HeaderCtx, Renderable, Slot } from "../src/index.js"
 import source from "./6_column_reorder.ts?raw"
 import type { Example } from "./0_types.js"
@@ -47,7 +47,7 @@ export const columnReorder: Example = {
   summary: "Drag a header grip sideways; one colOrder array moves the header band and every row band.",
   feature: "col.order",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const box = document.createElement("div")
     const readout = document.createElement("code")
     const root = document.createElement("div")
@@ -64,13 +64,14 @@ export const columnReorder: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(g.view.cols.$.subscribe((cols) => {
+    subs.add(runWhenInView(g.view.cols.$, (cols) => {
       readout.textContent = cols.map((node) => node.key).join(" → ")
     }))
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       box.remove()
     }
-  },
+  }),
 }

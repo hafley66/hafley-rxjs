@@ -10,7 +10,9 @@ import {
   detailOnCellClick,
   grid,
   isDetailKey,
+  mountInView,
   render,
+  runWhenInView,
   type ColumnDef,
   type GridIntent,
   type GridState,
@@ -114,7 +116,7 @@ export const detailDemo: DemoRoute = {
     "lives in is a real node of the outer row axis, so the scroll spacer has to account for it.",
   features: ["row.detail", "row.tree", "row.expand", "row.sort", "col.pin", "col.resize", "view.slots", "view.virtualize.row"],
   defects: [],
-  mount,
+  mount: (hosts) => mountInView(hosts.stage, () => mount(hosts)),
 }
 
 function mount(hosts: DemoHosts): DemoHandle {
@@ -205,7 +207,7 @@ function mount(hosts: DemoHosts): DemoHandle {
   // A panel is tall and variable, so its key needs a height or the sizer measures it at the
   // density default and the scroll drifts by the difference on every open.
   subs.add(
-    orders.state.detail.$.subscribe((open) => {
+    runWhenInView(orders.state.detail.$, (open) => {
       const next = detailHeights(open, PANEL_HEIGHT)
       const current = orders.state.rowHeight.$()
       const keys = Object.keys(next)
@@ -222,13 +224,13 @@ function mount(hosts: DemoHosts): DemoHandle {
     action.type === "cell.click"
 
   subs.add(
-    orders.intent$
-      .pipe(
+    runWhenInView(
+      orders.intent$.pipe(
         filter(isCellClick),
         filter((it) => it.col === "region"),
         filter((it) => !loaded.has(it.row) && !pending.has(it.row)),
-      )
-      .subscribe((action) => {
+      ),
+      (action) => {
         pending.add(action.row)
         refresh()
         // A real fetch is what a consumer puts here; the delay is what makes the pending state visible.
@@ -314,7 +316,7 @@ function mount(hosts: DemoHosts): DemoHandle {
   const panelReadout = readout(orders, box)
   hosts.readout.append(panelReadout.el)
 
-  subs.add(orders.state.$.subscribe(refresh))
+  subs.add(runWhenInView(orders.state.$, refresh))
   refresh()
 
   return {

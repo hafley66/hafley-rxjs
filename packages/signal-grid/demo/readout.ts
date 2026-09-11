@@ -2,7 +2,7 @@
 // the action stream just carried. Every number is read off `g` rather than off a copy the demo
 // keeps, so a disagreement between this panel and the grid is a bug in the grid.
 import { Subscription } from "rxjs"
-import type { Grid, GridAction } from "../src/index.js"
+import { mountInView, runWhenInView, type Grid, type GridAction } from "../src/index.js"
 import { h } from "./controls.js"
 
 const LOG_LINES = 10
@@ -118,16 +118,20 @@ export function readout<TRow>(g: Grid<TRow>, mount: HTMLElement): Readout {
   }
 
   const subs = new Subscription()
-  subs.add(g.view.plan.$.subscribe(schedule))
-  subs.add(g.state.$.subscribe(schedule))
-  subs.add(
-    g.actions$.subscribe((action) => {
-      if (!logScroll && action.phase === "intent" && action.type === "viewport.scroll") return
-      history.unshift(summarize(action))
-      if (history.length > LOG_LINES) history.length = LOG_LINES
-      schedule()
-    }),
-  )
+  // The box being reported on is the gate, not the panel: a readout of a grid nobody is looking at
+  // is three streams and a frame per burst spent on numbers nobody reads.
+  mountInView(mount, () => {
+    subs.add(runWhenInView(g.view.plan.$, schedule))
+    subs.add(runWhenInView(g.state.$, schedule))
+    subs.add(
+      runWhenInView(g.actions$, (action) => {
+        if (!logScroll && action.phase === "intent" && action.type === "viewport.scroll") return
+        history.unshift(summarize(action))
+        if (history.length > LOG_LINES) history.length = LOG_LINES
+        schedule()
+      }),
+    )
+  })
 
   return {
     el,

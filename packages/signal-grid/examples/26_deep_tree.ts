@@ -1,7 +1,7 @@
 // Alt-click is the whole-branch modifier: one intent writes one `expanded` map covering every
 // descendant, so a 261-node subtree opens in a single change rather than 261 of them.
 import { fromEvent, Subscription, timer } from "rxjs"
-import { grid, render, type ColumnDef } from "../src/index.js"
+import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./26_deep_tree.ts?raw"
 import type { Example } from "./0_types.js"
 
@@ -50,7 +50,7 @@ export const deepTree: Example = {
     "A 1,305-node forest five levels deep; the button alt-clicks the first expander, which opens that entire branch in one state write and re-flattens the forest under it.",
   feature: "row.expand",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const box = document.createElement("div")
     const open = document.createElement("button")
     open.type = "button"
@@ -69,7 +69,7 @@ export const deepTree: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(g.view.flat.$.subscribe((it) => {
+    subs.add(runWhenInView(g.view.flat.$, (it) => {
       label.textContent = `${TOTAL} nodes in the forest, ${it.length} flattened`
     }))
     const altClick = (): void => {
@@ -78,12 +78,13 @@ export const deepTree: Example = {
         expander.dispatchEvent(new MouseEvent("click", { bubbles: true, altKey: true, button: 0 }))
       }
     }
-    subs.add(fromEvent(open, "click").subscribe(altClick))
-    subs.add(timer(120).subscribe(altClick))
+    subs.add(runWhenInView(fromEvent(open, "click"), altClick))
+    subs.add(runWhenInView(timer(120), altClick))
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       box.remove()
     }
-  },
+  }),
 }

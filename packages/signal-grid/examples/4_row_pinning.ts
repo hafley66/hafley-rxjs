@@ -1,7 +1,7 @@
 // Pinning lifts rows out of the scrolling run before paging and virtualization narrow it, which is
 // why a pinned row stays visible whatever page the rest of the relation is showing.
 import { fromEvent, Subscription } from "rxjs"
-import { grid, render, type ColumnDef, type Side } from "../src/index.js"
+import { grid, mountInView, render, runWhenInView, type ColumnDef, type Side } from "../src/index.js"
 import source from "./4_row_pinning.ts?raw"
 import type { Example } from "./0_types.js"
 
@@ -30,7 +30,7 @@ export const rowPinning: Example = {
   summary: "Two rows held at the top and one at the bottom while two hundred scroll between them.",
   feature: "row.pin",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const box = document.createElement("div")
     const bar = document.createElement("button")
     bar.type = "button"
@@ -49,7 +49,7 @@ export const rowPinning: Example = {
     const handle = render(g, root)
     const subs = new Subscription()
     subs.add(
-      fromEvent(bar, "click").subscribe(() => {
+      runWhenInView(fromEvent(bar, "click"), () => {
         const on = Object.keys(g.state.rowPinning.$()).length > 0
         g.state.rowPinning.$(on ? {} : PINNED)
       }),
@@ -57,7 +57,8 @@ export const rowPinning: Example = {
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       box.remove()
     }
-  },
+  }),
 }

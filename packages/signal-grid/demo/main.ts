@@ -1,7 +1,7 @@
 // The shell. Five routes over one set of boxes, each route a module that mounts a grid and hands
 // back the teardown, so switching route stops the previous grid before the next one is built.
 import { Route, Signal } from "@hafley66/signals"
-import { grid, render } from "../src/index.js"
+import { grid, mountInView, render, runWhenInView } from "../src/index.js"
 import "../src/theme.css"
 import "./demo.css"
 import { h, must } from "./controls.js"
@@ -201,12 +201,16 @@ applyTheme("dark")
 shell.style.setProperty("--demo-pad", "10px")
 shell.style.setProperty("--demo-indent", "16px")
 
-route.$.subscribe(() => {
-  const slug = slugOf()
-  if (slug === shown) return
-  shown = slug
-  show(slug)
-})
+// The shell is the gate for the router too, so the one place a raw subscription would be left in
+// this tree is the one place the rule would have to be argued for.
+mountInView(shell, () =>
+  runWhenInView(route.$, () => {
+    const slug = slugOf()
+    if (slug === shown) return
+    shown = slug
+    show(slug)
+  }),
+)
 
 window.__sg = { grid, render, Signal }
 window.__routes = ROUTES.map((it) => ({ slug: it.slug, title: it.title, features: it.features, defects: it.defects }))

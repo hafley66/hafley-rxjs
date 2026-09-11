@@ -2,7 +2,7 @@
 // key and the kernel is identical either way, which is the claim worth being able to break: turning
 // it off puts all fifty thousand row elements in the page, and the readout shows the cost.
 import { fromEvent, Subscription } from "rxjs"
-import { grid, render, type ColumnDef } from "../src/index.js"
+import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./11_virtualization.ts?raw"
 import type { Example } from "./0_types.js"
 
@@ -29,7 +29,7 @@ export const virtualization: Example = {
   summary: "Fifty thousand rows recycle through a bounded document; the toggle renders all of them instead.",
   feature: "view.virtualize.row",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const box = document.createElement("div")
     const toggle = document.createElement("button")
     toggle.type = "button"
@@ -47,20 +47,21 @@ export const virtualization: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(g.view.plan.$.subscribe((plan) => {
+    subs.add(runWhenInView(g.view.plan.$, (plan) => {
       const on = g.state.virtualize.vertical.$()
       toggle.textContent = on ? "virtualize: on" : "virtualize: off"
       label.textContent = `${ROWS.length} rows in the model, ${plan.center.length} rendered`
     }))
     subs.add(
-      fromEvent(toggle, "click").subscribe(() =>
+      runWhenInView(fromEvent(toggle, "click"), () =>
         g.state.virtualize.vertical.$(!g.state.virtualize.vertical.$()),
       ),
     )
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       box.remove()
     }
-  },
+  }),
 }

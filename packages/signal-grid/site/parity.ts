@@ -3,7 +3,9 @@
 import { Signal } from "@hafley66/signals"
 import {
   grid,
+  mountInView,
   render,
+  runWhenInView,
   type CellCtx,
   type ColumnDef,
   type GridState,
@@ -361,13 +363,15 @@ export function mountParity(doc: HTMLElement): ParityMount | null {
   }
   gridHost.addEventListener("keydown", onKey)
 
-  const countSub = rows.$.subscribe((visible) => {
-    count.textContent = `${visible.length} of ${all.length} features. Click a header to sort, shift-click to add a second key.`
-  })
+  const stopCount = mountInView(gridHost, () =>
+    runWhenInView(rows.$, (visible) => {
+      count.textContent = `${visible.length} of ${all.length} features. Click a header to sort, shift-click to add a second key.`
+    }),
+  )
 
   return {
     teardown: () => {
-      countSub.unsubscribe()
+      stopCount()
       observer.disconnect()
       if (scroll instanceof HTMLElement) scroll.removeEventListener("scroll", onScroll)
       gridHost.removeEventListener("keydown", onKey)

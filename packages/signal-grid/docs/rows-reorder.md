@@ -18,7 +18,7 @@ the same gesture that resizes a column and moves a header, with a different hit 
 A committed drag emits an effect and writes nothing. Your code owns the order.
 
 ```ts
-g.effect$.subscribe((it) => {
+runWhenInView(g.effect$, (it) => {
   if (it.type === "reorderRow") rows.$(moved(rows.$(), it.row, it.index))
 })
 ```

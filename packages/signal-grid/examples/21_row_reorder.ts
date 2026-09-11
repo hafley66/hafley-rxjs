@@ -3,7 +3,7 @@
 // effect names the row and the row it should land before, and the consumer applies it.
 import { Subscription } from "rxjs"
 import { Signal } from "@hafley66/signals"
-import { dragColumn, grid, render, type ColumnDef } from "../src/index.js"
+import { dragColumn, grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./21_row_reorder.ts?raw"
 import type { Example } from "./0_types.js"
 
@@ -30,7 +30,7 @@ export const rowReorder: Example = {
   summary: "Drag the handle in the first column; the reorderRow effect rewrites the rows signal.",
   feature: "row.order",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const root = document.createElement("div")
     root.style.blockSize = "300px"
     host.append(root)
@@ -44,7 +44,7 @@ export const rowReorder: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(g.effect$.subscribe((effect) => {
+    subs.add(runWhenInView(g.effect$, (effect) => {
       if (effect.type !== "reorderRow") return
       const current = rows.$()
       const moved = current.find((row) => row.id === effect.row)
@@ -57,7 +57,8 @@ export const rowReorder: Example = {
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       root.remove()
     }
-  },
+  }),
 }

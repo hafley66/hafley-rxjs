@@ -1,7 +1,7 @@
 // Two writers race on purpose: the sort key flips every 200 ms while the scroll box moves every
 // 60 ms, so `sort`, `flatten` and `plan` all re-run against a viewport that never settles.
 import { interval, Subscription } from "rxjs"
-import { grid, render, type ColumnDef, type SortModel } from "../src/index.js"
+import { grid, mountInView, render, runWhenInView, type ColumnDef, type SortModel } from "../src/index.js"
 import source from "./27_sort_churn.ts?raw"
 import type { Example } from "./0_types.js"
 
@@ -47,7 +47,7 @@ export const sortChurn: Example = {
     "Twenty thousand rows re-sorted every 200 ms through four different keys while the viewport walks the scroll range, which is the worst case for the sort and flatten stages.",
   feature: "row.sort",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const box = document.createElement("div")
     const label = document.createElement("code")
     const root = document.createElement("div")
@@ -65,16 +65,16 @@ export const sortChurn: Example = {
     const handle = render(g, root)
     const subs = new Subscription()
     let writes = 0
-    subs.add(g.state.sort.$.subscribe((it) => {
+    subs.add(runWhenInView(g.state.sort.$, (it) => {
       const first = it[0]
       label.textContent = `${rows.length} rows, ${writes} sort writes, key ${first === undefined ? "none" : `${first.field} ${first.sort}`}`
     }))
-    subs.add(interval(200).subscribe(() => {
+    subs.add(runWhenInView(interval(200), () => {
       writes++
       g.state.sort.$(KEYS[writes % KEYS.length] ?? [])
     }))
     let step = 0
-    subs.add(interval(60).subscribe(() => {
+    subs.add(runWhenInView(interval(60), () => {
       const scroll = root.querySelector(".sg-scroll")
       if (!(scroll instanceof HTMLElement)) return
       step++
@@ -84,7 +84,8 @@ export const sortChurn: Example = {
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       box.remove()
     }
-  },
+  }),
 }

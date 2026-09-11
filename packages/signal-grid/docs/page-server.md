@@ -46,10 +46,10 @@ g.query.$()
 // { sort, group, page: { mode, index, size, total }, expand: null }
 ```
 
-Driving a fetch is subscribing to it.
+Driving a fetch is running the descriptor through the view gate.
 
 ```ts
-g.query.$.subscribe((it) => fetchPage(it).then((page) => rows.$(page.rows)))
+runWhenInView(g.query.$, (it) => fetchPage(it).then((page) => rows.$(page.rows)))
 ```
 
 The total is copied in from `rowCount`, so the page descriptor is complete without a second read.

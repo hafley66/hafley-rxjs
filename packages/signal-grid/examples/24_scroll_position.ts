@@ -2,7 +2,7 @@
 // kernel reads rather than an event the consumer has to relay. Writing `scrollTop` on that box is
 // the whole of scroll-into-view: the plan re-windows from the signal on the next frame.
 import { fromEvent, Subscription } from "rxjs"
-import { grid, render, ROW_HEIGHT, type ColumnDef } from "../src/index.js"
+import { grid, mountInView, render, ROW_HEIGHT, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./24_scroll_position.ts?raw"
 import type { Example } from "./0_types.js"
 
@@ -31,7 +31,7 @@ export const scrollPosition: Example = {
   summary: "A button scrolls row nine hundred into view and the viewport readout follows the box.",
   feature: "view.scroll",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const box = document.createElement("div")
     const jump = document.createElement("button")
     jump.type = "button"
@@ -44,17 +44,18 @@ export const scrollPosition: Example = {
     const g = grid<Row>({ id: "scroll-position", rows: ROWS, columns: COLUMNS, rowId: (row) => row.id })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(g.viewport.$.subscribe((viewport) => {
+    subs.add(runWhenInView(g.viewport.$, (viewport) => {
       label.textContent = `top ${Math.round(viewport.top)}, height ${Math.round(viewport.height)}`
     }))
-    subs.add(fromEvent(jump, "click").subscribe(() => {
+    subs.add(runWhenInView(fromEvent(jump, "click"), () => {
       const scroll = root.querySelector(".sg-scroll")
       if (scroll instanceof HTMLElement) scroll.scrollTop = TARGET * ROW_HEIGHT[g.state.density.$()]
     }))
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       box.remove()
     }
-  },
+  }),
 }

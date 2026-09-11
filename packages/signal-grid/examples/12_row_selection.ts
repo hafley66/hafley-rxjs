@@ -4,7 +4,7 @@
 // `g/r/c/check` and matches no declared template. One consumer-owned listener dispatches the
 // intent instead, and `selectRowsOnCheckboxClick` then supplies the toggle and the shift range.
 import { fromEvent, Subscription } from "rxjs"
-import { checkboxColumn, grid, modifiersOf, render, type ColumnDef, type Grid } from "../src/index.js"
+import { checkboxColumn, grid, modifiersOf, mountInView, render, runWhenInView, type ColumnDef, type Grid } from "../src/index.js"
 import source from "./12_row_selection.ts?raw"
 import type { Example } from "./0_types.js"
 
@@ -39,7 +39,7 @@ export const rowSelection: Example = {
   summary: "Click a mark to toggle a row, shift-click to fill the range; the header glyph is a live signal.",
   feature: "row.select",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const root = document.createElement("div")
     root.style.blockSize = "320px"
     host.append(root)
@@ -54,7 +54,7 @@ export const rowSelection: Example = {
     live = g
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(fromEvent<MouseEvent>(root, "click").subscribe((event) => {
+    subs.add(runWhenInView(fromEvent<MouseEvent>(root, "click"), (event) => {
       const target = event.target
       if (!(target instanceof Element)) return
       const row = target.closest(".example-check")?.closest("[data-route='r']")
@@ -65,7 +65,8 @@ export const rowSelection: Example = {
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       root.remove()
     }
-  },
+  }),
 }

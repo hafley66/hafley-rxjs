@@ -2,7 +2,7 @@
 // second code path. `plan.pageCount` is reported off the whole center run, which is what lets a
 // pager know how many pages exist while only one page is windowed.
 import { fromEvent, Subscription } from "rxjs"
-import { grid, render, type ColumnDef } from "../src/index.js"
+import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./9_pagination.ts?raw"
 import type { Example } from "./0_types.js"
 
@@ -31,7 +31,7 @@ export const pagination: Example = {
   summary: "Twelve rows at a time out of one hundred and thirty-seven, with the page count read off the plan.",
   feature: "page.paginate",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const box = document.createElement("div")
     const previous = document.createElement("button")
     const next = document.createElement("button")
@@ -53,22 +53,24 @@ export const pagination: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    let pages = 1
-    subs.add(g.view.plan.$.subscribe((plan) => {
-      pages = Math.max(1, plan.pageCount)
-      label.textContent = `page ${g.state.page.$().index + 1} of ${pages}`
+    // Read on demand, so the bound the stepper clamps against holds whether or not the label ever
+    // painted. A count carried out of an effect reads 1 for a pager nobody has scrolled to yet.
+    const pages = (): number => Math.max(1, g.view.plan.$().pageCount)
+    subs.add(runWhenInView(g.view.plan.$, () => {
+      label.textContent = `page ${g.state.page.$().index + 1} of ${pages()}`
     }))
     const step = (delta: number): void => {
       const page = g.state.page.$()
-      const index = Math.min(pages - 1, Math.max(0, page.index + delta))
+      const index = Math.min(pages() - 1, Math.max(0, page.index + delta))
       if (index !== page.index) g.state.page.$({ ...page, index })
     }
-    subs.add(fromEvent(previous, "click").subscribe(() => step(-1)))
-    subs.add(fromEvent(next, "click").subscribe(() => step(1)))
+    subs.add(runWhenInView(fromEvent(previous, "click"), () => step(-1)))
+    subs.add(runWhenInView(fromEvent(next, "click"), () => step(1)))
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       box.remove()
     }
-  },
+  }),
 }

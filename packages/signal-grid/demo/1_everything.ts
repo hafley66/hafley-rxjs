@@ -8,9 +8,11 @@ import {
   defaultState,
   grid,
   isGroupKey,
+  mountInView,
   moveAttrs,
   pinningFor,
   render,
+  runWhenInView,
   ROW_HEIGHT,
   rowNumberColumn,
   type CellCtx,
@@ -116,7 +118,9 @@ export const everythingDemo: DemoRoute = {
     "ColumnDef.pin never seeds colPinning: this route calls pinningFor() itself.",
     "ColumnDef.movable is read by the renderer but absent from the type, so the move grip is stamped by a header slot.",
   ],
-  mount,
+  // The stage is the gate for everything the route opens, so `mount` names the host once and every
+  // `runWhenInView` below it carries a source alone.
+  mount: (hosts) => mountInView(hosts.stage, () => mount(hosts)),
 }
 
 function mount(hosts: DemoHosts): DemoHandle {
@@ -590,10 +594,10 @@ function mount(hosts: DemoHosts): DemoHandle {
     viewGroup.refresh()
   }
 
-  subs.add(files.state.$.subscribe(() => refresh()))
-  subs.add(shape.$.subscribe(() => refresh()))
+  subs.add(runWhenInView(files.state.$, () => refresh()))
+  subs.add(runWhenInView(shape.$, () => refresh()))
   subs.add(
-    files.state.listView.$.subscribe((on: boolean) =>
+    runWhenInView(files.state.listView.$, (on: boolean) =>
       hosts.shell.setAttribute("data-list-view", String(on === true)),
     ),
   )

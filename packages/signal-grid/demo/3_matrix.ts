@@ -5,7 +5,9 @@ import { Subscription } from "rxjs"
 import {
   cellParts,
   grid,
+  mountInView,
   render,
+  runWhenInView,
   transpose,
   type CellId,
   type ColumnDef,
@@ -94,7 +96,7 @@ export const matrixDemo: DemoRoute = {
     "2 by 3 span has to come back as 3 by 2 with both halves of its address swapped.",
   features: ["view.list", "cell.span", "col.pin", "col.resize", "row.pin", "row.sort", "view.slots", "view.theme"],
   defects: [],
-  mount,
+  mount: (hosts) => mountInView(hosts.stage, () => mount(hosts)),
 }
 
 function mount(hosts: DemoHosts): DemoHandle {
@@ -229,8 +231,8 @@ function mount(hosts: DemoHosts): DemoHandle {
     })
   }
 
-  subs.add(metrics.state.$.subscribe(refresh))
-  subs.add(metrics.view.plan.$.subscribe(refresh))
+  subs.add(runWhenInView(metrics.state.$, refresh))
+  subs.add(runWhenInView(metrics.view.plan.$, refresh))
   refresh()
 
   return {

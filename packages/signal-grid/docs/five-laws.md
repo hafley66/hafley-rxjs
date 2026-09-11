@@ -9,7 +9,7 @@ feature you have not read about yet.
 | 2 | Derivation is a chain of computed signals, one stage each | a stage that stops reading `group` stops depending on it, with no dependency list to maintain |
 | 3 | Anything with a filter, a deadline, or a gesture is plain RxJS | a drag is `takeUntil` over a live pointer stream in `src/6_gestures.ts`, never a signal |
 | 4 | One path template is the attributes, the event route, the CSS namespace, and the test selector | `src/3_paths.ts` declares each part once, so a selector cannot describe an element the renderer never draws |
-| 5 | Every subscription is opened by `bind`, `render`, or `writeGridVars` and handed back as a teardown | stopping a grid is one call, and a leak has exactly three places to be |
+| 5 | Every subscription is opened by `bind`, `render`, `writeGridVars`, or `runWhenInView` and handed back as a teardown | stopping a grid is one call, and a leak has exactly four places to be |
 
 ## Law 1 in practice
 
@@ -17,7 +17,7 @@ feature you have not read about yet.
 g.state.$()                     // the whole GridState
 g.state.sort.$()                // one key
 g.state.colHidden.size.$(true)  // one key of one record
-g.state.colHidden.size.$.subscribe(handle)
+runWhenInView(g.state.colHidden.size.$, handle)
 ```
 
 A nested-path selector dedupes with `distinctShallow`, so writing one column's width does not wake

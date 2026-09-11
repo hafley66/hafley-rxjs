@@ -4,7 +4,7 @@
 // into a node that now belongs to another row.
 import { Subscription, interval } from "rxjs"
 import { Signal } from "@hafley66/signals"
-import { grid, render, type CellCtx, type ColumnDef, type Slot } from "../src/index.js"
+import { grid, mountInView, render, runWhenInView, type CellCtx, type ColumnDef, type Slot } from "../src/index.js"
 import source from "./18_signal_slot.ts?raw"
 import type { Example } from "./0_types.js"
 
@@ -26,7 +26,7 @@ export const signalSlot: Example = {
   summary: "One shared tick drives a per-cell derived signal, so latency repaints without a row rebuild.",
   feature: "view.slots",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const root = document.createElement("div")
     root.style.blockSize = "300px"
     host.append(root)
@@ -42,11 +42,12 @@ export const signalSlot: Example = {
     const g = grid<Row>({ id: "signal-slot", rows: ROWS, columns, rowId: (row) => row.id })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(interval(900).subscribe(() => tick.$(tick.$() + 1)))
+    subs.add(runWhenInView(interval(900), () => tick.$(tick.$() + 1)))
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       root.remove()
     }
-  },
+  }),
 }

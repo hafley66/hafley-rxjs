@@ -52,7 +52,7 @@ document.body.append(menu)
 
 let release = () => {}
 
-g.intent$.pipe(filter(isMenuIntent)).subscribe((it) => {
+runWhenInView(g.intent$.pipe(filter(isMenuIntent)), (it) => {
   const target = menuTargetOf(it, root, g.state.orientation.$())
   if (target === null) return
   menu.replaceChildren(...itemsFor(target).map(button))

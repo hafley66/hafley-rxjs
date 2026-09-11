@@ -3,7 +3,7 @@
 // renderer rewrites it from `ROW_HEIGHT[density]` on every geometry frame, so height is changed
 // through `state.density` and colour through properties.
 import { fromEvent, Subscription } from "rxjs"
-import { grid, render, type ColumnDef } from "../src/index.js"
+import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./19_theming.ts?raw"
 import type { Example } from "./0_types.js"
 
@@ -50,7 +50,7 @@ export const theming: Example = {
   summary: "Three palettes, each one a set of property writes on the grid root and no stylesheet edit.",
   feature: "view.theme",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const box = document.createElement("div")
     const bar = document.createElement("div")
     const root = document.createElement("div")
@@ -72,7 +72,7 @@ export const theming: Example = {
       button.type = "button"
       button.textContent = name
       bar.append(button)
-      subs.add(fromEvent(button, "click").subscribe(() => {
+      subs.add(runWhenInView(fromEvent(button, "click"), () => {
         for (const property of applied) root.style.removeProperty(property)
         for (const [property, value] of Object.entries(vars)) root.style.setProperty(property, value)
         applied = Object.keys(vars)
@@ -81,7 +81,8 @@ export const theming: Example = {
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       box.remove()
     }
-  },
+  }),
 }

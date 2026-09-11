@@ -7,7 +7,7 @@
 // itself: a nested path emits on every root write whether or not its own branch moved.
 import { Subscription } from "rxjs"
 import { defaultEpics, detailColumn, detailHeights, detailOnCellClick } from "../src/index.js"
-import { grid, isDetailKey, render, rowOfDetailKey } from "../src/index.js"
+import { grid, isDetailKey, mountInView, render, rowOfDetailKey, runWhenInView } from "../src/index.js"
 import type { ColumnDef, RenderHandle } from "../src/index.js"
 import source from "./14_detail_nested_grid.ts?raw"
 import type { Example } from "./0_types.js"
@@ -43,7 +43,7 @@ export const detailNestedGrid: Example = {
   summary: "Click the disclosure to open a panel under a row; the panel is a second grid over that row's lines.",
   feature: "row.detail",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const root = document.createElement("div")
     root.style.blockSize = "360px"
     host.append(root)
@@ -85,7 +85,7 @@ export const detailNestedGrid: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(g.state.detail.$.subscribe((open) => {
+    subs.add(runWhenInView(g.state.detail.$, (open) => {
       const next = detailHeights(open, PANEL_HEIGHT)
       const current = g.state.rowHeight.$()
       const keys = Object.keys(next)
@@ -97,7 +97,8 @@ export const detailNestedGrid: Example = {
       for (const panel of panels.values()) panel.stop()
       panels.clear()
       handle.stop()
+      g.close()
       root.remove()
     }
-  },
+  }),
 }
