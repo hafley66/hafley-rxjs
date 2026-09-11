@@ -114,7 +114,7 @@ describe("the select-all toggle header is live", () => {
     const col = checkboxColumn<Row>({ grid: () => g })
     const glyph = col.headerCell(headerCtx(col.id))
     if (!isSignal<string>(glyph)) throw new Error("the select-all toggle must be a signal")
-    expect(glyph.$()).toBe("☐")
+    expect(glyph.$()).toBe("□")
     g.dispatch({ phase: "change", type: "rowSelection", rowSelection: { a: true } })
     expect(glyph.$()).toBe("☑")
     g.dispatch({
@@ -126,7 +126,7 @@ describe("the select-all toggle header is live", () => {
   })
 
   it("falls back to the empty glyph with no grid to read", () => {
-    expect(checkboxColumn<Row>().headerCell(headerCtx("__check"))).toBe("☐")
+    expect(checkboxColumn<Row>().headerCell(headerCtx("__check"))).toBe("□")
   })
 })
 

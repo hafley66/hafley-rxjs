@@ -86,7 +86,7 @@ export function toggleSelectAll(
 }
 
 const SELECT_ALL_GLYPH: Readonly<Record<SelectAllState, string>> = Object.freeze({
-  none: "☐",
+  none: "□",
   some: "☑",
   all: "☒",
 })
@@ -232,7 +232,9 @@ export function expandColumn<TRow>(opts: BuiltInColumnOptions<TRow> = {}): Built
 export function dragColumn<TRow>(opts: BuiltInColumnOptions<TRow> = {}): BuiltInColumnDef<TRow> {
   const cell: Slot<CellCtx<TRow>> = () => {
     const host = el("span", "sg-drag", moveAttrs())
-    host.append("∷")
+    // U+283F, the two-column dot grip, rather than U+2237: the proportion sign inks at 38 per cent
+    // of its em and reads as punctuation once the glyph box is the size of a control.
+    host.append("⠿")
     return host
   }
   return builtInColumn<TRow>("drag", GLYPH_WIDTH, "start", EMPTY_HEADER, cell, opts)
@@ -246,7 +248,7 @@ export function dragColumn<TRow>(opts: BuiltInColumnOptions<TRow> = {}): BuiltIn
 export function detailColumn<TRow>(opts: BuiltInColumnOptions<TRow> = {}): BuiltInColumnDef<TRow> {
   const cell: Slot<CellCtx<TRow>> = () => {
     const host = el("span", "sg-detail-toggle")
-    host.append("▸")
+    host.append("▶")
     return host
   }
   return builtInColumn<TRow>("detail", GLYPH_WIDTH, "start", EMPTY_HEADER, cell, opts)

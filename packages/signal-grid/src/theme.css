@@ -21,6 +21,16 @@
   inherits: true;
   initial-value: 36px;
 }
+@property --sg-glyph {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 24px;
+}
+@property --sg-sort-glyph {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 16px;
+}
 @property --sg-pad {
   syntax: "<length>";
   inherits: true;
@@ -48,7 +58,8 @@
   --sg-offset-y: 0px;
   --sg-depth: 0;
   --sg-indent: 16px;
-  --sg-glyph: 16px;
+  --sg-glyph: 24px;
+  --sg-sort-glyph: 16px;
   --sg-col-w: 100px;
   --sg-pad: 8px;
   --sg-line: light-dark(#e3e6ea, #2a2f36);
@@ -197,6 +208,15 @@
   user-select: none;
 }
 
+/* The sort mark is an indicator inside a run of label text rather than a control the pointer aims
+   at, so it takes its own size and stays near the text it annotates. */
+[data-route="g"] .sg-head-cell[data-sort="asc"]::after,
+[data-route="g"] .sg-head-cell[data-sort="desc"]::after {
+  flex: none;
+  font-size: var(--sg-sort-glyph);
+  line-height: 1;
+}
+
 [data-route="g"] .sg-head-cell[data-sort="asc"]::after {
   content: "\2191";
 }
@@ -221,6 +241,10 @@
   align-items: center;
   justify-content: center;
   inline-size: var(--sg-glyph);
+  /* `line-height: 1` is what keeps the box at one em: a compact row is 28px with a 1px border, so
+     a 24px glyph clears it and normal line height, around 1.2, would grow the row instead. */
+  font-size: var(--sg-glyph);
+  line-height: 1;
   margin-inline-start: calc(var(--sg-depth) * var(--sg-indent));
   cursor: pointer;
   user-select: none;
@@ -231,12 +255,14 @@
   cursor: default;
 }
 
+/* U+25B6 and U+25BC rather than the small U+25B8 and U+25BE pair: the small triangles ink at 27
+   per cent of their em, so they stay 6px however far the box is scaled up. */
 [data-route="g"] .sg-row[data-open="false"] .sg-expander[data-leaf="false"]::before {
-  content: "\25B8";
+  content: "\25B6";
 }
 
 [data-route="g"] .sg-row[data-open="true"] .sg-expander[data-leaf="false"]::before {
-  content: "\25BE";
+  content: "\25BC";
 }
 
 [data-route="g"] .sg-cell[data-editing="true"] {
@@ -300,18 +326,22 @@
   align-items: center;
   justify-content: center;
   block-size: 100%;
+  font-size: var(--sg-glyph);
+  line-height: 1;
   cursor: pointer;
   user-select: none;
 }
 
 /* The glyph text is CSS, not content: a cell rebuilds only when its data changed, so a checkbox
    that carried its own text would be a frame stale on every selection click. */
+/* U+25A1 with U+2611, and U+25CB with U+25C9: each pair inks within half a pixel of the other at
+   any size, so a selection click swaps the mark without resizing the box the reader is looking at. */
 [data-route="g"] .sg-check::before {
-  content: "\2610";
+  content: "\25A1";
 }
 
 [data-route="g"] .sg-check-radio::before {
-  content: "\25EF";
+  content: "\25CB";
 }
 
 [data-route="g"] .sg-row[data-selected="true"] .sg-check::before {

@@ -9,7 +9,8 @@ import { describe, expect, it } from "vitest"
 import "./theme.css"
 import type { ColumnDef } from "./0_types.js"
 import { rowHeightVar, selectorFor } from "./3_paths.js"
-import { grid } from "./8_grid.js"
+import { checkboxColumn, detailColumn, dragColumn } from "./5_columns.js"
+import { grid, ROW_HEIGHT } from "./8_grid.js"
 import { render } from "./10_render.js"
 import {
   SG_INLINE_TRACKS,
@@ -206,6 +207,59 @@ const mountWide = async (horizontal: boolean, scrollLeft: number) => {
     },
   }
 }
+
+// The compact row is the tightest case a glyph has to fit: 28px with a 1px border, so 27px of
+// content. A glyph box that grew the row would move every offset the plan computed.
+describe("the glyph boxes inside a compact row", () => {
+  const mountGlyphs = () => {
+    const host = document.createElement("div")
+    host.style.inlineSize = "600px"
+    host.style.blockSize = "300px"
+    document.body.append(host)
+    const g = grid<Row & { kids?: readonly Row[] }>({
+      id: "glyphs",
+      rows: [{ id: "a", name: "alice", kids: [{ id: "a/1", name: "one" }] }, { id: "b", name: "bob" }],
+      columns: [checkboxColumn(), dragColumn(), detailColumn(), { id: "name", flex: 1 }],
+      rowId: (it) => it.id,
+      subRows: (it) => it.kids,
+      state: { density: "compact", virtualize: { vertical: false, horizontal: false } },
+    })
+    const handle = render(g, host)
+    return { host, release: () => { handle.stop(); host.remove() } }
+  }
+
+  const heightsOf = (host: HTMLElement, selector: string): readonly number[] =>
+    [...host.querySelectorAll(selector)].map((it) => it.getBoundingClientRect().height)
+
+  it("leaves the row at the height its density declared", () => {
+    const view = mountGlyphs()
+    expect(heightsOf(view.host, ".sg-row")).toEqual([ROW_HEIGHT.compact, ROW_HEIGHT.compact])
+    view.release()
+  })
+
+  it("sizes every glyph off one token, and each box clears the row it sits in", () => {
+    const view = mountGlyphs()
+    const boxes = [".sg-expander", ".sg-check", ".sg-drag", ".sg-detail-toggle"]
+    for (const selector of boxes) {
+      const glyph = view.host.querySelector(selector)
+      expect(glyph, selector).not.toBe(null)
+      if (glyph === null) continue
+      expect(getComputedStyle(glyph).fontSize, selector).toBe("24px")
+      // `line-height: 1` is the whole reason 24px fits: normal line height would ask for 28.8px.
+      expect(getComputedStyle(glyph).lineHeight, selector).toBe("24px")
+    }
+    expect(heightsOf(view.host, ".sg-expander").every((it) => it <= ROW_HEIGHT.compact)).toBe(true)
+    view.release()
+  })
+
+  it("keeps the sort mark at text size rather than at control size", () => {
+    const view = mountGlyphs()
+    const head = view.host.querySelector(selectorFor("header", { colId: "name" }))
+    expect(head).not.toBe(null)
+    expect(head === null ? "" : getComputedStyle(head, "::after").fontSize).toBe("16px")
+    view.release()
+  })
+})
 
 describe("a windowed column run laid out by a real engine", () => {
   it("puts a rendered cell at the x its column's offset implies", async () => {

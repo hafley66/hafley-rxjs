@@ -62,7 +62,7 @@
       "id": "row.detail",
       "declaration": "detailColumn",
       "file": "src/5_columns.ts",
-      "line": 246
+      "line": 248
     },
     {
       "id": "row.select",

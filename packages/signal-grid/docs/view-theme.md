@@ -25,7 +25,7 @@ Two grids on a page are therefore two independent property scopes, and no id app
 | --- | --- |
 | `--sg-row-h` | you, or the property writer from density |
 | `--sg-total-h`, `--sg-offset-y`, `--sg-inline-tracks` | the property writer, per frame |
-| `--sg-indent`, `--sg-glyph`, `--sg-col-w`, `--sg-pad` | you |
+| `--sg-indent`, `--sg-glyph`, `--sg-sort-glyph`, `--sg-col-w`, `--sg-pad` | you |
 | `--sg-line`, `--sg-bg`, `--sg-fg`, `--sg-head-bg` | you |
 | `--sg-hover-bg`, `--sg-selected-bg`, `--sg-focus` | you |
 | `--sg-range-bg`, `--sg-range-edge`, `--sg-accent` | you |
@@ -38,6 +38,21 @@ appearances without writing a media query.
 A handful are declared with `@property` in `src/theme.css`, which is what lets the tree indent feed
 a continuous calculation and what makes an invalid value fall back to the initial rather than
 poisoning the whole declaration.
+
+## The two glyph sizes
+
+`--sg-glyph` is 24px and drives both the control box and the font size inside it, for the expander,
+the checkbox, the radio, the row grip, and the detail disclosure. Each of those rules also sets
+`line-height: 1`, which is what makes 24px fit: a compact row is 28px with a 1px border, leaving
+27px, and normal line height would ask for about 28.8px and grow the row.
+
+`--sg-sort-glyph` is 16px and belongs to the sort mark alone, which sits inside a run of header text
+rather than standing as a control the pointer aims at.
+
+A glyph's ink is a fraction of its em, and the fraction differs per codepoint, so the marks are
+chosen to ink alike at one size: U+25A1 with U+2611 for the checkbox, U+25CB with U+25C9 for the
+radio, U+25B6 with U+25BC for the expander. The small triangles U+25B8 and U+25BE ink at 27 per cent
+of their em and stay 6px however far the box is scaled, which is why they are gone.
 
 ## Per-entry sizes
 

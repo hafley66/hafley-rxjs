@@ -219,7 +219,7 @@ describe("built-in columns reach their routes", () => {
       },
     })
     const head = root.querySelector(selectorFor("header", { colId: "__check" }))
-    expect(head?.textContent).toBe("☐")
+    expect(head?.textContent).toBe("□")
     harness.grid.state.$({ ...harness.grid.state.$(), rowSelection: { a: true } })
     expect(head?.textContent).toBe("☑")
   })
@@ -243,7 +243,7 @@ describe("built-in columns reach their routes", () => {
     expect(textOfCell("a", "__rowNumber")).toBe("1")
     expect(textOfCell("b", "__rowNumber")).toBe("2")
     expect(root.querySelectorAll(".sg-detail-toggle").length).toBe(2)
-    expect(textOfCell("a", "__detail")).toBe("▸")
+    expect(textOfCell("a", "__detail")).toBe("▶")
   })
 
   test("a movable column stamps the move route on its header label, and nothing else does", () => {
