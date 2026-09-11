@@ -27,7 +27,7 @@ import {
 import { Signal } from "@hafley66/signals"
 import { cellId } from "./0_types.js"
 import type { ColumnDef, GridIntent, GridState, Modifiers } from "./0_types.js"
-import { radioColumn, rowNumberColumn } from "./5_columns.js"
+import { BUILT_IN_IDS, checkboxColumn, expandColumn, radioColumn, rowNumberColumn } from "./5_columns.js"
 import { grid, type Grid } from "./8_grid.js"
 import { rangeOf, selectionTest } from "./15_selection.js"
 import {
@@ -35,6 +35,8 @@ import {
   expandOnExpanderClick,
   selectColumnsOnDrag,
   selectRowsOnCellClick,
+  toggleExpandAllOnHeaderClick,
+  toggleSelectAllOnHeaderClick,
   type GridEpic,
 } from "./7_epics.js"
 
@@ -239,6 +241,59 @@ describe("selectRowsOnCellClick", () => {
     const { g } = withEpics(clickGrid())
     g.dispatch(cellClick("c", "name", { button: 2 }))
     expect(g.state.rowSelection.$()).toEqual({})
+  })
+})
+
+describe("the two tri-state header toggles", () => {
+  const toggleGrid = (
+    columns: readonly ColumnDef<Row>[],
+    epics: readonly GridEpic<Row>[],
+  ): Grid<Row> =>
+    grid<Row>({
+      id: "t",
+      rows: TREE,
+      columns,
+      rowId: (row) => row.id,
+      subRows: (row) => row.kids,
+      epics,
+    })
+
+  it("fills every selectable row from the checkbox header, and clears it on the next click", () => {
+    const columns = [checkboxColumn<Row>(), ...COLUMNS]
+    const { g } = withEpics(toggleGrid(columns, [toggleSelectAllOnHeaderClick<Row>()]))
+    g.dispatch(headerClick(BUILT_IN_IDS.check))
+    expect(g.state.rowSelection.$()).toEqual({ src: true, readme: true })
+    g.dispatch(headerClick(BUILT_IN_IDS.check))
+    expect(g.state.rowSelection.$()).toEqual({ src: false, readme: false })
+  })
+
+  it("opens every branch from the expand header, including the ones the flat list hides", () => {
+    const columns = [expandColumn<Row>(), ...COLUMNS]
+    const { g } = withEpics(toggleGrid(columns, [toggleExpandAllOnHeaderClick<Row>()]))
+    g.dispatch(headerClick(BUILT_IN_IDS.expand))
+    expect(g.state.expanded.$()).toEqual({ src: true, "src/b": true })
+    expect(g.view.flat.$().map((n) => n.key)).toEqual([
+      "src",
+      "src/a",
+      "src/b",
+      "src/b/x",
+      "readme",
+    ])
+    g.dispatch(headerClick(BUILT_IN_IDS.expand))
+    expect(g.view.flat.$().map((n) => n.key)).toEqual(["src", "readme"])
+  })
+
+  it("answers to its own column and to no other header", () => {
+    const columns = [checkboxColumn<Row>(), expandColumn<Row>(), ...COLUMNS]
+    const { g } = withEpics(
+      toggleGrid(columns, [toggleSelectAllOnHeaderClick<Row>(), toggleExpandAllOnHeaderClick<Row>()]),
+    )
+    g.dispatch(headerClick("name"))
+    expect(g.state.rowSelection.$()).toEqual({})
+    expect(g.state.expanded.$()).toEqual({})
+    g.dispatch(headerClick(BUILT_IN_IDS.check))
+    expect(g.state.expanded.$()).toEqual({})
+    expect(g.state.rowSelection.$()).toEqual({ src: true, readme: true })
   })
 })
 

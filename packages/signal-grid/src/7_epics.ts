@@ -3,7 +3,15 @@
 import { filter, map, merge, Observable } from "rxjs"
 import type { Epic, Signal } from "@hafley66/signals"
 import { descendantsOf } from "./1_axis.js"
-import { isBuiltIn, rowSelectionMode, type BuiltInId } from "./5_columns.js"
+import {
+  expandableRows,
+  isBuiltIn,
+  rowSelectionMode,
+  selectableRows,
+  toggleExpandAll,
+  toggleSelectAll,
+  type BuiltInId,
+} from "./5_columns.js"
 import { drag, landingIndex, type DragStreams } from "./6_gestures.js"
 import { neutralCell } from "./12_transpose.js"
 import {
@@ -204,6 +212,42 @@ export function selectRowsOnCellClick<TRow>(): GridEpic<TRow> {
       map(pick),
     )
   }
+}
+
+// --- The two tri-state header toggles ---------------------------------------
+
+// The action half of the pair `5_columns.ts` declares. The glyph is a slot and this is an epic, so
+// a consumer replaces either one without the other noticing.
+const headerOf = <TRow>(ctx: GridEpicCtx<TRow>, col: ColId, kind: BuiltInId): boolean => {
+  const def = defOf(ctx, col)
+  return def !== undefined && isBuiltIn(def) && def.builtIn === kind
+}
+
+/** Opt-in: the header draws the tri-state whether or not this is installed, and installing it is
+ * what makes the header a control. @feature row.select */
+export function toggleSelectAllOnHeaderClick<TRow>(): GridEpic<TRow> {
+  return (actions$, state, ctx) =>
+    intents<TRow, "header.click">(actions$, "header.click").pipe(
+      filter((it) => headerOf(ctx, it.col, "check")),
+      map((): GridAction<TRow> => ({
+        phase: "change",
+        type: "rowSelection",
+        rowSelection: toggleSelectAll(selectableRows(ctx.view.flat.$()), state.rowSelection.$()),
+      })),
+    )
+}
+
+/** The mirror on the expand column, reading the same rows `expandAllSignal` counts. */
+export function toggleExpandAllOnHeaderClick<TRow>(): GridEpic<TRow> {
+  return (actions$, state, ctx) =>
+    intents<TRow, "header.click">(actions$, "header.click").pipe(
+      filter((it) => headerOf(ctx, it.col, "expand")),
+      map((): GridAction<TRow> => ({
+        phase: "change",
+        type: "expanded",
+        expanded: toggleExpandAll(expandableRows(ctx.view.sorted.$()), state.expanded.$()),
+      })),
+    )
 }
 
 // --- Activate ---------------------------------------------------------------

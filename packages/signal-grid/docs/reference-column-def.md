@@ -127,7 +127,7 @@ from the anchor, which is the reason to render one.
 | --- | --- | --- |
 | `checkboxColumn` | `__check` | a mark on its own route, with a live select-all header |
 | `radioColumn` | `__radio` | the same box and route, with no select-all toggle |
-| `expandColumn` | `__expand` | the disclosure, indented by depth |
+| `expandColumn` | `__expand` | the disclosure, indented by depth, with a live expand-all header |
 | `dragColumn` | `__drag` | the row move handle |
 | `detailColumn` | `__detail` | a disclosure with no route of its own |
 | `rowNumberColumn` | `__rowNumber` | the row's index within the run |

@@ -45,12 +45,46 @@ folder never reach the virtualizer's count and cost nothing to keep closed.
 | alt-click the expander | open or close the whole branch, through `descendantsOf` | the same epic |
 | ArrowRight | open the focused node when it has closed children | `keyboardNav` in `src/7_epics.ts` |
 | ArrowLeft | close the focused node, otherwise step to its parent | the same epic |
+| double-click a row body | toggle that node | `expandOnCellDoubleClick`, opt-in |
+| click the expand header | open or close every branch | `toggleExpandAllOnHeaderClick`, opt-in |
+
+A double click also sends two clicks first. On the glyph those two are the whole gesture and the
+double click is skipped, because it arrives carrying `interactive`; on a row body only the double
+click reaches an epic that opens anything. Beside `selectRowsOnCellClick` the gesture leaves the row
+selected and open, since a plain click replaces the selection with the row it named and the second
+click writes what the first already wrote.
 
 ## The expander glyph
 
 Add `expandColumn()` from `src/5_columns.ts` to draw a disclosure with its own route, indented by
 depth. A row with no children is stamped `data-leaf`, which is how a rule styles it without asking
 the model.
+
+## Expand all, and its three states
+
+`expandColumn({ grid: () => g })` draws the same tri-state header the checkbox column draws, over
+the rows that have children rather than the rows that can be selected.
+
+| state | meaning | mark |
+| --- | --- | --- |
+| `none` | every branch is closed | `▶` |
+| `some` | a part of them is open | `▽` |
+| `all` | every branch is open | `▼` |
+
+`expandableRows` in `src/5_columns.ts` reads the axis rather than the flat list, because a collapsed
+parent hides the branches under it from that list and a toggle counting only what is visible would
+call one open level "all". `expandAllState` derives the answer on every read, and `toggleExpandAll`
+writes it, so nothing stores a flag that a newly arrived branch would make wrong.
+
+```ts
+const columns = [expandColumn<Row>({ grid: () => g }), ...DATA_COLUMNS]
+
+grid<Row>({ ...config, columns, epics: [...defaultEpics<Row>(), toggleExpandAllOnHeaderClick<Row>()] })
+```
+
+The rendering half and the toggle half are replaced independently, exactly as on the checkbox
+column: `glyph` swaps the three marks, `header` replaces the drawing while `expandAllSignal` keeps
+the state, and dropping the epic leaves the toggle to a consumer's own reader of `header.click`.
 
 ## Cyclic input
 

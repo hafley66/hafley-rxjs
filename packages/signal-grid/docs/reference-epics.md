@@ -74,6 +74,8 @@ grid<Row>({ ...config, epics: [...defaultEpics<Row>(), detailOnCellClick({ colum
 | --- | --- | --- |
 | `selectRowsOnCellClick` | `cell.click` | `rowSelection`; plain replaces, ctrl or meta toggles, shift fills the range |
 | `expandOnCellDoubleClick` | `cell.dblclick` on a row that has children | `expanded`; alt takes the whole subtree |
+| `toggleSelectAllOnHeaderClick` | `header.click` on the checkbox column | `rowSelection`, over `selectableRows` |
+| `toggleExpandAllOnHeaderClick` | `header.click` on the expand column | `expanded`, over `expandableRows` |
 | `detailOnCellClick` | `cell.click` | `detail` |
 
 Both new ones read `interactive`, which `cell.click` and `cell.dblclick` carry: it is true when the

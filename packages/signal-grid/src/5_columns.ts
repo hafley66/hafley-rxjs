@@ -2,7 +2,17 @@
 // never carries `flex` (min and max are pinned to width, so the pool cannot reopen).
 import { Signal } from "@hafley66/signals"
 import { isGroupKey } from "./0_types.js"
-import type { CellCtx, ColId, ColumnDef, HeaderCtx, RowId, Side, Slot } from "./0_types.js"
+import type {
+  Axis,
+  CellCtx,
+  ColId,
+  ColumnDef,
+  FlatNode,
+  HeaderCtx,
+  RowId,
+  Side,
+  Slot,
+} from "./0_types.js"
 import { isDetailKey } from "./11_detail.js"
 import { checkAttrs, expandAttrs, moveAttrs, SG_DEPTH } from "./3_paths.js"
 import type { Grid } from "./8_grid.js"
@@ -59,15 +69,33 @@ export function pinningFor<TRow>(
 export const rowSelectionMode = <TRow>(columns: readonly ColumnDef<TRow>[]): "single" | "multi" =>
   columns.some((it) => isBuiltIn(it) && it.builtIn === "radio") ? "single" : "multi"
 
-// --- Tri-state select-all toggle --------------------------------------------
+// --- The two tri-state headers ----------------------------------------------
 
-export type SelectAllState = "none" | "some" | "all"
+// @comment-ok: the composition rule is this section's contract with consumers and has no runtime home
+// Both headers are a state-and-action pair, and each half rides the route that half already has in
+// this package. The rendering is a `Slot`, so `BuiltInColumnOptions.header` replaces it exactly the
+// way `ColumnDef.cell` replaces a body cell, and `opts.glyph` swaps the three marks without writing
+// a slot at all. The toggle is an epic, so `config.epics` replaces it exactly the way any other
+// behaviour is replaced, and dropping it leaves the glyph reading a state nothing writes.
+//
+// Keeping either half means keeping the exported function the other half reads: `selectAllSignal`
+// and `expandAllSignal` are the state machines, and `selectableRows` and `expandableRows` are the
+// one definition of which rows each toggle is about, so a replaced glyph and a replaced toggle can
+// never disagree about the answer.
+//
+// Every state below is derived on read. A stored "all selected" flag goes stale the moment a row
+// arrives, which is the one thing a tri-state toggle must never do.
+
+export type TriState = "none" | "some" | "all"
+
+/** The name this had when only selection carried it. Docs and tests still name it. */
+export type SelectAllState = TriState
 
 /** An empty list is `none`: nothing is selected, and there is nothing to select. */
 export function selectAllState(
   rows: readonly RowId[],
   selection: Readonly<Record<RowId, boolean>>,
-): SelectAllState {
+): TriState {
   let on = 0
   for (const row of rows) if (selection[row] === true) on++
   if (on === 0) return "none"
@@ -85,11 +113,76 @@ export function toggleSelectAll(
   return next
 }
 
-const SELECT_ALL_GLYPH: Readonly<Record<SelectAllState, string>> = Object.freeze({
+/** The mirror over the rows that have children. A forest with no branch is `none`. */
+export function expandAllState(
+  rows: readonly RowId[],
+  expanded: Readonly<Record<RowId, boolean>>,
+): TriState {
+  let open = 0
+  for (const row of rows) if (expanded[row] === true) open++
+  if (open === 0) return "none"
+  return open === rows.length ? "all" : "some"
+}
+
+export function toggleExpandAll(
+  rows: readonly RowId[],
+  expanded: Readonly<Record<RowId, boolean>>,
+): Readonly<Record<RowId, boolean>> {
+  const next: Record<RowId, boolean> = { ...expanded }
+  const open = expandAllState(rows, expanded) !== "all"
+  for (const row of rows) next[row] = open
+  return next
+}
+
+/** What select-all is about: the visible rows that are rows. A group heading and a detail panel are
+ * not selectable, so counting them would leave the toggle stuck on `some`. */
+export const selectableRows = (flat: readonly FlatNode<RowId>[]): readonly RowId[] =>
+  flat.map((it) => it.key).filter((it) => !isGroupKey(it) && !isDetailKey(it))
+
+/** What expand-all is about: every row with children, open or closed. Read off the axis rather than
+ * the flat list, because a collapsed parent hides the branches under it from that list. */
+export const expandableRows = <T>(axis: Axis<RowId, T>): readonly RowId[] => {
+  const out: RowId[] = []
+  for (const [key, kids] of axis.children) if (kids.length > 0) out.push(key)
+  return out
+}
+
+/** The three marks, as a table a consumer can replace one entry of. `some` is the indeterminate
+ * state: a box with its centre filled, rather than the checked box it used to draw. */
+export const SELECT_ALL_GLYPH: Readonly<Record<TriState, string>> = Object.freeze({
   none: "□",
-  some: "☑",
-  all: "☒",
+  some: "▣",
+  all: "☑",
 })
+
+/** The same three states on the other axis, drawn with the expander's own triangles. */
+export const EXPAND_ALL_GLYPH: Readonly<Record<TriState, string>> = Object.freeze({
+  none: "▶",
+  some: "▽",
+  all: "▼",
+})
+
+/** Derived on every read, so a row arriving or a filter moving is already counted. */
+export const selectAllSignal = <TRow>(read: () => Grid<TRow> | undefined): Signal<TriState> =>
+  Signal<TriState>(() => {
+    const grid = read()
+    if (grid === undefined) return "none"
+    return selectAllState(selectableRows(grid.view.flat.$()), grid.state.rowSelection.$())
+  })
+
+export const expandAllSignal = <TRow>(read: () => Grid<TRow> | undefined): Signal<TriState> =>
+  Signal<TriState>(() => {
+    const grid = read()
+    if (grid === undefined) return "none"
+    return expandAllState(expandableRows(grid.view.sorted.$()), grid.state.expanded.$())
+  })
+
+/** The rendering half alone: a state signal in, a header slot out. A consumer keeping the state
+ * machine and replacing the drawing calls this with their own table, or writes their own slot. */
+export const triStateHeader =
+  <TRow>(state: Signal<TriState>, glyph: Readonly<Record<TriState, string>>): Slot<HeaderCtx<TRow>> =>
+  () =>
+    Signal<string>(() => glyph[state.$()])
 
 // --- Options ----------------------------------------------------------------
 
@@ -102,11 +195,16 @@ export interface BuiltInColumnOptions<TRow> {
   readonly cell?: Slot<CellCtx<TRow>>
 }
 
-export interface SelectColumnOptions<TRow> extends BuiltInColumnOptions<TRow> {
-  // Deferred because a schema is built before `grid()` is called and the select-all toggle is the one
+export interface TriStateColumnOptions<TRow> extends BuiltInColumnOptions<TRow> {
+  // Deferred because a schema is built before `grid()` is called and the tri-state header is the one
   // slot that reads the grid back: `() => g` closes over the binding rather than the value.
   readonly grid?: () => Grid<TRow> | undefined
+  /** The three marks. Swapping them keeps the state machine and the toggle untouched. */
+  readonly glyph?: Readonly<Record<TriState, string>>
 }
+
+/** The name the selection column's options had before the expand column grew the same pair. */
+export type SelectColumnOptions<TRow> = TriStateColumnOptions<TRow>
 
 export interface RowNumberColumnOptions<TRow> extends BuiltInColumnOptions<TRow> {
   /** The ordinal of the first row. One, because a grid is read by people. */
@@ -174,24 +272,21 @@ function builtInColumn<TRow>(
 const selectGlyph = <TRow>(kind: "check" | "radio"): Slot<CellCtx<TRow>> =>
   () => el("span", `sg-check sg-check-${kind}`, { ...checkAttrs(), "data-check": kind })
 
-/** Multi-select. The header is a signal, so a selection click repaints one node. @feature row.select */
-export function checkboxColumn<TRow>(opts: SelectColumnOptions<TRow> = {}): BuiltInColumnDef<TRow> {
+// A header with no grid to read draws the `none` mark: the schema asked for the column without
+// handing it the thing every state below is derived from.
+const triStateColumnHeader = <TRow>(
+  opts: TriStateColumnOptions<TRow>,
+  glyph: Readonly<Record<TriState, string>>,
+  signalOf: (read: () => Grid<TRow> | undefined) => Signal<TriState>,
+): Slot<HeaderCtx<TRow>> => {
+  const marks = opts.glyph ?? glyph
   const read = opts.grid
-  const header: Slot<HeaderCtx<TRow>> = () => {
-    if (read === undefined) return SELECT_ALL_GLYPH.none
-    const glyph: Signal<string> = Signal<string>(() => {
-      const grid = read()
-      if (grid === undefined) return SELECT_ALL_GLYPH.none
-      // A group header and a detail panel are not selectable rows, so counting them would leave
-      // the select-all toggle stuck on `some` for a grid whose every real row is checked.
-      const rows = grid.view.flat
-        .$()
-        .map((it) => it.key)
-        .filter((it) => !isGroupKey(it) && !isDetailKey(it))
-      return SELECT_ALL_GLYPH[selectAllState(rows, grid.state.rowSelection.$())]
-    })
-    return glyph
-  }
+  return read === undefined ? () => marks.none : triStateHeader<TRow>(signalOf(read), marks)
+}
+
+/** Multi-select. The header is a signal, so a selection click repaints one node. @feature row.select */
+export function checkboxColumn<TRow>(opts: TriStateColumnOptions<TRow> = {}): BuiltInColumnDef<TRow> {
+  const header = triStateColumnHeader<TRow>(opts, SELECT_ALL_GLYPH, selectAllSignal)
   return builtInColumn<TRow>("check", GLYPH_WIDTH, "start", header, selectGlyph<TRow>("check"), opts)
 }
 
@@ -213,7 +308,8 @@ export function radioColumn<TRow>(opts: BuiltInColumnOptions<TRow> = {}): BuiltI
 /** The expander as a column, so a caller can place or pin it. @feature row.expand */
 // Indent reads `--sg-depth` with `FlatNode.depth` as the fallback: the row property is rewritten
 // every pass, so a depth baked into the cell survives a re-parent it should not.
-export function expandColumn<TRow>(opts: BuiltInColumnOptions<TRow> = {}): BuiltInColumnDef<TRow> {
+export function expandColumn<TRow>(opts: TriStateColumnOptions<TRow> = {}): BuiltInColumnDef<TRow> {
+  const header = triStateColumnHeader<TRow>(opts, EXPAND_ALL_GLYPH, expandAllSignal)
   const cell: Slot<CellCtx<TRow>> = (ctx) => {
     const host = el("span", "sg-expander sg-cell-expander", expandAttrs())
     host.setAttribute("data-leaf", String(!ctx.node.hasChildren))
@@ -223,7 +319,7 @@ export function expandColumn<TRow>(opts: BuiltInColumnOptions<TRow> = {}): Built
     )
     return host
   }
-  return builtInColumn<TRow>("expand", GLYPH_WIDTH, "start", EMPTY_HEADER, cell, opts)
+  return builtInColumn<TRow>("expand", GLYPH_WIDTH, "start", header, cell, opts)
 }
 
 // --- Row drag ---------------------------------------------------------------

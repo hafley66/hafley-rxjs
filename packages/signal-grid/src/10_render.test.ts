@@ -25,6 +25,8 @@ import {
   expandColumn,
   radioColumn,
   rowNumberColumn,
+  EXPAND_ALL_GLYPH,
+  SELECT_ALL_GLYPH,
 } from "./5_columns.js"
 import {
   expandOnCellDoubleClick,
@@ -219,9 +221,27 @@ describe("built-in columns reach their routes", () => {
       },
     })
     const head = root.querySelector(selectorFor("header", { colId: "__check" }))
-    expect(head?.textContent).toBe("□")
+    expect(head?.textContent).toBe(SELECT_ALL_GLYPH.none)
     harness.grid.state.$({ ...harness.grid.state.$(), rowSelection: { a: true } })
-    expect(head?.textContent).toBe("☑")
+    expect(head?.textContent).toBe(SELECT_ALL_GLYPH.some)
+    harness.grid.state.$({ ...harness.grid.state.$(), rowSelection: { a: true, b: true } })
+    expect(head?.textContent).toBe(SELECT_ALL_GLYPH.all)
+  })
+
+  test("the expand header draws the same three states off the row forest", () => {
+    let made: Grid<Row> | undefined
+    const harness = mountGrid({
+      rows: TREE,
+      subRows: (it) => it.kids,
+      columns: [expandColumn<Row>({ grid: () => made }), NAME],
+      hold: (it) => {
+        made = it
+      },
+    })
+    const head = root.querySelector(selectorFor("header", { colId: "__expand" }))
+    expect(head?.textContent).toBe(EXPAND_ALL_GLYPH.none)
+    harness.grid.state.$({ ...harness.grid.state.$(), expanded: { a: true } })
+    expect(head?.textContent).toBe(EXPAND_ALL_GLYPH.all)
   })
 
   test("a drag column renders a grip carrying the row move route", () => {

@@ -1,7 +1,7 @@
 // Every assertion is a synchronous read. The body slots build DOM, so only the two that hand back
 // plain values (the select-all toggle, the ordinal) are invoked here; the rest are asserted as defs.
 import { describe, expect, it } from "vitest"
-import { isSignal } from "@hafley66/signals"
+import { isSignal, Signal } from "@hafley66/signals"
 import {
   BUILT_IN_IDS,
   checkboxColumn,
@@ -14,8 +14,14 @@ import {
   radioColumn,
   rowNumberColumn,
   rowSelectionMode,
+  expandableRows,
+  expandAllSignal,
+  expandAllState,
+  selectAllSignal,
   selectAllState,
+  toggleExpandAll,
   toggleSelectAll,
+  EXPAND_ALL_GLYPH,
   type BuiltInColumnDef,
 } from "./5_columns.js"
 import { trackList } from "./4_slice.js"
@@ -23,6 +29,7 @@ import { grid } from "./8_grid.js"
 import type { CellCtx, ColumnDef, FlatNode, HeaderCtx, RowId } from "./0_types.js"
 
 type Row = { id: string; name: string; size: number }
+type TreeRow = Row & { kids?: readonly TreeRow[] }
 
 const ROWS: readonly Row[] = [
   { id: "a", name: "alice", size: 10 },
@@ -108,6 +115,124 @@ describe("toggleSelectAll", () => {
   })
 })
 
+const TREE: readonly TreeRow[] = [
+  {
+    id: "src",
+    name: "src",
+    size: 0,
+    kids: [
+      { id: "src/a", name: "a.ts", size: 1 },
+      { id: "src/b", name: "b.ts", size: 2, kids: [{ id: "src/b/x", name: "x.ts", size: 3 }] },
+    ],
+  },
+  { id: "readme", name: "readme.md", size: 4 },
+]
+
+const treeGrid = () =>
+  grid<TreeRow>({
+    id: "t",
+    rows: TREE,
+    columns: DATA,
+    rowId: (it) => it.id,
+    subRows: (it) => it.kids,
+  })
+
+describe("expandableRows", () => {
+  it("names every row with children, however deep, open or closed", () => {
+    const g = treeGrid()
+    expect([...expandableRows(g.view.sorted.$())].sort()).toEqual(["src", "src/b"])
+  })
+
+  it("names nothing in a forest with no branch, so the toggle stays none", () => {
+    const g = grid<Row>({ id: "t", rows: ROWS, columns: DATA, rowId: (it) => it.id })
+    expect(expandableRows(g.view.sorted.$())).toEqual([])
+    expect(expandAllState(expandableRows(g.view.sorted.$()), {})).toBe("none")
+  })
+})
+
+describe("expandAllState", () => {
+  it("answers none, some, and all over the rows that can open", () => {
+    const rows = ["src", "src/b"]
+    expect(expandAllState(rows, {})).toBe("none")
+    expect(expandAllState(rows, { src: true })).toBe("some")
+    expect(expandAllState(rows, { src: true, "src/b": true })).toBe("all")
+    expect(expandAllState(rows, { src: true, "src/b": false })).toBe("some")
+  })
+
+  it("counts a row outside the list toward nothing", () => {
+    expect(expandAllState(["src"], { src: true, readme: true })).toBe("all")
+  })
+})
+
+describe("toggleExpandAll", () => {
+  it("opens from none and from some, and closes from all", () => {
+    const rows = ["src", "src/b"]
+    expect(toggleExpandAll(rows, {})).toEqual({ src: true, "src/b": true })
+    expect(toggleExpandAll(rows, { src: true })).toEqual({ src: true, "src/b": true })
+    expect(toggleExpandAll(rows, { src: true, "src/b": true })).toEqual({
+      src: false,
+      "src/b": false,
+    })
+  })
+})
+
+describe("the expand-all header is the same pair on the other axis", () => {
+  it("reads the tri-state off the grid it was handed", () => {
+    const g = treeGrid()
+    const col = expandColumn<TreeRow>({ grid: () => g })
+    const glyph = col.headerCell(headerCtx(col.id))
+    if (!isSignal<string>(glyph)) throw new Error("the expand-all toggle must be a signal")
+    expect(glyph.$()).toBe(EXPAND_ALL_GLYPH.none)
+    g.dispatch({ phase: "change", type: "expanded", expanded: { src: true } })
+    expect(glyph.$()).toBe(EXPAND_ALL_GLYPH.some)
+    g.dispatch({ phase: "change", type: "expanded", expanded: { src: true, "src/b": true } })
+    expect(glyph.$()).toBe(EXPAND_ALL_GLYPH.all)
+  })
+
+  it("counts a branch the flat list cannot see, so opening one row is not all", () => {
+    const g = treeGrid()
+    const state = expandAllSignal(() => g)
+    g.dispatch({ phase: "change", type: "expanded", expanded: { src: true } })
+    expect(g.view.flat.$().map((it) => it.key)).toEqual(["src", "src/a", "src/b", "readme"])
+    expect(state.$()).toBe("some")
+  })
+})
+
+describe("replacing one half of a tri-state header", () => {
+  it("takes a consumer's marks and keeps the state machine", () => {
+    const g = treeGrid()
+    const col = expandColumn<TreeRow>({
+      grid: () => g,
+      glyph: { none: "closed", some: "part", all: "open" },
+    })
+    const glyph = col.headerCell(headerCtx(col.id))
+    if (!isSignal<string>(glyph)) throw new Error("the expand-all toggle must be a signal")
+    expect(glyph.$()).toBe("closed")
+    g.dispatch({ phase: "change", type: "expanded", expanded: { src: true } })
+    expect(glyph.$()).toBe("part")
+  })
+
+  it("takes a consumer's whole header slot and keeps the state machine", () => {
+    const g = grid<Row>({ id: "t", rows: ROWS, columns: DATA, rowId: (it) => it.id })
+    const state = selectAllSignal(() => g)
+    const col = checkboxColumn<Row>({
+      grid: () => g,
+      header: () => Signal<string>(() => `rows: ${state.$()}`),
+    })
+    const rendered = col.headerCell(headerCtx(col.id))
+    if (!isSignal<string>(rendered)) throw new Error("the replacement is a signal here")
+    expect(rendered.$()).toBe("rows: none")
+    g.dispatch({ phase: "change", type: "rowSelection", rowSelection: { a: true } })
+    expect(rendered.$()).toBe("rows: some")
+    g.dispatch({
+      phase: "change",
+      type: "rowSelection",
+      rowSelection: { a: true, b: true, c: true },
+    })
+    expect(rendered.$()).toBe("rows: all")
+  })
+})
+
 describe("the select-all toggle header is live", () => {
   it("reads the tri-state off the grid it was handed", () => {
     const g = grid<Row>({ id: "t", rows: ROWS, columns: DATA, rowId: (r) => r.id })
@@ -116,13 +241,13 @@ describe("the select-all toggle header is live", () => {
     if (!isSignal<string>(glyph)) throw new Error("the select-all toggle must be a signal")
     expect(glyph.$()).toBe("□")
     g.dispatch({ phase: "change", type: "rowSelection", rowSelection: { a: true } })
-    expect(glyph.$()).toBe("☑")
+    expect(glyph.$()).toBe("▣")
     g.dispatch({
       phase: "change",
       type: "rowSelection",
       rowSelection: { a: true, b: true, c: true },
     })
-    expect(glyph.$()).toBe("☒")
+    expect(glyph.$()).toBe("☑")
   })
 
   it("falls back to the empty glyph with no grid to read", () => {
