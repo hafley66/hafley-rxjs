@@ -1,7 +1,8 @@
 // Density is one state key resolving to pixels through `ROW_HEIGHT`, written onto the grid root as
 // `--sg-row-h` on every geometry frame. Two densities are therefore one grid, not two.
 import { fromEvent, Subscription, tap } from "rxjs"
-import { grid, mountInView, render, runWhenInView, type ColumnDef, type GridState } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { grid, render, type ColumnDef, type GridState } from "../src/index.js"
 import source from "./23_density.ts?raw"
 import type { Example } from "./0_types.js"
 

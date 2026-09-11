@@ -2,7 +2,8 @@
 // accumulate instead of replacing each other. `pageOnScrollNearEnd` raises the index from scroll
 // position rather than from a counter, so scrolling the same boundary twice raises it once.
 import { Subscription, tap } from "rxjs"
-import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { grid, render, type ColumnDef } from "../src/index.js"
 import source from "./10_infinite_scroll.ts?raw"
 import type { Example } from "./0_types.js"
 

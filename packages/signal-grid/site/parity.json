@@ -5,13 +5,12 @@
   "implemented": 24,
   "declaredOnly": 9,
   "tags": 54,
-  "modules": 20,
+  "modules": 19,
   "untagged": [],
   "optedOut": {
     "0_log.ts": "the timing surface. It measures stages the other modules own, and each of those is tagged at its own stage",
     "10_render.ts": "the DOM pass. It renders what the view signals already decided, and each of those is tagged at its own stage",
     "12_transpose.ts": "the seat table both axes cross through; cell.span and view.list are tagged where the view exposes them",
-    "17_in_view.ts": "decides when a demo's subscriptions run on a docs page; the grid features those demos exercise are tagged at their own stages",
     "6_gestures.ts": "a pointer lifetime, shared by resize, move and range drag; every feature that uses it is tagged where it is implemented",
     "9_css.ts": "writes the custom properties the theme reads; the features that decide those numbers are tagged in 8_grid.ts and 4_slice.ts"
   },

@@ -1,0 +1,40 @@
+{
+  "name": "@hafley66/docs-kit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The documentation site apparatus every package in this workspace shares: the live demo panel, the in-view runner, the receipts renderer, the doc lint, and the API reference generator.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./theme": "./theme/index.ts",
+    "./theme/docs.css": "./theme/docs.css",
+    "./config": "./src/6_config.ts",
+    "./harness": "./examples/harness.ts",
+    "./scripts/docs": "./scripts/docs.mjs",
+    "./scripts/stats": "./scripts/stats.mjs",
+    "./scripts/examples": "./scripts/examples.mjs",
+    "./scripts/api": "./scripts/api.mjs"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@codemirror/lang-javascript": "^6.2.5",
+    "codemirror": "^6.0.2",
+    "rxjs": "^7.8.2",
+    "sucrase": "^3.35.1"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  },
+  "//": "vite, vitepress, vue, playwright and @hafley66/signals are peers rather than dependencies on purpose. A second copy of any of the first four in this package's own node_modules is a second Vue app instance, or a second @vitest/browser. @hafley66/signals is a peer because `packages/signals` consumes this package, and a dependency edge back would be a cycle.",
+  "peerDependencies": {
+    "@hafley66/signals": "workspace:*",
+    "playwright": "^1.62.1",
+    "vite": "^8.2.1",
+    "vitepress": "2.0.0-alpha.20",
+    "vitepress-plugin-mermaid": "^2.0.17",
+    "vue": "^3.5.42"
+  },
+  "license": "MIT"
+}

@@ -2,31 +2,8 @@
 // The one that is meant to break first.
 import { Signal } from "@hafley66/signals"
 import { merge, skip, Subscription, tap } from "rxjs"
-import {
-  checkboxColumn,
-  compositeColumn,
-  defaultState,
-  grid,
-  isGroupKey,
-  mountInView,
-  moveAttrs,
-  pinningFor,
-  render,
-  runWhenInView,
-  ROW_HEIGHT,
-  rowNumberColumn,
-  type CellCtx,
-  type ColId,
-  type ColumnDef,
-  type Grid,
-  type GridState,
-  type HeaderCtx,
-  type PageMode,
-  type Renderable,
-  type RowId,
-  type Side,
-  type Viewport,
-} from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { checkboxColumn, compositeColumn, defaultState, grid, isGroupKey, moveAttrs, pinningFor, render, ROW_HEIGHT, rowNumberColumn, type CellCtx, type ColId, type ColumnDef, type Grid, type GridState, type HeaderCtx, type PageMode, type Renderable, type RowId, type Side, type Viewport } from "../src/index.js"
 import {
   actions,
   applyOrder,

@@ -1,24 +1,14 @@
-// One row per page, nested the way the sidebar nests. `site/.vitepress/config.ts` derives the
-// sidebar, the route rewrites, and the page allow-list from these arrays.
+// One row per page, nested the way the sidebar nests. `@hafley66/docs-kit` derives the sidebar, the
+// route rewrites, and the page allow-list from these arrays.
 // `scripts/ship.mjs` reads the slugs back with a regular expression, so each stays `slug: "..."`.
 
 // The six concept groups are the six axes of `FEATURE_AXES` in `src/features.ts`, so a new feature
 // id has exactly one group to land in.
+import type { SiteContent, SiteGroup, SitePage } from "@hafley66/docs-kit"
+import { pagesOf, routeOf as routeIn, targetOf as targetIn } from "@hafley66/docs-kit"
 
 /** github.io serves gothic at `/hafley-rxjs/`, so this site takes a subdirectory under it. */
 export const BASE = "/hafley-rxjs/signal-grid/"
-
-export interface SitePage {
-  readonly slug: string
-  readonly title: string
-  /** Relative to `site/`. A `pages/` source is a document copied in by `pnpm site:content`. */
-  readonly source: string
-}
-
-export interface SiteGroup {
-  readonly text: string
-  readonly pages: readonly SitePage[]
-}
 
 // The order of this array is the order of the sidebar.
 export const GROUPS: readonly SiteGroup[] = [
@@ -94,6 +84,7 @@ export const GROUPS: readonly SiteGroup[] = [
       { slug: "reference-slots", title: "Slots", source: "pages/reference-slots.md" },
       { slug: "reference-menus", title: "Context menus", source: "pages/reference-menus.md" },
       { slug: "reference-in-view", title: "runWhenInView", source: "pages/reference-in-view.md" },
+      { slug: "reference-api", title: "Every export", source: "pages/reference-api.md" },
       { slug: "parity", title: "Feature parity", source: "pages/1_parity.md" },
       { slug: "competitors", title: "Competitors", source: "pages/3_competitors.md" },
     ],
@@ -132,12 +123,14 @@ export const RECEIPTS: SiteGroup = {
   ],
 }
 
-export const PAGES: readonly SitePage[] = [...GROUPS, RECEIPTS].flatMap((it) => it.pages)
-
 export const HOME = "overview"
 
+export const CONTENT: SiteContent = { base: BASE, groups: GROUPS, receipts: RECEIPTS, home: HOME }
+
+export const PAGES: readonly SitePage[] = pagesOf(CONTENT)
+
 /** The route a page is served at, relative to `BASE`. */
-export const routeOf = (page: SitePage): string => (page.slug === HOME ? "/" : `/${page.slug}`)
+export const routeOf = (page: SitePage): string => routeIn(CONTENT, page)
 
 /** The file VitePress writes for a page, relative to `site/`. */
-export const targetOf = (page: SitePage): string => (page.slug === HOME ? "index.md" : `${page.slug}.md`)
+export const targetOf = (page: SitePage): string => targetIn(CONTENT, page)

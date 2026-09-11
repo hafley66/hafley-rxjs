@@ -2,21 +2,8 @@
 // across. The same state drives both seatings, and a 2 by 3 span becomes 3 by 2 in the transpose.
 import { Signal } from "@hafley66/signals"
 import { merge, Subscription } from "rxjs"
-import {
-  cellParts,
-  grid,
-  mountInView,
-  render,
-  runWhenInView,
-  transpose,
-  type CellId,
-  type ColumnDef,
-  type GridState,
-  type HeaderCtx,
-  type Orientation,
-  type Renderable,
-  type Viewport,
-} from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { cellParts, grid, render, transpose, type CellId, type ColumnDef, type GridState, type HeaderCtx, type Orientation, type Renderable, type Viewport } from "../src/index.js"
 import { actions, checkField, group, h, readbackField, segmentField, type Option } from "./controls.js"
 import { readout } from "./readout.js"
 import { aboutPanel, stageBox, type DemoHandle, type DemoHosts, type DemoRoute } from "./0_shell.js"

@@ -2,21 +2,8 @@
 // 50,000 leaves, with the DOM row count printed against the flat length on every frame.
 import { Signal } from "@hafley66/signals"
 import { map, merge, share, Subscription, tap } from "rxjs"
-import {
-  createMeasureStore,
-  grid,
-  mountInView,
-  render,
-  ROW_HEIGHT,
-  runWhenInView,
-  type CellCtx,
-  type ColumnDef,
-  type GridState,
-  type MeasureStore,
-  type Renderable,
-  type RowId,
-  type Viewport,
-} from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { createMeasureStore, grid, render, ROW_HEIGHT, type CellCtx, type ColumnDef, type GridState, type MeasureStore, type Renderable, type RowId, type Viewport } from "../src/index.js"
 import {
   actions,
   afterPaint,

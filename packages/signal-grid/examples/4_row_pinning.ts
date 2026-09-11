@@ -1,7 +1,8 @@
 // Pinning lifts rows out of the scrolling run before paging and virtualization narrow it, which is
 // why a pinned row stays visible whatever page the rest of the relation is showing.
 import { fromEvent, Subscription, tap } from "rxjs"
-import { grid, mountInView, render, runWhenInView, type ColumnDef, type Side } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { grid, render, type ColumnDef, type Side } from "../src/index.js"
 import source from "./4_row_pinning.ts?raw"
 import type { Example } from "./0_types.js"
 

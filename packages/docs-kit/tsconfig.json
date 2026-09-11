@@ -1,0 +1,20 @@
+{
+  "//": "No build. Every consumer imports the source, because a docs site is already running a bundler and a second compiled copy would be one more thing to keep in step. `vitepress` and `vue` types arrive through the consumer, so `.vue` files stay out of this program.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+    // VitePress loads a site config through node, which resolves this package's own relative
+    // imports itself and has no `.js` to find. Spelling them `.ts` is what makes one file both a
+    // node module and a vite module.
+    "allowImportingTsExtensions": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts", "theme/**/*.ts", "examples/**/*.ts"]
+}

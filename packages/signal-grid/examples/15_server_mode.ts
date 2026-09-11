@@ -5,7 +5,8 @@
 // which is exactly what the local window then asks for, so the two agree with no second slice.
 import { Subscription, tap } from "rxjs"
 import { Signal } from "@hafley66/signals"
-import { grid, mountInView, render, runWhenInView, type ColumnDef, type QueryDescriptor } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { grid, render, type ColumnDef, type QueryDescriptor } from "../src/index.js"
 import source from "./15_server_mode.ts?raw"
 import type { Example } from "./0_types.js"
 

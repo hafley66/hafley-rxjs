@@ -20,8 +20,8 @@
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
     "parity": "node scripts/parity.mjs",
-    "docs": "node scripts/docs.mjs",
-    "docs:render": "node scripts/docs.mjs --render",
+    "docs": "pnpm api && node scripts/docs.mjs",
+    "docs:render": "pnpm api && node scripts/docs.mjs --render",
     "docs:fix": "node scripts/docs.mjs --fix",
     "test": "vitest run",
     "test:browser": "node ../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts",
@@ -38,11 +38,12 @@
     "typecheck:bench": "tsc --noEmit -p bench/tsconfig.json",
     "site": "pnpm site:content && vitepress dev site",
     "site:dev": "pnpm site",
-    "site:content": "node scripts/docs.mjs --render && rm -rf site/pages && mkdir site/pages && cp docs/dist/*.md site/pages/ && cp bench/README.md site/benchmarks.md && cp demo/README.md site/demo-guide.md",
+    "site:content": "pnpm docs:render && rm -rf site/pages && mkdir site/pages && cp docs/dist/*.md site/pages/ && cp bench/README.md site/benchmarks.md && cp demo/README.md site/demo-guide.md",
     "site:build": "pnpm site:content && vitepress build site",
     "site:preview": "vitepress preview site",
     "examples": "node scripts/examples.mjs",
-    "ship": "node scripts/ship.mjs"
+    "ship": "node scripts/ship.mjs",
+    "api": "node scripts/api.mjs"
   },
   "peerDependencies": {
     "@hafley66/path": ">=0.1.0",
@@ -57,7 +58,7 @@
     }
   },
   "devDependencies": {
-    "@codemirror/lang-javascript": "^6.2.5",
+    "@hafley66/docs-kit": "workspace:*",
     "@hafley66/path": "workspace:*",
     "@hafley66/signals": "workspace:*",
     "@hafley66/vitest-playwright": "workspace:*",
@@ -73,7 +74,6 @@
     "@vitejs/plugin-react": "^6.0.5",
     "@vitest/browser": "^4.1.10",
     "@vitest/browser-playwright": "^4.1.10",
-    "codemirror": "^6.0.2",
     "mermaid": "^11.16.0",
     "playwright": "^1.62.1",
     "react": "^19.2.8",
@@ -81,7 +81,6 @@
     "rollup-plugin-visualizer": "^7.1.1",
     "rxjs": "^7.8.2",
     "size-limit": "^13.0.3",
-    "sucrase": "^3.35.1",
     "typescript": "7.0.2",
     "vite": "^8.2.1",
     "vitepress": "2.0.0-alpha.20",

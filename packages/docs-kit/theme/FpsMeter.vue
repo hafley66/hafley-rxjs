@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Rendering nothing while `mountedDemos` is zero is what keeps a page with no demo off the frame loop.
-import { fps, mountedDemos } from "./meters.js"
+import { fps, mountedDemos } from "../src/3_meters.ts"
 </script>
 
 <template>

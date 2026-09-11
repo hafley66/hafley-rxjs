@@ -1,7 +1,8 @@
 // Alt-click is the whole-branch modifier: one intent writes one `expanded` map covering every
 // descendant, so a 261-node subtree opens in a single change rather than 261 of them.
 import { fromEvent, Subscription, tap, timer } from "rxjs"
-import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { grid, render, type ColumnDef } from "../src/index.js"
 import source from "./26_deep_tree.ts?raw"
 import type { Example } from "./0_types.js"
 

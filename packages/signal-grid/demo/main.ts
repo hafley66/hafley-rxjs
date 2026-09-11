@@ -2,7 +2,8 @@
 // back the teardown, so switching route stops the previous grid before the next one is built.
 import { Route, Signal } from "@hafley66/signals"
 import { filter, map, tap } from "rxjs"
-import { grid, mountInView, render, runWhenInView } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { grid, render } from "../src/index.js"
 import "../src/theme.css"
 import "./demo.css"
 import { h, must } from "./controls.js"

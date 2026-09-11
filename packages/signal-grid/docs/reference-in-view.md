@@ -3,10 +3,11 @@
 Every subscription a demo needs, opened when a reader can see the demo and closed when they cannot.
 A docs page carrying twenty-four grids costs what is on screen rather than what was mounted.
 
-`src/17_in_view.ts` is the whole of it.
+`packages/docs-kit/src/1_in_view.ts` is the whole of it. It sits in the docs kit rather than in
+this package because a signals demo gates the same way a grid demo does.
 
 ```ts
-import { mountInView, runWhenInView } from "@hafley66/signal-grid"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
 
 export const example = {
   mount: (host: HTMLElement) => mountInView(host, () => {

@@ -2,7 +2,8 @@
 // kernel reads rather than an event the consumer has to relay. Writing `scrollTop` on that box is
 // the whole of scroll-into-view: the plan re-windows from the signal on the next frame.
 import { fromEvent, Subscription, tap } from "rxjs"
-import { grid, mountInView, render, ROW_HEIGHT, runWhenInView, type ColumnDef } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { grid, render, ROW_HEIGHT, type ColumnDef } from "../src/index.js"
 import source from "./24_scroll_position.ts?raw"
 import type { Example } from "./0_types.js"
 

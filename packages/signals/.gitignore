@@ -1,0 +1,5 @@
+dist/
+out/
+site/pages
+site/dist
+docs/dist

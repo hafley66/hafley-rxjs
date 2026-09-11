@@ -2,7 +2,8 @@
 // `moveAttrs()`. Its route chain is `g/h/move`, which is the template `moveColumnOnHeaderDrag`
 // already listens on, so the epic needs no configuration to pick the gesture up.
 import { Subscription, tap } from "rxjs"
-import { grid, mountInView, moveAttrs, render, runWhenInView } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { grid, moveAttrs, render } from "../src/index.js"
 import type { ColumnDef, HeaderCtx, Renderable, Slot } from "../src/index.js"
 import source from "./6_column_reorder.ts?raw"
 import type { Example } from "./0_types.js"

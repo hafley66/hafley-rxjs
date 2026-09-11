@@ -2,7 +2,8 @@
 // second code path. `plan.pageCount` is reported off the whole center run, which is what lets a
 // pager know how many pages exist while only one page is windowed.
 import { fromEvent, Subscription, tap } from "rxjs"
-import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { grid, render, type ColumnDef } from "../src/index.js"
 import source from "./9_pagination.ts?raw"
 import type { Example } from "./0_types.js"
 

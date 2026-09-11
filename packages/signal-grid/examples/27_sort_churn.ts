@@ -1,7 +1,8 @@
 // Two writers race on purpose: the sort key flips every 200 ms while the scroll box moves every
 // 60 ms, so `sort`, `flatten` and `plan` all re-run against a viewport that never settles.
 import { interval, Subscription, tap } from "rxjs"
-import { grid, mountInView, render, runWhenInView, type ColumnDef, type SortModel } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { grid, render, type ColumnDef, type SortModel } from "../src/index.js"
 import source from "./27_sort_churn.ts?raw"
 import type { Example } from "./0_types.js"
 

@@ -2,11 +2,10 @@
 // and mounts one live grid under the "The matrix" heading. Sorting is the epic `bind()` installs.
 import { Signal } from "@hafley66/signals"
 import { tap } from "rxjs"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
 import {
   grid,
-  mountInView,
   render,
-  runWhenInView,
   type CellCtx,
   type ColumnDef,
   type GridState,

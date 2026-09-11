@@ -12,7 +12,7 @@ runWhenInView(g.effect$.pipe(tap(handle)))    // it left the grid
 
 `runWhenInView` opens the subscription when the host reaches the buffer zone and closes it when the
 host leaves, so a page of grids costs what the reader is looking at. It is declared in
-`src/17_in_view.ts` and takes its host from the `mountInView` call around it.
+`packages/docs-kit/src/1_in_view.ts` and takes its host from the `mountInView` call around it.
 
 ## The three phases
 
