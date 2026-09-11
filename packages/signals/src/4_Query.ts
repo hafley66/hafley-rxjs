@@ -34,11 +34,18 @@ export type QueryState<T, E = unknown> = {
   updatedAt?: number
 }
 
-export type QueryOptions = {
+export type RefetchInterval<O, E = unknown> =
+  | number
+  | false
+  | ((state: QueryState<O, E>) => number | false)
+
+export type QueryOptions<O = unknown, E = unknown> = {
   staleTime?: number
   cacheTime?: number
   skip?: "clear" | "retain"
   now?: () => number
+  /** Poll while subscribed. A tick that lands mid-flight is dropped, never queued. */
+  refetchInterval?: RefetchInterval<O, E>
 }
 
 export type Query<I, O, E = unknown> = SignalType<QueryState<O, E>> & {
@@ -142,6 +149,33 @@ function queryCache(endpoint: object) {
   return cache
 }
 
+// The next delay is read from the settled state after every response, so a
+// function form can slow down or stop (false) per result.
+function pollTicks<O, E>(
+  entry: QueryEntry<O, E>,
+  interval: RefetchInterval<O, E>,
+): Observable<"refetch"> {
+  if (interval === false || interval === undefined) return EMPTY
+  const delayFor = (): number | false =>
+    typeof interval === "function" ? interval(entry.current) : interval
+  return new Observable<"refetch">((subscriber) => {
+    let handle: ReturnType<typeof setTimeout> | undefined
+    const arm = () => {
+      const ms = delayFor()
+      if (ms === false) return
+      handle = setTimeout(() => {
+        if (delayFor() === false) return
+        if (!entry.current.isLoading) subscriber.next("refetch")
+        arm()
+      }, ms)
+    }
+    arm()
+    return () => {
+      if (handle !== undefined) clearTimeout(handle)
+    }
+  })
+}
+
 function getQueryEntry<I, O, E>(
   endpoint: Endpoint<I, O>,
   input: I,
@@ -172,6 +206,7 @@ function getQueryEntry<I, O, E>(
     const fetchEvents$ = merge(
       initialFetch$,
       command.pipe(filter((value) => value === "refetch")),
+      pollTicks(entry, options.refetchInterval as RefetchInterval<O, E>),
     ).pipe(
       // One query key represents one current request/response cycle. A new
       // refetch cancels the previous cycle; concurrency is deliberately not
@@ -232,6 +267,7 @@ export function createQuery<I, O, E = unknown>(
   const input = toSignal(source)
   const options: Required<QueryOptions> = {
     staleTime: config.staleTime ?? 0,
+    refetchInterval: config.refetchInterval ?? false,
     cacheTime: config.cacheTime ?? 5 * 60_000,
     skip: config.skip ?? "clear",
     now: config.now ?? Date.now,

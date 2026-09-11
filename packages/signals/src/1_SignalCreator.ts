@@ -2,7 +2,9 @@ import {
   BehaviorSubject,
   distinctUntilChanged,
   filter,
+  from as streamOf,
   identity,
+  isObservable,
   map,
   merge,
   Observable,
@@ -167,7 +169,7 @@ export function trackDependencies<T>(
 export function SignalCreator<T, Base extends object = object>(
   options: SignalCreatorOptions<T, Base>
 ): Signal<T, Base> {
-  const { initialState, observable, event = false, read, createBase } = options
+  const { initialState, observable, event = false, read, write, createBase } = options
 
   const state$ = event || (observable && initialState === undefined)
     ? new Subject<T>()
@@ -178,6 +180,9 @@ export function SignalCreator<T, Base extends object = object>(
   // at the root: the whole point of the record is naming which branch moved.
   const pushState = (next: T, from: string[] = ROOT_PATH) => {
     latest = next
+    // A writable memo mirrors the value into its own holder before the emit, so the next run of
+    // the body reads what was written as `prev`.
+    write?.(next)
     if (LOG.on) {
       LOG.emit(CAT_EMIT, "emit {path}", {
         path: from,
@@ -458,12 +463,43 @@ export function SignalCreator<T, Base extends object = object>(
  */
 let computedSeq = 0
 
-export function createComputedSignal<T>(compute: () => T, name?: string): Signal<T> {
-  const id = name ?? `memo#${++computedSeq}`
+/** Same shape as Solid 2.0 `ComputeFunction<Prev, Next>`: a value, or a stream of values. */
+export type ComputeResult<T> = T | Observable<T> | PromiseLike<T> | AsyncIterable<T>
+
+/** Arity 1 is the scan form: the body is handed its own previous value. */
+export type ComputeBody<T> = (prev: T) => ComputeResult<T>
+
+export type ComputedOptions = {
+  /** `.$(next)` overrides the value until the next run, which sees it as `prev`. Default true. */
+  writable?: boolean
+}
+
+function isStream<T>(value: ComputeResult<T>): value is Observable<T> | PromiseLike<T> | AsyncIterable<T> {
+  if (value === null || value === undefined) return false
+  if (isObservable(value)) return true
+  if (typeof value !== "object" && typeof value !== "function") return false
+  if (typeof (value as PromiseLike<T>).then === "function") return true
+  return Symbol.asyncIterator in (value as object)
+}
+
+/**
+ * The body receives the current value as `prev`. A stream result feeds the value one emission at a
+ * time: a dependency change cancels it and reruns (switch), completion after at least one emission
+ * reruns (expand), completion with none settles until a dependency changes.
+ */
+export function createComputedSignal<T>(
+  compute: ComputeBody<T>,
+  seed?: T,
+  options: ComputedOptions = {},
+): Signal<T> {
+  const id = `memo#${++computedSeq}`
   let dirty = true
-  let hasValue = false
-  let value: T
+  let hasValue = arguments.length >= 2
+  let value = seed as T
   let running = false
+  // A stream that completed asks for another run, and the loop below serves it without recursing.
+  let rerun = false
+  let streamed = false
   let lastRunFailed = false
   let subscriberCount = 0
   let readPinned = false
@@ -471,11 +507,18 @@ export function createComputedSignal<T>(compute: () => T, name?: string): Signal
   // invalidation and its drain would otherwise starve every subscriber of this memo.
   let pushOwed = false
   let rank = 0
+  // Counts emissions so a flush can tell whether the run it just made already published. A stream
+  // run publishes from its inner subscription, and a second push here would double every value.
+  let emitVersion = 0
 
-  const observers = new Set<{ next(value: T): void }>()
+  const observers = new Set<{ next(value: T): void; error(error: unknown): void }>()
   // Keyed by dependency so a recompute diffs instead of rebuilding: tearing every subscription
   // down and re-adding it re-emitted every BehaviorSubject on the way back in.
   const dependencySubs = new Map<Signal<unknown>, { unsubscribe(): void }>()
+  // The live stream result, and the identity of the run that opened it. A late `complete` from a
+  // cancelled run compares tokens and stays quiet.
+  let inner: { unsubscribe(): void } | undefined
+  let token: object = {}
 
   const clearDependencies = () => {
     for (const [dependency, sub] of dependencySubs) {
@@ -483,6 +526,19 @@ export function createComputedSignal<T>(compute: () => T, name?: string): Signal
       if (LOG.on) LOG.emit(CAT_UNSUBSCRIBE, "unsubscribe {id} {path}", { id, path: dependency.$.path })
     }
     dependencySubs.clear()
+  }
+
+  const cancelInner = () => {
+    token = {}
+    inner?.unsubscribe()
+    inner = undefined
+  }
+
+  // Downstream recomputation may unsubscribe and resubscribe while handling this emission. Iterate
+  // a snapshot so a newly added observer is not visited again in the same Set iteration.
+  const emit = (next: T) => {
+    emitVersion++
+    for (const observer of [...observers]) observer.next(next)
   }
 
   // Returns the diff size so a compute record can say how much of the wiring actually moved.
@@ -514,52 +570,82 @@ export function createComputedSignal<T>(compute: () => T, name?: string): Signal
     if (running) return value
     running = true
 
-    const started = LOG.on ? performance.now() : 0
-    const dependencies = new Set<Signal<unknown>>()
-    dependencyCollectors.push((dependency) => dependencies.add(dependency))
-    computingRanks.push(0)
+    do {
+      rerun = false
+      cancelInner()
+      const started = LOG.on ? performance.now() : 0
+      const dependencies = new Set<Signal<unknown>>()
+      dependencyCollectors.push((dependency) => dependencies.add(dependency))
+      computingRanks.push(0)
 
-    const report = (diff: { added: number; removed: number }) => {
-      if (!LOG.on) return
-      LOG.emit(CAT_COMPUTE, "compute {id} {durationMs}ms", {
-        id,
-        durationMs: performance.now() - started,
-        depCount: dependencies.size,
-        depsAdded: diff.added,
-        depsRemoved: diff.removed,
-        trigger,
-      })
-    }
+      const report = (diff: { added: number; removed: number }) => {
+        if (!LOG.on) return
+        LOG.emit(CAT_COMPUTE, "compute {id} {durationMs}ms", {
+          id,
+          durationMs: performance.now() - started,
+          depCount: dependencies.size,
+          depsAdded: diff.added,
+          depsRemoved: diff.removed,
+          trigger,
+        })
+      }
 
-    let next: T
-    try {
-      next = compute()
-    } catch (error) {
+      let out: ComputeResult<T>
+      try {
+        out = compute(value)
+      } catch (error) {
+        dependencyCollectors.pop()
+        rank = computingRanks.pop()!
+        running = false
+        dirty = true
+        lastRunFailed = true
+
+        // Preserve the dependencies read before the throw so a later change can recover the memo.
+        // A failed recomputation is not an Observable error: it must not permanently terminate
+        // this or any composed memo.
+        report(syncDependencies(dependencies))
+
+        if (hasValue) return value
+        throw error
+      }
+
       dependencyCollectors.pop()
       rank = computingRanks.pop()!
-      running = false
-      dirty = true
-      lastRunFailed = true
-
-      // Preserve the dependencies read before the throw so a later change can
-      // recover the memo. A failed recomputation is not an Observable error:
-      // it must not permanently terminate this or any composed memo.
+      dirty = false
+      lastRunFailed = false
       report(syncDependencies(dependencies))
 
-      if (hasValue) return value
-      throw error
-    }
+      streamed = isStream(out)
+      if (!streamed) {
+        value = out as T
+        hasValue = true
+        break
+      }
 
-    dependencyCollectors.pop()
-    rank = computingRanks.pop()!
+      const mine = (token = {})
+      let emitted = false
+      const sub = streamOf(out as Observable<T>).subscribe({
+        next: (next) => {
+          emitted = true
+          value = next
+          hasValue = true
+          emit(next)
+        },
+        error: (error) => {
+          for (const observer of [...observers]) observer.error(error)
+        },
+        complete: () => {
+          // A run whose token moved on was cancelled, and a stream that emitted nothing settles.
+          if (token !== mine || !emitted) return
+          inner = undefined
+          if (running) rerun = true
+          else invalidate()
+        },
+      })
+      if (token === mine && !sub.closed) inner = sub
+    } while (rerun)
+
     running = false
-    value = next
-    hasValue = true
-    dirty = false
-    lastRunFailed = false
-
-    report(syncDependencies(dependencies))
-
     return value
   }
 
@@ -583,11 +669,10 @@ export function createComputedSignal<T>(compute: () => T, name?: string): Signal
   const flush = () => {
     if (!dirty && !pushOwed) return
     pushOwed = false
+    const before = emitVersion
     const next = dirty ? recompute("invalidate") : value
-    // Downstream recomputation may unsubscribe and resubscribe while handling
-    // this emission. Iterate a snapshot so a newly added observer is not visited
-    // again in the same Set iteration (an infinite nested-memo cascade).
-    if (!lastRunFailed) for (const observer of [...observers]) observer.next(next)
+    // A stream run publishes from its inner, so the seed surfaces only on first subscribe.
+    if (!lastRunFailed && !streamed && before === emitVersion) emit(next)
   }
 
   const readMemo = () => {
@@ -606,7 +691,9 @@ export function createComputedSignal<T>(compute: () => T, name?: string): Signal
     observers.add(subscriber)
 
     try {
-      subscriber.next(dirty || !hasValue ? recompute("read") : value)
+      const before = emitVersion
+      const next = dirty || !hasValue ? recompute("read") : value
+      if (before === emitVersion) subscriber.next(next)
     } catch (error) {
       observers.delete(subscriber)
       subscriberCount--
@@ -618,11 +705,19 @@ export function createComputedSignal<T>(compute: () => T, name?: string): Signal
       observers.delete(subscriber)
       subscriberCount--
       if (!subscriberCount && !readPinned) {
+        cancelInner()
         clearDependencies()
         dirty = true
       }
     }
   })
 
-  return SignalCreator({ observable, read: readMemo })
+  const write = options.writable !== false
+    ? (next: T) => {
+        value = next
+        hasValue = true
+      }
+    : undefined
+
+  return SignalCreator({ observable, read: readMemo, write })
 }
