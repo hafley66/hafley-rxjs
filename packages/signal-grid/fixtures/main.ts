@@ -66,6 +66,16 @@ const COLUMNS: readonly ColumnDef<FileRow>[] = [
   { id: "mtime", header: "Modified", width: 140 },
 ]
 
+// The sizing a consumer writes when a column should take the leftover room: no width, a floor, a
+// cap. Selected by `?columns=flex`, so the suites that count cells keep the fixed schema.
+const FLEX_COLUMNS: readonly ColumnDef<FileRow>[] = [
+  { id: "name", header: "Name", flex: 2, minWidth: 180, maxWidth: 320, resizable: true },
+  { id: "size", header: "Size", width: 100, resizable: true },
+  { id: "mtime", header: "Modified", width: 140 },
+]
+
+const flexSchema = new URLSearchParams(location.search).get("columns") === "flex"
+
 export interface Observed {
   readonly route: "cell" | "header"
   readonly params: Record<string, string>
@@ -107,7 +117,7 @@ const viewport = Signal<Viewport>({ top: 0, left: 0, width: 900, height: 320 })
 const g = grid<FileRow>({
   id: GRID,
   rows: ROWS,
-  columns: COLUMNS,
+  columns: flexSchema ? FLEX_COLUMNS : COLUMNS,
   rowId: (row) => row.id,
   subRows: (row) => row.kids,
   // A signal rather than the plain object it seeds with, so this fixture is controlled both ways.
