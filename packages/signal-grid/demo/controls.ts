@@ -1,13 +1,17 @@
-// Control primitives. Every one of them is a lens over a signal: `read` pulls the current value out
-// of grid state, `write` puts one back, and `refresh` is called after any state emission so a
-// control moved from the console lands in the panel too.
+// @comment-ok: the one-signal-per-control contract is the thing this file exists to hold, and the
+// laziness note under `lens` is what keeps a bound panel gated behind `runWhenInView`
+// Control primitives. Every one takes a signal and nothing else: the element shows what the signal
+// holds, and a gesture on the element writes that same signal back.
 //
-// No local component state exists in this file. That is the point being demonstrated:
-// the input element is a view of the signal, not a second copy of it.
+// No control is ever told to re-read itself. Each hands back a `bind$` that paints the element for
+// as long as something subscribes, so the page decides when a panel is live.
+import { animationFrameScheduler, auditTime, EMPTY, map, merge, Observable, share, tap } from "rxjs"
+import { Signal } from "@hafley66/signals"
 
 export interface Bound {
   readonly el: HTMLElement
-  readonly refresh: () => void
+  /** Subscribing keeps `el` showing what its signal holds. The values it carries are not read. */
+  readonly bind$: Observable<unknown>
 }
 
 export interface Option<T extends string> {
@@ -32,6 +36,22 @@ export function must(selector: string): HTMLElement {
   return el
 }
 
+/** A signal over a value that lives inside another one. `Signal(read)` holds no subscription on
+ * anything `read` touches until it is subscribed, which keeps a bound panel gated by its host. */
+export function lens<T>(read: () => T, write: (it: T) => void): Signal<T> {
+  const view = Signal<T>(read)
+  const node = {
+    $: new Proxy(view.$, {
+      apply: (target, _thisArg, args: readonly unknown[]) => {
+        if (args.length === 0) return target()
+        write(args[0] as T)
+        return node
+      },
+    }),
+  } as Signal<T>
+  return node
+}
+
 const field = (label: string, control: HTMLElement, readout?: HTMLElement): HTMLElement => {
   const wrap = h("label", "field")
   const name = h("span", "field-label", label)
@@ -43,20 +63,19 @@ const field = (label: string, control: HTMLElement, readout?: HTMLElement): HTML
   return wrap
 }
 
-/** A titled group. Groups keep a fixed order so a refresh never reflows the panel. */
+/** A titled group. Groups keep a fixed order, and one subscription to the group paints every item. */
 export function group(title: string, items: readonly Bound[]): Bound {
   const el = h("section", "group")
   const head = h("h2", "group-title", title)
   el.append(head)
   for (const item of items) el.append(item.el)
-  return { el, refresh: () => { for (const item of items) item.refresh() } }
+  return { el, bind$: merge(...items.map((it) => it.bind$)) }
 }
 
 export function selectField<T extends string>(
   label: string,
   options: readonly Option<T>[],
-  read: () => T,
-  write: (next: T) => void,
+  value: Signal<T>,
 ): Bound {
   const el = h("select", "control control-select")
   for (const option of options) {
@@ -64,25 +83,24 @@ export function selectField<T extends string>(
     node.value = option.value
     el.append(node)
   }
-  el.addEventListener("change", () => write(el.value as T))
-  return { el: field(label, el), refresh: () => { el.value = read() } }
+  el.addEventListener("change", () => value.$(el.value as T))
+  return { el: field(label, el), bind$: value.$.pipe(tap((it) => { el.value = it })) }
 }
 
-export function checkField(label: string, read: () => boolean, write: (next: boolean) => void): Bound {
+export function checkField(label: string, value: Signal<boolean>): Bound {
   const el = h("input", "control control-check")
   el.type = "checkbox"
-  el.addEventListener("change", () => write(el.checked))
+  el.addEventListener("change", () => value.$(el.checked))
   const wrap = h("label", "field field-check")
   wrap.append(el, h("span", "field-label", label))
-  return { el: wrap, refresh: () => { el.checked = read() } }
+  return { el: wrap, bind$: value.$.pipe(tap((it) => { el.checked = it })) }
 }
 
 export function rangeField(
   label: string,
   bounds: { readonly min: number; readonly max: number; readonly step: number },
-  read: () => number,
-  write: (next: number) => void,
-  format: (value: number) => string = (value) => String(value),
+  value: Signal<number>,
+  format: (it: number) => string = (it) => String(it),
 ): Bound {
   const el = h("input", "control control-range")
   el.type = "range"
@@ -90,81 +108,76 @@ export function rangeField(
   el.max = String(bounds.max)
   el.step = String(bounds.step)
   const readout = h("span")
-  el.addEventListener("input", () => write(Number(el.value)))
+  el.addEventListener("input", () => value.$(Number(el.value)))
   return {
     el: field(label, el, readout),
-    refresh: () => {
-      const value = read()
-      el.value = String(value)
-      readout.textContent = format(value)
-    },
+    bind$: value.$.pipe(
+      tap((it) => {
+        el.value = String(it)
+        readout.textContent = format(it)
+      }),
+    ),
   }
 }
 
 export function numberField(
   label: string,
   bounds: { readonly min: number; readonly max: number; readonly step: number },
-  read: () => number,
-  write: (next: number) => void,
+  value: Signal<number>,
 ): Bound {
   const el = h("input", "control control-number")
   el.type = "number"
   el.min = String(bounds.min)
   el.max = String(bounds.max)
   el.step = String(bounds.step)
-  el.addEventListener("change", () => write(Number(el.value)))
-  return { el: field(label, el), refresh: () => { el.value = String(read()) } }
+  el.addEventListener("change", () => value.$(Number(el.value)))
+  return { el: field(label, el), bind$: value.$.pipe(tap((it) => { el.value = String(it) })) }
 }
 
-export function textField(
-  label: string,
-  read: () => string,
-  write: (next: string) => void,
-  placeholder?: string,
-): Bound {
+export function textField(label: string, value: Signal<string>, placeholder?: string): Bound {
   const el = h("input", "control control-text")
   el.type = "text"
   if (placeholder !== undefined) el.placeholder = placeholder
-  el.addEventListener("change", () => write(el.value))
+  el.addEventListener("change", () => value.$(el.value))
   return {
     el: field(label, el),
-    // A field being typed into is not re-read: the state write happens on change, and clobbering
-    // the caret mid-word is the one thing a live panel must not do.
-    refresh: () => { if (document.activeElement !== el) el.value = read() },
+    // A field being typed into is not painted over: the write happens on change, and clobbering the
+    // caret mid-word is the one thing a live panel must not do.
+    bind$: value.$.pipe(tap((it) => { if (document.activeElement !== el) el.value = it })),
   }
 }
 
-export function colorField(label: string, read: () => string, write: (next: string) => void): Bound {
+export function colorField(label: string, value: Signal<string>): Bound {
   const el = h("input", "control control-color")
   el.type = "color"
-  el.addEventListener("input", () => write(el.value))
-  return { el: field(label, el), refresh: () => { el.value = read() } }
+  el.addEventListener("input", () => value.$(el.value))
+  return { el: field(label, el), bind$: value.$.pipe(tap((it) => { el.value = it })) }
 }
 
 /** Radio semantics without a radio group: `aria-pressed` is the state, the signal is the source. */
 export function segmentField<T extends string>(
   label: string,
   options: readonly Option<T>[],
-  read: () => T,
-  write: (next: T) => void,
+  value: Signal<T>,
 ): Bound {
   const el = h("div", "control control-segment")
   el.setAttribute("role", "group")
   const buttons = options.map((option) => {
     const button = h("button", "segment", option.label)
     button.type = "button"
-    button.addEventListener("click", () => write(option.value))
+    button.addEventListener("click", () => value.$(option.value))
     el.append(button)
     return { option, button }
   })
   return {
     el: field(label, el),
-    refresh: () => {
-      const current = read()
-      for (const entry of buttons) {
-        entry.button.setAttribute("aria-pressed", String(entry.option.value === current))
-      }
-    },
+    bind$: value.$.pipe(
+      tap((current) => {
+        for (const entry of buttons) {
+          entry.button.setAttribute("aria-pressed", String(entry.option.value === current))
+        }
+      }),
+    ),
   }
 }
 
@@ -174,6 +187,7 @@ export interface Action {
   readonly run: () => void
 }
 
+/** Buttons hold no value, so there is nothing for them to show and nothing to bind. */
 export function actions(items: readonly Action[]): Bound {
   const el = h("div", "control-actions")
   for (const item of items) {
@@ -183,10 +197,10 @@ export function actions(items: readonly Action[]): Bound {
     button.addEventListener("click", item.run)
     el.append(button)
   }
-  return { el, refresh: () => {} }
+  return { el, bind$: EMPTY }
 }
 
-/** A row of controls that belong to one column of the grid. Order is set by `refresh`. */
+/** A row of controls that belong to one column of the grid. Order is written by `applyOrder`. */
 export interface Reorderable extends Bound {
   readonly key: string
 }
@@ -219,10 +233,24 @@ export function moveBefore(order: readonly string[], key: string, before: string
   return [...without.slice(0, at), key, ...without.slice(at)]
 }
 
-/** A label with a live value beside it. Reads state, writes nothing. */
-export function readbackField(label: string, read: () => string): Bound {
+/** A label with a live value beside it. Shows a signal, writes nothing. */
+export function readbackField(label: string, text: Signal<string>): Bound {
   const el = h("div", "field field-readback")
   const value = h("code", "readback")
   el.append(h("span", "field-label", label), value)
-  return { el, refresh: () => { value.textContent = read() } }
+  return { el, bind$: text.$.pipe(tap((it) => { value.textContent = it })) }
 }
+
+/** An element whose attribute is a signal, for the parts of a panel that are not a labelled field. */
+export function attributeOf(el: HTMLElement, name: string, value: Signal<string>): Bound {
+  return { el, bind$: value.$.pipe(tap((it) => { el.setAttribute(name, it) })) }
+}
+
+/** One tick a frame after `source` emits, which is when the renderer has finished writing rows.
+ * Shared, so a panel reading the document ten ways still costs one frame per burst. */
+export const afterPaint = (source: Observable<unknown>): Observable<unknown> =>
+  source.pipe(auditTime(0, animationFrameScheduler), share())
+
+/** Text read out of the document rather than off state, sampled on each tick of `frames`. */
+export const paintedText = (frames: Observable<unknown>, read: () => string): Signal<string> =>
+  Signal<string>(frames.pipe(map(read)), "")

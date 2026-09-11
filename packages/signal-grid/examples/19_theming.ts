@@ -2,7 +2,7 @@
 // is one write and no class name is overridden. `--sg-row-h` is deliberately not among these: the
 // renderer rewrites it from `ROW_HEIGHT[density]` on every geometry frame, so height is changed
 // through `state.density` and colour through properties.
-import { fromEvent, Subscription } from "rxjs"
+import { fromEvent, Subscription, tap } from "rxjs"
 import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./19_theming.ts?raw"
 import type { Example } from "./0_types.js"
@@ -72,11 +72,12 @@ export const theming: Example = {
       button.type = "button"
       button.textContent = name
       bar.append(button)
-      subs.add(runWhenInView(fromEvent(button, "click"), () => {
+      const clicked$ = fromEvent(button, "click")
+      subs.add(runWhenInView(clicked$.pipe(tap(() => {
         for (const property of applied) root.style.removeProperty(property)
         for (const [property, value] of Object.entries(vars)) root.style.setProperty(property, value)
         applied = Object.keys(vars)
-      }))
+      }))))
     }
     return () => {
       subs.unsubscribe()

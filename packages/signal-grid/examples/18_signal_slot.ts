@@ -2,7 +2,7 @@
 // row's subscription and writes its text, so a value change repaints one cell and the row around it
 // never rebuilds. The subscription dies with the cell, which is what stops a recycled cell writing
 // into a node that now belongs to another row.
-import { Subscription, interval } from "rxjs"
+import { interval, Subscription, tap } from "rxjs"
 import { Signal } from "@hafley66/signals"
 import { grid, mountInView, render, runWhenInView, type CellCtx, type ColumnDef, type Slot } from "../src/index.js"
 import source from "./18_signal_slot.ts?raw"
@@ -42,7 +42,7 @@ export const signalSlot: Example = {
     const g = grid<Row>({ id: "signal-slot", rows: ROWS, columns, rowId: (row) => row.id })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(runWhenInView(interval(900), () => tick.$(tick.$() + 1)))
+    subs.add(runWhenInView(interval(900).pipe(tap(() => tick.$(tick.$() + 1)))))
     return () => {
       subs.unsubscribe()
       handle.stop()

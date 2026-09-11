@@ -7,7 +7,7 @@ remembers, and it is declared in `src/0_types.ts`.
 g.state.$()                       // the whole record
 g.state.sort.$()                  // one key
 g.state.colHidden.size.$(true)    // one key of one record
-runWhenInView(g.state.colHidden.size.$, handle)
+runWhenInView(g.state.colHidden.size.$.pipe(tap(handle)))
 ```
 
 ## Row axis

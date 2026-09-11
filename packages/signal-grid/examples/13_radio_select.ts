@@ -2,7 +2,7 @@
 // The default epic set toggles many, so single select replaces one epic rather than configuring it:
 // every other epic is exported alone precisely so a consumer can swap exactly the one it disagrees
 // with and keep the rest.
-import { filter, fromEvent, map, Subscription } from "rxjs"
+import { filter, fromEvent, map, Subscription, tap } from "rxjs"
 import { activateOnCellClick, grid, keyboardNav, modifiersOf, radioColumn } from "../src/index.js"
 import { mountInView, render, rowSelectionMode, runWhenInView, sortOnHeaderClick } from "../src/index.js"
 import type { ColumnDef, GridAction, GridEpic, GridIntent } from "../src/index.js"
@@ -68,13 +68,14 @@ export const radioSelect: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(runWhenInView(fromEvent<MouseEvent>(root, "click"), (event) => {
+    const clicked$ = fromEvent<MouseEvent>(root, "click")
+    subs.add(runWhenInView(clicked$.pipe(tap((event) => {
       const target = event.target
       if (!(target instanceof Element)) return
       const id = target.closest(".example-radio")?.closest("[data-route='r']")?.getAttribute("data-row-id")
       if (id === null || id === undefined) return
       g.dispatch({ phase: "intent", type: "checkbox.click", row: id, mods: modifiersOf(event) })
-    }))
+    }))))
     return () => {
       subs.unsubscribe()
       handle.stop()

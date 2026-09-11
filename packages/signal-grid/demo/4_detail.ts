@@ -1,7 +1,7 @@
 // Route 4. Both things a cell click can mean. One opens a detail row holding a second full grid;
 // the other loads that row's children into the row axis and expands it, with no panel at all.
 import { Signal } from "@hafley66/signals"
-import { filter, Subscription } from "rxjs"
+import { delay, filter, merge, mergeMap, of, Subscription, tap } from "rxjs"
 import {
   BUILT_IN_IDS,
   defaultEpics,
@@ -123,21 +123,16 @@ function mount(hosts: DemoHosts): DemoHandle {
   const subs = new Subscription()
   const box = stageBox(hosts, "stage-box")
 
-  let queued = false
-  const groups: { refresh: () => void }[] = []
-
-  function refresh(): void {
-    if (queued) return
-    queued = true
-    requestAnimationFrame(() => {
-      queued = false
-      for (const entry of groups) entry.refresh()
-    })
-  }
-
   const source = Signal<readonly OrderRow[]>(ORDERS)
-  const loaded = new Set<RowId>()
-  const pending = new Set<RowId>()
+  const loaded = Signal<ReadonlySet<RowId>>(new Set<RowId>())
+  const pending = Signal<ReadonlySet<RowId>>(new Set<RowId>())
+
+  const withKey = (keys: ReadonlySet<RowId>, id: RowId): ReadonlySet<RowId> => new Set(keys).add(id)
+  const withoutKey = (keys: ReadonlySet<RowId>, id: RowId): ReadonlySet<RowId> => {
+    const next = new Set(keys)
+    next.delete(id)
+    return next
+  }
   // The nested grid needs no hand-wired delegation: `data-route-boundary` on its own root ends the
   // ancestor walk, so its cells compose `g/r/c` against it rather than `g/r/g/r/c` against the page.
   let lastNested: unknown = null
@@ -206,15 +201,14 @@ function mount(hosts: DemoHosts): DemoHandle {
 
   // A panel is tall and variable, so its key needs a height or the sizer measures it at the
   // density default and the scroll drifts by the difference on every open.
-  subs.add(
-    runWhenInView(orders.state.detail.$, (open) => {
+  const heights$ = orders.state.detail.$.pipe(
+    tap((open) => {
       const next = detailHeights(open, PANEL_HEIGHT)
       const current = orders.state.rowHeight.$()
       const keys = Object.keys(next)
       const same =
         keys.length === Object.keys(current).length && keys.every((it) => current[it] === next[it])
       if (!same) orders.state.rowHeight.$(next)
-      refresh()
     }),
   )
 
@@ -223,25 +217,19 @@ function mount(hosts: DemoHosts): DemoHandle {
   const isCellClick = (action: GridIntent): action is Extract<GridIntent, { type: "cell.click" }> =>
     action.type === "cell.click"
 
-  subs.add(
-    runWhenInView(
-      orders.intent$.pipe(
-        filter(isCellClick),
-        filter((it) => it.col === "region"),
-        filter((it) => !loaded.has(it.row) && !pending.has(it.row)),
-      ),
-      (action) => {
-        pending.add(action.row)
-        refresh()
-        // A real fetch is what a consumer puts here; the delay is what makes the pending state visible.
-        window.setTimeout(() => {
-          pending.delete(action.row)
-          loaded.add(action.row)
-          source.$(attach(source.$(), action.row, childRowsOf(action.row)))
-          orders.state.expanded.$({ ...orders.state.expanded.$(), [action.row]: true })
-          refresh()
-        }, 220)
-      }),
+  const lazy$ = orders.intent$.pipe(
+    filter(isCellClick),
+    filter((it) => it.col === "region"),
+    filter((it) => !loaded.$().has(it.row) && !pending.$().has(it.row)),
+    tap((it) => pending.$(withKey(pending.$(), it.row))),
+    // A real fetch is what a consumer puts here; the delay is what makes the pending state visible.
+    mergeMap((it) => of(it).pipe(delay(220))),
+    tap((it) => {
+      pending.$(withoutKey(pending.$(), it.row))
+      loaded.$(withKey(loaded.$(), it.row))
+      source.$(attach(source.$(), it.row, childRowsOf(it.row)))
+      orders.state.expanded.$({ ...orders.state.expanded.$(), [it.row]: true })
+    }),
   )
 
   // --- panel ----------------------------------------------------------------
@@ -259,12 +247,17 @@ function mount(hosts: DemoHosts): DemoHandle {
       { label: "open the first visible row", run: openFirst },
       { label: "close every panel", run: () => orders.state.detail.$({}) },
     ]),
-    readbackField("open panels", () => `${openRows().length}: ${openRows().slice(0, 2).join(", ")}`),
-    readbackField("nested grids alive", () => String(openRows().length)),
-    readbackField("detail row heights", () =>
-      Object.keys(orders.state.rowHeight.$()).length === 0
-        ? "none"
-        : `${Object.keys(orders.state.rowHeight.$()).length} keys at ${PANEL_HEIGHT}px`,
+    readbackField(
+      "open panels",
+      Signal<string>(() => `${openRows().length}: ${openRows().slice(0, 2).join(", ")}`),
+    ),
+    readbackField("nested grids alive", Signal<string>(() => String(openRows().length))),
+    readbackField(
+      "detail row heights",
+      Signal<string>(() => {
+        const keys = Object.keys(orders.state.rowHeight.$()).length
+        return keys === 0 ? "none" : `${keys} keys at ${PANEL_HEIGHT}px`
+      }),
     ),
     actions([
       {
@@ -290,34 +283,36 @@ function mount(hosts: DemoHosts): DemoHandle {
   ])
 
   const lazyGroup = group("Lazy children through intent$", [
-    readbackField("rows loaded", () => String(loaded.size)),
-    readbackField("fetches in flight", () => String(pending.size)),
-    readbackField("expanded rows", () => String(Object.keys(orders.state.expanded.$()).length)),
-    readbackField("flat length", () => orders.view.flat.$().length.toLocaleString("en-US")),
+    readbackField("rows loaded", Signal<string>(() => String(loaded.$().size))),
+    readbackField("fetches in flight", Signal<string>(() => String(pending.$().size))),
+    readbackField(
+      "expanded rows",
+      Signal<string>(() => String(Object.keys(orders.state.expanded.$()).length)),
+    ),
+    readbackField(
+      "flat length",
+      Signal<string>(() => orders.view.flat.$().length.toLocaleString("en-US")),
+    ),
     actions([
       {
         label: "forget every lazy load",
         run: () => {
-          loaded.clear()
+          loaded.$(new Set<RowId>())
           source.$(ORDERS)
           orders.state.expanded.$({})
-          refresh()
         },
       },
     ]),
-    checkField("virtualize rows", () => orders.state.virtualize.vertical.$(), (next) =>
-      orders.state.virtualize.vertical.$(next),
-    ),
+    checkField("virtualize rows", orders.state.virtualize.vertical),
   ])
 
-  groups.push(panelGroup, lazyGroup)
   hosts.panel.append(aboutPanel(detailDemo), panelGroup.el, lazyGroup.el)
 
   const panelReadout = readout(orders, box)
   hosts.readout.append(panelReadout.el)
 
-  subs.add(runWhenInView(orders.state.$, refresh))
-  refresh()
+  const panel$ = merge(panelGroup.bind$, lazyGroup.bind$, heights$, lazy$)
+  subs.add(runWhenInView(panel$))
 
   return {
     grid: orders,

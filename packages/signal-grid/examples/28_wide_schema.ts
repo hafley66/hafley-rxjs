@@ -1,6 +1,6 @@
 // Every column in the schema reaches the document today, so the cell count per frame is rows times
 // 300 and the `dom` timing is the one to watch; facet virtualization is what removes that.
-import { interval, Subscription } from "rxjs"
+import { interval, Subscription, tap } from "rxjs"
 import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./28_wide_schema.ts?raw"
 import type { Example } from "./0_types.js"
@@ -52,17 +52,17 @@ export const wideSchema: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(runWhenInView(g.view.plan.$, (it) => {
+    subs.add(runWhenInView(g.view.plan.$.pipe(tap((it) => {
       label.textContent = `${COLUMNS.length} columns, ${rows.length} rows, ${it.center.length} rows in the document`
-    }))
+    }))))
     let step = 0
-    subs.add(runWhenInView(interval(100), () => {
+    subs.add(runWhenInView(interval(100).pipe(tap(() => {
       const scroll = root.querySelector(".sg-scroll")
       if (!(scroll instanceof HTMLElement)) return
       step++
       const range = scroll.scrollWidth - scroll.clientWidth
       scroll.scrollLeft = range * ((step % 10) / 10)
-    }))
+    }))))
     return () => {
       subs.unsubscribe()
       handle.stop()

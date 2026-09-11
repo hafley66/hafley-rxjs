@@ -12,9 +12,12 @@ export const example = {
   mount: (host: HTMLElement) => mountInView(host, () => {
     const g = grid<Row>({ id: "files", rows: ROWS, columns: COLUMNS, rowId: (it) => it.id })
     const handle = render(g, root)
-    const stop = runWhenInView(g.view.plan.$, (plan) => {
-      label.textContent = `${plan.center.length} rows in the document`
-    })
+    const counted$ = g.view.plan.$.pipe(
+      tap((plan) => {
+        label.textContent = `${plan.center.length} rows in the document`
+      }),
+    )
+    const stop = runWhenInView(counted$)
     return () => {
       stop()
       handle.stop()
@@ -29,7 +32,7 @@ export const example = {
 | call | what it does |
 | --- | --- |
 | `mountInView(host, mount)` | binds `host` for the length of `mount`, returns what `mount` returned |
-| `runWhenInView(source, effect?)` | subscribes while the host is in view, returns the teardown |
+| `runWhenInView(source)` | subscribes while the host is in view, returns the teardown |
 
 The host is bound rather than passed, so the call inside a demo carries a source and nothing else.
 The binding lasts one synchronous mount call and is restored on the way out, which is why two demos
@@ -38,15 +41,17 @@ on one page never read each other's host. A `runWhenInView` with nothing bound t
 
 ## What it accepts
 
-The three live shapes of `GridSource`, declared in `src/8_grid.ts:68`.
+One argument, and it carries the effect.
 
 | shape | example |
 | --- | --- |
 | `Signal<T>` | `g.state.sort` |
 | `Observable<T>` | `g.view.plan.$`, `g.intent$`, `fromEvent(button, "click")` |
-| `() => T` | `() => rows.length` |
 
-A bare value is not accepted. A constant emits once and never again, so gating it buys nothing.
+A thunk and a bare value are both refused. A constant emits once and never again, and a thunk has
+nowhere to put a `tap`, which is where an effect belongs. Writing `source.pipe(tap(...))` is the
+whole of it: a call site that wanted a callback here was assembled forwards from its input rather
+than backwards from its output.
 
 ## The edge it watches
 

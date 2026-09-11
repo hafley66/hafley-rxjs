@@ -49,7 +49,12 @@ g.query.$()
 Driving a fetch is running the descriptor through the view gate.
 
 ```ts
-runWhenInView(g.query.$, (it) => fetchPage(it).then((page) => rows.$(page.rows)))
+runWhenInView(
+  g.query.$.pipe(
+    switchMap((it) => fetchPage(it)),
+    tap((page) => rows.$(page.rows)),
+  ),
+)
 ```
 
 The total is copied in from `rowCount`, so the page descriptor is complete without a second read.

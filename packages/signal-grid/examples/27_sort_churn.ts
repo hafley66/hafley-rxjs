@@ -1,6 +1,6 @@
 // Two writers race on purpose: the sort key flips every 200 ms while the scroll box moves every
 // 60 ms, so `sort`, `flatten` and `plan` all re-run against a viewport that never settles.
-import { interval, Subscription } from "rxjs"
+import { interval, Subscription, tap } from "rxjs"
 import { grid, mountInView, render, runWhenInView, type ColumnDef, type SortModel } from "../src/index.js"
 import source from "./27_sort_churn.ts?raw"
 import type { Example } from "./0_types.js"
@@ -65,22 +65,22 @@ export const sortChurn: Example = {
     const handle = render(g, root)
     const subs = new Subscription()
     let writes = 0
-    subs.add(runWhenInView(g.state.sort.$, (it) => {
+    subs.add(runWhenInView(g.state.sort.$.pipe(tap((it) => {
       const first = it[0]
       label.textContent = `${rows.length} rows, ${writes} sort writes, key ${first === undefined ? "none" : `${first.field} ${first.sort}`}`
-    }))
-    subs.add(runWhenInView(interval(200), () => {
+    }))))
+    subs.add(runWhenInView(interval(200).pipe(tap(() => {
       writes++
       g.state.sort.$(KEYS[writes % KEYS.length] ?? [])
-    }))
+    }))))
     let step = 0
-    subs.add(runWhenInView(interval(60), () => {
+    subs.add(runWhenInView(interval(60).pipe(tap(() => {
       const scroll = root.querySelector(".sg-scroll")
       if (!(scroll instanceof HTMLElement)) return
       step++
       const range = scroll.scrollHeight - scroll.clientHeight
       scroll.scrollTop = range * ((step % 20) / 20)
-    }))
+    }))))
     return () => {
       subs.unsubscribe()
       handle.stop()

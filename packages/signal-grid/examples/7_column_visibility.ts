@@ -1,6 +1,6 @@
 // Hiding is a model operation, not a `display: none`: the cells leave the document and the
 // remaining flex columns take the freed width, so a hidden column costs nothing to render.
-import { fromEvent, Subscription } from "rxjs"
+import { fromEvent, Subscription, tap } from "rxjs"
 import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./7_column_visibility.ts?raw"
 import type { Example } from "./0_types.js"
@@ -49,11 +49,12 @@ export const columnVisibility: Example = {
       button.type = "button"
       button.textContent = col.header ?? col.id
       bar.append(button)
+      const clicked$ = fromEvent(button, "click")
       subs.add(
-        runWhenInView(fromEvent(button, "click"), () => {
+        runWhenInView(clicked$.pipe(tap(() => {
           const hidden = g.state.colHidden.$()
           g.state.colHidden.$({ ...hidden, [col.id]: hidden[col.id] !== true })
-        }),
+        }))),
       )
     }
     return () => {

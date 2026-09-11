@@ -17,7 +17,7 @@ feature you have not read about yet.
 g.state.$()                     // the whole GridState
 g.state.sort.$()                // one key
 g.state.colHidden.size.$(true)  // one key of one record
-runWhenInView(g.state.colHidden.size.$, handle)
+runWhenInView(g.state.colHidden.size.$.pipe(tap(handle)))
 ```
 
 A nested-path selector dedupes with `distinctShallow`, so writing one column's width does not wake

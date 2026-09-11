@@ -1,7 +1,7 @@
 // Route 5. A million rows and 240 columns with both seats of the window switched on, which is the
 // shape a spreadsheet demo puts on the table and the one this kernel has never been asked for.
 import { Signal } from "@hafley66/signals"
-import { Subscription } from "rxjs"
+import { map, merge, Observable, Subscription } from "rxjs"
 import {
   grid,
   mountInView,
@@ -14,7 +14,7 @@ import {
   type RowId,
   type Viewport,
 } from "../src/index.js"
-import { actions, checkField, group, readbackField, type Bound } from "./controls.js"
+import { actions, afterPaint, checkField, group, paintedText, readbackField, type Bound } from "./controls.js"
 import { readout } from "./readout.js"
 import { aboutPanel, stageBox, type DemoHandle, type DemoHosts, type DemoRoute } from "./0_shell.js"
 
@@ -149,61 +149,60 @@ function mount(hosts: DemoHosts): DemoHandle {
 
   const modelCells = ROW_COUNT * COL_COUNT
 
-  let frames = 0
-  let framesSince = performance.now()
-  let framesPerSecond = 0
-  let ticking = 0
+  // The loop belongs to the stream, so a sheet nobody is looking at schedules no frames at all.
+  const framesPerSecond$ = new Observable<number>((subscriber) => {
+    let frames = 0
+    let since = performance.now()
+    let ticking = requestAnimationFrame(function sample(): void {
+      frames++
+      const now = performance.now()
+      if (now - since >= 500) {
+        subscriber.next(Math.round((frames * 1000) / (now - since)))
+        frames = 0
+        since = now
+      }
+      ticking = requestAnimationFrame(sample)
+    })
+    return () => cancelAnimationFrame(ticking)
+  })
 
-  const tick = (): void => {
-    frames++
-    const now = performance.now()
-    if (now - framesSince >= 500) {
-      framesPerSecond = Math.round((frames * 1000) / (now - framesSince))
-      frames = 0
-      framesSince = now
-      scrollGroup.refresh()
-      windowGroup.refresh()
-    }
-    ticking = requestAnimationFrame(tick)
-  }
+  const painted$ = afterPaint(sheet.view.plan.$)
 
   // --- panel ----------------------------------------------------------------
 
   const modelGroup = group("Model", [
-    readbackField("rows", () => num(ROW_COUNT)),
-    readbackField("columns", () => num(COL_COUNT)),
-    readbackField("cells", () => num(modelCells)),
-    readbackField("rows are", () => "minted from the index, never stored"),
-    readbackField("flat length", () => num(sheet.view.flat.$().length)),
+    readbackField("rows", Signal<string>(() => num(ROW_COUNT))),
+    readbackField("columns", Signal<string>(() => num(COL_COUNT))),
+    readbackField("cells", Signal<string>(() => num(modelCells))),
+    readbackField("rows are", Signal<string>(() => "minted from the index, never stored")),
+    readbackField("flat length", Signal<string>(() => num(sheet.view.flat.$().length))),
   ])
 
   const windowGroup: Bound = group("Window", [
-    checkField(
-      "virtualize down the page",
-      () => sheet.state.virtualize.vertical.$(),
-      (next) => sheet.state.virtualize.vertical.$(next),
+    checkField("virtualize down the page", sheet.state.virtualize.vertical),
+    checkField("virtualize across the page", sheet.state.virtualize.horizontal),
+    readbackField("rendered rows", Signal<string>(() => num(renderedRows()))),
+    readbackField("rendered columns", Signal<string>(() => num(renderedCols()))),
+    readbackField("rendered cells", paintedText(painted$, () => num(renderedCells()))),
+    readbackField(
+      "model cells per rendered cell",
+      paintedText(painted$, () => {
+        const drawn = renderedCells()
+        return drawn === 0 ? "n/a" : `${num(Math.round(modelCells / drawn))} to 1`
+      }),
     ),
-    checkField(
-      "virtualize across the page",
-      () => sheet.state.virtualize.horizontal.$(),
-      (next) => sheet.state.virtualize.horizontal.$(next),
-    ),
-    readbackField("rendered rows", () => num(renderedRows())),
-    readbackField("rendered columns", () => num(renderedCols())),
-    readbackField("rendered cells", () => num(renderedCells())),
-    readbackField("model cells per rendered cell", () => {
-      const drawn = renderedCells()
-      return drawn === 0 ? "n/a" : `${num(Math.round(modelCells / drawn))} to 1`
-    }),
   ])
 
   const scrollGroup: Bound = group("Scroll", [
-    readbackField("frames per second", () => (framesPerSecond === 0 ? "sampling" : num(framesPerSecond))),
-    readbackField("scroller height", () => {
-      const total = Math.round(sheet.view.plan.$().centerTotal)
-      return `${num(total)} px of ${num(SCROLL_CEILING)}`
-    }),
-    readbackField("row height", () => `${num(ROW_HEIGHT[DENSITY])} px, density ${DENSITY}`),
+    readbackField("frames per second", Signal<string>(framesPerSecond$.pipe(map(num)), "sampling")),
+    readbackField(
+      "scroller height",
+      Signal<string>(() => {
+        const total = Math.round(sheet.view.plan.$().centerTotal)
+        return `${num(total)} px of ${num(SCROLL_CEILING)}`
+      }),
+    ),
+    readbackField("row height", Signal<string>(() => `${num(ROW_HEIGHT[DENSITY])} px, density ${DENSITY}`)),
     actions([
       { label: "top", run: () => scrollTo(0, 0) },
       { label: "row 500,000", run: () => scrollTo(500_000 * ROW_HEIGHT[DENSITY], 0) },
@@ -214,9 +213,9 @@ function mount(hosts: DemoHosts): DemoHandle {
   ])
 
   const costGroup = group("Cost", [
-    readbackField("retained per row at 100k", () => `${RETAINED_PER_ROW.at100k} B`),
-    readbackField("retained per row at 1M", () => `${RETAINED_PER_ROW.atMillion} B`),
-    readbackField("measured by", () => "scripts/stats.mjs, same probe at both counts"),
+    readbackField("retained per row at 100k", Signal<string>(() => `${RETAINED_PER_ROW.at100k} B`)),
+    readbackField("retained per row at 1M", Signal<string>(() => `${RETAINED_PER_ROW.atMillion} B`)),
+    readbackField("measured by", Signal<string>(() => "scripts/stats.mjs, same probe at both counts")),
   ])
 
   hosts.panel.append(aboutPanel(sheetDemo), modelGroup.el, windowGroup.el, scrollGroup.el, costGroup.el)
@@ -224,18 +223,8 @@ function mount(hosts: DemoHosts): DemoHandle {
   const panelReadout = readout(sheet, box)
   hosts.readout.append(panelReadout.el)
 
-  function refresh(): void {
-    modelGroup.refresh()
-    windowGroup.refresh()
-    scrollGroup.refresh()
-    costGroup.refresh()
-  }
-
-  subs.add(runWhenInView(sheet.state.$, () => refresh()))
-  subs.add(runWhenInView(sheet.view.plan.$, () => windowGroup.refresh()))
-  subs.add(runWhenInView(sheet.view.colPlan.$, () => windowGroup.refresh()))
-  refresh()
-  ticking = requestAnimationFrame(tick)
+  const panel$ = merge(modelGroup.bind$, windowGroup.bind$, scrollGroup.bind$, costGroup.bind$)
+  subs.add(runWhenInView(panel$))
 
   window.__demo = {
     rowCount: () => box.getElementsByClassName("sg-row").length,
@@ -247,7 +236,6 @@ function mount(hosts: DemoHosts): DemoHandle {
   return {
     grid: sheet,
     stop: () => {
-      cancelAnimationFrame(ticking)
       subs.unsubscribe()
       panelReadout.stop()
       handle.stop()

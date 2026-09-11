@@ -1,7 +1,7 @@
 // The renderer owns the scroll box and feeds `g.viewport` from it, so scroll position is state the
 // kernel reads rather than an event the consumer has to relay. Writing `scrollTop` on that box is
 // the whole of scroll-into-view: the plan re-windows from the signal on the next frame.
-import { fromEvent, Subscription } from "rxjs"
+import { fromEvent, Subscription, tap } from "rxjs"
 import { grid, mountInView, render, ROW_HEIGHT, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./24_scroll_position.ts?raw"
 import type { Example } from "./0_types.js"
@@ -44,13 +44,14 @@ export const scrollPosition: Example = {
     const g = grid<Row>({ id: "scroll-position", rows: ROWS, columns: COLUMNS, rowId: (row) => row.id })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(runWhenInView(g.viewport.$, (viewport) => {
+    subs.add(runWhenInView(g.viewport.$.pipe(tap((viewport) => {
       label.textContent = `top ${Math.round(viewport.top)}, height ${Math.round(viewport.height)}`
-    }))
-    subs.add(runWhenInView(fromEvent(jump, "click"), () => {
+    }))))
+    const clicked$ = fromEvent(jump, "click")
+    subs.add(runWhenInView(clicked$.pipe(tap(() => {
       const scroll = root.querySelector(".sg-scroll")
       if (scroll instanceof HTMLElement) scroll.scrollTop = TARGET * ROW_HEIGHT[g.state.density.$()]
-    }))
+    }))))
     return () => {
       subs.unsubscribe()
       handle.stop()

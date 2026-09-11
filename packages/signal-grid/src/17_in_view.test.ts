@@ -3,7 +3,7 @@
 // frame later and publishes neither its instance count nor its targets, and both are what these
 // tests assert.
 import { afterEach, beforeEach, describe, expect, test } from "vitest"
-import { Observable } from "rxjs"
+import { Observable, tap } from "rxjs"
 import { DEFAULT_BUFFER_PX } from "./14_measure.js"
 import { mountInView, runWhenInView } from "./17_in_view.js"
 
@@ -129,7 +129,8 @@ describe("a source runs only while its host is in view", () => {
     const el = host()
     const seen = counted()
     const values: number[] = []
-    const stop = mountInView(el, () => runWhenInView(seen.source, (it) => values.push(it)))
+    const effect$ = seen.source.pipe(tap((it) => values.push(it)))
+    const stop = mountInView(el, () => runWhenInView(effect$))
     cross(el, true)
     cross(el, false)
     cross(el, true)

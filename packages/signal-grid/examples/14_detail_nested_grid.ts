@@ -5,7 +5,7 @@
 // The panel needs a height in `rowHeight` or the sizer measures it at the density default, so the
 // height map is kept in step with the open set. The guard is what stops that write from feeding
 // itself: a nested path emits on every root write whether or not its own branch moved.
-import { Subscription } from "rxjs"
+import { Subscription, tap } from "rxjs"
 import { defaultEpics, detailColumn, detailHeights, detailOnCellClick } from "../src/index.js"
 import { grid, isDetailKey, mountInView, render, rowOfDetailKey, runWhenInView } from "../src/index.js"
 import type { ColumnDef, RenderHandle } from "../src/index.js"
@@ -85,13 +85,13 @@ export const detailNestedGrid: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(runWhenInView(g.state.detail.$, (open) => {
+    subs.add(runWhenInView(g.state.detail.$.pipe(tap((open) => {
       const next = detailHeights(open, PANEL_HEIGHT)
       const current = g.state.rowHeight.$()
       const keys = Object.keys(next)
       const same = keys.length === Object.keys(current).length && keys.every((k) => current[k] === next[k])
       if (!same) g.state.rowHeight.$(next)
-    }))
+    }))))
     return () => {
       subs.unsubscribe()
       for (const panel of panels.values()) panel.stop()

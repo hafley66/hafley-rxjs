@@ -1,7 +1,7 @@
 // `infinite` differs from `pages` in one rule: the window is `[0, (index + 1) * size)`, so pages
 // accumulate instead of replacing each other. `pageOnScrollNearEnd` raises the index from scroll
 // position rather than from a counter, so scrolling the same boundary twice raises it once.
-import { Subscription } from "rxjs"
+import { Subscription, tap } from "rxjs"
 import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./10_infinite_scroll.ts?raw"
 import type { Example } from "./0_types.js"
@@ -46,9 +46,9 @@ export const infiniteScroll: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(runWhenInView(g.state.page.$, (page) => {
+    subs.add(runWhenInView(g.state.page.$.pipe(tap((page) => {
       label.textContent = `${(page.index + 1) * page.size} of ${ROWS.length} rows admitted`
-    }))
+    }))))
     return () => {
       subs.unsubscribe()
       handle.stop()

@@ -3,7 +3,7 @@
 //
 // `infinite` is the paging rule that lets the caller answer with the whole prefix `[0, loaded)`,
 // which is exactly what the local window then asks for, so the two agree with no second slice.
-import { Subscription } from "rxjs"
+import { Subscription, tap } from "rxjs"
 import { Signal } from "@hafley66/signals"
 import { grid, mountInView, render, runWhenInView, type ColumnDef, type QueryDescriptor } from "../src/index.js"
 import source from "./15_server_mode.ts?raw"
@@ -72,12 +72,12 @@ export const serverMode: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(runWhenInView(g.query.$, (query) => {
+    subs.add(runWhenInView(g.query.$.pipe(tap((query) => {
       const page = fetchPage(query)
       rows.$(page)
       const item = query.sort[0]
       label.textContent = `fetched ${page.length} of ${TABLE.length}, sorted by ${item?.field ?? "nothing"}`
-    }))
+    }))))
     return () => {
       subs.unsubscribe()
       handle.stop()
