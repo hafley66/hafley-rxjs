@@ -33,6 +33,7 @@ import {
   type FacetPair,
   type SpanRelation,
 } from "./12_transpose.js"
+import { checkBands } from "./18_bands.js"
 import { defaultEpics, type GridEpic, type GridEpicCtx } from "./7_epics.js"
 import { EMPTY_RANGE } from "./15_selection.js"
 import {
@@ -255,6 +256,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
   // A column carrying both a `field` and a `value` says two things about one read, so the schema
   // is rejected at construction rather than at whichever cell asks first.
   for (const col of columns.$()) columnReader(col, col.id)
+  checkBands(columns.$())
 
   // Every other input goes through `toGridSignal`, so a plain object here must too. Three of the
   // four shapes emit again, and the signal is kept so those emissions have somewhere to land.

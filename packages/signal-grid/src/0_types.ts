@@ -237,7 +237,8 @@ export interface ColumnDef<TRow, V = unknown> {
   readonly movable?: boolean
   readonly editable?: boolean
   readonly pinnable?: boolean
-  /** Header group membership: this column's parent key in the column axis. @feature-declared col.group */
+  /** Header group membership: this column's parent key in the column axis. The parent it names must
+   * be a band, minted by `headerGroup` in `18_bands.ts`. */
   readonly group?: ColId
   readonly sortComparator?: (a: V, b: V) => number
   readonly filterOperators?: readonly FilterOperator<V>[]
