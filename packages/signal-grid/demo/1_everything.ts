@@ -1,7 +1,7 @@
 // Route 1. Every feature the kernel implements, switched on at once, over 50,000 rows.
 // The one that is meant to break first.
 import { Signal } from "@hafley66/signals"
-import { Subscription } from "rxjs"
+import { merge, skip, Subscription, tap } from "rxjs"
 import {
   checkboxColumn,
   compositeColumn,
@@ -30,9 +30,11 @@ import {
 import {
   actions,
   applyOrder,
+  attributeOf,
   checkField,
   group,
   h,
+  lens,
   moveBefore,
   numberField,
   rangeField,
@@ -227,11 +229,10 @@ function mount(hosts: DemoHosts): DemoHandle {
     files.state.sort.$(multi ? [...rest, { field, sort: next }] : [{ field, sort: next }])
   }
 
-  const toggleGroup = (field: ColId): void => {
+  const setGroup = (field: ColId, on: boolean): void => {
     const current = files.state.group.$()
-    files.state.group.$(
-      current.includes(field) ? current.filter((it) => it !== field) : [...current, field],
-    )
+    if (on === current.includes(field)) return
+    files.state.group.$(on ? [...current, field] : current.filter((it) => it !== field))
   }
 
   const setPinning = (field: ColId, side: Side | "none"): void => {
@@ -320,6 +321,7 @@ function mount(hosts: DemoHosts): DemoHandle {
   ]
 
   const scenarioBox = h("div", "scenarios")
+  const activeScenario = Signal<string>("")
   const applyScenario = (name: string): void => {
     const scenario = SCENARIOS.find((it) => it.name === name)
     if (scenario === undefined) return
@@ -327,8 +329,7 @@ function mount(hosts: DemoHosts): DemoHandle {
     const next = defaultState(scenario.state)
     files.state.$({ ...next, colPinning: { ...seedPinning, ...next.colPinning } })
     resetScroll()
-    scenarioBox.setAttribute("data-active", name)
-    refresh()
+    activeScenario.$(name)
   }
   for (const scenario of SCENARIOS) {
     const button = h("button", "scenario", scenario.name)
@@ -339,27 +340,20 @@ function mount(hosts: DemoHosts): DemoHandle {
   }
 
   const scenarioGroup = group("Scenarios", [
-    { el: scenarioBox, refresh: () => {} },
+    attributeOf(scenarioBox, "data-active", activeScenario),
     selectField<DataShape>(
       "data shape",
       [
         { value: "flat", label: "flat (50,000 leaves)" },
         { value: "tree", label: "tree (6 roots, 50,636 nodes)" },
       ],
-      () => shape.$(),
-      (next) => {
-        shape.$(next)
-        resetScroll()
-        refresh()
-      },
+      shape,
     ),
   ])
 
   const rowGroup = group("Row axis", [
-    readbackField("sort model", describeSort),
-    checkField("multi-column sort (shift-click a header does this too)", () => multiSort.$(), (next) =>
-      multiSort.$(next),
-    ),
+    readbackField("sort model", Signal<string>(describeSort)),
+    checkField("multi-column sort (shift-click a header does this too)", multiSort),
     actions([
       { label: "clear sort", run: () => files.state.sort.$([]) },
       { label: "expand all", run: openAllKeys },
@@ -367,38 +361,25 @@ function mount(hosts: DemoHosts): DemoHandle {
       { label: "select page", run: selectRendered },
       { label: "clear selection", run: () => files.state.rowSelection.$({}) },
     ]),
-    readbackField("group model", describeGroup),
+    readbackField("group model", Signal<string>(describeGroup)),
     ...GROUPABLE.map((field) =>
       checkField(
         `group by ${field}`,
-        () => files.state.group.$().includes(field),
-        () => toggleGroup(field),
+        lens(
+          () => files.state.group.$().includes(field),
+          (on) => setGroup(field, on),
+        ),
       ),
     ),
-    readbackField("row selection", describeSelection),
-    textField(
-      "pin row (id)",
-      () => pinTarget.$(),
-      (next) => {
-        pinTarget.$(next)
-        refresh()
-      },
-      "/workspace/src-0",
-    ),
+    readbackField("row selection", Signal<string>(describeSelection)),
+    textField("pin row (id)", pinTarget, "/workspace/src-0"),
     segmentField<Side | "none">(
       "pinned side",
       SIDE_OPTIONS,
-      () => files.state.rowPinning.$()[pinTarget.$()] ?? "none",
-      setRowPin,
+      lens(() => files.state.rowPinning.$()[pinTarget.$()] ?? "none", setRowPin),
     ),
     actions([
-      {
-        label: "take first rendered row",
-        run: () => {
-          pinTarget.$(files.view.plan.$().center[0] ?? "")
-          refresh()
-        },
-      },
+      { label: "take first rendered row", run: () => pinTarget.$(files.view.plan.$().center[0] ?? "") },
       { label: "unpin all rows", run: () => files.state.rowPinning.$({}) },
     ]),
     selectField<PageMode>(
@@ -408,15 +389,10 @@ function mount(hosts: DemoHosts): DemoHandle {
         { value: "pages", label: "pages" },
         { value: "infinite", label: "infinite" },
       ],
-      () => files.state.page.$().mode,
-      (mode) => setPage({ mode, index: 0 }),
+      lens(() => files.state.page.mode.$(), (mode) => setPage({ mode, index: 0 })),
     ),
-    numberField("page size", { min: 5, max: 5000, step: 5 }, () => files.state.page.$().size, (size) =>
-      setPage({ size }),
-    ),
-    numberField("page index", { min: 0, max: 100000, step: 1 }, () => files.state.page.$().index, (index) =>
-      setPage({ index }),
-    ),
+    numberField("page size", { min: 5, max: 5000, step: 5 }, files.state.page.size),
+    numberField("page index", { min: 0, max: 100000, step: 1 }, files.state.page.index),
     actions([
       { label: "prev page", run: () => setPage({ index: Math.max(0, files.state.page.$().index - 1) }) },
       { label: "next page", run: () => setPage({ index: files.state.page.$().index + 1 }) },
@@ -432,7 +408,6 @@ function mount(hosts: DemoHosts): DemoHandle {
     const to = at + delta
     if (at === -1 || to < 0 || to >= order.length) return
     files.state.colOrder.$(moveBefore(order, field, delta < 0 ? order[to] ?? null : order[to + 1] ?? null))
-    refresh()
   }
 
   const columnCard = (field: ColId): Reorderable => {
@@ -445,8 +420,7 @@ function mount(hosts: DemoHosts): DemoHandle {
     const grip = h("span", "grip", "⁙")
     const visible = checkField(
       def?.header ?? field,
-      () => files.state.colHidden.$()[field] !== true,
-      (next) => setHidden(field, next),
+      lens(() => files.state.colHidden.$()[field] !== true, (on) => setHidden(field, on)),
     )
     const up = h("button", "icon-button", "↑")
     const down = h("button", "icon-button", "↓")
@@ -458,21 +432,21 @@ function mount(hosts: DemoHosts): DemoHandle {
     down.addEventListener("click", () => nudgeColumn(field, 1))
     head.append(grip, visible.el, up, down)
 
-    const sort = segmentField<"off" | "asc" | "desc">("sort", SORT_OPTIONS, () => sortOf(field), (next) =>
-      setSort(field, next, multiSort.$()),
+    const sort = segmentField<"off" | "asc" | "desc">(
+      "sort",
+      SORT_OPTIONS,
+      lens(() => sortOf(field), (next) => setSort(field, next, multiSort.$())),
     )
     const pin = segmentField<Side | "none">(
       "pin",
       SIDE_OPTIONS,
-      () => files.state.colPinning.$()[field] ?? "none",
-      (side) => setPinning(field, side),
+      lens(() => files.state.colPinning.$()[field] ?? "none", (side) => setPinning(field, side)),
     )
     const width = rangeField(
       "width",
       { min: 60, max: 640, step: 4 },
-      () => Math.round(widthOf(field)),
-      (next) => setWidth(field, next),
-      (value) => `${value}px`,
+      lens(() => Math.round(widthOf(field)), (next) => setWidth(field, next)),
+      (it) => `${it}px`,
     )
 
     el.append(head, sort.el, pin.el, width.el)
@@ -497,19 +471,18 @@ function mount(hosts: DemoHosts): DemoHandle {
       el.removeAttribute("data-drop")
       if (dragging === null || dragging === field) return
       files.state.colOrder.$(moveBefore(columnOrder(), dragging, field))
-      refresh()
     })
+
+    const hidden = attributeOf(
+      el,
+      "data-hidden",
+      Signal<string>(() => String(files.state.colHidden.$()[field] === true)),
+    )
 
     return {
       key: field,
       el,
-      refresh: () => {
-        visible.refresh()
-        sort.refresh()
-        pin.refresh()
-        width.refresh()
-        el.setAttribute("data-hidden", String(files.state.colHidden.$()[field] === true))
-      },
+      bind$: merge(visible.bind$, sort.bind$, pin.bind$, width.bind$, hidden.bind$),
     }
   }
 
@@ -519,38 +492,36 @@ function mount(hosts: DemoHosts): DemoHandle {
   const columnGroup = group("Column axis", [
     {
       el: columnList,
-      refresh: () => {
-        for (const card of cards) card.refresh()
-        applyOrder(columnList, columnOrder(), cards)
-      },
+      bind$: merge(
+        Signal<readonly ColId[]>(columnOrder).$.pipe(
+          tap((order) => applyOrder(columnList, order, cards)),
+        ),
+        ...cards.map((it) => it.bind$),
+      ),
     },
     actions([
-      {
-        label: "reset order",
-        run: () => {
-          files.state.colOrder.$([])
-          refresh()
-        },
-      },
+      { label: "reset order", run: () => files.state.colOrder.$([]) },
       { label: "reset widths", run: () => files.state.colWidth.$({}) },
       { label: "unpin all", run: () => files.state.colPinning.$({ ...seedPinning }) },
       { label: "show all", run: () => files.state.colHidden.$({}) },
     ]),
-    checkField("header groups (kind, modified, owner under Metadata)", () => banded.$(), (next) => {
-      banded.$(next)
-      refresh()
-    }),
-    readbackField("column axis nodes", () => {
-      const nodes = files.view.horizontal.$().nodes.length
-      const tracks = files.view.cols.$().length
-      return `${nodes} nodes, ${tracks} in run`
-    }),
+    checkField("header groups (kind, modified, owner under Metadata)", banded),
+    readbackField(
+      "column axis nodes",
+      Signal<string>(() => {
+        const nodes = files.view.horizontal.$().nodes.length
+        const tracks = files.view.cols.$().length
+        return `${nodes} nodes, ${tracks} in run`
+      }),
+    ),
   ])
 
   const setRowHeight = (next: number): void => {
     ROW_HEIGHT[files.state.density.$()] = next
     files.state.density.$(files.state.density.$())
   }
+
+  const logScroll = Signal<boolean>(false)
 
   const viewGroup = group("View", [
     segmentField<GridState["density"]>(
@@ -560,48 +531,40 @@ function mount(hosts: DemoHosts): DemoHandle {
         { value: "standard", label: "standard" },
         { value: "comfortable", label: "roomy" },
       ],
-      () => files.state.density.$(),
-      (next) => files.state.density.$(next),
+      files.state.density,
     ),
-    checkField("virtualize rows", () => files.state.virtualize.vertical.$(), (next) =>
-      files.state.virtualize.vertical.$(next),
-    ),
-    checkField("list view", () => files.state.listView.$(), (next) => files.state.listView.$(next)),
+    checkField("virtualize rows", files.state.virtualize.vertical),
+    checkField("list view", files.state.listView),
     rangeField(
       "--sg-row-h",
       { min: 20, max: 72, step: 1 },
-      () => ROW_HEIGHT[files.state.density.$()],
-      setRowHeight,
-      (value) => `${value}px`,
+      lens(() => ROW_HEIGHT[files.state.density.$()], setRowHeight),
+      (it) => `${it}px`,
     ),
-    checkField("log viewport.scroll intents", () => logScroll, (next) => {
-      logScroll = next
-      panelReadout.setLogScroll(next)
-    }),
+    checkField("log viewport.scroll intents", logScroll),
   ])
-
-  let logScroll = false
 
   hosts.panel.append(aboutPanel(everythingDemo), scenarioGroup.el, rowGroup.el, columnGroup.el, viewGroup.el)
 
-  const panelReadout = readout(files, box)
+  const panelReadout = readout(files, box, logScroll)
   hosts.readout.append(panelReadout.el)
 
-  function refresh(): void {
-    scenarioGroup.refresh()
-    rowGroup.refresh()
-    columnGroup.refresh()
-    viewGroup.refresh()
-  }
-
-  subs.add(runWhenInView(files.state.$, () => refresh()))
-  subs.add(runWhenInView(shape.$, () => refresh()))
   subs.add(
-    runWhenInView(files.state.listView.$, (on: boolean) =>
-      hosts.shell.setAttribute("data-list-view", String(on === true)),
+    runWhenInView(
+      merge(
+        scenarioGroup.bind$,
+        rowGroup.bind$,
+        columnGroup.bind$,
+        viewGroup.bind$,
+        // The seeded value is the scroll position the reader already has, so only a later choice
+        // of shape sends the stage back to the top.
+        shape.$.pipe(skip(1), tap(() => resetScroll())),
+        files.state.listView.$.pipe(
+          tap((it) => hosts.shell.setAttribute("data-list-view", String(it))),
+        ),
+      ),
     ),
   )
-  refresh()
 
   window.__demo = {
     shape,
