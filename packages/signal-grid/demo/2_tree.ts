@@ -5,8 +5,10 @@ import { Subscription } from "rxjs"
 import {
   createMeasureStore,
   grid,
+  mountInView,
   render,
   ROW_HEIGHT,
+  runWhenInView,
   type CellCtx,
   type ColumnDef,
   type GridState,
@@ -78,7 +80,7 @@ export const treeDemo: DemoRoute = {
     "Alt-click on an expander opens the whole branch through descendantsOf, which walks 50,000 keys on the root volumes and blocks the frame.",
     "MeasureStore is exported and wired here, but no stage of the kernel reads it: extents and approaching$ feed nothing.",
   ],
-  mount,
+  mount: (hosts) => mountInView(hosts.stage, () => mount(hosts)),
 }
 
 function mount(hosts: DemoHosts): DemoHandle {
@@ -164,7 +166,7 @@ function mount(hosts: DemoHosts): DemoHandle {
     bufferPx: 240,
   })
   let approaching = 0
-  subs.add(store.approaching$.subscribe((keys) => { approaching = keys.length }))
+  subs.add(runWhenInView(store.approaching$, (keys) => { approaching = keys.length }))
   subs.add(() => store.close())
 
   const observed = new Map<string, () => void>()
@@ -267,8 +269,8 @@ function mount(hosts: DemoHosts): DemoHandle {
     })
   }
 
-  subs.add(files.state.$.subscribe(refresh))
-  subs.add(files.view.plan.$.subscribe(refresh))
+  subs.add(runWhenInView(files.state.$, refresh))
+  subs.add(runWhenInView(files.view.plan.$, refresh))
   refresh()
 
   return {

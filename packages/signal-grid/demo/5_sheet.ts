@@ -4,8 +4,10 @@ import { Signal } from "@hafley66/signals"
 import { Subscription } from "rxjs"
 import {
   grid,
+  mountInView,
   render,
   ROW_HEIGHT,
+  runWhenInView,
   type ColumnDef,
   type Grid,
   type GridState,
@@ -100,7 +102,7 @@ export const sheetDemo: DemoRoute = {
     "A 1,000,000 row scroller at the standard density asks for 36,000,000 px and the engine caps near 33,554,432, so this route pins itself to compact.",
     "state.density is not offered here for the same reason: switching to comfortable would put the last rows out of reach of the scrollbar.",
   ],
-  mount,
+  mount: (hosts) => mountInView(hosts.stage, () => mount(hosts)),
 }
 
 function mount(hosts: DemoHosts): DemoHandle {
@@ -229,9 +231,9 @@ function mount(hosts: DemoHosts): DemoHandle {
     costGroup.refresh()
   }
 
-  subs.add(sheet.state.$.subscribe(() => refresh()))
-  subs.add(sheet.view.plan.$.subscribe(() => windowGroup.refresh()))
-  subs.add(sheet.view.colPlan.$.subscribe(() => windowGroup.refresh()))
+  subs.add(runWhenInView(sheet.state.$, () => refresh()))
+  subs.add(runWhenInView(sheet.view.plan.$, () => windowGroup.refresh()))
+  subs.add(runWhenInView(sheet.view.colPlan.$, () => windowGroup.refresh()))
   refresh()
   ticking = requestAnimationFrame(tick)
 
