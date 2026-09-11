@@ -12,6 +12,7 @@ import { mapped } from "./7_signal_map.js"
 import { stored } from "./8_storage.js"
 import { routed } from "./9_route.js"
 import { sliced } from "./10_slice.js"
+import { react } from "./11_react.js"
 
 export type { Example, ExampleCheck, SignalForm } from "./0_types.js"
 
@@ -26,6 +27,7 @@ export const EXAMPLES: readonly Example[] = [
   stored,
   routed,
   sliced,
+  react,
 ]
 
 export const byId = (id: string): Example | undefined => EXAMPLES.find((it) => it.id === id)

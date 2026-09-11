@@ -43,6 +43,10 @@ export const GROUPS: readonly SiteGroup[] = [
     ],
   },
   {
+    text: "React",
+    pages: [{ slug: "react", title: "The React binding", source: "pages/react.md" }],
+  },
+  {
     text: "Reference",
     pages: [{ slug: "reference-api", title: "Every export", source: "pages/reference-api.md" }],
   },

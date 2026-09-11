@@ -74,9 +74,14 @@ export function docsConfig(options: DocsSiteOptions): UserConfig {
       vite: {
         server: { port: options.devPort, strictPort: true },
         preview: { port: options.previewPort, strictPort: true },
-        optimizeDeps: { include: MERMAID_DEPS, exclude: ["@hafley66/docs-kit"] },
-        ssr: { noExternal: ["@hafley66/docs-kit"] },
         ...options.vite,
+        // Merged rather than replaced: a site adding a plugin must not have to restate these.
+        optimizeDeps: {
+          ...options.vite?.optimizeDeps,
+          include: [...MERMAID_DEPS, ...(options.vite?.optimizeDeps?.include ?? [])],
+          exclude: ["@hafley66/docs-kit", ...(options.vite?.optimizeDeps?.exclude ?? [])],
+        },
+        ssr: { ...options.vite?.ssr, noExternal: ["@hafley66/docs-kit"] },
       },
     }),
   )

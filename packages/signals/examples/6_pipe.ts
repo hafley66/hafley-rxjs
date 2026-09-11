@@ -9,6 +9,16 @@ import type { Example } from "./0_types.js"
 
 const QUIET_MS = 300
 
+// Module scope rather than inside `mount`, because a `pipe$` signal is hot for its lifetime:
+// `signalFromObservable` holds one subscription so an unobserved piped signal still answers `.$()`.
+// One per page is right; one per mount would be one more every time a reader scrolls past.
+const typed = Signal("")
+
+const settledText = typed.$.pipe$(
+  debounceTime(QUIET_MS),
+  map((it) => it.trim().toLowerCase()),
+)
+
 export const piped: Example = {
   id: "pipe-signal",
   title: "pipe$ keeps the read surface",
@@ -24,12 +34,7 @@ export const piped: Example = {
       const settled = readout("after pipe$", root)
       const readBack = readout("settled.$() right now", root)
 
-      const typed = Signal("")
-
-      const settledText = typed.$.pipe$(
-        debounceTime(QUIET_MS),
-        map((it) => it.trim().toLowerCase()),
-      )
+      input.value = typed.$()
 
       const typing$ = fromEvent(input, "input").pipe(tap(() => typed.$(input.value)))
 

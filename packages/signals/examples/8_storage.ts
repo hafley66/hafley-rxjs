@@ -2,7 +2,7 @@
 // browser's own store is behind the same `.$()` and `.$(next)` a plain state signal has.
 import { fromEvent, merge, tap } from "rxjs"
 import { mountInView, runWhenInView } from "@hafley66/docs-kit"
-import { StorageSignal } from "../src/index.js"
+import { localStorageAdapter, storageSignal } from "../src/index.js"
 import { button, field, panel, readout, row } from "./0_dom.js"
 import source from "./8_storage.ts?raw"
 import type { Example } from "./0_types.js"
@@ -25,7 +25,9 @@ export const stored: Example = {
       const held = readout("what the signal holds", root)
       const where = readout("the key it reads", root)
 
-      const note = StorageSignal(KEY, "nothing saved yet")
+      // `storageSignal` rather than `StorageSignal`: the adapter form hands back the `close()`
+      // that ends the two subscriptions it opened, and a demo that remounts has to end them.
+      const note = storageSignal(localStorageAdapter(KEY), "nothing saved yet")
 
       input.value = note.$()
       where.write(KEY)
@@ -45,6 +47,7 @@ export const stored: Example = {
       const stop = runWhenInView(merge(pressed$, shown$))
       return () => {
         stop()
+        note.close()
         root.remove()
       }
     }),

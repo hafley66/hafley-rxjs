@@ -69,21 +69,34 @@ function patchSubscribe(): void {
   }
 }
 
+// Scoped the same way a subscription is. React attaches a delegated listener per event type to
+// every root it creates and leaves them on the container it is about to discard, and a framework's
+// own bookkeeping is not the package under check's to close.
 function patchListeners(): void {
   const baseAdd = EventTarget.prototype.addEventListener
   const baseRemove = EventTarget.prototype.removeEventListener
+  const owned = new WeakSet<object>()
+  const ours = (): boolean => {
+    const caller = callerOf(new Error().stack ?? "")
+    return caller !== undefined && isOurs(caller)
+  }
   EventTarget.prototype.addEventListener = function patchedAdd(
     this: EventTarget,
     ...args: Parameters<typeof baseAdd>
   ): void {
-    listenerBalance++
+    const handler = args[1]
+    if (handler !== null && handler !== undefined && ours()) {
+      owned.add(handler as object)
+      listenerBalance++
+    }
     baseAdd.apply(this, args)
   }
   EventTarget.prototype.removeEventListener = function patchedRemove(
     this: EventTarget,
     ...args: Parameters<typeof baseRemove>
   ): void {
-    listenerBalance--
+    const handler = args[1]
+    if (handler !== null && handler !== undefined && owned.has(handler as object)) listenerBalance--
     baseRemove.apply(this, args)
   }
 }
