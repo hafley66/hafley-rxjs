@@ -20,7 +20,7 @@
     "build": "tsc -p tsconfig.build.json && cp src/2_marbler.css dist/2_marbler.css",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "test": "vitest run",
-    "test:browser": "vitest run --config vitest.browser.config.ts",
+    "test:browser": "node ../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts",
     "typecheck": "tsc --noEmit",
     "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
   },

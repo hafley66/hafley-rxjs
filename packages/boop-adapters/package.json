@@ -24,7 +24,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "pnpm run build && vitest run",
     "test:unit": "vitest run src dist",
-    "test:e2e": "vitest run -c vitest.e2e.config.ts",
+    "test:e2e": "node ../../scripts/browser-queue.mjs vitest run -c vitest.e2e.config.ts",
     "receipts": "pnpm run typecheck && pnpm run build && node dist/9_cli.js report --out out && node scripts/1_checkNoExternal.mjs out/boop-network.html && pnpm run test:unit && pnpm run test:e2e"
   },
   "dependencies": {

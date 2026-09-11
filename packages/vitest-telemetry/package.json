@@ -31,7 +31,7 @@
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "rm -rf out && node dist/cli.js run --otlp http://localhost:14318 -- sh -c \"VITEST_SHARD=1 JUNIT_OUT=out/junit-1.xml vitest run -c fixtures/vitest.config.ts --shard=1/2; VITEST_SHARD=2 JUNIT_OUT=out/junit-2.xml vitest run -c fixtures/vitest.config.ts --shard=2/2; JUNIT_OUT=out/junit-merged.xml vitest run -c fixtures/vitest.config.ts --merge-reports --experimental.openTelemetry.enabled=false --reporter=junit\"; node dist/cli.js report && node dist/cli.js trace",
-    "test:e2e": "vitest run -c vitest.e2e.config.ts",
+    "test:e2e": "node ../../scripts/browser-queue.mjs vitest run -c vitest.e2e.config.ts",
     "receipts": "pnpm run typecheck && pnpm run build && node dist/cli.js report && node scripts/1_checkNoExternal.mjs out/report.html && pnpm run test:e2e"
   },
   "dependencies": {

@@ -27,7 +27,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "receipts": "pnpm typecheck && pnpm test && pnpm build",
-    "test:browser": "vitest run --config vitest.browser.config.ts --passWithNoTests"
+    "test:browser": "node ../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts --passWithNoTests"
   },
   "peerDependencies": {
     "@hafley66/grid": "workspace:*",

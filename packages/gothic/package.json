@@ -16,7 +16,7 @@
     "render:static": "RENDER_STATIC=1 vitest run scripts/2_render-static.test.ts",
     "build:vello": "bash scripts/3_vello-wasm.sh",
     "check": "pnpm run receipts",
-    "test:e2e": "vitest run -c vitest.e2e.config.ts",
+    "test:e2e": "node ../../scripts/browser-queue.mjs vitest run -c vitest.e2e.config.ts",
     "receipts": "pnpm typecheck && pnpm test && pnpm build:single && pnpm test:e2e"
   },
   "dependencies": {
