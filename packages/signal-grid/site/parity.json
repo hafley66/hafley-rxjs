@@ -4,7 +4,7 @@
   "features": 47,
   "implemented": 24,
   "declaredOnly": 9,
-  "tags": 53,
+  "tags": 54,
   "modules": 20,
   "untagged": [],
   "optedOut": {
@@ -20,7 +20,7 @@
       "id": "col.formula",
       "declaration": "formula",
       "file": "src/0_types.ts",
-      "line": 226
+      "line": 264
     },
     {
       "id": "row.detail",

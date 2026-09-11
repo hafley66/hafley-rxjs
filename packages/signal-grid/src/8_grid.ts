@@ -50,6 +50,7 @@ import {
   type GridIntent,
   type GridMode,
   type GridState,
+  type GroupRow,
   type Page,
   type PageRequest,
   type QueryDescriptor,
@@ -388,8 +389,10 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
 
   // Server mode already applied grouping and sorting upstream; re-running them locally over one
   // page would reorder that page against the rest of the result.
+  // The one cast that seats a synthesized value where a `TRow` goes. `isGroupRow` is the way back
+  // out, so every reader downstream narrows instead of trusting it.
   const groupValue = (path: readonly unknown[], key: RowId): TRow =>
-    ({ [GROUP_PREFIX]: key, path }) as unknown as TRow
+    ({ [GROUP_PREFIX]: key, path }) satisfies GroupRow as unknown as TRow
 
   const grouped = Signal<Axis<RowId, TRow>>(() => {
     const axis = base.$()

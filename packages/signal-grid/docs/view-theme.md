@@ -25,7 +25,7 @@ Two grids on a page are therefore two independent property scopes, and no id app
 | --- | --- |
 | `--sg-row-h` | you, or the property writer from density |
 | `--sg-total-h`, `--sg-offset-y`, `--sg-inline-tracks` | the property writer, per frame |
-| `--sg-indent`, `--sg-glyph`, `--sg-sort-glyph`, `--sg-col-w`, `--sg-pad` | you |
+| `--sg-indent`, `--sg-hit`, `--sg-glyph`, `--sg-sort-glyph`, `--sg-col-w`, `--sg-pad` | you |
 | `--sg-line`, `--sg-bg`, `--sg-fg`, `--sg-head-bg` | you |
 | `--sg-hover-bg`, `--sg-selected-bg`, `--sg-focus` | you |
 | `--sg-range-bg`, `--sg-range-edge`, `--sg-accent` | you |
@@ -39,20 +39,39 @@ A handful are declared with `@property` in `src/theme.css`, which is what lets t
 a continuous calculation and what makes an invalid value fall back to the initial rather than
 poisoning the whole declaration.
 
-## The two glyph sizes
+## The three glyph sizes
 
-`--sg-glyph` is 24px and drives both the control box and the font size inside it, for the expander,
-the checkbox, the radio, the row grip, and the detail disclosure. Each of those rules also sets
-`line-height: 1`, which is what makes 24px fit: a compact row is 28px with a 1px border, leaving
-27px, and normal line height would ask for about 28.8px and grow the row.
+A control is a box you aim at and a mark drawn inside it, and those are two numbers. One token drove
+both until this split, which is what put a 15px triangle in a 27px row.
 
-`--sg-sort-glyph` is 16px and belongs to the sort mark alone, which sits inside a run of header text
-rather than standing as a control the pointer aims at.
+| property | default | what it sizes |
+| --- | --- | --- |
+| `--sg-hit` | 24px | the box: the expander's square, and the floor under a glyph column's cell |
+| `--sg-glyph` | 16px | the mark: expander triangle, checkbox, radio, row grip, detail disclosure |
+| `--sg-sort-glyph` | 11px | the sort arrow, which annotates a label rather than being a target |
 
-A glyph's ink is a fraction of its em, and the fraction differs per codepoint, so the marks are
-chosen to ink alike at one size: U+25A1 with U+2611 for the checkbox, U+25CB with U+25C9 for the
-radio, U+25B6 with U+25BC for the expander. The small triangles U+25B8 and U+25BE ink at 27 per cent
-of their em and stay 6px however far the box is scaled, which is why they are gone.
+`--sg-hit` is 24px for two reasons at once. It is the WCAG 2.2 minimum target size, and the compact
+row is 28px with a 1px border, leaving 27px of content, so 24 is the largest square that still
+clears the tightest row. It does not grow with density: a target the pointer can hit is the same
+target in a 48px row.
+
+Every mark rule sets `line-height: 1`, which keeps the mark's line box off the row's height. The row
+then only has to clear the 24px box.
+
+A glyph's ink is a fraction of its em, and the fraction differs per codepoint, so one 16px mark
+draws a different number of pixels per glyph. Measured in the same font the grid renders in:
+
+| mark | codepoints | ink as a share of the em | drawn at 16px |
+| --- | --- | --- | --- |
+| expander | U+25B6, U+25BC | 61-63% | about 10px |
+| checkbox | U+25A1, U+2611 | 71% | about 11px |
+| radio | U+25CB, U+25C9 | 79-81% | about 13px |
+| row grip | U+283F | 60% | about 10px |
+| sort arrow | U+2191, U+2193 | 73% | about 8px at 11px |
+
+Each pair inks within a pixel of its partner, so a click swaps the mark without resizing the box the
+reader is looking at. The small triangles U+25B8 and U+25BE ink 27 per cent of their em, which at a
+16px mark would draw 4px, which is why they are gone.
 
 ## Per-entry sizes
 
