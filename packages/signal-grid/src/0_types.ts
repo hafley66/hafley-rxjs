@@ -28,6 +28,21 @@ export const cellParts = (id: CellId): readonly [RowId, ColId] => {
 export const GROUP_PREFIX = "g:"
 export const isGroupKey = (key: string): boolean => key.startsWith(GROUP_PREFIX)
 
+/** The shape behind the one `as unknown as TRow` in `8_grid.ts`. `path` is the ancestry, outermost
+ * level first, so a nested heading names itself without walking back up the axis. */
+export interface GroupRow {
+  readonly [GROUP_PREFIX]: RowId
+  readonly path: readonly unknown[]
+}
+
+/** Narrows the value rather than testing the key: one call at the row level answers for the row and
+ * every cell under it, and it is the only reader that cast needs. */
+export const isGroupRow = (value: unknown): value is GroupRow =>
+  typeof value === "object" &&
+  value !== null &&
+  GROUP_PREFIX in value &&
+  Array.isArray((value as GroupRow).path)
+
 // --- The container: an ordered forest ---------------------------------------
 
 /**
@@ -186,6 +201,27 @@ export interface RowCtx<TRow> {
   readonly open: boolean
 }
 
+/** What a group heading is about. Not generic in `TRow`: a heading stands for a level rather than
+ * for a row, and `GroupRow` is the whole of what the axis put behind its key. */
+export interface GroupCtx {
+  readonly row: RowId
+  readonly data: GroupRow
+  readonly node: FlatNode<RowId>
+  readonly path: readonly unknown[]
+  /** The last element of `path`, which is what this level grouped by. */
+  readonly value: unknown
+  /** The column the level read, and its `header` label. Undefined once `state.group` has moved on
+   * from the path the axis was built with. */
+  readonly field: ColId | undefined
+  readonly header: string | undefined
+  /** Data rows under the heading, its whole subtree, panels excluded. */
+  readonly count: number
+  /** True when more than one level is open, which is when naming the field earns its space. */
+  readonly nested: boolean
+  readonly open: boolean
+  readonly selected: boolean
+}
+
 /** Every replaceable piece. Absent means the built-in is used. @feature-declared view.slots */
 export interface Slots<TRow> {
   readonly cell?: Slot<CellCtx<TRow>>
@@ -193,6 +229,8 @@ export interface Slots<TRow> {
   readonly header?: Slot<HeaderCtx<TRow>>
   readonly headerGroup?: Slot<HeaderCtx<TRow>>
   readonly row?: Slot<RowCtx<TRow>>
+  /** The heading a synthesized group row draws. Absent keeps the built-in field, value, and count. */
+  readonly groupRow?: Slot<GroupCtx>
   readonly detail?: Slot<RowCtx<TRow>>
   readonly expander?: Slot<RowCtx<TRow>>
   readonly checkbox?: Slot<RowCtx<TRow>>

@@ -13,11 +13,14 @@ import {
   cellId,
   cellParts,
   columnReader,
+  isGroupRow,
   type CellCtx,
   type CellId,
   type ColId,
   type ColumnDef,
   type FlatNode,
+  type GroupCtx,
+  type GroupRow,
   type HeaderCtx,
   type Orientation,
   type Partitioned,
@@ -30,6 +33,7 @@ import {
   type SortModel,
 } from "./0_types.js"
 import { CAT_DOM, CAT_FRAME, LOG } from "./0_log.js"
+import { groupCounts } from "./1_axis.js"
 import { isBuiltIn } from "./5_columns.js"
 import {
   addressedEntry,
@@ -133,6 +137,10 @@ interface Frame<TRow> {
   /** Whether the scrolling run is the row axis, which is the only one `expanded` reaches. */
   readonly rowsVertical: boolean
   readonly nodes: ReadonlyMap<RowId, FlatNode<RowId>>
+  /** The grouped levels in order, so a heading at depth n names the column that produced it. */
+  readonly group: readonly ColId[]
+  /** Rows under each group key, counted off the axis rather than per rendered heading. */
+  readonly groupSizes: ReadonlyMap<RowId, number>
   readonly selection: Readonly<Record<RowId, boolean>>
   /** The cell range as one predicate, with both axes indexed once. */
   readonly covers: (address: CellId) => boolean
@@ -168,6 +176,10 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
   let headKey: string | null = null
   let headBand: string | null = null
   let headSort: SortModel = []
+
+  // Its own memo, off `sorted` rather than `detailed`: a scroll frame redraws the same headings and
+  // one top-level group can hold the whole table, and a panel is not a row to count.
+  const sizes = Signal<ReadonlyMap<RowId, number>>(() => groupCounts(grid.view.sorted.$()))
 
   const frame = Signal<Frame<TRow>>(() => {
     if (!LOG.on) return frameBody()
@@ -254,6 +266,8 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       rowsVertical,
       // The vertical run's own nodes, so the plan and the records it builds share one key space.
       nodes: new Map(down.nodes.map((node) => [node.key, node] as const)),
+      group: grid.state.group.$(),
+      groupSizes: sizes.$(),
       selection: grid.state.rowSelection.$(),
       covers: selectionTest(
         rangeOf(grid.state.selection.$()),
@@ -509,6 +523,48 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     record.el.replaceChildren(...runs)
   }
 
+  // --- group headings -------------------------------------------------------
+
+  // One box across the row rather than a cell per column: a heading stands for the level it names,
+  // and a column beside it would draw an empty cell that reads as a row with its fields missing.
+  function buildHeading(
+    record: RowRecord,
+    key: RowId,
+    node: FlatNode<RowId>,
+    data: GroupRow,
+    current: Frame<TRow>,
+  ): void {
+    record.subs.unsubscribe()
+    const subs = new Subscription()
+    record.subs = subs
+    record.cells.clear()
+    const host = box("sg-group-cell")
+    // Unconditionally, unlike a data row: the heading has no cell for an `expandColumn()` glyph to
+    // sit in, so `drawsExpander` would leave a nesting level with nothing to open it.
+    host.append(expanderFor(key, node, undefined, current, subs))
+    const label = box("sg-group-label")
+    host.append(label)
+    const level = data.path.length - 1
+    const field = current.group[level]
+    const ctx: GroupCtx = {
+      row: key,
+      data,
+      node,
+      path: data.path,
+      value: data.path[level],
+      field,
+      header: field === undefined ? undefined : current.defs.get(field)?.header,
+      count: current.groupSizes.get(key) ?? 0,
+      nested: current.group.length > 1,
+      open: current.expanded[key] === true,
+      selected: current.selection[key] === true,
+    }
+    const slot = grid.slots.groupRow
+    if (slot === undefined) label.append(...headingParts(ctx))
+    else mount(label, slot(ctx), subs)
+    record.el.replaceChildren(host)
+  }
+
   // --- detail panels --------------------------------------------------------
 
   // One full-width box, not a second set of cells: a panel spans the row it hangs under, and the
@@ -602,11 +658,16 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     // The panel answers to its owning row: a detail key holds a NUL no selector can spell, and an
     // intent raised inside a panel means the row it belongs to.
     const owner = rowOfDetailKey(key)
+    const data = current.data.get(key)
+    // The value, never the key: under the transpose a vertical entry is a column and carries no row
+    // value at all, so the guard answers false there without this file asking about orientation.
+    const heading = isGroupRow(data)
     let record = rows.get(key)
     if (record === undefined) {
-      const el = box(panel ? "sg-row sg-detail-row" : "sg-row")
+      const el = box(rowClass(panel, heading))
       setAttrs(el, rowAttrs(owner))
       if (panel) el.setAttribute("data-detail", "true")
+      if (heading) el.setAttribute("data-group", "true")
       record = {
         el,
         colRunSignature: "",
@@ -617,13 +678,13 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       }
       rows.set(key, record)
     }
-    const data = current.data.get(key)
     // The rebuild key falls back to the map itself: a vertical entry under the transpose is a
     // column, which owns no row value, and the map is one identity until the data reloads.
     const identity: unknown = data ?? current.data
     const editing = panel ? null : editingIn(current.editing, key, current.orientation)
     if (record.colRunSignature !== current.colRunSignature || record.data !== identity || record.editing !== editing) {
       if (panel) buildPanel(record, owner, node, data, current)
+      else if (heading) buildHeading(record, key, node, data, current)
       else buildCells(record, key, node, data, current)
       record.colRunSignature = current.colRunSignature
       record.data = identity
@@ -862,6 +923,26 @@ function linkIn(cell: HTMLElement, href: string | undefined): HTMLElement {
   return link
 }
 
+// --- group headings ---------------------------------------------------------
+
+const textSpan = (className: string, text: string): HTMLElement => {
+  const el = document.createElement("span")
+  el.className = className
+  el.append(text)
+  return el
+}
+
+/** The field is drawn only when a second level is open, which is when a `kind` heading and an
+ * `owner` heading are otherwise two bare values a reader cannot tell apart. */
+function headingParts(ctx: GroupCtx): readonly HTMLElement[] {
+  const out: HTMLElement[] = []
+  const field = ctx.header ?? ctx.field
+  if (ctx.nested && field !== undefined) out.push(textSpan("sg-group-field", field))
+  out.push(textSpan("sg-group-value", textOf(ctx.value)))
+  out.push(textSpan("sg-group-count", String(ctx.count)))
+  return out
+}
+
 const textOf = (value: unknown): string =>
   value === null || value === undefined
     ? ""
@@ -873,6 +954,11 @@ const readValue = <TRow>(def: ColumnDef<TRow> | undefined, row: TRow, colId: Col
   columnReader(def, colId)(row)
 
 // --- element helpers --------------------------------------------------------
+
+/** A row is one of three kinds, and no key is two of them: a detail key holds a NUL and a group key
+ * holds the `GROUP_PREFIX` namespace, so the pair can never both answer. */
+const rowClass = (panel: boolean, heading: boolean): string =>
+  panel ? "sg-row sg-detail-row" : heading ? "sg-row sg-group-row" : "sg-row"
 
 const box = (className: string): HTMLElement => {
   const el = document.createElement("div")

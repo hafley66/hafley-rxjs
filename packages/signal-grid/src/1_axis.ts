@@ -345,6 +345,21 @@ export function groupAxis<K extends string, T>(
   return { roots, children, parent, by }
 }
 
+/** Data rows under each group key, whole subtree. Walked upward from each row, so every node is
+ * visited once and a non-group key never lands in the result. @feature row.group */
+export function groupCounts<K extends string, T>(axis: Axis<K, T>): ReadonlyMap<K, number> {
+  const counts = new Map<K, number>()
+  for (const key of axis.by.keys()) {
+    if (isGroupKey(key)) continue
+    let up = axis.parent.get(key)
+    while (up !== undefined) {
+      if (isGroupKey(up)) counts.set(up, (counts.get(up) ?? 0) + 1)
+      up = axis.parent.get(up)
+    }
+  }
+  return counts
+}
+
 // --- Flatten ----------------------------------------------------------------
 
 interface Step<K extends string> {

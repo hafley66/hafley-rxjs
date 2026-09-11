@@ -66,6 +66,9 @@
   --sg-bg: light-dark(#ffffff, #14161a);
   --sg-fg: light-dark(#1a1c1f, #e6e8ea);
   --sg-head-bg: light-dark(#f6f7f9, #1b1e23);
+  --sg-group-bg: light-dark(#f4f6f8, #1a1d22);
+  --sg-group-dim: light-dark(#5b636d, #98a1ad);
+  --sg-group-count-bg: light-dark(#e5e9ee, #262b32);
   --sg-hover-bg: light-dark(#f2f5f9, #1f242b);
   --sg-selected-bg: light-dark(#dce9fb, #1d2b3d);
   --sg-focus: light-dark(#2f6feb, #6ea8fe);
@@ -371,6 +374,64 @@
 
 [data-route="g"] .sg-row[data-selected="true"] .sg-check-radio::before {
   content: "\25C9";
+}
+
+/* A heading stands for a whole level rather than for a value in a column, so it is one box across
+   the row and no column beside it draws a cell a reader would read as missing data. */
+[data-route="g"] .sg-row[data-group="true"] {
+  display: block;
+  overflow: hidden;
+  background: var(--sg-group-bg);
+}
+
+/* Sticky at the inline start for the reason the detail panel is: the heading names the run under it
+   and has to stay legible while the columns scroll away. */
+[data-route="g"] .sg-group-cell {
+  position: sticky;
+  inset-inline-start: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  block-size: 100%;
+  min-block-size: var(--sg-h, var(--sg-row-h));
+  padding-inline-end: var(--sg-pad);
+  overflow: hidden;
+  white-space: nowrap;
+  user-select: none;
+}
+
+[data-route="g"] .sg-group-label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The column that produced the heading, drawn only when a second level is open. Dimmed, because it
+   labels the value beside it rather than being the thing the reader is scanning for. */
+[data-route="g"] .sg-group-field {
+  color: var(--sg-group-dim);
+  font-size: 0.85em;
+}
+
+[data-route="g"] .sg-group-value {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-route="g"] .sg-group-count {
+  flex: none;
+  padding-inline: 6px;
+  border-radius: 999px;
+  background: var(--sg-group-count-bg);
+  color: var(--sg-group-dim);
+  font-size: 0.8em;
+  font-variant-numeric: tabular-nums;
 }
 
 /* A panel is a sibling row holding one box. Sticky at the inline start keeps it in view while the

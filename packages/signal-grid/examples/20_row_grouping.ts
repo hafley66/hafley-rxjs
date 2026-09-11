@@ -40,7 +40,8 @@ const OPEN: Readonly<Record<string, boolean>> = Object.fromEntries(
 export const rowGrouping: Example = {
   id: "row-grouping",
   title: "Row grouping",
-  summary: "Grouped by kind then owner; the first level is open and the second is one expander away.",
+  summary:
+    "Grouped by kind then owner. Each heading names the column it grouped, the value, and how many rows sit under it; the first level is open and the second is one expander away.",
   feature: "row.group",
   source,
   mount: (host) => {
