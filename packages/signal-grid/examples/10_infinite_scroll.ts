@@ -2,7 +2,7 @@
 // accumulate instead of replacing each other. `pageOnScrollNearEnd` raises the index from scroll
 // position rather than from a counter, so scrolling the same boundary twice raises it once.
 import { Subscription } from "rxjs"
-import { grid, render, type ColumnDef } from "../src/index.js"
+import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./10_infinite_scroll.ts?raw"
 import type { Example } from "./0_types.js"
 
@@ -29,7 +29,7 @@ export const infiniteScroll: Example = {
   summary: "Twenty-five rows to start; scrolling toward the end admits the next page and keeps the last.",
   feature: "page.infinite",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const box = document.createElement("div")
     const label = document.createElement("code")
     const root = document.createElement("div")
@@ -46,13 +46,14 @@ export const infiniteScroll: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(g.state.page.$.subscribe((page) => {
+    subs.add(runWhenInView(g.state.page.$, (page) => {
       label.textContent = `${(page.index + 1) * page.size} of ${ROWS.length} rows admitted`
     }))
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       box.remove()
     }
-  },
+  }),
 }

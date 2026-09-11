@@ -4,7 +4,7 @@
 // with and keep the rest.
 import { filter, fromEvent, map, Subscription } from "rxjs"
 import { activateOnCellClick, grid, keyboardNav, modifiersOf, radioColumn } from "../src/index.js"
-import { render, rowSelectionMode, sortOnHeaderClick } from "../src/index.js"
+import { mountInView, render, rowSelectionMode, runWhenInView, sortOnHeaderClick } from "../src/index.js"
 import type { ColumnDef, GridAction, GridEpic, GridIntent } from "../src/index.js"
 import source from "./13_radio_select.ts?raw"
 import type { Example } from "./0_types.js"
@@ -55,7 +55,7 @@ export const radioSelect: Example = {
   summary: "One row selected at a time, enforced by an epic that reads rowSelectionMode off the schema.",
   feature: "row.select",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const root = document.createElement("div")
     root.style.blockSize = "300px"
     host.append(root)
@@ -68,7 +68,7 @@ export const radioSelect: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(fromEvent<MouseEvent>(root, "click").subscribe((event) => {
+    subs.add(runWhenInView(fromEvent<MouseEvent>(root, "click"), (event) => {
       const target = event.target
       if (!(target instanceof Element)) return
       const id = target.closest(".example-radio")?.closest("[data-route='r']")?.getAttribute("data-row-id")
@@ -78,7 +78,8 @@ export const radioSelect: Example = {
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       root.remove()
     }
-  },
+  }),
 }

@@ -1,7 +1,7 @@
 // Hiding is a model operation, not a `display: none`: the cells leave the document and the
 // remaining flex columns take the freed width, so a hidden column costs nothing to render.
 import { fromEvent, Subscription } from "rxjs"
-import { grid, render, type ColumnDef } from "../src/index.js"
+import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./7_column_visibility.ts?raw"
 import type { Example } from "./0_types.js"
 
@@ -34,7 +34,7 @@ export const columnVisibility: Example = {
   summary: "Toggle a column out of the schema; unhiding returns it to its rank, never to the end.",
   feature: "col.visible",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const box = document.createElement("div")
     const bar = document.createElement("div")
     const root = document.createElement("div")
@@ -50,7 +50,7 @@ export const columnVisibility: Example = {
       button.textContent = col.header ?? col.id
       bar.append(button)
       subs.add(
-        fromEvent(button, "click").subscribe(() => {
+        runWhenInView(fromEvent(button, "click"), () => {
           const hidden = g.state.colHidden.$()
           g.state.colHidden.$({ ...hidden, [col.id]: hidden[col.id] !== true })
         }),
@@ -59,7 +59,8 @@ export const columnVisibility: Example = {
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       box.remove()
     }
-  },
+  }),
 }

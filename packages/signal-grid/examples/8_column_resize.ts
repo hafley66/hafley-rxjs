@@ -2,7 +2,7 @@
 // `resizeOnHeaderDrag` is already installed by `defaultEpics()`, so the drag needs no extra wiring.
 // The width that lands in state is the resolved one, so a flex column freezes where it actually sat.
 import { Subscription } from "rxjs"
-import { grid, render, type ColumnDef } from "../src/index.js"
+import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./8_column_resize.ts?raw"
 import type { Example } from "./0_types.js"
 
@@ -35,7 +35,7 @@ export const columnResize: Example = {
   summary: "Drag the right edge of a header; one write moves the header band, the row band, and the model.",
   feature: "col.resize",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const box = document.createElement("div")
     const readout = document.createElement("code")
     const root = document.createElement("div")
@@ -45,13 +45,14 @@ export const columnResize: Example = {
     const g = grid<Row>({ id: "column-resize", rows: ROWS, columns: COLUMNS, rowId: (row) => row.id })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(g.view.widths.$.subscribe((widths) => {
+    subs.add(runWhenInView(g.view.widths.$, (widths) => {
       readout.textContent = [...widths].map(([id, px]) => `${id} ${Math.round(px)}`).join("  ")
     }))
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       box.remove()
     }
-  },
+  }),
 }

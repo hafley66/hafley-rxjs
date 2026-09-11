@@ -1,7 +1,7 @@
 // Every column in the schema reaches the document today, so the cell count per frame is rows times
 // 300 and the `dom` timing is the one to watch; facet virtualization is what removes that.
 import { interval, Subscription } from "rxjs"
-import { grid, render, type ColumnDef } from "../src/index.js"
+import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./28_wide_schema.ts?raw"
 import type { Example } from "./0_types.js"
 
@@ -36,7 +36,7 @@ export const wideSchema: Example = {
     "A 300-column schema walked across its horizontal range on a timer. It is slow on purpose: the column axis is not virtualized yet, so all 300 cells per row are in the document, and this is the demo that proves facet virtualization when it lands.",
   feature: "view.virtualize.col",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const box = document.createElement("div")
     const label = document.createElement("code")
     const root = document.createElement("div")
@@ -52,11 +52,11 @@ export const wideSchema: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(g.view.plan.$.subscribe((it) => {
+    subs.add(runWhenInView(g.view.plan.$, (it) => {
       label.textContent = `${COLUMNS.length} columns, ${rows.length} rows, ${it.center.length} rows in the document`
     }))
     let step = 0
-    subs.add(interval(100).subscribe(() => {
+    subs.add(runWhenInView(interval(100), () => {
       const scroll = root.querySelector(".sg-scroll")
       if (!(scroll instanceof HTMLElement)) return
       step++
@@ -66,7 +66,8 @@ export const wideSchema: Example = {
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       box.remove()
     }
-  },
+  }),
 }

@@ -19,7 +19,7 @@ type Closeable = { readonly closed: boolean }
 
 interface Tracked {
   readonly sub: Closeable
-  /** Opened by a direct `.subscribe()` call in `src/` or `examples/`. */
+  /** Opened by a direct subscription from a file in `src/` or `examples/`. */
   readonly owned: boolean
 }
 

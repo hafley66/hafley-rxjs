@@ -31,7 +31,7 @@ export interface ExampleCheck {
   readonly sourceBytes: number
   readonly rowsRendered: number
   readonly nodesAfterTeardown: number
-  /** Opened by a direct `.subscribe()` in this package and never closed. Must be zero. */
+  /** Opened by a direct subscription in this package and never closed. Must be zero. */
   readonly openOwned: number
   /** Dependency subscriptions `@hafley66/signals` keeps observed for a read-pinned memo. */
   readonly retainedByDeps: number

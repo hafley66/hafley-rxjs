@@ -1,7 +1,7 @@
 // The rows are built inside `mount` rather than at module scope, so teardown releases the heap they
 // take and the receipts page can report a retained figure that means something.
 import { interval, Subscription } from "rxjs"
-import { grid, render, type ColumnDef } from "../src/index.js"
+import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./25_tall_relation.ts?raw"
 import type { Example } from "./0_types.js"
 
@@ -39,7 +39,7 @@ export const tallRelation: Example = {
     "Five hundred thousand uniform rows with virtualization on, driven through seven scroll stops on a timer, so the frame and plan timings have a steady load to report.",
   feature: "view.virtualize.row",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const box = document.createElement("div")
     const label = document.createElement("code")
     const root = document.createElement("div")
@@ -56,11 +56,11 @@ export const tallRelation: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(g.view.plan.$.subscribe((it) => {
+    subs.add(runWhenInView(g.view.plan.$, (it) => {
       label.textContent = `${rows.length} rows in the model, ${it.center.length} in the document, from index ${it.span.start}`
     }))
     let stop = 0
-    subs.add(interval(140).subscribe(() => {
+    subs.add(runWhenInView(interval(140), () => {
       const scroll = root.querySelector(".sg-scroll")
       if (!(scroll instanceof HTMLElement)) return
       const fraction = STOPS[stop % STOPS.length] ?? 0
@@ -70,7 +70,8 @@ export const tallRelation: Example = {
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       box.remove()
     }
-  },
+  }),
 }

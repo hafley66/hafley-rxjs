@@ -5,7 +5,7 @@
 // which is exactly what the local window then asks for, so the two agree with no second slice.
 import { Subscription } from "rxjs"
 import { Signal } from "@hafley66/signals"
-import { grid, render, type ColumnDef, type QueryDescriptor } from "../src/index.js"
+import { grid, mountInView, render, runWhenInView, type ColumnDef, type QueryDescriptor } from "../src/index.js"
 import source from "./15_server_mode.ts?raw"
 import type { Example } from "./0_types.js"
 
@@ -49,7 +49,7 @@ export const serverMode: Example = {
   summary: "Sorting and paging leave the browser: every query emission is one fetch, and rows are the answer.",
   feature: "page.server",
   source,
-  mount: (host) => {
+  mount: (host) => mountInView(host, () => {
     const box = document.createElement("div")
     const label = document.createElement("code")
     const root = document.createElement("div")
@@ -72,7 +72,7 @@ export const serverMode: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(g.query.$.subscribe((query) => {
+    subs.add(runWhenInView(g.query.$, (query) => {
       const page = fetchPage(query)
       rows.$(page)
       const item = query.sort[0]
@@ -81,7 +81,8 @@ export const serverMode: Example = {
     return () => {
       subs.unsubscribe()
       handle.stop()
+      g.close()
       box.remove()
     }
-  },
+  }),
 }

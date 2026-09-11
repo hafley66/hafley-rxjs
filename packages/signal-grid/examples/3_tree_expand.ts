@@ -52,6 +52,7 @@ export const treeExpand: Example = {
     const handle = render(g, root)
     return () => {
       handle.stop()
+      g.close()
       root.remove()
     }
   },
