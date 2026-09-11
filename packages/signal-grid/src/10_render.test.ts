@@ -60,6 +60,18 @@ const ROWS: readonly Row[] = [
 const NAME: ColumnDef<Row> = { id: "name", header: "Name", width: 120 }
 const SIZE: ColumnDef<Row> = { id: "size", header: "Size", width: 80 }
 
+/** Two kinds and two owners over three rows, so one grouping opens a level that nests. */
+const GROUP_ROWS: readonly Row[] = [
+  { id: "a", name: "Alpha", size: 1, kind: "document", owner: "ana" },
+  { id: "b", name: "Beta", size: 2, kind: "document", owner: "bo" },
+  { id: "c", name: "Cass", size: 3, kind: "image", owner: "ana" },
+]
+const KIND: ColumnDef<Row> = { id: "kind", header: "Kind", width: 100 }
+const OWNER: ColumnDef<Row> = { id: "owner", header: "Owner", width: 100 }
+const GROUP_COLUMNS: readonly ColumnDef<Row>[] = [NAME, KIND, OWNER, SIZE]
+
+const keyOf = (...path: readonly string[]): string => GROUP_PREFIX + JSON.stringify(path)
+
 const ROW = selectorFor("row")
 const CELL = selectorFor("cell")
 const CHECK = selectorFor("rowCheck")
@@ -141,6 +153,16 @@ const textOfCell = (rowId: string, colId: string): string => {
   const cell = root.querySelector(`${selectorFor("row", { rowId })} ${selectorFor("cell", { colId })}`)
   return cell?.textContent ?? ""
 }
+
+const mountGrouped = (
+  group: readonly string[],
+  expanded: Record<string, boolean>,
+  slots?: Slots<Row>,
+): Harness =>
+  mountGrid({ rows: GROUP_ROWS, columns: GROUP_COLUMNS, slots, state: { group, expanded } })
+
+const headingRow = (...path: readonly string[]): HTMLElement | null =>
+  root.querySelector(selectorFor("row", { rowId: keyOf(...path) }))
 
 // --- D1: slot precedence ----------------------------------------------------
 
@@ -449,27 +471,6 @@ describe("detail rows", () => {
 // while every group row drew four empty cells because `10_render.ts` had never heard of one.
 
 describe("group headings", () => {
-  const GROUPED: readonly Row[] = [
-    { id: "a", name: "Alpha", size: 1, kind: "document", owner: "ana" },
-    { id: "b", name: "Beta", size: 2, kind: "document", owner: "bo" },
-    { id: "c", name: "Cass", size: 3, kind: "image", owner: "ana" },
-  ]
-  const KIND: ColumnDef<Row> = { id: "kind", header: "Kind", width: 100 }
-  const OWNER: ColumnDef<Row> = { id: "owner", header: "Owner", width: 100 }
-  const GROUP_COLUMNS: readonly ColumnDef<Row>[] = [NAME, KIND, OWNER, SIZE]
-
-  const keyOf = (...path: readonly string[]): string => GROUP_PREFIX + JSON.stringify(path)
-
-  const mountGrouped = (group: readonly string[], expanded: Record<string, boolean>, slots?: Slots<Row>) =>
-    mountGrid({
-      rows: GROUPED,
-      columns: GROUP_COLUMNS,
-      slots,
-      state: { group, expanded },
-    })
-
-  const headingRow = (...path: readonly string[]): HTMLElement | null =>
-    root.querySelector(selectorFor("row", { rowId: keyOf(...path) }))
 
   test("a heading carries text, and the text names the value the level grouped by", () => {
     mountGrouped(["kind"], { [keyOf("document")]: true })
@@ -547,7 +548,7 @@ describe("group headings", () => {
       },
     })
     expect(isGroupRow(held)).toBe(true)
-    expect(isGroupRow(GROUPED[0])).toBe(false)
+    expect(isGroupRow(GROUP_ROWS[0])).toBe(false)
   })
 
   test("dropping the group keys puts every row back on its own cells", () => {
@@ -891,6 +892,53 @@ describe("range selection restamps without rebuilding", () => {
     )
     // Top-left of a two-by-two block: outside on the top and the start, inside on the other two.
     expect(corner?.getAttribute("data-edge")).toBe("top start")
+  })
+
+  // The blue run in the owner's screenshot was this, drawn correctly: a drag down one column, over
+  // group rows that each rendered four empty cells a range could stamp. The heading owns no cell in
+  // any column, so it takes no stamp, and the range still spans the leaves on both sides of it.
+  test("a range across a group heading stamps the leaves and never the heading", () => {
+    const { grid: made } = mountGrouped(["kind"], {
+      [keyOf("document")]: true,
+      [keyOf("image")]: true,
+    })
+    made.state.selection.$({
+      anchor: cellId("a", "name"),
+      head: cellId("c", "name"),
+      mode: "cell",
+      blocks: [],
+    })
+
+    const stamped = [...root.querySelectorAll(`${CELL}[data-selected]`)]
+    expect(stamped.map((it) => it.closest("[data-row-id]")?.getAttribute("data-row-id"))).toEqual([
+      "a",
+      "b",
+      "c",
+    ])
+    for (const path of [["document"], ["image"]]) {
+      const heading = headingRow(...path)
+      expect(heading?.querySelectorAll("[data-selected]").length).toBe(0)
+      expect(heading?.querySelectorAll("[data-edge]").length).toBe(0)
+      // The row's own stamp is row selection, a different feature, and no gesture here wrote it.
+      expect(heading?.getAttribute("data-selected")).toBe("false")
+    }
+  })
+
+  test("a row block across a group heading covers its leaves whole", () => {
+    const { grid: made } = mountGrouped(["kind"], {
+      [keyOf("document")]: true,
+      [keyOf("image")]: true,
+    })
+    made.state.selection.$({
+      anchor: cellId("a", ""),
+      head: cellId("c", ""),
+      mode: "row",
+      blocks: [],
+    })
+
+    // Four columns each on three leaves, and nothing on the two headings between them.
+    expect(root.querySelectorAll(`${CELL}[data-selected]`).length).toBe(12)
+    expect(root.querySelectorAll('[data-group="true"] [data-selected]').length).toBe(0)
   })
 })
 

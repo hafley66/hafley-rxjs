@@ -39,6 +39,16 @@ columns and a gutter drag select whole rows through the same block arithmetic.
 | `selectRowsOnDrag` | a press on the gutter |
 | `selectColumnsOnDrag` | a press on a header |
 
+## A range over a group heading
+
+A heading is one box across the row and owns no cell in any column, so a range never stamps one and
+a drag cannot start on one. The block still spans it: the range is two addresses over the flat key
+list, so the leaves above and below a heading stay in one rectangle.
+
+`data-selected` on a row and `data-selected` on a cell are two different features. The row's is
+`state.rowSelection`, the cell's is range membership, and `--sg-selected-bg` and `--sg-range-bg` are
+the two blues that say so.
+
 Every one of them gates on the primary button, so a right click inside a selected block raises a
 menu intent and leaves the range exactly as the reader can still see it.
 
