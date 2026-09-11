@@ -353,12 +353,14 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       node: verticalOf(nodePair, current.orientation) ?? node,
       editing,
     }
+    // An editor in an anchor would navigate on the click that put the caret in it.
+    const host = editing ? cell : linkIn(cell, hrefOf(grid, def, data))
     const slot = (editing ? grid.slots.editor : undefined) ?? def?.cell ?? grid.slots.cell
     if (slot === undefined) {
-      cell.append(textOf(ctx.value))
+      host.append(textOf(ctx.value))
       return cell
     }
-    mount(cell, slot(ctx), subs)
+    mount(host, slot(ctx), subs)
     return cell
   }
 
@@ -752,6 +754,30 @@ function append(host: ParentNode, value: Renderable): void {
   }
   // What is left matched `Renderable` through `$$typeof`, which is a React element. Nothing here
   // can mount one, and a consumer holding one wants the React entry point instead of this.
+}
+
+// --- links ------------------------------------------------------------------
+
+/** A column's own target beats the row's. A built-in column holds a control rather than a value,
+ * so a row link never covers one: the click there belongs to the glyph. */
+const hrefOf = <TRow>(
+  grid: Grid<TRow>,
+  def: ColumnDef<TRow> | undefined,
+  row: TRow,
+): string | undefined =>
+  def?.href?.(row) ?? (def !== undefined && isBuiltIn(def) ? undefined : grid.rowHref?.(row))
+
+// The anchor wraps the content and never becomes the cell. The cell is the grid item carrying the
+// route, the span tracks, and the selection stamp, and an anchor in that seat would hold all three.
+function linkIn(cell: HTMLElement, href: string | undefined): HTMLElement {
+  if (href === undefined) return cell
+  const link = document.createElement("a")
+  link.className = "sg-link"
+  link.href = href
+  // A cell range drag opens in this seat, and the browser's own link drag would take the gesture.
+  link.draggable = false
+  cell.append(link)
+  return link
 }
 
 const textOf = (value: unknown): string =>

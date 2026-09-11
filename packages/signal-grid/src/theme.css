@@ -262,6 +262,29 @@
   touch-action: none;
 }
 
+/* The same box `.sg-head-label` is, for the same reason: a flex item's automatic minimum is
+   min-content, so an anchor without `min-inline-size: 0` pushes its text past the cell instead of
+   truncating. It stretches to the cell's full height, so the hit area is the cell the reader aims
+   at rather than the width of the text. */
+[data-route="g"] .sg-link {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 4px;
+  block-size: 100%;
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: inherit;
+  text-decoration: none;
+}
+
+[data-route="g"] .sg-link:hover,
+[data-route="g"] .sg-link:focus-visible {
+  text-decoration: underline;
+}
+
 /* A glyph column's cell carries no route: the control inside it does, so the control is the whole
    hit area and the cell contributes no padding to miss. */
 [data-route="g"] .sg-cell-glyph {

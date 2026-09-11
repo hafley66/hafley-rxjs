@@ -9,6 +9,7 @@ import {
   cellId,
   type CellCtx,
   type ColumnDef,
+  type GridIntent,
   type GridState,
   type HeaderCtx,
   type Orientation,
@@ -67,6 +68,7 @@ interface Options {
   readonly hold?: (made: Grid<Row>) => void
   /** Absent installs `defaultEpics()`, which is what every test above the interaction ones wants. */
   readonly epics?: readonly GridEpic<Row>[]
+  readonly rowHref?: (row: Row) => string | undefined
 }
 
 let root: HTMLElement
@@ -114,6 +116,7 @@ function mountGrid(options: Options = {}): Harness {
     viewport: { top: 0, left: 0, width: 600, height: 400 },
     slots: options.slots,
     epics: options.epics,
+    rowHref: options.rowHref,
   })
   options.hold?.(made)
   const handle = render(made, root)
@@ -283,6 +286,67 @@ describe("selecting by clicking the row", () => {
     click(root.querySelector(selectorFor("expander")))
     expect(made.state.expanded.$()).toEqual({ a: true })
     expect(made.state.rowSelection.$()).toEqual({})
+  })
+})
+
+describe("a cell that is a link", () => {
+  const LINKED: ColumnDef<Row> = {
+    ...NAME,
+    href: (it) => (it.id === "a" ? `#row-${it.id}` : undefined),
+  }
+
+  const linkAt = (rowId: string, colId: string): HTMLAnchorElement | null =>
+    cellAt(rowId, colId)?.querySelector("a") ?? null
+
+  test("a column href wraps that cell's content and leaves the rows it declined plain", () => {
+    mountGrid({ columns: [LINKED, SIZE] })
+    expect(linkAt("a", "name")?.getAttribute("href")).toBe("#row-a")
+    expect(linkAt("a", "name")?.textContent).toBe("Alpha")
+    expect(linkAt("b", "name")).toBeNull()
+    expect(cellAt("b", "name")?.textContent).toBe("Beta")
+    expect(linkAt("a", "size")).toBeNull()
+  })
+
+  test("a row href covers every data cell and none of the glyph columns", () => {
+    mountGrid({
+      columns: [checkboxColumn<Row>(), NAME, SIZE],
+      rowHref: (it) => `#row-${it.id}`,
+    })
+    expect(linkAt("a", "name")?.getAttribute("href")).toBe("#row-a")
+    expect(linkAt("a", "size")?.getAttribute("href")).toBe("#row-a")
+    expect(root.querySelector(CHECK)?.closest("a")).toBeNull()
+  })
+
+  test("a column href beats the row's", () => {
+    mountGrid({ columns: [LINKED, SIZE], rowHref: () => "#whole-row" })
+    expect(linkAt("a", "name")?.getAttribute("href")).toBe("#row-a")
+    expect(linkAt("a", "size")?.getAttribute("href")).toBe("#whole-row")
+  })
+
+  test("a plain click follows the link, raises the intent, and selects nothing", () => {
+    const { grid: made } = mountGrid({
+      columns: [LINKED, SIZE],
+      epics: [selectRowsOnCellClick<Row>()],
+    })
+    const seen: GridIntent[] = []
+    const subs = made.intent$.subscribe((it) => seen.push(it))
+    location.hash = "#before"
+    click(linkAt("a", "name"))
+    subs.unsubscribe()
+    expect(location.hash).toBe("#row-a")
+    expect(seen.filter((it) => it.type === "cell.click")).toHaveLength(1)
+    expect(made.state.rowSelection.$()).toEqual({})
+  })
+
+  test("a command-click is the browser's: no intent raised and no default prevented", () => {
+    const { grid: made } = mountGrid({ columns: [LINKED, SIZE] })
+    const seen: GridIntent[] = []
+    const subs = made.intent$.subscribe((it) => seen.push(it))
+    const event = new MouseEvent("click", { bubbles: true, cancelable: true, metaKey: true })
+    linkAt("a", "name")?.dispatchEvent(event)
+    subs.unsubscribe()
+    expect(seen).toEqual([])
+    expect(event.defaultPrevented).toBe(false)
   })
 })
 

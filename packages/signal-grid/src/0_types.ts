@@ -251,6 +251,9 @@ export interface ColumnDef<TRow, V = unknown> {
    * @feature-declared cell.span
    */
   readonly span?: (row: TRow, index: number) => { rows?: number; cols?: number } | undefined
+  /** Where this column's cell points, rendered as a real `<a href>` by `10_render.ts`. A function
+   * of the row, so `undefined` leaves that row plain. @feature-declared view.a11y */
+  readonly href?: (it: TRow) => string | undefined
   /** Per-column body slot. Beats `Slots.cell`, which stays the schema-wide default. */
   readonly cell?: Slot<CellCtx<TRow>>
   /** Per-column header slot. `header` above is the plain-text label. */

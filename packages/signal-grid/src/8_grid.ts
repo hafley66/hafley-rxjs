@@ -130,6 +130,9 @@ export interface GridConfig<TRow> {
   readonly rowId: (row: TRow) => RowId
   /** Supplying this is the whole of tree mode. */
   readonly subRows?: (row: TRow) => readonly TRow[] | undefined
+  /** Where the whole row points. `ColumnDef.href` beats it per column, and a built-in glyph column
+   * is never covered by it, because those cells hold a control of their own. */
+  readonly rowHref?: (row: TRow) => string | undefined
   readonly mode?: GridMode
   /** Server mode: total rows behind the query, so the scrollbar can measure the whole result. */
   readonly rowCount?: GridSource<number | null>
@@ -206,6 +209,7 @@ export interface Grid<TRow> {
   readonly close: () => void
   readonly slots: Slots<TRow>
   readonly rowId: (row: TRow) => RowId
+  readonly rowHref?: (row: TRow) => string | undefined
 }
 
 const byPhase = <TRow, P extends GridAction<TRow>["phase"]>(
@@ -712,6 +716,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
     epics$: slice.epics$,
     slots: config.slots ?? {},
     rowId: config.rowId,
+    rowHref: config.rowHref,
   }
 }
 

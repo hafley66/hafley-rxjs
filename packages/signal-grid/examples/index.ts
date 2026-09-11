@@ -34,6 +34,7 @@ import { tallRelation } from "./25_tall_relation.js"
 import { deepTree } from "./26_deep_tree.js"
 import { sortChurn } from "./27_sort_churn.js"
 import { wideSchema } from "./28_wide_schema.js"
+import { links } from "./29_links.js"
 
 export type { Example, ExampleCheck } from "./0_types.js"
 export { VIDEOS, videoById, type Recording } from "./videos.js"
@@ -58,6 +59,7 @@ export const EXAMPLES: readonly Example[] = [
   detailNestedGrid,
   serverMode,
   observableRows,
+  links,
   cellSlots,
   signalSlot,
   theming,
