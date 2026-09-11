@@ -7,7 +7,8 @@
 // itself: a nested path emits on every root write whether or not its own branch moved.
 import { Subscription, tap } from "rxjs"
 import { defaultEpics, detailColumn, detailHeights, detailOnCellClick } from "../src/index.js"
-import { grid, isDetailKey, mountInView, render, rowOfDetailKey, runWhenInView } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { grid, isDetailKey, render, rowOfDetailKey } from "../src/index.js"
 import type { ColumnDef, RenderHandle } from "../src/index.js"
 import source from "./14_detail_nested_grid.ts?raw"
 import type { Example } from "./0_types.js"

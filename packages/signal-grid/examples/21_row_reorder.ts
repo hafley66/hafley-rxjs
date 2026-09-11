@@ -3,7 +3,8 @@
 // effect names the row and the row it should land before, and the consumer applies it.
 import { Subscription, tap } from "rxjs"
 import { Signal } from "@hafley66/signals"
-import { dragColumn, grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { dragColumn, grid, render, type ColumnDef } from "../src/index.js"
 import source from "./21_row_reorder.ts?raw"
 import type { Example } from "./0_types.js"
 

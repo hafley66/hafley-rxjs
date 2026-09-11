@@ -4,7 +4,8 @@
 // `g/r/c/check` and matches no declared template. One consumer-owned listener dispatches the
 // intent instead, and `selectRowsOnCheckboxClick` then supplies the toggle and the shift range.
 import { fromEvent, Subscription, tap } from "rxjs"
-import { checkboxColumn, grid, modifiersOf, mountInView, render, runWhenInView, type ColumnDef, type Grid } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { checkboxColumn, grid, modifiersOf, render, type ColumnDef, type Grid } from "../src/index.js"
 import source from "./12_row_selection.ts?raw"
 import type { Example } from "./0_types.js"
 

@@ -1,11 +1,10 @@
-// Chromium under `vitest.browser.config.ts` supplies the elements. The IntersectionObserver is
-// stubbed over, the same way `src/14_measure.test.ts` stubs it: a real one delivers its entries a
-// frame later and publishes neither its instance count nor its targets, and both are what these
-// tests assert.
+// The runner itself lives in `@hafley66/docs-kit`; this suite is signal-grid's proof that its own
+// demos gate on it. Chromium under `vitest.browser.config.ts` supplies the elements, and the
+// IntersectionObserver is stubbed the same way `src/14_measure.test.ts` stubs it: a real one
+// delivers entries a frame later and publishes neither its instance count nor its targets.
 import { afterEach, beforeEach, describe, expect, test } from "vitest"
 import { Observable, tap } from "rxjs"
-import { DEFAULT_BUFFER_PX } from "./14_measure.js"
-import { mountInView, runWhenInView } from "./17_in_view.js"
+import { DEFAULT_BUFFER_PX, mountInView, runWhenInView } from "@hafley66/docs-kit"
 
 type StubEntry = { readonly target: Element; readonly isIntersecting: boolean }
 

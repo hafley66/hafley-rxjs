@@ -2,25 +2,8 @@
 // the other loads that row's children into the row axis and expands it, with no panel at all.
 import { Signal } from "@hafley66/signals"
 import { delay, filter, merge, mergeMap, of, Subscription, tap } from "rxjs"
-import {
-  BUILT_IN_IDS,
-  defaultEpics,
-  detailColumn,
-  detailHeights,
-  detailOnCellClick,
-  grid,
-  isDetailKey,
-  mountInView,
-  render,
-  runWhenInView,
-  type ColumnDef,
-  type GridIntent,
-  type GridState,
-  type RenderHandle,
-  type RowCtx,
-  type RowId,
-  type Viewport,
-} from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { BUILT_IN_IDS, defaultEpics, detailColumn, detailHeights, detailOnCellClick, grid, isDetailKey, render, type ColumnDef, type GridIntent, type GridState, type RenderHandle, type RowCtx, type RowId, type Viewport } from "../src/index.js"
 import { actions, checkField, group, h, readbackField } from "./controls.js"
 import { readout } from "./readout.js"
 import { aboutPanel, stageBox, type DemoHandle, type DemoHosts, type DemoRoute } from "./0_shell.js"

@@ -4,7 +4,8 @@
 // into a node that now belongs to another row.
 import { interval, Subscription, tap } from "rxjs"
 import { Signal } from "@hafley66/signals"
-import { grid, mountInView, render, runWhenInView, type CellCtx, type ColumnDef, type Slot } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { grid, render, type CellCtx, type ColumnDef, type Slot } from "../src/index.js"
 import source from "./18_signal_slot.ts?raw"
 import type { Example } from "./0_types.js"
 

@@ -1,18 +1,20 @@
 <script setup lang="ts">
-// An edited demo keeps its `import` lines and `site/embeds.ts` answers them from the copy of the
-// library this page already loaded, so the editor's text stays the file you would commit.
+// An edited demo keeps its `import` lines and the site's embed table answers them from the copy of
+// the library this page already loaded, so the editor's text stays the file you would commit.
 import { javascript } from "@codemirror/lang-javascript"
 import { EditorView, basicSetup } from "codemirror"
 import { transform } from "sucrase"
 import { onMounted, onUnmounted, ref, shallowRef, watch } from "vue"
-import type { Example } from "../../../examples/0_types.js"
-import { byId } from "../../../examples/index.js"
-import { evaluate, exampleOf, type Evaluated } from "../../embeds.js"
-import { fps, retainMeters, type Meters, type Timing } from "./meters.js"
+import type { Example } from "../src/0_types.ts"
+import type { Evaluated } from "../src/2_embeds.ts"
+import { exampleOf } from "../src/2_embeds.ts"
+import { fps, retainMeters, type Meters, type Timing } from "../src/3_meters.ts"
+import { demoHost } from "./0_site.ts"
 
 const props = defineProps<{ id: string; height?: number }>()
 
-const example = byId(props.id)
+const host = demoHost()
+const example = host?.byId(props.id)
 
 const stage = ref<HTMLElement | null>(null)
 const editorHost = ref<HTMLElement | null>(null)
@@ -34,8 +36,7 @@ const timings = shallowRef<readonly Timing[]>([])
 /** An edit that takes longer than this stops re-running on its own, so a slow one cannot repeat. */
 const BUDGET_MS = 2000
 
-const messageOf = (thrown: unknown): string =>
-  thrown instanceof Error ? thrown.message : String(thrown)
+const messageOf = (thrown: unknown): string => (thrown instanceof Error ? thrown.message : String(thrown))
 
 const teardown = (): void => {
   try {
@@ -48,9 +49,9 @@ const teardown = (): void => {
   sandbox = null
 }
 
-function mountExample(host: HTMLElement, example: Example): () => void {
+function mountExample(into: HTMLElement, subject: Example): () => void {
   meters?.reset()
-  return example.mount(host)
+  return subject.mount(into)
 }
 
 function transpile(source: string): { code: string } | { error: string } {
@@ -62,18 +63,18 @@ function transpile(source: string): { code: string } | { error: string } {
 }
 
 function runEdited(code: string): void {
-  const host = stage.value
-  if (host === null) return
+  const into = stage.value
+  if (into === null || host === null) return
   error.value = null
   teardown()
-  host.replaceChildren()
+  into.replaceChildren()
   const started = performance.now()
   try {
-    const evaluated = evaluate(code, text.value)
+    const evaluated = host.evaluate(code, text.value)
     sandbox = evaluated
     const found = exampleOf(evaluated.exports)
     if (found === undefined) error.value = "No example is exported. Export a value with an `id` and a `mount`."
-    else mountTeardown = mountExample(host, found)
+    else mountTeardown = mountExample(into, found)
   } catch (thrown) {
     error.value = messageOf(thrown)
   }
@@ -82,15 +83,15 @@ function runEdited(code: string): void {
 }
 
 const runOriginal = (): void => {
-  const host = stage.value
-  if (host === null || example === undefined) return
+  const into = stage.value
+  if (into === null || example === undefined) return
   error.value = null
   overBudget.value = null
   edited.value = false
   teardown()
-  host.replaceChildren()
+  into.replaceChildren()
   try {
-    mountTeardown = mountExample(host, example)
+    mountTeardown = mountExample(into, example)
   } catch (thrown) {
     error.value = messageOf(thrown)
   }
@@ -110,7 +111,7 @@ const runNow = (): void => {
   runFromEditor()
 }
 
-// A half-typed line fails to parse, so the grid on screen keeps running until the next edit parses.
+// A half-typed line fails to parse, so what is on screen keeps running until the next edit parses.
 const schedule = (): void => {
   window.clearTimeout(debounce)
   if (overBudget.value !== null) return
@@ -132,11 +133,11 @@ function reset(): void {
 
 const openEditor = (): void => {
   tab.value = "edit"
-  const host = editorHost.value
-  if (view !== null || host === null || example === undefined) return
+  const into = editorHost.value
+  if (view !== null || into === null || example === undefined) return
   view = new EditorView({
     doc: text.value,
-    parent: host,
+    parent: into,
     extensions: [
       basicSetup,
       javascript({ typescript: true }),
@@ -206,6 +207,7 @@ onUnmounted(() => {
   </div>
 
   <p v-else class="demo-missing">
-    No example is registered under the id <code>{{ props.id }}</code>. Check <code>examples/index.ts</code>.
+    No example is registered under the id <code>{{ props.id }}</code>. Check
+    <code>{{ host?.registry ?? "the site theme, which named no demo registry" }}</code>.
   </p>
 </template>

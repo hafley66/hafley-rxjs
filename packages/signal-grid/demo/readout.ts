@@ -2,7 +2,8 @@
 // the action stream just carried. Every stat names the signal it reads, so nothing is refreshed.
 import { animationFrameScheduler, auditTime, filter, map, merge, Observable, scan, tap } from "rxjs"
 import { Signal } from "@hafley66/signals"
-import { mountInView, runWhenInView, type Grid, type GridAction } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { type Grid, type GridAction } from "../src/index.js"
 import { afterPaint, h } from "./controls.js"
 
 const LOG_LINES = 10

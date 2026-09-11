@@ -1,7 +1,8 @@
 // The rows are built inside `mount` rather than at module scope, so teardown releases the heap they
 // take and the receipts page can report a retained figure that means something.
 import { interval, Subscription, tap } from "rxjs"
-import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { grid, render, type ColumnDef } from "../src/index.js"
 import source from "./25_tall_relation.ts?raw"
 import type { Example } from "./0_types.js"
 

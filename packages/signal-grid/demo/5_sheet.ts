@@ -2,18 +2,8 @@
 // shape a spreadsheet demo puts on the table and the one this kernel has never been asked for.
 import { Signal } from "@hafley66/signals"
 import { map, merge, Observable, Subscription } from "rxjs"
-import {
-  grid,
-  mountInView,
-  render,
-  ROW_HEIGHT,
-  runWhenInView,
-  type ColumnDef,
-  type Grid,
-  type GridState,
-  type RowId,
-  type Viewport,
-} from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { grid, render, ROW_HEIGHT, type ColumnDef, type Grid, type GridState, type RowId, type Viewport } from "../src/index.js"
 import { actions, afterPaint, checkField, group, paintedText, readbackField, type Bound } from "./controls.js"
 import { readout } from "./readout.js"
 import { aboutPanel, stageBox, type DemoHandle, type DemoHosts, type DemoRoute } from "./0_shell.js"

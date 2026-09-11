@@ -1,11 +1,12 @@
-// Every number the site prints about itself, written to `site/stats.json`. Each field names the
-// command it came from in a sibling `method`, and a missing source yields `null` plus a `reason`.
-import { execFileSync, spawnSync } from "node:child_process"
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs"
-import { cpus, totalmem } from "node:os"
-import { dirname, join, relative, resolve } from "node:path"
+// @comment-ok: the probe runs in a child process because a synchronous script cannot import an ES module, and that constraint is invisible from the code
+// The numbers that are about grids: what a 100k-row grid retains, how many epics the default set
+// holds, what the parity ledger tracks, and what the benchmark tables say. Everything else is
+// measured by `@hafley66/docs-kit`, whose groups this assembles around these four.
+import { execFileSync } from "node:child_process"
+import { cpSync, existsSync, readFileSync, writeFileSync } from "node:fs"
+import { dirname, join, resolve } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
-import { gzipSync } from "node:zlib"
+import { BUNDLE_METHOD, SITE_METHOD, createMeasure, reportStats } from "@hafley66/docs-kit/scripts/stats"
 
 const PKG = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const OUT = join(PKG, "site", "stats.json")
@@ -20,197 +21,23 @@ const numberArg = (name) => {
   return Number.isFinite(value) ? value : null
 }
 
-// --- shell ------------------------------------------------------------------
-
-/** stdout of a command, trimmed, or `null` when it exits non-zero. Never throws. */
-const capture = (command, args) => {
-  try {
-    return execFileSync(command, args, { cwd: PKG, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim()
-  } catch {
-    return null
-  }
-}
-
-/** Runs a command for its side effect and returns the wall time in ms, or `null` when it failed. */
-const timed = (command, args) => {
-  const started = Date.now()
-  try {
-    execFileSync(command, args, { cwd: PKG, stdio: ["ignore", "ignore", "pipe"] })
-    return { ms: Date.now() - started, ok: true }
-  } catch {
-    return { ms: Date.now() - started, ok: false }
-  }
-}
-
-// --- bytes ------------------------------------------------------------------
-
-/** Raw and gzip bytes of one file. gzip runs over the same buffer `statSync` sized. */
-function weigh(path) {
-  const raw = readFileSync(path)
-  return { bytes: statSync(path).size, gzipBytes: gzipSync(raw).length }
-}
-
-/** Totals and a file count. The per-file listing this used to carry answered nothing and is gone. */
-function weighDir(dir) {
-  if (!existsSync(dir)) return null
-  const entries = readdirSync(dir, { recursive: true })
-    .map((it) => join(dir, String(it)))
-    .filter((it) => statSync(it).isFile())
-  if (entries.length === 0) return null
-  const weighed = entries.map(weigh)
-  return {
-    fileCount: weighed.length,
-    totalBytes: weighed.reduce((sum, it) => sum + it.bytes, 0),
-    totalGzipBytes: weighed.reduce((sum, it) => sum + it.gzipBytes, 0),
-  }
-}
-
-// --- commit -----------------------------------------------------------------
-
-function commitGroup() {
-  const long = capture("git", ["rev-parse", "HEAD"])
-  const short = capture("git", ["rev-parse", "--short", "HEAD"])
-  const porcelain = capture("git", ["status", "--porcelain"])
-  // The build writes these two, so measuring before writing them still reports the tree dirty on a
-  // clean checkout. Excluding a file this script itself produces is the only way the answer can be
-  // about the source rather than about the act of measuring it.
-  const GENERATED = [
+const measure = createMeasure({
+  pkg: PKG,
+  repo: REPO,
+  // The build writes these three, so measuring before writing them would report a clean checkout
+  // dirty. Excluding them is the only way the answer is about the source.
+  generated: [
     "packages/signal-grid/site/stats.json",
     "packages/signal-grid/site/parity.json",
     "packages/signal-grid/docs/1_parity.md",
-  ]
-  const dirty =
-    porcelain === null
-      ? null
-      : porcelain
-          .split("\n")
-          .filter((it) => it.trim() !== "")
-          .filter((it) => !GENERATED.some((name) => it.endsWith(name)))
-  return {
-    method: "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain excluding this script's own two outputs, git rev-parse --abbrev-ref HEAD",
-    hash: long,
-    short,
-    subject: capture("git", ["log", "-1", "--format=%s"]),
-    authorDate: capture("git", ["log", "-1", "--format=%aI"]),
-    branch: capture("git", ["rev-parse", "--abbrev-ref", "HEAD"]),
-    clean: dirty === null ? null : dirty.length === 0,
-    dirtyCount: dirty === null ? null : dirty.length,
-    dirtyEntries: dirty === null ? null : dirty.slice(0, 20),
-    repository: REPO,
-    url: long === null ? null : `https://github.com/${REPO}/commit/${long}`,
-    reason: long === null ? "git rev-parse HEAD exited non-zero; no repository at packages/signal-grid" : null,
-  }
-}
+  ],
+})
 
-// --- machine ----------------------------------------------------------------
-
-function machineGroup() {
-  const cores = cpus()
-  return {
-    method: "process.version, process.platform, process.arch, node:os cpus() and totalmem(), Date at run time",
-    node: process.version,
-    platform: process.platform,
-    arch: process.arch,
-    cpuModel: cores[0]?.model ?? null,
-    cores: cores.length,
-    totalMemoryBytes: totalmem(),
-    builtAt: new Date().toISOString(),
-  }
-}
-
-// --- source -----------------------------------------------------------------
-
-/** Line count is `\n` occurrences plus one when the file does not end in a newline. */
-function lineCount(text) {
-  if (text === "") return 0
-  let count = 0
-  for (let index = 0; index < text.length; index++) {
-    if (text[index] === "\n") count++
-  }
-  return text.endsWith("\n") ? count : count + 1
-}
-
-function sourceGroup() {
-  const dir = join(PKG, "src")
-  const names = readdirSync(dir).filter((it) => it.endsWith(".ts") || it.endsWith(".css"))
-  const files = names
-    .map((name) => {
-      const text = readFileSync(join(dir, name), "utf8")
-      return { file: `src/${name}`, lines: lineCount(text), kind: name.includes(".test.") ? "test" : "source" }
-    })
-    .sort((left, right) => right.lines - left.lines)
-  const of = (kind) => files.filter((it) => it.kind === kind)
-  return {
-    method: "readFileSync over src/*.{ts,css}, lines counted as \\n occurrences; a name containing .test. is a test file",
-    files,
-    sourceFiles: of("source").length,
-    sourceLines: of("source").reduce((sum, it) => sum + it.lines, 0),
-    testFiles: of("test").length,
-    testLines: of("test").reduce((sum, it) => sum + it.lines, 0),
-  }
-}
-
-// --- tests ------------------------------------------------------------------
-
-const TMP = join(PKG, "out", "stats")
-
-/** Runs one vitest config through the json reporter and reads the file back. */
-function runSuite(label, args) {
-  mkdirSync(TMP, { recursive: true })
-  const file = join(TMP, `${label}.json`)
-  const started = Date.now()
-  const outcome = timed("npx", ["vitest", "run", "--reporter=json", `--outputFile=${file}`, ...args])
-  if (!existsSync(file)) {
-    return {
-      report: null,
-      ms: Date.now() - started,
-      reason: `vitest run ${args.join(" ")} wrote no json report (exit ${outcome.ok ? 0 : "non-zero"})`,
-    }
-  }
-  return { report: JSON.parse(readFileSync(file, "utf8")), ms: outcome.ms, reason: null }
-}
-
-const suiteShape = (label, command, run) =>
-  run.report === null
-    ? { label, command, tests: null, files: null, passed: null, failed: null, durationMs: run.ms, reason: run.reason }
-    : {
-        label,
-        command,
-        tests: run.report.numTotalTests,
-        files: run.report.numTotalTestSuites,
-        passed: run.report.numPassedTests,
-        failed: run.report.numFailedTests,
-        durationMs: run.ms,
-        success: run.report.success,
-        reason: null,
-      }
-
-function testsGroup() {
-  const unit = runSuite("unit", [])
-  const browserFiles = readdirSync(join(PKG, "src")).filter((it) => it.includes(".browser.test."))
-  const browser =
-    browserFiles.length === 0
-      ? {
-          label: "browser",
-          command: "vitest run --config vitest.browser.config.ts",
-          tests: null,
-          files: 0,
-          passed: null,
-          failed: null,
-          durationMs: null,
-          reason:
-            "vitest.browser.config.ts includes src/**/*.browser.test.{ts,tsx} and no file in src/ matches, so no browser suite was run",
-        }
-      : suiteShape(
-          "browser",
-          "vitest run --config vitest.browser.config.ts",
-          runSuite("browser", ["--config", "vitest.browser.config.ts", "--passWithNoTests"]),
-        )
-  return {
-    method: "vitest run --reporter=json --outputFile=..., counts read from numTotalTests / numTotalTestSuites / numPassedTests / numFailedTests",
-    unit: suiteShape("unit", "vitest run", unit),
-    browser,
-  }
+const TREEMAP = {
+  method:
+    "rollup-plugin-visualizer, wired into vite.config.ts behind SIGNAL_GRID_TREEMAP=1 because it takes the bundle step from 24 ms to 84 ms; this script does not set the flag",
+  envFlag: "SIGNAL_GRID_TREEMAP=1",
+  command: "SIGNAL_GRID_TREEMAP=1 npx vite build",
 }
 
 // --- memory -----------------------------------------------------------------
@@ -256,8 +83,7 @@ built.close()
 `
 
 function memoryGroup() {
-  const built = join(PKG, "dist", "index.js")
-  if (!existsSync(built)) {
+  if (!existsSync(join(PKG, "dist", "index.js"))) {
     return {
       method: null,
       measured: null,
@@ -272,11 +98,7 @@ function memoryGroup() {
       stdio: ["ignore", "pipe", "pipe"],
     })
   } catch (error) {
-    return {
-      method: null,
-      measured: null,
-      reason: `the probe child process failed: ${String(error).split("\n")[0]}`,
-    }
+    return { method: null, measured: null, reason: `the probe child process failed: ${String(error).split("\n")[0]}` }
   }
   const parsed = JSON.parse(raw)
   return {
@@ -296,41 +118,6 @@ function memoryGroup() {
   }
 }
 
-// --- memory per demo ---------------------------------------------------------
-
-/** Runs the examples check, which samples `JSHeapUsedSize` over CDP around every mount, and reads
- * the file it writes. The gate lives in that script; this reads its numbers. */
-function demoMemoryGroup() {
-  const file = join(PKG, "out", "examples-memory.json")
-  const run = timed(process.execPath, [join(PKG, "scripts", "examples.mjs"), `--memory-json=${relative(PKG, file)}`])
-  if (!existsSync(file)) {
-    return {
-      method: null,
-      command: "node scripts/examples.mjs",
-      samples: null,
-      leakBytes: null,
-      examples: null,
-      retaining: null,
-      durationMs: run.ms,
-      reason: "node scripts/examples.mjs wrote no out/examples-memory.json; the browser pass did not finish",
-    }
-  }
-  const parsed = JSON.parse(readFileSync(file, "utf8"))
-  const examples = parsed.examples.filter((it) => it.reason === null || it.reason === undefined)
-  const retaining = examples.filter((it) => it.leaks === true).map((it) => it.id)
-  return {
-    method: parsed.method,
-    command: "node scripts/examples.mjs",
-    samples: parsed.samples,
-    leakBytes: parsed.leakBytes,
-    measuredAt: parsed.measuredAt,
-    examples,
-    retaining,
-    durationMs: run.ms,
-    reason: retaining.length === 0 ? null : `${retaining.length} example(s) hold heap after teardown: ${retaining.join(", ")}`,
-  }
-}
-
 // --- ledger -----------------------------------------------------------------
 
 const EPIC_PROBE = `
@@ -338,12 +125,14 @@ import { defaultEpics } from ${JSON.stringify(pathToFileURL(join(PKG, "dist", "i
 process.stdout.write(String(defaultEpics().length))
 `
 
-/** Called rather than regex-counted: a helper returning two epics reads as one `epic(` to a scanner.
- * The child process is what lets this synchronous script import an ES module. */
+/** Called rather than regex-counted: a helper returning two epics reads as one `epic(` to a scanner. */
 function epicsGroup() {
-  const built = join(PKG, "dist", "index.js")
-  if (!existsSync(built)) {
-    return { method: null, count: null, reason: "dist/index.js is absent, so defaultEpics() could not be imported; run the library build first" }
+  if (!existsSync(join(PKG, "dist", "index.js"))) {
+    return {
+      method: null,
+      count: null,
+      reason: "dist/index.js is absent, so defaultEpics() could not be imported; run the library build first",
+    }
   }
   let raw = null
   try {
@@ -353,7 +142,11 @@ function epicsGroup() {
       stdio: ["ignore", "pipe", "pipe"],
     })
   } catch (error) {
-    return { method: null, count: null, reason: `importing defaultEpics from dist/index.js failed: ${String(error).split("\n")[0]}` }
+    return {
+      method: null,
+      count: null,
+      reason: `importing defaultEpics from dist/index.js failed: ${String(error).split("\n")[0]}`,
+    }
   }
   const count = Number(raw.trim())
   return {
@@ -367,7 +160,7 @@ function epicsGroup() {
  * gate is reported here rather than erasing the numbers. */
 function featuresGroup() {
   const data = join(PKG, "site", "parity.json")
-  const run = timed(process.execPath, [join(PKG, "scripts", "parity.mjs")])
+  const run = measure.timed(process.execPath, [join(PKG, "scripts", "parity.mjs")])
   if (!existsSync(data)) {
     return { method: null, tracked: null, reason: "node scripts/parity.mjs wrote no site/parity.json" }
   }
@@ -411,7 +204,14 @@ const rowCells = (line) =>
 function benchGroup() {
   const file = join(PKG, "bench", "README.md")
   if (!existsSync(file)) {
-    return { method: null, file: "bench/README.md", medians: null, headToHead: null, machine: null, reason: "bench/README.md does not exist" }
+    return {
+      method: null,
+      file: "bench/README.md",
+      medians: null,
+      headToHead: null,
+      machine: null,
+      reason: "bench/README.md does not exist",
+    }
   }
   const lines = readFileSync(file, "utf8").split("\n")
   const medians = []
@@ -486,154 +286,40 @@ function benchGroup() {
   }
 }
 
-// --- size-limit --------------------------------------------------------------
-
-const SIZE_LIMIT_METHOD =
-  "npx size-limit --json, read as json rather than parsed out of its human output; @size-limit/preset-small-lib bundles each entry with esbuild and gzips it, @size-limit/time replays it on a throttled connection and in headless chrome"
-
-/** stdout of a command that is expected to exit non-zero when a gate fails, so the payload survives. */
-function captureEvenOnFailure(command, args) {
-  const run = spawnSync(command, args, { cwd: PKG, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] })
-  return { stdout: run.stdout ?? "", status: run.status, error: run.error }
-}
-
-function sizeLimitGroup() {
-  const config = join(PKG, ".size-limit.json")
-  if (!existsSync(config)) {
-    return { method: null, config: ".size-limit.json", entries: null, passed: null, durationMs: null, reason: ".size-limit.json is absent, so there are no budgets to run" }
-  }
-  const started = Date.now()
-  const run = captureEvenOnFailure("npx", ["size-limit", "--json"])
-  const durationMs = Date.now() - started
-  // The spinner writes to stderr but the runner is free to prefix stdout, so the payload starts at
-  // the first bracket rather than at byte zero.
-  const opened = run.stdout.indexOf("[")
-  if (opened === -1) {
-    return { method: null, config: ".size-limit.json", entries: null, passed: null, durationMs, reason: `npx size-limit --json printed no json array (exit ${run.status ?? "none"})` }
-  }
-  let parsed = null
-  try {
-    parsed = JSON.parse(run.stdout.slice(opened))
-  } catch (error) {
-    return { method: null, config: ".size-limit.json", entries: null, passed: null, durationMs, reason: `npx size-limit --json printed unparseable json: ${String(error).split("\n")[0]}` }
-  }
-  const entries = parsed.map((it) => ({
-    name: it.name,
-    sizeBytes: it.size ?? null,
-    limitBytes: it.sizeLimit ?? null,
-    headroomBytes: it.size === undefined || it.sizeLimit === undefined ? null : it.sizeLimit - it.size,
-    passed: it.passed === true,
-    loadingMs: it.loading === undefined ? null : Math.round(it.loading * 1000),
-    runningMs: it.running === undefined ? null : Math.round(it.running * 1000),
-  }))
-  const failed = entries.filter((it) => !it.passed)
-  return {
-    method: SIZE_LIMIT_METHOD,
-    config: ".size-limit.json",
-    entries,
-    passed: failed.length === 0,
-    durationMs,
-    reason: failed.length === 0 ? null : `${failed.length} entr(y|ies) over budget: ${failed.map((it) => it.name).join(", ")}`,
-  }
-}
-
-const TREEMAP_METHOD =
-  "rollup-plugin-visualizer, wired into vite.config.ts behind SIGNAL_GRID_TREEMAP=1 because it takes the bundle step from 24 ms to 84 ms; this script does not set the flag"
-
-const treemapGroup = () => {
-  const file = join(PKG, "out", "treemap.html")
-  const present = existsSync(file)
-  return {
-    method: TREEMAP_METHOD,
-    envFlag: "SIGNAL_GRID_TREEMAP=1",
-    command: "SIGNAL_GRID_TREEMAP=1 npx vite build",
-    file: "out/treemap.html",
-    bytes: present ? statSync(file).size : null,
-    reason: present ? null : "out/treemap.html is absent; the last build ran without SIGNAL_GRID_TREEMAP=1",
-  }
-}
-
-// --- bundle -----------------------------------------------------------------
-
-function libraryBundle() {
-  const dir = join(PKG, "dist")
-  const weighed = weighDir(dir)
-  if (weighed === null) {
-    return { ...emptyBundle(), reason: "dist/ holds no files; the library build did not run or produced nothing" }
-  }
-  return { ...weighed, reason: null }
-}
-
-const emptyBundle = () => ({ fileCount: null, totalBytes: null, totalGzipBytes: null })
-
-function siteBundles() {
-  const dist = join(PKG, "site", "dist")
-  const assets = weighDir(join(dist, "assets"))
-  const html = existsSync(join(dist, "index.html")) ? [weigh(join(dist, "index.html"))] : []
-  const demo = weighDir(join(dist, "demo", "assets"))
-  const videos = weighDir(join(dist, "videos"))
-  const site =
-    assets === null
-      ? { ...emptyBundle(), reason: "site/dist/assets does not exist; the site has not been built in this run" }
-      : {
-          fileCount: assets.fileCount + html.length,
-          totalBytes: assets.totalBytes + html.reduce((sum, it) => sum + it.bytes, 0),
-          totalGzipBytes: assets.totalGzipBytes + html.reduce((sum, it) => sum + it.gzipBytes, 0),
-          reason: null,
-        }
-  return {
-    site,
-    demo: demo === null ? { ...emptyBundle(), reason: "site/dist/demo/assets does not exist; the demo has not been built in this run" } : { ...demo, reason: null },
-    videos:
-      videos === null
-        ? { ...emptyBundle(), reason: "site/dist/videos holds no recordings; run `pnpm test:visual && pnpm videos`" }
-        : { ...videos, reason: null },
-  }
-}
-
 // --- assembly ---------------------------------------------------------------
-
-const packageVersion = () => {
-  const manifest = JSON.parse(readFileSync(join(PKG, "package.json"), "utf8"))
-  return { name: manifest.name, version: manifest.version }
-}
-
-const BUNDLE_METHOD =
-  "statSync().size summed for raw bytes and zlib.gzipSync(readFileSync(file)).length summed for gzip, over every file in the directory; totals and a file count only, because a per-file listing of a build output answers nothing"
-const SITE_METHOD =
-  "the same statSync and gzipSync pass, run after the site build and before the rebuild that ships this file; the shipped assets differ from these figures by the bytes this table adds to stats.json"
 
 function fullRun() {
   const startedAt = Date.now()
-  const typecheck = timed("npx", ["tsc", "--noEmit"])
-  const libraryBuild = timed("npx", ["vite", "build"])
+  const typecheck = measure.timed("npx", ["tsc", "--noEmit"])
+  const libraryBuild = measure.timed("npx", ["vite", "build"])
   const themeSource = join(PKG, "src", "theme.css")
   if (libraryBuild.ok && existsSync(themeSource)) cpSync(themeSource, join(PKG, "dist", "theme.css"))
-  const tests = testsGroup()
-  const bundles = siteBundles()
+  const tests = measure.testsGroup()
+  const bundles = measure.siteBundles()
 
   return {
     schema: 1,
     generatedBy: "packages/signal-grid/scripts/stats.mjs",
-    commit: commitGroup(),
-    machine: machineGroup(),
-    package: packageVersion(),
+    commit: measure.commitGroup(),
+    machine: measure.machineGroup(),
+    package: measure.packageVersion(),
     bundle: {
       method: BUNDLE_METHOD,
-      library: libraryBundle(),
+      library: measure.libraryBundle(),
       siteMethod: SITE_METHOD,
       site: bundles.site,
       demo: bundles.demo,
       videos: bundles.videos,
-      treemap: treemapGroup(),
+      treemap: measure.treemapGroup(TREEMAP),
     },
-    sizeLimit: sizeLimitGroup(),
-    source: sourceGroup(),
+    sizeLimit: measure.sizeLimitGroup(),
+    source: measure.sourceGroup(),
     epics: epicsGroup(),
     features: featuresGroup(),
     tests,
     timing: {
-      method: "Date.now() around each execFileSync call in scripts/stats.mjs; site and demo build times are handed over by scripts/ship.mjs",
+      method:
+        "Date.now() around each execFileSync call in scripts/stats.mjs; site and demo build times are handed over by scripts/ship.mjs",
       typecheckMs: typecheck.ok ? typecheck.ms : null,
       typecheckReason: typecheck.ok ? null : "npx tsc --noEmit exited non-zero",
       libraryBuildMs: libraryBuild.ok ? libraryBuild.ms : null,
@@ -645,26 +331,26 @@ function fullRun() {
       statsMs: Date.now() - startedAt,
     },
     memory: memoryGroup(),
-    demoMemory: demoMemoryGroup(),
+    demoMemory: measure.demoMemoryGroup(join("scripts", "examples.mjs")),
     bench: benchGroup(),
   }
 }
 
-// The site imports stats.json, so its own bundle size is only knowable after it is built. `ship.mjs`
-// builds, calls `--bundles`, and builds again, which is why `SITE_METHOD` names the pass it measured.
+// The site imports stats.json, so its own bundle size is only knowable after it is built.
+// `ship.mjs` builds, calls `--bundles`, and builds again, which is why `SITE_METHOD` names the pass.
 function bundlesRun() {
-  if (!existsSync(OUT)) throw new Error("scripts/stats.mjs --bundles needs an existing site/stats.json; run it without the flag first")
+  if (!existsSync(OUT)) {
+    throw new Error("scripts/stats.mjs --bundles needs an existing site/stats.json; run it without the flag first")
+  }
   const previous = JSON.parse(readFileSync(OUT, "utf8"))
-  const bundles = siteBundles()
-  const siteBuildMs = numberArg("site-build-ms")
-  const demoBuildMs = numberArg("demo-build-ms")
+  const bundles = measure.siteBundles()
   return {
     ...previous,
     bundle: { ...previous.bundle, siteMethod: SITE_METHOD, site: bundles.site, demo: bundles.demo, videos: bundles.videos },
     timing: {
       ...previous.timing,
-      siteBuildMs: siteBuildMs ?? previous.timing.siteBuildMs,
-      demoBuildMs: demoBuildMs ?? previous.timing.demoBuildMs,
+      siteBuildMs: numberArg("site-build-ms") ?? previous.timing.siteBuildMs,
+      demoBuildMs: numberArg("demo-build-ms") ?? previous.timing.demoBuildMs,
     },
   }
 }
@@ -673,37 +359,17 @@ const stats = bundlesOnly ? bundlesRun() : fullRun()
 writeFileSync(OUT, `${JSON.stringify(stats, null, 2)}\n`)
 
 const kb = (value) => (value === null ? "n/a" : `${(value / 1024).toFixed(1)} kB`)
-console.log("")
-console.log(`  stats      ${relative(PKG, OUT)}${bundlesOnly ? " (bundles refreshed)" : ""}`)
-console.log(`  commit     ${stats.commit.short ?? "unknown"} ${stats.commit.clean === true ? "clean" : "DIRTY"}`)
-console.log(`  library    ${kb(stats.bundle.library.totalBytes)} raw, ${kb(stats.bundle.library.totalGzipBytes)} gzip`)
-for (const entry of stats.sizeLimit.entries ?? []) {
-  console.log(
-    `  size-limit ${entry.passed ? "pass" : "OVER"} ${kb(entry.sizeBytes)} of ${kb(entry.limitBytes)}  ${entry.name}`,
-  )
-}
-console.log(`  site       ${kb(stats.bundle.site.totalBytes)} raw, ${kb(stats.bundle.site.totalGzipBytes)} gzip`)
-console.log(`  demo       ${kb(stats.bundle.demo.totalBytes)} raw, ${kb(stats.bundle.demo.totalGzipBytes)} gzip`)
-console.log(`  tests      ${stats.tests.unit.tests ?? "n/a"} unit in ${stats.tests.unit.durationMs ?? "n/a"} ms`)
-console.log(`  epics      ${stats.epics.count ?? "n/a"} in defaultEpics()`)
-console.log(`  features   ${stats.features.tracked ?? "n/a"} tracked, ${stats.features.implemented ?? "n/a"} implemented, gate ${stats.features.gate ?? "n/a"}`)
-console.log(`  memory     ${stats.memory.retainedBytes === undefined ? "n/a" : kb(stats.memory.retainedBytes)} retained by a 100k-row grid`)
-console.log(
-  `  demos      ${stats.demoMemory.examples === null ? "n/a" : `${stats.demoMemory.examples.length} sampled, ${stats.demoMemory.retaining.length} retaining over ${kb(stats.demoMemory.leakBytes)}`}`,
-)
-const nulls = []
-if (stats.commit.reason !== null) nulls.push(`commit: ${stats.commit.reason}`)
-if (stats.bundle.library.reason !== null) nulls.push(`bundle.library: ${stats.bundle.library.reason}`)
-if (stats.bundle.site.reason !== null) nulls.push(`bundle.site: ${stats.bundle.site.reason}`)
-if (stats.bundle.demo.reason !== null) nulls.push(`bundle.demo: ${stats.bundle.demo.reason}`)
-if (stats.bundle.videos.reason !== null) nulls.push(`bundle.videos: ${stats.bundle.videos.reason}`)
-if (stats.bundle.treemap.reason !== null) nulls.push(`bundle.treemap: ${stats.bundle.treemap.reason}`)
-if (stats.sizeLimit.reason !== null) nulls.push(`sizeLimit: ${stats.sizeLimit.reason}`)
-if (stats.tests.browser.reason !== null) nulls.push(`tests.browser: ${stats.tests.browser.reason}`)
-if (stats.memory.reason !== null) nulls.push(`memory: ${stats.memory.reason}`)
-if (stats.demoMemory.reason !== null) nulls.push(`demoMemory: ${stats.demoMemory.reason}`)
-if (stats.bench.reason !== null) nulls.push(`bench: ${stats.bench.reason}`)
-if (stats.epics.reason !== null) nulls.push(`epics: ${stats.epics.reason}`)
-if (stats.features.reason !== null) nulls.push(`features: ${stats.features.reason}`)
-for (const note of nulls) console.log(`  null       ${note}`)
-console.log("")
+reportStats(stats, OUT, PKG, {
+  bundlesOnly,
+  extra: [
+    `  epics      ${stats.epics.count ?? "n/a"} in defaultEpics()`,
+    `  features   ${stats.features.tracked ?? "n/a"} tracked, ${stats.features.implemented ?? "n/a"} implemented, gate ${stats.features.gate ?? "n/a"}`,
+    `  memory     ${stats.memory.retainedBytes === undefined ? "n/a" : kb(stats.memory.retainedBytes)} retained by a 100k-row grid`,
+  ],
+  nulls: [
+    stats.memory.reason === null ? null : `memory: ${stats.memory.reason}`,
+    stats.bench.reason === null ? null : `bench: ${stats.bench.reason}`,
+    stats.epics.reason === null ? null : `epics: ${stats.epics.reason}`,
+    stats.features.reason === null ? null : `features: ${stats.features.reason}`,
+  ],
+})

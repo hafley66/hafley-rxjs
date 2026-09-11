@@ -3,7 +3,8 @@
 // renderer rewrites it from `ROW_HEIGHT[density]` on every geometry frame, so height is changed
 // through `state.density` and colour through properties.
 import { fromEvent, Subscription, tap } from "rxjs"
-import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { grid, render, type ColumnDef } from "../src/index.js"
 import source from "./19_theming.ts?raw"
 import type { Example } from "./0_types.js"
 

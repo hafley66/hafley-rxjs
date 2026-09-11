@@ -2,7 +2,8 @@
 // key and the kernel is identical either way, which is the claim worth being able to break: turning
 // it off puts all fifty thousand row elements in the page, and the readout shows the cost.
 import { fromEvent, Subscription, tap } from "rxjs"
-import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { grid, render, type ColumnDef } from "../src/index.js"
 import source from "./11_virtualization.ts?raw"
 import type { Example } from "./0_types.js"
 

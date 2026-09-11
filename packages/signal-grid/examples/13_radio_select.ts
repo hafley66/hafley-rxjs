@@ -4,7 +4,8 @@
 // with and keep the rest.
 import { filter, fromEvent, map, Subscription, tap } from "rxjs"
 import { activateOnCellClick, grid, keyboardNav, modifiersOf, radioColumn } from "../src/index.js"
-import { mountInView, render, rowSelectionMode, runWhenInView, sortOnHeaderClick } from "../src/index.js"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { render, rowSelectionMode, sortOnHeaderClick } from "../src/index.js"
 import type { ColumnDef, GridAction, GridEpic, GridIntent } from "../src/index.js"
 import source from "./13_radio_select.ts?raw"
 import type { Example } from "./0_types.js"
