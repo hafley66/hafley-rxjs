@@ -20,7 +20,6 @@
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.5",
-    "@hafley66/signals": "workspace:*",
     "codemirror": "^6.0.2",
     "rxjs": "^7.8.2",
     "sucrase": "^3.35.1"
@@ -28,8 +27,9 @@
   "devDependencies": {
     "typescript": "7.0.2"
   },
-  "//": "vite, vitepress, vue and playwright are peers rather than devDependencies on purpose: a second copy of any of them in this package's own node_modules is a second Vue app instance, or a second @vitest/browser, which is what a duplicate vite resolution produced the first time this was written.",
+  "//": "vite, vitepress, vue, playwright and @hafley66/signals are peers rather than dependencies on purpose. A second copy of any of the first four in this package's own node_modules is a second Vue app instance, or a second @vitest/browser. @hafley66/signals is a peer because `packages/signals` consumes this package, and a dependency edge back would be a cycle.",
   "peerDependencies": {
+    "@hafley66/signals": "workspace:*",
     "playwright": "^1.62.1",
     "vite": "^8.2.1",
     "vitepress": "2.0.0-alpha.20",

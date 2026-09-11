@@ -38,13 +38,23 @@
   "scripts": {
     "build": "vite build",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p examples/tsconfig.json",
     "test": "vitest run",
     "test:jsx-e2e": "vitest --config vitest.jsx-e2e.config.ts",
     "test:ui": "vitest --ui",
     "test:log": "SIGNALS_LOG=debug vitest run",
     "test:watch": "vitest",
-    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build && pnpm run docs",
+    "api": "node scripts/api.mjs",
+    "docs": "pnpm api && node scripts/docs.mjs",
+    "docs:render": "pnpm api && node scripts/docs.mjs --render",
+    "docs:fix": "node scripts/docs.mjs --fix",
+    "examples": "node scripts/examples.mjs",
+    "site:content": "pnpm docs:render && rm -rf site/pages && mkdir site/pages && cp docs/dist/*.md site/pages/",
+    "site": "pnpm site:content && vitepress dev site",
+    "site:build": "pnpm site:content && vitepress build site",
+    "site:preview": "vitepress preview site",
+    "ship": "node scripts/ship.mjs"
   },
   "dependencies": {
     "@hafley66/path": "workspace:*",
@@ -70,17 +80,25 @@
     }
   },
   "devDependencies": {
+    "@hafley66/docs-kit": "workspace:*",
     "@logtape/logtape": "2.3.3",
     "@types/lodash": "^4.17.16",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@vitest/browser": "^4.1.10",
+    "@vitest/browser-playwright": "^4.1.10",
     "@vitest/ui": "^4.1.10",
     "jsdom": "^26.0.0",
+    "mermaid": "^11.16.0",
+    "playwright": "^1.62.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "7.0.2",
     "vite": "^8.2.1",
-    "vitest": "^4.1.10"
+    "vitepress": "2.0.0-alpha.20",
+    "vitepress-plugin-mermaid": "^2.0.17",
+    "vitest": "^4.1.10",
+    "vue": "^3.5.42"
   },
   "keywords": [
     "rxjs",

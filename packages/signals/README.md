@@ -6,7 +6,7 @@ RxJS-native reactive signals with proxy-based nested access.
 > verified it against the source. Treat the examples as unverified until you run
 > them, and check signatures against `src/` before depending on them.
 
-📚 **[Full API Documentation](https://hafley66.github.io/hafley-rxjs/)**
+📚 **[The documentation site](https://hafley66.github.io/hafley-rxjs/signals/)**, with a live editable demo on every page and an API reference read out of the compiler.
 📖 See `GUIDE.md` for signal-first application architecture and the React boundary.
 
 ---
@@ -72,7 +72,7 @@ const slice = createSlice<State, Action, Ctx>({ initial, reduce, epics, ctx, sta
 slice.state.$()             // reduced state, any time
 slice.dispatch(action)      // reduce, then re-emit on actions$
 slice.actions$              // Observable<Action>, every dispatched action after its reduce
-slice.epics$.subscribe()    // run epics; unsubscribe to stop; share() across subscribers
+slice.epics$                // never emits; observing it is what makes the epics live, share()d
 
 type Epic<A, S, Ctx> = (actions$: Observable<A>, state: Signal<S>, ctx: Ctx) => Observable<A>
 runEpics(actions$, state, ctx, epics, dispatch)   // Observable<never>, for extra epic sets
@@ -80,9 +80,9 @@ runEpics(actions$, state, ctx, epics, dispatch)   // Observable<never>, for extr
 
 ```
 step 0  state={n:3}   dispatch {double-please}   epics cold   -> state {n:3}
-step 1  epics$.subscribe()
+step 1  something observes epics$
 step 2  dispatch {double-please} -> doubler epic emits {add, by:3} -> dispatch -> state {n:6}
-step 3  unsubscribe -> epics cold again
+step 3  the last observer leaves -> epics cold again
 ```
 
 ---
@@ -105,7 +105,8 @@ import { Signal, signalMap } from "@hafley66/signals"
 import { of } from "rxjs"
 
 const global = Signal(2)
-of(1).pipe(signalMap(n => n + global.$())).subscribe()  // logs 3
+const shown$ = of(1).pipe(signalMap(it => it + global.$()), tap(console.log))
+// observing shown$ logs 3
 global.$(4)                                            // logs 5
 global.$(6)                                            // logs 7
 ```
@@ -138,9 +139,11 @@ External state enters through producers rather than being mirrored into React.
 ## Build / test
 
 ```sh
-pnpm typecheck   # tsgo --noEmit
+pnpm typecheck   # tsc --noEmit, for src/ and for examples/
 pnpm test        # vitest
 pnpm build       # vite build
+pnpm examples    # mount every example in a real chromium and count what survived teardown
+pnpm site        # the documentation site, with every example live on its page
 ```
 
 ## Logging
@@ -189,4 +192,4 @@ pnpm test:log                        # the same thing, spelled as a script
 
 ## Application authoring skill
 
-The npm package includes [skills/signals/SKILL.md](skills/signals/SKILL.md). It covers recursive signal paths, grouped state, automatic JSX tracking, cold producer connections and RxJS resource lifetimes. Use it when authoring applications with this library.
+The npm package includes [skills/signals/SKILL.md](https://github.com/hafley66/hafley-rxjs/blob/main/packages/signals/skills/signals/SKILL.md). It covers recursive signal paths, grouped state, automatic JSX tracking, cold producer connections and RxJS resource lifetimes. Use it when authoring applications with this library.

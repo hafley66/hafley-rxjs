@@ -31,13 +31,16 @@ const wordIn = (haystack, word) =>
 
 const DECLARES = /\b(?:export|function|class|interface|type|const|let|var|enum)\b/
 
+/** An import or a re-export names a symbol it does not declare, and neither does a comment. */
+const BORROWS = /\bfrom\s*["']|^\s*(?:\/\/|\/?\*)/
+
 /** The 1-based line a symbol is declared on, preferring its declaration, or `0` when it is absent.
  * The same rule `scripts/docs.mjs` uses, so a generated citation and the lint agree. */
 function declarationLine(lines, name) {
   let first = 0
   for (let index = 0; index < lines.length; index++) {
     const text = lines[index]
-    if (!wordIn(text, name)) continue
+    if (!wordIn(text, name) || BORROWS.test(text)) continue
     if (first === 0) first = index + 1
     if (DECLARES.test(text)) return index + 1
   }
@@ -62,7 +65,17 @@ function declarationText(lines, from) {
   return out.join("\n").replace(/\s+$/, "")
 }
 
-/** Every consecutive `export function name` line above the body, so an overload set stays whole. */
+/** The first `export function name` line in a module, or `0`. */
+function functionLine(lines, name) {
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index] ?? ""
+    if (/^export\s+(?:declare\s+)?function\b/.test(line) && wordIn(line, name)) return index + 1
+  }
+  return 0
+}
+
+/** Every consecutive `export function name` line above the body, so an overload set stays whole.
+ * The implementation signature ends with an open paren and is the one a caller never sees. */
 function overloadText(lines, from, name) {
   const signatures = []
   for (let index = from - 1; index < lines.length; index++) {
@@ -71,6 +84,7 @@ function overloadText(lines, from, name) {
     if (!/^export\s+(?:declare\s+)?function\b/.test(line)) break
     signatures.push(line.replace(/\s*\{\s*$/, ""))
   }
+  while (signatures.length > 1 && /\($/.test(signatures.at(-1))) signatures.pop()
   return signatures.length > 1 ? signatures.join("\n") : null
 }
 
@@ -88,7 +102,9 @@ const escapeCell = (text) => text.replace(/\|/g, "\\|")
 export function generateApi(options) {
   const PKG = options.pkg
   const tsconfig = options.tsconfig ?? join(PKG, "tsconfig.json")
-  const barrel = options.barrel ?? "src/index.ts"
+  // A package with several entry points has several barrels. A name is public when any of them
+  // exports it, and every barrel stays out of the page's own module list.
+  const barrels = options.barrels ?? [options.barrel ?? "src/index.ts"]
 
   const api = new API({ cwd: PKG })
   const snapshot = api.updateSnapshot({ openProjects: [tsconfig] })
@@ -106,12 +122,15 @@ export function generateApi(options) {
     return symbol === undefined ? null : checker.getExportsOfModule(symbol)
   }
 
-  const barrelExports = exportsOf(barrel)
-  if (barrelExports === null) {
-    api.close()
-    throw new Error(`${barrel} is not in the program, so nothing could be called public`)
+  const publicNames = new Set()
+  for (const entry of barrels) {
+    const found = exportsOf(entry)
+    if (found === null) {
+      api.close()
+      throw new Error(`${entry} is not in the program, so nothing could be called public`)
+    }
+    for (const symbol of found) publicNames.add(symbol.name)
   }
-  const publicNames = new Set(barrelExports.map((it) => it.name))
 
   const modules = options.modules ?? defaultModules(PKG)
   const sections = []
@@ -119,7 +138,6 @@ export function generateApi(options) {
   let skipped = 0
 
   for (const relativePath of modules) {
-    if (relativePath === barrel) continue
     const found = exportsOf(relativePath)
     if (found === null) continue
     const lines = readFileSync(join(PKG, relativePath), "utf8").split("\n")
@@ -129,18 +147,19 @@ export function generateApi(options) {
         skipped++
         continue
       }
+      // A `export * from` re-export answers with the original symbol, flags and all, so a barrel
+      // would claim every name under it. The module that declares one is the one whose text has it.
       const line = declarationLine(lines, symbol.name)
-      // A value renders as `name: <what the checker resolved>`, which is a declaration a reader can
-      // paste. A type renders as its own source, because a declared type's string is just its name.
-      const type = isType(symbol.flags)
-        ? declarationText(lines, line)
-        : `${symbol.name}: ${signatureOf(checker, symbol)}`
+      if (line === 0) {
+        skipped++
+        continue
+      }
       entries.push({
         name: symbol.name,
         kind: kindOf(symbol.flags),
         line,
         doc: prose(String(checker.getDocumentationCommentOfSymbol(symbol) ?? "")),
-        text: overloadText(lines, line, symbol.name) ?? type,
+        text: textOf(checker, symbol, lines, line),
       })
       documented++
     }
@@ -155,6 +174,19 @@ export function generateApi(options) {
   mkdirSync(dirname(out), { recursive: true })
   writeFileSync(out, render(options, sections))
   return { file: relative(PKG, out), modules: sections.length, exports: documented, private: skipped }
+}
+
+/** What goes in the fence. A value renders as `name: <what the checker resolved>`, which is a
+ * declaration a reader can paste. A type renders as its own source, because a declared type's
+ * string is just its name, and a name that is both gets the type and the call signatures. */
+function textOf(checker, symbol, lines, line) {
+  const overloads = overloadText(lines, line, symbol.name)
+  if (overloads !== null) return overloads
+  if (!isType(symbol.flags)) return `${symbol.name}: ${signatureOf(checker, symbol)}`
+  const declared = declarationText(lines, line)
+  const call = functionLine(lines, symbol.name)
+  if (call === 0) return declared
+  return `${declared}\n\n${overloadText(lines, call, symbol.name) ?? lines[call - 1].replace(/\s*\{\s*$/, "")}`
 }
 
 function signatureOf(checker, symbol) {
@@ -207,6 +239,18 @@ const numberOf = (name) => {
 }
 
 function render(options, sections) {
+  // Two names in one module can slug the same way: `Signal` and `Signal$` both lose the `$`.
+  // VitePress refuses a duplicate heading id, so the second one takes a suffix.
+  const taken = new Map()
+  const unique = (candidate) => {
+    const count = (taken.get(candidate) ?? 0) + 1
+    taken.set(candidate, count)
+    return count === 1 ? candidate : `${candidate}-${count}`
+  }
+  for (const section of sections) {
+    for (const entry of section.entries) entry.anchor = unique(anchorOf(`${section.module}-${entry.name}`))
+  }
+
   const out = [`# ${options.title}`, ""]
   if (options.intro !== undefined) out.push(options.intro, "")
   out.push(
@@ -228,11 +272,11 @@ function render(options, sections) {
     if (section.headline !== null) out.push(section.headline, "")
     out.push("| export | kind |", "| --- | --- |")
     for (const entry of section.entries) {
-      out.push(`| [\`${entry.name}\`](#${anchorOf(entry.name)}) | ${entry.kind} |`)
+      out.push(`| [\`${entry.name}\`](#${entry.anchor}) | ${entry.kind} |`)
     }
     out.push("")
     for (const entry of section.entries) {
-      out.push(`### \`${entry.name}\``, "")
+      out.push(`### \`${entry.name}\` {#${entry.anchor}}`, "")
       if (entry.line > 0) out.push(`\`${entry.name}\` is declared at \`${section.module}:${entry.line}\`.`, "")
       if (entry.doc !== "") out.push(entry.doc, "")
       out.push("```ts", entry.text, "```", "")

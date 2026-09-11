@@ -34,22 +34,22 @@ LogTape is an optional peer, so nothing here may import it statically.
 
 | export | kind |
 | --- | --- |
-| [`LogFields`](#logfields) | type |
-| [`LogEmit`](#logemit) | type |
-| [`LOG`](#log) | const |
-| [`CAT_PLAN`](#cat-plan) | const |
-| [`CAT_FRAME`](#cat-frame) | const |
-| [`CAT_DOM`](#cat-dom) | const |
-| [`CAT_SORT`](#cat-sort) | const |
-| [`CAT_GROUP`](#cat-group) | const |
-| [`CAT_FLATTEN`](#cat-flatten) | const |
-| [`CAT_INTENT`](#cat-intent) | const |
-| [`setGridLogEmit`](#setgridlogemit) | function |
-| [`isGridLogging`](#isgridlogging) | function |
-| [`enableGridLogTape`](#enablegridlogtape) | function |
-| [`disableGridLogging`](#disablegridlogging) | function |
+| [`LogFields`](#src-0-log-ts-logfields) | type |
+| [`LogEmit`](#src-0-log-ts-logemit) | type |
+| [`LOG`](#src-0-log-ts-log) | const |
+| [`CAT_PLAN`](#src-0-log-ts-cat-plan) | const |
+| [`CAT_FRAME`](#src-0-log-ts-cat-frame) | const |
+| [`CAT_DOM`](#src-0-log-ts-cat-dom) | const |
+| [`CAT_SORT`](#src-0-log-ts-cat-sort) | const |
+| [`CAT_GROUP`](#src-0-log-ts-cat-group) | const |
+| [`CAT_FLATTEN`](#src-0-log-ts-cat-flatten) | const |
+| [`CAT_INTENT`](#src-0-log-ts-cat-intent) | const |
+| [`setGridLogEmit`](#src-0-log-ts-setgridlogemit) | function |
+| [`isGridLogging`](#src-0-log-ts-isgridlogging) | function |
+| [`enableGridLogTape`](#src-0-log-ts-enablegridlogtape) | function |
+| [`disableGridLogging`](#src-0-log-ts-disablegridlogging) | function |
 
-### `LogFields`
+### `LogFields` {#src-0-log-ts-logfields}
 
 `LogFields` is declared at `src/0_log.ts:6`.
 
@@ -57,7 +57,7 @@ LogTape is an optional peer, so nothing here may import it statically.
 export type LogFields = Record<string, unknown>
 ```
 
-### `LogEmit`
+### `LogEmit` {#src-0-log-ts-logemit}
 
 `LogEmit` is declared at `src/0_log.ts:9`.
 
@@ -67,9 +67,11 @@ export type LogEmit = (
   message: string,
   fields: LogFields,
 ) => void
+
+export function setGridLogEmit(emit: LogEmit | null): void
 ```
 
-### `LOG`
+### `LOG` {#src-0-log-ts-log}
 
 `LOG` is declared at `src/0_log.ts:17`.
 
@@ -77,7 +79,7 @@ export type LogEmit = (
 LOG: { on: boolean; emit: LogEmit; }
 ```
 
-### `CAT_PLAN`
+### `CAT_PLAN` {#src-0-log-ts-cat-plan}
 
 `CAT_PLAN` is declared at `src/0_log.ts:20`.
 
@@ -85,7 +87,7 @@ LOG: { on: boolean; emit: LogEmit; }
 CAT_PLAN: readonly ["signal-grid", "plan"]
 ```
 
-### `CAT_FRAME`
+### `CAT_FRAME` {#src-0-log-ts-cat-frame}
 
 `CAT_FRAME` is declared at `src/0_log.ts:21`.
 
@@ -93,7 +95,7 @@ CAT_PLAN: readonly ["signal-grid", "plan"]
 CAT_FRAME: readonly ["signal-grid", "frame"]
 ```
 
-### `CAT_DOM`
+### `CAT_DOM` {#src-0-log-ts-cat-dom}
 
 `CAT_DOM` is declared at `src/0_log.ts:22`.
 
@@ -101,7 +103,7 @@ CAT_FRAME: readonly ["signal-grid", "frame"]
 CAT_DOM: readonly ["signal-grid", "dom"]
 ```
 
-### `CAT_SORT`
+### `CAT_SORT` {#src-0-log-ts-cat-sort}
 
 `CAT_SORT` is declared at `src/0_log.ts:23`.
 
@@ -109,7 +111,7 @@ CAT_DOM: readonly ["signal-grid", "dom"]
 CAT_SORT: readonly ["signal-grid", "sort"]
 ```
 
-### `CAT_GROUP`
+### `CAT_GROUP` {#src-0-log-ts-cat-group}
 
 `CAT_GROUP` is declared at `src/0_log.ts:24`.
 
@@ -117,7 +119,7 @@ CAT_SORT: readonly ["signal-grid", "sort"]
 CAT_GROUP: readonly ["signal-grid", "group"]
 ```
 
-### `CAT_FLATTEN`
+### `CAT_FLATTEN` {#src-0-log-ts-cat-flatten}
 
 `CAT_FLATTEN` is declared at `src/0_log.ts:25`.
 
@@ -125,7 +127,7 @@ CAT_GROUP: readonly ["signal-grid", "group"]
 CAT_FLATTEN: readonly ["signal-grid", "flatten"]
 ```
 
-### `CAT_INTENT`
+### `CAT_INTENT` {#src-0-log-ts-cat-intent}
 
 `CAT_INTENT` is declared at `src/0_log.ts:26`.
 
@@ -133,7 +135,7 @@ CAT_FLATTEN: readonly ["signal-grid", "flatten"]
 CAT_INTENT: readonly ["signal-grid", "intent"]
 ```
 
-### `setGridLogEmit`
+### `setGridLogEmit` {#src-0-log-ts-setgridlogemit}
 
 `setGridLogEmit` is declared at `src/0_log.ts:30`.
 
@@ -141,7 +143,7 @@ CAT_INTENT: readonly ["signal-grid", "intent"]
 setGridLogEmit: (emit: LogEmit | null) => void
 ```
 
-### `isGridLogging`
+### `isGridLogging` {#src-0-log-ts-isgridlogging}
 
 `isGridLogging` is declared at `src/0_log.ts:35`.
 
@@ -149,7 +151,7 @@ setGridLogEmit: (emit: LogEmit | null) => void
 isGridLogging: () => boolean
 ```
 
-### `enableGridLogTape`
+### `enableGridLogTape` {#src-0-log-ts-enablegridlogtape}
 
 `enableGridLogTape` is declared at `src/0_log.ts:40`.
 
@@ -157,7 +159,7 @@ isGridLogging: () => boolean
 enableGridLogTape: () => Promise<void>
 ```
 
-### `disableGridLogging`
+### `disableGridLogging` {#src-0-log-ts-disablegridlogging}
 
 `disableGridLogging` is declared at `src/0_log.ts:55`.
 
@@ -171,57 +173,57 @@ The whole contract.
 
 | export | kind |
 | --- | --- |
-| [`RowId`](#rowid) | type |
-| [`ColId`](#colid) | type |
-| [`CellId`](#cellid) | type |
-| [`CELL_SEP`](#cell-sep) | const |
-| [`cellId`](#cellid) | const |
-| [`cellParts`](#cellparts) | const |
-| [`GROUP_PREFIX`](#group-prefix) | const |
-| [`isGroupKey`](#isgroupkey) | const |
-| [`Axis`](#axis) | interface |
-| [`FlatNode`](#flatnode) | interface |
-| [`IndexRange`](#indexrange) | interface |
-| [`Side`](#side) | type |
-| [`Partitioned`](#partitioned) | interface |
-| [`FilterMode`](#filtermode) | type |
-| [`LogicOperator`](#logicoperator) | type |
-| [`FilterItem`](#filteritem) | type |
-| [`FilterModel`](#filtermodel) | type |
-| [`FilterOperator`](#filteroperator) | interface |
-| [`SortDirection`](#sortdirection) | type |
-| [`SortItem`](#sortitem) | interface |
-| [`SortModel`](#sortmodel) | type |
-| [`Renderable`](#renderable) | type |
-| [`Slot`](#slot) | type |
-| [`SlotContent`](#slotcontent) | type |
-| [`CellCtx`](#cellctx) | interface |
-| [`HeaderCtx`](#headerctx) | interface |
-| [`RowCtx`](#rowctx) | interface |
-| [`Slots`](#slots) | interface |
-| [`ColumnType`](#columntype) | type |
-| [`FormulaApi`](#formulaapi) | interface |
-| [`ColumnDef`](#columndef) | interface |
-| [`fieldValue`](#fieldvalue) | const |
-| [`columnReader`](#columnreader) | function |
-| [`PageMode`](#pagemode) | type |
-| [`Orientation`](#orientation) | type |
-| [`Page`](#page) | type |
-| [`PageRequest`](#pagerequest) | type |
-| [`RangeSelection`](#rangeselection) | type |
-| [`GridState`](#gridstate) | type |
-| [`GridMode`](#gridmode) | type |
-| [`QueryDescriptor`](#querydescriptor) | type |
-| [`Viewport`](#viewport) | type |
-| [`Modifiers`](#modifiers) | type |
-| [`isPlainClick`](#isplainclick) | const |
-| [`GridIntent`](#gridintent) | type |
-| [`GridChange`](#gridchange) | type |
-| [`GridEffect`](#grideffect) | type |
-| [`GridAction`](#gridaction) | type |
-| [`GridPhase`](#gridphase) | type |
+| [`RowId`](#src-0-types-ts-rowid) | type |
+| [`ColId`](#src-0-types-ts-colid) | type |
+| [`CellId`](#src-0-types-ts-cellid) | type |
+| [`CELL_SEP`](#src-0-types-ts-cell-sep) | const |
+| [`cellId`](#src-0-types-ts-cellid-2) | const |
+| [`cellParts`](#src-0-types-ts-cellparts) | const |
+| [`GROUP_PREFIX`](#src-0-types-ts-group-prefix) | const |
+| [`isGroupKey`](#src-0-types-ts-isgroupkey) | const |
+| [`Axis`](#src-0-types-ts-axis) | interface |
+| [`FlatNode`](#src-0-types-ts-flatnode) | interface |
+| [`IndexRange`](#src-0-types-ts-indexrange) | interface |
+| [`Side`](#src-0-types-ts-side) | type |
+| [`Partitioned`](#src-0-types-ts-partitioned) | interface |
+| [`FilterMode`](#src-0-types-ts-filtermode) | type |
+| [`LogicOperator`](#src-0-types-ts-logicoperator) | type |
+| [`FilterItem`](#src-0-types-ts-filteritem) | type |
+| [`FilterModel`](#src-0-types-ts-filtermodel) | type |
+| [`FilterOperator`](#src-0-types-ts-filteroperator) | interface |
+| [`SortDirection`](#src-0-types-ts-sortdirection) | type |
+| [`SortItem`](#src-0-types-ts-sortitem) | interface |
+| [`SortModel`](#src-0-types-ts-sortmodel) | type |
+| [`Renderable`](#src-0-types-ts-renderable) | type |
+| [`Slot`](#src-0-types-ts-slot) | type |
+| [`SlotContent`](#src-0-types-ts-slotcontent) | type |
+| [`CellCtx`](#src-0-types-ts-cellctx) | interface |
+| [`HeaderCtx`](#src-0-types-ts-headerctx) | interface |
+| [`RowCtx`](#src-0-types-ts-rowctx) | interface |
+| [`Slots`](#src-0-types-ts-slots) | interface |
+| [`ColumnType`](#src-0-types-ts-columntype) | type |
+| [`FormulaApi`](#src-0-types-ts-formulaapi) | interface |
+| [`ColumnDef`](#src-0-types-ts-columndef) | interface |
+| [`fieldValue`](#src-0-types-ts-fieldvalue) | const |
+| [`columnReader`](#src-0-types-ts-columnreader) | function |
+| [`PageMode`](#src-0-types-ts-pagemode) | type |
+| [`Orientation`](#src-0-types-ts-orientation) | type |
+| [`Page`](#src-0-types-ts-page) | type |
+| [`PageRequest`](#src-0-types-ts-pagerequest) | type |
+| [`RangeSelection`](#src-0-types-ts-rangeselection) | type |
+| [`GridState`](#src-0-types-ts-gridstate) | type |
+| [`GridMode`](#src-0-types-ts-gridmode) | type |
+| [`QueryDescriptor`](#src-0-types-ts-querydescriptor) | type |
+| [`Viewport`](#src-0-types-ts-viewport) | type |
+| [`Modifiers`](#src-0-types-ts-modifiers) | type |
+| [`isPlainClick`](#src-0-types-ts-isplainclick) | const |
+| [`GridIntent`](#src-0-types-ts-gridintent) | type |
+| [`GridChange`](#src-0-types-ts-gridchange) | type |
+| [`GridEffect`](#src-0-types-ts-grideffect) | type |
+| [`GridAction`](#src-0-types-ts-gridaction) | type |
+| [`GridPhase`](#src-0-types-ts-gridphase) | type |
 
-### `RowId`
+### `RowId` {#src-0-types-ts-rowid}
 
 `RowId` is declared at `src/0_types.ts:14`.
 
@@ -231,7 +233,7 @@ Stable across data refresh. Selection, expansion, sizing, and pinning are keyed 
 export type RowId = string
 ```
 
-### `ColId`
+### `ColId` {#src-0-types-ts-colid}
 
 `ColId` is declared at `src/0_types.ts:16`.
 
@@ -241,7 +243,7 @@ Unique within one column schema.
 export type ColId = string
 ```
 
-### `CellId`
+### `CellId` {#src-0-types-ts-cellid}
 
 `CellId` is declared at `src/0_types.ts:18`.
 
@@ -251,7 +253,7 @@ export type ColId = string
 export type CellId = string
 ```
 
-### `CELL_SEP`
+### `CELL_SEP` {#src-0-types-ts-cell-sep}
 
 `CELL_SEP` is declared at `src/0_types.ts:20`.
 
@@ -259,7 +261,7 @@ export type CellId = string
 CELL_SEP: string
 ```
 
-### `cellId`
+### `cellId` {#src-0-types-ts-cellid-2}
 
 `cellId` is declared at `src/0_types.ts:21`.
 
@@ -267,7 +269,7 @@ CELL_SEP: string
 cellId: (row: string, col: string) => string
 ```
 
-### `cellParts`
+### `cellParts` {#src-0-types-ts-cellparts}
 
 `cellParts` is declared at `src/0_types.ts:22`.
 
@@ -275,7 +277,7 @@ cellId: (row: string, col: string) => string
 cellParts: (id: string) => readonly [string, string]
 ```
 
-### `GROUP_PREFIX`
+### `GROUP_PREFIX` {#src-0-types-ts-group-prefix}
 
 `GROUP_PREFIX` is declared at `src/0_types.ts:28`.
 
@@ -285,7 +287,7 @@ Synthesized group rows live in their own namespace so they can never collide wit
 GROUP_PREFIX: "g:"
 ```
 
-### `isGroupKey`
+### `isGroupKey` {#src-0-types-ts-isgroupkey}
 
 `isGroupKey` is declared at `src/0_types.ts:29`.
 
@@ -293,7 +295,7 @@ GROUP_PREFIX: "g:"
 isGroupKey: (key: string) => boolean
 ```
 
-### `Axis`
+### `Axis` {#src-0-types-ts-axis}
 
 `Axis` is declared at `src/0_types.ts:41`.
 
@@ -313,7 +315,7 @@ export interface Axis<K extends string, T> {
 }
 ```
 
-### `FlatNode`
+### `FlatNode` {#src-0-types-ts-flatnode}
 
 `FlatNode` is declared at `src/0_types.ts:49`.
 
@@ -330,7 +332,7 @@ export interface FlatNode<K extends string> {
 }
 ```
 
-### `IndexRange`
+### `IndexRange` {#src-0-types-ts-indexrange}
 
 `IndexRange` is declared at `src/0_types.ts:59`.
 
@@ -343,7 +345,7 @@ export interface IndexRange {
 }
 ```
 
-### `Side`
+### `Side` {#src-0-types-ts-side}
 
 `Side` is declared at `src/0_types.ts:65`.
 
@@ -353,7 +355,7 @@ Pinning splits a flat list into three ordered runs rendered in three sticky cont
 export type Side = "start" | "center" | "end"
 ```
 
-### `Partitioned`
+### `Partitioned` {#src-0-types-ts-partitioned}
 
 `Partitioned` is declared at `src/0_types.ts:66`.
 
@@ -365,7 +367,7 @@ export interface Partitioned<K extends string> {
 }
 ```
 
-### `FilterMode`
+### `FilterMode` {#src-0-types-ts-filtermode}
 
 `FilterMode` is declared at `src/0_types.ts:79`.
 
@@ -379,7 +381,7 @@ How a predicate propagates through a forest.
 export type FilterMode = "prune" | "ancestors" | "subtree"
 ```
 
-### `LogicOperator`
+### `LogicOperator` {#src-0-types-ts-logicoperator}
 
 `LogicOperator` is declared at `src/0_types.ts:83`.
 
@@ -387,7 +389,7 @@ export type FilterMode = "prune" | "ancestors" | "subtree"
 export type LogicOperator = "and" | "or"
 ```
 
-### `FilterItem`
+### `FilterItem` {#src-0-types-ts-filteritem}
 
 `FilterItem` is declared at `src/0_types.ts:86`.
 
@@ -402,7 +404,7 @@ export type FilterItem = {
 }
 ```
 
-### `FilterModel`
+### `FilterModel` {#src-0-types-ts-filtermodel}
 
 `FilterModel` is declared at `src/0_types.ts:93`.
 
@@ -416,7 +418,7 @@ export type FilterModel = {
 }
 ```
 
-### `FilterOperator`
+### `FilterOperator` {#src-0-types-ts-filteroperator}
 
 `FilterOperator` is declared at `src/0_types.ts:105`.
 
@@ -432,7 +434,7 @@ export interface FilterOperator<V = unknown> {
 }
 ```
 
-### `SortDirection`
+### `SortDirection` {#src-0-types-ts-sortdirection}
 
 `SortDirection` is declared at `src/0_types.ts:114`.
 
@@ -440,7 +442,7 @@ export interface FilterOperator<V = unknown> {
 export type SortDirection = "asc" | "desc"
 ```
 
-### `SortItem`
+### `SortItem` {#src-0-types-ts-sortitem}
 
 `SortItem` is declared at `src/0_types.ts:115`.
 
@@ -451,7 +453,7 @@ export interface SortItem {
 }
 ```
 
-### `SortModel`
+### `SortModel` {#src-0-types-ts-sortmodel}
 
 `SortModel` is declared at `src/0_types.ts:119`.
 
@@ -459,7 +461,7 @@ export interface SortItem {
 export type SortModel = readonly SortItem[]
 ```
 
-### `Renderable`
+### `Renderable` {#src-0-types-ts-renderable}
 
 `Renderable` is declared at `src/0_types.ts:127`.
 
@@ -470,7 +472,7 @@ package never imports React and a DOM-only consumer never pulls it in.
 export type Renderable =
 ```
 
-### `Slot`
+### `Slot` {#src-0-types-ts-slot}
 
 `Slot` is declared at `src/0_types.ts:144`.
 
@@ -484,7 +486,7 @@ There are no value/onChange pairs anywhere in this package. A signal is both hal
 export type Slot<Ctx> = (ctx: Ctx) => SlotContent
 ```
 
-### `SlotContent`
+### `SlotContent` {#src-0-types-ts-slotcontent}
 
 `SlotContent` is declared at `src/0_types.ts:144`.
 
@@ -497,7 +499,7 @@ content's own subscription, so the two teardown together.
 export type Slot<Ctx> = (ctx: Ctx) => SlotContent
 ```
 
-### `CellCtx`
+### `CellCtx` {#src-0-types-ts-cellctx}
 
 `CellCtx` is declared at `src/0_types.ts:158`.
 
@@ -512,7 +514,7 @@ export interface CellCtx<TRow> {
 }
 ```
 
-### `HeaderCtx`
+### `HeaderCtx` {#src-0-types-ts-headerctx}
 
 `HeaderCtx` is declared at `src/0_types.ts:173`.
 
@@ -533,7 +535,7 @@ export interface HeaderCtx<TRow = unknown> {
 }
 ```
 
-### `RowCtx`
+### `RowCtx` {#src-0-types-ts-rowctx}
 
 `RowCtx` is declared at `src/0_types.ts:181`.
 
@@ -547,7 +549,7 @@ export interface RowCtx<TRow> {
 }
 ```
 
-### `Slots`
+### `Slots` {#src-0-types-ts-slots}
 
 `Slots` is declared at `src/0_types.ts:190`.
 
@@ -571,7 +573,7 @@ export interface Slots<TRow> {
 }
 ```
 
-### `ColumnType`
+### `ColumnType` {#src-0-types-ts-columntype}
 
 `ColumnType` is declared at `src/0_types.ts:208`.
 
@@ -579,7 +581,7 @@ export interface Slots<TRow> {
 export type ColumnType =
 ```
 
-### `FormulaApi`
+### `FormulaApi` {#src-0-types-ts-formulaapi}
 
 `FormulaApi` is declared at `src/0_types.ts:211`.
 
@@ -589,7 +591,7 @@ export interface FormulaApi<TRow> {
 }
 ```
 
-### `ColumnDef`
+### `ColumnDef` {#src-0-types-ts-columndef}
 
 `ColumnDef` is declared at `src/0_types.ts:215`.
 
@@ -646,7 +648,7 @@ export interface ColumnDef<TRow, V = unknown> {
 }
 ```
 
-### `fieldValue`
+### `fieldValue` {#src-0-types-ts-fieldvalue}
 
 `fieldValue` is declared at `src/0_types.ts:277`.
 
@@ -656,7 +658,7 @@ Reads one dotted path off a row, checked against `TRow` the same way `ColumnDef.
 fieldValue: <TRow, Path extends SignalPath<TRow> & string>(row: TRow, field: Path) => SignalPathValue<TRow, Path>
 ```
 
-### `columnReader`
+### `columnReader` {#src-0-types-ts-columnreader}
 
 `columnReader` is declared at `src/0_types.ts:307`.
 
@@ -666,7 +668,7 @@ What a column reads off a row: `value`, else `field`, else the id.
 columnReader: <TRow>(col: ColumnDef<TRow, unknown> | undefined, colId: string) => (row: TRow) => unknown
 ```
 
-### `PageMode`
+### `PageMode` {#src-0-types-ts-pagemode}
 
 `PageMode` is declared at `src/0_types.ts:332`.
 
@@ -684,7 +686,7 @@ satisfy it, which is why `infinite` needs the caller to append rather than repla
 export type PageMode = "all" | "pages" | "infinite"
 ```
 
-### `Orientation`
+### `Orientation` {#src-0-types-ts-orientation}
 
 `Orientation` is declared at `src/0_types.ts:339`.
 
@@ -696,7 +698,7 @@ column headers. The seating chart that reads this lives in `12_transpose.ts` and
 export type Orientation = "rows" | "columns"
 ```
 
-### `Page`
+### `Page` {#src-0-types-ts-page}
 
 `Page` is declared at `src/0_types.ts:341`.
 
@@ -710,7 +712,7 @@ export type Page = {
 }
 ```
 
-### `PageRequest`
+### `PageRequest` {#src-0-types-ts-pagerequest}
 
 `PageRequest` is declared at `src/0_types.ts:353`.
 
@@ -724,7 +726,7 @@ export type PageRequest = {
 }
 ```
 
-### `RangeSelection`
+### `RangeSelection` {#src-0-types-ts-rangeselection}
 
 `RangeSelection` is declared at `src/0_types.ts:359`.
 
@@ -735,7 +737,7 @@ export type RangeSelection = {
 }
 ```
 
-### `GridState`
+### `GridState` {#src-0-types-ts-gridstate}
 
 `GridState` is declared at `src/0_types.ts:369`.
 
@@ -792,7 +794,7 @@ export type GridState = {
 }
 ```
 
-### `GridMode`
+### `GridMode` {#src-0-types-ts-gridmode}
 
 `GridMode` is declared at `src/0_types.ts:422`.
 
@@ -805,7 +807,7 @@ pinning, virtualization, selection, is identical in both modes.
 export type GridMode = "client" | "server"
 ```
 
-### `QueryDescriptor`
+### `QueryDescriptor` {#src-0-types-ts-querydescriptor}
 
 `QueryDescriptor` is declared at `src/0_types.ts:426`.
 
@@ -819,7 +821,7 @@ export type QueryDescriptor = {
 }
 ```
 
-### `Viewport`
+### `Viewport` {#src-0-types-ts-viewport}
 
 `Viewport` is declared at `src/0_types.ts:434`.
 
@@ -832,7 +834,7 @@ export type Viewport = {
 }
 ```
 
-### `Modifiers`
+### `Modifiers` {#src-0-types-ts-modifiers}
 
 `Modifiers` is declared at `src/0_types.ts:443`.
 
@@ -846,7 +848,7 @@ export type Modifiers = {
 }
 ```
 
-### `isPlainClick`
+### `isPlainClick` {#src-0-types-ts-isplainclick}
 
 `isPlainClick` is declared at `src/0_types.ts:453`.
 
@@ -857,7 +859,7 @@ A plain click: no chord, primary button. Declared beside `Modifiers`, because `3
 isPlainClick: (mods: Modifiers) => boolean
 ```
 
-### `GridIntent`
+### `GridIntent` {#src-0-types-ts-gridintent}
 
 `GridIntent` is declared at `src/0_types.ts:458`.
 
@@ -868,7 +870,7 @@ The DOM saw something. No state has moved. Every entry comes from an xdom path t
 export type GridIntent =
 ```
 
-### `GridChange`
+### `GridChange` {#src-0-types-ts-gridchange}
 
 `GridChange` is declared at `src/0_types.ts:477`.
 
@@ -880,7 +882,7 @@ export type GridChange = {
 }[keyof GridState]
 ```
 
-### `GridEffect`
+### `GridEffect` {#src-0-types-ts-grideffect}
 
 `GridEffect` is declared at `src/0_types.ts:482`.
 
@@ -890,7 +892,7 @@ Leaves the grid. The consumer decides what an activate or an edit commit means.
 export type GridEffect<TRow> =
 ```
 
-### `GridAction`
+### `GridAction` {#src-0-types-ts-gridaction}
 
 `GridAction` is declared at `src/0_types.ts:491`.
 
@@ -898,7 +900,7 @@ export type GridEffect<TRow> =
 export type GridAction<TRow> = GridIntent | GridChange | GridEffect<TRow>
 ```
 
-### `GridPhase`
+### `GridPhase` {#src-0-types-ts-gridphase}
 
 `GridPhase` is declared at `src/0_types.ts:492`.
 
@@ -912,17 +914,17 @@ The five pure operators over `Axis<K, T>`, plus the two constructors that mint o
 
 | export | kind |
 | --- | --- |
-| [`axisOfEntries`](#axisofentries) | function |
-| [`axisOfTree`](#axisoftree) | function |
-| [`ancestorsOf`](#ancestorsof) | function |
-| [`filterAxis`](#filteraxis) | function |
-| [`sortAxis`](#sortaxis) | function |
-| [`groupAxis`](#groupaxis) | function |
-| [`flattenAxis`](#flattenaxis) | function |
-| [`descendantsOf`](#descendantsof) | function |
-| [`mapAxis`](#mapaxis) | function |
+| [`axisOfEntries`](#src-1-axis-ts-axisofentries) | function |
+| [`axisOfTree`](#src-1-axis-ts-axisoftree) | function |
+| [`ancestorsOf`](#src-1-axis-ts-ancestorsof) | function |
+| [`filterAxis`](#src-1-axis-ts-filteraxis) | function |
+| [`sortAxis`](#src-1-axis-ts-sortaxis) | function |
+| [`groupAxis`](#src-1-axis-ts-groupaxis) | function |
+| [`flattenAxis`](#src-1-axis-ts-flattenaxis) | function |
+| [`descendantsOf`](#src-1-axis-ts-descendantsof) | function |
+| [`mapAxis`](#src-1-axis-ts-mapaxis) | function |
 
-### `axisOfEntries`
+### `axisOfEntries` {#src-1-axis-ts-axisofentries}
 
 `axisOfEntries` is declared at `src/1_axis.ts:50`.
 
@@ -936,7 +938,7 @@ already had. The parent is read from the latest value for the same reason.
 axisOfEntries: <K extends string, T>(entries: Iterable<readonly [K, T]>, parentOf?: ((key: K, value: T) => K | undefined) | undefined) => Axis<K, T>
 ```
 
-### `axisOfTree`
+### `axisOfTree` {#src-1-axis-ts-axisoftree}
 
 `axisOfTree` is declared at `src/1_axis.ts:90`.
 
@@ -949,7 +951,7 @@ descended into again, which is what stops a payload whose children loop back.
 axisOfTree: <K extends string, T>(items: readonly T[], keyOf: (item: T) => K, childrenOf: (item: T) => readonly T[] | undefined) => Axis<K, T>
 ```
 
-### `ancestorsOf`
+### `ancestorsOf` {#src-1-axis-ts-ancestorsof}
 
 `ancestorsOf` is declared at `src/1_axis.ts:149`.
 
@@ -959,7 +961,7 @@ Nearest first, so an indent guide or a breadcrumb reads the array straight off.
 ancestorsOf: <K extends string, T>(axis: Axis<K, T>, key: K) => readonly K[]
 ```
 
-### `filterAxis`
+### `filterAxis` {#src-1-axis-ts-filteraxis}
 
 `filterAxis` is declared at `src/1_axis.ts:225`.
 
@@ -969,7 +971,7 @@ Applies `keep` through the forest under one of the three propagation rules of `F
 filterAxis: <K extends string, T>(axis: Axis<K, T>, keep: (key: K, value: T) => boolean, mode: FilterMode) => Axis<K, T>
 ```
 
-### `sortAxis`
+### `sortAxis` {#src-1-axis-ts-sortaxis}
 
 `sortAxis` is declared at `src/1_axis.ts:245`.
 
@@ -980,7 +982,7 @@ moves nothing between parents.
 sortAxis: <K extends string, T>(axis: Axis<K, T>, cmp: ((a: T, b: T) => number) | null) => Axis<K, T>
 ```
 
-### `groupAxis`
+### `groupAxis` {#src-1-axis-ts-groupaxis}
 
 `groupAxis` is declared at `src/1_axis.ts:284`.
 
@@ -993,7 +995,7 @@ therefore idempotent: regrouping an already grouped axis yields the same axis.
 groupAxis: <K extends string, T>(axis: Axis<K, T>, keyOf: readonly ((value: T) => unknown)[], makeGroup: (path: readonly unknown[], key: K) => T) => Axis<K, T>
 ```
 
-### `flattenAxis`
+### `flattenAxis` {#src-1-axis-ts-flattenaxis}
 
 `flattenAxis` is declared at `src/1_axis.ts:361`.
 
@@ -1004,7 +1006,7 @@ collapsed branch out of the virtualizer's row count entirely.
 flattenAxis: <K extends string, T>(axis: Axis<K, T>, isOpen: (key: K) => boolean) => readonly FlatNode<K>[]
 ```
 
-### `descendantsOf`
+### `descendantsOf` {#src-1-axis-ts-descendantsof}
 
 `descendantsOf` is declared at `src/1_axis.ts:411`.
 
@@ -1014,7 +1016,7 @@ Depth-first, excluding `key` itself. The visited set is what makes a cyclic axis
 descendantsOf: <K extends string, T>(axis: Axis<K, T>, key: K) => readonly K[]
 ```
 
-### `mapAxis`
+### `mapAxis` {#src-1-axis-ts-mapaxis}
 
 `mapAxis` is declared at `src/1_axis.ts:430`.
 
@@ -1030,23 +1032,23 @@ Value-level operators: filter predicates and comparators.
 
 | export | kind |
 | --- | --- |
-| [`stringOperators`](#stringoperators) | const |
-| [`numberOperators`](#numberoperators) | const |
-| [`booleanOperators`](#booleanoperators) | const |
-| [`dateOperators`](#dateoperators) | const |
-| [`dateTimeOperators`](#datetimeoperators) | const |
-| [`singleSelectOperators`](#singleselectoperators) | const |
-| [`operatorsFor`](#operatorsfor) | const |
-| [`operatorByName`](#operatorbyname) | const |
-| [`buildRowPredicate`](#buildrowpredicate) | const |
-| [`compareString`](#comparestring) | const |
-| [`compareNumber`](#comparenumber) | const |
-| [`compareBoolean`](#compareboolean) | const |
-| [`compareDate`](#comparedate) | const |
-| [`comparatorFor`](#comparatorfor) | const |
-| [`buildComparator`](#buildcomparator) | const |
+| [`stringOperators`](#src-2-operators-ts-stringoperators) | const |
+| [`numberOperators`](#src-2-operators-ts-numberoperators) | const |
+| [`booleanOperators`](#src-2-operators-ts-booleanoperators) | const |
+| [`dateOperators`](#src-2-operators-ts-dateoperators) | const |
+| [`dateTimeOperators`](#src-2-operators-ts-datetimeoperators) | const |
+| [`singleSelectOperators`](#src-2-operators-ts-singleselectoperators) | const |
+| [`operatorsFor`](#src-2-operators-ts-operatorsfor) | const |
+| [`operatorByName`](#src-2-operators-ts-operatorbyname) | const |
+| [`buildRowPredicate`](#src-2-operators-ts-buildrowpredicate) | const |
+| [`compareString`](#src-2-operators-ts-comparestring) | const |
+| [`compareNumber`](#src-2-operators-ts-comparenumber) | const |
+| [`compareBoolean`](#src-2-operators-ts-compareboolean) | const |
+| [`compareDate`](#src-2-operators-ts-comparedate) | const |
+| [`comparatorFor`](#src-2-operators-ts-comparatorfor) | const |
+| [`buildComparator`](#src-2-operators-ts-buildcomparator) | const |
 
-### `stringOperators`
+### `stringOperators` {#src-2-operators-ts-stringoperators}
 
 `stringOperators` is declared at `src/2_operators.ts:160`.
 
@@ -1054,7 +1056,7 @@ Value-level operators: filter predicates and comparators.
 stringOperators: readonly FilterOperator<unknown>[]
 ```
 
-### `numberOperators`
+### `numberOperators` {#src-2-operators-ts-numberoperators}
 
 `numberOperators` is declared at `src/2_operators.ts:176`.
 
@@ -1062,7 +1064,7 @@ stringOperators: readonly FilterOperator<unknown>[]
 numberOperators: readonly FilterOperator<unknown>[]
 ```
 
-### `booleanOperators`
+### `booleanOperators` {#src-2-operators-ts-booleanoperators}
 
 `booleanOperators` is declared at `src/2_operators.ts:191`.
 
@@ -1070,7 +1072,7 @@ numberOperators: readonly FilterOperator<unknown>[]
 booleanOperators: readonly FilterOperator<unknown>[]
 ```
 
-### `dateOperators`
+### `dateOperators` {#src-2-operators-ts-dateoperators}
 
 `dateOperators` is declared at `src/2_operators.ts:215`.
 
@@ -1078,7 +1080,7 @@ booleanOperators: readonly FilterOperator<unknown>[]
 dateOperators: readonly FilterOperator<unknown>[]
 ```
 
-### `dateTimeOperators`
+### `dateTimeOperators` {#src-2-operators-ts-datetimeoperators}
 
 `dateTimeOperators` is declared at `src/2_operators.ts:216`.
 
@@ -1086,7 +1088,7 @@ dateOperators: readonly FilterOperator<unknown>[]
 dateTimeOperators: readonly FilterOperator<unknown>[]
 ```
 
-### `singleSelectOperators`
+### `singleSelectOperators` {#src-2-operators-ts-singleselectoperators}
 
 `singleSelectOperators` is declared at `src/2_operators.ts:218`.
 
@@ -1094,7 +1096,7 @@ dateTimeOperators: readonly FilterOperator<unknown>[]
 singleSelectOperators: readonly FilterOperator<unknown>[]
 ```
 
-### `operatorsFor`
+### `operatorsFor` {#src-2-operators-ts-operatorsfor}
 
 `operatorsFor` is declared at `src/2_operators.ts:242`.
 
@@ -1104,7 +1106,7 @@ singleSelectOperators: readonly FilterOperator<unknown>[]
 operatorsFor: (type: ColumnType) => readonly FilterOperator<unknown>[]
 ```
 
-### `operatorByName`
+### `operatorByName` {#src-2-operators-ts-operatorbyname}
 
 `operatorByName` is declared at `src/2_operators.ts:259`.
 
@@ -1112,7 +1114,7 @@ operatorsFor: (type: ColumnType) => readonly FilterOperator<unknown>[]
 operatorByName: (type: ColumnType, name: string) => FilterOperator<unknown> | undefined
 ```
 
-### `buildRowPredicate`
+### `buildRowPredicate` {#src-2-operators-ts-buildrowpredicate}
 
 `buildRowPredicate` is declared at `src/2_operators.ts:283`.
 
@@ -1120,7 +1122,7 @@ operatorByName: (type: ColumnType, name: string) => FilterOperator<unknown> | un
 buildRowPredicate: <TRow>(model: FilterModel, columns: readonly ColumnDef<TRow, unknown>[], getValue: (row: TRow, col: string) => unknown) => (row: TRow) => boolean
 ```
 
-### `compareString`
+### `compareString` {#src-2-operators-ts-comparestring}
 
 `compareString` is declared at `src/2_operators.ts:362`.
 
@@ -1128,7 +1130,7 @@ buildRowPredicate: <TRow>(model: FilterModel, columns: readonly ColumnDef<TRow, 
 compareString: (a: unknown, b: unknown) => number
 ```
 
-### `compareNumber`
+### `compareNumber` {#src-2-operators-ts-comparenumber}
 
 `compareNumber` is declared at `src/2_operators.ts:368`.
 
@@ -1136,7 +1138,7 @@ compareString: (a: unknown, b: unknown) => number
 compareNumber: (a: unknown, b: unknown) => number
 ```
 
-### `compareBoolean`
+### `compareBoolean` {#src-2-operators-ts-compareboolean}
 
 `compareBoolean` is declared at `src/2_operators.ts:376`.
 
@@ -1144,7 +1146,7 @@ compareNumber: (a: unknown, b: unknown) => number
 compareBoolean: (a: unknown, b: unknown) => number
 ```
 
-### `compareDate`
+### `compareDate` {#src-2-operators-ts-comparedate}
 
 `compareDate` is declared at `src/2_operators.ts:382`.
 
@@ -1152,7 +1154,7 @@ compareBoolean: (a: unknown, b: unknown) => number
 compareDate: (a: unknown, b: unknown) => number
 ```
 
-### `comparatorFor`
+### `comparatorFor` {#src-2-operators-ts-comparatorfor}
 
 `comparatorFor` is declared at `src/2_operators.ts:390`.
 
@@ -1160,7 +1162,7 @@ compareDate: (a: unknown, b: unknown) => number
 comparatorFor: (type: ColumnType) => (a: unknown, b: unknown) => number
 ```
 
-### `buildComparator`
+### `buildComparator` {#src-2-operators-ts-buildcomparator}
 
 `buildComparator` is declared at `src/2_operators.ts:405`.
 
@@ -1174,31 +1176,31 @@ One declaration per grid part yields four artifacts: element id, delegated route
 
 | export | kind |
 | --- | --- |
-| [`PartName`](#partname) | type |
-| [`PATHS`](#paths) | const |
-| [`TEMPLATES`](#templates) | const |
-| [`GridBinding`](#gridbinding) | type |
-| [`GridDom`](#griddom) | interface |
-| [`gridDom`](#griddom) | function |
-| [`gridAttrs`](#gridattrs) | const |
-| [`viewportAttrs`](#viewportattrs) | const |
-| [`headerAttrs`](#headerattrs) | const |
-| [`resizeAttrs`](#resizeattrs) | const |
-| [`moveAttrs`](#moveattrs) | const |
-| [`rowAttrs`](#rowattrs) | const |
-| [`expandAttrs`](#expandattrs) | const |
-| [`checkAttrs`](#checkattrs) | const |
-| [`cellAttrs`](#cellattrs) | const |
-| [`selectorFor`](#selectorfor) | function |
-| [`modifiersOf`](#modifiersof) | const |
-| [`browserOwnsClick`](#browserownsclick) | const |
-| [`intentOf`](#intentof) | const |
-| [`encodeVarId`](#encodevarid) | const |
-| [`decodeVarId`](#decodevarid) | const |
-| [`rowHeightVar`](#rowheightvar) | const |
-| [`SG_DEPTH`](#sg-depth) | const |
+| [`PartName`](#src-3-paths-ts-partname) | type |
+| [`PATHS`](#src-3-paths-ts-paths) | const |
+| [`TEMPLATES`](#src-3-paths-ts-templates) | const |
+| [`GridBinding`](#src-3-paths-ts-gridbinding) | type |
+| [`GridDom`](#src-3-paths-ts-griddom) | interface |
+| [`gridDom`](#src-3-paths-ts-griddom-2) | function |
+| [`gridAttrs`](#src-3-paths-ts-gridattrs) | const |
+| [`viewportAttrs`](#src-3-paths-ts-viewportattrs) | const |
+| [`headerAttrs`](#src-3-paths-ts-headerattrs) | const |
+| [`resizeAttrs`](#src-3-paths-ts-resizeattrs) | const |
+| [`moveAttrs`](#src-3-paths-ts-moveattrs) | const |
+| [`rowAttrs`](#src-3-paths-ts-rowattrs) | const |
+| [`expandAttrs`](#src-3-paths-ts-expandattrs) | const |
+| [`checkAttrs`](#src-3-paths-ts-checkattrs) | const |
+| [`cellAttrs`](#src-3-paths-ts-cellattrs) | const |
+| [`selectorFor`](#src-3-paths-ts-selectorfor) | function |
+| [`modifiersOf`](#src-3-paths-ts-modifiersof) | const |
+| [`browserOwnsClick`](#src-3-paths-ts-browserownsclick) | const |
+| [`intentOf`](#src-3-paths-ts-intentof) | const |
+| [`encodeVarId`](#src-3-paths-ts-encodevarid) | const |
+| [`decodeVarId`](#src-3-paths-ts-decodevarid) | const |
+| [`rowHeightVar`](#src-3-paths-ts-rowheightvar) | const |
+| [`SG_DEPTH`](#src-3-paths-ts-sg-depth) | const |
 
-### `PartName`
+### `PartName` {#src-3-paths-ts-partname}
 
 `PartName` is declared at `src/3_paths.ts:29`.
 
@@ -1206,7 +1208,7 @@ One declaration per grid part yields four artifacts: element id, delegated route
 export type PartName = keyof typeof LOCAL
 ```
 
-### `PATHS`
+### `PATHS` {#src-3-paths-ts-paths}
 
 `PATHS` is declared at `src/3_paths.ts:37`.
 
@@ -1216,7 +1218,7 @@ Frozen because a mutated route map is a silently mis-delegating grid.
 PATHS: Readonly<{ grid: IPath<Simplify<{ gridId: string; }>, "/g/{gridId}", SlashPathSyntax>; viewport: IPath<Simplify<Simplify<{ gridId: string; }> & Simplify<{}>>, "/g/{gridId}/vp", SlashPathSyntax>; ... 8 more ...; cellExpander: IPath<...>; }>
 ```
 
-### `TEMPLATES`
+### `TEMPLATES` {#src-3-paths-ts-templates}
 
 `TEMPLATES` is declared at `src/3_paths.ts:54`.
 
@@ -1226,7 +1228,7 @@ The same set as raw text, because `Dom()` keys its cache by the template string.
 TEMPLATES: Readonly<{ grid: "/g/{gridId}"; viewport: "/g/{gridId}/vp"; header: "/g/{gridId}/h/{colId}"; headerResize: "/g/{gridId}/h/{colId}/resize"; headerMove: "/g/{gridId}/h/{colId}/move"; row: "/g/{gridId}/r/{rowId}"; ... 4 more ...; cellExpander: "/g/{gridId}/r/{rowId}/c/{colId}/expand"; }>
 ```
 
-### `GridBinding`
+### `GridBinding` {#src-3-paths-ts-gridbinding}
 
 `GridBinding` is declared at `src/3_paths.ts:72`.
 
@@ -1234,7 +1236,7 @@ TEMPLATES: Readonly<{ grid: "/g/{gridId}"; viewport: "/g/{gridId}/vp"; header: "
 export type GridBinding<Template extends string> = DomTemplate<Template>
 ```
 
-### `GridDom`
+### `GridDom` {#src-3-paths-ts-griddom}
 
 `GridDom` is declared at `src/3_paths.ts:76`.
 
@@ -1253,9 +1255,11 @@ export interface GridDom {
   readonly cell: GridBinding<typeof TEMPLATES.cell>
   readonly cellExpander: GridBinding<typeof TEMPLATES.cellExpander>
 }
+
+export function gridDom(gridId: string): GridDom
 ```
 
-### `gridDom`
+### `gridDom` {#src-3-paths-ts-griddom-2}
 
 `gridDom` is declared at `src/3_paths.ts:93`.
 
@@ -1263,7 +1267,7 @@ export interface GridDom {
 gridDom: (gridId: string) => GridDom
 ```
 
-### `gridAttrs`
+### `gridAttrs` {#src-3-paths-ts-gridattrs}
 
 `gridAttrs` is declared at `src/3_paths.ts:139`.
 
@@ -1271,7 +1275,7 @@ gridDom: (gridId: string) => GridDom
 gridAttrs: (gridId: string) => Record<string, string>
 ```
 
-### `viewportAttrs`
+### `viewportAttrs` {#src-3-paths-ts-viewportattrs}
 
 `viewportAttrs` is declared at `src/3_paths.ts:146`.
 
@@ -1279,7 +1283,7 @@ gridAttrs: (gridId: string) => Record<string, string>
 viewportAttrs: () => Record<string, string>
 ```
 
-### `headerAttrs`
+### `headerAttrs` {#src-3-paths-ts-headerattrs}
 
 `headerAttrs` is declared at `src/3_paths.ts:149`.
 
@@ -1287,7 +1291,7 @@ viewportAttrs: () => Record<string, string>
 headerAttrs: (colId: string) => Record<string, string>
 ```
 
-### `resizeAttrs`
+### `resizeAttrs` {#src-3-paths-ts-resizeattrs}
 
 `resizeAttrs` is declared at `src/3_paths.ts:152`.
 
@@ -1295,7 +1299,7 @@ headerAttrs: (colId: string) => Record<string, string>
 resizeAttrs: () => Record<string, string>
 ```
 
-### `moveAttrs`
+### `moveAttrs` {#src-3-paths-ts-moveattrs}
 
 `moveAttrs` is declared at `src/3_paths.ts:156`.
 
@@ -1305,7 +1309,7 @@ Shared by the header and the row handle: the ancestor segment tells them apart.
 moveAttrs: () => Record<string, string>
 ```
 
-### `rowAttrs`
+### `rowAttrs` {#src-3-paths-ts-rowattrs}
 
 `rowAttrs` is declared at `src/3_paths.ts:159`.
 
@@ -1313,7 +1317,7 @@ moveAttrs: () => Record<string, string>
 rowAttrs: (rowId: string) => Record<string, string>
 ```
 
-### `expandAttrs`
+### `expandAttrs` {#src-3-paths-ts-expandattrs}
 
 `expandAttrs` is declared at `src/3_paths.ts:162`.
 
@@ -1321,7 +1325,7 @@ rowAttrs: (rowId: string) => Record<string, string>
 expandAttrs: () => Record<string, string>
 ```
 
-### `checkAttrs`
+### `checkAttrs` {#src-3-paths-ts-checkattrs}
 
 `checkAttrs` is declared at `src/3_paths.ts:165`.
 
@@ -1329,7 +1333,7 @@ expandAttrs: () => Record<string, string>
 checkAttrs: () => Record<string, string>
 ```
 
-### `cellAttrs`
+### `cellAttrs` {#src-3-paths-ts-cellattrs}
 
 `cellAttrs` is declared at `src/3_paths.ts:168`.
 
@@ -1337,7 +1341,7 @@ checkAttrs: () => Record<string, string>
 cellAttrs: (colId: string) => Record<string, string>
 ```
 
-### `selectorFor`
+### `selectorFor` {#src-3-paths-ts-selectorfor}
 
 `selectorFor` is declared at `src/3_paths.ts:178`.
 
@@ -1345,7 +1349,7 @@ cellAttrs: (colId: string) => Record<string, string>
 selectorFor: (part: "cell" | "cellExpander" | "expander" | "grid" | "header" | "headerMove" | "headerResize" | "row" | "rowCheck" | "rowMove" | "viewport", values?: Readonly<Record<string, string>>) => string
 ```
 
-### `modifiersOf`
+### `modifiersOf` {#src-3-paths-ts-modifiersof}
 
 `modifiersOf` is declared at `src/3_paths.ts:200`.
 
@@ -1353,7 +1357,7 @@ selectorFor: (part: "cell" | "cellExpander" | "expander" | "grid" | "header" | "
 modifiersOf: (event: KeyboardEvent | MouseEvent | PointerEvent) => Modifiers
 ```
 
-### `browserOwnsClick`
+### `browserOwnsClick` {#src-3-paths-ts-browserownsclick}
 
 `browserOwnsClick` is declared at `src/3_paths.ts:238`.
 
@@ -1364,7 +1368,7 @@ raises nothing for it, and `8_grid.ts` is where that filter sits.
 browserOwnsClick: (event: MouseEvent) => boolean
 ```
 
-### `intentOf`
+### `intentOf` {#src-3-paths-ts-intentof}
 
 `intentOf` is declared at `src/3_paths.ts:247`.
 
@@ -1372,7 +1376,7 @@ browserOwnsClick: (event: MouseEvent) => boolean
 intentOf: Readonly<{ "cell.click": (event: Delegated<Simplify<{ gridId: string; } & { rowId: string; } & { colId: string; }>, MouseEvent>) => { phase: "intent"; type: "cell.click"; row: string; col: string; mods: Modifiers; interactive: boolean; }; ... 14 more ...; "viewport.resize": (box: { ...; }) => { ...; }; }>
 ```
 
-### `encodeVarId`
+### `encodeVarId` {#src-3-paths-ts-encodevarid}
 
 `encodeVarId` is declared at `src/3_paths.ts:400`.
 
@@ -1380,7 +1384,7 @@ intentOf: Readonly<{ "cell.click": (event: Delegated<Simplify<{ gridId: string; 
 encodeVarId: (id: string) => string
 ```
 
-### `decodeVarId`
+### `decodeVarId` {#src-3-paths-ts-decodevarid}
 
 `decodeVarId` is declared at `src/3_paths.ts:410`.
 
@@ -1390,7 +1394,7 @@ The inverse, for reading an id back out of a stylesheet or a failing assertion.
 decodeVarId: (encoded: string) => string
 ```
 
-### `rowHeightVar`
+### `rowHeightVar` {#src-3-paths-ts-rowheightvar}
 
 `rowHeightVar` is declared at `src/3_paths.ts:417`.
 
@@ -1398,7 +1402,7 @@ decodeVarId: (encoded: string) => string
 rowHeightVar: (rowId: string) => string
 ```
 
-### `SG_DEPTH`
+### `SG_DEPTH` {#src-3-paths-ts-sg-depth}
 
 `SG_DEPTH` is declared at `src/3_paths.ts:420`.
 
@@ -1414,23 +1418,23 @@ From a flat key list to the rendered window.
 
 | export | kind |
 | --- | --- |
-| [`partition`](#partition) | function |
-| [`paginate`](#paginate) | function |
-| [`Sizer`](#sizer) | interface |
-| [`uniformSizer`](#uniformsizer) | function |
-| [`measuredSizer`](#measuredsizer) | function |
-| [`windowOf`](#windowof) | function |
-| [`sliceKeys`](#slicekeys) | function |
-| [`RenderPlanInput`](#renderplaninput) | interface |
-| [`RenderPlan`](#renderplan) | interface |
-| [`renderPlan`](#renderplan) | function |
-| [`Spacers`](#spacers) | interface |
-| [`NO_SPACERS`](#no-spacers) | const |
-| [`spacersOf`](#spacersof) | function |
-| [`TrackColumn`](#trackcolumn) | interface |
-| [`trackList`](#tracklist) | function |
+| [`partition`](#src-4-slice-ts-partition) | function |
+| [`paginate`](#src-4-slice-ts-paginate) | function |
+| [`Sizer`](#src-4-slice-ts-sizer) | interface |
+| [`uniformSizer`](#src-4-slice-ts-uniformsizer) | function |
+| [`measuredSizer`](#src-4-slice-ts-measuredsizer) | function |
+| [`windowOf`](#src-4-slice-ts-windowof) | function |
+| [`sliceKeys`](#src-4-slice-ts-slicekeys) | function |
+| [`RenderPlanInput`](#src-4-slice-ts-renderplaninput) | interface |
+| [`RenderPlan`](#src-4-slice-ts-renderplan) | interface |
+| [`renderPlan`](#src-4-slice-ts-renderplan-2) | function |
+| [`Spacers`](#src-4-slice-ts-spacers) | interface |
+| [`NO_SPACERS`](#src-4-slice-ts-no-spacers) | const |
+| [`spacersOf`](#src-4-slice-ts-spacersof) | function |
+| [`TrackColumn`](#src-4-slice-ts-trackcolumn) | interface |
+| [`trackList`](#src-4-slice-ts-tracklist) | function |
 
-### `partition`
+### `partition` {#src-4-slice-ts-partition}
 
 `partition` is declared at `src/4_slice.ts:23`.
 
@@ -1442,7 +1446,7 @@ concatenate back to a permutation of the input.
 partition: <K extends string>(flat: readonly K[], side: (key: K) => Side | undefined) => Partitioned<K>
 ```
 
-### `paginate`
+### `paginate` {#src-4-slice-ts-paginate}
 
 `paginate` is declared at `src/4_slice.ts:46`.
 
@@ -1453,7 +1457,7 @@ every page.
 paginate: <K extends string>(center: readonly K[], page: { index: number; size: number; }, enabled: boolean) => readonly K[]
 ```
 
-### `Sizer`
+### `Sizer` {#src-4-slice-ts-sizer}
 
 `Sizer` is declared at `src/4_slice.ts:64`.
 
@@ -1469,9 +1473,11 @@ export interface Sizer {
   /** First index whose `[offset, offset + size)` contains `px`. Clamped, never throws. */
   indexAt(px: number): number
 }
+
+export function uniformSizer(count: number, size: number): Sizer
 ```
 
-### `uniformSizer`
+### `uniformSizer` {#src-4-slice-ts-uniformsizer}
 
 `uniformSizer` is declared at `src/4_slice.ts:75`.
 
@@ -1481,7 +1487,7 @@ Every method O(1), no allocation past the returned object. The common case, so i
 uniformSizer: (count: number, size: number) => Sizer
 ```
 
-### `measuredSizer`
+### `measuredSizer` {#src-4-slice-ts-measuredsizer}
 
 `measuredSizer` is declared at `src/4_slice.ts:95`.
 
@@ -1492,7 +1498,7 @@ once at construction rather than on every read during a scroll.
 measuredSizer: (count: number, estimate: number, measured: ReadonlyMap<number, number>) => Sizer
 ```
 
-### `windowOf`
+### `windowOf` {#src-4-slice-ts-windowof}
 
 `windowOf` is declared at `src/4_slice.ts:146`.
 
@@ -1503,7 +1509,7 @@ Overscan lives at this edge and nowhere deeper: it is a repaint budget, not part
 windowOf: (sizer: Sizer, viewport: { start: number; extent: number; }, overscan: number) => IndexRange
 ```
 
-### `sliceKeys`
+### `sliceKeys` {#src-4-slice-ts-slicekeys}
 
 `sliceKeys` is declared at `src/4_slice.ts:165`.
 
@@ -1511,7 +1517,7 @@ windowOf: (sizer: Sizer, viewport: { start: number; extent: number; }, overscan:
 sliceKeys: <K extends string>(keys: readonly K[], span: IndexRange) => readonly K[]
 ```
 
-### `RenderPlanInput`
+### `RenderPlanInput` {#src-4-slice-ts-renderplaninput}
 
 `RenderPlanInput` is declared at `src/4_slice.ts:174`.
 
@@ -1532,9 +1538,11 @@ export interface RenderPlanInput<K extends string> {
   readonly viewport: { readonly start: number; readonly extent: number }
   readonly overscan?: number
 }
+
+export function renderPlan<K extends string>(input: RenderPlanInput<K>): RenderPlan<K>
 ```
 
-### `RenderPlan`
+### `RenderPlan` {#src-4-slice-ts-renderplan}
 
 `RenderPlan` is declared at `src/4_slice.ts:191`.
 
@@ -1553,9 +1561,11 @@ export interface RenderPlan<K extends string> {
   /** The sizer this plan was windowed with, so a later plan can cancel a scroll shift against it. */
   readonly sizer: Sizer
 }
+
+export function renderPlan<K extends string>(input: RenderPlanInput<K>): RenderPlan<K>
 ```
 
-### `renderPlan`
+### `renderPlan` {#src-4-slice-ts-renderplan-2}
 
 `renderPlan` is declared at `src/4_slice.ts:209`.
 
@@ -1565,7 +1575,7 @@ partition -> paginate -> virtualize, in that order, once.
 renderPlan: <K extends string>(input: RenderPlanInput<K>) => RenderPlan<K>
 ```
 
-### `Spacers`
+### `Spacers` {#src-4-slice-ts-spacers}
 
 `Spacers` is declared at `src/4_slice.ts:233`.
 
@@ -1579,9 +1589,11 @@ export interface Spacers {
    * about how many seats the rendered run covers. */
   readonly tracked: boolean
 }
+
+export function spacersOf<K extends string>(plan: RenderPlan<K>): Spacers
 ```
 
-### `NO_SPACERS`
+### `NO_SPACERS` {#src-4-slice-ts-no-spacers}
 
 `NO_SPACERS` is declared at `src/4_slice.ts:241`.
 
@@ -1589,7 +1601,7 @@ export interface Spacers {
 NO_SPACERS: Spacers
 ```
 
-### `spacersOf`
+### `spacersOf` {#src-4-slice-ts-spacersof}
 
 `spacersOf` is declared at `src/4_slice.ts:245`.
 
@@ -1600,7 +1612,7 @@ windowed.
 spacersOf: <K extends string>(plan: RenderPlan<K>) => Spacers
 ```
 
-### `TrackColumn`
+### `TrackColumn` {#src-4-slice-ts-trackcolumn}
 
 `TrackColumn` is declared at `src/4_slice.ts:255`.
 
@@ -1614,9 +1626,11 @@ export interface TrackColumn {
   readonly maxWidth?: number
   readonly flex?: number
 }
+
+export function trackList(cols: readonly TrackColumn[]): string
 ```
 
-### `trackList`
+### `trackList` {#src-4-slice-ts-tracklist}
 
 `trackList` is declared at `src/4_slice.ts:267`.
 
@@ -1633,38 +1647,38 @@ Two rules hold for every factory here, enforced in code: a built-in is never `gr
 
 | export | kind |
 | --- | --- |
-| [`BuiltInId`](#builtinid) | type |
-| [`BUILT_IN_IDS`](#built-in-ids) | const |
-| [`BuiltInColumnDef`](#builtincolumndef) | interface |
-| [`isBuiltIn`](#isbuiltin) | const |
-| [`dataColumns`](#datacolumns) | const |
-| [`pinningFor`](#pinningfor) | function |
-| [`rowSelectionMode`](#rowselectionmode) | const |
-| [`selectAllSignal`](#selectallsignal) | const |
-| [`TriState`](#tristate) | type |
-| [`SelectAllState`](#selectallstate) | type |
-| [`selectAllState`](#selectallstate) | function |
-| [`toggleSelectAll`](#toggleselectall) | function |
-| [`expandAllState`](#expandallstate) | function |
-| [`toggleExpandAll`](#toggleexpandall) | function |
-| [`selectableRows`](#selectablerows) | const |
-| [`expandableRows`](#expandablerows) | const |
-| [`SELECT_ALL_GLYPH`](#select-all-glyph) | const |
-| [`EXPAND_ALL_GLYPH`](#expand-all-glyph) | const |
-| [`expandAllSignal`](#expandallsignal) | const |
-| [`triStateHeader`](#tristateheader) | const |
-| [`BuiltInColumnOptions`](#builtincolumnoptions) | interface |
-| [`TriStateColumnOptions`](#tristatecolumnoptions) | interface |
-| [`SelectColumnOptions`](#selectcolumnoptions) | type |
-| [`RowNumberColumnOptions`](#rownumbercolumnoptions) | interface |
-| [`checkboxColumn`](#checkboxcolumn) | function |
-| [`radioColumn`](#radiocolumn) | function |
-| [`expandColumn`](#expandcolumn) | function |
-| [`dragColumn`](#dragcolumn) | function |
-| [`detailColumn`](#detailcolumn) | function |
-| [`rowNumberColumn`](#rownumbercolumn) | function |
+| [`BuiltInId`](#src-5-columns-ts-builtinid) | type |
+| [`BUILT_IN_IDS`](#src-5-columns-ts-built-in-ids) | const |
+| [`BuiltInColumnDef`](#src-5-columns-ts-builtincolumndef) | interface |
+| [`isBuiltIn`](#src-5-columns-ts-isbuiltin) | const |
+| [`dataColumns`](#src-5-columns-ts-datacolumns) | const |
+| [`pinningFor`](#src-5-columns-ts-pinningfor) | function |
+| [`rowSelectionMode`](#src-5-columns-ts-rowselectionmode) | const |
+| [`TriState`](#src-5-columns-ts-tristate) | type |
+| [`SelectAllState`](#src-5-columns-ts-selectallstate) | type |
+| [`selectAllState`](#src-5-columns-ts-selectallstate-2) | function |
+| [`toggleSelectAll`](#src-5-columns-ts-toggleselectall) | function |
+| [`expandAllState`](#src-5-columns-ts-expandallstate) | function |
+| [`toggleExpandAll`](#src-5-columns-ts-toggleexpandall) | function |
+| [`selectableRows`](#src-5-columns-ts-selectablerows) | const |
+| [`expandableRows`](#src-5-columns-ts-expandablerows) | const |
+| [`SELECT_ALL_GLYPH`](#src-5-columns-ts-select-all-glyph) | const |
+| [`EXPAND_ALL_GLYPH`](#src-5-columns-ts-expand-all-glyph) | const |
+| [`selectAllSignal`](#src-5-columns-ts-selectallsignal) | const |
+| [`expandAllSignal`](#src-5-columns-ts-expandallsignal) | const |
+| [`triStateHeader`](#src-5-columns-ts-tristateheader) | const |
+| [`BuiltInColumnOptions`](#src-5-columns-ts-builtincolumnoptions) | interface |
+| [`TriStateColumnOptions`](#src-5-columns-ts-tristatecolumnoptions) | interface |
+| [`SelectColumnOptions`](#src-5-columns-ts-selectcolumnoptions) | type |
+| [`RowNumberColumnOptions`](#src-5-columns-ts-rownumbercolumnoptions) | interface |
+| [`checkboxColumn`](#src-5-columns-ts-checkboxcolumn) | function |
+| [`radioColumn`](#src-5-columns-ts-radiocolumn) | function |
+| [`expandColumn`](#src-5-columns-ts-expandcolumn) | function |
+| [`dragColumn`](#src-5-columns-ts-dragcolumn) | function |
+| [`detailColumn`](#src-5-columns-ts-detailcolumn) | function |
+| [`rowNumberColumn`](#src-5-columns-ts-rownumbercolumn) | function |
 
-### `BuiltInId`
+### `BuiltInId` {#src-5-columns-ts-builtinid}
 
 `BuiltInId` is declared at `src/5_columns.ts:22`.
 
@@ -1672,7 +1686,7 @@ Two rules hold for every factory here, enforced in code: a built-in is never `gr
 export type BuiltInId = "check" | "radio" | "expand" | "drag" | "detail" | "rowNumber"
 ```
 
-### `BUILT_IN_IDS`
+### `BUILT_IN_IDS` {#src-5-columns-ts-built-in-ids}
 
 `BUILT_IN_IDS` is declared at `src/5_columns.ts:25`.
 
@@ -1682,7 +1696,7 @@ Default ids, one namespace so a data column called `check` still keeps its own s
 BUILT_IN_IDS: Readonly<Record<BuiltInId, string>>
 ```
 
-### `BuiltInColumnDef`
+### `BuiltInColumnDef` {#src-5-columns-ts-builtincolumndef}
 
 `BuiltInColumnDef` is declared at `src/5_columns.ts:38`.
 
@@ -1692,9 +1706,11 @@ export interface BuiltInColumnDef<TRow> extends ColumnDef<TRow> {
   readonly cell: Slot<CellCtx<TRow>>
   readonly headerCell: Slot<HeaderCtx<TRow>>
 }
+
+export function checkboxColumn<TRow>(opts: TriStateColumnOptions<TRow> = {}): BuiltInColumnDef<TRow>
 ```
 
-### `isBuiltIn`
+### `isBuiltIn` {#src-5-columns-ts-isbuiltin}
 
 `isBuiltIn` is declared at `src/5_columns.ts:45`.
 
@@ -1704,7 +1720,7 @@ By the discriminator first, because `opts.id` may rename any of them.
 isBuiltIn: <TRow>(col: ColumnDef<TRow, unknown>) => col is BuiltInColumnDef<TRow>
 ```
 
-### `dataColumns`
+### `dataColumns` {#src-5-columns-ts-datacolumns}
 
 `dataColumns` is declared at `src/5_columns.ts:49`.
 
@@ -1714,7 +1730,7 @@ What sorting, grouping, and the flex pool should be looking at.
 dataColumns: <TRow>(columns: readonly ColumnDef<TRow, unknown>[]) => readonly ColumnDef<TRow, unknown>[]
 ```
 
-### `pinningFor`
+### `pinningFor` {#src-5-columns-ts-pinningfor}
 
 `pinningFor` is declared at `src/5_columns.ts:55`.
 
@@ -1722,7 +1738,7 @@ dataColumns: <TRow>(columns: readonly ColumnDef<TRow, unknown>[]) => readonly Co
 pinningFor: <TRow>(columns: readonly ColumnDef<TRow, unknown>[]) => Readonly<Record<string, Side>>
 ```
 
-### `rowSelectionMode`
+### `rowSelectionMode` {#src-5-columns-ts-rowselectionmode}
 
 `rowSelectionMode` is declared at `src/5_columns.ts:69`.
 
@@ -1730,17 +1746,7 @@ pinningFor: <TRow>(columns: readonly ColumnDef<TRow, unknown>[]) => Readonly<Rec
 rowSelectionMode: <TRow>(columns: readonly ColumnDef<TRow, unknown>[]) => "multi" | "single"
 ```
 
-### `selectAllSignal`
-
-`selectAllSignal` is declared at `src/5_columns.ts:81`.
-
-Derived on every read, so a row arriving or a filter moving is already counted.
-
-```ts
-selectAllSignal: <TRow>(read: () => Grid<TRow> | undefined) => { $: Signal$<TriState, object>; }
-```
-
-### `TriState`
+### `TriState` {#src-5-columns-ts-tristate}
 
 `TriState` is declared at `src/5_columns.ts:89`.
 
@@ -1748,7 +1754,7 @@ selectAllSignal: <TRow>(read: () => Grid<TRow> | undefined) => { $: Signal$<TriS
 export type TriState = "none" | "some" | "all"
 ```
 
-### `SelectAllState`
+### `SelectAllState` {#src-5-columns-ts-selectallstate}
 
 `SelectAllState` is declared at `src/5_columns.ts:92`.
 
@@ -1758,7 +1764,7 @@ The name this had when only selection carried it. Docs and tests still name it.
 export type SelectAllState = TriState
 ```
 
-### `selectAllState`
+### `selectAllState` {#src-5-columns-ts-selectallstate-2}
 
 `selectAllState` is declared at `src/5_columns.ts:95`.
 
@@ -1768,7 +1774,7 @@ An empty list is `none`: nothing is selected, and there is nothing to select.
 selectAllState: (rows: readonly string[], selection: Readonly<Record<string, boolean>>) => TriState
 ```
 
-### `toggleSelectAll`
+### `toggleSelectAll` {#src-5-columns-ts-toggleselectall}
 
 `toggleSelectAll` is declared at `src/5_columns.ts:106`.
 
@@ -1778,7 +1784,7 @@ All means clear, anything else means fill. A row outside `rows` keeps whatever f
 toggleSelectAll: (rows: readonly string[], selection: Readonly<Record<string, boolean>>) => Readonly<Record<string, boolean>>
 ```
 
-### `expandAllState`
+### `expandAllState` {#src-5-columns-ts-expandallstate}
 
 `expandAllState` is declared at `src/5_columns.ts:117`.
 
@@ -1788,7 +1794,7 @@ The mirror over the rows that have children. A forest with no branch is `none`.
 expandAllState: (rows: readonly string[], expanded: Readonly<Record<string, boolean>>) => TriState
 ```
 
-### `toggleExpandAll`
+### `toggleExpandAll` {#src-5-columns-ts-toggleexpandall}
 
 `toggleExpandAll` is declared at `src/5_columns.ts:127`.
 
@@ -1796,7 +1802,7 @@ expandAllState: (rows: readonly string[], expanded: Readonly<Record<string, bool
 toggleExpandAll: (rows: readonly string[], expanded: Readonly<Record<string, boolean>>) => Readonly<Record<string, boolean>>
 ```
 
-### `selectableRows`
+### `selectableRows` {#src-5-columns-ts-selectablerows}
 
 `selectableRows` is declared at `src/5_columns.ts:139`.
 
@@ -1807,7 +1813,7 @@ not selectable, so counting them would leave the toggle stuck on `some`.
 selectableRows: (flat: readonly FlatNode<string>[]) => readonly string[]
 ```
 
-### `expandableRows`
+### `expandableRows` {#src-5-columns-ts-expandablerows}
 
 `expandableRows` is declared at `src/5_columns.ts:144`.
 
@@ -1818,7 +1824,7 @@ the flat list, because a collapsed parent hides the branches under it from that 
 expandableRows: <T>(axis: Axis<string, T>) => readonly string[]
 ```
 
-### `SELECT_ALL_GLYPH`
+### `SELECT_ALL_GLYPH` {#src-5-columns-ts-select-all-glyph}
 
 `SELECT_ALL_GLYPH` is declared at `src/5_columns.ts:152`.
 
@@ -1829,7 +1835,7 @@ state: a box with its centre filled, rather than the checked box it used to draw
 SELECT_ALL_GLYPH: Readonly<Record<TriState, string>>
 ```
 
-### `EXPAND_ALL_GLYPH`
+### `EXPAND_ALL_GLYPH` {#src-5-columns-ts-expand-all-glyph}
 
 `EXPAND_ALL_GLYPH` is declared at `src/5_columns.ts:159`.
 
@@ -1839,7 +1845,17 @@ The same three states on the other axis, drawn with the expander's own triangles
 EXPAND_ALL_GLYPH: Readonly<Record<TriState, string>>
 ```
 
-### `expandAllSignal`
+### `selectAllSignal` {#src-5-columns-ts-selectallsignal}
+
+`selectAllSignal` is declared at `src/5_columns.ts:166`.
+
+Derived on every read, so a row arriving or a filter moving is already counted.
+
+```ts
+selectAllSignal: <TRow>(read: () => Grid<TRow> | undefined) => { $: Signal$<TriState, object>; }
+```
+
+### `expandAllSignal` {#src-5-columns-ts-expandallsignal}
 
 `expandAllSignal` is declared at `src/5_columns.ts:173`.
 
@@ -1847,7 +1863,7 @@ EXPAND_ALL_GLYPH: Readonly<Record<TriState, string>>
 expandAllSignal: <TRow>(read: () => Grid<TRow> | undefined) => { $: Signal$<TriState, object>; }
 ```
 
-### `triStateHeader`
+### `triStateHeader` {#src-5-columns-ts-tristateheader}
 
 `triStateHeader` is declared at `src/5_columns.ts:182`.
 
@@ -1858,7 +1874,7 @@ machine and replacing the drawing calls this with their own table, or writes the
 triStateHeader: <TRow>(state: { $: Signal$<TriState, object>; }, glyph: Readonly<Record<TriState, string>>) => Slot<HeaderCtx<TRow>>
 ```
 
-### `BuiltInColumnOptions`
+### `BuiltInColumnOptions` {#src-5-columns-ts-builtincolumnoptions}
 
 `BuiltInColumnOptions` is declared at `src/5_columns.ts:189`.
 
@@ -1871,9 +1887,11 @@ export interface BuiltInColumnOptions<TRow> {
   readonly header?: Slot<HeaderCtx<TRow>>
   readonly cell?: Slot<CellCtx<TRow>>
 }
+
+export function radioColumn<TRow>(opts: BuiltInColumnOptions<TRow> = {}): BuiltInColumnDef<TRow>
 ```
 
-### `TriStateColumnOptions`
+### `TriStateColumnOptions` {#src-5-columns-ts-tristatecolumnoptions}
 
 `TriStateColumnOptions` is declared at `src/5_columns.ts:198`.
 
@@ -1885,9 +1903,11 @@ export interface TriStateColumnOptions<TRow> extends BuiltInColumnOptions<TRow> 
   /** The three marks. Swapping them keeps the state machine and the toggle untouched. */
   readonly glyph?: Readonly<Record<TriState, string>>
 }
+
+export function checkboxColumn<TRow>(opts: TriStateColumnOptions<TRow> = {}): BuiltInColumnDef<TRow>
 ```
 
-### `SelectColumnOptions`
+### `SelectColumnOptions` {#src-5-columns-ts-selectcolumnoptions}
 
 `SelectColumnOptions` is declared at `src/5_columns.ts:207`.
 
@@ -1897,7 +1917,7 @@ The name the selection column's options had before the expand column grew the sa
 export type SelectColumnOptions<TRow> = TriStateColumnOptions<TRow>
 ```
 
-### `RowNumberColumnOptions`
+### `RowNumberColumnOptions` {#src-5-columns-ts-rownumbercolumnoptions}
 
 `RowNumberColumnOptions` is declared at `src/5_columns.ts:209`.
 
@@ -1912,7 +1932,7 @@ export interface RowNumberColumnOptions<TRow> extends BuiltInColumnOptions<TRow>
 }
 ```
 
-### `checkboxColumn`
+### `checkboxColumn` {#src-5-columns-ts-checkboxcolumn}
 
 `checkboxColumn` is declared at `src/5_columns.ts:288`.
 
@@ -1922,7 +1942,7 @@ Multi-select. The header is a signal, so a selection click repaints one node.
 checkboxColumn: <TRow>(opts?: TriStateColumnOptions<TRow>) => BuiltInColumnDef<TRow>
 ```
 
-### `radioColumn`
+### `radioColumn` {#src-5-columns-ts-radiocolumn}
 
 `radioColumn` is declared at `src/5_columns.ts:294`.
 
@@ -1932,7 +1952,7 @@ Single select, same box and route as the checkbox column.
 radioColumn: <TRow>(opts?: BuiltInColumnOptions<TRow>) => BuiltInColumnDef<TRow>
 ```
 
-### `expandColumn`
+### `expandColumn` {#src-5-columns-ts-expandcolumn}
 
 `expandColumn` is declared at `src/5_columns.ts:311`.
 
@@ -1942,7 +1962,7 @@ The expander as a column, so a caller can place or pin it.
 expandColumn: <TRow>(opts?: TriStateColumnOptions<TRow>) => BuiltInColumnDef<TRow>
 ```
 
-### `dragColumn`
+### `dragColumn` {#src-5-columns-ts-dragcolumn}
 
 `dragColumn` is declared at `src/5_columns.ts:328`.
 
@@ -1952,7 +1972,7 @@ expandColumn: <TRow>(opts?: TriStateColumnOptions<TRow>) => BuiltInColumnDef<TRo
 dragColumn: <TRow>(opts?: BuiltInColumnOptions<TRow>) => BuiltInColumnDef<TRow>
 ```
 
-### `detailColumn`
+### `detailColumn` {#src-5-columns-ts-detailcolumn}
 
 `detailColumn` is declared at `src/5_columns.ts:344`.
 
@@ -1962,7 +1982,7 @@ The disclosure that opens the detail area for its row.
 detailColumn: <TRow>(opts?: BuiltInColumnOptions<TRow>) => BuiltInColumnDef<TRow>
 ```
 
-### `rowNumberColumn`
+### `rowNumberColumn` {#src-5-columns-ts-rownumbercolumn}
 
 `rowNumberColumn` is declared at `src/5_columns.ts:358`.
 
@@ -1978,16 +1998,16 @@ Resize, column move, and row move are one gesture with three hit tests.
 
 | export | kind |
 | --- | --- |
-| [`DragStreams`](#dragstreams) | interface |
-| [`DragDown`](#dragdown) | type |
-| [`DragSpec`](#dragspec) | interface |
-| [`WINDOW_DRAG`](#window-drag) | const |
-| [`setDragStreams`](#setdragstreams) | function |
-| [`LIVE_DRAG`](#live-drag) | const |
-| [`drag`](#drag) | function |
-| [`landingIndex`](#landingindex) | function |
+| [`DragStreams`](#src-6-gestures-ts-dragstreams) | interface |
+| [`DragDown`](#src-6-gestures-ts-dragdown) | type |
+| [`DragSpec`](#src-6-gestures-ts-dragspec) | interface |
+| [`WINDOW_DRAG`](#src-6-gestures-ts-window-drag) | const |
+| [`setDragStreams`](#src-6-gestures-ts-setdragstreams) | function |
+| [`LIVE_DRAG`](#src-6-gestures-ts-live-drag) | const |
+| [`drag`](#src-6-gestures-ts-drag) | function |
+| [`landingIndex`](#src-6-gestures-ts-landingindex) | function |
 
-### `DragStreams`
+### `DragStreams` {#src-6-gestures-ts-dragstreams}
 
 `DragStreams` is declared at `src/6_gestures.ts:7`.
 
@@ -1998,9 +2018,11 @@ export interface DragStreams {
   readonly move$: Observable<PointerEvent>
   readonly up$: Observable<PointerEvent>
 }
+
+export function setDragStreams(next: DragStreams): () => void
 ```
 
-### `DragDown`
+### `DragDown` {#src-6-gestures-ts-dragdown}
 
 `DragDown` is declared at `src/6_gestures.ts:13`.
 
@@ -2008,9 +2030,11 @@ What a delegated pointerdown carries: the event plus the route params of the ele
 
 ```ts
 export type DragDown = PointerEvent & { readonly params: Record<string, string> }
+
+export function drag<S, A, D = DragDown>(
 ```
 
-### `DragSpec`
+### `DragSpec` {#src-6-gestures-ts-dragspec}
 
 `DragSpec` is declared at `src/6_gestures.ts:17`.
 
@@ -2024,7 +2048,7 @@ export interface DragSpec<S, A, D = DragDown> {
 }
 ```
 
-### `WINDOW_DRAG`
+### `WINDOW_DRAG` {#src-6-gestures-ts-window-drag}
 
 `WINDOW_DRAG` is declared at `src/6_gestures.ts:27`.
 
@@ -2032,7 +2056,7 @@ export interface DragSpec<S, A, D = DragDown> {
 WINDOW_DRAG: DragStreams
 ```
 
-### `setDragStreams`
+### `setDragStreams` {#src-6-gestures-ts-setdragstreams}
 
 `setDragStreams` is declared at `src/6_gestures.ts:42`.
 
@@ -2042,7 +2066,7 @@ WINDOW_DRAG: DragStreams
 setDragStreams: (next: DragStreams) => () => void
 ```
 
-### `LIVE_DRAG`
+### `LIVE_DRAG` {#src-6-gestures-ts-live-drag}
 
 `LIVE_DRAG` is declared at `src/6_gestures.ts:51`.
 
@@ -2052,7 +2076,7 @@ Reads `active` per subscription, so a swap made after an epic was built still ta
 LIVE_DRAG: DragStreams
 ```
 
-### `drag`
+### `drag` {#src-6-gestures-ts-drag}
 
 `drag` is declared at `src/6_gestures.ts:58`.
 
@@ -2060,7 +2084,7 @@ LIVE_DRAG: DragStreams
 drag: <S, A, D = DragDown>(down$: Observable<D>, spec: DragSpec<S, A, D>, streams?: DragStreams) => Observable<A>
 ```
 
-### `landingIndex`
+### `landingIndex` {#src-6-gestures-ts-landingindex}
 
 `landingIndex` is declared at `src/6_gestures.ts:84`.
 
@@ -2074,27 +2098,27 @@ Where an intent becomes a change or an effect.
 
 | export | kind |
 | --- | --- |
-| [`GridEpicCtx`](#gridepicctx) | interface |
-| [`GridEpic`](#gridepic) | type |
-| [`sortOnHeaderClick`](#sortonheaderclick) | function |
-| [`expandOnExpanderClick`](#expandonexpanderclick) | function |
-| [`expandOnCellDoubleClick`](#expandoncelldoubleclick) | function |
-| [`selectRowsOnCheckboxClick`](#selectrowsoncheckboxclick) | function |
-| [`selectRowsOnCellClick`](#selectrowsoncellclick) | function |
-| [`toggleSelectAllOnHeaderClick`](#toggleselectallonheaderclick) | function |
-| [`toggleExpandAllOnHeaderClick`](#toggleexpandallonheaderclick) | function |
-| [`activateOnCellClick`](#activateoncellclick) | function |
-| [`resizeOnHeaderDrag`](#resizeonheaderdrag) | function |
-| [`moveColumnOnHeaderDrag`](#movecolumnonheaderdrag) | function |
-| [`moveRowOnRowDrag`](#moverowonrowdrag) | function |
-| [`keyboardNav`](#keyboardnav) | function |
-| [`pageOnScrollNearEnd`](#pageonscrollnearend) | function |
-| [`selectCellsOnDrag`](#selectcellsondrag) | function |
-| [`selectRowsOnDrag`](#selectrowsondrag) | function |
-| [`selectColumnsOnDrag`](#selectcolumnsondrag) | function |
-| [`defaultEpics`](#defaultepics) | function |
+| [`GridEpicCtx`](#src-7-epics-ts-gridepicctx) | interface |
+| [`GridEpic`](#src-7-epics-ts-gridepic) | type |
+| [`sortOnHeaderClick`](#src-7-epics-ts-sortonheaderclick) | function |
+| [`expandOnExpanderClick`](#src-7-epics-ts-expandonexpanderclick) | function |
+| [`expandOnCellDoubleClick`](#src-7-epics-ts-expandoncelldoubleclick) | function |
+| [`selectRowsOnCheckboxClick`](#src-7-epics-ts-selectrowsoncheckboxclick) | function |
+| [`selectRowsOnCellClick`](#src-7-epics-ts-selectrowsoncellclick) | function |
+| [`toggleSelectAllOnHeaderClick`](#src-7-epics-ts-toggleselectallonheaderclick) | function |
+| [`toggleExpandAllOnHeaderClick`](#src-7-epics-ts-toggleexpandallonheaderclick) | function |
+| [`activateOnCellClick`](#src-7-epics-ts-activateoncellclick) | function |
+| [`resizeOnHeaderDrag`](#src-7-epics-ts-resizeonheaderdrag) | function |
+| [`moveColumnOnHeaderDrag`](#src-7-epics-ts-movecolumnonheaderdrag) | function |
+| [`moveRowOnRowDrag`](#src-7-epics-ts-moverowonrowdrag) | function |
+| [`keyboardNav`](#src-7-epics-ts-keyboardnav) | function |
+| [`pageOnScrollNearEnd`](#src-7-epics-ts-pageonscrollnearend) | function |
+| [`selectCellsOnDrag`](#src-7-epics-ts-selectcellsondrag) | function |
+| [`selectRowsOnDrag`](#src-7-epics-ts-selectrowsondrag) | function |
+| [`selectColumnsOnDrag`](#src-7-epics-ts-selectcolumnsondrag) | function |
+| [`defaultEpics`](#src-7-epics-ts-defaultepics) | function |
 
-### `GridEpicCtx`
+### `GridEpicCtx` {#src-7-epics-ts-gridepicctx}
 
 `GridEpicCtx` is declared at `src/7_epics.ts:47`.
 
@@ -2111,15 +2135,17 @@ export interface GridEpicCtx<TRow> {
 }
 ```
 
-### `GridEpic`
+### `GridEpic` {#src-7-epics-ts-gridepic}
 
 `GridEpic` is declared at `src/7_epics.ts:56`.
 
 ```ts
 export type GridEpic<TRow> = Epic<GridAction<TRow>, GridState, GridEpicCtx<TRow>>
+
+export function sortOnHeaderClick<TRow>(): GridEpic<TRow>
 ```
 
-### `sortOnHeaderClick`
+### `sortOnHeaderClick` {#src-7-epics-ts-sortonheaderclick}
 
 `sortOnHeaderClick` is declared at `src/7_epics.ts:99`.
 
@@ -2127,7 +2153,7 @@ export type GridEpic<TRow> = Epic<GridAction<TRow>, GridState, GridEpicCtx<TRow>
 sortOnHeaderClick: <TRow>() => GridEpic<TRow>
 ```
 
-### `expandOnExpanderClick`
+### `expandOnExpanderClick` {#src-7-epics-ts-expandonexpanderclick}
 
 `expandOnExpanderClick` is declared at `src/7_epics.ts:129`.
 
@@ -2135,7 +2161,7 @@ sortOnHeaderClick: <TRow>() => GridEpic<TRow>
 expandOnExpanderClick: <TRow>() => GridEpic<TRow>
 ```
 
-### `expandOnCellDoubleClick`
+### `expandOnCellDoubleClick` {#src-7-epics-ts-expandoncelldoubleclick}
 
 `expandOnCellDoubleClick` is declared at `src/7_epics.ts:141`.
 
@@ -2146,7 +2172,7 @@ The second way into a tree, for a schema that draws no glyph. Opt-in, and it com
 expandOnCellDoubleClick: <TRow>() => GridEpic<TRow>
 ```
 
-### `selectRowsOnCheckboxClick`
+### `selectRowsOnCheckboxClick` {#src-7-epics-ts-selectrowsoncheckboxclick}
 
 `selectRowsOnCheckboxClick` is declared at `src/7_epics.ts:198`.
 
@@ -2154,7 +2180,7 @@ expandOnCellDoubleClick: <TRow>() => GridEpic<TRow>
 selectRowsOnCheckboxClick: <TRow>() => GridEpic<TRow>
 ```
 
-### `selectRowsOnCellClick`
+### `selectRowsOnCellClick` {#src-7-epics-ts-selectrowsoncellclick}
 
 `selectRowsOnCellClick` is declared at `src/7_epics.ts:207`.
 
@@ -2165,7 +2191,7 @@ that click, and `interactive` is the intent saying one took it.
 selectRowsOnCellClick: <TRow>() => GridEpic<TRow>
 ```
 
-### `toggleSelectAllOnHeaderClick`
+### `toggleSelectAllOnHeaderClick` {#src-7-epics-ts-toggleselectallonheaderclick}
 
 `toggleSelectAllOnHeaderClick` is declared at `src/7_epics.ts:228`.
 
@@ -2176,7 +2202,7 @@ what makes the header a control.
 toggleSelectAllOnHeaderClick: <TRow>() => GridEpic<TRow>
 ```
 
-### `toggleExpandAllOnHeaderClick`
+### `toggleExpandAllOnHeaderClick` {#src-7-epics-ts-toggleexpandallonheaderclick}
 
 `toggleExpandAllOnHeaderClick` is declared at `src/7_epics.ts:241`.
 
@@ -2186,7 +2212,7 @@ The mirror on the expand column, reading the same rows `expandAllSignal` counts.
 toggleExpandAllOnHeaderClick: <TRow>() => GridEpic<TRow>
 ```
 
-### `activateOnCellClick`
+### `activateOnCellClick` {#src-7-epics-ts-activateoncellclick}
 
 `activateOnCellClick` is declared at `src/7_epics.ts:256`.
 
@@ -2196,7 +2222,7 @@ The only way a consumer hears "the user picked this row". Modified clicks belong
 activateOnCellClick: <TRow>() => GridEpic<TRow>
 ```
 
-### `resizeOnHeaderDrag`
+### `resizeOnHeaderDrag` {#src-7-epics-ts-resizeonheaderdrag}
 
 `resizeOnHeaderDrag` is declared at `src/7_epics.ts:282`.
 
@@ -2204,7 +2230,7 @@ activateOnCellClick: <TRow>() => GridEpic<TRow>
 resizeOnHeaderDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
 ```
 
-### `moveColumnOnHeaderDrag`
+### `moveColumnOnHeaderDrag` {#src-7-epics-ts-movecolumnonheaderdrag}
 
 `moveColumnOnHeaderDrag` is declared at `src/7_epics.ts:339`.
 
@@ -2212,7 +2238,7 @@ resizeOnHeaderDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
 moveColumnOnHeaderDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
 ```
 
-### `moveRowOnRowDrag`
+### `moveRowOnRowDrag` {#src-7-epics-ts-moverowonrowdrag}
 
 `moveRowOnRowDrag` is declared at `src/7_epics.ts:376`.
 
@@ -2220,7 +2246,7 @@ moveColumnOnHeaderDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TR
 moveRowOnRowDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
 ```
 
-### `keyboardNav`
+### `keyboardNav` {#src-7-epics-ts-keyboardnav}
 
 `keyboardNav` is declared at `src/7_epics.ts:470`.
 
@@ -2228,7 +2254,7 @@ moveRowOnRowDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
 keyboardNav: <TRow>() => GridEpic<TRow>
 ```
 
-### `pageOnScrollNearEnd`
+### `pageOnScrollNearEnd` {#src-7-epics-ts-pageonscrollnearend}
 
 `pageOnScrollNearEnd` is declared at `src/7_epics.ts:482`.
 
@@ -2236,7 +2262,7 @@ keyboardNav: <TRow>() => GridEpic<TRow>
 pageOnScrollNearEnd: <TRow>() => GridEpic<TRow>
 ```
 
-### `selectCellsOnDrag`
+### `selectCellsOnDrag` {#src-7-epics-ts-selectcellsondrag}
 
 `selectCellsOnDrag` is declared at `src/7_epics.ts:606`.
 
@@ -2244,7 +2270,7 @@ pageOnScrollNearEnd: <TRow>() => GridEpic<TRow>
 selectCellsOnDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
 ```
 
-### `selectRowsOnDrag`
+### `selectRowsOnDrag` {#src-7-epics-ts-selectrowsondrag}
 
 `selectRowsOnDrag` is declared at `src/7_epics.ts:625`.
 
@@ -2252,7 +2278,7 @@ selectCellsOnDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
 selectRowsOnDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
 ```
 
-### `selectColumnsOnDrag`
+### `selectColumnsOnDrag` {#src-7-epics-ts-selectcolumnsondrag}
 
 `selectColumnsOnDrag` is declared at `src/7_epics.ts:645`.
 
@@ -2260,7 +2286,7 @@ selectRowsOnDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
 selectColumnsOnDrag: <TRow>(streams?: DragStreams | undefined, opensOn?: (part: string) => boolean) => GridEpic<TRow>
 ```
 
-### `defaultEpics`
+### `defaultEpics` {#src-7-epics-ts-defaultepics}
 
 `defaultEpics` is declared at `src/7_epics.ts:669`.
 
@@ -2276,18 +2302,18 @@ The constructor.
 
 | export | kind |
 | --- | --- |
-| [`GridSource`](#gridsource) | type |
-| [`toGridSignal`](#togridsignal) | function |
-| [`DEFAULT_PAGE`](#default-page) | const |
-| [`defaultState`](#defaultstate) | function |
-| [`ROW_HEIGHT`](#row-height) | const |
-| [`GridConfig`](#gridconfig) | interface |
-| [`GridView`](#gridview) | interface |
-| [`Grid`](#grid) | interface |
-| [`pageWindow`](#pagewindow) | function |
-| [`grid`](#grid) | function |
+| [`GridSource`](#src-8-grid-ts-gridsource) | type |
+| [`toGridSignal`](#src-8-grid-ts-togridsignal) | function |
+| [`DEFAULT_PAGE`](#src-8-grid-ts-default-page) | const |
+| [`defaultState`](#src-8-grid-ts-defaultstate) | function |
+| [`ROW_HEIGHT`](#src-8-grid-ts-row-height) | const |
+| [`GridConfig`](#src-8-grid-ts-gridconfig) | interface |
+| [`GridView`](#src-8-grid-ts-gridview) | interface |
+| [`Grid`](#src-8-grid-ts-grid) | interface |
+| [`pageWindow`](#src-8-grid-ts-pagewindow) | function |
+| [`grid`](#src-8-grid-ts-grid-2) | function |
 
-### `GridSource`
+### `GridSource` {#src-8-grid-ts-gridsource}
 
 `GridSource` is declared at `src/8_grid.ts:69`.
 
@@ -2297,9 +2323,11 @@ source that has not emitted yet still has a first value to derive from.
 
 ```ts
 export type GridSource<T> = Signal<T> | Observable<T> | (() => T) | T
+
+export function toGridSignal<T>(source: GridSource<T>, fallback: T): Signal<T>
 ```
 
-### `toGridSignal`
+### `toGridSignal` {#src-8-grid-ts-togridsignal}
 
 `toGridSignal` is declared at `src/8_grid.ts:71`.
 
@@ -2307,7 +2335,7 @@ export type GridSource<T> = Signal<T> | Observable<T> | (() => T) | T
 toGridSignal: <T>(source: GridSource<T>, fallback: T) => Signal<T>
 ```
 
-### `DEFAULT_PAGE`
+### `DEFAULT_PAGE` {#src-8-grid-ts-default-page}
 
 `DEFAULT_PAGE` is declared at `src/8_grid.ts:83`.
 
@@ -2315,7 +2343,7 @@ toGridSignal: <T>(source: GridSource<T>, fallback: T) => Signal<T>
 DEFAULT_PAGE: Page
 ```
 
-### `defaultState`
+### `defaultState` {#src-8-grid-ts-defaultstate}
 
 `defaultState` is declared at `src/8_grid.ts:85`.
 
@@ -2323,7 +2351,7 @@ DEFAULT_PAGE: Page
 defaultState: (over?: Partial<GridState>) => GridState
 ```
 
-### `ROW_HEIGHT`
+### `ROW_HEIGHT` {#src-8-grid-ts-row-height}
 
 `ROW_HEIGHT` is declared at `src/8_grid.ts:118`.
 
@@ -2331,7 +2359,7 @@ defaultState: (over?: Partial<GridState>) => GridState
 ROW_HEIGHT: Record<"comfortable" | "compact" | "standard", number>
 ```
 
-### `GridConfig`
+### `GridConfig` {#src-8-grid-ts-gridconfig}
 
 `GridConfig` is declared at `src/8_grid.ts:126`.
 
@@ -2361,9 +2389,11 @@ export interface GridConfig<TRow> {
   /** Absent installs `defaultEpics()`. Opt-in epics such as `detailOnCellClick` go here. */
   readonly epics?: readonly GridEpic<TRow>[]
 }
+
+export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow>
 ```
 
-### `GridView`
+### `GridView` {#src-8-grid-ts-gridview}
 
 `GridView` is declared at `src/8_grid.ts:154`.
 
@@ -2400,7 +2430,7 @@ export interface GridView<TRow> {
 }
 ```
 
-### `Grid`
+### `Grid` {#src-8-grid-ts-grid}
 
 `Grid` is declared at `src/8_grid.ts:185`.
 
@@ -2435,9 +2465,11 @@ export interface Grid<TRow> {
   readonly rowId: (row: TRow) => RowId
   readonly rowHref?: (row: TRow) => string | undefined
 }
+
+export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow>
 ```
 
-### `pageWindow`
+### `pageWindow` {#src-8-grid-ts-pagewindow}
 
 `pageWindow` is declared at `src/8_grid.ts:233`.
 
@@ -2449,7 +2481,7 @@ rows off the page they happen not to sit on, which defeats the point of pinning 
 pageWindow: (page: Page) => { page: { index: number; size: number; }; enabled: boolean; }
 ```
 
-### `grid`
+### `grid` {#src-8-grid-ts-grid-2}
 
 `grid` is declared at `src/8_grid.ts:247`.
 
@@ -2463,14 +2495,14 @@ Changing a grid track triggers one full layout, so the cost of a resize is how o
 
 | export | kind |
 | --- | --- |
-| [`SG_ROW_H`](#sg-row-h) | const |
-| [`SG_TOTAL_H`](#sg-total-h) | const |
-| [`SG_OFFSET_Y`](#sg-offset-y) | const |
-| [`SG_INLINE_TRACKS`](#sg-inline-tracks) | const |
-| [`SG_ROW_HEIGHT_SELF`](#sg-row-height-self) | const |
-| [`writeGridVars`](#writegridvars) | function |
+| [`SG_ROW_H`](#src-9-css-ts-sg-row-h) | const |
+| [`SG_TOTAL_H`](#src-9-css-ts-sg-total-h) | const |
+| [`SG_OFFSET_Y`](#src-9-css-ts-sg-offset-y) | const |
+| [`SG_INLINE_TRACKS`](#src-9-css-ts-sg-inline-tracks) | const |
+| [`SG_ROW_HEIGHT_SELF`](#src-9-css-ts-sg-row-height-self) | const |
+| [`writeGridVars`](#src-9-css-ts-writegridvars) | function |
 
-### `SG_ROW_H`
+### `SG_ROW_H` {#src-9-css-ts-sg-row-h}
 
 `SG_ROW_H` is declared at `src/9_css.ts:11`.
 
@@ -2480,7 +2512,7 @@ Density in pixels. The row box reads it, and so does the sticky top of the pinne
 SG_ROW_H: "--sg-row-h"
 ```
 
-### `SG_TOTAL_H`
+### `SG_TOTAL_H` {#src-9-css-ts-sg-total-h}
 
 `SG_TOTAL_H` is declared at `src/9_css.ts:13`.
 
@@ -2490,7 +2522,7 @@ Scroll spacer height. Measures the paginated center run, not the whole relation.
 SG_TOTAL_H: "--sg-total-h"
 ```
 
-### `SG_OFFSET_Y`
+### `SG_OFFSET_Y` {#src-9-css-ts-sg-offset-y}
 
 `SG_OFFSET_Y` is declared at `src/9_css.ts:15`.
 
@@ -2500,7 +2532,7 @@ Pixels above the first rendered row, applied as a translate on the rendered run.
 SG_OFFSET_Y: "--sg-offset-y"
 ```
 
-### `SG_INLINE_TRACKS`
+### `SG_INLINE_TRACKS` {#src-9-css-ts-sg-inline-tracks}
 
 `SG_INLINE_TRACKS` is declared at `src/9_css.ts:18`.
 
@@ -2511,7 +2543,7 @@ SG_OFFSET_Y: "--sg-offset-y"
 SG_INLINE_TRACKS: "--sg-inline-tracks"
 ```
 
-### `SG_ROW_HEIGHT_SELF`
+### `SG_ROW_HEIGHT_SELF` {#src-9-css-ts-sg-row-height-self}
 
 `SG_ROW_HEIGHT_SELF` is declared at `src/9_css.ts:21`.
 
@@ -2522,7 +2554,7 @@ spell, so the row carries this alias and one generic rule serves every row.
 SG_ROW_HEIGHT_SELF: "--sg-h"
 ```
 
-### `writeGridVars`
+### `writeGridVars` {#src-9-css-ts-writegridvars}
 
 `writeGridVars` is declared at `src/9_css.ts:36`.
 
@@ -2539,10 +2571,10 @@ Plain DOM.
 
 | export | kind |
 | --- | --- |
-| [`RenderHandle`](#renderhandle) | interface |
-| [`render`](#render) | function |
+| [`RenderHandle`](#src-10-render-ts-renderhandle) | interface |
+| [`render`](#src-10-render-ts-render) | function |
 
-### `RenderHandle`
+### `RenderHandle` {#src-10-render-ts-renderhandle}
 
 `RenderHandle` is declared at `src/10_render.ts:60`.
 
@@ -2550,9 +2582,11 @@ Plain DOM.
 export interface RenderHandle {
   readonly stop: () => void
 }
+
+export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle
 ```
 
-### `render`
+### `render` {#src-10-render-ts-render}
 
 `render` is declared at `src/10_render.ts:147`.
 
@@ -2566,43 +2600,23 @@ A detail row is a real node in the row axis, model (a).
 
 | export | kind |
 | --- | --- |
-| [`detailOnCellClick`](#detailoncellclick) | function |
-| [`withDetail`](#withdetail) | function |
-| [`DetailKey`](#detailkey) | type |
-| [`DETAIL_PREFIX`](#detail-prefix) | const |
-| [`isDetailKey`](#isdetailkey) | const |
-| [`detailKeyFor`](#detailkeyfor) | const |
-| [`rowOfDetailKey`](#rowofdetailkey) | const |
-| [`DetailOpen`](#detailopen) | type |
-| [`DetailChange`](#detailchange) | type |
-| [`openDetail`](#opendetail) | function |
-| [`closeDetail`](#closedetail) | function |
-| [`toggleDetail`](#toggledetail) | function |
-| [`detailHeights`](#detailheights) | function |
-| [`DetailEpicOptions`](#detailepicoptions) | interface |
-| [`DetailEpic`](#detailepic) | type |
+| [`DetailKey`](#src-11-detail-ts-detailkey) | type |
+| [`DETAIL_PREFIX`](#src-11-detail-ts-detail-prefix) | const |
+| [`isDetailKey`](#src-11-detail-ts-isdetailkey) | const |
+| [`detailKeyFor`](#src-11-detail-ts-detailkeyfor) | const |
+| [`rowOfDetailKey`](#src-11-detail-ts-rowofdetailkey) | const |
+| [`DetailOpen`](#src-11-detail-ts-detailopen) | type |
+| [`DetailChange`](#src-11-detail-ts-detailchange) | type |
+| [`openDetail`](#src-11-detail-ts-opendetail) | function |
+| [`closeDetail`](#src-11-detail-ts-closedetail) | function |
+| [`toggleDetail`](#src-11-detail-ts-toggledetail) | function |
+| [`withDetail`](#src-11-detail-ts-withdetail) | function |
+| [`detailHeights`](#src-11-detail-ts-detailheights) | function |
+| [`DetailEpicOptions`](#src-11-detail-ts-detailepicoptions) | interface |
+| [`DetailEpic`](#src-11-detail-ts-detailepic) | type |
+| [`detailOnCellClick`](#src-11-detail-ts-detailoncellclick) | function |
 
-### `detailOnCellClick`
-
-`detailOnCellClick` is declared at `src/11_detail.ts:14`.
-
-Opt-in, so a plain grid still reduces a cell click to nothing but `activate`.
-
-```ts
-detailOnCellClick: <TRow>(opts?: DetailEpicOptions) => DetailEpic<TRow>
-```
-
-### `withDetail`
-
-`withDetail` is declared at `src/11_detail.ts:15`.
-
-One node per open row, inserted right after it in its sibling list.
-
-```ts
-withDetail: <K extends string, T>(axis: Axis<K, T>, open: Readonly<Record<string, string | true>>, make: (row: string) => T | undefined) => Axis<K, T>
-```
-
-### `DetailKey`
+### `DetailKey` {#src-11-detail-ts-detailkey}
 
 `DetailKey` is declared at `src/11_detail.ts:37`.
 
@@ -2610,7 +2624,7 @@ withDetail: <K extends string, T>(axis: Axis<K, T>, open: Readonly<Record<string
 export type DetailKey = string
 ```
 
-### `DETAIL_PREFIX`
+### `DETAIL_PREFIX` {#src-11-detail-ts-detail-prefix}
 
 `DETAIL_PREFIX` is declared at `src/11_detail.ts:41`.
 
@@ -2618,7 +2632,7 @@ export type DetailKey = string
 DETAIL_PREFIX: string
 ```
 
-### `isDetailKey`
+### `isDetailKey` {#src-11-detail-ts-isdetailkey}
 
 `isDetailKey` is declared at `src/11_detail.ts:43`.
 
@@ -2626,7 +2640,7 @@ DETAIL_PREFIX: string
 isDetailKey: (key: string) => boolean
 ```
 
-### `detailKeyFor`
+### `detailKeyFor` {#src-11-detail-ts-detailkeyfor}
 
 `detailKeyFor` is declared at `src/11_detail.ts:45`.
 
@@ -2634,7 +2648,7 @@ isDetailKey: (key: string) => boolean
 detailKeyFor: (row: string) => string
 ```
 
-### `rowOfDetailKey`
+### `rowOfDetailKey` {#src-11-detail-ts-rowofdetailkey}
 
 `rowOfDetailKey` is declared at `src/11_detail.ts:48`.
 
@@ -2644,7 +2658,7 @@ Not a detail key means the caller already holds the row, so it answers itself.
 rowOfDetailKey: (key: string) => string
 ```
 
-### `DetailOpen`
+### `DetailOpen` {#src-11-detail-ts-detailopen}
 
 `DetailOpen` is declared at `src/11_detail.ts:54`.
 
@@ -2654,7 +2668,7 @@ Which cell opened the panel. `true` is a panel opened by something other than a 
 export type DetailOpen = Readonly<Record<RowId, ColId | true>>
 ```
 
-### `DetailChange`
+### `DetailChange` {#src-11-detail-ts-detailchange}
 
 `DetailChange` is declared at `src/11_detail.ts:56`.
 
@@ -2662,7 +2676,7 @@ export type DetailOpen = Readonly<Record<RowId, ColId | true>>
 export type DetailChange = { phase: "change"; type: "detail"; detail: DetailOpen }
 ```
 
-### `openDetail`
+### `openDetail` {#src-11-detail-ts-opendetail}
 
 `openDetail` is declared at `src/11_detail.ts:61`.
 
@@ -2672,7 +2686,7 @@ Recording the column, not just a flag, is what lets a second cell swap the panel
 openDetail: (state: HasDetail, row: string, col: string) => Partial<GridState>
 ```
 
-### `closeDetail`
+### `closeDetail` {#src-11-detail-ts-closedetail}
 
 `closeDetail` is declared at `src/11_detail.ts:69`.
 
@@ -2680,7 +2694,7 @@ openDetail: (state: HasDetail, row: string, col: string) => Partial<GridState>
 closeDetail: (state: HasDetail, row: string) => Partial<GridState>
 ```
 
-### `toggleDetail`
+### `toggleDetail` {#src-11-detail-ts-toggledetail}
 
 `toggleDetail` is declared at `src/11_detail.ts:78`.
 
@@ -2688,7 +2702,17 @@ closeDetail: (state: HasDetail, row: string) => Partial<GridState>
 toggleDetail: (state: HasDetail, row: string, col: string) => Partial<GridState>
 ```
 
-### `detailHeights`
+### `withDetail` {#src-11-detail-ts-withdetail}
+
+`withDetail` is declared at `src/11_detail.ts:89`.
+
+One node per open row, inserted right after it in its sibling list.
+
+```ts
+withDetail: <K extends string, T>(axis: Axis<K, T>, open: Readonly<Record<string, string | true>>, make: (row: string) => T | undefined) => Axis<K, T>
+```
+
+### `detailHeights` {#src-11-detail-ts-detailheights}
 
 `detailHeights` is declared at `src/11_detail.ts:138`.
 
@@ -2696,7 +2720,7 @@ toggleDetail: (state: HasDetail, row: string, col: string) => Partial<GridState>
 detailHeights: (open: Readonly<Record<string, string | true>>, height: number, base?: Readonly<Record<string, number>>) => Readonly<Record<string, number>>
 ```
 
-### `DetailEpicOptions`
+### `DetailEpicOptions` {#src-11-detail-ts-detailepicoptions}
 
 `DetailEpicOptions` is declared at `src/11_detail.ts:153`.
 
@@ -2707,9 +2731,11 @@ export interface DetailEpicOptions {
   /** `swap` never closes, for a panel that is a preview pane rather than a disclosure. */
   readonly mode?: "toggle" | "swap"
 }
+
+export function detailOnCellClick<TRow>(opts: DetailEpicOptions = {}): DetailEpic<TRow>
 ```
 
-### `DetailEpic`
+### `DetailEpic` {#src-11-detail-ts-detailepic}
 
 `DetailEpic` is declared at `src/11_detail.ts:162`.
 
@@ -2719,6 +2745,18 @@ export type DetailEpic<TRow> = (
   state: Signal<GridState>,
   ctx: GridEpicCtx<TRow>,
 ) => Observable<DetailChange>
+
+export function detailOnCellClick<TRow>(opts: DetailEpicOptions = {}): DetailEpic<TRow>
+```
+
+### `detailOnCellClick` {#src-11-detail-ts-detailoncellclick}
+
+`detailOnCellClick` is declared at `src/11_detail.ts:169`.
+
+Opt-in, so a plain grid still reduces a cell click to nothing but `activate`.
+
+```ts
+detailOnCellClick: <TRow>(opts?: DetailEpicOptions) => DetailEpic<TRow>
 ```
 
 ## src/12_transpose.ts
@@ -2727,38 +2765,30 @@ The one place the two-axis design stopped being two-axis.
 
 | export | kind |
 | --- | --- |
-| [`Orientation`](#orientation) | re-export |
-| [`AxisPair`](#axispair) | type |
-| [`transpose`](#transpose) | const |
-| [`verticalOf`](#verticalof) | const |
-| [`horizontalOf`](#horizontalof) | const |
-| [`AxisFacet`](#axisfacet) | interface |
-| [`FacetPair`](#facetpair) | type |
-| [`verticalFacet`](#verticalfacet) | const |
-| [`horizontalFacet`](#horizontalfacet) | const |
-| [`collapseToOneEntry`](#collapsetooneentry) | function |
-| [`CellSpan`](#cellspan) | interface |
-| [`SpanRelation`](#spanrelation) | type |
-| [`NO_SPANS`](#no-spans) | const |
-| [`NO_COVER`](#no-cover) | const |
-| [`neutralSpan`](#neutralspan) | function |
-| [`neutralCell`](#neutralcell) | function |
-| [`conventionalParts`](#conventionalparts) | function |
-| [`NO_ENTRY`](#no-entry) | const |
-| [`AddressedEntry`](#addressedentry) | interface |
-| [`addressedEntry`](#addressedentry) | function |
-| [`transposeSpans`](#transposespans) | function |
-| [`coveredBy`](#coveredby) | function |
+| [`AxisPair`](#src-12-transpose-ts-axispair) | type |
+| [`Orientation`](#src-12-transpose-ts-orientation) | re-export |
+| [`transpose`](#src-12-transpose-ts-transpose) | const |
+| [`verticalOf`](#src-12-transpose-ts-verticalof) | const |
+| [`horizontalOf`](#src-12-transpose-ts-horizontalof) | const |
+| [`AxisFacet`](#src-12-transpose-ts-axisfacet) | interface |
+| [`FacetPair`](#src-12-transpose-ts-facetpair) | type |
+| [`verticalFacet`](#src-12-transpose-ts-verticalfacet) | const |
+| [`horizontalFacet`](#src-12-transpose-ts-horizontalfacet) | const |
+| [`collapseToOneEntry`](#src-12-transpose-ts-collapsetooneentry) | function |
+| [`CellSpan`](#src-12-transpose-ts-cellspan) | interface |
+| [`SpanRelation`](#src-12-transpose-ts-spanrelation) | type |
+| [`NO_SPANS`](#src-12-transpose-ts-no-spans) | const |
+| [`NO_COVER`](#src-12-transpose-ts-no-cover) | const |
+| [`neutralSpan`](#src-12-transpose-ts-neutralspan) | function |
+| [`neutralCell`](#src-12-transpose-ts-neutralcell) | function |
+| [`conventionalParts`](#src-12-transpose-ts-conventionalparts) | function |
+| [`NO_ENTRY`](#src-12-transpose-ts-no-entry) | const |
+| [`AddressedEntry`](#src-12-transpose-ts-addressedentry) | interface |
+| [`addressedEntry`](#src-12-transpose-ts-addressedentry-2) | function |
+| [`transposeSpans`](#src-12-transpose-ts-transposespans) | function |
+| [`coveredBy`](#src-12-transpose-ts-coveredby) | function |
 
-### `Orientation`
-
-`Orientation` is declared at `src/12_transpose.ts:12`.
-
-```ts
-Orientation: any
-```
-
-### `AxisPair`
+### `AxisPair` {#src-12-transpose-ts-axispair}
 
 `AxisPair` is declared at `src/12_transpose.ts:17`.
 
@@ -2768,7 +2798,15 @@ Seat 0 always holds the row axis, seat 1 the column axis. Fixed, so a pair is bu
 export type AxisPair<T> = readonly [T, T]
 ```
 
-### `transpose`
+### `Orientation` {#src-12-transpose-ts-orientation}
+
+`Orientation` is declared at `src/12_transpose.ts:28`.
+
+```ts
+Orientation: any
+```
+
+### `transpose` {#src-12-transpose-ts-transpose}
 
 `transpose` is declared at `src/12_transpose.ts:36`.
 
@@ -2778,7 +2816,7 @@ Its own inverse, which is what a round trip rests on.
 transpose: (orientation: Orientation) => Orientation
 ```
 
-### `verticalOf`
+### `verticalOf` {#src-12-transpose-ts-verticalof}
 
 `verticalOf` is declared at `src/12_transpose.ts:39`.
 
@@ -2788,7 +2826,7 @@ Picks the seat standing on the y dimension. The vertical run is the one that scr
 verticalOf: <T>(pair: AxisPair<T>, orientation: Orientation) => T
 ```
 
-### `horizontalOf`
+### `horizontalOf` {#src-12-transpose-ts-horizontalof}
 
 `horizontalOf` is declared at `src/12_transpose.ts:43`.
 
@@ -2798,7 +2836,7 @@ Picks the other seat. Always the complement, so the two can never name the same 
 horizontalOf: <T>(pair: AxisPair<T>, orientation: Orientation) => T
 ```
 
-### `AxisFacet`
+### `AxisFacet` {#src-12-transpose-ts-axisfacet}
 
 `AxisFacet` is declared at `src/12_transpose.ts:56`.
 
@@ -2818,7 +2856,7 @@ export interface AxisFacet<K extends string, T> {
 }
 ```
 
-### `FacetPair`
+### `FacetPair` {#src-12-transpose-ts-facetpair}
 
 `FacetPair` is declared at `src/12_transpose.ts:68`.
 
@@ -2830,7 +2868,7 @@ row window on every pointermove for a value it did not use.
 export type FacetPair<K extends string, T> = AxisPair<() => AxisFacet<K, T>>
 ```
 
-### `verticalFacet`
+### `verticalFacet` {#src-12-transpose-ts-verticalfacet}
 
 `verticalFacet` is declared at `src/12_transpose.ts:70`.
 
@@ -2838,7 +2876,7 @@ export type FacetPair<K extends string, T> = AxisPair<() => AxisFacet<K, T>>
 verticalFacet: <K extends string, T>(pair: FacetPair<K, T>, orientation: Orientation) => AxisFacet<K, T>
 ```
 
-### `horizontalFacet`
+### `horizontalFacet` {#src-12-transpose-ts-horizontalfacet}
 
 `horizontalFacet` is declared at `src/12_transpose.ts:75`.
 
@@ -2846,7 +2884,7 @@ verticalFacet: <K extends string, T>(pair: FacetPair<K, T>, orientation: Orienta
 horizontalFacet: <K extends string, T>(pair: FacetPair<K, T>, orientation: Orientation) => AxisFacet<K, T>
 ```
 
-### `collapseToOneEntry`
+### `collapseToOneEntry` {#src-12-transpose-ts-collapsetooneentry}
 
 `collapseToOneEntry` is declared at `src/12_transpose.ts:89`.
 
@@ -2860,7 +2898,7 @@ is the leaf, so keeping the group node instead would leave a run whose only entr
 collapseToOneEntry: <K extends string>(nodes: readonly FlatNode<K>[], on: boolean) => readonly FlatNode<K>[]
 ```
 
-### `CellSpan`
+### `CellSpan` {#src-12-transpose-ts-cellspan}
 
 `CellSpan` is declared at `src/12_transpose.ts:106`.
 
@@ -2874,7 +2912,7 @@ export interface CellSpan {
 }
 ```
 
-### `SpanRelation`
+### `SpanRelation` {#src-12-transpose-ts-spanrelation}
 
 `SpanRelation` is declared at `src/12_transpose.ts:116`.
 
@@ -2884,9 +2922,11 @@ and no consumer has to know a column ever had an opinion about it.
 
 ```ts
 export type SpanRelation = ReadonlyMap<CellId, CellSpan>
+
+export function transposeSpans(spans: SpanRelation): SpanRelation
 ```
 
-### `NO_SPANS`
+### `NO_SPANS` {#src-12-transpose-ts-no-spans}
 
 `NO_SPANS` is declared at `src/12_transpose.ts:118`.
 
@@ -2894,7 +2934,7 @@ export type SpanRelation = ReadonlyMap<CellId, CellSpan>
 NO_SPANS: SpanRelation
 ```
 
-### `NO_COVER`
+### `NO_COVER` {#src-12-transpose-ts-no-cover}
 
 `NO_COVER` is declared at `src/12_transpose.ts:119`.
 
@@ -2902,7 +2942,7 @@ NO_SPANS: SpanRelation
 NO_COVER: ReadonlySet<string>
 ```
 
-### `neutralSpan`
+### `neutralSpan` {#src-12-transpose-ts-neutralspan}
 
 `neutralSpan` is declared at `src/12_transpose.ts:128`.
 
@@ -2914,7 +2954,7 @@ kernel never sees the conventional names again.
 neutralSpan: (span: { readonly rows?: number | undefined; readonly cols?: number | undefined; }, orientation: Orientation) => CellSpan
 ```
 
-### `neutralCell`
+### `neutralCell` {#src-12-transpose-ts-neutralcell}
 
 `neutralCell` is declared at `src/12_transpose.ts:137`.
 
@@ -2924,7 +2964,7 @@ The same crossing for the address. `cellId` is already a tuple, so only the seat
 neutralCell: (row: string, col: string, orientation: Orientation) => string
 ```
 
-### `conventionalParts`
+### `conventionalParts` {#src-12-transpose-ts-conventionalparts}
 
 `conventionalParts` is declared at `src/12_transpose.ts:150`.
 
@@ -2939,7 +2979,7 @@ as sending it the other way took it out of one.
 conventionalParts: (vertical: string, horizontal: string, orientation: Orientation) => readonly [string, string]
 ```
 
-### `NO_ENTRY`
+### `NO_ENTRY` {#src-12-transpose-ts-no-entry}
 
 `NO_ENTRY` is declared at `src/12_transpose.ts:160`.
 
@@ -2949,7 +2989,7 @@ The empty half of a one-axis address, which the header band stands on. No axis h
 NO_ENTRY: ""
 ```
 
-### `AddressedEntry`
+### `AddressedEntry` {#src-12-transpose-ts-addressedentry}
 
 `AddressedEntry` is declared at `src/12_transpose.ts:164`.
 
@@ -2965,7 +3005,7 @@ export interface AddressedEntry<TCol, TRow> {
 }
 ```
 
-### `addressedEntry`
+### `addressedEntry` {#src-12-transpose-ts-addressedentry-2}
 
 `addressedEntry` is declared at `src/12_transpose.ts:173`.
 
@@ -2976,7 +3016,7 @@ the seat table once rather than once per caller. A second copy is a second code 
 addressedEntry: <TCol, TRow>(vertical: string, horizontal: string, orientation: Orientation, defs: ReadonlyMap<string, TCol>, by: ReadonlyMap<string, TRow>) => AddressedEntry<...>
 ```
 
-### `transposeSpans`
+### `transposeSpans` {#src-12-transpose-ts-transposespans}
 
 `transposeSpans` is declared at `src/12_transpose.ts:190`.
 
@@ -2986,7 +3026,7 @@ Swaps both halves of every entry. Applied twice it is the identity, which is the
 transposeSpans: (spans: SpanRelation) => SpanRelation
 ```
 
-### `coveredBy`
+### `coveredBy` {#src-12-transpose-ts-coveredby}
 
 `coveredBy` is declared at `src/12_transpose.ts:209`.
 
@@ -3006,17 +3046,17 @@ One cell, several source columns.
 
 | export | kind |
 | --- | --- |
-| [`CompositeRank`](#compositerank) | type |
-| [`CompositePart`](#compositepart) | interface |
-| [`ColumnSource`](#columnsource) | type |
-| [`COMPOSITE_PREFIX`](#composite-prefix) | const |
-| [`CompositeColumnDef`](#compositecolumndef) | interface |
-| [`isComposite`](#iscomposite) | const |
-| [`compositeParts`](#compositeparts) | function |
-| [`CompositeColumnOptions`](#compositecolumnoptions) | interface |
-| [`compositeColumn`](#compositecolumn) | function |
+| [`CompositeRank`](#src-13-composite-ts-compositerank) | type |
+| [`CompositePart`](#src-13-composite-ts-compositepart) | interface |
+| [`ColumnSource`](#src-13-composite-ts-columnsource) | type |
+| [`COMPOSITE_PREFIX`](#src-13-composite-ts-composite-prefix) | const |
+| [`CompositeColumnDef`](#src-13-composite-ts-compositecolumndef) | interface |
+| [`isComposite`](#src-13-composite-ts-iscomposite) | const |
+| [`compositeParts`](#src-13-composite-ts-compositeparts) | function |
+| [`CompositeColumnOptions`](#src-13-composite-ts-compositecolumnoptions) | interface |
+| [`compositeColumn`](#src-13-composite-ts-compositecolumn) | function |
 
-### `CompositeRank`
+### `CompositeRank` {#src-13-composite-ts-compositerank}
 
 `CompositeRank` is declared at `src/13_composite.ts:14`.
 
@@ -3026,7 +3066,7 @@ Presentation weight, not order: reordering `parts` carries the ranks with them.
 export type CompositeRank = "primary" | "secondary" | "tertiary"
 ```
 
-### `CompositePart`
+### `CompositePart` {#src-13-composite-ts-compositepart}
 
 `CompositePart` is declared at `src/13_composite.ts:16`.
 
@@ -3037,7 +3077,7 @@ export interface CompositePart {
 }
 ```
 
-### `ColumnSource`
+### `ColumnSource` {#src-13-composite-ts-columnsource}
 
 `ColumnSource` is declared at `src/13_composite.ts:30`.
 
@@ -3047,7 +3087,7 @@ A thunk too, because a composite is usually built in the same expression as its 
 export type ColumnSource<TRow> =
 ```
 
-### `COMPOSITE_PREFIX`
+### `COMPOSITE_PREFIX` {#src-13-composite-ts-composite-prefix}
 
 `COMPOSITE_PREFIX` is declared at `src/13_composite.ts:45`.
 
@@ -3057,7 +3097,7 @@ Ids are user strings, so the generated one is namespaced the way the built-ins a
 COMPOSITE_PREFIX: "__composite:"
 ```
 
-### `CompositeColumnDef`
+### `CompositeColumnDef` {#src-13-composite-ts-compositecolumndef}
 
 `CompositeColumnDef` is declared at `src/13_composite.ts:47`.
 
@@ -3065,9 +3105,11 @@ COMPOSITE_PREFIX: "__composite:"
 export interface CompositeColumnDef<TRow> extends ColumnDef<TRow> {
   readonly composite: readonly CompositePart[]
 }
+
+export function compositeColumn<TRow>(opts: CompositeColumnOptions<TRow>): CompositeColumnDef<TRow>
 ```
 
-### `isComposite`
+### `isComposite` {#src-13-composite-ts-iscomposite}
 
 `isComposite` is declared at `src/13_composite.ts:51`.
 
@@ -3075,7 +3117,7 @@ export interface CompositeColumnDef<TRow> extends ColumnDef<TRow> {
 isComposite: <TRow>(col: ColumnDef<TRow, unknown>) => col is CompositeColumnDef<TRow>
 ```
 
-### `compositeParts`
+### `compositeParts` {#src-13-composite-ts-compositeparts}
 
 `compositeParts` is declared at `src/13_composite.ts:56`.
 
@@ -3085,7 +3127,7 @@ A cell stacks several columns as primary, secondary and tertiary parts.
 compositeParts: <TRow>(def: ColumnDef<TRow, unknown>, columns?: ColumnSource<TRow> | undefined) => readonly CompositePart[]
 ```
 
-### `CompositeColumnOptions`
+### `CompositeColumnOptions` {#src-13-composite-ts-compositecolumnoptions}
 
 `CompositeColumnOptions` is declared at `src/13_composite.ts:66`.
 
@@ -3105,9 +3147,11 @@ export interface CompositeColumnOptions<TRow> {
   /** Default true, sorting by the primary part. False makes the composite unsortable. */
   readonly sortable?: boolean
 }
+
+export function compositeColumn<TRow>(opts: CompositeColumnOptions<TRow>): CompositeColumnDef<TRow>
 ```
 
-### `compositeColumn`
+### `compositeColumn` {#src-13-composite-ts-compositecolumn}
 
 `compositeColumn` is declared at `src/13_composite.ts:84`.
 
@@ -3124,16 +3168,16 @@ Real geometry, for the entries whose extent no config can declare.
 
 | export | kind |
 | --- | --- |
-| [`MeasureDirection`](#measuredirection) | type |
-| [`MeasureStore`](#measurestore) | interface |
-| [`MeasureOptions`](#measureoptions) | interface |
-| [`MeasureSnapshot`](#measuresnapshot) | interface |
-| [`snapshotOf`](#snapshotof) | const |
-| [`DEFAULT_BUFFER_PX`](#default-buffer-px) | const |
-| [`createMeasureStore`](#createmeasurestore) | function |
-| [`anchorAdjustment`](#anchoradjustment) | function |
+| [`MeasureDirection`](#src-14-measure-ts-measuredirection) | type |
+| [`MeasureStore`](#src-14-measure-ts-measurestore) | interface |
+| [`MeasureOptions`](#src-14-measure-ts-measureoptions) | interface |
+| [`MeasureSnapshot`](#src-14-measure-ts-measuresnapshot) | interface |
+| [`snapshotOf`](#src-14-measure-ts-snapshotof) | const |
+| [`DEFAULT_BUFFER_PX`](#src-14-measure-ts-default-buffer-px) | const |
+| [`createMeasureStore`](#src-14-measure-ts-createmeasurestore) | function |
+| [`anchorAdjustment`](#src-14-measure-ts-anchoradjustment) | function |
 
-### `MeasureDirection`
+### `MeasureDirection` {#src-14-measure-ts-measuredirection}
 
 `MeasureDirection` is declared at `src/14_measure.ts:13`.
 
@@ -3143,7 +3187,7 @@ Measures rendered extents, with no kernel stage reading them yet.
 export type MeasureDirection = "vertical" | "horizontal"
 ```
 
-### `MeasureStore`
+### `MeasureStore` {#src-14-measure-ts-measurestore}
 
 `MeasureStore` is declared at `src/14_measure.ts:15`.
 
@@ -3161,9 +3205,11 @@ export interface MeasureStore {
   readonly leaving$: Observable<readonly string[]>
   readonly close: () => void
 }
+
+export function createMeasureStore(opts: MeasureOptions): MeasureStore
 ```
 
-### `MeasureOptions`
+### `MeasureOptions` {#src-14-measure-ts-measureoptions}
 
 `MeasureOptions` is declared at `src/14_measure.ts:29`.
 
@@ -3178,9 +3224,11 @@ export interface MeasureOptions {
   readonly root?: Element | null
   readonly bufferPx?: number
 }
+
+export function createMeasureStore(opts: MeasureOptions): MeasureStore
 ```
 
-### `MeasureSnapshot`
+### `MeasureSnapshot` {#src-14-measure-ts-measuresnapshot}
 
 `MeasureSnapshot` is declared at `src/14_measure.ts:41`.
 
@@ -3193,7 +3241,7 @@ export interface MeasureSnapshot {
 }
 ```
 
-### `snapshotOf`
+### `snapshotOf` {#src-14-measure-ts-snapshotof}
 
 `snapshotOf` is declared at `src/14_measure.ts:47`.
 
@@ -3203,7 +3251,7 @@ Copied, because `MeasureStore.extents` is live and a reference comparison would 
 snapshotOf: (store: MeasureStore) => MeasureSnapshot
 ```
 
-### `DEFAULT_BUFFER_PX`
+### `DEFAULT_BUFFER_PX` {#src-14-measure-ts-default-buffer-px}
 
 `DEFAULT_BUFFER_PX` is declared at `src/14_measure.ts:53`.
 
@@ -3213,7 +3261,7 @@ Roughly five standard rows, so a fast scroll still measures before it paints.
 DEFAULT_BUFFER_PX: 200
 ```
 
-### `createMeasureStore`
+### `createMeasureStore` {#src-14-measure-ts-createmeasurestore}
 
 `createMeasureStore` is declared at `src/14_measure.ts:63`.
 
@@ -3221,7 +3269,7 @@ DEFAULT_BUFFER_PX: 200
 createMeasureStore: (opts: MeasureOptions) => MeasureStore
 ```
 
-### `anchorAdjustment`
+### `anchorAdjustment` {#src-14-measure-ts-anchoradjustment}
 
 `anchorAdjustment` is declared at `src/14_measure.ts:161`.
 
@@ -3238,28 +3286,28 @@ A range is two addresses and a mode, never a set of cells, so a drag across a mi
 
 | export | kind |
 | --- | --- |
-| [`SelectionMode`](#selectionmode) | type |
-| [`Block`](#block) | interface |
-| [`GridSelection`](#gridselection) | interface |
-| [`Rect`](#rect) | interface |
-| [`EMPTY_RECT`](#empty-rect) | const |
-| [`EMPTY_RANGE`](#empty-range) | const |
-| [`columnAnchor`](#columnanchor) | const |
-| [`rowAnchor`](#rowanchor) | const |
-| [`rangeOf`](#rangeof) | function |
-| [`liveBlock`](#liveblock) | function |
-| [`blocksOf`](#blocksof) | function |
-| [`isRangeEmpty`](#israngeempty) | const |
-| [`rectOf`](#rectof) | function |
-| [`selectionTest`](#selectiontest) | function |
-| [`isSelected`](#isselected) | function |
-| [`selectedKeys`](#selectedkeys) | function |
-| [`beginAt`](#beginat) | function |
-| [`extendTo`](#extendto) | function |
-| [`commitBlock`](#commitblock) | function |
-| [`clearSelection`](#clearselection) | function |
+| [`SelectionMode`](#src-15-selection-ts-selectionmode) | type |
+| [`Block`](#src-15-selection-ts-block) | interface |
+| [`GridSelection`](#src-15-selection-ts-gridselection) | interface |
+| [`Rect`](#src-15-selection-ts-rect) | interface |
+| [`EMPTY_RECT`](#src-15-selection-ts-empty-rect) | const |
+| [`EMPTY_RANGE`](#src-15-selection-ts-empty-range) | const |
+| [`columnAnchor`](#src-15-selection-ts-columnanchor) | const |
+| [`rowAnchor`](#src-15-selection-ts-rowanchor) | const |
+| [`rangeOf`](#src-15-selection-ts-rangeof) | function |
+| [`liveBlock`](#src-15-selection-ts-liveblock) | function |
+| [`blocksOf`](#src-15-selection-ts-blocksof) | function |
+| [`isRangeEmpty`](#src-15-selection-ts-israngeempty) | const |
+| [`rectOf`](#src-15-selection-ts-rectof) | function |
+| [`selectionTest`](#src-15-selection-ts-selectiontest) | function |
+| [`isSelected`](#src-15-selection-ts-isselected) | function |
+| [`selectedKeys`](#src-15-selection-ts-selectedkeys) | function |
+| [`beginAt`](#src-15-selection-ts-beginat) | function |
+| [`extendTo`](#src-15-selection-ts-extendto) | function |
+| [`commitBlock`](#src-15-selection-ts-commitblock) | function |
+| [`clearSelection`](#src-15-selection-ts-clearselection) | function |
 
-### `SelectionMode`
+### `SelectionMode` {#src-15-selection-ts-selectionmode}
 
 `SelectionMode` is declared at `src/15_selection.ts:9`.
 
@@ -3269,7 +3317,7 @@ A range is two addresses and a mode, never a set of cells, so a drag across a mi
 export type SelectionMode = "cell" | "row" | "column"
 ```
 
-### `Block`
+### `Block` {#src-15-selection-ts-block}
 
 `Block` is declared at `src/15_selection.ts:11`.
 
@@ -3279,9 +3327,11 @@ export interface Block {
   readonly head: CellId
   readonly mode: SelectionMode
 }
+
+export function liveBlock(range: GridSelection): Block | null
 ```
 
-### `GridSelection`
+### `GridSelection` {#src-15-selection-ts-gridselection}
 
 `GridSelection` is declared at `src/15_selection.ts:17`.
 
@@ -3293,9 +3343,11 @@ export interface GridSelection {
   /** Ranges already committed, so ctrl-drag adds a second block rather than replacing the first. */
   readonly blocks: readonly Block[]
 }
+
+export function rangeOf(value: RangeSelection): GridSelection
 ```
 
-### `Rect`
+### `Rect` {#src-15-selection-ts-rect}
 
 `Rect` is declared at `src/15_selection.ts:26`.
 
@@ -3308,7 +3360,7 @@ export interface Rect {
 }
 ```
 
-### `EMPTY_RECT`
+### `EMPTY_RECT` {#src-15-selection-ts-empty-rect}
 
 `EMPTY_RECT` is declared at `src/15_selection.ts:34`.
 
@@ -3316,7 +3368,7 @@ export interface Rect {
 EMPTY_RECT: Rect
 ```
 
-### `EMPTY_RANGE`
+### `EMPTY_RANGE` {#src-15-selection-ts-empty-range}
 
 `EMPTY_RANGE` is declared at `src/15_selection.ts:36`.
 
@@ -3324,7 +3376,7 @@ EMPTY_RECT: Rect
 EMPTY_RANGE: GridSelection
 ```
 
-### `columnAnchor`
+### `columnAnchor` {#src-15-selection-ts-columnanchor}
 
 `columnAnchor` is declared at `src/15_selection.ts:44`.
 
@@ -3334,7 +3386,7 @@ A header names a horizontal entry only, and `rectOf` reads no vertical half for 
 columnAnchor: (horizontal: string) => string
 ```
 
-### `rowAnchor`
+### `rowAnchor` {#src-15-selection-ts-rowanchor}
 
 `rowAnchor` is declared at `src/15_selection.ts:47`.
 
@@ -3344,7 +3396,7 @@ The mirror, for a gutter that names a vertical entry and no column.
 rowAnchor: (vertical: string) => string
 ```
 
-### `rangeOf`
+### `rangeOf` {#src-15-selection-ts-rangeof}
 
 `rangeOf` is declared at `src/15_selection.ts:51`.
 
@@ -3354,7 +3406,7 @@ A rectangular range over two ordered axes, with edges for the border.
 rangeOf: (value: RangeSelection) => GridSelection
 ```
 
-### `liveBlock`
+### `liveBlock` {#src-15-selection-ts-liveblock}
 
 `liveBlock` is declared at `src/15_selection.ts:59`.
 
@@ -3364,7 +3416,7 @@ The pair being dragged. Opened and never extended is one cell, never empty.
 liveBlock: (range: GridSelection) => Block | null
 ```
 
-### `blocksOf`
+### `blocksOf` {#src-15-selection-ts-blocksof}
 
 `blocksOf` is declared at `src/15_selection.ts:66`.
 
@@ -3374,7 +3426,7 @@ Everything the range covers: the live pair first, then what earlier gestures com
 blocksOf: (range: GridSelection) => readonly Block[]
 ```
 
-### `isRangeEmpty`
+### `isRangeEmpty` {#src-15-selection-ts-israngeempty}
 
 `isRangeEmpty` is declared at `src/15_selection.ts:72`.
 
@@ -3382,7 +3434,7 @@ blocksOf: (range: GridSelection) => readonly Block[]
 isRangeEmpty: (range: GridSelection) => boolean
 ```
 
-### `rectOf`
+### `rectOf` {#src-15-selection-ts-rectof}
 
 `rectOf` is declared at `src/15_selection.ts:122`.
 
@@ -3392,7 +3444,7 @@ Both axis orders are handed in, so one call answers for either seating. `ordered
 rectOf: (block: Block, vertical: readonly string[], horizontal: readonly string[]) => Rect
 ```
 
-### `selectionTest`
+### `selectionTest` {#src-15-selection-ts-selectiontest}
 
 `selectionTest` is declared at `src/15_selection.ts:147`.
 
@@ -3402,7 +3454,7 @@ Both axes indexed once, so a renderer pays two map lookups and one comparison pe
 selectionTest: (range: GridSelection, vertical: readonly string[], horizontal: readonly string[]) => (address: string) => boolean
 ```
 
-### `isSelected`
+### `isSelected` {#src-15-selection-ts-isselected}
 
 `isSelected` is declared at `src/15_selection.ts:178`.
 
@@ -3412,7 +3464,7 @@ The live drag plus every committed block, for one address.
 isSelected: (range: GridSelection, vertical: readonly string[], horizontal: readonly string[], address: string) => boolean
 ```
 
-### `selectedKeys`
+### `selectedKeys` {#src-15-selection-ts-selectedkeys}
 
 `selectedKeys` is declared at `src/15_selection.ts:188`.
 
@@ -3422,7 +3474,7 @@ Keys covered along their whole run, which is what a row or a column highlight ne
 selectedKeys: (range: GridSelection, vertical: readonly string[], horizontal: readonly string[]) => Rect
 ```
 
-### `beginAt`
+### `beginAt` {#src-15-selection-ts-beginat}
 
 `beginAt` is declared at `src/15_selection.ts:209`.
 
@@ -3432,7 +3484,7 @@ Additive keeps the earlier blocks. Anchor equal to head is one cell, never an em
 beginAt: (range: GridSelection, cell: string, mode: SelectionMode, additive: boolean) => GridSelection
 ```
 
-### `extendTo`
+### `extendTo` {#src-15-selection-ts-extendto}
 
 `extendTo` is declared at `src/15_selection.ts:219`.
 
@@ -3442,7 +3494,7 @@ A range with no anchor takes the head as both, so an extend can open a block.
 extendTo: (range: GridSelection, head: string) => GridSelection
 ```
 
-### `commitBlock`
+### `commitBlock` {#src-15-selection-ts-commitblock}
 
 `commitBlock` is declared at `src/15_selection.ts:224`.
 
@@ -3452,7 +3504,7 @@ The pair stays live for a following shift-click and joins `blocks` for a followi
 commitBlock: (range: GridSelection) => GridSelection
 ```
 
-### `clearSelection`
+### `clearSelection` {#src-15-selection-ts-clearselection}
 
 `clearSelection` is declared at `src/15_selection.ts:232`.
 
@@ -3468,13 +3520,13 @@ A context menu is UI every application wants to own: its own items, its own icon
 
 | export | kind |
 | --- | --- |
-| [`isMenuIntent`](#ismenuintent) | const |
-| [`MenuTarget`](#menutarget) | interface |
-| [`menuTargetOf`](#menutargetof) | function |
-| [`supportsAnchorPositioning`](#supportsanchorpositioning) | function |
-| [`anchorTo`](#anchorto) | function |
+| [`isMenuIntent`](#src-16-menu-ts-ismenuintent) | const |
+| [`MenuTarget`](#src-16-menu-ts-menutarget) | interface |
+| [`menuTargetOf`](#src-16-menu-ts-menutargetof) | function |
+| [`supportsAnchorPositioning`](#src-16-menu-ts-supportsanchorpositioning) | function |
+| [`anchorTo`](#src-16-menu-ts-anchorto) | function |
 
-### `isMenuIntent`
+### `isMenuIntent` {#src-16-menu-ts-ismenuintent}
 
 `isMenuIntent` is declared at `src/16_menu.ts:28`.
 
@@ -3484,7 +3536,7 @@ A context menu anchored to the cell it was raised on.
 isMenuIntent: (intent: GridIntent) => intent is { phase: "intent"; type: "cell.contextmenu"; row: string; col: string; x: number; y: number; mods: Modifiers; } | { phase: "intent"; type: "header.contextmenu"; col: string; x: number; y: number; mods: Modifiers; } | { ...; }
 ```
 
-### `MenuTarget`
+### `MenuTarget` {#src-16-menu-ts-menutarget}
 
 `MenuTarget` is declared at `src/16_menu.ts:35`.
 
@@ -3500,9 +3552,11 @@ export interface MenuTarget {
   /** A unique `anchor-name` written onto that element, for CSS anchor positioning. */
   readonly anchorName: string
 }
+
+export function anchorTo(target: MenuTarget, popover: HTMLElement): () => void
 ```
 
-### `menuTargetOf`
+### `menuTargetOf` {#src-16-menu-ts-menutargetof}
 
 `menuTargetOf` is declared at `src/16_menu.ts:94`.
 
@@ -3513,7 +3567,7 @@ left the DOM, which is a menu that does not open rather than one that opens at t
 menuTargetOf: (intent: GridIntent, root: HTMLElement, orientation: Orientation) => MenuTarget | null
 ```
 
-### `supportsAnchorPositioning`
+### `supportsAnchorPositioning` {#src-16-menu-ts-supportsanchorpositioning}
 
 `supportsAnchorPositioning` is declared at `src/16_menu.ts:178`.
 
@@ -3524,7 +3578,7 @@ throwing. Both properties are asked for: the name without the placement half ren
 supportsAnchorPositioning: () => boolean
 ```
 
-### `anchorTo`
+### `anchorTo` {#src-16-menu-ts-anchorto}
 
 `anchorTo` is declared at `src/16_menu.ts:191`.
 
@@ -3541,18 +3595,18 @@ The header band: the rows above the leaves, each cell covering the leaves of one
 
 | export | kind |
 | --- | --- |
-| [`ColumnGroupDef`](#columngroupdef) | interface |
-| [`isHeaderGroup`](#isheadergroup) | const |
-| [`HeaderGroupOptions`](#headergroupoptions) | interface |
-| [`headerGroup`](#headergroup) | function |
-| [`checkBands`](#checkbands) | function |
-| [`SG_HEAD_ROWS`](#sg-head-rows) | const |
-| [`BandCell`](#bandcell) | interface |
-| [`bandAncestors`](#bandancestors) | function |
-| [`bandDepth`](#banddepth) | function |
-| [`bandRow`](#bandrow) | function |
+| [`ColumnGroupDef`](#src-18-bands-ts-columngroupdef) | interface |
+| [`isHeaderGroup`](#src-18-bands-ts-isheadergroup) | const |
+| [`HeaderGroupOptions`](#src-18-bands-ts-headergroupoptions) | interface |
+| [`headerGroup`](#src-18-bands-ts-headergroup) | function |
+| [`checkBands`](#src-18-bands-ts-checkbands) | function |
+| [`SG_HEAD_ROWS`](#src-18-bands-ts-sg-head-rows) | const |
+| [`BandCell`](#src-18-bands-ts-bandcell) | interface |
+| [`bandAncestors`](#src-18-bands-ts-bandancestors) | function |
+| [`bandDepth`](#src-18-bands-ts-banddepth) | function |
+| [`bandRow`](#src-18-bands-ts-bandrow) | function |
 
-### `ColumnGroupDef`
+### `ColumnGroupDef` {#src-18-bands-ts-columngroupdef}
 
 `ColumnGroupDef` is declared at `src/18_bands.ts:22`.
 
@@ -3563,9 +3617,11 @@ the field a leaf labels itself with, so the one string a band owns needs no seco
 export interface ColumnGroupDef<TRow> extends ColumnDef<TRow> {
   readonly band: true
 }
+
+export function headerGroup<TRow>(opts: HeaderGroupOptions): ColumnGroupDef<TRow>
 ```
 
-### `isHeaderGroup`
+### `isHeaderGroup` {#src-18-bands-ts-isheadergroup}
 
 `isHeaderGroup` is declared at `src/18_bands.ts:28`.
 
@@ -3576,7 +3632,7 @@ carries no marker, so nothing below has to ask which axis it is looking at.
 isHeaderGroup: (value: unknown) => boolean
 ```
 
-### `HeaderGroupOptions`
+### `HeaderGroupOptions` {#src-18-bands-ts-headergroupoptions}
 
 `HeaderGroupOptions` is declared at `src/18_bands.ts:31`.
 
@@ -3587,9 +3643,11 @@ export interface HeaderGroupOptions {
   /** A band nests by naming its own parent, through the field a leaf names one with. */
   readonly group?: ColId
 }
+
+export function headerGroup<TRow>(opts: HeaderGroupOptions): ColumnGroupDef<TRow>
 ```
 
-### `headerGroup`
+### `headerGroup` {#src-18-bands-ts-headergroup}
 
 `headerGroup` is declared at `src/18_bands.ts:58`.
 
@@ -3597,7 +3655,7 @@ export interface HeaderGroupOptions {
 headerGroup: <TRow>(opts: HeaderGroupOptions) => ColumnGroupDef<TRow>
 ```
 
-### `checkBands`
+### `checkBands` {#src-18-bands-ts-checkbands}
 
 `checkBands` is declared at `src/18_bands.ts:76`.
 
@@ -3608,7 +3666,7 @@ list counts leaves, so it is rejected beside the `field` and `value` check in `8
 checkBands: <TRow>(columns: readonly ColumnDef<TRow, unknown>[]) => void
 ```
 
-### `SG_HEAD_ROWS`
+### `SG_HEAD_ROWS` {#src-18-bands-ts-sg-head-rows}
 
 `SG_HEAD_ROWS` is declared at `src/18_bands.ts:96`.
 
@@ -3619,7 +3677,7 @@ is the schema's band depth and no stylesheet selector can count elements.
 SG_HEAD_ROWS: "--sg-head-rows"
 ```
 
-### `BandCell`
+### `BandCell` {#src-18-bands-ts-bandcell}
 
 `BandCell` is declared at `src/18_bands.ts:99`.
 
@@ -3633,7 +3691,7 @@ export interface BandCell {
 }
 ```
 
-### `bandAncestors`
+### `bandAncestors` {#src-18-bands-ts-bandancestors}
 
 `bandAncestors` is declared at `src/18_bands.ts:107`.
 
@@ -3644,7 +3702,7 @@ The bands over one entry, outermost first. The marker filter decides the depth a
 bandAncestors: (axis: Axis<string, unknown>, key: string) => readonly string[]
 ```
 
-### `bandDepth`
+### `bandDepth` {#src-18-bands-ts-banddepth}
 
 `bandDepth` is declared at `src/18_bands.ts:117`.
 
@@ -3655,7 +3713,7 @@ the window, so a horizontal scroll cannot change the header's height under the r
 bandDepth: (axis: Axis<string, unknown>, leaves: readonly string[]) => number
 ```
 
-### `bandRow`
+### `bandRow` {#src-18-bands-ts-bandrow}
 
 `bandRow` is declared at `src/18_bands.ts:125`.
 

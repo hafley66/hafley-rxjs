@@ -1,0 +1,468 @@
+{
+  "schema": 1,
+  "generatedBy": "packages/signals/scripts/stats.mjs",
+  "commit": {
+    "method": "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain excluding this step's own outputs, git rev-parse --abbrev-ref HEAD",
+    "hash": "21f3c36fc9c3171cf7536d9119f7372801b9999a",
+    "short": "21f3c36",
+    "subject": "docs-kit: the api reference is read out of the compiler, not typed",
+    "authorDate": "2026-09-10T22:51:05-04:00",
+    "branch": "feature/docs-kit",
+    "clean": false,
+    "dirtyCount": 14,
+    "dirtyEntries": [
+      "M packages/docs-kit/package.json",
+      " M packages/docs-kit/scripts/api.mjs",
+      " M packages/signal-grid/docs/reference-api.md",
+      " M packages/signal-grid/site/parity.json",
+      " M packages/signal-grid/site/stats.json",
+      " M packages/signals/README.md",
+      " M packages/signals/package.json",
+      " M pages/manifest.ts",
+      " M pnpm-lock.yaml",
+      "?? packages/signals/docs/",
+      "?? packages/signals/examples/",
+      "?? packages/signals/out/",
+      "?? packages/signals/scripts/",
+      "?? packages/signals/site/"
+    ],
+    "repository": "hafley66/hafley-rxjs",
+    "url": "https://github.com/hafley66/hafley-rxjs/commit/21f3c36fc9c3171cf7536d9119f7372801b9999a",
+    "reason": null
+  },
+  "machine": {
+    "method": "process.version, process.platform, process.arch, node:os cpus() and totalmem(), Date at run time",
+    "node": "v24.15.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M2 Pro",
+    "cores": 12,
+    "totalMemoryBytes": 17179869184,
+    "builtAt": "2026-09-11T03:05:07.507Z"
+  },
+  "package": {
+    "name": "@hafley66/signals",
+    "version": "0.1.1"
+  },
+  "bundle": {
+    "method": "statSync().size summed for raw bytes and zlib.gzipSync(readFileSync(file)).length summed for gzip, over every file in the directory; totals and a file count only, because a per-file listing of a build output answers nothing",
+    "library": {
+      "fileCount": 82,
+      "totalBytes": 183636,
+      "totalGzipBytes": 63837,
+      "reason": null
+    },
+    "siteMethod": "the same statSync and gzipSync pass, run after the site build and before the rebuild that ships this file; the shipped assets differ from these figures by the bytes this table adds to stats.json",
+    "site": {
+      "fileCount": 153,
+      "totalBytes": 6188592,
+      "totalGzipBytes": 2286066,
+      "reason": null
+    },
+    "demo": {
+      "fileCount": null,
+      "totalBytes": null,
+      "totalGzipBytes": null,
+      "reason": "site/dist/demo/assets does not exist; the demo has not been built in this run"
+    },
+    "videos": {
+      "fileCount": null,
+      "totalBytes": null,
+      "totalGzipBytes": null,
+      "reason": "site/dist/videos holds no recordings"
+    },
+    "treemap": {
+      "method": "rollup-plugin-visualizer is not wired into this package's vite config, so no treemap is produced",
+      "envFlag": "SIGNALS_TREEMAP=1",
+      "command": "not available",
+      "file": "out/treemap.html",
+      "bytes": null,
+      "reason": "out/treemap.html is absent; the last build ran without SIGNALS_TREEMAP=1"
+    }
+  },
+  "sizeLimit": {
+    "method": null,
+    "config": ".size-limit.json",
+    "entries": null,
+    "passed": null,
+    "durationMs": null,
+    "reason": ".size-limit.json is absent, so there are no budgets to run"
+  },
+  "source": {
+    "method": "readFileSync over src/*.{ts,css}, lines counted as \\n occurrences; a name containing .test. is a test file",
+    "files": [
+      {
+        "file": "src/1_SignalCreator.ts",
+        "lines": 628,
+        "kind": "source"
+      },
+      {
+        "file": "src/4_Query.test.ts",
+        "lines": 373,
+        "kind": "test"
+      },
+      {
+        "file": "src/4_Query.ts",
+        "lines": 287,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_types.ts",
+        "lines": 216,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_Signal.memo.test.ts",
+        "lines": 211,
+        "kind": "test"
+      },
+      {
+        "file": "src/4_assumptions.test.ts",
+        "lines": 195,
+        "kind": "test"
+      },
+      {
+        "file": "src/7_signalMap.test.ts",
+        "lines": 166,
+        "kind": "test"
+      },
+      {
+        "file": "src/0_ProxyTree.test.ts",
+        "lines": 165,
+        "kind": "test"
+      },
+      {
+        "file": "src/0_ProxyTree.ts",
+        "lines": 163,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_Signal.overloads.test.ts",
+        "lines": 162,
+        "kind": "test"
+      },
+      {
+        "file": "src/0_ProxyTreeThin.ts",
+        "lines": 154,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_ProxyTreeThin.test.ts",
+        "lines": 148,
+        "kind": "test"
+      },
+      {
+        "file": "src/0_ProxyTree.large-memory.ts",
+        "lines": 146,
+        "kind": "source"
+      },
+      {
+        "file": "src/6_Storage.ts",
+        "lines": 136,
+        "kind": "source"
+      },
+      {
+        "file": "src/3_react.ts",
+        "lines": 127,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_types.test.ts",
+        "lines": 124,
+        "kind": "test"
+      },
+      {
+        "file": "src/6_Storage.test.ts",
+        "lines": 111,
+        "kind": "test"
+      },
+      {
+        "file": "src/10_slice.test.ts",
+        "lines": 104,
+        "kind": "test"
+      },
+      {
+        "file": "src/2_Signal.ts",
+        "lines": 93,
+        "kind": "source"
+      },
+      {
+        "file": "src/7_signalMap.ts",
+        "lines": 89,
+        "kind": "source"
+      },
+      {
+        "file": "src/3_Endpoint.ts",
+        "lines": 87,
+        "kind": "source"
+      },
+      {
+        "file": "src/4_jsxAuto.render.test.ts",
+        "lines": 87,
+        "kind": "test"
+      },
+      {
+        "file": "src/11_pipe.test.ts",
+        "lines": 86,
+        "kind": "test"
+      },
+      {
+        "file": "src/5_Route.ts",
+        "lines": 75,
+        "kind": "source"
+      },
+      {
+        "file": "src/10_slice.ts",
+        "lines": 66,
+        "kind": "source"
+      },
+      {
+        "file": "src/1_SignalCreator.bench.ts",
+        "lines": 66,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_log.ts",
+        "lines": 54,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_ProxyTree.memory.ts",
+        "lines": 36,
+        "kind": "source"
+      },
+      {
+        "file": "src/9_history.ts",
+        "lines": 33,
+        "kind": "source"
+      },
+      {
+        "file": "src/8_sync.ts",
+        "lines": 32,
+        "kind": "source"
+      },
+      {
+        "file": "src/10_slice.bench.ts",
+        "lines": 28,
+        "kind": "source"
+      },
+      {
+        "file": "src/index.ts",
+        "lines": 23,
+        "kind": "source"
+      },
+      {
+        "file": "src/4_jsxAuto.test.ts",
+        "lines": 20,
+        "kind": "test"
+      },
+      {
+        "file": "src/5_Route.test.ts",
+        "lines": 20,
+        "kind": "test"
+      },
+      {
+        "file": "src/vite-plugin.ts",
+        "lines": 18,
+        "kind": "source"
+      },
+      {
+        "file": "src/4_jsxAuto.ts",
+        "lines": 17,
+        "kind": "source"
+      },
+      {
+        "file": "src/jsx-runtime.ts",
+        "lines": 10,
+        "kind": "source"
+      },
+      {
+        "file": "src/jsx-dev-runtime.ts",
+        "lines": 8,
+        "kind": "source"
+      }
+    ],
+    "sourceFiles": 24,
+    "sourceLines": 2592,
+    "testFiles": 14,
+    "testLines": 1972
+  },
+  "tests": {
+    "method": "vitest run --reporter=json --outputFile=..., counts read from numTotalTests / numTotalTestSuites / numPassedTests / numFailedTests",
+    "unit": {
+      "label": "unit",
+      "command": "vitest run",
+      "tests": 118,
+      "files": 41,
+      "passed": 118,
+      "failed": 0,
+      "durationMs": 1383,
+      "success": true,
+      "reason": null
+    },
+    "browser": {
+      "label": "browser",
+      "command": "vitest run --config vitest.browser.config.ts",
+      "tests": null,
+      "files": 0,
+      "passed": null,
+      "failed": null,
+      "durationMs": null,
+      "reason": "vitest.browser.config.ts includes files matching .browser.test. and no file in src/ matches, so no browser suite was run"
+    }
+  },
+  "timing": {
+    "method": "Date.now() around each execFileSync call in scripts/stats.mjs; the site build time is handed over by scripts/ship.mjs",
+    "typecheckMs": 255,
+    "typecheckReason": null,
+    "libraryBuildMs": 1395,
+    "libraryBuildReason": null,
+    "unitTestsMs": 1383,
+    "browserTestsMs": null,
+    "siteBuildMs": 3107,
+    "demoBuildMs": null,
+    "statsMs": 3261
+  },
+  "demoMemory": {
+    "method": "Playwright over CDP: HeapProfiler.enable, then per example per repeat, HeapProfiler.collectGarbage, Performance.getMetrics JSHeapUsedSize as the baseline, mount, 3 samples 50 ms apart taking the largest as the peak, teardown, two collectGarbage calls, one more JSHeapUsedSize as retained. Every example is mounted and torn down twice by the leak pass before any of this runs, so a page-lifetime allocation is already made. 3 repeats per example, reported as the median with the spread across those repeats beside it. An example retaining more than 524288 bytes over its own baseline is named as a leak. Every example here holds a handful of DOM nodes and a few subscriptions, so a peak near 0.5 MB is the measurement floor rather than a figure about the example. What the numbers are good for is the retained column: a signal whose subscription outlived its teardown shows there.",
+    "command": "node scripts/examples.mjs",
+    "samples": 3,
+    "leakBytes": 524288,
+    "measuredAt": "2026-09-11T03:05:16.100Z",
+    "examples": [
+      {
+        "id": "state-counter",
+        "repeats": 3,
+        "baselineHeapBytes": 6111824,
+        "peakHeapBytes": 78584,
+        "peakSpreadBytes": 5644,
+        "retainedHeapBytes": 5696,
+        "retainedSpreadBytes": 5868,
+        "nodesAfterTeardown": 0,
+        "painted": 2,
+        "leaks": false,
+        "reason": null
+      },
+      {
+        "id": "nested-paths",
+        "repeats": 3,
+        "baselineHeapBytes": 6131540,
+        "peakHeapBytes": 195416,
+        "peakSpreadBytes": 8168,
+        "retainedHeapBytes": 7372,
+        "retainedSpreadBytes": 5136,
+        "nodesAfterTeardown": 0,
+        "painted": 4,
+        "leaks": false,
+        "reason": null
+      },
+      {
+        "id": "source-observable",
+        "repeats": 3,
+        "baselineHeapBytes": 6139248,
+        "peakHeapBytes": 155748,
+        "peakSpreadBytes": 156,
+        "retainedHeapBytes": 0,
+        "retainedSpreadBytes": 5884,
+        "nodesAfterTeardown": 0,
+        "painted": 2,
+        "leaks": false,
+        "reason": null
+      },
+      {
+        "id": "computed-thunk",
+        "repeats": 3,
+        "baselineHeapBytes": 6151000,
+        "peakHeapBytes": 133660,
+        "peakSpreadBytes": 7220,
+        "retainedHeapBytes": 8904,
+        "retainedSpreadBytes": 11536,
+        "nodesAfterTeardown": 0,
+        "painted": 2,
+        "leaks": false,
+        "reason": null
+      },
+      {
+        "id": "event-bus",
+        "repeats": 3,
+        "baselineHeapBytes": 6161604,
+        "peakHeapBytes": 62584,
+        "peakSpreadBytes": 1560,
+        "retainedHeapBytes": 0,
+        "retainedSpreadBytes": 1484,
+        "nodesAfterTeardown": 0,
+        "painted": 3,
+        "leaks": false,
+        "reason": null
+      },
+      {
+        "id": "pipe-signal",
+        "repeats": 3,
+        "baselineHeapBytes": 6172460,
+        "peakHeapBytes": 162232,
+        "peakSpreadBytes": 6352,
+        "retainedHeapBytes": 9160,
+        "retainedSpreadBytes": 2504,
+        "nodesAfterTeardown": 0,
+        "painted": 3,
+        "leaks": false,
+        "reason": null
+      },
+      {
+        "id": "signal-map",
+        "repeats": 3,
+        "baselineHeapBytes": 6188560,
+        "peakHeapBytes": 62672,
+        "peakSpreadBytes": 144,
+        "retainedHeapBytes": 152,
+        "retainedSpreadBytes": 1780,
+        "nodesAfterTeardown": 0,
+        "painted": 2,
+        "leaks": false,
+        "reason": null
+      },
+      {
+        "id": "storage-signal",
+        "repeats": 3,
+        "baselineHeapBytes": 6192744,
+        "peakHeapBytes": 157820,
+        "peakSpreadBytes": 116,
+        "retainedHeapBytes": 3968,
+        "retainedSpreadBytes": 104,
+        "nodesAfterTeardown": 0,
+        "painted": 2,
+        "leaks": false,
+        "reason": null
+      },
+      {
+        "id": "route-signal",
+        "repeats": 3,
+        "baselineHeapBytes": 6200828,
+        "peakHeapBytes": 120188,
+        "peakSpreadBytes": 24912,
+        "retainedHeapBytes": 1292,
+        "retainedSpreadBytes": 24888,
+        "nodesAfterTeardown": 0,
+        "painted": 4,
+        "leaks": false,
+        "reason": null
+      },
+      {
+        "id": "slice-epics",
+        "repeats": 3,
+        "baselineHeapBytes": 6230500,
+        "peakHeapBytes": 187724,
+        "peakSpreadBytes": 3484,
+        "retainedHeapBytes": 36,
+        "retainedSpreadBytes": 3304,
+        "nodesAfterTeardown": 0,
+        "painted": 3,
+        "leaks": false,
+        "reason": null
+      }
+    ],
+    "retaining": [],
+    "durationMs": 8594,
+    "reason": null
+  }
+}

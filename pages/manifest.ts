@@ -59,6 +59,14 @@ export const SITES: readonly PageSite[] = [
     build: "pnpm --filter @hafley66/signal-grid ship",
     dist: "packages/signal-grid/site/dist",
   },
+  {
+    slug: "signals",
+    title: "signals",
+    blurb: "RxJS-native reactive signals: one constructor, four forms, proxy-based nested access, no value and onChange pair.",
+    pkg: "@hafley66/signals",
+    build: "pnpm --filter @hafley66/signals ship",
+    dist: "packages/signals/site/dist",
+  },
 ]
 
 /** The site that owns a hash path, or undefined when the root should render the hub. */
