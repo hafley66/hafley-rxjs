@@ -1,8 +1,9 @@
 // Supplying `subRows` is the whole of tree mode: the same call that renders a flat list renders a
 // forest, because both are one `Axis`. The expander box is drawn by the renderer ahead of the
 // first cell run, so no column is needed to make a row openable.
-import { grid, render, type ColumnDef } from "../src/index.js"
+import { grid, render, type ColumnDef, type Grid } from "../src/index.js"
 import source from "./3_tree_expand.ts?raw"
+import { reactMount } from "./0_react.js"
 import type { Example } from "./0_types.js"
 
 interface Node {
@@ -31,6 +32,18 @@ const COLUMNS: readonly ColumnDef<Node>[] = [
   { id: "size", header: "Size", width: 110 },
 ]
 
+// One factory and one seed for both renderings. The expander is a glyph carrying `expandAttrs()` in
+// either panel, so what opens a branch is the same epic reading the same `expanded` record.
+const open = (): Grid<Node> =>
+  grid<Node>({
+    id: "tree-expand",
+    rows: TREE,
+    columns: COLUMNS,
+    rowId: (row) => row.id,
+    subRows: (row) => row.children,
+    state: { expanded: { dir0: true, "dir0-s0": true } },
+  })
+
 export const treeExpand: Example = {
   id: "tree-expand",
   title: "Tree data with expand",
@@ -41,14 +54,7 @@ export const treeExpand: Example = {
     const root = document.createElement("div")
     root.style.blockSize = "340px"
     host.append(root)
-    const g = grid<Node>({
-      id: "tree-expand",
-      rows: TREE,
-      columns: COLUMNS,
-      rowId: (row) => row.id,
-      subRows: (row) => row.children,
-      state: { expanded: { dir0: true, "dir0-s0": true } },
-    })
+    const g = open()
     const handle = render(g, root)
     return () => {
       handle.stop()
@@ -56,4 +62,5 @@ export const treeExpand: Example = {
       root.remove()
     }
   },
+  alternate: { label: "React", mount: reactMount(open, 340) },
 }

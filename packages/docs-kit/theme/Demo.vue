@@ -19,6 +19,7 @@ const example = host?.byId(props.id)
 const stage = ref<HTMLElement | null>(null)
 const editorHost = ref<HTMLElement | null>(null)
 const tab = ref<"preview" | "edit">("preview")
+const renderer = ref<"dom" | "alternate">("dom")
 const error = ref<string | null>(null)
 const overBudget = ref<number | null>(null)
 const edited = ref(false)
@@ -49,9 +50,12 @@ const teardown = (): void => {
   sandbox = null
 }
 
+// An edit can delete the second rendering the strip is currently on, and the fallback is what keeps
+// that keystroke from leaving a blank stage until the reader notices the button.
 function mountExample(into: HTMLElement, subject: Example): () => void {
   meters?.reset()
-  return subject.mount(into)
+  const chosen = renderer.value === "alternate" ? subject.alternate : undefined
+  return (chosen ?? subject).mount(into)
 }
 
 function transpile(source: string): { code: string } | { error: string } {
@@ -109,6 +113,15 @@ const runFromEditor = (): void => {
 const runNow = (): void => {
   overBudget.value = null
   runFromEditor()
+}
+
+// The editor's text survives the switch, so a reader who changed a column and then asked for the
+// other renderer sees their own change drawn twice rather than the committed file drawn twice.
+const pick = (next: "dom" | "alternate"): void => {
+  if (renderer.value === next) return
+  renderer.value = next
+  if (edited.value) runFromEditor()
+  else runOriginal()
 }
 
 // A half-typed line fails to parse, so what is on screen keeps running until the next edit parses.
@@ -194,6 +207,13 @@ onUnmounted(() => {
         no timings recorded
       </span>
       <span class="demo-fps">fps {{ fps }}</span>
+    </div>
+
+    <div v-if="example.alternate" class="demo-tabs">
+      <button type="button" :aria-pressed="renderer === 'dom'" @click="pick('dom')">DOM</button>
+      <button type="button" :aria-pressed="renderer === 'alternate'" @click="pick('alternate')">
+        {{ example.alternate.label }}
+      </button>
     </div>
 
     <div class="demo-tabs">
