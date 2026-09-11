@@ -16,14 +16,14 @@ and uncontrolled come from.
 // one object
 g.state.sort.$()
 g.state.sort.$([{ field: "name", sort: "asc" }])
-runWhenInView(g.state.sort.$, handle)
+runWhenInView(g.state.sort.$.pipe(tap(handle)))
 ```
 
 | you want | you do |
 | --- | --- |
 | the current value | `g.state.sort.$()` |
 | to write it | `g.state.sort.$(model)` |
-| to observe it | `runWhenInView(g.state.sort.$, handle)` |
+| to observe it | `runWhenInView(g.state.sort.$.pipe(tap(handle)))` |
 | to own it entirely | hand your own signal in as `config.state` |
 | to persist it | `sync`, which round-trips the whole state through the url |
 

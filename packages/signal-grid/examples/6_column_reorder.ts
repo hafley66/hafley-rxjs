@@ -1,7 +1,7 @@
 // The renderer mounts no drag grip of its own, so the header slot supplies one carrying
 // `moveAttrs()`. Its route chain is `g/h/move`, which is the template `moveColumnOnHeaderDrag`
 // already listens on, so the epic needs no configuration to pick the gesture up.
-import { Subscription } from "rxjs"
+import { Subscription, tap } from "rxjs"
 import { grid, mountInView, moveAttrs, render, runWhenInView } from "../src/index.js"
 import type { ColumnDef, HeaderCtx, Renderable, Slot } from "../src/index.js"
 import source from "./6_column_reorder.ts?raw"
@@ -64,9 +64,9 @@ export const columnReorder: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(runWhenInView(g.view.cols.$, (cols) => {
+    subs.add(runWhenInView(g.view.cols.$.pipe(tap((cols) => {
       readout.textContent = cols.map((node) => node.key).join(" → ")
-    }))
+    }))))
     return () => {
       subs.unsubscribe()
       handle.stop()

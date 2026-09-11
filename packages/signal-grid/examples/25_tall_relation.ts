@@ -1,6 +1,6 @@
 // The rows are built inside `mount` rather than at module scope, so teardown releases the heap they
 // take and the receipts page can report a retained figure that means something.
-import { interval, Subscription } from "rxjs"
+import { interval, Subscription, tap } from "rxjs"
 import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./25_tall_relation.ts?raw"
 import type { Example } from "./0_types.js"
@@ -56,17 +56,17 @@ export const tallRelation: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(runWhenInView(g.view.plan.$, (it) => {
+    subs.add(runWhenInView(g.view.plan.$.pipe(tap((it) => {
       label.textContent = `${rows.length} rows in the model, ${it.center.length} in the document, from index ${it.span.start}`
-    }))
+    }))))
     let stop = 0
-    subs.add(runWhenInView(interval(140), () => {
+    subs.add(runWhenInView(interval(140).pipe(tap(() => {
       const scroll = root.querySelector(".sg-scroll")
       if (!(scroll instanceof HTMLElement)) return
       const fraction = STOPS[stop % STOPS.length] ?? 0
       stop++
       scroll.scrollTop = (scroll.scrollHeight - scroll.clientHeight) * fraction
-    }))
+    }))))
     return () => {
       subs.unsubscribe()
       handle.stop()

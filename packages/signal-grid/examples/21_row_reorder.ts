@@ -1,7 +1,7 @@
 // `moveRowOnRowDrag` commits once, on pointerup, and only as an effect. The grid does not own source
 // order, so a per-move change would ask the consumer to rewrite its data once per pointermove; the
 // effect names the row and the row it should land before, and the consumer applies it.
-import { Subscription } from "rxjs"
+import { Subscription, tap } from "rxjs"
 import { Signal } from "@hafley66/signals"
 import { dragColumn, grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./21_row_reorder.ts?raw"
@@ -44,7 +44,7 @@ export const rowReorder: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(runWhenInView(g.effect$, (effect) => {
+    subs.add(runWhenInView(g.effect$.pipe(tap((effect) => {
       if (effect.type !== "reorderRow") return
       const current = rows.$()
       const moved = current.find((row) => row.id === effect.row)
@@ -53,7 +53,7 @@ export const rowReorder: Example = {
       const found = effect.before === null ? -1 : rest.findIndex((row) => row.id === effect.before)
       const at = found === -1 ? rest.length : found
       rows.$([...rest.slice(0, at), moved, ...rest.slice(at)])
-    }))
+    }))))
     return () => {
       subs.unsubscribe()
       handle.stop()

@@ -1,7 +1,7 @@
 // `resizable: true` is what makes the renderer append the handle inside the header cell, and
 // `resizeOnHeaderDrag` is already installed by `defaultEpics()`, so the drag needs no extra wiring.
 // The width that lands in state is the resolved one, so a flex column freezes where it actually sat.
-import { Subscription } from "rxjs"
+import { Subscription, tap } from "rxjs"
 import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./8_column_resize.ts?raw"
 import type { Example } from "./0_types.js"
@@ -45,9 +45,9 @@ export const columnResize: Example = {
     const g = grid<Row>({ id: "column-resize", rows: ROWS, columns: COLUMNS, rowId: (row) => row.id })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(runWhenInView(g.view.widths.$, (widths) => {
+    subs.add(runWhenInView(g.view.widths.$.pipe(tap((widths) => {
       readout.textContent = [...widths].map(([id, px]) => `${id} ${Math.round(px)}`).join("  ")
-    }))
+    }))))
     return () => {
       subs.unsubscribe()
       handle.stop()

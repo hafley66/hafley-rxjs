@@ -4,10 +4,10 @@ One bus carries everything that happens in a grid, in three phases. Run a phase 
 `runWhenInView` and you have a hook the library never had to declare.
 
 ```ts
-runWhenInView(g.actions$, log)      // everything
-runWhenInView(g.intent$, handle)    // the DOM saw something
-runWhenInView(g.change$, handle)    // one state key was written
-runWhenInView(g.effect$, handle)    // it left the grid
+runWhenInView(g.actions$.pipe(tap(log)))      // everything
+runWhenInView(g.intent$.pipe(tap(handle)))    // the DOM saw something
+runWhenInView(g.change$.pipe(tap(handle)))    // one state key was written
+runWhenInView(g.effect$.pipe(tap(handle)))    // it left the grid
 ```
 
 `runWhenInView` opens the subscription when the host reaches the buffer zone and closes it when the
@@ -90,8 +90,8 @@ import { TEMPLATES } from "@hafley66/signal-grid"
 runWhenInView(
   Dom(TEMPLATES.cell).route.auxclick.pipe(
     filter((it) => it.params.gridId === g.id.$() && it.button === 1),
+    tap((it) => open(`/rows/${it.params.rowId}`)),
   ),
-  (it) => open(`/rows/${it.params.rowId}`),
 )
 ```
 
@@ -113,12 +113,12 @@ runWhenInView(
     filter((it) => it.type === "cell.click" && it.col === "name"),
     filter((it) => loaded.has(it.row) === false),
     mergeMap((it) => fetchChildren(it.row).then((kids) => ({ row: it.row, kids }))),
+    tap(({ row, kids }) => {
+      loaded.add(row)
+      source.$(withChildren(source.$(), row, kids))
+      g.state.expanded[row].$(true)
+    }),
   ),
-  ({ row, kids }) => {
-    loaded.add(row)
-    source.$(withChildren(source.$(), row, kids))
-    g.state.expanded[row].$(true)
-  },
 )
 ```
 

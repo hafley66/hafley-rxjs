@@ -18,9 +18,12 @@ the same gesture that resizes a column and moves a header, with a different hit 
 A committed drag emits an effect and writes nothing. Your code owns the order.
 
 ```ts
-runWhenInView(g.effect$, (it) => {
-  if (it.type === "reorderRow") rows.$(moved(rows.$(), it.row, it.index))
-})
+runWhenInView(
+  g.effect$.pipe(
+    filter((it) => it.type === "reorderRow"),
+    tap((it) => rows.$(moved(rows.$(), it.row, it.index))),
+  ),
+)
 ```
 
 `moveRowOnRowDrag` in `src/7_epics.ts` emits on commit only, so a drag that is abandoned mid-flight

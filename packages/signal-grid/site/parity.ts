@@ -1,6 +1,7 @@
 // Reads the three wide tables of the rendered `docs/1_parity.md` back out of the DOM, hides them,
 // and mounts one live grid under the "The matrix" heading. Sorting is the epic `bind()` installs.
 import { Signal } from "@hafley66/signals"
+import { tap } from "rxjs"
 import {
   grid,
   mountInView,
@@ -363,11 +364,13 @@ export function mountParity(doc: HTMLElement): ParityMount | null {
   }
   gridHost.addEventListener("keydown", onKey)
 
-  const stopCount = mountInView(gridHost, () =>
-    runWhenInView(rows.$, (visible) => {
+  const counted$ = rows.$.pipe(
+    tap((visible) => {
       count.textContent = `${visible.length} of ${all.length} features. Click a header to sort, shift-click to add a second key.`
     }),
   )
+
+  const stopCount = mountInView(gridHost, () => runWhenInView(counted$))
 
   return {
     teardown: () => {

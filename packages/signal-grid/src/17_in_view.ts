@@ -16,16 +16,12 @@ import { isObservable, Observable, Subscription } from "rxjs"
 import { isSignal, Signal } from "@hafley66/signals"
 import { createMeasureStore, DEFAULT_BUFFER_PX, type MeasureStore } from "./14_measure.js"
 
-/** The three live shapes of `GridSource` in `src/8_grid.ts`. A bare value is left out: a constant
- * emits once and never again, so gating it buys nothing. */
-export type InViewSource<T> = Signal<T> | Observable<T> | (() => T)
+/** The two shapes that can carry an effect. A thunk has nowhere to put a `tap`, and a bare value
+ * emits once and never again, so neither is accepted. */
+export type InViewSource<T> = Signal<T> | Observable<T>
 
-// `toGridSignal` is the package's other normaliser and the wrong one here: it needs a fallback, and
-// a fallback replayed into an effect turns a click stream into a click nobody made.
 function streamOf<T>(source: InViewSource<T>): Observable<T> {
-  if (isSignal<T>(source)) return source.$
-  if (isObservable(source)) return source
-  return Signal<T>(source as () => T).$
+  return isSignal<T>(source) ? source.$ : source
 }
 
 /** Every runner on one host, so two runners sharing a host share one observation. */
@@ -113,8 +109,8 @@ export function mountInView<T>(host: HTMLElement, mount: () => T): T {
 export const hasInViewHost = (): boolean => mounting !== null
 
 /** Subscribes when the host reaches the buffer zone, unsubscribes when it leaves, and returns the
- * teardown. Returning re-subscribes: an interval restarts and a signal replays its current value. */
-export function runWhenInView<T>(source: InViewSource<T>, effect?: (it: T) => void): () => void {
+ * teardown. One argument, so an effect is written as `source.pipe(tap(...))`. */
+export function runWhenInView<T>(source: InViewSource<T>): () => void {
   const host = mounting
   if (host === null) {
     throw new Error(
@@ -134,7 +130,7 @@ export function runWhenInView<T>(source: InViewSource<T>, effect?: (it: T) => vo
       return
     }
     if (open !== null) return
-    open = effect === undefined ? stream.subscribe() : stream.subscribe({ next: effect })
+    open = stream.subscribe()
   }
 
   watch.runners.add(runner)

@@ -1,7 +1,7 @@
 // Fifty thousand rows in the model, a couple of dozen in the document. The toggle writes one state
 // key and the kernel is identical either way, which is the claim worth being able to break: turning
 // it off puts all fifty thousand row elements in the page, and the readout shows the cost.
-import { fromEvent, Subscription } from "rxjs"
+import { fromEvent, Subscription, tap } from "rxjs"
 import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./11_virtualization.ts?raw"
 import type { Example } from "./0_types.js"
@@ -47,15 +47,15 @@ export const virtualization: Example = {
     })
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(runWhenInView(g.view.plan.$, (plan) => {
+    subs.add(runWhenInView(g.view.plan.$.pipe(tap((plan) => {
       const on = g.state.virtualize.vertical.$()
       toggle.textContent = on ? "virtualize: on" : "virtualize: off"
       label.textContent = `${ROWS.length} rows in the model, ${plan.center.length} rendered`
-    }))
+    }))))
+    const clicked$ = fromEvent(toggle, "click")
     subs.add(
-      runWhenInView(fromEvent(toggle, "click"), () =>
-        g.state.virtualize.vertical.$(!g.state.virtualize.vertical.$()),
-      ),
+      runWhenInView(clicked$.pipe(tap(() =>
+        g.state.virtualize.vertical.$(!g.state.virtualize.vertical.$())))),
     )
     return () => {
       subs.unsubscribe()

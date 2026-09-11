@@ -3,7 +3,7 @@
 // and a cell contributes a `c` segment, so a glyph mounted through a cell slot reads
 // `g/r/c/check` and matches no declared template. One consumer-owned listener dispatches the
 // intent instead, and `selectRowsOnCheckboxClick` then supplies the toggle and the shift range.
-import { fromEvent, Subscription } from "rxjs"
+import { fromEvent, Subscription, tap } from "rxjs"
 import { checkboxColumn, grid, modifiersOf, mountInView, render, runWhenInView, type ColumnDef, type Grid } from "../src/index.js"
 import source from "./12_row_selection.ts?raw"
 import type { Example } from "./0_types.js"
@@ -54,14 +54,15 @@ export const rowSelection: Example = {
     live = g
     const handle = render(g, root)
     const subs = new Subscription()
-    subs.add(runWhenInView(fromEvent<MouseEvent>(root, "click"), (event) => {
+    const clicked$ = fromEvent<MouseEvent>(root, "click")
+    subs.add(runWhenInView(clicked$.pipe(tap((event) => {
       const target = event.target
       if (!(target instanceof Element)) return
       const row = target.closest(".example-check")?.closest("[data-route='r']")
       const id = row?.getAttribute("data-row-id")
       if (id === null || id === undefined) return
       g.dispatch({ phase: "intent", type: "checkbox.click", row: id, mods: modifiersOf(event) })
-    }))
+    }))))
     return () => {
       subs.unsubscribe()
       handle.stop()

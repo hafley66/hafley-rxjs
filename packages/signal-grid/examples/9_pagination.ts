@@ -1,7 +1,7 @@
 // Paging is one operator with three retention rules, so `pages` is a state write rather than a
 // second code path. `plan.pageCount` is reported off the whole center run, which is what lets a
 // pager know how many pages exist while only one page is windowed.
-import { fromEvent, Subscription } from "rxjs"
+import { fromEvent, Subscription, tap } from "rxjs"
 import { grid, mountInView, render, runWhenInView, type ColumnDef } from "../src/index.js"
 import source from "./9_pagination.ts?raw"
 import type { Example } from "./0_types.js"
@@ -56,16 +56,18 @@ export const pagination: Example = {
     // Read on demand, so the bound the stepper clamps against holds whether or not the label ever
     // painted. A count carried out of an effect reads 1 for a pager nobody has scrolled to yet.
     const pages = (): number => Math.max(1, g.view.plan.$().pageCount)
-    subs.add(runWhenInView(g.view.plan.$, () => {
+    subs.add(runWhenInView(g.view.plan.$.pipe(tap(() => {
       label.textContent = `page ${g.state.page.$().index + 1} of ${pages()}`
-    }))
+    }))))
     const step = (delta: number): void => {
       const page = g.state.page.$()
       const index = Math.min(pages() - 1, Math.max(0, page.index + delta))
       if (index !== page.index) g.state.page.$({ ...page, index })
     }
-    subs.add(runWhenInView(fromEvent(previous, "click"), () => step(-1)))
-    subs.add(runWhenInView(fromEvent(next, "click"), () => step(1)))
+    const previousClicked$ = fromEvent(previous, "click")
+    const nextClicked$ = fromEvent(next, "click")
+    subs.add(runWhenInView(previousClicked$.pipe(tap(() => step(-1)))))
+    subs.add(runWhenInView(nextClicked$.pipe(tap(() => step(1)))))
     return () => {
       subs.unsubscribe()
       handle.stop()

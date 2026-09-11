@@ -1,6 +1,6 @@
 // Density is one state key resolving to pixels through `ROW_HEIGHT`, written onto the grid root as
 // `--sg-row-h` on every geometry frame. Two densities are therefore one grid, not two.
-import { fromEvent, Subscription } from "rxjs"
+import { fromEvent, Subscription, tap } from "rxjs"
 import { grid, mountInView, render, runWhenInView, type ColumnDef, type GridState } from "../src/index.js"
 import source from "./23_density.ts?raw"
 import type { Example } from "./0_types.js"
@@ -48,7 +48,8 @@ export const density: Example = {
       button.type = "button"
       button.textContent = value
       bar.append(button)
-      subs.add(runWhenInView(fromEvent(button, "click"), () => g.state.density.$(value)))
+      const clicked$ = fromEvent(button, "click")
+      subs.add(runWhenInView(clicked$.pipe(tap(() => g.state.density.$(value)))))
     }
     return () => {
       subs.unsubscribe()
