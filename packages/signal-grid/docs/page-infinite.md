@@ -33,7 +33,7 @@ Nothing in the kernel waits on a fetch. `g.page$` emits once per page change, an
 own rows signal is what makes the new rows appear.
 
 ```ts
-g.page$.subscribe(({ index, size }) => {
+runWhenInView(g.page$, ({ index, size }) => {
   fetchRows(index, size).then((it) => rows.$([...rows.$(), ...it]))
 })
 ```

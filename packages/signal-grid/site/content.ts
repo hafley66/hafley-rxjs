@@ -93,6 +93,7 @@ export const GROUPS: readonly SiteGroup[] = [
       { slug: "reference-epics", title: "Epics", source: "pages/reference-epics.md" },
       { slug: "reference-slots", title: "Slots", source: "pages/reference-slots.md" },
       { slug: "reference-menus", title: "Context menus", source: "pages/reference-menus.md" },
+      { slug: "reference-in-view", title: "runWhenInView", source: "pages/reference-in-view.md" },
       { slug: "parity", title: "Feature parity", source: "pages/1_parity.md" },
       { slug: "competitors", title: "Competitors", source: "pages/3_competitors.md" },
     ],

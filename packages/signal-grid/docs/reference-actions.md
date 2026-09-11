@@ -1,14 +1,18 @@
 # Intents, changes, effects
 
-One bus carries everything that happens in a grid, in three phases. Subscribe to a phase and you
-have a hook the library never had to declare.
+One bus carries everything that happens in a grid, in three phases. Run a phase through
+`runWhenInView` and you have a hook the library never had to declare.
 
 ```ts
-g.actions$.subscribe(log)      // everything
-g.intent$.subscribe(handle)    // the DOM saw something
-g.change$.subscribe(handle)    // one state key was written
-g.effect$.subscribe(handle)    // it left the grid
+runWhenInView(g.actions$, log)      // everything
+runWhenInView(g.intent$, handle)    // the DOM saw something
+runWhenInView(g.change$, handle)    // one state key was written
+runWhenInView(g.effect$, handle)    // it left the grid
 ```
+
+`runWhenInView` opens the subscription when the host reaches the buffer zone and closes it when the
+host leaves, so a page of grids costs what the reader is looking at. It is declared in
+`src/17_in_view.ts` and takes its host from the `mountInView` call around it.
 
 ## The three phases
 
@@ -83,9 +87,12 @@ You do not need an epic or a state key to act on a gesture the kernel has no opi
 import { Dom } from "@hafley66/xdom"
 import { TEMPLATES } from "@hafley66/signal-grid"
 
-Dom(TEMPLATES.cell).route.auxclick
-  .pipe(filter((it) => it.params.gridId === g.id.$() && it.button === 1))
-  .subscribe((it) => open(`/rows/${it.params.rowId}`))
+runWhenInView(
+  Dom(TEMPLATES.cell).route.auxclick.pipe(
+    filter((it) => it.params.gridId === g.id.$() && it.button === 1),
+  ),
+  (it) => open(`/rows/${it.params.rowId}`),
+)
 ```
 
 `event.params` is typed from the template, so a missing parameter is a compile error rather than a
@@ -101,17 +108,18 @@ const source = Signal<readonly Row[]>(ROWS)
 const g = grid<Row>({ id: "tree", rows: source, columns, rowId: (it) => it.id, subRows })
 const loaded = new Set<RowId>()
 
-g.intent$
-  .pipe(
+runWhenInView(
+  g.intent$.pipe(
     filter((it) => it.type === "cell.click" && it.col === "name"),
     filter((it) => loaded.has(it.row) === false),
     mergeMap((it) => fetchChildren(it.row).then((kids) => ({ row: it.row, kids }))),
-  )
-  .subscribe(({ row, kids }) => {
+  ),
+  ({ row, kids }) => {
     loaded.add(row)
     source.$(withChildren(source.$(), row, kids))
     g.state.expanded[row].$(true)
-  })
+  },
+)
 ```
 
 Grafting children is an edit to your own array, because `axisOfTree` in `src/1_axis.ts` re-derives

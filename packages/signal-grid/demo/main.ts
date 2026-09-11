@@ -201,8 +201,8 @@ applyTheme("dark")
 shell.style.setProperty("--demo-pad", "10px")
 shell.style.setProperty("--demo-indent", "16px")
 
-// The shell is the gate for the router too, so the one place a `.subscribe(` would be left in this
-// tree is the one place the rule would have to be argued for.
+// The shell is the gate for the router too, so the one place a raw subscription would be left in
+// this tree is the one place the rule would have to be argued for.
 mountInView(shell, () =>
   runWhenInView(route.$, () => {
     const slug = slugOf()
