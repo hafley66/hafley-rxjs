@@ -371,3 +371,57 @@ describe("createMutation", () => {
     expect(mutation.data.profile.name.$()).toBe("Recovered")
   })
 })
+
+describe("createQuery refetchInterval", () => {
+  afterEach(() => vi.useRealTimers())
+
+  it("drops a tick that lands while a request is in flight instead of queueing it", () => {
+    vi.useFakeTimers()
+    const { endpoint, requests } = controlledEndpoint()
+    const query = endpoint.createQuery({ id: "1" }, { refetchInterval: 3000 })
+
+    trackSubscription(query.$.subscribe())
+    expect(requests).toHaveLength(1)
+
+    vi.advanceTimersByTime(9000)
+    expect(requests).toHaveLength(1)
+
+    requests[0].response.next(response({ id: "1", profile: { name: "A" } }))
+    requests[0].response.complete()
+    vi.advanceTimersByTime(3000)
+    expect(requests).toHaveLength(2)
+  })
+
+  it("reads a function interval from the settled state and stops on false", () => {
+    vi.useFakeTimers()
+    const { endpoint, requests } = controlledEndpoint()
+    const query = endpoint.createQuery({ id: "1" }, {
+      refetchInterval: (state) => (state.data?.profile.name === "done" ? false : 1000),
+    })
+
+    trackSubscription(query.$.subscribe())
+    requests[0].response.next(response({ id: "1", profile: { name: "more" } }))
+    requests[0].response.complete()
+    vi.advanceTimersByTime(1000)
+    expect(requests).toHaveLength(2)
+
+    requests[1].response.next(response({ id: "1", profile: { name: "done" } }))
+    requests[1].response.complete()
+    vi.advanceTimersByTime(10_000)
+    expect(requests).toHaveLength(2)
+  })
+
+  it("stops polling when the last subscriber leaves", () => {
+    vi.useFakeTimers()
+    const { endpoint, requests } = controlledEndpoint()
+    const query = endpoint.createQuery({ id: "1" }, { refetchInterval: 1000 })
+
+    const sub = query.$.subscribe()
+    requests[0].response.next(response({ id: "1", profile: { name: "A" } }))
+    requests[0].response.complete()
+    sub.unsubscribe()
+    vi.advanceTimersByTime(5000)
+
+    expect(requests).toHaveLength(1)
+  })
+})

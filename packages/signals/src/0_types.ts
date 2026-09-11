@@ -211,6 +211,8 @@ export type SignalCreatorOptions<T, Base extends object = object> = {
    * `distinctShallow()`. `null` disables it, restoring re-emission on every root write.
    */
   distinct?: MonoTypeOperatorFunction<unknown> | null
+  /** Mirror a `.$(next)` write into an external holder (writable memos). */
+  write?: (next: T) => void
   /** Factory to create Base extension for each node */
   createBase?: (root: Signal<T, Base>, path: string[]) => Base
 }

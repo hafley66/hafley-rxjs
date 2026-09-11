@@ -1,5 +1,11 @@
 import { isObservable, Observable, type OperatorFunction } from "rxjs"
-import { createComputedSignal, signalFromObservable, SignalCreator } from "./1_SignalCreator.js"
+import {
+  createComputedSignal,
+  signalFromObservable,
+  SignalCreator,
+  type ComputeBody,
+  type ComputedOptions,
+} from "./1_SignalCreator.js"
 import type { Signal as SignalType } from "./0_types.js"
 
 export type Signal<T, Base extends object = object, Depth extends number = 5> = SignalType<T, Base, Depth>
@@ -37,11 +43,13 @@ export function toSignal<T>(source: SignalSource<T>): SignalType<T> {
 export function Signal<T>(observable: Observable<T>): SignalType<T | undefined>
 export function Signal<T>(observable: Observable<T>, defaultState: T): SignalType<T>
 export function Signal<T>(memo: () => T): SignalType<T>
+export function Signal<T>(scan: ComputeBody<T>, seed: T, options?: ComputedOptions): SignalType<T>
 export function Signal<T>(state: T): SignalType<T>
 export function Signal<T>(): SignalType<T | undefined>
 export function Signal<T>(
   obs_or_state?: Observable<T> | T,
-  defaults?: T
+  defaults?: T,
+  options?: ComputedOptions,
 ): SignalType<T> {
   // Bare form is an event signal: lazy/shared Subject semantics, no initial
   // undefined emission and no replay to late subscribers.
@@ -57,9 +65,14 @@ export function Signal<T>(
     })
   }
 
-  // Function source is automatic derived state.
+  // Function source is automatic derived state. Arity 1 receives its own
+  // previous value (scan) and may return a stream (expand). fn.length counts
+  // params before the first default, so `(prev = x) =>` reads as arity 0.
   if (typeof obs_or_state === "function") {
-    return createComputedSignal(obs_or_state as () => T)
+    if ((obs_or_state as Function).length >= 1) {
+      return createComputedSignal(obs_or_state as ComputeBody<T>, defaults as T, options)
+    }
+    return createComputedSignal(obs_or_state as ComputeBody<T>)
   }
 
   // Plain state or undefined
