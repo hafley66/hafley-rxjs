@@ -71,6 +71,9 @@ already uses for its export check. Three calls carry the whole thing:
 | `checker.getTypeOfSymbol(symbol)` plus `typeToString` | the resolved signature, generics and all |
 | `checker.getDocumentationCommentOfSymbol(symbol)` | the prose already written beside the code |
 
+A type alias and an interface are the exception: `typeToString` on a declared type answers with
+its own name, so those render from their source text instead.
+
 Two rules keep the output inside the lint rather than beside it. Every signature sits in a fenced
 block, where the lint's backtick spans find nothing to check. Every citation is placed by the same
 `declarationLine` rule `scripts/docs.mjs` uses to verify one, so the generator and the lint cannot

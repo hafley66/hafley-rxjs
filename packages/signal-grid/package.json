@@ -20,8 +20,8 @@
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
     "parity": "node scripts/parity.mjs",
-    "docs": "node scripts/docs.mjs",
-    "docs:render": "node scripts/docs.mjs --render",
+    "docs": "pnpm api && node scripts/docs.mjs",
+    "docs:render": "pnpm api && node scripts/docs.mjs --render",
     "docs:fix": "node scripts/docs.mjs --fix",
     "test": "vitest run",
     "test:browser": "vitest run --config vitest.browser.config.ts",
@@ -38,11 +38,12 @@
     "typecheck:bench": "tsc --noEmit -p bench/tsconfig.json",
     "site": "pnpm site:content && vitepress dev site",
     "site:dev": "pnpm site",
-    "site:content": "node scripts/docs.mjs --render && rm -rf site/pages && mkdir site/pages && cp docs/dist/*.md site/pages/ && cp bench/README.md site/benchmarks.md && cp demo/README.md site/demo-guide.md",
+    "site:content": "pnpm docs:render && rm -rf site/pages && mkdir site/pages && cp docs/dist/*.md site/pages/ && cp bench/README.md site/benchmarks.md && cp demo/README.md site/demo-guide.md",
     "site:build": "pnpm site:content && vitepress build site",
     "site:preview": "vitepress preview site",
     "examples": "node scripts/examples.mjs",
-    "ship": "node scripts/ship.mjs"
+    "ship": "node scripts/ship.mjs",
+    "api": "node scripts/api.mjs"
   },
   "peerDependencies": {
     "@hafley66/path": ">=0.1.0",

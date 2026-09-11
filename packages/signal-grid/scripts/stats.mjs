@@ -30,6 +30,7 @@ const measure = createMeasure({
     "packages/signal-grid/site/stats.json",
     "packages/signal-grid/site/parity.json",
     "packages/signal-grid/docs/1_parity.md",
+    "packages/signal-grid/docs/reference-api.md",
   ],
 })
 

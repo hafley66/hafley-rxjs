@@ -130,9 +130,11 @@ export function generateApi(options) {
         continue
       }
       const line = declarationLine(lines, symbol.name)
+      // A value renders as `name: <what the checker resolved>`, which is a declaration a reader can
+      // paste. A type renders as its own source, because a declared type's string is just its name.
       const type = isType(symbol.flags)
         ? declarationText(lines, line)
-        : signatureOf(checker, symbol)
+        : `${symbol.name}: ${signatureOf(checker, symbol)}`
       entries.push({
         name: symbol.name,
         kind: kindOf(symbol.flags),
@@ -163,17 +165,30 @@ function signatureOf(checker, symbol) {
   }
 }
 
-/** The module's own first prose line, when its header is a comment rather than an import. */
+/** The module's own first sentence, when its header is a comment rather than an import. A `@`
+ * directive and the lines it wraps onto are scanner input rather than prose, so both are skipped. */
 function headlineOf(lines) {
+  const prose = []
+  let inDirective = false
   for (const line of lines) {
     const trimmed = line.trim()
-    if (trimmed === "") continue
-    if (!trimmed.startsWith("//")) return null
+    if (trimmed === "") break
+    if (!trimmed.startsWith("//")) break
     const text = trimmed.replace(/^\/\/\s?/, "")
-    if (text.startsWith("@")) continue
-    return text
+    if (text.startsWith("@")) {
+      inDirective = true
+      continue
+    }
+    if (inDirective && /^[a-z]/.test(text)) continue
+    inDirective = false
+    if (text === "") break
+    prose.push(text)
+    if (/[.!?]$/.test(text)) break
   }
-  return null
+  if (prose.length === 0) return null
+  const joined = prose.join(" ")
+  const stop = /[.!?](\s|$)/.exec(joined)
+  return stop === null ? joined : joined.slice(0, stop.index + 1)
 }
 
 function defaultModules(pkg) {
