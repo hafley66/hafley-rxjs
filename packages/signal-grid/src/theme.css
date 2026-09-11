@@ -122,6 +122,10 @@
   inline-size: max-content;
   min-inline-size: 100%;
   block-size: var(--sg-row-h);
+  /* The pinned runs inside take `background: inherit`, so a row with none leaves them transparent
+     and a long pinned header prints on top of the centre header it is supposed to cover. `.sg-head`
+     carries the same colour, and a sticky child cannot inherit through to a grandparent. */
+  background: var(--sg-head-bg);
 }
 
 /* The scroll spacer. Its height is the paginated center run, whatever fraction of it renders. */

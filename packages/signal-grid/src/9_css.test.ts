@@ -350,3 +350,60 @@ describe("a windowed column run laid out by a real engine", () => {
     view.release()
   })
 })
+
+// The pinned runs are the only boxes in the grid that draw over another box, so they are the only
+// ones where a missing background colour costs legibility rather than looks.
+describe("a pinned run covers what it scrolls over", () => {
+  const mountPinned = () => {
+    const host = document.createElement("div")
+    // Narrower than the seven columns need, so the centre run scrolls under both pinned runs.
+    host.style.inlineSize = "400px"
+    host.style.blockSize = "300px"
+    document.body.append(host)
+    const g = grid<Row>({
+      id: "pinned",
+      rows: [{ id: "a", name: "alice" }, { id: "b", name: "bob" }],
+      columns: [
+        { id: "name", header: "Name", width: 200 },
+        { id: "one", header: "Quarter", width: 140 },
+        { id: "two", header: "Status", width: 160 },
+      ],
+      rowId: (it) => it.id,
+      state: {
+        colPinning: { name: "start", two: "end" },
+        virtualize: { vertical: false, horizontal: false },
+      },
+    })
+    const handle = render(g, host)
+    return { host, release: () => { handle.stop(); host.remove() } }
+  }
+
+  const alphaOf = (color: string): number => {
+    const parts = /^rgba?\(([^)]+)\)$/.exec(color)
+    if (parts?.[1] === undefined) return 0
+    const fields = parts[1].split(/[\s,/]+/).filter(Boolean)
+    return fields.length < 4 ? 1 : Number(fields[3])
+  }
+
+  for (const side of ["start", "end"] as const) {
+    it(`gives the ${side} run in the header an opaque backing`, () => {
+      const view = mountPinned()
+      const run = view.host.querySelector(`.sg-head-row .sg-run[data-side="${side}"]`)
+      expect(run).not.toBe(null)
+      if (run === null) return
+      // `background: inherit` on the run, so a header row with no colour of its own leaves this
+      // transparent and the centre header prints straight through the pinned one.
+      expect(alphaOf(getComputedStyle(run).backgroundColor)).toBe(1)
+      view.release()
+    })
+
+    it(`gives the ${side} run in a body row an opaque backing`, () => {
+      const view = mountPinned()
+      const run = view.host.querySelector(`.sg-row .sg-run[data-side="${side}"]`)
+      expect(run).not.toBe(null)
+      if (run === null) return
+      expect(alphaOf(getComputedStyle(run).backgroundColor)).toBe(1)
+      view.release()
+    })
+  }
+})
