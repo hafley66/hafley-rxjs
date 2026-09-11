@@ -59,7 +59,7 @@ describe.skipIf(base === undefined)("signal-grid delegation", () => {
         {
           route: "cell",
           params: { gridId: GRID, rowId: ROW, colId: COL },
-          intent: { phase: "intent", type: "cell.click", row: ROW, col: COL, mods: NO_MODS },
+          intent: { phase: "intent", type: "cell.click", row: ROW, col: COL, mods: NO_MODS, interactive: false },
         },
       ])
       expect(JSON.parse(await observed())).toEqual({ gridId: GRID, rowId: ROW, colId: COL })
@@ -93,6 +93,7 @@ describe.skipIf(base === undefined)("signal-grid delegation", () => {
           row: ROW,
           col: COL,
           mods: { alt: false, ctrl: false, meta: false, shift: true, button: 0 },
+          interactive: false,
         },
       ])
     })

@@ -3,7 +3,15 @@
 import { filter, map, merge, Observable } from "rxjs"
 import type { Epic, Signal } from "@hafley66/signals"
 import { descendantsOf } from "./1_axis.js"
-import { isBuiltIn, rowSelectionMode, type BuiltInId } from "./5_columns.js"
+import {
+  expandableRows,
+  isBuiltIn,
+  rowSelectionMode,
+  selectableRows,
+  toggleExpandAll,
+  toggleSelectAll,
+  type BuiltInId,
+} from "./5_columns.js"
 import { drag, landingIndex, type DragStreams } from "./6_gestures.js"
 import { neutralCell } from "./12_transpose.js"
 import {
@@ -20,6 +28,7 @@ import {
 import {
   cellId,
   cellParts,
+  isPlainClick,
   type CellId,
   type ColId,
   type ColumnDef,
@@ -58,10 +67,6 @@ const intents = <TRow, T extends GridIntent["type"]>(
 
 const emitted = <TRow>() =>
   filter((action: GridAction<TRow> | null): action is GridAction<TRow> => action !== null)
-
-/** A plain click: no chord, primary button. Anything else belongs to another gesture. */
-export const isPlainClick = (mods: Modifiers): boolean =>
-  !mods.alt && !mods.ctrl && !mods.meta && !mods.shift && mods.button === 0
 
 const clamp = (value: number, low: number, high: number): number =>
   value < low ? low : value > high ? high : value
@@ -104,55 +109,145 @@ export function sortOnHeaderClick<TRow>(): GridEpic<TRow> {
 
 // --- Expand -----------------------------------------------------------------
 
+// Alt is the whole-branch modifier every file tree has, and the only reader of `descendantsOf`.
+// One body, because the glyph and the double click mean the same thing about the same row.
+function flipOpen<TRow>(
+  state: Signal<GridState>,
+  ctx: GridEpicCtx<TRow>,
+  row: RowId,
+  mods: Modifiers,
+): GridAction<TRow> {
+  const open = state.expanded.$()
+  const next = open[row] !== true
+  const expanded: Record<RowId, boolean> = { ...open, [row]: next }
+  if (mods.alt) {
+    for (const key of descendantsOf(ctx.view.sorted.$(), row)) expanded[key] = next
+  }
+  return { phase: "change", type: "expanded", expanded }
+}
+
 export function expandOnExpanderClick<TRow>(): GridEpic<TRow> {
   return (actions$, state, ctx) =>
     intents<TRow, "expander.click">(actions$, "expander.click").pipe(
-      map((it): GridAction<TRow> => {
-        const open = state.expanded.$()
-        const next = open[it.row] !== true
-        const expanded: Record<RowId, boolean> = { ...open, [it.row]: next }
-        // Alt is the whole-branch modifier every file tree has, and the only reader of
-        // `descendantsOf`.
-        if (it.mods.alt) {
-          for (const key of descendantsOf(ctx.view.sorted.$(), it.row)) expanded[key] = next
-        }
-        return { phase: "change", type: "expanded", expanded }
-      }),
+      map((it): GridAction<TRow> => flipOpen<TRow>(state, ctx, it.row, it.mods)),
+    )
+}
+
+const hasChildren = <TRow>(ctx: GridEpicCtx<TRow>, row: RowId): boolean =>
+  ctx.view.flat.$().find((it) => it.key === row)?.hasChildren === true
+
+/** The second way into a tree, for a schema that draws no glyph. Opt-in, and it composes with
+ * `expandOnExpanderClick`, because a double click on the glyph arrives `interactive`. */
+export function expandOnCellDoubleClick<TRow>(): GridEpic<TRow> {
+  return (actions$, state, ctx) =>
+    intents<TRow, "cell.dblclick">(actions$, "cell.dblclick").pipe(
+      filter((it) => !it.interactive && it.mods.button === 0),
+      // A leaf has nothing to open, and writing `expanded[leaf]` would grow a key the flatten walk
+      // reads on every frame for a row that can never use it.
+      filter((it) => hasChildren(ctx, it.row)),
+      map((it): GridAction<TRow> => flipOpen<TRow>(state, ctx, it.row, it.mods)),
     )
 }
 
 // --- Select -----------------------------------------------------------------
 
+/** What a click with no chord means. The gutter toggles the row it names; the row body replaces the
+ * whole selection, which is what a list with no gutter does. */
+type PlainSelect = (
+  current: Readonly<Record<RowId, boolean>>,
+  row: RowId,
+) => Record<RowId, boolean>
+
+const toggleOne: PlainSelect = (current, row) => ({ ...current, [row]: current[row] !== true })
+
+const onlyOne: PlainSelect = (_current, row) => ({ [row]: true })
+
+// One gesture, two doors. The range anchor is gesture state, not grid state: it is not in the URL,
+// and a reload has no last click to remember, so it is a closure per epic instance.
+function rowPicker<TRow>(
+  state: Signal<GridState>,
+  ctx: GridEpicCtx<TRow>,
+  plain: PlainSelect,
+): (pick: { readonly row: RowId; readonly mods: Modifiers }) => GridAction<TRow> {
+  let anchor: RowId | null = null
+  return (pick) => {
+    const current = state.rowSelection.$()
+    const order = ctx.view.flat.$().map((it) => it.key)
+    const from = anchor === null ? -1 : order.indexOf(anchor)
+    const to = order.indexOf(pick.row)
+    if (pick.mods.shift && from !== -1 && to !== -1) {
+      const rowSelection: Record<RowId, boolean> = { ...current }
+      for (let index = Math.min(from, to); index <= Math.max(from, to); index++) {
+        const key = order[index]
+        if (key !== undefined) rowSelection[key] = true
+      }
+      return { phase: "change", type: "rowSelection", rowSelection }
+    }
+    anchor = pick.row
+    // A radio column means one row rather than one more row, so single select replaces the map
+    // instead of extending it. Read from the schema because a checkbox intent carries no column.
+    if (rowSelectionMode(ctx.columns.$()) === "single") {
+      return { phase: "change", type: "rowSelection", rowSelection: { [pick.row]: true } }
+    }
+    const chord = pick.mods.ctrl || pick.mods.meta
+    const rowSelection = chord ? toggleOne(current, pick.row) : plain(current, pick.row)
+    return { phase: "change", type: "rowSelection", rowSelection }
+  }
+}
+
 export function selectRowsOnCheckboxClick<TRow>(): GridEpic<TRow> {
   return (actions$, state, ctx) => {
-    // The range anchor is gesture state, not grid state: it is not in the URL, and a reload has no
-    // last click to remember.
-    let anchor: RowId | null = null
-    return intents<TRow, "checkbox.click">(actions$, "checkbox.click").pipe(
-      map((intent): GridAction<TRow> => {
-        const current = state.rowSelection.$()
-        const order = ctx.view.flat.$().map((it) => it.key)
-        const from = anchor === null ? -1 : order.indexOf(anchor)
-        const to = order.indexOf(intent.row)
-        if (intent.mods.shift && from !== -1 && to !== -1) {
-          const rowSelection: Record<RowId, boolean> = { ...current }
-          for (let index = Math.min(from, to); index <= Math.max(from, to); index++) {
-            const key = order[index]
-            if (key !== undefined) rowSelection[key] = true
-          }
-          return { phase: "change", type: "rowSelection", rowSelection }
-        }
-        anchor = intent.row
-        // A radio column means one row, not one more row, so single select replaces the map
-        // rather than extending it. Read from the schema because the intent carries no column.
-        if (rowSelectionMode(ctx.columns.$()) === "single") {
-          return { phase: "change", type: "rowSelection", rowSelection: { [intent.row]: true } }
-        }
-        const rowSelection = { ...current, [intent.row]: current[intent.row] !== true }
-        return { phase: "change", type: "rowSelection", rowSelection }
-      }),
+    const pick = rowPicker<TRow>(state, ctx, toggleOne)
+    return intents<TRow, "checkbox.click">(actions$, "checkbox.click").pipe(map(pick))
+  }
+}
+
+/** Selection for a schema with no checkbox column. Opt-in: a cell holding a link or a button wants
+ * that click, and `interactive` is the intent saying one took it. @feature row.select */
+export function selectRowsOnCellClick<TRow>(): GridEpic<TRow> {
+  return (actions$, state, ctx) => {
+    const pick = rowPicker<TRow>(state, ctx, onlyOne)
+    return intents<TRow, "cell.click">(actions$, "cell.click").pipe(
+      filter((it) => !it.interactive && it.mods.button === 0),
+      map(pick),
     )
   }
+}
+
+// --- The two tri-state header toggles ---------------------------------------
+
+// The action half of the pair `5_columns.ts` declares. The glyph is a slot and this is an epic, so
+// a consumer replaces either one without the other noticing.
+const headerOf = <TRow>(ctx: GridEpicCtx<TRow>, col: ColId, kind: BuiltInId): boolean => {
+  const def = defOf(ctx, col)
+  return def !== undefined && isBuiltIn(def) && def.builtIn === kind
+}
+
+/** Opt-in: the header draws the tri-state whether or not this is installed, and installing it is
+ * what makes the header a control. @feature row.select */
+export function toggleSelectAllOnHeaderClick<TRow>(): GridEpic<TRow> {
+  return (actions$, state, ctx) =>
+    intents<TRow, "header.click">(actions$, "header.click").pipe(
+      filter((it) => headerOf(ctx, it.col, "check")),
+      map((): GridAction<TRow> => ({
+        phase: "change",
+        type: "rowSelection",
+        rowSelection: toggleSelectAll(selectableRows(ctx.view.flat.$()), state.rowSelection.$()),
+      })),
+    )
+}
+
+/** The mirror on the expand column, reading the same rows `expandAllSignal` counts. */
+export function toggleExpandAllOnHeaderClick<TRow>(): GridEpic<TRow> {
+  return (actions$, state, ctx) =>
+    intents<TRow, "header.click">(actions$, "header.click").pipe(
+      filter((it) => headerOf(ctx, it.col, "expand")),
+      map((): GridAction<TRow> => ({
+        phase: "change",
+        type: "expanded",
+        expanded: toggleExpandAll(expandableRows(ctx.view.sorted.$()), state.expanded.$()),
+      })),
+    )
 }
 
 // --- Activate ---------------------------------------------------------------

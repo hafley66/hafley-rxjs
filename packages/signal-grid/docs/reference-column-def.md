@@ -88,6 +88,36 @@ today, so a schema that wants a grip stamps one from a header slot.
 | `filterOperators` | declared; nothing calls it |
 | `cell` | the per-column body slot, beating the schema-wide one |
 | `headerCell` | the per-column header slot, beating the schema-wide one |
+| `href` | where this column's cell points, as a function of the row |
+
+## A cell, a column, or a row as a link
+
+`href` is a function rather than a string, so one schema links the rows that have a target and
+leaves the rest plain: returning `undefined` renders the ordinary cell. `GridConfig.rowHref` does
+the same for every data cell of a row, and a column's own `href` beats it. A built-in glyph column
+is never covered by a row link, because the click there belongs to its control.
+
+```ts
+const columns: readonly ColumnDef<Row>[] = [
+  { id: "name", header: "Repository", href: (it) => `/repo/${it.id}` },
+  { id: "owner", header: "Owner" },
+]
+
+grid<Row>({ ...config, columns, rowHref: (it) => (it.archived ? undefined : `/repo/${it.id}/board`) })
+```
+
+`src/10_render.ts:772` wraps the cell's content in an `<a href>` rather than making the cell one:
+the cell is the grid item carrying the route, the span tracks, and the selection stamp. The anchor
+mirrors `.sg-head-label` in `src/theme.css`, because a flex item's automatic minimum is min-content
+and an anchor without `min-inline-size: 0` pushes its text past the cell instead of truncating.
+
+A modified click belongs to the browser. `src/3_paths.ts:238` reports it and `src/8_grid.ts:779`
+drops it, so a command-click, a shift-click, or a middle-click on a link raises no intent and has
+nothing prevented. A plain click still raises `cell.click` carrying `interactive: true`, so an epic
+can act on it while `selectRowsOnCellClick` steps aside. Keyboard and screen reader behaviour comes
+from the anchor, which is the reason to render one.
+
+<GridDemo id="links" />
 
 ## The six built-ins
 
@@ -97,7 +127,7 @@ today, so a schema that wants a grip stamps one from a header slot.
 | --- | --- | --- |
 | `checkboxColumn` | `__check` | a mark on its own route, with a live select-all header |
 | `radioColumn` | `__radio` | the same box and route, with no select-all toggle |
-| `expandColumn` | `__expand` | the disclosure, indented by depth |
+| `expandColumn` | `__expand` | the disclosure, indented by depth, with a live expand-all header |
 | `dragColumn` | `__drag` | the row move handle |
 | `detailColumn` | `__detail` | a disclosure with no route of its own |
 | `rowNumberColumn` | `__rowNumber` | the row's index within the run |

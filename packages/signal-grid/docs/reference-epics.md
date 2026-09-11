@@ -68,6 +68,32 @@ why a plain grid reduces a cell click to an `activate` effect and nothing else.
 grid<Row>({ ...config, epics: [...defaultEpics<Row>(), detailOnCellClick({ columns: ["__detail"] })] })
 ```
 
+## The opt-in ones
+
+| epic | reads | writes |
+| --- | --- | --- |
+| `selectRowsOnCellClick` | `cell.click` | `rowSelection`; plain replaces, ctrl or meta toggles, shift fills the range |
+| `expandOnCellDoubleClick` | `cell.dblclick` on a row that has children | `expanded`; alt takes the whole subtree |
+| `toggleSelectAllOnHeaderClick` | `header.click` on the checkbox column | `rowSelection`, over `selectableRows` |
+| `toggleExpandAllOnHeaderClick` | `header.click` on the expand column | `expanded`, over `expandableRows` |
+| `detailOnCellClick` | `cell.click` | `detail` |
+
+Both new ones read `interactive`, which `cell.click` and `cell.dblclick` carry: it is true when the
+click landed on an anchor, a form control, or one of the grid's own routed glyphs, and both epics
+step aside for it. A grid whose cells are links therefore navigates rather than selecting, and a
+double click on the expander glyph is the two clicks under it and nothing more.
+
+```ts
+grid<Row>({
+  ...config,
+  epics: [...defaultEpics<Row>(), selectRowsOnCellClick<Row>(), expandOnCellDoubleClick<Row>()],
+})
+```
+
+Installed together, a double click on a row body selects that row and opens it. A plain click
+replaces the selection with the row it named, so the second click of the pair writes what the first
+already wrote, and the state after the gesture is the same one click leaves plus the expansion.
+
 ## Why they are synchronous
 
 An epic runs inside a queue-scheduled slice, which is what gives causal order and bounded recursion:

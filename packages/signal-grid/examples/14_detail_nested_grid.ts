@@ -60,7 +60,7 @@ export const detailNestedGrid: Example = {
       panels.set(row, render(inner, into))
     }
     const columns: readonly ColumnDef<Order>[] = [
-      detailColumn<Order>({ cell: (ctx) => (isDetailKey(ctx.row) ? "" : "▸") }),
+      detailColumn<Order>({ cell: (ctx) => (isDetailKey(ctx.row) ? "" : "▶") }),
       {
         id: "customer",
         header: "Customer",

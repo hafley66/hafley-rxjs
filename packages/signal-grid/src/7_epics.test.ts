@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest"
 import {
   at,
   cellClick,
+  cellDoubleClick,
   checkboxClick,
   expanderClick,
   flatGrid,
@@ -16,6 +17,7 @@ import {
   pointerStreams,
   rowDown,
   scrollTo,
+  TREE,
   treeGrid,
   withEpics,
   COLUMNS,
@@ -25,10 +27,18 @@ import {
 import { Signal } from "@hafley66/signals"
 import { cellId } from "./0_types.js"
 import type { ColumnDef, GridIntent, GridState, Modifiers } from "./0_types.js"
-import { rowNumberColumn } from "./5_columns.js"
+import { BUILT_IN_IDS, checkboxColumn, expandColumn, radioColumn, rowNumberColumn } from "./5_columns.js"
 import { grid, type Grid } from "./8_grid.js"
 import { rangeOf, selectionTest } from "./15_selection.js"
-import { selectColumnsOnDrag, type GridEpic } from "./7_epics.js"
+import {
+  expandOnCellDoubleClick,
+  expandOnExpanderClick,
+  selectColumnsOnDrag,
+  selectRowsOnCellClick,
+  toggleExpandAllOnHeaderClick,
+  toggleSelectAllOnHeaderClick,
+  type GridEpic,
+} from "./7_epics.js"
 
 describe("sortOnHeaderClick", () => {
   it("cycles one column asc, desc, off", () => {
@@ -100,6 +110,61 @@ describe("expandOnExpanderClick", () => {
   })
 })
 
+describe("expandOnCellDoubleClick", () => {
+  const treeEpics = (over: readonly GridEpic<Row>[] = []): readonly GridEpic<Row>[] => [
+    expandOnCellDoubleClick<Row>(),
+    ...over,
+  ]
+
+  const doubleClickGrid = (epics: readonly GridEpic<Row>[]): Grid<Row> =>
+    grid<Row>({
+      id: "t",
+      rows: TREE,
+      columns: COLUMNS,
+      rowId: (row) => row.id,
+      subRows: (row) => row.kids,
+      state: Signal<Partial<GridState>>({}),
+      epics,
+    })
+
+  it("opens the row the double click named, and closes it on the next one", () => {
+    const { g } = withEpics(doubleClickGrid(treeEpics()))
+    g.dispatch(cellDoubleClick("src", "name"))
+    expect(g.view.flat.$().map((n) => n.key)).toEqual(["src", "src/a", "src/b", "readme"])
+    g.dispatch(cellDoubleClick("src", "name"))
+    expect(g.view.flat.$().map((n) => n.key)).toEqual(["src", "readme"])
+  })
+
+  it("writes nothing for a leaf, which has nothing to open", () => {
+    const { g } = withEpics(doubleClickGrid(treeEpics()))
+    g.dispatch(cellDoubleClick("readme", "name"))
+    expect(g.state.expanded.$()).toEqual({})
+  })
+
+  it("opens the whole branch on alt, the same modifier the glyph reads", () => {
+    const { g } = withEpics(doubleClickGrid(treeEpics()))
+    g.dispatch(cellDoubleClick("src", "name", { alt: true }))
+    expect(g.state.expanded.$()).toEqual({ src: true, "src/a": true, "src/b": true, "src/b/x": true })
+  })
+
+  it("leaves the glyph's own double click to the two clicks under it", () => {
+    const { g } = withEpics(doubleClickGrid(treeEpics([expandOnExpanderClick<Row>()])))
+    g.dispatch(expanderClick("src"))
+    g.dispatch(expanderClick("src"))
+    g.dispatch(cellDoubleClick("src", "name", {}, true))
+    expect(g.view.flat.$().map((n) => n.key)).toEqual(["src", "readme"])
+  })
+
+  it("leaves the row selected beside it, because a plain click replaces the selection twice", () => {
+    const { g } = withEpics(doubleClickGrid(treeEpics([selectRowsOnCellClick<Row>()])))
+    g.dispatch(cellClick("src", "name"))
+    g.dispatch(cellClick("src", "name"))
+    g.dispatch(cellDoubleClick("src", "name"))
+    expect(g.state.rowSelection.$()).toEqual({ src: true })
+    expect(g.state.expanded.$()).toEqual({ src: true })
+  })
+})
+
 describe("selectRowsOnCheckboxClick", () => {
   it("toggles one row", () => {
     const { g } = withEpics(flatGrid())
@@ -122,6 +187,113 @@ describe("selectRowsOnCheckboxClick", () => {
     g.dispatch(checkboxClick("a"))
     g.dispatch(checkboxClick("b", { shift: true }))
     expect(g.state.rowSelection.$()).toEqual({ a: true, b: true })
+  })
+})
+
+describe("selectRowsOnCellClick", () => {
+  const clickGrid = (columns: readonly ColumnDef<Row>[] = COLUMNS): Grid<Row> =>
+    grid<Row>({
+      id: "t",
+      rows: FLAT,
+      columns,
+      rowId: (row) => row.id,
+      epics: [selectRowsOnCellClick<Row>()],
+    })
+
+  it("replaces the selection on a plain click", () => {
+    const { g } = withEpics(clickGrid())
+    g.dispatch(cellClick("c", "name"))
+    expect(g.state.rowSelection.$()).toEqual({ c: true })
+    g.dispatch(cellClick("a", "size"))
+    expect(g.state.rowSelection.$()).toEqual({ a: true })
+  })
+
+  it("toggles one row on ctrl and on meta, leaving the rest alone", () => {
+    const { g } = withEpics(clickGrid())
+    g.dispatch(cellClick("c", "name"))
+    g.dispatch(cellClick("a", "name", { ctrl: true }))
+    expect(g.state.rowSelection.$()).toEqual({ c: true, a: true })
+    g.dispatch(cellClick("a", "name", { meta: true }))
+    expect(g.state.rowSelection.$()).toEqual({ c: true, a: false })
+  })
+
+  it("fills the range from the anchor the last plain click left", () => {
+    const { g } = withEpics(clickGrid())
+    g.dispatch(cellClick("c", "name"))
+    g.dispatch(cellClick("b", "name", { shift: true }))
+    expect(g.state.rowSelection.$()).toEqual({ c: true, a: true, b: true })
+  })
+
+  it("selects one row at a time behind a radio column", () => {
+    const { g } = withEpics(clickGrid([radioColumn<Row>(), ...COLUMNS]))
+    g.dispatch(cellClick("c", "name"))
+    g.dispatch(cellClick("a", "name", { ctrl: true }))
+    expect(g.state.rowSelection.$()).toEqual({ a: true })
+  })
+
+  it("leaves a click that landed on a link or a glyph to the control", () => {
+    const { g } = withEpics(clickGrid())
+    g.dispatch(cellClick("c", "name", {}, true))
+    expect(g.state.rowSelection.$()).toEqual({})
+  })
+
+  it("leaves a secondary button alone", () => {
+    const { g } = withEpics(clickGrid())
+    g.dispatch(cellClick("c", "name", { button: 2 }))
+    expect(g.state.rowSelection.$()).toEqual({})
+  })
+})
+
+describe("the two tri-state header toggles", () => {
+  const toggleGrid = (
+    columns: readonly ColumnDef<Row>[],
+    epics: readonly GridEpic<Row>[],
+  ): Grid<Row> =>
+    grid<Row>({
+      id: "t",
+      rows: TREE,
+      columns,
+      rowId: (row) => row.id,
+      subRows: (row) => row.kids,
+      epics,
+    })
+
+  it("fills every selectable row from the checkbox header, and clears it on the next click", () => {
+    const columns = [checkboxColumn<Row>(), ...COLUMNS]
+    const { g } = withEpics(toggleGrid(columns, [toggleSelectAllOnHeaderClick<Row>()]))
+    g.dispatch(headerClick(BUILT_IN_IDS.check))
+    expect(g.state.rowSelection.$()).toEqual({ src: true, readme: true })
+    g.dispatch(headerClick(BUILT_IN_IDS.check))
+    expect(g.state.rowSelection.$()).toEqual({ src: false, readme: false })
+  })
+
+  it("opens every branch from the expand header, including the ones the flat list hides", () => {
+    const columns = [expandColumn<Row>(), ...COLUMNS]
+    const { g } = withEpics(toggleGrid(columns, [toggleExpandAllOnHeaderClick<Row>()]))
+    g.dispatch(headerClick(BUILT_IN_IDS.expand))
+    expect(g.state.expanded.$()).toEqual({ src: true, "src/b": true })
+    expect(g.view.flat.$().map((n) => n.key)).toEqual([
+      "src",
+      "src/a",
+      "src/b",
+      "src/b/x",
+      "readme",
+    ])
+    g.dispatch(headerClick(BUILT_IN_IDS.expand))
+    expect(g.view.flat.$().map((n) => n.key)).toEqual(["src", "readme"])
+  })
+
+  it("answers to its own column and to no other header", () => {
+    const columns = [checkboxColumn<Row>(), expandColumn<Row>(), ...COLUMNS]
+    const { g } = withEpics(
+      toggleGrid(columns, [toggleSelectAllOnHeaderClick<Row>(), toggleExpandAllOnHeaderClick<Row>()]),
+    )
+    g.dispatch(headerClick("name"))
+    expect(g.state.rowSelection.$()).toEqual({})
+    expect(g.state.expanded.$()).toEqual({})
+    g.dispatch(headerClick(BUILT_IN_IDS.check))
+    expect(g.state.expanded.$()).toEqual({})
+    expect(g.state.rowSelection.$()).toEqual({ src: true, readme: true })
   })
 })
 

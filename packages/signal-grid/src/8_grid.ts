@@ -17,7 +17,7 @@ import {
   type Sizer,
   type Spacers,
 } from "./4_slice.js"
-import { gridDom, intentOf } from "./3_paths.js"
+import { browserOwnsClick, gridDom, intentOf } from "./3_paths.js"
 import {
   collapseToOneEntry,
   coveredBy,
@@ -131,6 +131,9 @@ export interface GridConfig<TRow> {
   readonly rowId: (row: TRow) => RowId
   /** Supplying this is the whole of tree mode. */
   readonly subRows?: (row: TRow) => readonly TRow[] | undefined
+  /** Where the whole row points. `ColumnDef.href` beats it per column, and a built-in glyph column
+   * is never covered by it, because those cells hold a control of their own. */
+  readonly rowHref?: (row: TRow) => string | undefined
   readonly mode?: GridMode
   /** Server mode: total rows behind the query, so the scrollbar can measure the whole result. */
   readonly rowCount?: GridSource<number | null>
@@ -207,6 +210,7 @@ export interface Grid<TRow> {
   readonly close: () => void
   readonly slots: Slots<TRow>
   readonly rowId: (row: TRow) => RowId
+  readonly rowHref?: (row: TRow) => string | undefined
 }
 
 const byPhase = <TRow, P extends GridAction<TRow>["phase"]>(
@@ -722,6 +726,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
     epics$: slice.epics$,
     slots: config.slots ?? {},
     rowId: config.rowId,
+    rowHref: config.rowHref,
   }
 }
 
@@ -779,7 +784,9 @@ function bindRoot<TRow>(
         .subscribe((it) => dispatch(to(it))),
     )
   }
-  on(dom.cell.route.click, intentOf["cell.click"])
+  // A command-click, a shift-click, or a middle-click on a link opens it somewhere else, and an
+  // epic acting on a row the user is opening in another tab is acting on the wrong screen.
+  on(dom.cell.route.click.pipe(rxFilter((it) => !browserOwnsClick(it))), intentOf["cell.click"])
   on(dom.cell.route.pointerdown, intentOf["cell.pointerdown"])
   // `pointerenter` does not bubble, and delegation listens on the document, so the hover edge
   // arrives as `pointerover` and the route resolves it to the cell underneath.

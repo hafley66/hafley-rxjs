@@ -3,8 +3,8 @@
   "generatedBy": "packages/signal-grid/scripts/parity.mjs",
   "features": 47,
   "implemented": 24,
-  "declaredOnly": 8,
-  "tags": 50,
+  "declaredOnly": 9,
+  "tags": 53,
   "modules": 20,
   "untagged": [],
   "optedOut": {
@@ -38,35 +38,47 @@
       "id": "row.select",
       "declaration": "checkboxColumn",
       "file": "src/5_columns.ts",
-      "line": 178
+      "line": 288
     },
     {
       "id": "row.select",
       "declaration": "radioColumn",
       "file": "src/5_columns.ts",
-      "line": 199
+      "line": 294
     },
     {
       "id": "row.expand",
       "declaration": "expandColumn",
       "file": "src/5_columns.ts",
-      "line": 216
+      "line": 311
     },
     {
       "id": "row.order",
       "declaration": "dragColumn",
       "file": "src/5_columns.ts",
-      "line": 232
+      "line": 328
     },
     {
       "id": "row.detail",
       "declaration": "detailColumn",
       "file": "src/5_columns.ts",
-      "line": 246
+      "line": 344
+    },
+    {
+      "id": "row.select",
+      "declaration": "selectRowsOnCellClick",
+      "file": "src/7_epics.ts",
+      "line": 207
+    },
+    {
+      "id": "row.select",
+      "declaration": "toggleSelectAllOnHeaderClick",
+      "file": "src/7_epics.ts",
+      "line": 228
     }
   ],
   "decidedOut": 8,
-  "undecided": 7,
+  "undecided": 6,
   "tanstack": 20,
   "mui": {
     "yes": 45,

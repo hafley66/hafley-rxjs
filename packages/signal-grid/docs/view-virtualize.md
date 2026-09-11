@@ -47,6 +47,7 @@ keeps the arithmetic honest at the only place the pixels are used.
 
 `g.state.virtualize.horizontal.$(true)` runs the same `renderPlan` over the horizontal run, which
 `src/8_grid.ts:612` builds as `colPlan`. It is off by default, because a schema narrow enough to fit
+`src/8_grid.ts:606` builds as `colPlan`. It is off by default, because a schema narrow enough to fit
 pays the two spacer tracks for nothing.
 
 Under `orientation: "columns"` the vertical seat holds columns and the horizontal seat holds rows, so

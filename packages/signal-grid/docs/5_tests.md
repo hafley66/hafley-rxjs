@@ -101,7 +101,7 @@ again through `grid()` plus `writeGridVars`.
 | a bare column defaults to `100px` | `9_css.test.ts:63` | `4_slice.test.ts:358` |
 | a mixed run joins in order | `9_css.test.ts:69` | `4_slice.test.ts:392` |
 
-`src/9_css.test.ts:43` is now `describe("what becomes a track")` and holds only what `tracksOf`
+`src/9_css.test.ts:44` is now `describe("what becomes a track")` and holds only what `tracksOf`
 adds: run order start/center/end (`:41`), a header group taking no track (`:56`), and a committed
 resize freezing a flex column (`:65`).
 
@@ -131,7 +131,7 @@ the rule rather than after the member.
 
 ### 2.6 Fixtures duplicated rather than shared
 
-The same `TREE` literal was typed out at `src/7_epics.test.ts:30`, `src/8_grid.test.ts:26`, and
+The same `TREE` literal was typed out at `src/7_epics.test.ts:20`, `src/8_grid.test.ts:26`, and
 `src/12_transpose.test.ts:34`. The same `keys(nodes)` one-liner was redefined at
 `src/1_axis.test.ts:46`, `src/8_grid.test.ts:34`, `src/11_detail.test.ts:37`, and
 `src/12_transpose.test.ts:54`. All now come from `src/test/0_kit.ts`.
@@ -151,6 +151,7 @@ The same `TREE` literal was typed out at `src/7_epics.test.ts:30`, `src/8_grid.t
 `docs/1_parity.md:115` records `row.filter` as "no, by decision", and `buildRowPredicate` has no
 caller in `src/`: the only import of `2_operators.js` outside its own test is `src/8_grid.ts:7`,
 which takes `buildComparator` alone (`src/8_grid.ts:441`, `:342`). Roughly 44 of the 56 exercise
+which takes `buildComparator` alone (`src/8_grid.ts:443`, `:342`). Roughly 44 of the 56 exercise
 unwired code.
 
 Not condemned. `src/index.ts:11` re-exports the module wholesale, so every operator set is package

@@ -207,8 +207,8 @@ describe("intentOf", () => {
       intentOf["expander.click"](rowEvent()),
       intentOf["checkbox.click"](rowEvent()),
     ]).toEqual([
-      { phase: "intent", type: "cell.click", row: ROW, col: COL, mods: NO_MODS },
-      { phase: "intent", type: "cell.dblclick", row: ROW, col: COL, mods: NO_MODS },
+      { phase: "intent", type: "cell.click", row: ROW, col: COL, mods: NO_MODS, interactive: false },
+      { phase: "intent", type: "cell.dblclick", row: ROW, col: COL, mods: NO_MODS, interactive: false },
       { phase: "intent", type: "cell.pointerdown", row: ROW, col: COL, mods: NO_MODS },
       { phase: "intent", type: "header.click", col: COL, mods: NO_MODS },
       { phase: "intent", type: "expander.click", row: ROW, mods: NO_MODS },

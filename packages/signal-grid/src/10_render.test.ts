@@ -9,6 +9,7 @@ import {
   cellId,
   type CellCtx,
   type ColumnDef,
+  type GridIntent,
   type GridState,
   type HeaderCtx,
   type Orientation,
@@ -24,7 +25,15 @@ import {
   expandColumn,
   radioColumn,
   rowNumberColumn,
+  EXPAND_ALL_GLYPH,
+  SELECT_ALL_GLYPH,
 } from "./5_columns.js"
+import {
+  expandOnCellDoubleClick,
+  expandOnExpanderClick,
+  selectRowsOnCellClick,
+  type GridEpic,
+} from "./7_epics.js"
 import { grid, type Grid } from "./8_grid.js"
 import { render, type RenderHandle } from "./10_render.js"
 import { headerGroup } from "./18_bands.js"
@@ -65,6 +74,9 @@ interface Options {
   readonly slots?: Slots<Row>
   readonly state?: Partial<GridState>
   readonly hold?: (made: Grid<Row>) => void
+  /** Absent installs `defaultEpics()`, which is what every test above the interaction ones wants. */
+  readonly epics?: readonly GridEpic<Row>[]
+  readonly rowHref?: (row: Row) => string | undefined
 }
 
 let root: HTMLElement
@@ -111,6 +123,8 @@ function mountGrid(options: Options = {}): Harness {
     state: { virtualize: { vertical: false, horizontal: false }, ...options.state },
     viewport: { top: 0, left: 0, width: 600, height: 400 },
     slots: options.slots,
+    epics: options.epics,
+    rowHref: options.rowHref,
   })
   options.hold?.(made)
   const handle = render(made, root)
@@ -208,9 +222,27 @@ describe("built-in columns reach their routes", () => {
       },
     })
     const head = root.querySelector(selectorFor("header", { colId: "__check" }))
-    expect(head?.textContent).toBe("☐")
+    expect(head?.textContent).toBe(SELECT_ALL_GLYPH.none)
     harness.grid.state.$({ ...harness.grid.state.$(), rowSelection: { a: true } })
-    expect(head?.textContent).toBe("☑")
+    expect(head?.textContent).toBe(SELECT_ALL_GLYPH.some)
+    harness.grid.state.$({ ...harness.grid.state.$(), rowSelection: { a: true, b: true } })
+    expect(head?.textContent).toBe(SELECT_ALL_GLYPH.all)
+  })
+
+  test("the expand header draws the same three states off the row forest", () => {
+    let made: Grid<Row> | undefined
+    const harness = mountGrid({
+      rows: TREE,
+      subRows: (it) => it.kids,
+      columns: [expandColumn<Row>({ grid: () => made }), NAME],
+      hold: (it) => {
+        made = it
+      },
+    })
+    const head = root.querySelector(selectorFor("header", { colId: "__expand" }))
+    expect(head?.textContent).toBe(EXPAND_ALL_GLYPH.none)
+    harness.grid.state.$({ ...harness.grid.state.$(), expanded: { a: true } })
+    expect(head?.textContent).toBe(EXPAND_ALL_GLYPH.all)
   })
 
   test("a drag column renders a grip carrying the row move route", () => {
@@ -232,7 +264,7 @@ describe("built-in columns reach their routes", () => {
     expect(textOfCell("a", "__rowNumber")).toBe("1")
     expect(textOfCell("b", "__rowNumber")).toBe("2")
     expect(root.querySelectorAll(".sg-detail-toggle").length).toBe(2)
-    expect(textOfCell("a", "__detail")).toBe("▸")
+    expect(textOfCell("a", "__detail")).toBe("▶")
   })
 
   test("a movable column stamps the move route on its header label, and nothing else does", () => {
@@ -242,6 +274,130 @@ describe("built-in columns reach their routes", () => {
     const size = root.querySelector(selectorFor("header", { colId: "size" }))
     expect(name?.querySelector(".sg-head-label")?.getAttribute("data-route")).toBe("move")
     expect(size?.querySelector(".sg-head-label")?.hasAttribute("data-route")).toBe(false)
+  })
+})
+
+// --- what a real pointer reaches --------------------------------------------
+
+const click = (target: Element | null, init: MouseEventInit = {}): void => {
+  target?.dispatchEvent(new MouseEvent("click", { bubbles: true, ...init }))
+}
+
+describe("selecting by clicking the row", () => {
+  const clicking = (): readonly GridEpic<Row>[] => [selectRowsOnCellClick<Row>()]
+
+  test("a plain click replaces the selection and a ctrl-click adds one row", () => {
+    const { grid: made } = mountGrid({ epics: clicking() })
+    click(cellAt("a", "name"))
+    expect(made.state.rowSelection.$()).toEqual({ a: true })
+    click(cellAt("b", "size"), { ctrlKey: true })
+    expect(made.state.rowSelection.$()).toEqual({ a: true, b: true })
+    click(cellAt("b", "size"))
+    expect(made.state.rowSelection.$()).toEqual({ b: true })
+  })
+
+  test("a shift-click fills the range from the row the last plain click anchored", () => {
+    const { grid: made } = mountGrid({ epics: clicking() })
+    click(cellAt("a", "name"))
+    click(cellAt("b", "name"), { shiftKey: true })
+    expect(made.state.rowSelection.$()).toEqual({ a: true, b: true })
+  })
+
+  test("a click on the expander glyph opens the row and selects nothing", () => {
+    const { grid: made } = mountGrid({
+      rows: TREE,
+      subRows: (it) => it.kids,
+      epics: [expandOnExpanderClick<Row>(), ...clicking()],
+    })
+    click(root.querySelector(selectorFor("expander")))
+    expect(made.state.expanded.$()).toEqual({ a: true })
+    expect(made.state.rowSelection.$()).toEqual({})
+  })
+})
+
+// What the browser actually sends: two clicks, then the dblclick, all bubbling from one element.
+const doubleClick = (target: Element | null): void => {
+  click(target)
+  click(target)
+  target?.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }))
+}
+
+describe("double clicking a tree row", () => {
+  const treeGrid = (epics: readonly GridEpic<Row>[]): Harness =>
+    mountGrid({ rows: TREE, subRows: (it) => it.kids, epics })
+
+  test("opens the row, and the select epic beside it leaves that row selected", () => {
+    const { grid: made } = treeGrid([expandOnCellDoubleClick<Row>(), selectRowsOnCellClick<Row>()])
+    doubleClick(cellAt("a", "name"))
+    expect(made.state.expanded.$()).toEqual({ a: true })
+    expect(made.state.rowSelection.$()).toEqual({ a: true })
+  })
+
+  test("a double click on the glyph is the two clicks under it and nothing more", () => {
+    const { grid: made } = treeGrid([expandOnCellDoubleClick<Row>(), expandOnExpanderClick<Row>()])
+    doubleClick(root.querySelector(selectorFor("expander")))
+    expect(made.state.expanded.$()).toEqual({ a: false })
+  })
+})
+
+describe("a cell that is a link", () => {
+  const LINKED: ColumnDef<Row> = {
+    ...NAME,
+    href: (it) => (it.id === "a" ? `#row-${it.id}` : undefined),
+  }
+
+  const linkAt = (rowId: string, colId: string): HTMLAnchorElement | null =>
+    cellAt(rowId, colId)?.querySelector("a") ?? null
+
+  test("a column href wraps that cell's content and leaves the rows it declined plain", () => {
+    mountGrid({ columns: [LINKED, SIZE] })
+    expect(linkAt("a", "name")?.getAttribute("href")).toBe("#row-a")
+    expect(linkAt("a", "name")?.textContent).toBe("Alpha")
+    expect(linkAt("b", "name")).toBeNull()
+    expect(cellAt("b", "name")?.textContent).toBe("Beta")
+    expect(linkAt("a", "size")).toBeNull()
+  })
+
+  test("a row href covers every data cell and none of the glyph columns", () => {
+    mountGrid({
+      columns: [checkboxColumn<Row>(), NAME, SIZE],
+      rowHref: (it) => `#row-${it.id}`,
+    })
+    expect(linkAt("a", "name")?.getAttribute("href")).toBe("#row-a")
+    expect(linkAt("a", "size")?.getAttribute("href")).toBe("#row-a")
+    expect(root.querySelector(CHECK)?.closest("a")).toBeNull()
+  })
+
+  test("a column href beats the row's", () => {
+    mountGrid({ columns: [LINKED, SIZE], rowHref: () => "#whole-row" })
+    expect(linkAt("a", "name")?.getAttribute("href")).toBe("#row-a")
+    expect(linkAt("a", "size")?.getAttribute("href")).toBe("#whole-row")
+  })
+
+  test("a plain click follows the link, raises the intent, and selects nothing", () => {
+    const { grid: made } = mountGrid({
+      columns: [LINKED, SIZE],
+      epics: [selectRowsOnCellClick<Row>()],
+    })
+    const seen: GridIntent[] = []
+    const subs = made.intent$.subscribe((it) => seen.push(it))
+    location.hash = "#before"
+    click(linkAt("a", "name"))
+    subs.unsubscribe()
+    expect(location.hash).toBe("#row-a")
+    expect(seen.filter((it) => it.type === "cell.click")).toHaveLength(1)
+    expect(made.state.rowSelection.$()).toEqual({})
+  })
+
+  test("a command-click is the browser's: no intent raised and no default prevented", () => {
+    const { grid: made } = mountGrid({ columns: [LINKED, SIZE] })
+    const seen: GridIntent[] = []
+    const subs = made.intent$.subscribe((it) => seen.push(it))
+    const event = new MouseEvent("click", { bubbles: true, cancelable: true, metaKey: true })
+    linkAt("a", "name")?.dispatchEvent(event)
+    subs.unsubscribe()
+    expect(seen).toEqual([])
+    expect(event.defaultPrevented).toBe(false)
   })
 })
 

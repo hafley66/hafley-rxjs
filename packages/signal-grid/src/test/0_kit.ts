@@ -165,12 +165,34 @@ export const checkboxClick = (row: string, over: Partial<Modifiers> = {}): GridI
   mods: mods(over),
 })
 
-export const cellClick = (row: string, col: string, over: Partial<Modifiers> = {}): GridIntent => ({
+/** `interactive` is the fourth argument rather than a modifier: it is what the click landed on,
+ * which no keyboard chord can say. */
+export const cellClick = (
+  row: string,
+  col: string,
+  over: Partial<Modifiers> = {},
+  interactive = false,
+): GridIntent => ({
   phase: "intent",
   type: "cell.click",
   row,
   col,
   mods: mods(over),
+  interactive,
+})
+
+export const cellDoubleClick = (
+  row: string,
+  col: string,
+  over: Partial<Modifiers> = {},
+  interactive = false,
+): GridIntent => ({
+  phase: "intent",
+  type: "cell.dblclick",
+  row,
+  col,
+  mods: mods(over),
+  interactive,
 })
 
 export const keyPress = (name: string): GridIntent => ({
