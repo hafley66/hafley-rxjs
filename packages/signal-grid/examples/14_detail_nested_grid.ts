@@ -8,7 +8,7 @@
 import { Subscription, tap } from "rxjs"
 import { defaultEpics, detailColumn, detailHeights, detailOnCellClick } from "../src/index.js"
 import { mountInView, runWhenInView } from "@hafley66/docs-kit"
-import { grid, isDetailKey, render, rowOfDetailKey } from "../src/index.js"
+import { grid, render } from "../src/index.js"
 import type { ColumnDef, RenderHandle } from "../src/index.js"
 import source from "./14_detail_nested_grid.ts?raw"
 import type { Example } from "./0_types.js"
@@ -48,9 +48,22 @@ export const detailNestedGrid: Example = {
     const root = document.createElement("div")
     root.style.blockSize = "360px"
     host.append(root)
-    const panels = new Map<string, RenderHandle>()
+    // The handle and the grid both, because stopping a render leaves the grid it drew still open and
+    // the example check counts that as a subscription the package owns and never closed.
+    interface Panel {
+      readonly handle: RenderHandle
+      readonly close: () => void
+    }
+    const panels = new Map<string, Panel>()
+    const closePanel = (row: string): void => {
+      const held = panels.get(row)
+      if (held === undefined) return
+      held.handle.stop()
+      held.close()
+      panels.delete(row)
+    }
     const openPanel = (row: string, into: HTMLElement): void => {
-      panels.get(row)?.stop()
+      closePanel(row)
       const inner = grid<Line>({
         id: `lines-${row}`,
         rows: LINES(row),
@@ -58,23 +71,11 @@ export const detailNestedGrid: Example = {
         rowId: (line) => line.id,
         state: { virtualize: { vertical: false, horizontal: false } },
       })
-      panels.set(row, render(inner, into))
+      panels.set(row, { handle: render(inner, into), close: () => inner.close() })
     }
     const columns: readonly ColumnDef<Order>[] = [
-      detailColumn<Order>({ cell: (ctx) => (isDetailKey(ctx.row) ? "" : "▶") }),
-      {
-        id: "customer",
-        header: "Customer",
-        width: 420,
-        cell: (ctx) => {
-          if (!isDetailKey(ctx.row)) return String(ctx.value)
-          const panel = document.createElement("div")
-          panel.style.blockSize = `${PANEL_HEIGHT - 20}px`
-          panel.style.inlineSize = "100%"
-          openPanel(rowOfDetailKey(ctx.row), panel)
-          return panel
-        },
-      },
+      detailColumn<Order>(),
+      { id: "customer", header: "Customer", width: 420 },
     ]
     const g = grid<Order>({
       id: "detail-nested-grid",
@@ -83,6 +84,17 @@ export const detailNestedGrid: Example = {
       rowId: (row) => row.id,
       epics: [...defaultEpics<Order>(), detailOnCellClick<Order>({ columns: ["__detail"] })],
       state: { detail: { r0: true }, rowHeight: detailHeights({ r0: true }, PANEL_HEIGHT) },
+      // The panel is the `detail` slot's. A detail row gets one full-width box and no cells at all,
+      // so a column cell that tested the key would be drawing into a seat that is never built.
+      slots: {
+        detail: (ctx) => {
+          const panel = document.createElement("div")
+          panel.style.blockSize = `${PANEL_HEIGHT - 20}px`
+          panel.style.inlineSize = "100%"
+          openPanel(ctx.row, panel)
+          return panel
+        },
+      },
     })
     const handle = render(g, root)
     const subs = new Subscription()
@@ -95,8 +107,7 @@ export const detailNestedGrid: Example = {
     }))))
     return () => {
       subs.unsubscribe()
-      for (const panel of panels.values()) panel.stop()
-      panels.clear()
+      for (const row of [...panels.keys()]) closePanel(row)
       handle.stop()
       g.close()
       root.remove()
