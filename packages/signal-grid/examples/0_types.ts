@@ -1,6 +1,6 @@
 // The kit owns the five fields every runnable example has. This adds the one that is about grids:
 // which row of the parity ledger the example is evidence for.
-import type { Example as DocsExample, ExampleCheck } from "@hafley66/docs-kit"
+import type { AltRenderer, Example as DocsExample, ExampleCheck } from "@hafley66/docs-kit"
 import type { FeatureId } from "../src/features.js"
 
 export interface Example extends DocsExample {
@@ -8,4 +8,4 @@ export interface Example extends DocsExample {
   readonly feature: FeatureId
 }
 
-export type { ExampleCheck }
+export type { AltRenderer, ExampleCheck }

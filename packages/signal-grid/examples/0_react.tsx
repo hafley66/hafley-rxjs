@@ -9,8 +9,6 @@
 // the editing seat, links, selection stamping, per-row heights, the pinned row runs, and the
 // spacer tracks a column window leaves behind.
 import { useEffect, useRef, type CSSProperties, type ReactNode, type RefObject } from "react"
-import { flushSync } from "react-dom"
-import { createRoot } from "react-dom/client"
 import {
   cellAttrs,
   columnReader,
@@ -158,26 +156,3 @@ export function SignalGrid<TRow>({ grid }: { readonly grid: Grid<TRow> }): React
     </div>
   )
 }
-
-/** The `Example.alternate` half. Same host and same teardown contract as the DOM `mount` beside it,
- * and the grid comes from the example's own factory so neither side writes the config a second time. */
-export const reactMount = <TRow,>(open: () => Grid<TRow>, height: number) =>
-  (host: HTMLElement): (() => void) => {
-    const stage = document.createElement("div")
-    stage.style.blockSize = `${height}px`
-    host.append(stage)
-    const grid = open()
-    const root = createRoot(stage)
-    // The observer in `useGridWiring` first reports a size after the frame that mounted, and a
-    // zero-height viewport windows no rows, so the box is measured once before anything renders.
-    const rect = stage.getBoundingClientRect()
-    grid.viewport.$({ ...grid.viewport.$(), width: rect.width, height: rect.height })
-    // Synchronous, so the example check reads a painted tree on the frame after mount rather than on
-    // whichever frame React's own scheduler picked.
-    flushSync(() => root.render(<SignalGrid grid={grid} />))
-    return () => {
-      root.unmount()
-      grid.close()
-      stage.remove()
-    }
-  }

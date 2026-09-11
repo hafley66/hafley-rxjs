@@ -2,7 +2,7 @@
 // appends or flips a key without dropping the ones already in the model.
 import { grid, render, type ColumnDef, type Grid } from "../src/index.js"
 import source from "./2_multi_sort.ts?raw"
-import { reactMount } from "./0_react.js"
+import { multiSortReact } from "./2_multi_sort_react.js"
 import type { Example } from "./0_types.js"
 
 interface Row {
@@ -29,7 +29,7 @@ const COLUMNS: readonly ColumnDef<Row>[] = [
 
 // One factory and one seed for both renderings. The React panel raises `header.click` through the
 // same `grid.bind` the DOM panel does, so the sort model behind each is one reducer, not two.
-const open = (): Grid<Row> =>
+export const open = (): Grid<Row> =>
   grid<Row>({
     id: "multi-sort",
     rows: ROWS,
@@ -56,5 +56,5 @@ export const multiSort: Example = {
       root.remove()
     }
   },
-  alternate: { label: "React", mount: reactMount(open, 320) },
+  alternate: multiSortReact,
 }

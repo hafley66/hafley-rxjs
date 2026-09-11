@@ -222,9 +222,15 @@ importers:
       '@codemirror/lang-javascript':
         specifier: ^6.2.5
         version: 6.2.5
+      '@codemirror/language':
+        specifier: ^6.12.4
+        version: 6.12.4
       '@hafley66/signals':
         specifier: workspace:*
         version: link:../signals
+      '@lezer/highlight':
+        specifier: ^1.2.3
+        version: 1.2.3
       codemirror:
         specifier: ^6.0.2
         version: 6.0.2

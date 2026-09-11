@@ -12,6 +12,9 @@
 export interface AltRenderer {
   /** What the panel prints on the button. The `mount` field's own button is always "DOM". */
   readonly label: string
+  /** Same contract as `Example.source`. A panel that printed the other rendering's file would make
+   * the button a claim about code the reader is not being shown, so this field is required. */
+  readonly source: string
   /** Same contract as `Example.mount`: takes a host, returns the teardown for what it opened. */
   readonly mount: (host: HTMLElement) => () => void
 }
