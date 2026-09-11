@@ -1,7 +1,7 @@
 // Route 3. `orientation: "columns"`: the column axis stands on the y dimension and the rows run
 // across. The same state drives both seatings, and a 2 by 3 span becomes 3 by 2 in the transpose.
 import { Signal } from "@hafley66/signals"
-import { Subscription } from "rxjs"
+import { merge, Subscription } from "rxjs"
 import {
   cellParts,
   grid,
@@ -166,47 +166,60 @@ function mount(hosts: DemoHosts): DemoHandle {
   ]
 
   const axisGroup = group("Seating", [
-    segmentField<Orientation>("orientation", ORIENTATIONS, () => metrics.state.orientation.$(), setOrientation),
+    segmentField<Orientation>("orientation", ORIENTATIONS, metrics.state.orientation),
     actions([
       { label: "transpose", run: () => setOrientation(transpose(metrics.state.orientation.$())) },
       { label: "transpose twice", run: () => setOrientation(transpose(transpose(metrics.state.orientation.$()))) },
     ]),
-    readbackField("vertical entries", () => {
-      const nodes = metrics.view.vertical.$().nodes
-      return `${nodes.length}: ${nodes.map((it) => it.key).slice(0, 4).join(", ")}…`
-    }),
-    readbackField("horizontal entries", () => {
-      const nodes = metrics.view.horizontal.$().nodes
-      return `${nodes.length}: ${nodes.map((it) => it.key).slice(0, 4).join(", ")}…`
-    }),
-    readbackField("plan.center", () => metrics.view.plan.$().center.slice(0, 4).join(", ")),
-    readbackField("state unchanged by the toggle", () =>
-      fingerprint() === seedFingerprint ? "yes, byte for byte" : "no, a control moved it",
+    readbackField(
+      "vertical entries",
+      Signal<string>(() => {
+        const nodes = metrics.view.vertical.$().nodes
+        return `${nodes.length}: ${nodes.map((it) => it.key).slice(0, 4).join(", ")}…`
+      }),
+    ),
+    readbackField(
+      "horizontal entries",
+      Signal<string>(() => {
+        const nodes = metrics.view.horizontal.$().nodes
+        return `${nodes.length}: ${nodes.map((it) => it.key).slice(0, 4).join(", ")}…`
+      }),
+    ),
+    readbackField("plan.center", Signal<string>(() => metrics.view.plan.$().center.slice(0, 4).join(", "))),
+    readbackField(
+      "state unchanged by the toggle",
+      Signal<string>(() =>
+        fingerprint() === seedFingerprint ? "yes, byte for byte" : "no, a control moved it",
+      ),
     ),
   ])
 
   const spanGroup = group("Spanning", [
-    readbackField("declared on q1", () => `rows ${SPAN_ROWS}, cols ${SPAN_COLS} at index ${SPAN_AT_INDEX}`),
-    readbackField("view.spans", describeSpans),
-    readbackField("view.covered", describeCovered),
-    readbackField("acceptance", () => {
-      const relation = metrics.view.spans.$()
-      const first = [...relation.values()][0]
-      if (first === undefined) return "no span"
-      const wanted =
-        metrics.state.orientation.$() === "rows"
-          ? { vertical: SPAN_ROWS, horizontal: SPAN_COLS }
-          : { vertical: SPAN_COLS, horizontal: SPAN_ROWS }
-      const ok = first.vertical === wanted.vertical && first.horizontal === wanted.horizontal
-      return ok ? `${wanted.vertical} × ${wanted.horizontal}, as declared` : "mismatch"
-    }),
+    readbackField(
+      "declared on q1",
+      Signal<string>(() => `rows ${SPAN_ROWS}, cols ${SPAN_COLS} at index ${SPAN_AT_INDEX}`),
+    ),
+    readbackField("view.spans", Signal<string>(describeSpans)),
+    readbackField("view.covered", Signal<string>(describeCovered)),
+    readbackField(
+      "acceptance",
+      Signal<string>(() => {
+        const relation = metrics.view.spans.$()
+        const first = [...relation.values()][0]
+        if (first === undefined) return "no span"
+        const wanted =
+          metrics.state.orientation.$() === "rows"
+            ? { vertical: SPAN_ROWS, horizontal: SPAN_COLS }
+            : { vertical: SPAN_COLS, horizontal: SPAN_ROWS }
+        const ok = first.vertical === wanted.vertical && first.horizontal === wanted.horizontal
+        return ok ? `${wanted.vertical} × ${wanted.horizontal}, as declared` : "mismatch"
+      }),
+    ),
   ])
 
   const viewGroup = group("View", [
-    checkField("list view (the degenerate transpose)", () => metrics.state.listView.$(), (next) =>
-      metrics.state.listView.$(next),
-    ),
-    readbackField("horizontal run after collapse", () => String(metrics.view.cols.$().length)),
+    checkField("list view (the degenerate transpose)", metrics.state.listView),
+    readbackField("horizontal run after collapse", Signal<string>(() => String(metrics.view.cols.$().length))),
     actions([
       { label: "pin q1 start", run: () => metrics.state.colPinning.$({ ...metrics.state.colPinning.$(), q1: "start" }) },
       { label: "pin north start", run: () => metrics.state.rowPinning.$({ ...metrics.state.rowPinning.$(), north: "start" }) },
@@ -219,21 +232,8 @@ function mount(hosts: DemoHosts): DemoHandle {
   const panelReadout = readout(metrics, box)
   hosts.readout.append(panelReadout.el)
 
-  let queued = false
-  const refresh = (): void => {
-    if (queued) return
-    queued = true
-    requestAnimationFrame(() => {
-      queued = false
-      axisGroup.refresh()
-      spanGroup.refresh()
-      viewGroup.refresh()
-    })
-  }
-
-  subs.add(runWhenInView(metrics.state.$, refresh))
-  subs.add(runWhenInView(metrics.view.plan.$, refresh))
-  refresh()
+  const panel$ = merge(axisGroup.bind$, spanGroup.bind$, viewGroup.bind$)
+  subs.add(runWhenInView(panel$))
 
   return {
     grid: metrics,
