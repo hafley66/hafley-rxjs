@@ -9,7 +9,6 @@ import {
   TEMPLATES,
   cellAttrs,
   checkAttrs,
-  colWidthVar,
   decodeVarId,
   encodeVarId,
   expandAttrs,
@@ -280,7 +279,6 @@ describe("intentOf", () => {
 
 describe("css custom properties", () => {
   it("names a variable off the same segment the route uses", () => {
-    expect(colWidthVar(COL)).toBe("--sg-h-w-size")
     expect(rowHeightVar("r1")).toBe("--sg-r-h-r1")
     expect(SG_DEPTH).toBe("--sg-depth")
   })
@@ -304,7 +302,6 @@ describe("css custom properties", () => {
 
   it("produces a var name a stylesheet can hold", () => {
     for (const id of ["src/a.ts", "first name", "size ✓"]) {
-      expect(colWidthVar(id)).toMatch(/^--sg-h-w-[A-Za-z0-9_-]+$/)
       expect(rowHeightVar(id)).toMatch(/^--sg-r-h-[A-Za-z0-9_-]+$/)
     }
   })

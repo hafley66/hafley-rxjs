@@ -51,7 +51,7 @@ are one `drag` operator in `src/6_gestures.ts` with three hit tests, driven by e
 | DOM attributes | `rowAttrs` in `src/3_paths.ts` | `data-route="g/r"` plus `data-row-id` |
 | event stream | `gridDom` in `src/3_paths.ts` | a delegated event carrying typed params |
 | intent | `intentOf` in `src/3_paths.ts` | a `GridIntent`, with no state moved |
-| CSS namespace | `colWidthVar` in `src/3_paths.ts` | a custom property named after the column |
+| CSS namespace | `rowHeightVar` in `src/3_paths.ts` | a custom property named after the row |
 | test selector | `selectorFor` in `src/3_paths.ts` | the same attributes, as a CSS selector |
 
 ## Law 5 in practice

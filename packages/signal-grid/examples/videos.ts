@@ -69,7 +69,7 @@ export const VIDEOS: readonly Recording[] = [
       "during the drag, the size cell width equals [140, 160, 180, 200, 220, 240]",
       "after release, the size row cell and the size header cell are both 240",
       "the model agrees: widths().size === 240",
-      'getComputedStyle(root).getPropertyValue(colWidthVar("size")) === "240px"',
+      'getComputedStyle(root).getPropertyValue("--sg-inline-tracks") === "220px 240px 140px 160px"',
       "neighbour name keeps width 220 and its x across the whole drag",
       "neighbour kind keeps width 140",
     ],
