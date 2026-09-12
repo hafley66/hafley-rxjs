@@ -150,8 +150,8 @@ The same `TREE` literal was typed out at `src/7_epics.test.ts:20`, `src/8_grid.t
 **`src/2_operators.test.ts`, 56 tests against a cut feature.** The cut is real.
 `docs/1_parity.md:115` records `row.filter` as "no, by decision", and `buildRowPredicate` has no
 caller in `src/`: the only import of `2_operators.js` outside its own test is `src/8_grid.ts:7`,
-which takes `buildComparator` alone (`src/8_grid.ts:448`, `:342`). Roughly 44 of the 56 exercise
-which takes `buildComparator` alone (`src/8_grid.ts:448`, `:342`). Roughly 44 of the 56 exercise
+which takes `buildComparator` alone (`src/8_grid.ts:452`, `:342`). Roughly 44 of the 56 exercise
+which takes `buildComparator` alone (`src/8_grid.ts:452`, `:342`). Roughly 44 of the 56 exercise
 unwired code.
 
 Not condemned. `src/index.ts:11` re-exports the module wholesale, so every operator set is package

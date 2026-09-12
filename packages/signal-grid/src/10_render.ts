@@ -181,6 +181,25 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
   // one top-level group can hold the whole table, and a panel is not a row to count.
   const sizes = Signal<ReadonlyMap<RowId, number>>(() => groupCounts(grid.view.sorted.$()))
 
+  // Whole-relation projections, one memo each. `frame` reads `view.plan`, and the plan reads the
+  // scroll position, so every scroll frame re-runs the whole frame body. Built inline there, these
+  // four walked the vertical run four times per frame: at 1,000,000 rows that is 440 ms spent in a
+  // frame that had 16, which is what turned the sheet demo white while it scrolled. None of them
+  // reads the viewport, so each now answers from cache until the run itself changes.
+  const verticalKeys = Signal<readonly RowId[]>(() =>
+    grid.view.vertical.$().nodes.map((it) => it.key),
+  )
+  const verticalNodes = Signal<ReadonlyMap<string, FlatNode<RowId>>>(
+    () => new Map(grid.view.vertical.$().nodes.map((node) => [node.key, node] as const)),
+  )
+  // `some` walks the whole run when the answer is false, which is the flat case.
+  const anyChildren = Signal<boolean>(() =>
+    grid.view.vertical.$().nodes.some((it: FlatNode<RowId>) => it.hasChildren),
+  )
+  const covers = Signal<(address: CellId) => boolean>(() =>
+    selectionTest(rangeOf(grid.state.selection.$()), verticalKeys.$(), grid.view.colLeaves.$()),
+  )
+
   const frame = Signal<Frame<TRow>>(() => {
     if (!LOG.on) return frameBody()
     const started = performance.now()
@@ -259,22 +278,15 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       // and under subgrid it now sits inside the first cell where it is impossible to miss.
       // A header group nests too, and under the transpose those groups are the run. The glyph
       // writes `expanded`, which only the row axis reads, so it stays off the column forest.
-      drawsExpander:
-        rowsVertical &&
-        !schema.some(isExpandColumn) &&
-        down.nodes.some((it: FlatNode<RowId>) => it.hasChildren),
+      drawsExpander: rowsVertical && !schema.some(isExpandColumn) && anyChildren.$(),
       rowsVertical,
       // The vertical run's own nodes, so the plan and the records it builds share one key space.
-      nodes: new Map(down.nodes.map((node) => [node.key, node] as const)),
+      nodes: verticalNodes.$(),
       group: grid.state.group.$(),
       groupSizes: sizes.$(),
       selection: grid.state.rowSelection.$(),
-      covers: selectionTest(
-        rangeOf(grid.state.selection.$()),
-        down.nodes.map((it) => it.key),
-        leaves,
-      ),
-      verticalKeys: down.nodes.map((it) => it.key),
+      covers: covers.$(),
+      verticalKeys: verticalKeys.$(),
       horizontalKeys: leaves,
       expanded: grid.state.expanded.$(),
       extent: down.extent,

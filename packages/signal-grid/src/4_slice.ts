@@ -205,28 +205,66 @@ export interface RenderPlan<K extends string> {
 
 const DEFAULT_OVERSCAN = 4
 
-/** partition -> paginate -> virtualize, in that order, once. */
-export function renderPlan<K extends string>(input: RenderPlanInput<K>): RenderPlan<K> {
+/** The half of a plan the scroll position does not reach. `partition` walks the whole relation
+ * calling `side` on every key, `paginate` cuts it, and the sizer indexes what is left, so all
+ * three cost the relation rather than the window. Held apart from `planWindow` so a consumer can
+ * memoize it against the run and pay the walk when the run changes instead of when the scroll
+ * moves: at 1,000,000 rows that walk was the whole of a 440 ms scroll frame. */
+export interface PlanBase<K extends string> {
+  readonly start: readonly K[]
+  readonly end: readonly K[]
+  /** The center after the page cut. `planWindow` slices this. */
+  readonly paged: readonly K[]
+  readonly sizer: Sizer
+  readonly pageCount: number
+}
+
+export type PlanBaseInput<K extends string> = Pick<
+  RenderPlanInput<K>,
+  "flat" | "side" | "page" | "paginate" | "sizer"
+>
+
+export type PlanWindowInput = Pick<RenderPlanInput<never>, "virtualize" | "viewport" | "overscan">
+
+/** partition -> paginate -> size. Costs the relation. */
+export function planBase<K extends string>(input: PlanBaseInput<K>): PlanBase<K> {
   const { start, center, end } = partition(input.flat, input.side)
   const paged = paginate(center, input.page, input.paginate)
-  const sizer = input.sizer(paged)
   // Reported off the whole center regardless of the toggle, because a pager reads it to decide
   // whether to render at all.
   const size = Math.trunc(input.page.size)
-  const pageCount = size > 0 ? Math.ceil(center.length / size) : 0
-  const span = input.virtualize
-    ? windowOf(sizer, input.viewport, input.overscan ?? DEFAULT_OVERSCAN)
-    : { start: 0, end: paged.length }
   return {
-    sizer,
     start,
-    center: sliceKeys(paged, span),
     end,
-    span,
-    centerTotal: sizer.total,
-    offsetTop: sizer.offsetOf(span.start),
-    pageCount,
+    paged,
+    sizer: input.sizer(paged),
+    pageCount: size > 0 ? Math.ceil(center.length / size) : 0,
   }
+}
+
+/** virtualize. Costs the window. */
+export function planWindow<K extends string>(
+  base: PlanBase<K>,
+  input: PlanWindowInput,
+): RenderPlan<K> {
+  const span = input.virtualize
+    ? windowOf(base.sizer, input.viewport, input.overscan ?? DEFAULT_OVERSCAN)
+    : { start: 0, end: base.paged.length }
+  return {
+    sizer: base.sizer,
+    start: base.start,
+    center: sliceKeys(base.paged, span),
+    end: base.end,
+    span,
+    centerTotal: base.sizer.total,
+    offsetTop: base.sizer.offsetOf(span.start),
+    pageCount: base.pageCount,
+  }
+}
+
+/** partition -> paginate -> virtualize, in that order, once. */
+export function renderPlan<K extends string>(input: RenderPlanInput<K>): RenderPlan<K> {
+  return planWindow(planBase(input), input)
 }
 
 /** The pixels a window left out, before `span.start` and after `span.end`. */

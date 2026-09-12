@@ -350,6 +350,29 @@ describe("columns are the same five operators on the other axis", () => {
     expect(nodes.map((n) => [n.key, n.depth])).toEqual([["meta", 0], ["name", 1], ["size", 1]])
   })
 
+  // The scroll frame is where the sheet demo spent 440 ms of the 16 it had: the pinning cut, the
+  // page cut and the sizer all walk the relation, and they sat in the same memo as the window.
+  // The sizer is the one of the three the plan hands back, so its identity is the probe.
+  it("a scroll windows the same base rather than rebuilding it", () => {
+    const g = flatGrid()
+    g.state.virtualize.$({ vertical: true, horizontal: false })
+    g.viewport.$({ top: 0, left: 0, width: 400, height: 200 })
+    const first = g.view.plan.$()
+    g.viewport.$({ top: 180, left: 0, width: 400, height: 200 })
+    const second = g.view.plan.$()
+    expect(second.span).not.toEqual(first.span)
+    expect(second.sizer).toBe(first.sizer)
+  })
+
+  it("a row height write does rebuild the base", () => {
+    const g = flatGrid()
+    g.state.virtualize.$({ vertical: true, horizontal: false })
+    g.viewport.$({ top: 0, left: 0, width: 400, height: 200 })
+    const first = g.view.plan.$()
+    g.state.rowHeight.$({ ...g.state.rowHeight.$(), [FLAT[1]!.id]: 90 })
+    expect(g.view.plan.$().sizer).not.toBe(first.sizer)
+  })
+
   it("width overrides beat the column definition", () => {
     const g = flatGrid()
     g.viewport.$({ top: 0, left: 0, width: 400, height: 200 })

@@ -1,6 +1,6 @@
 // The panel that makes the kernel legible: what the relation holds, what the plan chose, and what
 // the action stream just carried. Every stat names the signal it reads, so nothing is refreshed.
-import { animationFrameScheduler, auditTime, filter, map, merge, Observable, scan, tap } from "rxjs"
+import { animationFrameScheduler, auditTime, defer, filter, map, merge, Observable, scan, shareReplay, tap } from "rxjs"
 import { Signal } from "@hafley66/signals"
 import { mountInView, runWhenInView } from "@hafley66/docs-kit"
 import { type Grid, type GridAction } from "../src/index.js"
@@ -9,6 +9,61 @@ import { afterPaint, h } from "./controls.js"
 const LOG_LINES = 10
 /** A full node count walks the tree, so it runs on a timer rather than on every scroll frame. */
 const NODE_COUNT_MS = 400
+
+/** Frames kept in the rolling average. 90 at 60 Hz is a second and a half, long enough that one
+ * stutter shows and short enough that the number follows the hand. */
+const FRAME_WINDOW = 90
+/** Two 60 Hz budgets. A gap past this is a frame the browser was asked for and did not draw. */
+const SLOW_FRAME_MS = 32
+/** The meter samples every frame; only the text it writes is throttled. */
+const FRAME_TEXT_MS = 250
+
+export interface FrameStats {
+  readonly fps: number
+  /** The longest gap still in the window, in milliseconds. */
+  readonly worst: number
+  /** Gaps past `SLOW_FRAME_MS` since the meter started. */
+  readonly slow: number
+}
+
+/** Milliseconds between paints. The teardown cancels the pending frame, so a demo scrolled out of
+ * view stops asking for them. */
+const frameGaps = (): Observable<number> =>
+  new Observable<number>((observer) => {
+    let previous = performance.now()
+    let id = requestAnimationFrame(function step(now: number): void {
+      observer.next(now - previous)
+      previous = now
+      id = requestAnimationFrame(step)
+    })
+    return () => cancelAnimationFrame(id)
+  })
+
+/** One ring per subscription rather than a growing array, so reading the meter costs one write and
+ * one 90-step sum per frame instead of an allocation. */
+const frameStats = (): Observable<FrameStats> =>
+  defer(() => {
+    const gaps = new Float64Array(FRAME_WINDOW)
+    let at = 0
+    let filled = 0
+    let slow = 0
+    return frameGaps().pipe(
+      map((gap): FrameStats => {
+        gaps[at] = gap
+        at = (at + 1) % FRAME_WINDOW
+        if (filled < FRAME_WINDOW) filled += 1
+        if (gap > SLOW_FRAME_MS) slow += 1
+        let total = 0
+        let worst = 0
+        for (let i = 0; i < filled; i++) {
+          const it = gaps[i] ?? 0
+          total += it
+          if (it > worst) worst = it
+        }
+        return { fps: total === 0 ? 0 : (1000 * filled) / total, worst, slow }
+      }),
+    )
+  })
 
 export interface Readout {
   readonly el: HTMLElement
@@ -96,6 +151,20 @@ export function readout<TRow>(
     stat(domStats, "DOM nodes", painted(domNodeCount)),
   )
 
+  // Scroll is where this kernel is judged, and a rendered-cell count says nothing about whether
+  // the browser drew them in time. One rAF loop, three readings off it.
+  const frameBox = h("div", "stats")
+  el.append(h("h2", "group-title", "Frames"), frameBox)
+  const held$ = frameStats().pipe(
+    auditTime(FRAME_TEXT_MS),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  )
+  const frames$ = merge(
+    stat(frameBox, "fps", held$.pipe(map((it) => it.fps.toFixed(0)))),
+    stat(frameBox, "worst frame", held$.pipe(map((it) => `${it.worst.toFixed(1)} ms`))),
+    stat(frameBox, `frames over ${SLOW_FRAME_MS} ms`, held$.pipe(map((it) => num(it.slow)))),
+  )
+
   const logBox = h("div", "log")
   el.append(h("h2", "group-title", "actions$"), logBox)
   const lines: HTMLElement[] = []
@@ -117,7 +186,7 @@ export function readout<TRow>(
 
   // The box being reported on is the gate: a readout of a grid nobody is looking at is a frame per
   // burst spent on numbers nobody reads.
-  const panel$ = merge(relation$, plan$, document$, log$)
+  const panel$ = merge(relation$, plan$, document$, frames$, log$)
   const stop = mountInView(mount, () => runWhenInView(panel$))
 
   return { el, stop }

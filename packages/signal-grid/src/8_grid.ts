@@ -9,9 +9,13 @@ import { buildComparator } from "./2_operators.js"
 import { withDetail } from "./11_detail.js"
 import {
   measuredSizer,
+  planBase,
+  planWindow,
   renderPlan,
   spacersOf,
   uniformSizer,
+  type PlanBase,
+  type PlanWindowInput,
   type RenderPlan,
   type RenderPlanInput,
   type Sizer,
@@ -538,22 +542,29 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
     horizontalFacet(seats, state.orientation.$()),
   )
 
-  const plan = Signal<RenderPlan<RowId>>(() => {
+  // Its own memo, off `vertical` alone. Inside `plan` this filter and map ran on every scroll
+  // frame, because `plan` reads the scroll position: two passes over 1,000,000 keys for a window
+  // that moved by one row. The mirror of `colLeaves` on the other seat: under the transpose the
+  // column axis stands here, and a band holds no seat on either axis, so it renders no entry of
+  // the run that scrolls.
+  const verticalLeaves = Signal<readonly string[]>(() => {
+    const seat = vertical.$()
+    return seat.nodes
+      .filter((it) => !isHeaderGroup(seat.axis.by.get(it.key)))
+      .map((it) => it.key)
+  })
+
+  // The pinning cut, the page cut and the sizer, none of which the scroll position reaches. Read
+  // through its own memo so a scroll frame windows a base it did not rebuild: those three walk the
+  // relation, and a million rows made them the whole of a 440 ms frame.
+  const planBase$ = Signal<PlanBase<string>>(() => {
     const seat = vertical.$()
     // The direction supplies the fallback, not the axis: a column standing on the y dimension is
     // one row height tall, because that is what the density setting is measuring.
     const fallback = ROW_HEIGHT[state.density.$()]
-    // The two fields by name, so a sideways scroll writes `left` and never wakes this stage. Reading
-    // the whole viewport put a full row replan on every horizontal frame.
-    const start = viewport.top.$()
-    const extent = viewport.height.$()
     const args = pageWindow(state.page.$())
-    // The mirror of `colLeaves` on the other seat: under the transpose the column axis stands here,
-    // and a band holds no seat on either axis, so it renders no entry of the run that scrolls.
-    const input: RenderPlanInput<string> = {
-      flat: seat.nodes
-        .filter((it) => !isHeaderGroup(seat.axis.by.get(it.key)))
-        .map((it) => it.key),
+    return planBase<string>({
+      flat: verticalLeaves.$(),
       side: (key) => seat.pinning[key],
       page: args.page,
       // Server mode already answered with exactly the page it was asked for, so slicing here takes
@@ -561,17 +572,27 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
       // `infinite` happens to agree, because the caller returns the whole `[0, loaded)` prefix;
       // `pages` does not, and the two modes must not disagree about who did the cut.
       paginate: mode === "client" && args.enabled,
-      virtualize: state.virtualize.vertical.$(),
       sizer: (keys) => sizerFor(keys, (it) => seat.extent[it], fallback),
+    })
+  })
+
+  const plan = Signal<RenderPlan<RowId>>(() => {
+    const base = planBase$.$()
+    // The two fields by name, so a sideways scroll writes `left` and never wakes this stage. Reading
+    // the whole viewport put a full row replan on every horizontal frame.
+    const start = viewport.top.$()
+    const extent = viewport.height.$()
+    const window: PlanWindowInput = {
+      virtualize: state.virtualize.vertical.$(),
       viewport: { start, extent },
       overscan: config.overscan ?? 4,
     }
-    if (!LOG.on) return renderPlan(input)
+    if (!LOG.on) return planWindow(base, window)
     const started = performance.now()
-    const built = renderPlan(input)
+    const built = planWindow(base, window)
     LOG.emit(CAT_PLAN, "plan {id} {durationMs}ms", {
       id: loggedId,
-      count: input.flat.length,
+      count: base.paged.length + base.start.length + base.end.length,
       drawn: built.start.length + built.center.length + built.end.length,
       durationMs: performance.now() - started,
     })

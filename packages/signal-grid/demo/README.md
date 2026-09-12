@@ -53,10 +53,25 @@ demo/4_detail.ts
 demo/5_sheet.ts
 demo/5_sheet.test.ts  the chromium test behind /sheet, listed in DOM_TESTS
 demo/controls.ts    control primitives, each a lens over a signal
-demo/readout.ts     relation sizes, plan numbers, DOM counts, the actions$ log
+demo/readout.ts     relation sizes, plan numbers, DOM counts, the frame meter, the actions$ log
 demo/data.ts        the seeded filesystem generator
 demo/scenarios.ts   preset states as plain data, used by /everything
 ```
+
+## Frames
+
+Every route's readout carries a **Frames** group under the DOM counts. One `requestAnimationFrame`
+loop per mounted readout, sampling the gap between paints, throttled to a text write every 250 ms.
+
+| stat | reads | why it is there |
+| --- | --- | --- |
+| `fps` | 1000 / mean gap over the last 90 frames | a rendered-cell count says nothing about whether the browser drew them in time |
+| `worst frame` | longest gap still in the 90-frame window | one stutter during a drag never shows in an average |
+| `frames over 32 ms` | running count since the readout mounted | two 60 Hz budgets; past it the browser was asked for a frame and skipped it |
+
+The loop is inside `runWhenInView`, so a route scrolled off the page stops asking for frames. The
+window is a `Float64Array` ring, one write and one 90-step sum per frame, so the meter does not
+show up in its own reading.
 
 ## Console
 

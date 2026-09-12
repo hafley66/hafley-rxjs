@@ -59,6 +59,10 @@
 @layer signal-grid.theme {
 [data-route="g"] {
   --sg-row-h: 36px;
+  /* Re-seeded at every grid root. `--sg-h` is written inline on a row and a custom property
+     inherits, so a grid mounted inside a detail panel gave each of its own rows the outer row's
+     height: five 36px lines all asked for 210px and only the first one fit the panel. */
+  --sg-h: initial;
   --sg-total-h: 0px;
   --sg-offset-y: 0px;
   --sg-depth: 0;
@@ -268,6 +272,46 @@
   cursor: col-resize;
   touch-action: none;
 }
+
+/* 6px of hit around 2px of ink: the strip stays a pointer target at any density and the mark
+   stays a line. Drawn on a pseudo-element so the target keeps its width while the ink changes. */
+[data-route="g"] .sg-resize::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 2px;
+  inline-size: 2px;
+  block-size: 100%;
+  background: transparent;
+}
+
+[data-route="g"] .sg-resize:hover::before {
+  background: var(--sg-line);
+}
+
+/* The press keeps `:active` for as long as the button is held, which is the whole drag: the
+   pointer stream lives on `window`, so the handle never sees the pointer leave. The mark stays
+   inside the header cell, which carries `overflow: hidden` for its own ellipsis. */
+[data-route="g"] .sg-resize:active::before {
+  background: var(--sg-accent);
+  inline-size: 3px;
+}
+
+/* The move handle is the header label itself when no slot replaced it, so the cursor is the only
+   thing that says a column can be picked up. */
+[data-route="g"] [data-route="move"] {
+  cursor: grab;
+  touch-action: none;
+}
+
+[data-route="g"] [data-route="move"]:active {
+  cursor: grabbing;
+}
+
+/* No tint on the column being moved. `columnOrder` is rewritten on every pointermove and the
+   header rebuilds on `colRunSignature`, so the cell holding the grip is a new element by the
+   second frame of the drag and any `:active` chain on it died with the old one. The live reorder
+   is the preview; marking the travelling column needs the header to reuse cells by column id. */
 
 /* Tree indent. Depth is written once per row and read here by the one box ahead of the cells.
    The box is `--sg-hit` and the mark inside it is `--sg-glyph`: a target and the thing drawn in it

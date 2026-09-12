@@ -13,7 +13,7 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 | [src/1_axis.ts](#src-1-axis-ts) | 10 | The five pure operators over `Axis<K, T>`, plus the two constructors that mint one and the walks that read one. |
 | [src/2_operators.ts](#src-2-operators-ts) | 15 | Value-level operators: filter predicates and comparators. |
 | [src/3_paths.ts](#src-3-paths-ts) | 23 | One declaration per grid part yields four artifacts: element id, delegated route, CSS custom property namespace, test selector. |
-| [src/4_slice.ts](#src-4-slice-ts) | 15 | From a flat key list to the rendered window. |
+| [src/4_slice.ts](#src-4-slice-ts) | 20 | From a flat key list to the rendered window. |
 | [src/5_columns.ts](#src-5-columns-ts) | 30 | Two rules hold for every factory here, enforced in code: a built-in is never `groupable`, and it never carries `flex` (min and max are pinned to width, so the pool cannot reopen). |
 | [src/6_gestures.ts](#src-6-gestures-ts) | 8 | Resize, column move, and row move are one gesture with three hit tests. |
 | [src/7_epics.ts](#src-7-epics-ts) | 19 | Where an intent becomes a change or an effect. |
@@ -1497,6 +1497,11 @@ From a flat key list to the rendered window.
 | [`sliceKeys`](#src-4-slice-ts-slicekeys) | function |
 | [`RenderPlanInput`](#src-4-slice-ts-renderplaninput) | interface |
 | [`RenderPlan`](#src-4-slice-ts-renderplan) | interface |
+| [`PlanBase`](#src-4-slice-ts-planbase) | interface |
+| [`PlanBaseInput`](#src-4-slice-ts-planbaseinput) | type |
+| [`PlanWindowInput`](#src-4-slice-ts-planwindowinput) | type |
+| [`planBase`](#src-4-slice-ts-planbase-2) | function |
+| [`planWindow`](#src-4-slice-ts-planwindow) | function |
 | [`renderPlan`](#src-4-slice-ts-renderplan-2) | function |
 | [`Spacers`](#src-4-slice-ts-spacers) | interface |
 | [`NO_SPACERS`](#src-4-slice-ts-no-spacers) | const |
@@ -1635,9 +1640,70 @@ export interface RenderPlan<K extends string> {
 export function renderPlan<K extends string>(input: RenderPlanInput<K>): RenderPlan<K>
 ```
 
+### `PlanBase` {#src-4-slice-ts-planbase}
+
+`PlanBase` is declared at `src/4_slice.ts:213`.
+
+The half of a plan the scroll position does not reach. `partition` walks the whole relation
+calling `side` on every key, `paginate` cuts it, and the sizer indexes what is left, so all
+three cost the relation rather than the window. Held apart from `planWindow` so a consumer can
+memoize it against the run and pay the walk when the run changes instead of when the scroll
+moves: at 1,000,000 rows that walk was the whole of a 440 ms scroll frame.
+
+```ts
+export interface PlanBase<K extends string> {
+  readonly start: readonly K[]
+  readonly end: readonly K[]
+  /** The center after the page cut. `planWindow` slices this. */
+  readonly paged: readonly K[]
+  readonly sizer: Sizer
+  readonly pageCount: number
+}
+
+export function planBase<K extends string>(input: PlanBaseInput<K>): PlanBase<K>
+```
+
+### `PlanBaseInput` {#src-4-slice-ts-planbaseinput}
+
+`PlanBaseInput` is declared at `src/4_slice.ts:222`.
+
+```ts
+export type PlanBaseInput<K extends string> = Pick<
+
+export function planBase<K extends string>(input: PlanBaseInput<K>): PlanBase<K>
+```
+
+### `PlanWindowInput` {#src-4-slice-ts-planwindowinput}
+
+`PlanWindowInput` is declared at `src/4_slice.ts:227`.
+
+```ts
+export type PlanWindowInput = Pick<RenderPlanInput<never>, "virtualize" | "viewport" | "overscan">
+```
+
+### `planBase` {#src-4-slice-ts-planbase-2}
+
+`planBase` is declared at `src/4_slice.ts:230`.
+
+partition -> paginate -> size. Costs the relation.
+
+```ts
+planBase: <K extends string>(input: PlanBaseInput<K>) => PlanBase<K>
+```
+
+### `planWindow` {#src-4-slice-ts-planwindow}
+
+`planWindow` is declared at `src/4_slice.ts:246`.
+
+virtualize. Costs the window.
+
+```ts
+planWindow: <K extends string>(base: PlanBase<K>, input: PlanWindowInput) => RenderPlan<K>
+```
+
 ### `renderPlan` {#src-4-slice-ts-renderplan-2}
 
-`renderPlan` is declared at `src/4_slice.ts:209`.
+`renderPlan` is declared at `src/4_slice.ts:266`.
 
 partition -> paginate -> virtualize, in that order, once.
 
@@ -1647,7 +1713,7 @@ renderPlan: <K extends string>(input: RenderPlanInput<K>) => RenderPlan<K>
 
 ### `Spacers` {#src-4-slice-ts-spacers}
 
-`Spacers` is declared at `src/4_slice.ts:233`.
+`Spacers` is declared at `src/4_slice.ts:271`.
 
 The pixels a window left out, before `span.start` and after `span.end`.
 
@@ -1665,7 +1731,7 @@ export function spacersOf<K extends string>(plan: RenderPlan<K>): Spacers
 
 ### `NO_SPACERS` {#src-4-slice-ts-no-spacers}
 
-`NO_SPACERS` is declared at `src/4_slice.ts:241`.
+`NO_SPACERS` is declared at `src/4_slice.ts:279`.
 
 ```ts
 NO_SPACERS: Spacers
@@ -1673,7 +1739,7 @@ NO_SPACERS: Spacers
 
 ### `spacersOf` {#src-4-slice-ts-spacersof}
 
-`spacersOf` is declared at `src/4_slice.ts:245`.
+`spacersOf` is declared at `src/4_slice.ts:283`.
 
 Read off the plan's own sizer, so a spacer can never describe a run other than the one that was
 windowed.
@@ -1684,7 +1750,7 @@ spacersOf: <K extends string>(plan: RenderPlan<K>) => Spacers
 
 ### `TrackColumn` {#src-4-slice-ts-trackcolumn}
 
-`TrackColumn` is declared at `src/4_slice.ts:255`.
+`TrackColumn` is declared at `src/4_slice.ts:293`.
 
 One column's declared sizing. Nothing here is resolved: the browser owns the arithmetic.
 
@@ -1702,7 +1768,7 @@ export function trackList(cols: readonly TrackColumn[]): string
 
 ### `trackList` {#src-4-slice-ts-tracklist}
 
-`trackList` is declared at `src/4_slice.ts:267`.
+`trackList` is declared at `src/4_slice.ts:305`.
 
 One `grid-template-columns` value. `maxWidth` takes the upper slot even when `flex` is set,
 because `minmax()` cannot hold both a flexible max and a cap.
@@ -2385,7 +2451,7 @@ The constructor.
 
 ### `GridSource` {#src-8-grid-ts-gridsource}
 
-`GridSource` is declared at `src/8_grid.ts:70`.
+`GridSource` is declared at `src/8_grid.ts:74`.
 
 Every input accepts any source shape, so a live input and a static one are the same call.
 `@hafley66/signals` already carries this as `SignalSource`; the grid adds a fallback so a live
@@ -2399,7 +2465,7 @@ export function toGridSignal<T>(source: GridSource<T>, fallback: T): Signal<T>
 
 ### `toGridSignal` {#src-8-grid-ts-togridsignal}
 
-`toGridSignal` is declared at `src/8_grid.ts:72`.
+`toGridSignal` is declared at `src/8_grid.ts:76`.
 
 ```ts
 toGridSignal: <T>(source: GridSource<T>, fallback: T) => Signal<T>
@@ -2407,7 +2473,7 @@ toGridSignal: <T>(source: GridSource<T>, fallback: T) => Signal<T>
 
 ### `DEFAULT_PAGE` {#src-8-grid-ts-default-page}
 
-`DEFAULT_PAGE` is declared at `src/8_grid.ts:84`.
+`DEFAULT_PAGE` is declared at `src/8_grid.ts:88`.
 
 ```ts
 DEFAULT_PAGE: Page
@@ -2415,7 +2481,7 @@ DEFAULT_PAGE: Page
 
 ### `defaultState` {#src-8-grid-ts-defaultstate}
 
-`defaultState` is declared at `src/8_grid.ts:86`.
+`defaultState` is declared at `src/8_grid.ts:90`.
 
 ```ts
 defaultState: (over?: Partial<GridState>) => GridState
@@ -2423,7 +2489,7 @@ defaultState: (over?: Partial<GridState>) => GridState
 
 ### `ROW_HEIGHT` {#src-8-grid-ts-row-height}
 
-`ROW_HEIGHT` is declared at `src/8_grid.ts:119`.
+`ROW_HEIGHT` is declared at `src/8_grid.ts:123`.
 
 ```ts
 ROW_HEIGHT: Record<"comfortable" | "compact" | "standard", number>
@@ -2431,7 +2497,7 @@ ROW_HEIGHT: Record<"comfortable" | "compact" | "standard", number>
 
 ### `GridConfig` {#src-8-grid-ts-gridconfig}
 
-`GridConfig` is declared at `src/8_grid.ts:127`.
+`GridConfig` is declared at `src/8_grid.ts:131`.
 
 ```ts
 export interface GridConfig<TRow> {
@@ -2465,7 +2531,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow>
 
 ### `GridView` {#src-8-grid-ts-gridview}
 
-`GridView` is declared at `src/8_grid.ts:155`.
+`GridView` is declared at `src/8_grid.ts:159`.
 
 ```ts
 export interface GridView<TRow> {
@@ -2502,7 +2568,7 @@ export interface GridView<TRow> {
 
 ### `Grid` {#src-8-grid-ts-grid}
 
-`Grid` is declared at `src/8_grid.ts:186`.
+`Grid` is declared at `src/8_grid.ts:190`.
 
 ```ts
 export interface Grid<TRow> {
@@ -2541,7 +2607,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow>
 
 ### `pageWindow` {#src-8-grid-ts-pagewindow}
 
-`pageWindow` is declared at `src/8_grid.ts:234`.
+`pageWindow` is declared at `src/8_grid.ts:238`.
 
 The three retention rules of `PageMode` expressed as one `paginate` call, so paging runs inside
 `renderPlan` after pinning has already been lifted out. Paging before pinning drops pinned
@@ -2553,7 +2619,7 @@ pageWindow: (page: Page) => { page: { index: number; size: number; }; enabled: b
 
 ### `grid` {#src-8-grid-ts-grid-2}
 
-`grid` is declared at `src/8_grid.ts:248`.
+`grid` is declared at `src/8_grid.ts:252`.
 
 ```ts
 grid: <TRow>(config: GridConfig<TRow>) => Grid<TRow>

@@ -5,6 +5,8 @@ import {
   NO_SPACERS,
   paginate,
   partition,
+  planBase,
+  planWindow,
   renderPlan,
   sliceKeys,
   spacersOf,
@@ -477,6 +479,42 @@ describe("the column window", () => {
     })
     expect(off.center).toHaveLength(197)
     expect(spacersOf(off)).toBe(NO_SPACERS)
+  })
+})
+
+describe("planBase and planWindow", () => {
+  const input = {
+    flat: Array.from({ length: 40 }, (_unused, index) => `k${index}`),
+    side: (key: string) => (key === "k0" ? ("start" as const) : undefined),
+    page: { index: 0, size: 25 },
+    paginate: true,
+    virtualize: true,
+    sizer: (keys: readonly string[]) => uniformSizer(keys.length, 20),
+    viewport: { start: 100, extent: 80 },
+    overscan: 1,
+  }
+
+  // Field by field rather than `toEqual` on the pair: a `Sizer` holds closures, so two of them
+  // built from the same run are equal in every number and never deeply equal.
+  it("compose to what renderPlan answers", () => {
+    const split = planWindow(planBase(input), input)
+    const whole = renderPlan(input)
+    expect(split.start).toEqual(whole.start)
+    expect(split.center).toEqual(whole.center)
+    expect(split.end).toEqual(whole.end)
+    expect(split.span).toEqual(whole.span)
+    expect(split.centerTotal).toBe(whole.centerTotal)
+    expect(split.offsetTop).toBe(whole.offsetTop)
+    expect(split.pageCount).toBe(whole.pageCount)
+  })
+
+  it("share one base across two windows, which is what a scroll frame reuses", () => {
+    const base = planBase(input)
+    const low = planWindow(base, { ...input, viewport: { start: 0, extent: 80 } })
+    const high = planWindow(base, input)
+    expect(low.span).not.toEqual(high.span)
+    expect(low.sizer).toBe(high.sizer)
+    expect(low.start).toBe(high.start)
   })
 })
 
