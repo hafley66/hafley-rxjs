@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>signal-grid perf knobs, live</title>
+    <style>
+      html, body { margin: 0; background: #14161a; color: #e6e8ea; font: 13px system-ui; color-scheme: dark }
+      [data-route="g"] { color-scheme: dark }
+      header.bar { display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+        background: #1b1e24; border-block-end: 1px solid #2a2f36; position: sticky; top: 0; z-index: 5 }
+      header.bar h1 { font-size: 14px; margin: 0; font-weight: 600 }
+      #readout { font-variant-numeric: tabular-nums; color: #a9b1ba }
+      #readout b { color: #6fd7ad }
+      button { font: inherit; color: inherit; background: #2a2f36; border: 0; border-radius: 4px; padding: 4px 10px; cursor: pointer }
+      main { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 14px; padding: 14px; align-items: start }
+      #rack { display: flex; flex-direction: column; gap: 10px }
+      .k-field { display: grid; grid-template-columns: 1fr 58px auto; grid-template-areas: "head head head" "input value sweep";
+        gap: 6px 8px; align-items: center; background: #1b1e24; border: 1px solid #2a2f36; border-radius: 6px; padding: 8px 10px }
+      .k-head { grid-area: head; display: flex; flex-direction: column; gap: 1px }
+      .k-head i { color: #7d868f; font-size: 11px; font-style: normal }
+      .k-range { grid-area: input; inline-size: 100%; accent-color: #6fd7ad }
+      .k-check { grid-area: input; justify-self: start; inline-size: 16px; block-size: 16px; accent-color: #6fd7ad }
+      .k-value { grid-area: value; font-variant-numeric: tabular-nums; color: #a9b1ba; text-align: end; font-size: 11px }
+      .k-sweep { grid-area: sweep; font-size: 11px; padding: 2px 8px }
+      .panes { display: flex; flex-direction: column; gap: 12px; min-inline-size: 0 }
+      #stage { background: #1b1e24; border: 1px solid #2a2f36; border-radius: 6px; padding: 10px; overflow: hidden }
+      .k-host { overflow: hidden }
+      .chart { background: #0f1115; border: 1px solid #2a2f36; border-radius: 6px; position: relative }
+      .chart canvas { display: block; inline-size: 100%; block-size: 150px }
+      .chart figcaption { position: absolute; inset-block-start: 6px; inset-inline-start: 8px;
+        font-size: 11px; color: #7d868f; pointer-events: none }
+      .chart figcaption b { color: #6fd7ad } .chart figcaption i { color: #5a8fd6; font-style: normal }
+      .b-stack { display: flex; align-items: center; gap: 4px; min-inline-size: 0 }
+      .b-dot { inline-size: 8px; block-size: 8px; border-radius: 50%; background: #6fd7ad; flex: none }
+      .b-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+      .b-badge { font-size: 10px; padding: 0 4px; border-radius: 3px; background: #2a2f36; flex: none }
+      .b-meter { inline-size: 70px; block-size: 6px; background: #2a2f36; border-radius: 3px; overflow: hidden; flex: none }
+      .b-fill { display: block; block-size: 100%; background: #6fd7ad }
+      .b-num { font-variant-numeric: tabular-nums; font-size: 11px }
+      rect { fill: #6fd7ad }
+    </style>
+    <script type="module" crossorigin src="./assets/knobs-DT9Gio9q.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/0_bench-CbDffROP.js">
+    <link rel="stylesheet" crossorigin href="./assets/0_bench-B0dVDB41.css">
+  </head>
+  <body>
+    <header class="bar">
+      <h1>signal-grid perf knobs</h1>
+      <button id="toggle">pause</button>
+      <div id="readout"></div>
+    </header>
+    <main>
+      <div id="rack"></div>
+      <div class="panes">
+        <div id="stage"></div>
+        <figure class="chart" style="margin:0">
+          <figcaption>last 320 frames &middot; <b>frame ms</b> &middot; <i>dom build ms</i></figcaption>
+          <canvas id="trace"></canvas>
+        </figure>
+        <figure class="chart" style="margin:0">
+          <figcaption>sweep: knob value across, frame ms up &middot; <span id="curve-label">press sweep on a knob</span></figcaption>
+          <canvas id="curve"></canvas>
+        </figure>
+      </div>
+    </main>
+  </body>
+</html>
