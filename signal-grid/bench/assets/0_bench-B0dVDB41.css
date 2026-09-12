@@ -1,0 +1,620 @@
+/* Two layers, so a consumer rule outside them wins without a specificity fight and without
+   !important. Override a palette by writing `--sg-*` anywhere unlayered; override structure only
+   if you mean it. */
+@layer signal-grid.theme, signal-grid.structure;
+
+/* Typed so the numeric ones animate and an invalid value falls back to the initial rather than
+   poisoning the whole declaration. `--sg-depth` is the one that matters: it feeds a calc() every
+   row reads, and an untyped custom property makes that calc discrete. */
+@property --sg-depth {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+@property --sg-indent {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 14px;
+}
+@property --sg-row-h {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 36px;
+}
+@property --sg-hit {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 24px;
+}
+@property --sg-glyph {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 16px;
+}
+@property --sg-sort-glyph {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 11px;
+}
+@property --sg-pad {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 8px;
+}
+@property --sg-guide-x {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --sg-guide-y {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --sg-accent {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #3b82f6;
+}
+
+/* @comment-ok: the property list is this file's contract with the renderer and has no runtime home
+ * Every custom property the renderer reads, with a default, plus the layout that turns those
+ * numbers into a grid. Scoped under `[data-route="g"]`, which is the same attribute delegation
+ * matches on, so a page with two grids has two independent property scopes and no id in a selector.
+ *
+ * The renderer writes: --sg-row-h, --sg-total-h, --sg-offset-y, --sg-depth, --sg-inline-tracks, and
+ * one height per sized row. Everything below is either one of those or a knob for the consumer.
+ */
+
+@layer signal-grid.theme {
+[data-route="g"] {
+  --sg-row-h: 36px;
+  /* Re-seeded at every grid root. `--sg-h` is written inline on a row and a custom property
+     inherits, so a grid mounted inside a detail panel gave each of its own rows the outer row's
+     height: five 36px lines all asked for 210px and only the first one fit the panel. */
+  --sg-h: initial;
+  --sg-total-h: 0px;
+  --sg-offset-y: 0px;
+  --sg-depth: 0;
+  --sg-indent: 16px;
+  --sg-hit: 24px;
+  --sg-glyph: 16px;
+  --sg-sort-glyph: 11px;
+  --sg-col-w: 100px;
+  --sg-pad: 8px;
+  --sg-line: light-dark(#e3e6ea, #2a2f36);
+  --sg-bg: light-dark(#ffffff, #14161a);
+  --sg-fg: light-dark(#1a1c1f, #e6e8ea);
+  --sg-head-bg: light-dark(#f6f7f9, #1b1e23);
+  --sg-group-bg: light-dark(#f4f6f8, #1a1d22);
+  --sg-group-dim: light-dark(#5b636d, #98a1ad);
+  --sg-group-count-bg: light-dark(#e5e9ee, #262b32);
+  --sg-hover-bg: light-dark(#f2f5f9, #1f242b);
+  --sg-selected-bg: light-dark(#dce9fb, #1d2b3d);
+  --sg-focus: light-dark(#2f6feb, #6ea8fe);
+  --sg-range-bg: light-dark(#e8f0fe, #1b2735);
+  --sg-range-edge: light-dark(#2f6feb, #6ea8fe);
+
+  color-scheme: light dark;
+  position: relative;
+  display: block;
+  block-size: 100%;
+  color: var(--sg-fg);
+  background: var(--sg-bg);
+  font: inherit;
+}
+}
+
+@layer signal-grid.structure {
+
+/* The scroll box, deliberately routeless: see the comment in 10_render.ts. */
+[data-route="g"] .sg-scroll {
+  position: relative;
+  overflow: auto;
+  block-size: 100%;
+  inline-size: 100%;
+}
+
+/* Inside the scroller rather than above it, so the header tracks horizontal scroll for free. */
+[data-route="g"] .sg-head {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 3;
+  display: block;
+  inline-size: max-content;
+  min-inline-size: 100%;
+  block-size: calc(var(--sg-row-h) * var(--sg-head-rows, 1));
+  background: var(--sg-head-bg);
+  border-block-end: 1px solid var(--sg-line);
+}
+
+/* One row per band level, written by `10_render.ts` as `--sg-head-rows` because the count is the
+   schema's band depth and no selector can count elements. */
+[data-route="g"] .sg-head-row {
+  display: grid;
+  grid-template-columns: var(--sg-inline-tracks, none);
+  inline-size: max-content;
+  min-inline-size: 100%;
+  block-size: var(--sg-row-h);
+  /* The pinned runs inside take `background: inherit`, so a row with none leaves them transparent
+     and a long pinned header prints on top of the centre header it is supposed to cover. `.sg-head`
+     carries the same colour, and a sticky child cannot inherit through to a grandparent. */
+  background: var(--sg-head-bg);
+}
+
+/* The scroll spacer. Its height is the paginated center run, whatever fraction of it renders. */
+[data-route="g"] .sg-canvas {
+  position: relative;
+  block-size: var(--sg-total-h);
+  inline-size: max-content;
+  min-inline-size: 100%;
+}
+
+[data-route="g"] .sg-rows {
+  display: block;
+  inline-size: max-content;
+  min-inline-size: 100%;
+}
+
+/* Only the windowed run translates: the pinned runs are never virtualized. */
+[data-route="g"] .sg-center {
+  transform: translateY(var(--sg-offset-y));
+  will-change: transform;
+}
+
+[data-route="g"] .sg-pinned-start {
+  position: sticky;
+  inset-block-start: calc(var(--sg-row-h) * var(--sg-head-rows, 1));
+  z-index: 2;
+  background: var(--sg-bg);
+}
+
+[data-route="g"] .sg-pinned-end {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 2;
+  background: var(--sg-bg);
+}
+
+/* `--sg-h` is written inline per row as an alias of that row's height property: the property name
+   is per row, so the fallback keeps this one rule generic. Border-box because the kernel's total
+   counts the border the row draws. */
+[data-route="g"] .sg-row {
+  display: grid;
+  grid-template-columns: var(--sg-inline-tracks, none);
+  box-sizing: border-box;
+  /* min, not fixed: a measured row reports its own height, and a fixed one would
+     report back exactly the number it was given and never grow for a composite cell. */
+  min-block-size: var(--sg-h, var(--sg-row-h));
+  background: var(--sg-bg);
+  border-block-end: 1px solid var(--sg-line);
+}
+
+[data-route="g"] .sg-row:hover {
+  background: var(--sg-hover-bg);
+}
+
+[data-route="g"] .sg-row[data-selected="true"] {
+  background: var(--sg-selected-bg);
+}
+
+[data-route="g"] .sg-run {
+  display: grid;
+  grid-template-columns: subgrid;
+}
+
+[data-route="g"] .sg-cell,
+[data-route="g"] .sg-head-cell {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-inline: var(--sg-pad);
+  /* A grid item's automatic minimum is min-content, which would defeat the ellipsis. */
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The seat the leading spacer track holds when the column window skipped columns before this run.
+   It draws nothing and takes no pointer; its width is the track's, written into the track list. */
+[data-route="g"] .sg-spacer {
+  min-inline-size: 0;
+  pointer-events: none;
+}
+
+[data-route="g"] .sg-run[data-side="start"] {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  background: inherit;
+}
+
+[data-route="g"] .sg-run[data-side="end"] {
+  position: sticky;
+  inset-inline-end: 0;
+  z-index: 1;
+  background: inherit;
+}
+
+[data-route="g"] .sg-head-cell {
+  font-weight: 600;
+  user-select: none;
+}
+
+/* A band's box is the sum of its leaves' tracks, and the lines are what show that extent. */
+[data-route="g"] .sg-head-band {
+  justify-content: center;
+  border-block-end: 1px solid var(--sg-line);
+  border-inline-end: 1px solid var(--sg-line);
+}
+
+/* The seat above a leaf no band covers. It draws nothing and takes no pointer. */
+[data-route="g"] .sg-head-filler {
+  pointer-events: none;
+}
+
+/* The sort mark is an indicator inside a run of label text rather than a control the pointer aims
+   at, so it takes its own size and never `--sg-hit`. U+2191 inks 73 per cent of its em, so 11px
+   draws 8px of arrow beside a label the reader is already scanning. */
+[data-route="g"] .sg-head-cell[data-sort="asc"]::after,
+[data-route="g"] .sg-head-cell[data-sort="desc"]::after {
+  flex: none;
+  font-size: var(--sg-sort-glyph);
+  line-height: 1;
+}
+
+[data-route="g"] .sg-head-cell[data-sort="asc"]::after {
+  content: "\2191";
+}
+
+[data-route="g"] .sg-head-cell[data-sort="desc"]::after {
+  content: "\2193";
+}
+
+[data-route="g"] .sg-resize {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  inline-size: 6px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+/* 6px of hit around 2px of ink: the strip stays a pointer target at any density and the mark
+   stays a line. Drawn on a pseudo-element so the target keeps its width while the ink changes. */
+[data-route="g"] .sg-resize::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 2px;
+  inline-size: 2px;
+  block-size: 100%;
+  background: transparent;
+}
+
+[data-route="g"] .sg-resize:hover::before {
+  background: var(--sg-line);
+}
+
+/* The press keeps `:active` for as long as the button is held, which is the whole drag: the
+   pointer stream lives on `window`, so the handle never sees the pointer leave. The mark stays
+   inside the header cell, which carries `overflow: hidden` for its own ellipsis. */
+[data-route="g"] .sg-resize:active::before {
+  background: var(--sg-accent);
+  inline-size: 3px;
+}
+
+/* The move handle is the header label itself when no slot replaced it, so the cursor is the only
+   thing that says a column can be picked up. */
+[data-route="g"] [data-route="move"] {
+  cursor: grab;
+  touch-action: none;
+}
+
+[data-route="g"] [data-route="move"]:active {
+  cursor: grabbing;
+}
+
+/* The travelling entry, under `drag: "preview"`. Nothing rewrites `colOrder` or the source order
+   while the pointer is down, so the header is not rebuilt and this element is the one it grabbed. */
+[data-route="g"] .sg-head-cell[data-dragging="true"],
+[data-route="g"] .sg-row[data-dragging="true"] {
+  opacity: 0.5;
+}
+
+/* The line at the landing edge. Absolutely positioned inside the scroller, so it spans the whole
+   scrollable run and nothing clips it; `left` and `top` because the offsets are measured. */
+[data-route="g"] .sg-guide {
+  position: absolute;
+  z-index: 4;
+  display: none;
+  pointer-events: none;
+  background: var(--sg-accent);
+}
+
+[data-route="g"] .sg-guide[data-axis="inline"] {
+  display: block;
+  top: 0;
+  bottom: 0;
+  left: var(--sg-guide-x);
+  inline-size: 2px;
+}
+
+[data-route="g"] .sg-guide[data-axis="block"] {
+  display: block;
+  left: 0;
+  right: 0;
+  top: var(--sg-guide-y);
+  block-size: 2px;
+}
+
+/* Tree indent. Depth is written once per row and read here by the one box ahead of the cells.
+   The box is `--sg-hit` and the mark inside it is `--sg-glyph`: a target and the thing drawn in it
+   are two jobs, and one token doing both is what put a 15px triangle in a 27px row. */
+[data-route="g"] .sg-expander {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--sg-hit);
+  block-size: var(--sg-hit);
+  /* `line-height: 1` keeps the mark's line box off the row's height, so the 24px box is the only
+     thing the compact row's 27px of content has to clear. */
+  font-size: var(--sg-glyph);
+  line-height: 1;
+  margin-inline-start: calc(var(--sg-depth) * var(--sg-indent));
+  cursor: pointer;
+  user-select: none;
+  color: var(--sg-fg);
+}
+
+[data-route="g"] .sg-expander[data-leaf="true"] {
+  cursor: default;
+}
+
+/* U+25B6 and U+25BC rather than the small U+25B8 and U+25BE pair: the small triangles ink 27 per
+   cent of their em against these two at 61, so at a 16px mark they would draw 4px, not 10px. */
+[data-route="g"] .sg-row[data-open="false"] .sg-expander[data-leaf="false"]::before {
+  content: "\25B6";
+}
+
+[data-route="g"] .sg-row[data-open="true"] .sg-expander[data-leaf="false"]::before {
+  content: "\25BC";
+}
+
+[data-route="g"] .sg-cell[data-editing="true"] {
+  outline: 2px solid var(--sg-focus);
+  outline-offset: -2px;
+}
+
+/* The header label is the move handle when the column asked for one, so it has to be an element
+   and it has to be the part of the cell the pointer lands on. */
+[data-route="g"] .sg-head-label {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 4px;
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+[data-route="g"] .sg-head-label[data-route="move"] {
+  cursor: grab;
+  touch-action: none;
+}
+
+/* The same box `.sg-head-label` is, for the same reason: a flex item's automatic minimum is
+   min-content, so an anchor without `min-inline-size: 0` pushes its text past the cell instead of
+   truncating. It stretches to the cell's full height, so the hit area is the cell the reader aims
+   at rather than the width of the text. */
+[data-route="g"] .sg-link {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 4px;
+  block-size: 100%;
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: inherit;
+  text-decoration: none;
+}
+
+[data-route="g"] .sg-link:hover,
+[data-route="g"] .sg-link:focus-visible {
+  text-decoration: underline;
+}
+
+/* A glyph column's cell carries no route: the control inside it does, so the control is the whole
+   hit area and the cell contributes no padding to miss. */
+[data-route="g"] .sg-cell-glyph {
+  padding-inline: 0;
+  justify-content: center;
+}
+
+/* These three fill their cell, so the cell is already the target and `--sg-hit` is only the floor
+   under a column narrower than one. The mark inside is `--sg-glyph` like the expander's. */
+[data-route="g"] .sg-check,
+[data-route="g"] .sg-drag,
+[data-route="g"] .sg-detail-toggle {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  block-size: 100%;
+  min-inline-size: var(--sg-hit);
+  font-size: var(--sg-glyph);
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* The glyph text is CSS, not content: a cell rebuilds only when its data changed, so a checkbox
+   that carried its own text would be a frame stale on every selection click. */
+/* U+25A1 with U+2611, and U+25CB with U+25C9: each pair inks within half a pixel of the other at
+   any size, so a selection click swaps the mark without resizing the box the reader is looking at. */
+[data-route="g"] .sg-check::before {
+  content: "\25A1";
+}
+
+[data-route="g"] .sg-check-radio::before {
+  content: "\25CB";
+}
+
+[data-route="g"] .sg-row[data-selected="true"] .sg-check::before {
+  content: "\2611";
+}
+
+[data-route="g"] .sg-row[data-selected="true"] .sg-check-radio::before {
+  content: "\25C9";
+}
+
+/* One glyph turned, rather than two glyphs swapped: the disclosure is the same triangle open or
+   shut, and `rotate` on the mark leaves the box it sits in exactly where it was. */
+[data-route="g"] .sg-detail-toggle::before {
+  content: "\25B6";
+  transition: rotate 120ms ease;
+}
+
+[data-route="g"] .sg-row[data-detail-open="true"] .sg-detail-toggle::before {
+  rotate: 90deg;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-route="g"] .sg-detail-toggle::before {
+    transition: none;
+  }
+}
+
+/* A heading stands for a whole level rather than for a value in a column, so it is one box across
+   the row and no column beside it draws a cell a reader would read as missing data. */
+[data-route="g"] .sg-row[data-group="true"] {
+  display: block;
+  overflow: hidden;
+  background: var(--sg-group-bg);
+}
+
+/* Sticky at the inline start for the reason the detail panel is: the heading names the run under it
+   and has to stay legible while the columns scroll away. */
+[data-route="g"] .sg-group-cell {
+  position: sticky;
+  inset-inline-start: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  block-size: 100%;
+  min-block-size: var(--sg-h, var(--sg-row-h));
+  padding-inline-end: var(--sg-pad);
+  overflow: hidden;
+  white-space: nowrap;
+  user-select: none;
+}
+
+[data-route="g"] .sg-group-label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The column that produced the heading, drawn only when a second level is open. Dimmed, because it
+   labels the value beside it rather than being the thing the reader is scanning for. */
+[data-route="g"] .sg-group-field {
+  color: var(--sg-group-dim);
+  font-size: 0.85em;
+}
+
+[data-route="g"] .sg-group-value {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-route="g"] .sg-group-count {
+  flex: none;
+  padding-inline: 6px;
+  border-radius: 999px;
+  background: var(--sg-group-count-bg);
+  color: var(--sg-group-dim);
+  font-size: 0.8em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A panel is a sibling row holding one box. Sticky at the inline start keeps it in view while the
+   columns beside it scroll away. */
+[data-route="g"] .sg-row[data-detail="true"] {
+  display: block;
+  overflow: hidden;
+}
+
+[data-route="g"] .sg-detail-panel {
+  position: sticky;
+  inset-inline-start: 0;
+  box-sizing: border-box;
+  block-size: 100%;
+  inline-size: 100%;
+  padding: var(--sg-pad);
+  overflow: auto;
+}
+
+/* A span is counted in entries, never in pixels: a run laid out as a grid reads the pair as tracks,
+   and the covered neighbours render nothing, so the anchor grows into the seats they left. */
+[data-route="g"] .sg-cell[data-span="true"] {
+  grid-row: span var(--sg-span-vertical, 1);
+  grid-column: span var(--sg-span-horizontal, 1);
+  block-size: calc(var(--sg-span-vertical, 1) * var(--sg-h, var(--sg-row-h)));
+  align-self: start;
+  z-index: 1;
+}
+
+
+/* A span is counted in entries, so the pair reads straight into grid placement. */
+[data-route="g"] .sg-cell[data-span="true"] {
+  grid-column: span var(--sg-span-horizontal, 1);
+  grid-row: span var(--sg-span-vertical, 1);
+}
+
+/* Presence, not "true": a cell out of the range carries no attribute, so the common case is one
+   attribute removal rather than one write per cell per frame. */
+[data-route="g"] .sg-cell[data-selected] {
+  background: var(--sg-range-bg);
+}
+
+/* One rectangle draws one border: only the cells on a side of the block carry that side's edge,
+   and the cell is border-box already, so the line costs no layout. */
+[data-route="g"] .sg-cell[data-edge~="top"] {
+  border-block-start: 1px solid var(--sg-range-edge);
+}
+[data-route="g"] .sg-cell[data-edge~="bottom"] {
+  border-block-end: 1px solid var(--sg-range-edge);
+}
+[data-route="g"] .sg-cell[data-edge~="start"] {
+  border-inline-start: 1px solid var(--sg-range-edge);
+}
+[data-route="g"] .sg-cell[data-edge~="end"] {
+  border-inline-end: 1px solid var(--sg-range-edge);
+}
+
+/* A drag across cells is a range, not a text selection, and the two fight for the same pointer. */
+[data-route="g"] .sg-cell {
+  user-select: none;
+}
+}
+
+/* Unscoped on purpose: a popover sits in the top layer and is never a descendant of the grid box.
+   Anchor positioning measures from the margin box and the UA sheet gives `[popover]` a margin, so
+   `position-area` would place the menu a margin off its anchor. `:where()` keeps specificity at
+   zero, so any consumer rule wins. */
+:where([popover]) {
+  margin: unset;
+}
