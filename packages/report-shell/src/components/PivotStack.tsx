@@ -7,7 +7,7 @@ import type { Signal as SignalType } from '@hafley66/signals'
 import type { Grid } from '@hafley66/grid'
 import { TreeTable, type TreeColumn, type TreeTableDensity } from '@hafley66/grid/react'
 import { formatDuration } from '../lib/time'
-import { gutter } from '../layout'
+import { gutter } from '@hafley66/xdom'
 import type { NavRow, PivotEntry } from '../types'
 
 export type { PivotEntry }

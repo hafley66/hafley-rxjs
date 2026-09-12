@@ -1,6 +1,6 @@
-// Pure restore math for sizing.ts. Kept in its own file so sizing.ts stays a thin store
-// wrapper; nothing here reads or writes storage.
-import type { Sizing } from './sizing'
+// Pure restore math for 3_sizing.ts. Kept in its own file so the store stays a thin wrapper;
+// nothing here reads or writes storage.
+import type { Sizing } from "./3_sizing.js"
 
 function priorityRank(id: string, priority: string[]): number {
   const index = priority.indexOf(id)
@@ -74,7 +74,7 @@ export function restoreSizing(
   const isRecordedManual = (id: string): boolean => records[id]?.manual === true
 
   const manualIds = ids.filter(isRecordedManual)
-  const autoIds = ids.filter((id) => !isRecordedManual(id))
+  const autoIds = ids.filter(id => !isRecordedManual(id))
 
   // Step 1: manual ids scale their recorded share to the new viewport, clamped to mins.
   const px: Record<string, number> = {}
@@ -88,7 +88,7 @@ export function restoreSizing(
   const manualTotal = manualIds.reduce((sum, id) => sum + px[id], 0)
   const remaining = Math.max(0, viewportPx - manualTotal)
   const fallbackWeight = autoIds.length > 0 ? 1 / autoIds.length : 0
-  const weights = autoIds.map((id) => records[id]?.share ?? fallbackWeight)
+  const weights = autoIds.map(id => records[id]?.share ?? fallbackWeight)
   const totalWeight = weights.reduce((sum, weight) => sum + weight, 0) || 1
   autoIds.forEach((id, index) => {
     const share = weights[index] / totalWeight

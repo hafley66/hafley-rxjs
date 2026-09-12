@@ -8,6 +8,7 @@ hands back a teardown, so switching route stops the previous grid before the nex
 - [Run it](#run-it)
 - [The six routes](#the-six-routes)
 - [Shape](#shape)
+- [The shell](#the-shell)
 - [Console](#console)
 - [Defects found](#defects-found)
 - [Workarounds this directory carries](#workarounds-this-directory-carries)
@@ -25,7 +26,8 @@ Routing is `Route("/:demo")` from `@hafley66/signals` over `location.pathname`, 
 and vite's SPA fallback serves every route.
 
 No dependency is added. Every route imports `../src/index.js` and `../src/theme.css` directly, so
-an edit in `src/` shows up without a package build.
+an edit in `src/` shows up without a package build. `main.ts` also reaches for `layout` and
+`gutter` from `@hafley66/xdom`, already a peer of this package, for the two draggable columns.
 
 ## The six routes
 
@@ -59,6 +61,25 @@ demo/readout.ts     relation sizes, plan numbers, DOM counts, the frame meter, t
 demo/data.ts        the seeded filesystem generator
 demo/scenarios.ts   preset states as plain data, used by /everything
 ```
+
+## The shell
+
+Three steps, keyed off a container query on `body` rather than a media query, so an iframe narrower
+than the page reaches the same step a narrow window does.
+
+| shell inline size | columns | the two side panels |
+| --- | --- | --- |
+| under 760px | the grid, full width | closed `<details>` disclosures stacked above it |
+| 760px to 1179px | `--track-panel`, a gutter, the grid | controls open beside the grid, readout still a disclosure |
+| 1180px and up | `--track-panel`, gutter, grid, gutter, `--track-readout` | both open |
+
+Wide, a `<details>` is `display: contents` and so is its `::details-content`, which drops the
+disclosure out of the layout and leaves the `<aside>` as the grid item it was before.
+
+The two tracks are `layout()` from `@hafley66/xdom` over `localStorageAdapter("signal-grid.demo.tracks")`,
+and its `run$` is merged into the router's stream at `main.ts`, the one boundary in this directory.
+Each gutter commits on pointerup rather than per frame, so a drag costs one grid layout instead of
+one per pointermove.
 
 ## Frames
 

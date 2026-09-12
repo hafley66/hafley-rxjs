@@ -3,9 +3,7 @@
 One million rows and 240 columns, both seats of the window switched on, and the rows minted from
 their index rather than stored.
 
-<iframe class="route-frame" src="./demo/sheet" title="the sheet route"></iframe>
-
-<p><a href="./demo/sheet" target="_blank" rel="noreferrer">Open the route full screen</a></p>
+<RouteFrame route="sheet" title="the sheet route" />
 
 ## What it is stressing
 

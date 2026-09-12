@@ -55,15 +55,21 @@ body {
 
 body {
   font: var(--text-0) / 1.45 var(--sans);
+  /* The shell answers to the box it was given, so an iframe narrower than the page still
+     reaches the one-column step. A media query would answer to the frame's own viewport. */
+  container-type: inline-size;
+  container-name: shell;
 }
 
 /* --- Shell ---------------------------------------------------------------- */
 
+/* Narrowest of three steps, and the base: one column, the grid last and tallest, both side
+   panels closed disclosures above it. 760c adds the panel column, 1180c adds the readout. */
 .demo {
   color-scheme: var(--demo-scheme);
   display: grid;
-  grid-template-columns: minmax(280px, 330px) minmax(0, 1fr) minmax(250px, 300px);
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
   gap: var(--space-3);
   padding: var(--space-3);
   block-size: 100dvh;
@@ -72,6 +78,7 @@ body {
 }
 
 .demo-top {
+  grid-row: 1;
   grid-column: 1 / -1;
   display: flex;
   align-items: baseline;
@@ -79,9 +86,146 @@ body {
   padding-inline: var(--space-1);
 }
 
+.demo-side-panel {
+  grid-row: 2;
+  grid-column: 1 / -1;
+}
+
+.demo-side-readout {
+  grid-row: 3;
+  grid-column: 1 / -1;
+}
+
+.demo-stage {
+  grid-row: 4;
+  grid-column: 1 / -1;
+}
+
+.demo-side {
+  min-inline-size: 0;
+}
+
+.demo-side-summary {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--demo-line);
+  border-radius: var(--radius-2);
+  background: var(--demo-panel-bg);
+  font-size: var(--text--1);
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--demo-muted);
+  cursor: pointer;
+}
+
+/* Open, a side panel takes a bounded slice of the shell: the grid keeps the rest of the column. */
+.demo-side[open] > .demo-panel,
+.demo-side[open] > .demo-readout {
+  max-block-size: 42dvh;
+  margin-block-start: var(--space-2);
+}
+
+/* 6px of pointer target between two columns. `gutter()` puts `.dragging` on it and translates it
+   during the drag, so the track signal is written once on release rather than once a frame. */
+.demo-gutter {
+  display: none;
+  inline-size: 6px;
+  border-radius: 3px;
+  background: transparent;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.demo-gutter:hover,
+.demo-gutter.dragging {
+  background: var(--demo-accent);
+}
+
+@container shell (min-width: 760px) {
+  .demo {
+    grid-template-columns: var(--track-panel, 330px) auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+
+  /* `display: contents` on both the element and its content box drops the disclosure out of the
+     layout, so the aside is the grid item and every rule written for it still applies. */
+  .demo-side-panel {
+    display: contents;
+  }
+
+  .demo-side-panel > .demo-side-summary {
+    display: none;
+  }
+
+  .demo-side-panel::details-content {
+    display: contents;
+    content-visibility: visible;
+  }
+
+  .demo-panel {
+    grid-row: 3;
+    grid-column: 1;
+    max-block-size: none;
+  }
+
+  #gutter-panel {
+    display: block;
+    grid-row: 3;
+    grid-column: 2;
+  }
+
+  .demo-stage {
+    grid-row: 3;
+    grid-column: 3;
+  }
+
+  .demo-side-readout {
+    grid-row: 2;
+    grid-column: 1 / -1;
+  }
+}
+
+@container shell (min-width: 1180px) {
+  .demo {
+    grid-template-columns: var(--track-panel, 330px) auto minmax(0, 1fr) auto var(--track-readout, 290px);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .demo-side-readout {
+    display: contents;
+  }
+
+  .demo-side-readout > .demo-side-summary {
+    display: none;
+  }
+
+  .demo-side-readout::details-content {
+    display: contents;
+    content-visibility: visible;
+  }
+
+  .demo-panel,
+  #gutter-panel,
+  .demo-stage {
+    grid-row: 2;
+  }
+
+  #gutter-readout {
+    display: block;
+    grid-row: 2;
+    grid-column: 4;
+  }
+
+  .demo-readout {
+    grid-row: 2;
+    grid-column: 5;
+    max-block-size: none;
+  }
+}
+
 .demo-title {
   margin: 0;
-  font-size: var(--text-3);
+  font-size: var(--text-1);
   font-weight: 650;
   letter-spacing: -0.01em;
 }
@@ -540,21 +684,33 @@ body {
 
 /* --- Four routes ---------------------------------------------------------- */
 
+/* Stacked at the narrow step and three across from 760c up, same as the shell under it. Without
+   the wrap the six route links push the document wider than its own column. */
 .demo-top {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-2);
+}
+
+@container shell (min-width: 760px) {
+  .demo-top {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--space-4);
+  }
 }
 
 .demo-brand {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--space-4);
+  gap: var(--space-2) var(--space-4);
+  min-inline-size: 0;
 }
 
 .demo-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-1);
 }
 
@@ -603,13 +759,26 @@ body {
   font-size: var(--text--1);
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
+}
+
+/* Narrow, the frame is the scarce thing: the wordmark is not a headline and the blurb keeps one
+   line. Both grow back once there is a panel column to sit beside. */
+@container shell (min-width: 760px) {
+  .demo-title {
+    font-size: var(--text-3);
+  }
+
+  .route-blurb {
+    -webkit-line-clamp: 2;
+  }
 }
 
 .demo-theme {
   inline-size: auto;
-  min-inline-size: 200px;
+  min-inline-size: 0;
+  max-inline-size: 240px;
 }
 
 .demo-stage {

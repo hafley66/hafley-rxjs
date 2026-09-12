@@ -3,7 +3,7 @@
 import { Signal } from "@hafley66/signals"
 import { delay, filter, merge, mergeMap, of, Subscription, tap } from "rxjs"
 import { mountInView, runWhenInView } from "@hafley66/docs-kit"
-import { BUILT_IN_IDS, defaultEpics, detailColumn, detailHeights, detailOnCellClick, grid, isDetailKey, render, type ColumnDef, type GridIntent, type GridState, type RenderHandle, type RowCtx, type RowId, type Viewport } from "../src/index.js"
+import { BUILT_IN_IDS, defaultEpics, detailColumn, detailHeights, detailOnCellClick, expandOnCellDoubleClick, grid, isDetailKey, render, type ColumnDef, type GridIntent, type GridState, type RenderHandle, type RowCtx, type RowId, type Viewport } from "../src/index.js"
 import { actions, checkField, group, h, readbackField } from "./controls.js"
 import { readout } from "./readout.js"
 import { aboutPanel, stageBox, type DemoHandle, type DemoHosts, type DemoRoute } from "./0_shell.js"
@@ -176,6 +176,7 @@ function mount(hosts: DemoHosts): DemoHandle {
     epics: [
       ...defaultEpics<OrderRow>(),
       detailOnCellClick<OrderRow>({ columns: [BUILT_IN_IDS.detail, "label"] }),
+      expandOnCellDoubleClick<OrderRow>(),
     ],
     slots: { detail: detailSlot },
   })

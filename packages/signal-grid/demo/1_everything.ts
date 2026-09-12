@@ -3,7 +3,7 @@
 import { Signal } from "@hafley66/signals"
 import { merge, skip, Subscription, tap } from "rxjs"
 import { mountInView, runWhenInView } from "@hafley66/docs-kit"
-import { checkboxColumn, compositeColumn, defaultState, grid, isGroupKey, moveAttrs, pinningFor, render, ROW_HEIGHT, rowNumberColumn, type CellCtx, type ColId, type ColumnDef, type Grid, type GridState, type HeaderCtx, type PageMode, type Renderable, type RowId, type Side, type Viewport } from "../src/index.js"
+import { checkboxColumn, compositeColumn, defaultEpics, defaultState, expandOnCellDoubleClick, grid, isGroupKey, moveAttrs, pinningFor, render, ROW_HEIGHT, rowNumberColumn, selectRowsOnCellClick, type CellCtx, type ColId, type ColumnDef, type Grid, type GridState, type HeaderCtx, type PageMode, type Renderable, type RowId, type Side, type Viewport } from "../src/index.js"
 import {
   actions,
   applyOrder,
@@ -172,6 +172,9 @@ function mount(hosts: DemoHosts): DemoHandle {
     state: Signal<Partial<GridState>>({ virtualize: { vertical: true, horizontal: false }, colPinning: { ...seedPinning } }),
     viewport,
     overscan: 6,
+    // A click on the row body selects and a double click opens: the checkbox and the chevron are
+    // the only doors `defaultEpics` opens, and neither is the one a pointer reaches for first.
+    epics: [...defaultEpics<FsRow>(), selectRowsOnCellClick<FsRow>(), expandOnCellDoubleClick<FsRow>()],
     slots: { cell: cellSlot, header: headerSlot },
   })
   live = files

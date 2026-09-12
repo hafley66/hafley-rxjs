@@ -1,7 +1,8 @@
 // The shell. Six routes over one set of boxes, each route a module that mounts a grid and hands
 // back the teardown, so switching route stops the previous grid before the next one is built.
-import { Route, Signal } from "@hafley66/signals"
-import { filter, map, tap } from "rxjs"
+import { localStorageAdapter, Route, Signal } from "@hafley66/signals"
+import { gutter, layout, type Track } from "@hafley66/xdom"
+import { filter, map, merge, tap } from "rxjs"
 import { mountInView, runWhenInView } from "@hafley66/docs-kit"
 import { grid, render, setGridLogEmit } from "../src/index.js"
 import "../src/theme.css"
@@ -31,6 +32,20 @@ const readoutHost = must("#readout")
 const nav = must("#nav")
 const title = must("#route-title")
 const blurb = must("#route-blurb")
+
+// --- Track widths -----------------------------------------------------------
+
+// Two draggable columns, persisted as one blob. The CSS picks the vars up on `.demo` itself, and
+// the container query steps decide whether a track is on screen at all at this width.
+const TRACKS: Track[] = [
+  { name: "panel", min: 240, max: 560, fallback: 330, axis: "x" },
+  { name: "readout", min: 200, max: 480, fallback: 290, axis: "x" },
+]
+
+const sides = layout(shell, TRACKS, localStorageAdapter("signal-grid.demo.tracks"))
+gutter(must("#gutter-panel"), sides.tracks["panel"]!)
+// The readout hangs off the right edge, so dragging left is what makes it wider.
+gutter(must("#gutter-readout"), sides.tracks["readout"]!, { invert: true })
 
 const hosts: DemoHosts = { shell, panel, stage, readout: readoutHost }
 
@@ -226,7 +241,7 @@ const routed$ = route.$.pipe(
   }),
 )
 
-mountInView(shell, () => runWhenInView(routed$))
+mountInView(shell, () => runWhenInView(merge(routed$, sides.run$)))
 
 // The timing stages are structured records, not a console format, so the console gets the raw sink:
 // `__sg.log(r => console.table(r))` turns every stage on and hands back the stop.

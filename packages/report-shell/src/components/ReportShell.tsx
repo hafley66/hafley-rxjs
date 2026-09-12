@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { localStorageAdapter, type Signal as SignalType } from '@hafley66/signals'
-import { gutter, layout, type Track } from '../layout'
+import { gutter, layout, type Track } from '@hafley66/xdom'
 import { NavRail } from './NavRail'
 
 export type ReportTracks = Record<string, SignalType<number>>
@@ -24,7 +24,11 @@ export function ReportShell({ tracks: trackDefs, storageKey, header, nav, childr
   const navCollapseStorage = useMemo(() => localStorageAdapter(`${storageKey}.nav-collapsed`), [storageKey])
   const navFallback = trackDefs.find((t) => t.name === 'nav')?.fallback ?? 380
 
-  useEffect(() => () => shell.unsubscribe(), [shell])
+  // React is the boundary here: the layout's writes run for as long as this component is mounted.
+  useEffect(() => {
+    const running = shell.run$.subscribe()
+    return () => running.unsubscribe()
+  }, [shell])
   useEffect(() => {
     if (!navGutterRef.current || !tracks.nav) return
     return gutter(navGutterRef.current, tracks.nav, { axis: 'x' })

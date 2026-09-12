@@ -3,9 +3,7 @@
 Four hundred orders, each one opening a panel that holds a second grid over that order's lines,
 fetched when the panel opens.
 
-<iframe class="route-frame" src="./demo/detail" title="the detail route"></iframe>
-
-<p><a href="./demo/detail" target="_blank" rel="noreferrer">Open the route full screen</a></p>
+<RouteFrame route="detail" title="the detail route" />
 
 ## What it is stressing
 

@@ -1084,6 +1084,9 @@ importers:
       '@hafley66/signals':
         specifier: workspace:*
         version: link:../signals
+      '@hafley66/xdom':
+        specifier: workspace:*
+        version: link:../xdom
       '@tanstack/react-table':
         specifier: ^9.1.0
         version: 9.1.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -1556,6 +1559,9 @@ importers:
       '@hafley66/path':
         specifier: workspace:*
         version: link:../path
+      '@hafley66/signals':
+        specifier: workspace:*
+        version: link:../signals
       react:
         specifier: '>=18.0.0'
         version: 19.2.8

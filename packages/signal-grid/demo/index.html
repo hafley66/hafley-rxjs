@@ -18,9 +18,17 @@
         </div>
         <div class="control control-segment demo-theme" id="theme" role="group" aria-label="theme"></div>
       </header>
-      <aside class="demo-panel" id="panel" aria-label="controls"></aside>
+      <details class="demo-side demo-side-panel">
+        <summary class="demo-side-summary">Controls</summary>
+        <aside class="demo-panel" id="panel" aria-label="controls"></aside>
+      </details>
+      <div class="demo-gutter" id="gutter-panel" role="separator" aria-orientation="vertical" aria-label="resize the control panel"></div>
       <main class="demo-stage" id="stage"></main>
-      <aside class="demo-readout" id="readout" aria-label="readout"></aside>
+      <div class="demo-gutter" id="gutter-readout" role="separator" aria-orientation="vertical" aria-label="resize the readout"></div>
+      <details class="demo-side demo-side-readout">
+        <summary class="demo-side-summary">Readout</summary>
+        <aside class="demo-readout" id="readout" aria-label="readout"></aside>
+      </details>
     </div>
     <script type="module" src="./main.ts"></script>
   </body>

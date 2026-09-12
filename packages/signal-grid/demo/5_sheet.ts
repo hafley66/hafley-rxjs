@@ -3,7 +3,7 @@
 import { Signal } from "@hafley66/signals"
 import { map, merge, Observable, Subscription } from "rxjs"
 import { mountInView, runWhenInView } from "@hafley66/docs-kit"
-import { grid, render, ROW_HEIGHT, type ColumnDef, type Grid, type GridState, type RowId, type Viewport } from "../src/index.js"
+import { defaultEpics, grid, render, ROW_HEIGHT, selectRowsOnCellClick, type ColumnDef, type Grid, type GridState, type RowId, type Viewport } from "../src/index.js"
 import { actions, afterPaint, checkField, group, paintedText, readbackField, type Bound } from "./controls.js"
 import { readout } from "./readout.js"
 import { aboutPanel, stageBox, type DemoHandle, type DemoHosts, type DemoRoute } from "./0_shell.js"
@@ -87,6 +87,7 @@ export const sheetDemo: DemoRoute = {
     "col.size",
     "col.type",
     "cell.focus",
+    "row.select",
   ],
   defects: [
     "A 1,000,000 row scroller at the standard density asks for 36,000,000 px and the engine caps near 33,554,432, so this route pins itself to compact.",
@@ -118,6 +119,8 @@ function mount(hosts: DemoHosts): DemoHandle {
     }),
     viewport,
     overscan: 4,
+    // A million rows and no gutter column: clicking a cell has to name its row or nothing does.
+    epics: [...defaultEpics<SheetRow>(), selectRowsOnCellClick<SheetRow>()],
   })
 
   const handle = render(sheet, box)

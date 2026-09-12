@@ -125,16 +125,36 @@
 }
 
 /* A showcase page names a demo route and used to link to it. The route itself is the page's
-   subject, so it runs in the page. */
-.route-frame {
+   subject, so it runs in the page. `resize` is unreliable on an iframe, so the wrapper carries it
+   and RouteFrame.vue remembers the height per route. */
+.route-frame-box {
   inline-size: 100%;
-  block-size: 640px;
+  block-size: 760px;
+  min-block-size: 320px;
+  resize: vertical;
+  overflow: auto;
   border: 1px solid var(--vp-c-divider);
   border-radius: 8px;
   background: var(--vp-c-bg-alt);
   margin-block: 16px;
 }
 
-@media (max-width: 960px) {
-  .route-frame { block-size: 480px }
+.route-frame {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  border: 0;
+  border-radius: 8px;
+}
+
+.route-frame-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.route-frame-hint {
+  color: var(--vp-c-text-3);
+  font-size: 13px;
 }

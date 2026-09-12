@@ -3,7 +3,7 @@
 import { Signal } from "@hafley66/signals"
 import { map, merge, share, Subscription, tap } from "rxjs"
 import { mountInView, runWhenInView } from "@hafley66/docs-kit"
-import { createMeasureStore, grid, render, ROW_HEIGHT, type CellCtx, type ColumnDef, type GridState, type MeasureStore, type Renderable, type RowId, type Viewport } from "../src/index.js"
+import { createMeasureStore, defaultEpics, expandOnCellDoubleClick, grid, render, ROW_HEIGHT, selectRowsOnCellClick, type CellCtx, type ColumnDef, type GridState, type MeasureStore, type Renderable, type RowId, type Viewport } from "../src/index.js"
 import {
   actions,
   afterPaint,
@@ -71,7 +71,7 @@ export const treeDemo: DemoRoute = {
     "Tree flattening and row virtualization at the same time. The readout prints DOM rows against " +
     "flat length, so a flatten that forgets a collapsed subtree shows up as a row count in the tens " +
     "of thousands.",
-  features: ["row.tree", "row.expand", "row.sort", "row.height", "view.virtualize.row", "view.scroll", "view.density", "view.slots"],
+  features: ["row.tree", "row.expand", "row.select", "row.sort", "row.height", "view.virtualize.row", "view.scroll", "view.density", "view.slots"],
   defects: [
     "Alt-click on an expander opens the whole branch through descendantsOf, which walks 50,000 keys on the root volumes and blocks the frame.",
     "MeasureStore is exported and wired here, but no stage of the kernel reads it: extents and approaching$ feed nothing.",
@@ -104,6 +104,9 @@ function mount(hosts: DemoHosts): DemoHandle {
     }),
     viewport,
     overscan: 8,
+    // The chevron is 12px wide and the row is the whole width, so the row body gets both gestures:
+    // one click picks the node, two toggles it. @feature row.expand @feature row.select
+    epics: [...defaultEpics<FsRow>(), selectRowsOnCellClick<FsRow>(), expandOnCellDoubleClick<FsRow>()],
   })
 
   const handle = render(files, box)

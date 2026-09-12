@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { SignalReact } from '@hafley66/signals/react'
 import type { Signal as SignalType } from '@hafley66/signals'
 import { MarblerPanel, formatDuration, type Marbler, type MarbleEvent } from '@hafley66/marbler'
-import { gutter, type GutterOptions } from '../layout'
+import { gutter, type GutterOptions } from '@hafley66/xdom'
 import { SubTable } from './SubTable'
 
 function findRow(rows: MarbleEvent[], id: string | null): MarbleEvent | null {

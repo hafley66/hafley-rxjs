@@ -1,7 +1,7 @@
 // Sizing store: one persisted record of what the user did to each resizable thing (pane
 // track, grid column, nav width), shared enough to restore sensibly at a different viewport.
-import { storageSignal, type Signal as SignalType, type Storage } from '@hafley66/signals'
-import { restoreSizing } from './sizingRestore'
+import { storageSignal, type Signal as SignalType, type Storage } from "@hafley66/signals"
+import { restoreSizing } from "./2_sizingRestore.js"
 
 export type Sizing = {
   id: string

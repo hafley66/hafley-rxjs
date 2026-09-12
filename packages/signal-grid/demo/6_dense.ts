@@ -5,11 +5,13 @@ import { merge, Subscription } from "rxjs"
 import { mountInView, runWhenInView } from "@hafley66/docs-kit"
 import {
   checkboxColumn,
+  defaultEpics,
   dragColumn,
   grid,
   render,
   ROW_HEIGHT,
   rowNumberColumn,
+  selectRowsOnCellClick,
   type CellCtx,
   type ColumnDef,
   type Grid,
@@ -346,6 +348,9 @@ function mount(hosts: DemoHosts): DemoHandle {
     }),
     viewport,
     overscan: 2,
+    // Every cell here is a chart or a stack, and `interactive` keeps a click inside one of them
+    // from reaching this, so the row body is the only door. @feature row.select
+    epics: [...defaultEpics<DenseRow>(), selectRowsOnCellClick<DenseRow>()],
   })
 
   const handle = render(dense, box)

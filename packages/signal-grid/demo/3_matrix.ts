@@ -3,7 +3,7 @@
 import { Signal } from "@hafley66/signals"
 import { merge, Subscription } from "rxjs"
 import { mountInView, runWhenInView } from "@hafley66/docs-kit"
-import { cellParts, grid, render, transpose, type CellId, type ColumnDef, type GridState, type HeaderCtx, type Orientation, type Renderable, type Viewport } from "../src/index.js"
+import { cellParts, defaultEpics, grid, render, selectRowsOnCellClick, transpose, type CellId, type ColumnDef, type GridState, type HeaderCtx, type Orientation, type Renderable, type Viewport } from "../src/index.js"
 import { actions, checkField, group, h, readbackField, segmentField, type Option } from "./controls.js"
 import { readout } from "./readout.js"
 import { aboutPanel, stageBox, type DemoHandle, type DemoHosts, type DemoRoute } from "./0_shell.js"
@@ -41,6 +41,10 @@ const ROWS: readonly Metric[] = REGIONS.map((region, index) => {
 const SPAN_AT_INDEX = 1
 const SPAN_ROWS = 2
 const SPAN_COLS = 3
+
+// Eight regions, so every row is on screen at once and the height is free to be a readable line
+// rather than a band. 64 keeps the two-row span at 128, which still reads as a block.
+const ROW_PX = 64
 
 const COLUMNS: readonly ColumnDef<Metric>[] = [
   { id: "region", header: "Region", width: 120, resizable: true },
@@ -81,7 +85,7 @@ export const matrixDemo: DemoRoute = {
   stressing:
     "The transpose. One state, two seatings, and the library's own acceptance test made visible: a " +
     "2 by 3 span has to come back as 3 by 2 with both halves of its address swapped.",
-  features: ["view.list", "cell.span", "col.pin", "col.resize", "row.pin", "row.sort", "view.slots", "view.theme"],
+  features: ["view.list", "cell.span", "col.pin", "col.resize", "row.pin", "row.select", "row.sort", "view.slots", "view.theme"],
   defects: [],
   mount: (hosts) => mountInView(hosts.stage, () => mount(hosts)),
 }
@@ -106,9 +110,11 @@ function mount(hosts: DemoHosts): DemoHandle {
     state: Signal<Partial<GridState>>({
       virtualize: { vertical: false, horizontal: false },
       orientation: "rows",
-      rowHeight: { north: 130, south: 130, east: 130, west: 130, alpine: 130, coastal: 130, delta: 130, plateau: 130 },
+      rowHeight: { north: ROW_PX, south: ROW_PX, east: ROW_PX, west: ROW_PX, alpine: ROW_PX, coastal: ROW_PX, delta: ROW_PX, plateau: ROW_PX },
     }),
     viewport,
+    // Nothing here has a checkbox or a chevron, so the row body is the only door a pointer has.
+    epics: [...defaultEpics<Metric>(), selectRowsOnCellClick<Metric>()],
     slots: { header: headerSlot },
   })
 
