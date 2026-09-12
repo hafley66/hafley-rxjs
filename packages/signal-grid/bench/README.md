@@ -20,6 +20,7 @@ places signal-grid loses.
 | [allocation](#allocation) | retained bytes per row after a forced gc |
 | [complexity claims checked](#complexity-claims-checked-against-the-numbers) | where a comment understates |
 | [scrolling in a browser](#scrolling-in-a-browser-the-factor-matrix) | which factor costs a frame, and what a row costs in memory |
+| [head to head with MUI X](#head-to-head-with-mui-x-data-grid) | the same scroll on both grids, including where MUI X wins |
 | [where the retained bytes go](#where-the-retained-bytes-go) | the 125 bytes a row that are the grid, and the rest that are your data |
 | [the live pages](#the-live-pages) | the knob sweep and the ten-grid gallery, both on the site |
 | [known gaps](#known-gaps) | what is not measured |
@@ -633,6 +634,24 @@ properties evaluate in order, so a 20,000-key walk landed inside the measured sp
 cached per extent object and the duration is taken before the fields are built. The column reads
 0.02 at both sizes.
 
+## head to head with MUI X Data Grid
+
+`bench/versus.mjs` mounts signal-grid, signal-grid with every cell as a `reactSlot`, and
+`@mui/x-data-grid` 9.13.0 over the same rows and the same heavy cell, and drives all three through
+the one burst in `bench/scroll/1_run.ts`. The matrix, the ratios, the row-count ceiling and the
+`reactSlot` opt-in cost are written up in `docs/2_versus.md`; the raw numbers are `bench/versus.json`
+and the chart is `bench/versus.svg`.
+
+Two results belong here rather than only there. The MIT `<DataGrid />` forces `pagination: true` and
+throws above a `pageSize` of 100, so its scroller is 3,600 px deep however many rows are handed to
+it and it will not perform a deep scroll at all. And MUI X spends three to fifteen times less time
+per frame in layout and style recalc than signal-grid does, on every case measured, which is the
+larger of the two terms and the one place this package is furthest from the ceiling it aims at.
+
+```
+node ../../scripts/browser-queue.mjs node bench/versus.mjs
+```
+
 ## known gaps
 
 - Event dispatch is not measured. The browser matrix covers a scroll and the work it wakes; a
@@ -647,3 +666,7 @@ cached per extent object and the duration is taken before the fields are built. 
   that is not in these numbers, and neither is `@tanstack/react-virtual`.
 - GC pauses land inside samples. The allocation table is the separate, forced-gc measurement.
 - The p95 column on 5-sample and 7-sample cases is the maximum sample.
+- The burst in `bench/scroll/1_run.ts` now reverses at either end of the scroller, which the
+  head-to-head needed because MUI X's scroller bottoms out after 3,600 px. The matrix above was
+  recorded before that change, so its two smallest relation sizes spent their last few frames
+  against the bottom stop rather than scrolling back. Re-run `pnpm bench:scroll` to refresh them.

@@ -8,12 +8,12 @@
 //
 // Always through the queue: `node ../../scripts/browser-queue.mjs node bench/scroll.mjs`.
 import { spawnSync } from "node:child_process"
-import { createReadStream, existsSync, writeFileSync } from "node:fs"
-import { createServer } from "node:http"
+import { existsSync, writeFileSync } from "node:fs"
 import { cpus, totalmem } from "node:os"
-import { extname, join, normalize } from "node:path"
+import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { chromium } from "playwright"
+import { METRICS, metricsOf, serveDist } from "./_serve.mjs"
 
 const PACKAGE = fileURLToPath(new URL(".", import.meta.url)).replace(/bench\/$/, "")
 const DIST = join(PACKAGE, "bench/scroll/dist")
@@ -123,38 +123,13 @@ if (!existsSync(join(DIST, "index.html"))) {
   process.exit(1)
 }
 
-const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".map": "application/json" }
-
-const server = createServer((req, res) => {
-  const path = normalize(decodeURIComponent((req.url ?? "/").split("?")[0])).replace(/^(\.\.[/\\])+/, "")
-  const file = join(DIST, path === "/" ? "index.html" : path)
-  if (!file.startsWith(DIST) || !existsSync(file)) {
-    res.writeHead(404).end("not found")
-    return
-  }
-  res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream" })
-  createReadStream(file).pipe(res)
-})
-await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve))
-const origin = `http://127.0.0.1:${server.address().port}`
+const server = await serveDist(DIST)
+const origin = server.origin
 
 // Precise heap info, so `performance.memory` reports bytes rather than the 100 kB-quantized number
 // a page gets by default.
 const browser = await chromium.launch({ headless: true, args: ["--enable-precise-memory-info"] })
 const results = new Map()
-
-const METRICS = ["JSHeapUsedSize", "Nodes", "LayoutCount", "RecalcStyleCount", "LayoutDuration", "RecalcStyleDuration", "ScriptDuration", "TaskDuration"]
-
-/** Browser-side cost the package cannot time itself: layout, style recalc and the retained heap.
- * Read through CDP either side of the measured burst, with a forced collection before each read so
- * the heap delta is what survived the run rather than what churned inside it. */
-async function metricsOf(cdp) {
-  await cdp.send("HeapProfiler.collectGarbage")
-  const { metrics } = await cdp.send("Performance.getMetrics")
-  const out = {}
-  for (const it of metrics) if (METRICS.includes(it.name)) out[it.name] = it.value
-  return out
-}
 
 async function measure(cfg) {
   const key = keyOf(cfg)

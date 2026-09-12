@@ -1,12 +1,16 @@
 import { fileURLToPath } from "node:url"
+import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 
 // Unminified on purpose: a profile taken against this build has to name the package's own functions.
 const here = fileURLToPath(new URL(".", import.meta.url))
 
+const page = (name: string): string => fileURLToPath(new URL(name, import.meta.url))
+
 export default defineConfig({
   root: here,
   base: "./",
+  plugins: [react()],
   build: {
     outDir: "dist",
     emptyOutDir: true,
@@ -14,9 +18,11 @@ export default defineConfig({
     minify: false,
     rollupOptions: {
       input: {
-        index: fileURLToPath(new URL("index.html", import.meta.url)),
-        gallery: fileURLToPath(new URL("gallery.html", import.meta.url)),
-        knobs: fileURLToPath(new URL("knobs.html", import.meta.url)),
+        index: page("index.html"),
+        gallery: page("gallery.html"),
+        knobs: page("knobs.html"),
+        react: page("react.html"),
+        mui: page("mui.html"),
       },
     },
   },

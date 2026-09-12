@@ -46,7 +46,7 @@
     "typecheck:bench": "tsc --noEmit -p bench/tsconfig.json && tsc --noEmit -p bench/scroll/tsconfig.json",
     "site": "pnpm site:content && vitepress dev site",
     "site:dev": "pnpm site",
-    "site:content": "pnpm docs:render && rm -rf site/pages && mkdir site/pages && cp docs/dist/*.md site/pages/ && cp bench/README.md site/benchmarks.md && cp bench/scroll.svg site/scroll.svg && cp demo/README.md site/demo-guide.md",
+    "site:content": "pnpm docs:render && rm -rf site/pages && mkdir site/pages && cp docs/dist/*.md site/pages/ && cp bench/README.md site/benchmarks.md && cp bench/scroll.svg site/scroll.svg && cp bench/versus.svg site/versus.svg && cp demo/README.md site/demo-guide.md",
     "site:build": "pnpm site:content && vitepress build site",
     "site:preview": "vitepress preview site",
     "examples": "node scripts/examples.mjs",
@@ -58,9 +58,9 @@
     "@hafley66/signals": ">=0.1.0",
     "@hafley66/xdom": ">=0.1.0",
     "@logtape/logtape": "^2.3.3",
-    "rxjs": "^7.8.0",
     "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
+    "react-dom": ">=18.0.0",
+    "rxjs": "^7.8.0"
   },
   "peerDependenciesMeta": {
     "@logtape/logtape": {
@@ -74,6 +74,8 @@
     }
   },
   "devDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@hafley66/docs-kit": "workspace:*",
     "@hafley66/path": "workspace:*",
     "@hafley66/signals": "workspace:*",
@@ -81,6 +83,9 @@
     "@hafley66/vitest-telemetry": "workspace:*",
     "@hafley66/xdom": "workspace:*",
     "@logtape/logtape": "2.3.3",
+    "@mui/material": "^7.3.11",
+    "@mui/system": "^9.4.0",
+    "@mui/x-data-grid": "^9.13.0",
     "@size-limit/preset-small-lib": "^13.0.3",
     "@size-limit/time": "^13.0.3",
     "@tanstack/react-virtual": "^3.14.9",

@@ -87,6 +87,7 @@ export const GROUPS: readonly SiteGroup[] = [
       { slug: "reference-api", title: "Every export", source: "pages/reference-api.md" },
       { slug: "parity", title: "Feature parity", source: "pages/1_parity.md" },
       { slug: "competitors", title: "Competitors", source: "pages/3_competitors.md" },
+      { slug: "versus", title: "Head to head with MUI X", source: "pages/2_versus.md" },
     ],
   },
   {

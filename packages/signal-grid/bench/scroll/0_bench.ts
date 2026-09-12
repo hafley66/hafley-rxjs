@@ -12,14 +12,17 @@
 // | extent | uniform, varied | whether the consumer declares a height per row |
 // | overscan | any | rows held beyond the viewport on each side |
 // | cv | 0, 1 | `content-visibility: auto` on the rendered rows |
-// | resize | 0, 1 | the grid box itself changing size every frame, not only its contents |
+// | resize | 0, 1 | the grid box itself changing size every frame, not only its contents
+// | src | proxy, array | whether the relation is materialised, which is what the head-to-head equalises |
 import { Signal } from "@hafley66/signals"
 import {
   grid,
   render,
+  type CellCtx,
   type ColumnDef,
   type Grid,
   type GridState,
+  type Slot,
   type Viewport,
 } from "../../src/index.js"
 import "../../src/theme.css"
@@ -33,6 +36,7 @@ export interface Cfg {
   readonly extent: "uniform" | "varied"
   readonly cv: 0 | 1
   readonly resize: 0 | 1
+  readonly src: "proxy" | "array"
 }
 
 export const DEFAULTS: Cfg = {
@@ -44,6 +48,7 @@ export const DEFAULTS: Cfg = {
   extent: "uniform",
   cv: 0,
   resize: 0,
+  src: "proxy",
 }
 
 export const ROW_PX = 36
@@ -63,12 +68,13 @@ export const cfgOf = (params: URLSearchParams): Cfg => {
     extent: params.get("extent") === "varied" ? "varied" : "uniform",
     cv: params.get("cv") === "1" ? 1 : 0,
     resize: params.get("resize") === "1" ? 1 : 0,
+    src: params.get("src") === "array" ? "array" : "proxy",
   }
 }
 
 export const queryOf = (cfg: Cfg): string =>
   `rows=${cfg.rows}&width=${cfg.width}&height=${cfg.height}&overscan=${cfg.overscan}` +
-  `&cell=${cfg.cell}&extent=${cfg.extent}&cv=${cfg.cv}&resize=${cfg.resize}`
+  `&cell=${cfg.cell}&extent=${cfg.extent}&cv=${cfg.cv}&resize=${cfg.resize}&src=${cfg.src}`
 
 export interface BenchRow {
   readonly id: string
@@ -79,14 +85,14 @@ export interface BenchRow {
   readonly spark: readonly number[]
 }
 
-const SPARK = 16
+export const SPARK = 16
 const hash = (n: number): number => {
   let h = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b)
   h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35)
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296
 }
 
-const rowAt = (at: number): BenchRow => ({
+export const rowAt = (at: number): BenchRow => ({
   id: `r${at}`,
   at,
   name: `row ${at}`,
@@ -98,7 +104,7 @@ const rowAt = (at: number): BenchRow => ({
 /** A proxy over an empty array: `Array.isArray` still answers true, `map` still walks it, and no
  * array of a million objects is ever held. The same trick `demo/5_sheet.ts` uses. */
 const INDEX = /^\d+$/
-const dataOf = (rows: number): readonly BenchRow[] =>
+export const dataOf = (rows: number): readonly BenchRow[] =>
   new Proxy([] as BenchRow[], {
     get: (target, key) => {
       if (key === "length") return rows
@@ -111,6 +117,14 @@ const dataOf = (rows: number): readonly BenchRow[] =>
     has: (target, key) =>
       typeof key === "string" && INDEX.test(key) ? Number(key) < rows : Reflect.has(target, key),
   })
+
+/** The same relation as one real array. MUI X reads `rows` into its own lookup either way, so the
+ * head-to-head runs both engines on this and the Proxy is reported as a separate ceiling. */
+export const arrayOf = (rows: number): readonly BenchRow[] =>
+  Array.from({ length: rows }, (_value, at) => rowAt(at))
+
+export const rowsOf = (cfg: Pick<Cfg, "rows" | "src">): readonly BenchRow[] =>
+  cfg.src === "array" ? arrayOf(cfg.rows) : dataOf(cfg.rows)
 
 const el = (tag: string, cls: string): HTMLElement => {
   const node = document.createElement(tag)
@@ -139,7 +153,7 @@ const sparkline = (values: readonly number[]): SVGElement => {
 
 /** Nine elements in one cell against a plain text node's one, which is the whole of the `cell`
  * factor. Shaped after `demo/6_dense.ts` so the two are comparable. */
-const heavyCell = (row: BenchRow, colId: string): HTMLElement => {
+export const heavyCell = (row: BenchRow, colId: string): HTMLElement => {
   const host = el("span", "b-stack")
   if (colId === "spark") {
     host.append(sparkline(row.spark))
@@ -164,7 +178,7 @@ const heavyCell = (row: BenchRow, colId: string): HTMLElement => {
   return host
 }
 
-const COLUMNS: readonly ColumnDef<BenchRow>[] = [
+export const COLUMNS: readonly ColumnDef<BenchRow>[] = [
   { id: "name", header: "Name", width: 220, value: (row) => row.name },
   { id: "size", header: "Size", type: "number", width: 120, value: (row) => row.size },
   { id: "pct", header: "Share", width: 160, value: (row) => row.pct },
@@ -210,7 +224,11 @@ export interface Live {
   readonly overscan: () => number
 }
 
-export function mountBench(host: HTMLElement, cfg: Cfg, live?: Live): Mounted {
+/** A cell slot supplied by the caller rather than built here. `react.tsx` passes `reactSlot` so the
+ * same heavy cell is measured through React reconciliation instead of the DOM writer. */
+export type CellSlot = Slot<CellCtx<BenchRow>>
+
+export function mountBench(host: HTMLElement, cfg: Cfg, live?: Live, cellSlot?: CellSlot): Mounted {
   host.style.inlineSize = `${cfg.width}px`
   host.style.blockSize = `${cfg.height}px`
   if (cfg.cv === 1) {
@@ -230,7 +248,7 @@ export function mountBench(host: HTMLElement, cfg: Cfg, live?: Live): Mounted {
   const id = `bench${seq}`
   const g = grid<BenchRow>({
     id,
-    rows: dataOf(cfg.rows),
+    rows: rowsOf(cfg),
     columns: COLUMNS,
     rowId: (row) => row.id,
     state: Signal<Partial<GridState>>({
@@ -242,7 +260,12 @@ export function mountBench(host: HTMLElement, cfg: Cfg, live?: Live): Mounted {
     get overscan(): number {
       return live === undefined ? cfg.overscan : live.overscan()
     },
-    slots: cfg.cell === "heavy" ? { cell: (ctx) => heavyCell(ctx.data as BenchRow, ctx.col) } : undefined,
+    slots:
+      cellSlot !== undefined
+        ? { cell: cellSlot }
+        : cfg.cell === "heavy"
+          ? { cell: (ctx) => heavyCell(ctx.data as BenchRow, ctx.col) }
+          : undefined,
   })
   const handle = render(g, host)
   const scroll = host.querySelector(".sg-scroll")

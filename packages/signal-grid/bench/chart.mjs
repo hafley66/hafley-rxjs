@@ -63,3 +63,65 @@ export function chart(report) {
     `</g></svg>`,
   ].join("")
 }
+
+const ENGINE_HUE = ["#6fd7ad", "#e2b45e", "#5a8fd6"]
+const V_LABEL = 200
+const V_PLOT = 240
+const V_BAR = 9
+const V_GAP = 2
+
+const barsOf = (report, pick) => {
+  const cases = [...new Set(report.runs.map((r) => r.label))]
+  return cases.map((label) => ({
+    label,
+    values: report.engines.map((id) => {
+      const run = report.runs.find((r) => r.label === label && r.engine === id)
+      return run?.ok === true ? pick(run) : 0
+    }),
+  }))
+}
+
+/** The head-to-head as grouped bars: one group per case, one bar per engine, two panels. `report`
+ * is what `bench/versus.mjs` writes to `bench/versus.json`. */
+export function versusChart(report) {
+  const panels = [
+    { key: "browser ms per frame: layout + style", pick: (r) => r.layoutMs + r.styleMs, max: 9 },
+    { key: "script ms per frame", pick: (r) => r.scriptMs, max: 5 },
+  ]
+  const groups = panels.map((panel) => barsOf(report, panel.pick))
+  const out = []
+  let y = PAD + 16
+  out.push(`<text x="0" y="${PAD + 10}" class="h">signal-grid against MUI X Data Grid 9.13.0</text>`)
+  report.engines.forEach((id, i) => {
+    const x = 460 + i * 150
+    out.push(`<rect x="${x}" y="${PAD}" width="10" height="10" fill="${ENGINE_HUE[i] ?? "#8b949e"}"/>`)
+    out.push(`<text x="${x + 14}" y="${PAD + 9}" class="k">${esc(id)}</text>`)
+  })
+  panels.forEach((panel, p) => {
+    const rows = groups[p] ?? []
+    const px = V_LABEL + p * (V_PLOT + 90)
+    out.push(`<text x="${px}" y="${y + 8}" class="k">${esc(panel.key)}</text>`)
+    let gy = y + 16
+    for (const group of rows) {
+      if (p === 0) out.push(`<text x="0" y="${gy + 9}" class="l">${esc(group.label)}</text>`)
+      group.values.forEach((value, i) => {
+        const w = Math.min(1, value / panel.max) * V_PLOT
+        const by = gy + i * (V_BAR + V_GAP)
+        out.push(`<rect x="${px}" y="${by}" width="${Math.max(0.5, w).toFixed(1)}" height="${V_BAR}" fill="${ENGINE_HUE[i] ?? "#8b949e"}"/>`)
+        out.push(`<text x="${(px + w + 4).toFixed(1)}" y="${by + 8}" class="n">${value.toFixed(2)}</text>`)
+      })
+      gy += (V_BAR + V_GAP) * report.engines.length + 8
+    }
+    y = Math.max(y, gy)
+  })
+  const height = y + PAD
+  return [
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${height}" width="${W}" height="${height}" font-family="system-ui, sans-serif">`,
+    `<style>text{fill:#c9d1d9}.h{font-size:12px;font-weight:600;fill:#e6e8ea}.l{font-size:10px}`,
+    `.n{font-size:9px;fill:#8b949e}.k{font-size:9px;fill:#6e7681}</style>`,
+    `<rect width="${W}" height="${height}" fill="#14161a"/>`,
+    `<g transform="translate(${PAD},0)">`,
+    ...out,
+    `</g></svg>`,
+  ].join("")
+}
