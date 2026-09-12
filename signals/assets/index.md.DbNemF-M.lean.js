@@ -1,1 +1,0 @@
-import{_t as e,it as t,rt as n,t as r}from"./chunks/framework.BJWY7y6u.js";var i=JSON.parse(`{"title":"@hafley66/signals","description":"","frontmatter":{},"headers":[],"relativePath":"index.md","filePath":"pages/README.md"}`),a={name:`index.md`};function o(r,i,a,o,s,c){return e(),n(`div`,null,[...i[0]||=[t("",48)]])}var s=r(a,[[`render`,o]]);export{i as __pageData,s as default};
