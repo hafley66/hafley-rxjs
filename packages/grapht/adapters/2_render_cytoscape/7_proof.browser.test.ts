@@ -76,12 +76,45 @@ describe("sealed architecture diagram proof", () => {
     await page.screenshot({ path: "proof/arch-proof.png" })
 
     // The epic is 25k units wide, so the fitted shot is proof of render, not of
-    // reading. A camera over the opening section at reading scale proves the
-    // second half.
-    resource.render(
-      { ...frame, camera: { x: 950, y: 500, scale: 0.85, viewport: { x: 0, y: 0, width: 1280, height: 800 } } },
-      { enterIds: [], updateIds: ["epic"], exitIds: [] },
-    )
+    // reading. The zoom camera targets the leftmost text cluster, measured out
+    // of the mounted svg in source units, and follows the pan convention
+    // fitGraphCamera uses: x and y are screen-space translation.
+    const sealedSvg = host.querySelector<SVGElement>('[data-grapht-overlay="sealed-svg"] svg')
+    expect(sealedSvg).not.toBeNull()
+    const textNodes = [...(sealedSvg?.querySelectorAll("text") ?? [])]
+    expect(textNodes.length).toBeGreaterThan(20)
+    const boxes = textNodes
+      .map(node => {
+        const box = (node as SVGTextElement).getBBox()
+        return { text: node.textContent?.trim() ?? "", x: box.x, y: box.y, width: box.width, height: box.height }
+      })
+      .filter(box => box.text.length > 0)
+      .sort((left, right) => left.x + left.y - (right.x + right.y))
+    const seed = boxes[0]
+    const cluster = boxes.filter(box => Math.abs(box.x - seed.x) < 900 && Math.abs(box.y - seed.y) < 500)
+    expect(cluster.length).toBeGreaterThan(3)
+    const left = Math.min(...cluster.map(box => box.x)) - 60
+    const top = Math.min(...cluster.map(box => box.y)) - 60
+    const right = Math.max(...cluster.map(box => box.x + box.width)) + 60
+    const bottom = Math.max(...cluster.map(box => box.y + box.height)) + 60
+    const zoomScale = Math.max(Math.min(1160 / (right - left), 680 / (bottom - top), 1.6), 0.8)
+    const zoomCamera = {
+      x: 640 - ((left + right) / 2) * zoomScale,
+      y: 400 - ((top + bottom) / 2) * zoomScale,
+      scale: zoomScale,
+      viewport: { x: 0, y: 0, width: 1280, height: 800 },
+    }
+    resource.render({ ...frame, camera: zoomCamera }, { enterIds: [], updateIds: ["epic"], exitIds: [] })
+
+    const screenLeft = left * zoomScale + zoomCamera.x
+    const screenTop = top * zoomScale + zoomCamera.y
+    const screenRight = right * zoomScale + zoomCamera.x
+    const screenBottom = bottom * zoomScale + zoomCamera.y
+    expect(screenLeft).toBeGreaterThan(0)
+    expect(screenRight).toBeLessThan(1280)
+    expect(screenTop).toBeGreaterThan(0)
+    expect(screenBottom).toBeLessThan(800)
+
     await page.screenshot({ path: "proof/arch-zoom.png" })
     resource.unsubscribe()
     host.remove()
