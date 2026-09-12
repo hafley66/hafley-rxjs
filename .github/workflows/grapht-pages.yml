@@ -1,0 +1,137 @@
+# Publishes the grapht docs site into `gh-pages/grapht/` and touches nothing else on that branch.
+# The Pages source stays the legacy branch, so gothic keeps serving the root. The strip at the
+# branch root is rebuilt too, because it lists every site in `pages/manifest.ts`, so a new tab must
+# ship with the site.
+name: grapht pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/grapht/**"
+      - "pages/**"
+      - ".github/workflows/grapht-pages.yml"
+
+# `contents: write` is the whole grant. No `pages: write`, no `id-token: write`, no environment:
+# switching the Pages source from the branch to Actions would take the gothic root offline.
+permissions:
+  contents: write
+
+concurrency:
+  group: grapht-pages
+  cancel-in-progress: false
+
+env:
+  DEST: grapht
+  BASE_URL: https://hafley66.github.io/hafley-rxjs/grapht/
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # No version pin here on purpose: pnpm reads `packageManager` and node reads `engines.node`,
+      # both out of the repo's own package.json.
+      - name: pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # The site imports the workspace packages through their `dist`, so those come first.
+      - name: Build workspace dependencies
+        run: pnpm --filter "@hafley66/grapht..." build
+
+      # `ship` builds the site, folds the proof app in, measures, and rebuilds with the real stats.
+      - name: Ship
+        run: pnpm --filter @hafley66/grapht ship
+
+      # The strip is an IIFE with `pages/manifest.ts` inlined, built from the workspace where vite
+      # and the manifest live. The publish step only copies the file; gh-pages has no toolchain.
+      - name: Build the strip
+        run: |
+          npx vite build -c pages/vite.config.ts --mode strip
+          test -f pages/dist/strip.js || { echo "strip build produced no pages/dist/strip.js"; exit 1; }
+
+      - name: Assert the artifact is complete
+        run: |
+          set -euo pipefail
+          dist=packages/grapht/site/dist
+          for required in index.html 404.html assets proof/index.html proof/arch.svg; do
+            test -e "$dist/$required" || { echo "missing $dist/$required"; exit 1; }
+          done
+          grep -q '/hafley-rxjs/grapht/assets/' "$dist/index.html" || {
+            echo "index.html does not reference the project base; check site/content.ts BASE"
+            exit 1
+          }
+          echo "artifact ok: $(find "$dist" -type f | wc -l) files"
+
+      # Adds to the branch, never replaces it: only `grapht/` and `strip.js` are rewritten, the
+      # root index.html and .nojekyll are hashed before and after, and a stray path aborts the push.
+      # The strip is rebuilt from `pages/vite.config.ts` because it inlines the manifest, so a tab
+      # for a site in `pages/manifest.ts` appears only when that site's build also ships it.
+      - name: Publish into gh-pages/grapht
+        if: github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages
+          worktree="$RUNNER_TEMP/gh-pages"
+          git worktree add "$worktree" origin/gh-pages
+          cd "$worktree"
+
+          test -f index.html || { echo "gh-pages has no root index.html; refusing to publish"; exit 1; }
+          test -f .nojekyll || { echo "gh-pages has no root .nojekyll; refusing to publish"; exit 1; }
+          before_index="$(sha256sum index.html | cut -d' ' -f1)"
+          before_nojekyll="$(sha256sum .nojekyll | cut -d' ' -f1)"
+          echo "root index.html before: $before_index"
+
+          cp "$GITHUB_WORKSPACE/pages/dist/strip.js" "$worktree/strip.js"
+          test -f strip.js || { echo "strip.js vanished after the copy; refusing to publish"; exit 1; }
+
+          rm -rf "${DEST:?}"
+          mkdir -p "$DEST"
+          cp -R "$GITHUB_WORKSPACE/packages/grapht/site/dist/." "$DEST/"
+
+          test -f index.html || { echo "root index.html vanished during the copy"; exit 1; }
+          test -f .nojekyll || { echo "root .nojekyll vanished during the copy"; exit 1; }
+          after_index="$(sha256sum index.html | cut -d' ' -f1)"
+          after_nojekyll="$(sha256sum .nojekyll | cut -d' ' -f1)"
+          if [ "$before_index" != "$after_index" ]; then
+            echo "root index.html changed: $before_index -> $after_index. Refusing to push."
+            exit 1
+          fi
+          if [ "$before_nojekyll" != "$after_nojekyll" ]; then
+            echo "root .nojekyll changed. Refusing to push."
+            exit 1
+          fi
+
+          git add -A
+          outside="$(git diff --cached --name-only | grep -v -E "^grapht/|^strip.js$" || true)"
+          if [ -n "$outside" ]; then
+            echo "staged paths outside grapht/ and strip.js, refusing to push:"
+            echo "$outside"
+            exit 1
+          fi
+
+          if git diff --cached --quiet; then
+            echo "no change under grapht/, nothing to push"
+          else
+            git commit -m "grapht site from ${GITHUB_SHA}"
+            git push origin HEAD:gh-pages
+            echo "published $BASE_URL"
+          fi

@@ -1,0 +1,475 @@
+{
+  "schema": 1,
+  "generatedBy": "grapht/site",
+  "commit": {
+    "method": "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain excluding this step's own outputs, git rev-parse --abbrev-ref HEAD",
+    "hash": "cf79b5a5d32e6c591195b17c8659b60741c2ef25",
+    "short": "cf79b5a",
+    "subject": "grapht: add pages workflow with strip refresh",
+    "authorDate": "2026-09-12T11:47:29-04:00",
+    "branch": "feature/grapht-pages-site",
+    "clean": false,
+    "dirtyCount": 4,
+    "dirtyEntries": [
+      "M .github/workflows/grapht-pages.yml",
+      "A  packages/grapht/adapters/2_render_cytoscape/proof/arch.svg",
+      "M packages/grapht/scripts/ship.mjs",
+      "M packages/grapht/site/pages/proof.md"
+    ],
+    "repository": "hafley66/hafley-rxjs",
+    "url": "https://github.com/hafley66/hafley-rxjs/commit/cf79b5a5d32e6c591195b17c8659b60741c2ef25",
+    "reason": null
+  },
+  "machine": {
+    "method": "os.type() / os.release(), process.version, node:os cpus() and totalmem(), Date at run time",
+    "node": "v24.15.0",
+    "platform": "Darwin 23.6.0",
+    "arch": "arm64",
+    "cpuModel": "Apple M2 Pro",
+    "cores": 12,
+    "totalMemoryBytes": 17179869184,
+    "builtAt": "2026-09-12T15:51:27.511Z"
+  },
+  "package": {
+    "name": "@hafley66/grapht",
+    "version": "0.1.0"
+  },
+  "bundle": {
+    "method": "statSync().size summed for raw bytes and zlib.gzipSync(readFileSync(file)).length summed for gzip, over every file in the directory",
+    "library": {
+      "fileCount": 176,
+      "totalBytes": 340864,
+      "totalGzipBytes": 101017,
+      "reason": null
+    },
+    "siteMethod": "the same statSync and gzipSync pass over site/dist; the copy inlined into the site measures pass 1, the committed stats.json measures the final dist",
+    "site": {
+      "fileCount": 134,
+      "totalBytes": 6408736,
+      "totalGzipBytes": 2488985,
+      "reason": null
+    },
+    "demo": {
+      "fileCount": 5,
+      "totalBytes": 926370,
+      "totalGzipBytes": 296126,
+      "reason": null
+    },
+    "videos": {
+      "fileCount": 0,
+      "totalBytes": 0,
+      "totalGzipBytes": 0,
+      "reason": "no recordings; the proof is a live app, not a filmed suite"
+    },
+    "treemap": {
+      "method": "none",
+      "envFlag": "",
+      "command": "",
+      "file": "",
+      "bytes": null,
+      "reason": "no treemap generated for grapht"
+    }
+  },
+  "sizeLimit": {
+    "method": null,
+    "config": ".size-limit.json",
+    "entries": null,
+    "passed": null,
+    "durationMs": null,
+    "reason": "no size-limit gate for grapht"
+  },
+  "source": {
+    "method": "readFileSync over packages/grapht/src and packages/grapht/tests, lines counted as \\n occurrences; a name containing .test. or under tests/ is a test file",
+    "files": [
+      {
+        "file": "src/browser.ts",
+        "lines": 19,
+        "kind": "source"
+      },
+      {
+        "file": "src/index.ts",
+        "lines": 251,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_bench/0_protocol.ts",
+        "lines": 288,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_bench/10_rendererFixture.ts",
+        "lines": 45,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_bench/11_scenarios.ts",
+        "lines": 132,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_bench/12_shake.ts",
+        "lines": 35,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_bench/13_visualValidity.ts",
+        "lines": 119,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_bench/1_geometryProtocol.ts",
+        "lines": 64,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_bench/2_fixtures.ts",
+        "lines": 93,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_bench/3_hash.ts",
+        "lines": 50,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_bench/4_process.ts",
+        "lines": 131,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_bench/5_bench.ts",
+        "lines": 202,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_bench/6_record.ts",
+        "lines": 92,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_bench/7_identity.ts",
+        "lines": 56,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_bench/8_cli.ts",
+        "lines": 40,
+        "kind": "source"
+      },
+      {
+        "file": "src/0_bench/9_fixturesCli.ts",
+        "lines": 34,
+        "kind": "source"
+      },
+      {
+        "file": "src/1_sequence/0_identity.ts",
+        "lines": 18,
+        "kind": "source"
+      },
+      {
+        "file": "src/1_sequence/1_svgBinding.ts",
+        "lines": 15,
+        "kind": "source"
+      },
+      {
+        "file": "src/1_sequence/2_artifact.ts",
+        "lines": 14,
+        "kind": "source"
+      },
+      {
+        "file": "src/1_sequence/3_geometry.ts",
+        "lines": 145,
+        "kind": "source"
+      },
+      {
+        "file": "src/1_sequence/4_focus.ts",
+        "lines": 2,
+        "kind": "source"
+      },
+      {
+        "file": "src/1_sequence/5_collapse.ts",
+        "lines": 95,
+        "kind": "source"
+      },
+      {
+        "file": "src/1_sequence/6_placement.ts",
+        "lines": 2,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_graph/0_frame.ts",
+        "lines": 47,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_graph/10_renderer.ts",
+        "lines": 47,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_graph/11_cytoscape-fcose.d.ts",
+        "lines": 6,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_graph/12_layout.ts",
+        "lines": 185,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_graph/13_foreignObjectText.ts",
+        "lines": 104,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_graph/1_fitCamera.ts",
+        "lines": 74,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_graph/2_geometryScope.ts",
+        "lines": 148,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_graph/3_sealedSvgArtifact.ts",
+        "lines": 52,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_graph/4_svgGeometry.ts",
+        "lines": 148,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_graph/5_translateGeometry.ts",
+        "lines": 57,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_graph/6_stackGroupHeaders.ts",
+        "lines": 99,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_graph/7_operatorTypes.ts",
+        "lines": 29,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_graph/8_filesystemGraph.ts",
+        "lines": 42,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_graph/9_operators.ts",
+        "lines": 146,
+        "kind": "source"
+      },
+      {
+        "file": "src/3_contracts/0_graphology.ts",
+        "lines": 144,
+        "kind": "source"
+      },
+      {
+        "file": "src/3_contracts/1_rendererCapabilities.ts",
+        "lines": 115,
+        "kind": "source"
+      },
+      {
+        "file": "src/3_contracts/2_rendererRuntime.ts",
+        "lines": 208,
+        "kind": "source"
+      },
+      {
+        "file": "src/3_contracts/3_visualPort.ts",
+        "lines": 192,
+        "kind": "source"
+      },
+      {
+        "file": "src/5_history/0_journal.ts",
+        "lines": 68,
+        "kind": "source"
+      },
+      {
+        "file": "src/5_history/1_gitWalk.ts",
+        "lines": 80,
+        "kind": "source"
+      },
+      {
+        "file": "src/5_history/2_cli.ts",
+        "lines": 22,
+        "kind": "source"
+      },
+      {
+        "file": "src/5_history/index.ts",
+        "lines": 3,
+        "kind": "source"
+      },
+      {
+        "file": "tests/0_bench/0_protocol.test.ts",
+        "lines": 251,
+        "kind": "test"
+      },
+      {
+        "file": "tests/0_bench/10_rendererFixture.test.ts",
+        "lines": 51,
+        "kind": "test"
+      },
+      {
+        "file": "tests/0_bench/1_scenarios.test.ts",
+        "lines": 102,
+        "kind": "test"
+      },
+      {
+        "file": "tests/0_bench/2_shake.test.ts",
+        "lines": 52,
+        "kind": "test"
+      },
+      {
+        "file": "tests/1_sequence/0_identity.test.ts",
+        "lines": 754,
+        "kind": "test"
+      },
+      {
+        "file": "tests/1_sequence/1_svgBinding.test.ts",
+        "lines": 950,
+        "kind": "test"
+      },
+      {
+        "file": "tests/1_sequence/2_artifact.test.ts",
+        "lines": 1094,
+        "kind": "test"
+      },
+      {
+        "file": "tests/1_sequence/3_geometryFocus.test.ts",
+        "lines": 226,
+        "kind": "test"
+      },
+      {
+        "file": "tests/1_sequence/5_collapsePlacement.test.ts",
+        "lines": 550,
+        "kind": "test"
+      },
+      {
+        "file": "tests/2_graph/10_renderer.test.ts",
+        "lines": 71,
+        "kind": "test"
+      },
+      {
+        "file": "tests/2_graph/12_layout.test.ts",
+        "lines": 390,
+        "kind": "test"
+      },
+      {
+        "file": "tests/2_graph/1_fitCamera.test.ts",
+        "lines": 79,
+        "kind": "test"
+      },
+      {
+        "file": "tests/2_graph/2_geometryScope.test.ts",
+        "lines": 210,
+        "kind": "test"
+      },
+      {
+        "file": "tests/2_graph/5_stickyStack.test.ts",
+        "lines": 48,
+        "kind": "test"
+      },
+      {
+        "file": "tests/2_graph/5_translateGeometry.test.ts",
+        "lines": 57,
+        "kind": "test"
+      },
+      {
+        "file": "tests/2_graph/6_stackGroupHeaders.test.ts",
+        "lines": 307,
+        "kind": "test"
+      },
+      {
+        "file": "tests/2_graph/8_filesystemGraph.test.ts",
+        "lines": 95,
+        "kind": "test"
+      },
+      {
+        "file": "tests/2_graph/9_operators.test.ts",
+        "lines": 345,
+        "kind": "test"
+      },
+      {
+        "file": "tests/3_integration/1_shellPipeline.test.ts",
+        "lines": 227,
+        "kind": "test"
+      },
+      {
+        "file": "tests/3_integration/20_packageGate.test.ts",
+        "lines": 1116,
+        "kind": "test"
+      },
+      {
+        "file": "tests/3_integration/28_graphPipeline.test.ts",
+        "lines": 403,
+        "kind": "test"
+      },
+      {
+        "file": "tests/3_integration/3_laneParity.test.ts",
+        "lines": 84,
+        "kind": "test"
+      },
+      {
+        "file": "tests/5_history/1_gitWalk.test.ts",
+        "lines": 65,
+        "kind": "test"
+      }
+    ],
+    "sourceFiles": 45,
+    "sourceLines": 3958,
+    "testFiles": 23,
+    "testLines": 7527
+  },
+  "tests": {
+    "method": "not run by ship; `pnpm test` covers the library",
+    "unit": {
+      "label": "unit",
+      "command": "pnpm test",
+      "tests": null,
+      "files": 0,
+      "passed": null,
+      "failed": null,
+      "durationMs": null,
+      "reason": "not measured by ship"
+    },
+    "browser": {
+      "label": "browser",
+      "command": "",
+      "tests": null,
+      "files": 0,
+      "passed": null,
+      "failed": null,
+      "durationMs": null,
+      "reason": "no browser suite for grapht"
+    }
+  },
+  "timing": {
+    "method": "Date.now() around each execFileSync call in scripts/ship.mjs",
+    "typecheckMs": null,
+    "typecheckReason": "not measured by ship",
+    "libraryBuildMs": null,
+    "libraryBuildReason": "not measured by ship",
+    "unitTestsMs": null,
+    "browserTestsMs": null,
+    "siteBuildMs": 1948,
+    "demoBuildMs": null,
+    "statsMs": 1789228287649
+  },
+  "demoMemory": {
+    "method": null,
+    "command": "",
+    "samples": null,
+    "leakBytes": null,
+    "examples": null,
+    "retaining": null,
+    "durationMs": null,
+    "reason": "no browser heap pass for grapht"
+  }
+}

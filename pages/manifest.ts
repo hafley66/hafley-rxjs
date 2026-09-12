@@ -68,6 +68,14 @@ export const SITES: readonly PageSite[] = [
     build: "pnpm --filter @hafley66/signals ship",
     dist: "packages/signals/site/dist",
   },
+  {
+    slug: "grapht",
+    title: "grapht",
+    blurb: "Graph diagram toolkit: d2 and mermaid into one canonical model, swappable renderers.",
+    pkg: "@hafley66/grapht",
+    build: "pnpm --filter @hafley66/grapht ship",
+    dist: "packages/grapht/site/dist",
+  },
 ]
 
 /** The site that owns a hash path, or undefined when the root should render the hub. */

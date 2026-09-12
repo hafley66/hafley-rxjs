@@ -34,7 +34,11 @@
     "test": "pnpm run build && vitest run tests",
     "renderer-fixture": "node scripts/0_generate_renderer_fixture.mjs",
     "bench:fixture-memory": "node scripts/2_compare_fixture_memory.mjs",
-    "receipts": "pnpm run typecheck && pnpm run test"
+    "receipts": "pnpm run typecheck && pnpm run test",
+    "site": "vitepress dev site",
+    "site:build": "vitepress build site",
+    "site:preview": "vitepress preview site",
+    "ship": "node scripts/ship.mjs"
   },
   "dependencies": {
     "@hafley66/grapht-model": "workspace:*",
@@ -48,8 +52,12 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@hafley66/docs-kit": "workspace:*",
     "@types/node": "^25.0.8",
     "typescript": "7.0.2",
+    "vite": "^8.2.1",
+    "vitepress": "2.0.0-alpha.20",
+    "vitepress-plugin-mermaid": "^2.0.17",
     "vitest": "^4.1.10"
   },
   "license": "MIT",
