@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grapht golden</title>
+  </head>
+  <body>
+    <main>
+      <section class="controls" aria-label="Grapht golden controls">
+        <label>
+          Renderer
+          <select id="renderer" aria-label="Renderer">
+            <option value="cytoscape">Cytoscape</option>
+            <option value="pixi">Pixi</option>
+          </select>
+        </label>
+        <label>
+          Scenario
+          <select id="scenario" aria-label="Scenario">
+            <option value="mermaid">Mermaid sequence</option>
+            <option value="d2">D2 sequence</option>
+            <option value="generic">Generic fCoSE graph</option>
+          </select>
+        </label>
+        <button id="reset-camera" type="button">Reset camera</button>
+        <button id="show-sticky" type="button">Show sticky headers</button>
+        <output id="camera" aria-label="Current camera"></output>
+        <output id="focused-ids" aria-label="Focused IDs"></output>
+        <output id="selected-ids" aria-label="Selected IDs"></output>
+      </section>
+      <p class="instructions">Sequence scenarios preserve checked native SVG layout inside a sealed graph node. The generic scenario uses fCoSE.</p>
+      <div id="graph" aria-label="Canonical Grapht graph"></div>
+    </main>
+    <script type="module" src="/src/2_main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM"],
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node", "vitest/globals"],
+    "paths": {
+      "@hafley66/grapht/browser": ["../grapht/src/27_browser.ts"],
+      "@hafley66/grapht-model": ["../grapht-model/src/index.ts"],
+      "@hafley66/mmd/browser": ["../mmd/src/6_browser.ts"],
+      "@hafley66/d2/browser": ["../d2/src/6_browser.ts"],
+      "@hafley66/grapht-render-cytoscape": ["../grapht/adapters/2_render_cytoscape/index.ts"],
+      "@hafley66/grapht-render-pixijs": ["../grapht/adapters/6_render_pixijs/src/index.ts"]
+    }
+  },
+  "include": ["src", "tests"]
+}

@@ -1,0 +1,40 @@
+:root {
+  color: #e9eef6;
+  background: #10141c;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  height: 100vh;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #18202d;
+}
+
+output {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.instructions {
+  margin: 0;
+  padding: 8px 12px;
+  background: #111924;
+}
+
+#graph {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}

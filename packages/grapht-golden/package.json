@@ -1,0 +1,34 @@
+{
+  "name": "@hafley66/grapht-golden",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "golden": "vite --host 127.0.0.1 --port 4174",
+    "dev": "pnpm golden",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:browser": "playwright test -c playwright.config.ts"
+  },
+  "dependencies": {
+    "@hafley66/grapht": "workspace:*",
+    "@hafley66/grapht-model": "workspace:*",
+    "@hafley66/grapht-render-cytoscape": "workspace:*",
+    "@hafley66/grapht-render-pixijs": "workspace:*",
+    "@hafley66/d2": "workspace:*",
+    "@hafley66/mmd": "workspace:*",
+    "@pixi-essentials/svg": "3.0.0",
+    "cytoscape-fcose": "2.2.0",
+    "pixi.js": "^8.9.0",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^25.0.8",
+    "playwright": "^1.62.1",
+    "typescript": "7.0.2",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
+  }
+}
