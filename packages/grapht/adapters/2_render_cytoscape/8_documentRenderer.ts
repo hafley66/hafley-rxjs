@@ -71,28 +71,26 @@ export function createDocumentGraphFrameResource(
   const onWheel = (event: WheelEvent): void => {
     if (camera === undefined) return
     event.preventDefault()
-    // Shifted wheels carry horizontal intent; a mouse reports it as deltaY
-    // with shiftKey, a trackpad as deltaX.
+    // Shift scrolls horizontally, command or control zooms at the cursor
+    // (ctrl carries the trackpad pinch), and a plain wheel pans.
     if (event.shiftKey) {
       const delta = event.deltaX !== 0 ? event.deltaX : event.deltaY
       applyCamera({ ...camera, x: camera.x - delta })
-      interactions?.cameraInput$.next(camera)
-      return
+    } else if (event.metaKey || event.ctrlKey) {
+      const at = pointer(event)
+      const factor = Math.exp(-event.deltaY * 0.0015)
+      const scale = Math.min(Math.max(camera.scale * factor, 0.01), 8)
+      const worldX = (at.x - camera.x) / camera.scale
+      const worldY = (at.y - camera.y) / camera.scale
+      applyCamera({
+        x: at.x - worldX * scale,
+        y: at.y - worldY * scale,
+        scale,
+        viewport: camera.viewport,
+      })
+    } else {
+      applyCamera({ ...camera, x: camera.x - event.deltaX, y: camera.y - event.deltaY })
     }
-    const at = pointer(event)
-    if (event.deltaX !== 0) {
-      applyCamera({ ...camera, x: camera.x - event.deltaX })
-    }
-    const factor = Math.exp(-event.deltaY * 0.0015)
-    const scale = Math.min(Math.max(camera.scale * factor, 0.01), 8)
-    const worldX = (at.x - camera.x) / camera.scale
-    const worldY = (at.y - camera.y) / camera.scale
-    applyCamera({
-      x: at.x - worldX * scale,
-      y: at.y - worldY * scale,
-      scale,
-      viewport: camera.viewport,
-    })
     interactions?.cameraInput$.next(camera)
   }
 
