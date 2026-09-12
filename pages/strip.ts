@@ -70,6 +70,9 @@ export function renderStrip(host: HTMLElement, pathname: string): void {
 
   const hub = doc.createElement("a")
   hub.href = base
+  // A site's own client router treats these as in-site routes and paints its 404; VitePress skips
+  // any link carrying a target, so the browser performs the cross-site navigation the tab means.
+  hub.target = "_top"
   hub.dataset.tab = "hub"
   hub.textContent = "hub"
   if (current === undefined) hub.setAttribute("aria-current", "page")
@@ -78,6 +81,7 @@ export function renderStrip(host: HTMLElement, pathname: string): void {
   for (const site of SITES) {
     const link = doc.createElement("a")
     link.href = `${base}${site.slug}/`
+    link.target = "_top"
     link.dataset.tab = site.slug
     link.title = site.blurb
     link.textContent = site.title
