@@ -40,6 +40,7 @@
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit && tsc --noEmit -p examples/tsconfig.json",
     "test": "vitest run",
+    "test:browser": "node ../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts",
     "test:jsx-e2e": "vitest --config vitest.jsx-e2e.config.ts",
     "test:ui": "vitest --ui",
     "test:log": "SIGNALS_LOG=debug vitest run",

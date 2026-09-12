@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { describe, expect, it } from "vitest"
 import { Route } from "./5_Route.js"
 

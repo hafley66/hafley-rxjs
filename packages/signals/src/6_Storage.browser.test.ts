@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { Observable } from "rxjs"
 import { StorageSignal, hashAdapter, historyAdapter, storageSignal, urlAdapter, type Storage } from "./6_Storage.js"
