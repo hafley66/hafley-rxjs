@@ -77,9 +77,30 @@ async function mount(next: Mode): Promise<void> {
 
 mount("document")
 
+let lastCameraLine = ""
 cameraInput$.subscribe(camera => {
-  readout.textContent = `${mode} | camera x ${camera.x.toFixed(0)} y ${camera.y.toFixed(0)} scale ${camera.scale.toFixed(3)}`
+  lastCameraLine = `camera x ${camera.x.toFixed(0)} y ${camera.y.toFixed(0)} scale ${camera.scale.toFixed(3)}`
+  paintReadout()
 })
+
+let fpsNow = 0
+function paintReadout(): void {
+  readout.textContent = `${mode} | fps ${fpsNow} | ${lastCameraLine}`
+}
+let frameCount = 0
+let frameWindowStart = performance.now()
+requestAnimationFrame(function tick() {
+  frameCount += 1
+  const now = performance.now()
+  if (now - frameWindowStart >= 500) {
+    fpsNow = Math.round((frameCount * 1000) / (now - frameWindowStart))
+    frameCount = 0
+    frameWindowStart = now
+    paintReadout()
+  }
+  requestAnimationFrame(tick)
+})
+paintReadout()
 
 document.querySelector("#document")?.addEventListener("click", () => mount("document"))
 document.querySelector("#cytoscape")?.addEventListener("click", () => mount("cytoscape"))
