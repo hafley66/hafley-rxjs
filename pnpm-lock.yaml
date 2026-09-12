@@ -1316,9 +1316,6 @@ importers:
       '@vitest/ui':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
-      jsdom:
-        specifier: ^26.0.0
-        version: 26.1.0
       mermaid:
         specifier: ^11.16.0
         version: 11.16.0
