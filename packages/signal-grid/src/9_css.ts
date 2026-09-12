@@ -60,6 +60,17 @@ export function writeGridVars<TRow>(grid: Grid<TRow>, root: HTMLElement): () => 
   // The last value each property was set to. Every stage above reads the viewport, so a scroll
   // recomputes this frame each time, and a property set to what it already holds still costs style.
   const held = new Map<string, string>()
+  // Counted per extent object rather than per frame. The axis hands back the same record until a
+  // height changes, and `Object.keys` on 20,000 declared rows cost 1.5 ms of every logged frame.
+  let counted: Readonly<Record<string, number>> | null = null
+  let declared = 0
+  const declaredOf = (extent: Readonly<Record<string, number>>): number => {
+    if (extent !== counted) {
+      counted = extent
+      declared = Object.keys(extent).length
+    }
+    return declared
+  }
   const sub = frame.$.subscribe((next) => {
     if (!LOG.on) {
       written = writeFrame(root, next, written, held)
@@ -67,12 +78,13 @@ export function writeGridVars<TRow>(grid: Grid<TRow>, root: HTMLElement): () => 
     }
     const started = performance.now()
     written = writeFrame(root, next, written, held)
+    const durationMs = performance.now() - started
     LOG.emit(CAT_VARS, "vars {id} {durationMs}ms", {
       id: grid.id.$(),
-      declared: Object.keys(next.extent).length,
+      declared: declaredOf(next.extent),
       drawn: next.drawn.length,
       written: written.size,
-      durationMs: performance.now() - started,
+      durationMs,
     })
   })
   return () => sub.unsubscribe()

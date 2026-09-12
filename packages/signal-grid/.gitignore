@@ -1,5 +1,7 @@
 demo/dist
 bench/results.json
+bench/scroll.json
+bench/scroll/dist
 out/
 site/dist
 site/.vitepress/cache
