@@ -23,6 +23,7 @@
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "pnpm run build && vitest run",
+    "proof:live": "pnpm run proof:svg && vite --config proof/vite.config.ts",
     "proof:svg": "d2 --watch=false --theme=0 --layout=dagre --pad=100 --scale=1 ../../0_rendered_artifact_state_epic.d2 proof/arch.svg",
     "test:browser": "pnpm run proof:svg && node ../../../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts",
     "lab": "node ../../scripts/0_generate_renderer_fixture.mjs 1000 && playwright test -c playwright.config.ts",
@@ -32,6 +33,7 @@
   "dependencies": {
     "@hafley66/grapht": "workspace:^",
     "cytoscape": "^3.31.1",
+    "rxjs": "^7.8.2",
     "dompurify": "3.4.14",
     "playwright": "^1.62.1",
     "zod": "^4.4.3"

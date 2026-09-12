@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>grapht live: rendered artifact epic</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0b1220;
+        overflow: hidden;
+        font: 12px/1.4 system-ui, sans-serif;
+        color: #e2e8f0;
+      }
+      #host {
+        position: fixed;
+        inset: 0;
+      }
+      #bar {
+        position: fixed;
+        top: 8px;
+        left: 8px;
+        z-index: 9;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      #bar button {
+        background: #172554;
+        color: #e2e8f0;
+        border: 1px solid #93c5fd;
+        border-radius: 3px;
+        padding: 4px 10px;
+        cursor: pointer;
+      }
+      #readout {
+        position: fixed;
+        bottom: 8px;
+        left: 8px;
+        z-index: 9;
+        font-family: ui-monospace, monospace;
+        color: #7dd3fc;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="bar">
+      <button id="fit">fit whole epic</button>
+      <button id="crop">crop to input cluster</button>
+    </div>
+    <div id="host"></div>
+    <div id="readout"></div>
+    <script type="module" src="./live.ts"></script>
+  </body>
+</html>

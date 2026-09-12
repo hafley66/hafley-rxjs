@@ -1,0 +1,16 @@
+import { chromium } from "@playwright/test"
+const browser = await chromium.launch()
+const page = await browser.newPage()
+const errors = []
+page.on("pageerror", error => errors.push(String(error)))
+page.on("console", message => { if (message.type() === "error") errors.push(message.text()) })
+await page.goto("http://localhost:5179/")
+await page.waitForTimeout(2500)
+const svgCount = await page.evaluate(() => document.querySelectorAll("#host svg").length)
+const elements = await page.evaluate(() => document.querySelector("#host svg")?.querySelectorAll("g,path,rect,text").length ?? 0)
+await page.mouse.move(640, 400)
+await page.mouse.wheel(0, -600)
+await page.waitForTimeout(600)
+const readout = await page.evaluate(() => document.querySelector("#readout")?.textContent ?? "")
+console.log(JSON.stringify({ svgCount, elements, readout, errors: errors.slice(0, 3) }))
+await browser.close()
