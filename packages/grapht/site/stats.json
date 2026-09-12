@@ -3,21 +3,29 @@
   "generatedBy": "grapht/site",
   "commit": {
     "method": "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain excluding this step's own outputs, git rev-parse --abbrev-ref HEAD",
-    "hash": "cf79b5a5d32e6c591195b17c8659b60741c2ef25",
-    "short": "cf79b5a",
-    "subject": "grapht: add pages workflow with strip refresh",
-    "authorDate": "2026-09-12T11:47:29-04:00",
-    "branch": "feature/grapht-pages-site",
+    "hash": "86cd0ddf026c58e62d9803c6d7d5f2508874c652",
+    "short": "86cd0dd",
+    "subject": "grapht: vitepress site on GitHub Pages with the proof app",
+    "authorDate": "2026-09-12T11:52:49-04:00",
+    "branch": "main",
     "clean": false,
-    "dirtyCount": 4,
+    "dirtyCount": 12,
     "dirtyEntries": [
-      "M .github/workflows/grapht-pages.yml",
-      "A  packages/grapht/adapters/2_render_cytoscape/proof/arch.svg",
-      "M packages/grapht/scripts/ship.mjs",
-      "M packages/grapht/site/pages/proof.md"
+      "M packages/grapht/adapters/2_render_cytoscape/proof/arch-proof.png",
+      "M packages/grapht/adapters/2_render_cytoscape/proof/arch-zoom.png",
+      "M packages/signal-grid/demo/main.ts",
+      "M packages/signal-grid/site/stats.json",
+      "M packages/signals/docs/reference-api.md",
+      "M packages/signals/site/stats.json",
+      "M packages/signals/src/5_Route.browser.test.ts",
+      "M packages/signals/src/5_Route.ts",
+      "?? .boop-briefs/",
+      "?? packages/gothic/src/lib/8a_khFit.ts",
+      "?? packages/gothic/tools/",
+      "?? packages/grapht/adapters/2_render_cytoscape/proof/depProbe.mjs"
     ],
     "repository": "hafley66/hafley-rxjs",
-    "url": "https://github.com/hafley66/hafley-rxjs/commit/cf79b5a5d32e6c591195b17c8659b60741c2ef25",
+    "url": "https://github.com/hafley66/hafley-rxjs/commit/86cd0ddf026c58e62d9803c6d7d5f2508874c652",
     "reason": null
   },
   "machine": {
@@ -28,7 +36,7 @@
     "cpuModel": "Apple M2 Pro",
     "cores": 12,
     "totalMemoryBytes": 17179869184,
-    "builtAt": "2026-09-12T15:51:27.511Z"
+    "builtAt": "2026-09-12T15:53:02.935Z"
   },
   "package": {
     "name": "@hafley66/grapht",
@@ -37,16 +45,16 @@
   "bundle": {
     "method": "statSync().size summed for raw bytes and zlib.gzipSync(readFileSync(file)).length summed for gzip, over every file in the directory",
     "library": {
-      "fileCount": 176,
-      "totalBytes": 340864,
-      "totalGzipBytes": 101017,
+      "fileCount": 264,
+      "totalBytes": 529176,
+      "totalGzipBytes": 153143,
       "reason": null
     },
     "siteMethod": "the same statSync and gzipSync pass over site/dist; the copy inlined into the site measures pass 1, the committed stats.json measures the final dist",
     "site": {
       "fileCount": 134,
-      "totalBytes": 6408736,
-      "totalGzipBytes": 2488985,
+      "totalBytes": 6409085,
+      "totalGzipBytes": 2489079,
       "reason": null
     },
     "demo": {
@@ -458,9 +466,9 @@
     "libraryBuildReason": "not measured by ship",
     "unitTestsMs": null,
     "browserTestsMs": null,
-    "siteBuildMs": 1948,
+    "siteBuildMs": 2021,
     "demoBuildMs": null,
-    "statsMs": 1789228287649
+    "statsMs": 1789228383052
   },
   "demoMemory": {
     "method": null,
