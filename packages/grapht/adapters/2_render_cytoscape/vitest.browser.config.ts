@@ -13,6 +13,6 @@ export default defineConfig({
       headless: true,
       screenshotFailures: true,
     },
-    include: ["6_graphRenderer.browser.test.ts"],
+    include: ["6_graphRenderer.browser.test.ts", "7_proof.browser.test.ts"],
   },
 })

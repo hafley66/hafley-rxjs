@@ -67,14 +67,16 @@ function union(left: Rect | undefined, right: Rect): Rect {
   return { x, y, width: rightEdge - x, height: bottom - y }
 }
 
+/** Injects the svg namespace into the root element only; nested roots inherit it and must not be touched. */
+function withSvgNamespace(source: string): string {
+  const root = /<svg\b[^>]*>/i.exec(source)
+  if (!root || /\bxmlns\s*=/.test(root[0])) return source
+  return `<svg xmlns="http://www.w3.org/2000/svg" ${source.slice(root.index + 4)}`
+}
+
 function parseSvg(document: Document, svg: string): SVGSVGElement {
-  // A source without xmlns parses into no namespace and lands as a plain Element, so the
-  // namespace is injected before parsing rather than repaired after it.
-  const source = /<svg\b(?![^>]*\bxmlns=)/i.test(svg)
-    ? svg.replace(/<svg\b/i, '<svg xmlns="http://www.w3.org/2000/svg"')
-    : svg
-  const parsed = new DOMParser().parseFromString(source, "image/svg+xml")
-  if (parsed.querySelector("parsererror")) throw new Error("sealed SVG artifact is not valid XML")
+  const parsed = new DOMParser().parseFromString(withSvgNamespace(svg), "image/svg+xml")
+  if (parsed.querySelector("parsererror")) throw new Error(`sealed SVG artifact is not valid XML: ${parsed.querySelector("parsererror")?.textContent?.slice(0, 200)}`)
   for (const unsafe of parsed.querySelectorAll("script, foreignObject")) unsafe.remove()
   for (const element of parsed.querySelectorAll("*")) {
     for (const attribute of [...element.attributes]) {

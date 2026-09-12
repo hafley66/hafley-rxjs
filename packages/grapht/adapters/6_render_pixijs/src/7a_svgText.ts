@@ -16,14 +16,16 @@ const PRESENTATION_ATTRIBUTES = [
   "text-anchor",
 ] as const
 
+/** Injects the svg namespace into the root element only; nested roots inherit it and must not be touched. */
+function withSvgNamespace(source: string): string {
+  const root = /<svg\b[^>]*>/i.exec(source)
+  if (!root || /\bxmlns\s*=/.test(root[0])) return source
+  return `<svg xmlns="http://www.w3.org/2000/svg" ${source.slice(root.index + 4)}`
+}
+
 /** Resolves stylesheet rules into presentation attributes before SVGScene consumes the detached SVG. */
 export function svgRootForPixi(document: Document, source: string): SVGSVGElement {
-  // A source without xmlns parses into no namespace and lands as a plain Element, so the
-  // namespace is injected before parsing rather than repaired after it.
-  const namespaced = /<svg\b(?![^>]*\bxmlns=)/i.test(source)
-    ? source.replace(/<svg\b/i, '<svg xmlns="http://www.w3.org/2000/svg"')
-    : source
-  const parsed = new DOMParser().parseFromString(namespaced, "image/svg+xml")
+  const parsed = new DOMParser().parseFromString(withSvgNamespace(source), "image/svg+xml")
   if (parsed.querySelector("parsererror")) throw new Error("Pixi SVG source is not valid XML")
   const root = document.importNode(parsed.documentElement, true)
   if (!(root instanceof SVGSVGElement)) throw new Error("Pixi SVG source has no SVG root")
