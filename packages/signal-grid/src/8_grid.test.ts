@@ -354,26 +354,35 @@ describe("columns are the same five operators on the other axis", () => {
     expect(nodes.map((n) => [n.key, n.depth])).toEqual([["meta", 0], ["name", 1], ["size", 1]])
   })
 
+  // `FLAT` is three rows, so no scroll moves a window over it. 200 of them at the default density
+  // is 7,200 px against a 200 px viewport, which is a window the scroll can actually walk.
+  const tallGrid = (): Grid<Row> =>
+    grid<Row>({
+      id: "tall",
+      rows: Array.from({ length: 200 }, (_unused, index) => ({ id: `r${index}`, name: `n${index}`, size: index })),
+      columns: COLUMNS,
+      rowId: (row) => row.id,
+      state: Signal<Partial<GridState>>({ virtualize: { vertical: true, horizontal: false } }),
+    })
+
   // The scroll frame is where the sheet demo spent 440 ms of the 16 it had: the pinning cut, the
   // page cut and the sizer all walk the relation, and they sat in the same memo as the window.
   // The sizer is the one of the three the plan hands back, so its identity is the probe.
   it("a scroll windows the same base rather than rebuilding it", () => {
-    const g = flatGrid()
-    g.state.virtualize.$({ vertical: true, horizontal: false })
+    const g = tallGrid()
     g.viewport.$({ top: 0, left: 0, width: 400, height: 200 })
     const first = g.view.plan.$()
-    g.viewport.$({ top: 180, left: 0, width: 400, height: 200 })
+    g.viewport.$({ top: 1800, left: 0, width: 400, height: 200 })
     const second = g.view.plan.$()
     expect(second.span).not.toEqual(first.span)
     expect(second.sizer).toBe(first.sizer)
   })
 
   it("a row height write does rebuild the base", () => {
-    const g = flatGrid()
-    g.state.virtualize.$({ vertical: true, horizontal: false })
+    const g = tallGrid()
     g.viewport.$({ top: 0, left: 0, width: 400, height: 200 })
     const first = g.view.plan.$()
-    g.state.rowHeight.$({ ...g.state.rowHeight.$(), [FLAT[1]!.id]: 90 })
+    g.state.rowHeight.$({ ...g.state.rowHeight.$(), r1: 90 })
     expect(g.view.plan.$().sizer).not.toBe(first.sizer)
   })
 
