@@ -77,7 +77,7 @@ export type {
 } from "./13_sequenceSvgBinding.js"
 export {
   decorateSvg,
-  descendantsOf,
+  svgDescendantsOf,
   elementIdForBinding,
   parentPath,
   pathKey,

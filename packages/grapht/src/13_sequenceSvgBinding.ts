@@ -7,7 +7,7 @@ export type {
 } from "@hafley66/grapht-model"
 export {
   decorateSvg,
-  descendantsOf,
+  svgDescendantsOf,
   elementIdForBinding,
   parentPath,
   pathKey,

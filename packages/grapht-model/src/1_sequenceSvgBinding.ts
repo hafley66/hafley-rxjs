@@ -53,7 +53,7 @@ export function pathKey(path: number[]): string {
   return path.join(".")
 }
 
-export function descendantsOf(elements: NativeSvgElement[], parentPath: number[]): NativeSvgElement[] {
+export function svgDescendantsOf(elements: NativeSvgElement[], parentPath: number[]): NativeSvgElement[] {
   return elements.filter(
     element =>
       element.path.length > parentPath.length && parentPath.every((part, index) => element.path[index] === part),

@@ -1,7 +1,7 @@
 {
   "name": "@hafley66/grapht-model",
   "version": "0.1.0",
-  "description": "Versioned shared sequence artifact and pure sequence operations",
+  "description": "Canonical graph topology, validation, and indexes plus shared sequence operations",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

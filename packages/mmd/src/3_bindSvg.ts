@@ -1,6 +1,6 @@
 import type { SequenceOccurrenceDocument } from "@hafley66/grapht-model"
 import {
-  descendantsOf,
+  svgDescendantsOf,
   type NativeRenderReceipt,
   parentPath,
   SvgBindingBuilder,
@@ -13,7 +13,7 @@ function firstDescendant(
   path: number[],
   predicate: (element: NativeRenderReceipt["elements"][number]) => boolean,
 ) {
-  return descendantsOf(receipt.elements, path).find(predicate)
+  return svgDescendantsOf(receipt.elements, path).find(predicate)
 }
 
 function occurrenceAt(
@@ -116,7 +116,7 @@ export function bindMermaidSvg(
     if (!text) continue
 
     const framePath = parentPath(parentPath(text.path))
-    const frame = descendantsOf(receipt.elements, framePath).filter(
+    const frame = svgDescendantsOf(receipt.elements, framePath).filter(
       element => element.tag === "line" && element.classes.includes("loopLine"),
     )
 

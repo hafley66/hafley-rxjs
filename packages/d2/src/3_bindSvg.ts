@@ -1,6 +1,6 @@
 import type { SequenceOccurrenceDocument } from "@hafley66/grapht-model"
 import {
-  descendantsOf,
+  svgDescendantsOf,
   type NativeRenderReceipt,
   parentPath,
   SvgBindingBuilder,
@@ -13,7 +13,7 @@ function firstDescendant(
   path: number[],
   predicate: (element: NativeRenderReceipt["elements"][number]) => boolean,
 ) {
-  return descendantsOf(receipt.elements, path).find(predicate)
+  return svgDescendantsOf(receipt.elements, path).find(predicate)
 }
 
 function occurrenceAt(
@@ -96,7 +96,7 @@ export function bindD2Svg(
       candidate =>
         candidate.tag === "g" &&
         candidate.classes.includes("shape") &&
-        descendantsOf(receipt.elements, candidate.path).some(
+        svgDescendantsOf(receipt.elements, candidate.path).some(
           descendant => descendant.tag === "rect" && descendant.attributes.width === "12.000000",
         ),
     )
