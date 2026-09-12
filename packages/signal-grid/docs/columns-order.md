@@ -21,9 +21,31 @@ never requires editing the order key.
 g.dispatch(headerDown("name", "move", 0))
 ```
 
-`moveColumnOnHeaderDrag` in `src/7_epics.ts` writes `colOrder` while the pointer moves, so the
-header band and every row band travel together. `landingIndex` in `src/6_gestures.ts` decides a
+`moveColumnOnHeaderDrag` in `src/7_epics.ts` publishes where the column will land while the pointer
+is down and writes `colOrder` once, on the lift. `landingIndex` in `src/6_gestures.ts` decides a
 neighbour has been passed once the pointer crosses half of it, measured from where the drag began.
+
+## Preview, or live
+
+```ts
+grid<Row>({ ...config, drag: "live" })     // rewrites colOrder on every pointermove
+grid<Row>({ ...config })                   // "preview", the default
+```
+
+| mode | during the drag | on the lift |
+| --- | --- | --- |
+| `preview` | `state.drag` names the travelling column and the landing edge; no column moves | one `colOrder` write, then `state.drag` back to null |
+| `live` | one `colOrder` write per pointermove | one more, from the last position |
+
+`preview` is the default because a live rewrite moves the grid under the pointer that is aiming at
+it, and because the rebuilt header band throws away the element the pointer grabbed: `buildHeader`
+in `src/10_render.ts` tears the band down whenever `colRunSignature` changes, so `:active` on the
+grip died on the second frame of every live drag. Deferring the commit is what lets the renderer
+stamp `data-dragging` on the cell that is travelling, and draw the drop line at the landing edge.
+
+`GridConfig.drag` is read only when `epics` is absent. A caller listing epics passes the mode to
+`moveColumnOnHeaderDrag` and `resizeOnHeaderDrag` directly, since each takes it as its second
+argument.
 
 The grip is drawn when the column allows the move. `src/10_render.ts` reads that flag through a
 local patch type, and the flag is absent from `ColumnDef` in `src/0_types.ts` today, so a schema
@@ -37,9 +59,9 @@ differ only in which part of the path the press landed on.
 
 | press lands on | route | epic writes |
 | --- | --- | --- |
-| the header label | `g/h/move` | `colOrder` |
-| the resize handle | `g/h/resize` | `colWidth` |
-| the row grip | `g/r/move` | an effect, and nothing in state |
+| the header label | `g/h/move` | `drag` per move, `colOrder` on the lift |
+| the resize handle | `g/h/resize` | `drag` per move, `colWidth` on the lift |
+| the row grip | `g/r/move` | `drag` per move, an effect on the lift and nothing in state |
 
 ## Testing a drag with no window
 

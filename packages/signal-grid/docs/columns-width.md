@@ -45,9 +45,28 @@ and hold a fixed size.
 g.dispatch(headerDown("name", "resize", 0))
 ```
 
-`resizeOnHeaderDrag` in `src/7_epics.ts` writes `colWidth` on every pointer move, clamped to the
-column's min and max. One write repaints the header band and every row band, because both read the
-same custom property.
+`resizeOnHeaderDrag` in `src/7_epics.ts` publishes the prospective width while the pointer is down,
+clamped to the column's min and max, and writes `colWidth` once on the lift. One write repaints the
+header band and every row band, because both read the same custom property.
+
+## Preview, or live
+
+```ts
+grid<Row>({ ...config, drag: "live" })     // writes colWidth on every pointermove
+grid<Row>({ ...config })                   // "preview", the default
+```
+
+Under `preview` every column keeps the width it is painting and the renderer draws one line at the
+prospective edge. The line is a child of `.sg-scroll` rather than of the header cell, because a
+header cell carries `overflow: hidden` for its own ellipsis and a line inside one stops at the
+bottom of the band. `resizeOnHeaderDrag` takes the mode as its second argument, and `GridConfig.drag`
+is the seat a caller who does not list `epics` writes it in. The same option covers the column move,
+on [Order](/columns-order).
+
+| what is drawn | element | attribute |
+| --- | --- | --- |
+| the held handle | `.sg-resize::before` | `:active`, 3 px of `--sg-accent` |
+| the prospective edge | `.sg-guide` | `data-axis="inline"`, offset in `--sg-guide-x` |
 
 ## The browser owns distribution
 

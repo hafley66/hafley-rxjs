@@ -38,7 +38,7 @@ import {
   type SpanRelation,
 } from "./12_transpose.js"
 import { checkBands, isHeaderGroup } from "./18_bands.js"
-import { defaultEpics, type GridEpic, type GridEpicCtx } from "./7_epics.js"
+import { defaultEpics, type DragMode, type GridEpic, type GridEpicCtx } from "./7_epics.js"
 import { EMPTY_RANGE } from "./15_selection.js"
 import {
   columnReader,
@@ -103,6 +103,7 @@ export function defaultState(over: Partial<GridState> = {}): GridState {
     colWidth: {},
     colPinning: {},
     selection: EMPTY_RANGE,
+    drag: null,
     focus: null,
     editing: null,
     density: "standard",
@@ -152,6 +153,9 @@ export interface GridConfig<TRow> {
   readonly overscan?: number
   /** Absent installs `defaultEpics()`. Opt-in epics such as `detailOnCellClick` go here. */
   readonly epics?: readonly GridEpic<TRow>[]
+  /** How a resize or a move shows itself while the pointer is down. Read only when `epics` is
+   * absent, because a caller listing epics already chose the mode on each one. */
+  readonly drag?: DragMode
 }
 
 // --- The view chain ---------------------------------------------------------
@@ -303,7 +307,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
     initial: store.$(),
     state: store,
     reduce,
-    epics: config.epics ?? defaultEpics<TRow>(),
+    epics: config.epics ?? defaultEpics<TRow>(undefined, config.drag),
     ctx: epicCtx,
   })
   const state = slice.state

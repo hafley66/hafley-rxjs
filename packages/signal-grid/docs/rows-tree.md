@@ -62,8 +62,9 @@ the model.
 
 ## Expand all, and its three states
 
-`expandColumn({ grid: () => g })` draws the same tri-state header the checkbox column draws, over
-the rows that have children rather than the rows that can be selected.
+`expandColumn()` draws the same tri-state header the checkbox column draws, over the rows that have
+children rather than the rows that can be selected. It reads the grid off `HeaderCtx`, so nothing is
+threaded back into the schema.
 
 | state | meaning | mark |
 | --- | --- | --- |
@@ -77,10 +78,11 @@ call one open level "all". `expandAllState` derives the answer on every read, an
 writes it, so nothing stores a flag that a newly arrived branch would make wrong.
 
 ```ts
-const columns = [expandColumn<Row>({ grid: () => g }), ...DATA_COLUMNS]
-
-grid<Row>({ ...config, columns, epics: [...defaultEpics<Row>(), toggleExpandAllOnHeaderClick<Row>()] })
+const columns = [expandColumn<Row>(), ...DATA_COLUMNS]
 ```
+
+`toggleExpandAllOnHeaderClick` is in `defaultEpics` beside `toggleSelectAllOnHeaderClick`, so the
+header is a control without a config. Listing `epics` yourself is what drops it.
 
 The rendering half and the toggle half are replaced independently, exactly as on the checkbox
 column: `glyph` swaps the three marks, `header` replaces the drawing while `expandAllSignal` keeps

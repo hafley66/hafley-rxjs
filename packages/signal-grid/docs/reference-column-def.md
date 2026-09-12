@@ -125,11 +125,11 @@ from the anchor, which is the reason to render one.
 
 | factory | default id | what its cell holds |
 | --- | --- | --- |
-| `checkboxColumn` | `__check` | a mark on its own route, with a live select-all header |
+| `checkboxColumn` | `__check` | a mark on its own route, with a select-all header live by default |
 | `radioColumn` | `__radio` | the same box and route, with no select-all toggle |
 | `expandColumn` | `__expand` | the disclosure, indented by depth, with a live expand-all header |
 | `dragColumn` | `__drag` | the row move handle |
-| `detailColumn` | `__detail` | a disclosure with no route of its own |
+| `detailColumn` | `__detail` | a disclosure with no route of its own, turned by `data-detail-open` on the row |
 | `rowNumberColumn` | `__rowNumber` | the row's index within the run |
 
 A built-in is never groupable, sortable, filterable, resizable, or editable, and its min and max are

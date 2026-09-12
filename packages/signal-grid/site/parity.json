@@ -19,7 +19,7 @@
       "id": "col.formula",
       "declaration": "formula",
       "file": "src/0_types.ts",
-      "line": 264
+      "line": 268
     },
     {
       "id": "row.detail",
@@ -37,43 +37,37 @@
       "id": "row.select",
       "declaration": "checkboxColumn",
       "file": "src/5_columns.ts",
-      "line": 288
+      "line": 290
     },
     {
       "id": "row.select",
       "declaration": "radioColumn",
       "file": "src/5_columns.ts",
-      "line": 294
+      "line": 296
     },
     {
       "id": "row.expand",
       "declaration": "expandColumn",
       "file": "src/5_columns.ts",
-      "line": 311
+      "line": 313
     },
     {
       "id": "row.order",
       "declaration": "dragColumn",
       "file": "src/5_columns.ts",
-      "line": 328
+      "line": 330
     },
     {
       "id": "row.detail",
       "declaration": "detailColumn",
       "file": "src/5_columns.ts",
-      "line": 344
+      "line": 346
     },
     {
       "id": "row.select",
       "declaration": "selectRowsOnCellClick",
       "file": "src/7_epics.ts",
-      "line": 207
-    },
-    {
-      "id": "row.select",
-      "declaration": "toggleSelectAllOnHeaderClick",
-      "file": "src/7_epics.ts",
-      "line": 228
+      "line": 236
     }
   ],
   "decidedOut": 8,

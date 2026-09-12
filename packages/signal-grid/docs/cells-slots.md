@@ -43,7 +43,7 @@ const columns: readonly ColumnDef<Row>[] = [
 | ctx | fields | reaches |
 | --- | --- | --- |
 | `CellCtx` | `row`, `col`, `data`, `value`, `node`, `editing` | `cell`, `editor` |
-| `HeaderCtx` | `col`, `node`, `sort`, `pinned` | `header` |
+| `HeaderCtx` | `col`, `node`, `sort`, `pinned`, `row`, `data`, `grid` | `header` |
 | `RowCtx` | `row`, `data`, `node`, `selected`, `open` | `expander`, `detail` |
 
 All three are declared in `src/0_types.ts` as fixed shapes. A slot needing more closes over it,

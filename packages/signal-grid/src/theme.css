@@ -41,6 +41,16 @@
   inherits: true;
   initial-value: 8px;
 }
+@property --sg-guide-x {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --sg-guide-y {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
 @property --sg-accent {
   syntax: "<color>";
   inherits: true;
@@ -308,10 +318,38 @@
   cursor: grabbing;
 }
 
-/* No tint on the column being moved. `columnOrder` is rewritten on every pointermove and the
-   header rebuilds on `colRunSignature`, so the cell holding the grip is a new element by the
-   second frame of the drag and any `:active` chain on it died with the old one. The live reorder
-   is the preview; marking the travelling column needs the header to reuse cells by column id. */
+/* The travelling entry, under `drag: "preview"`. Nothing rewrites `colOrder` or the source order
+   while the pointer is down, so the header is not rebuilt and this element is the one it grabbed. */
+[data-route="g"] .sg-head-cell[data-dragging="true"],
+[data-route="g"] .sg-row[data-dragging="true"] {
+  opacity: 0.5;
+}
+
+/* The line at the landing edge. Absolutely positioned inside the scroller, so it spans the whole
+   scrollable run and nothing clips it; `left` and `top` because the offsets are measured. */
+[data-route="g"] .sg-guide {
+  position: absolute;
+  z-index: 4;
+  display: none;
+  pointer-events: none;
+  background: var(--sg-accent);
+}
+
+[data-route="g"] .sg-guide[data-axis="inline"] {
+  display: block;
+  top: 0;
+  bottom: 0;
+  left: var(--sg-guide-x);
+  inline-size: 2px;
+}
+
+[data-route="g"] .sg-guide[data-axis="block"] {
+  display: block;
+  left: 0;
+  right: 0;
+  top: var(--sg-guide-y);
+  block-size: 2px;
+}
 
 /* Tree indent. Depth is written once per row and read here by the one box ahead of the cells.
    The box is `--sg-hit` and the mark inside it is `--sg-glyph`: a target and the thing drawn in it
@@ -435,6 +473,23 @@
 
 [data-route="g"] .sg-row[data-selected="true"] .sg-check-radio::before {
   content: "\25C9";
+}
+
+/* One glyph turned, rather than two glyphs swapped: the disclosure is the same triangle open or
+   shut, and `rotate` on the mark leaves the box it sits in exactly where it was. */
+[data-route="g"] .sg-detail-toggle::before {
+  content: "\25B6";
+  transition: rotate 120ms ease;
+}
+
+[data-route="g"] .sg-row[data-detail-open="true"] .sg-detail-toggle::before {
+  rotate: 90deg;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-route="g"] .sg-detail-toggle::before {
+    transition: none;
+  }
 }
 
 /* A heading stands for a whole level rather than for a value in a column, so it is one box across

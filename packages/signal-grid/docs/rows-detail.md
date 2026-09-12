@@ -31,6 +31,11 @@ g.state.detail.$({ "r3": true })
 `activate` effect and nothing else. Adding a `detailColumn()` from `src/5_columns.ts` gives the row
 a disclosure to click.
 
+The disclosure carries no text of its own. `10_render.ts` stamps `data-detail-open` on the row box
+from `state.detail`, and `theme.css` turns the mark on that attribute, for the reason the checkbox
+glyph is CSS too: a cell rebuilds when its data, its column run, or its editing flag moved, and a
+panel opening moves none of the three, so a glyph carrying its own text would be a frame stale.
+
 ## Height
 
 A panel is a row in the row index space, so it needs a height or the scroll drifts.

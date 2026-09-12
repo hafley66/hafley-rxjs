@@ -18,12 +18,16 @@ g.state.rowSelection.$({})           // clear
 ## The checkbox column
 
 ```ts
-const columns = [checkboxColumn({ grid: () => g }), ...DATA_COLUMNS]
+const columns = [checkboxColumn(), ...DATA_COLUMNS]
 ```
 
 `checkboxColumn` in `src/5_columns.ts` draws a mark carrying its own event route, and its header is
 a live signal reading the current selection. The glyph answers one of three states through
 `selectAllState`, counting neither group headings nor detail panels.
+
+Nothing is threaded back in. `HeaderCtx` carries the grid the band belongs to, so the header derives
+its three states from the relation and the selection the renderer already holds. `{ grid: () => g }`
+is still accepted and still wins, for a schema that wants to name a different grid.
 
 | gesture | result | epic |
 | --- | --- | --- |
@@ -63,6 +67,9 @@ The two halves are replaced separately, each through the route that half already
 | the whole header rendering | the state machine and the toggle | `checkboxColumn({ header })`, reading `selectAllSignal` |
 | the toggle | the rendering | drop `toggleSelectAllOnHeaderClick` and write an epic on `header.click` |
 
+`toggleSelectAllOnHeaderClick` is in `defaultEpics`, so a click on the header fills and clears
+without a config. Listing `epics` yourself is what drops it.
+
 ```ts
 const state = selectAllSignal(() => g)
 
@@ -74,7 +81,7 @@ const columns = [
   ...DATA_COLUMNS,
 ]
 
-grid<Row>({ ...config, columns, epics: [...defaultEpics<Row>(), toggleSelectAllOnHeaderClick<Row>()] })
+grid<Row>({ ...config, columns, epics: [...defaultEpics<Row>()] })
 ```
 
 `toggleSelectAll` reads the same `selectableRows` the glyph counts, so a replaced mark and a

@@ -152,13 +152,17 @@ describe("a state signal is controlled in both directions", () => {
     expect(held.$().sort).toEqual([{ field: "size", sort: "asc" }])
   })
 
-  it("a user's resize reaches the caller's signal", () => {
+  it("a user's resize reaches the caller's signal on the lift, and the preview does too", () => {
     const held = Signal<Partial<GridState>>({})
-    const { move$ } = pointerStreams()
+    const { move$, up$ } = pointerStreams()
     const { g } = withEpics(withState(held))
     g.dispatch(headerDown("name", "resize", 0))
     move$.next(at({ clientX: 30 }))
+    expect(held.$().drag).toEqual({ kind: "colSize", col: "name", width: 150 })
+    expect(held.$().colWidth).toBeUndefined()
+    up$.next(at({ clientX: 30 }))
     expect(held.$().colWidth).toEqual({ name: 150 })
+    expect(held.$().drag).toBe(null)
   })
 
   it("one header click is one emission, because the write back cannot come round again", () => {

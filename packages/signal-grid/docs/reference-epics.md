@@ -14,17 +14,19 @@ type GridEpic<TRow> = (
 Declared in `src/7_epics.ts`. An epic reads the state signal and the derived view through its ctx,
 touches no DOM, and is never asynchronous.
 
-## The twelve installed by default
+## The fourteen installed by default
 
 | epic | reads | writes |
 | --- | --- | --- |
 | `sortOnHeaderClick` | `header.click` | `sort`, cycling ascending, descending, off; shift appends |
 | `expandOnExpanderClick` | `expander.click` | `expanded`; alt takes the whole subtree |
 | `selectRowsOnCheckboxClick` | `checkbox.click` | `rowSelection`; shift fills the range in view order |
+| `toggleSelectAllOnHeaderClick` | `header.click` on the checkbox column | `rowSelection`, over `selectableRows` |
+| `toggleExpandAllOnHeaderClick` | `header.click` on the expand column | `expanded`, over `expandableRows` |
 | `activateOnCellClick` | `cell.click` with no modifier | the `activate` effect, plus `focus` |
-| `resizeOnHeaderDrag` | `header.pointerdown` on the resize part | `colWidth`, clamped to min and max |
-| `moveColumnOnHeaderDrag` | `header.pointerdown` on the move part | `colOrder` |
-| `moveRowOnRowDrag` | `row.pointerdown` | the `reorderRow` effect, on commit only |
+| `resizeOnHeaderDrag` | `header.pointerdown` on the resize part | `drag` per move, `colWidth` on the lift |
+| `moveColumnOnHeaderDrag` | `header.pointerdown` on the move part | `drag` per move, `colOrder` on the lift |
+| `moveRowOnRowDrag` | `row.pointerdown` | `drag` per move, the `reorderRow` effect on the lift |
 | `keyboardNav` | `key` | `focus`, `expanded`, `rowSelection`, and the `activate` effect |
 | `pageOnScrollNearEnd` | `viewport.scroll` | `page.index`, in infinite mode only |
 | `selectCellsOnDrag` | `cell.pointerdown` | `selection` |
@@ -33,6 +35,21 @@ touches no DOM, and is never asynchronous.
 
 `defaultEpics()` in `src/7_epics.ts` returns that list. `config.epics` replaces the whole list, which
 is how one is dropped or an opt-in one added.
+
+## The drag mode
+
+`defaultEpics(streams, mode)` takes a `DragMode`, and `GridConfig.drag` is the seat a caller who
+does not list `epics` writes it in. `preview` is the default: the two header gestures publish
+`state.drag` while the pointer is down and write their key once, on the lift. `live` is the older
+shape, one write per pointermove.
+
+```ts
+grid<Row>({ ...config, drag: "live" })
+grid<Row>({ ...config, epics: defaultEpics<Row>(undefined, "live") })
+```
+
+The row gesture has one shape only. The grid does not own source order, so there is no live mode
+for it to have: it previews, then emits one effect.
 
 ## Replacing one
 
@@ -74,8 +91,6 @@ grid<Row>({ ...config, epics: [...defaultEpics<Row>(), detailOnCellClick({ colum
 | --- | --- | --- |
 | `selectRowsOnCellClick` | `cell.click` | `rowSelection`; plain replaces, ctrl or meta toggles, shift fills the range |
 | `expandOnCellDoubleClick` | `cell.dblclick` on a row that has children | `expanded`; alt takes the whole subtree |
-| `toggleSelectAllOnHeaderClick` | `header.click` on the checkbox column | `rowSelection`, over `selectableRows` |
-| `toggleExpandAllOnHeaderClick` | `header.click` on the expand column | `expanded`, over `expandableRows` |
 | `detailOnCellClick` | `cell.click` | `detail` |
 
 Both new ones read `interactive`, which `cell.click` and `cell.dblclick` carry: it is true when the

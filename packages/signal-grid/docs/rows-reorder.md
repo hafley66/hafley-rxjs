@@ -30,6 +30,25 @@ runWhenInView(
 changes nothing. `landingIndex` in `src/6_gestures.ts` decides a neighbour is passed once the
 pointer crosses half of it, measured from where the drag began.
 
+## The preview
+
+While the pointer is down the epic writes `state.drag`, and nothing else moves.
+
+```ts
+g.state.drag.$()   // { kind: "rowMove", row: "r7", over: "r3", side: "start" }
+```
+
+| what is drawn | element | attribute |
+| --- | --- | --- |
+| the travelling row | `.sg-row` | `data-dragging="true"` |
+| the landing edge | `.sg-guide` | `data-axis="block"`, offset in `--sg-guide-y` |
+
+The rows hold still: the grid does not own source order, so there is nothing for it to shift, and
+the line says where the drop will land before the consumer is asked to rewrite anything. A landing
+row the window does not hold draws no line, because there is nothing on screen to draw it against.
+Columns and the resize handle carry the same pair behind `GridConfig.drag`, on
+[Order](/columns-order) and [Resize and width](/columns-width).
+
 ## Why the grid does not rewrite your rows
 
 The rows signal is yours. Reordering it inside the kernel would mean the grid holding an opinion

@@ -38,8 +38,13 @@ runWhenInView(g.state.colHidden.size.$.pipe(tap(handle)))
 | key | type | page |
 | --- | --- | --- |
 | `selection` | `GridSelection`, the live block plus the committed ones | [Range selection and focus](/cells-range) |
+| `drag` | `DragPreview`, or nothing between gestures | [Order](/columns-order), [Resize and width](/columns-width), [Reorder](/rows-reorder) |
 | `focus` | one `CellId`, or nothing | the same page |
 | `editing` | one `CellId`, or nothing | read by the renderer, written by no epic |
+
+`drag` is a live gesture rather than a stored preference: a deferred resize or move writes it on
+every pointermove and clears it on the lift, which is the same seat `selection` already holds for
+the live half of a range drag.
 
 ## View
 

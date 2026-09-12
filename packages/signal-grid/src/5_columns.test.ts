@@ -42,13 +42,14 @@ const DATA: readonly ColumnDef<Row>[] = [
   { id: "size", width: 80 },
 ]
 
-const headerCtx = (col: string): HeaderCtx => ({
+const headerCtx = <TRow>(col: string, held?: Grid<TRow>): HeaderCtx<TRow> => ({
   col,
   node: { key: col, depth: 0, index: 0, parent: null, hasChildren: false },
   sort: null,
   pinned: undefined,
   row: null,
   data: undefined,
+  grid: held,
 })
 
 const cellCtx = (row: RowId, col: string, node: FlatNode<RowId>): CellCtx<Row> => ({
@@ -180,7 +181,7 @@ describe("the expand-all header is the same pair on the other axis", () => {
   it("reads the tri-state off the grid it was handed", () => {
     const g = treeGrid()
     const col = expandColumn<TreeRow>({ grid: () => g })
-    const glyph = col.headerCell(headerCtx(col.id))
+    const glyph = col.headerCell(headerCtx<TreeRow>(col.id))
     if (!isSignal<string>(glyph)) throw new Error("the expand-all toggle must be a signal")
     expect(glyph.$()).toBe(EXPAND_ALL_GLYPH.none)
     g.dispatch({ phase: "change", type: "expanded", expanded: { src: true } })
@@ -205,7 +206,7 @@ describe("replacing one half of a tri-state header", () => {
       grid: () => g,
       glyph: { none: "closed", some: "part", all: "open" },
     })
-    const glyph = col.headerCell(headerCtx(col.id))
+    const glyph = col.headerCell(headerCtx<TreeRow>(col.id))
     if (!isSignal<string>(glyph)) throw new Error("the expand-all toggle must be a signal")
     expect(glyph.$()).toBe("closed")
     g.dispatch({ phase: "change", type: "expanded", expanded: { src: true } })
@@ -219,7 +220,7 @@ describe("replacing one half of a tri-state header", () => {
       grid: () => g,
       header: () => Signal<string>(() => `rows: ${state.$()}`),
     })
-    const rendered = col.headerCell(headerCtx(col.id))
+    const rendered = col.headerCell(headerCtx<Row>(col.id))
     if (!isSignal<string>(rendered)) throw new Error("the replacement is a signal here")
     expect(rendered.$()).toBe("rows: none")
     g.dispatch({ phase: "change", type: "rowSelection", rowSelection: { a: true } })
@@ -237,7 +238,7 @@ describe("the select-all toggle header is live", () => {
   it("reads the tri-state off the grid it was handed", () => {
     const g = grid<Row>({ id: "t", rows: ROWS, columns: DATA, rowId: (r) => r.id })
     const col = checkboxColumn<Row>({ grid: () => g })
-    const glyph = col.headerCell(headerCtx(col.id))
+    const glyph = col.headerCell(headerCtx<Row>(col.id))
     if (!isSignal<string>(glyph)) throw new Error("the select-all toggle must be a signal")
     expect(glyph.$()).toBe("□")
     g.dispatch({ phase: "change", type: "rowSelection", rowSelection: { a: true } })
@@ -250,8 +251,20 @@ describe("the select-all toggle header is live", () => {
     expect(glyph.$()).toBe("☑")
   })
 
-  it("falls back to the empty glyph with no grid to read", () => {
-    expect(checkboxColumn<Row>().headerCell(headerCtx("__check"))).toBe("□")
+  it("reads the grid off the header context when the schema threaded none in", () => {
+    const g = grid<Row>({ id: "t", rows: ROWS, columns: DATA, rowId: (r) => r.id })
+    const col = checkboxColumn<Row>()
+    const glyph = col.headerCell(headerCtx<Row>(col.id, g))
+    if (!isSignal<string>(glyph)) throw new Error("the select-all toggle must be a signal")
+    expect(glyph.$()).toBe("□")
+    g.dispatch({ phase: "change", type: "rowSelection", rowSelection: { a: true } })
+    expect(glyph.$()).toBe("▣")
+  })
+
+  it("falls back to the empty glyph when the context carries no grid either", () => {
+    const glyph = checkboxColumn<Row>().headerCell(headerCtx<Row>("__check"))
+    if (!isSignal<string>(glyph)) throw new Error("the select-all toggle must be a signal")
+    expect(glyph.$()).toBe("□")
   })
 })
 
@@ -382,7 +395,7 @@ describe("every factory takes an override", () => {
 
   it("swaps the header without losing the tri-state rules", () => {
     const col = checkboxColumn<Row>({ header: () => "pick" })
-    expect(col.headerCell(headerCtx(col.id))).toBe("pick")
+    expect(col.headerCell(headerCtx<Row>(col.id))).toBe("pick")
     expect(col.builtIn).toBe("check")
   })
 })

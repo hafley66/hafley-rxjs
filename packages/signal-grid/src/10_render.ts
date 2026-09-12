@@ -18,6 +18,7 @@ import {
   type CellId,
   type ColId,
   type ColumnDef,
+  type DragPreview,
   type FlatNode,
   type GroupCtx,
   type GroupRow,
@@ -45,7 +46,7 @@ import {
 } from "./12_transpose.js"
 import { bandDepth, bandRow, SG_HEAD_ROWS, type BandCell } from "./18_bands.js"
 import { rangeOf, selectionTest } from "./15_selection.js"
-import { isDetailKey, rowOfDetailKey } from "./11_detail.js"
+import { isDetailKey, rowOfDetailKey, type DetailOpen } from "./11_detail.js"
 import {
   cellAttrs,
   expandAttrs,
@@ -54,6 +55,7 @@ import {
   moveAttrs,
   resizeAttrs,
   rowAttrs,
+  selectorFor,
   SG_DEPTH,
   rowHeightVar,
 } from "./3_paths.js"
@@ -66,6 +68,11 @@ export interface RenderHandle {
 }
 
 const SIDES: readonly Side[] = ["start", "center", "end"]
+
+/** The drop line's offsets. Physical, unlike every other number this package writes: they come off
+ * `getBoundingClientRect`, which reports physical coordinates whatever the writing mode. */
+const SG_GUIDE_X = "--sg-guide-x"
+const SG_GUIDE_Y = "--sg-guide-y"
 
 /** Built-ins whose own glyph carries a route under the row. Their cell must not add a `c` segment. */
 const ROW_ROUTED: ReadonlySet<string> = new Set(["check", "radio", "expand", "drag"])
@@ -147,6 +154,11 @@ interface Frame<TRow> {
   readonly verticalKeys: readonly string[]
   readonly horizontalKeys: readonly string[]
   readonly expanded: Readonly<Record<RowId, boolean>>
+  /** Which rows have a panel open. The disclosure is CSS reading this off the row box, because a
+   * cell rebuilds on its data and a panel opening moves no data. */
+  readonly detail: DetailOpen
+  /** The deferred gesture the pointer is holding, or null. Drawn as one line and one mark. */
+  readonly drag: DragPreview | null
   /** The vertical run's declared sizes: row heights under `"rows"`, column widths transposed. */
   readonly extent: Readonly<Record<string, number>>
   readonly editing: CellId | null
@@ -167,8 +179,12 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
   const center = box("sg-rows sg-center")
   const pinnedEnd = box("sg-rows sg-pinned-end")
   canvas.append(center)
-  scroll.append(head, pinnedStart, canvas, pinnedEnd)
+  // Last child of the scroller rather than of a header cell: a header cell clips its own overflow
+  // for the ellipsis, so a line drawn inside one stops at the bottom of the band.
+  const guide = box("sg-guide")
+  scroll.append(head, pinnedStart, canvas, pinnedEnd, guide)
   root.append(scroll)
+  const marked: HTMLElement[] = []
 
   const rows = new Map<RowId, RowRecord>()
   let headerSubs = new Subscription()
@@ -289,6 +305,8 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       verticalKeys: verticalKeys.$(),
       horizontalKeys: leaves,
       expanded: grid.state.expanded.$(),
+      detail: grid.state.detail.$(),
+      drag: grid.state.drag.$(),
       extent: down.extent,
       editing: grid.state.editing.$(),
     }
@@ -326,6 +344,7 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
         pinned: current.pinning[colId],
         row: entry.row === NO_ENTRY ? null : entry.row,
         data: entry.data,
+        grid,
       }
       mount(label, slot(ctx), subs)
     } else {
@@ -364,6 +383,7 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
         pinned: current.pinning[key],
         row: entry.row === NO_ENTRY ? null : entry.row,
         data: entry.data,
+        grid,
       }
       mount(label, slot(ctx), subs)
     } else {
@@ -713,6 +733,7 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     record.el.setAttribute("data-selected", String(current.selection[owner] === true))
     stampSelection(record, key, node, current)
     record.el.setAttribute("data-open", String(current.expanded[owner] === true))
+    record.el.setAttribute("data-detail-open", String(current.detail[owner] !== undefined))
     if (node.hasChildren) record.el.setAttribute("aria-expanded", String(current.expanded[owner] === true))
     else record.el.removeAttribute("aria-expanded")
     return record
@@ -754,6 +775,51 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     })
   }
 
+  const headCellFor = (colId: ColId): HTMLElement | null =>
+    head.querySelector<HTMLElement>(selectorFor("header", { colId }))
+
+  // One line and one mark, measured off the boxes the pass already placed. A deferred gesture moves
+  // nothing, so the elements it points at are the same ones the pointer went down on.
+  function paintPreview(current: Frame<TRow>): void {
+    for (const el of marked) el.removeAttribute("data-dragging")
+    marked.length = 0
+    const preview = current.drag
+    if (preview === null) {
+      guide.removeAttribute("data-axis")
+      return
+    }
+    const box = scroll.getBoundingClientRect()
+    const mark = (el: HTMLElement | null): void => {
+      if (el === null) return
+      el.setAttribute("data-dragging", "true")
+      marked.push(el)
+    }
+    const hide = (): void => guide.removeAttribute("data-axis")
+    if (preview.kind === "rowMove") {
+      mark(rows.get(preview.row)?.el ?? null)
+      const over = rows.get(preview.over)?.el
+      // The landing row is outside the window, so there is nothing on screen to draw a line against.
+      if (over === undefined) return hide()
+      const rect = over.getBoundingClientRect()
+      const edge = preview.side === "start" ? rect.top : rect.bottom
+      guide.style.setProperty(SG_GUIDE_Y, `${Math.round(edge - box.top + scroll.scrollTop)}px`)
+      guide.setAttribute("data-axis", "block")
+      return
+    }
+    if (preview.kind === "colMove") mark(headCellFor(preview.col))
+    const anchor = headCellFor(preview.kind === "colSize" ? preview.col : preview.over)
+    if (anchor === null) return hide()
+    const rect = anchor.getBoundingClientRect()
+    const edge =
+      preview.kind === "colSize"
+        ? rect.left + preview.width
+        : preview.side === "start"
+          ? rect.left
+          : rect.right
+    guide.style.setProperty(SG_GUIDE_X, `${Math.round(edge - box.left + scroll.scrollLeft)}px`)
+    guide.setAttribute("data-axis", "inline")
+  }
+
   function passBody(current: Frame<TRow>): void {
     if (stopped) return
     if (current.gridId !== gridId) {
@@ -781,6 +847,7 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       record.el.remove()
       rows.delete(key)
     }
+    paintPreview(current)
   }
 
   const subscription = new Subscription()

@@ -229,7 +229,9 @@ const el = (
   return node
 }
 
-const EMPTY_HEADER: Slot<HeaderCtx<unknown>> = () => ""
+// A function rather than one shared slot: `HeaderCtx` carries the grid, so the context is invariant
+// in `TRow` and a single `HeaderCtx<unknown>` value fits no other row type.
+const emptyHeader = <TRow>(): Slot<HeaderCtx<TRow>> => () => ""
 
 const GLYPH_WIDTH = 36
 const NUMBER_WIDTH = 56
@@ -272,16 +274,16 @@ function builtInColumn<TRow>(
 const selectGlyph = <TRow>(kind: "check" | "radio"): Slot<CellCtx<TRow>> =>
   () => el("span", `sg-check sg-check-${kind}`, { ...checkAttrs(), "data-check": kind })
 
-// A header with no grid to read draws the `none` mark: the schema asked for the column without
-// handing it the thing every state below is derived from.
+// `opts.grid` still wins, because a schema that threaded the grid back in named the grid it meant.
+// Absent, the header reads the one the band it was mounted in belongs to, which is the same object.
 const triStateColumnHeader = <TRow>(
   opts: TriStateColumnOptions<TRow>,
   glyph: Readonly<Record<TriState, string>>,
   signalOf: (read: () => Grid<TRow> | undefined) => Signal<TriState>,
 ): Slot<HeaderCtx<TRow>> => {
   const marks = opts.glyph ?? glyph
-  const read = opts.grid
-  return read === undefined ? () => marks.none : triStateHeader<TRow>(signalOf(read), marks)
+  const held = opts.grid
+  return (ctx) => triStateHeader<TRow>(signalOf(held ?? (() => ctx.grid)), marks)(ctx)
 }
 
 /** Multi-select. The header is a signal, so a selection click repaints one node. @feature row.select */
@@ -297,7 +299,7 @@ export function radioColumn<TRow>(opts: BuiltInColumnOptions<TRow> = {}): BuiltI
     "radio",
     GLYPH_WIDTH,
     "start",
-    EMPTY_HEADER,
+    emptyHeader<TRow>(),
     selectGlyph<TRow>("radio"),
     opts,
   )
@@ -333,7 +335,7 @@ export function dragColumn<TRow>(opts: BuiltInColumnOptions<TRow> = {}): BuiltIn
     host.append("⠿")
     return host
   }
-  return builtInColumn<TRow>("drag", GLYPH_WIDTH, "start", EMPTY_HEADER, cell, opts)
+  return builtInColumn<TRow>("drag", GLYPH_WIDTH, "start", emptyHeader<TRow>(), cell, opts)
 }
 
 // --- Detail disclosure ------------------------------------------------------
@@ -342,12 +344,10 @@ export function dragColumn<TRow>(opts: BuiltInColumnOptions<TRow> = {}): BuiltIn
 // No route of its own: a click here is already a `cell.click` carrying this column's id, which is
 // what `detailOnCellClick` filters on and what a consumer pipes for tree loading instead.
 export function detailColumn<TRow>(opts: BuiltInColumnOptions<TRow> = {}): BuiltInColumnDef<TRow> {
-  const cell: Slot<CellCtx<TRow>> = () => {
-    const host = el("span", "sg-detail-toggle")
-    host.append("▶")
-    return host
-  }
-  return builtInColumn<TRow>("detail", GLYPH_WIDTH, "start", EMPTY_HEADER, cell, opts)
+  // Textless for the reason `selectGlyph` is: the cell rebuilds on data, column run, or editing,
+  // and none of those moves when a panel opens, so the mark is CSS reading the row's own state.
+  const cell: Slot<CellCtx<TRow>> = () => el("span", "sg-detail-toggle")
+  return builtInColumn<TRow>("detail", GLYPH_WIDTH, "start", emptyHeader<TRow>(), cell, opts)
 }
 
 // --- Ordinal ----------------------------------------------------------------
@@ -369,5 +369,5 @@ export function rowNumberColumn<TRow>(
       return page.mode === "all" ? 0 : page.index * page.size
     })
   const cell: Slot<CellCtx<TRow>> = (ctx) => String(ctx.node.index + start + offset())
-  return builtInColumn<TRow>("rowNumber", NUMBER_WIDTH, "start", EMPTY_HEADER, cell, opts)
+  return builtInColumn<TRow>("rowNumber", NUMBER_WIDTH, "start", emptyHeader<TRow>(), cell, opts)
 }

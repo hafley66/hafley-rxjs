@@ -4,6 +4,7 @@
 // what is asserted here is the contract the rest of `src/` was written against: which slot wins,
 // which element carries which route, and what is left alive after `stop()`.
 import { afterEach, beforeEach, describe, expect, test } from "vitest"
+import "./theme.css"
 import { Signal } from "@hafley66/signals"
 import {
   cellId,
@@ -292,7 +293,47 @@ describe("built-in columns reach their routes", () => {
     expect(textOfCell("a", "__rowNumber")).toBe("1")
     expect(textOfCell("b", "__rowNumber")).toBe("2")
     expect(root.querySelectorAll(".sg-detail-toggle").length).toBe(2)
-    expect(textOfCell("a", "__detail")).toBe("▶")
+    // The mark is CSS reading the row's own state, so the cell itself carries no text to go stale.
+    expect(textOfCell("a", "__detail")).toBe("")
+  })
+
+  test("the detail disclosure reads the open panel off its row, and the cell never rebuilds", () => {
+    const harness = mountGrid({ columns: [detailColumn<Row>(), NAME] })
+    const rowOf = (rowId: string): HTMLElement | null =>
+      root.querySelector(selectorFor("row", { rowId }))
+    expect(rowOf("a")?.getAttribute("data-detail-open")).toBe("false")
+    const held = rowOf("a")?.querySelector(".sg-detail-toggle")
+    harness.grid.state.detail.$({ a: "__detail" })
+    expect(rowOf("a")?.getAttribute("data-detail-open")).toBe("true")
+    expect(rowOf("b")?.getAttribute("data-detail-open")).toBe("false")
+    expect(rowOf("a")?.querySelector(".sg-detail-toggle")).toBe(held)
+    harness.grid.state.detail.$({})
+    expect(rowOf("a")?.getAttribute("data-detail-open")).toBe("false")
+  })
+
+  test("the select-all header is live with no grid threaded into the schema", () => {
+    const harness = mountGrid({ columns: [checkboxColumn<Row>(), NAME] })
+    const head = root.querySelector(selectorFor("header", { colId: "__check" }))
+    expect(head?.textContent).toBe(SELECT_ALL_GLYPH.none)
+    harness.grid.state.rowSelection.$({ a: true })
+    expect(head?.textContent).toBe(SELECT_ALL_GLYPH.some)
+    harness.grid.state.rowSelection.$({ a: true, b: true })
+    expect(head?.textContent).toBe(SELECT_ALL_GLYPH.all)
+  })
+
+  test("clicking that header fills the rows and clicking it again clears them", () => {
+    const harness = mountGrid({ columns: [checkboxColumn<Row>(), NAME] })
+    const head = root.querySelector(selectorFor("header", { colId: "__check" }))
+    if (!(head instanceof HTMLElement)) throw new Error("the check column drew no header")
+    const click = (): void => {
+      head.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+    }
+    click()
+    expect(harness.grid.state.rowSelection.$()).toEqual({ a: true, b: true })
+    expect(head.textContent).toBe(SELECT_ALL_GLYPH.all)
+    click()
+    expect(harness.grid.state.rowSelection.$()).toEqual({ a: false, b: false })
+    expect(head.textContent).toBe(SELECT_ALL_GLYPH.none)
   })
 
   test("a movable column stamps the move route on its header label, and nothing else does", () => {
@@ -1218,5 +1259,88 @@ describe("the dom category", () => {
     disableGridLogging()
     harness.grid.state.sort.$([{ field: "size", sort: "desc" }])
     expect(records).toHaveLength(0)
+  })
+})
+
+// --- D10: the deferred gesture's line ---------------------------------------
+
+describe("a deferred move or resize draws a line and marks what is travelling", () => {
+  const guideOf = (): HTMLElement => {
+    const el = root.querySelector(".sg-guide")
+    if (!(el instanceof HTMLElement)) throw new Error("the renderer drew no guide")
+    return el
+  }
+
+  const scrollBox = (): DOMRect => {
+    const el = root.querySelector(".sg-scroll")
+    if (!(el instanceof HTMLElement)) throw new Error("the renderer drew no scroll box")
+    return el.getBoundingClientRect()
+  }
+
+  const headOf = (colId: string): HTMLElement => {
+    const el = root.querySelector(selectorFor("header", { colId }))
+    if (!(el instanceof HTMLElement)) throw new Error(`no header for ${colId}`)
+    return el
+  }
+
+  const rowOf = (rowId: string): HTMLElement => {
+    const el = root.querySelector(selectorFor("row", { rowId }))
+    if (!(el instanceof HTMLElement)) throw new Error(`no row for ${rowId}`)
+    return el
+  }
+
+  const guideX = (): string => guideOf().style.getPropertyValue("--sg-guide-x")
+  const guideY = (): string => guideOf().style.getPropertyValue("--sg-guide-y")
+
+  test("draws nothing at rest", () => {
+    mountGrid()
+    expect(guideOf().hasAttribute("data-axis")).toBe(false)
+    expect(root.querySelectorAll("[data-dragging]")).toHaveLength(0)
+  })
+
+  test("a column move marks the header cell it picked up and lands the line on the drop edge", () => {
+    const harness = mountGrid()
+    harness.grid.state.drag.$({ kind: "colMove", col: "name", over: "size", side: "end" })
+    expect(guideOf().getAttribute("data-axis")).toBe("inline")
+    expect(headOf("name").getAttribute("data-dragging")).toBe("true")
+    expect(headOf("size").hasAttribute("data-dragging")).toBe(false)
+    const trailing = headOf("size").getBoundingClientRect()
+    expect(guideX()).toBe(`${Math.round(trailing.right - scrollBox().left)}px`)
+    harness.grid.state.drag.$({ kind: "colMove", col: "size", over: "name", side: "start" })
+    const leading = headOf("name").getBoundingClientRect()
+    expect(guideX()).toBe(`${Math.round(leading.left - scrollBox().left)}px`)
+    expect(Number.parseFloat(guideX())).toBeLessThan(Math.round(trailing.right - scrollBox().left))
+  })
+
+  test("a resize puts the line at the prospective edge and moves no column", () => {
+    const harness = mountGrid()
+    const before = headOf("name").getBoundingClientRect()
+    harness.grid.state.drag.$({ kind: "colSize", col: "name", width: 260 })
+    expect(guideOf().getAttribute("data-axis")).toBe("inline")
+    expect(headOf("name").getBoundingClientRect().width).toBe(before.width)
+    expect(guideX()).toBe(`${Math.round(before.left + 260 - scrollBox().left)}px`)
+    // A resize is not a travelling column, and `.sg-resize:active` already marks the held handle.
+    expect(root.querySelectorAll("[data-dragging]")).toHaveLength(0)
+  })
+
+  test("a row move marks the row and lands the line on the landing row's edge", () => {
+    const harness = mountGrid()
+    harness.grid.state.drag.$({ kind: "rowMove", row: "a", over: "b", side: "end" })
+    expect(guideOf().getAttribute("data-axis")).toBe("block")
+    expect(rowOf("a").getAttribute("data-dragging")).toBe("true")
+    expect(rowOf("b").hasAttribute("data-dragging")).toBe(false)
+    const landing = rowOf("b").getBoundingClientRect()
+    expect(guideY()).toBe(`${Math.round(landing.bottom - scrollBox().top)}px`)
+    expect(harness.grid.view.flat.$().map((it) => it.key)).toEqual(["a", "b"])
+  })
+
+  test("a landing row outside the window draws no line, and clearing the preview clears both", () => {
+    const harness = mountGrid()
+    harness.grid.state.drag.$({ kind: "rowMove", row: "a", over: "gone", side: "start" })
+    expect(guideOf().hasAttribute("data-axis")).toBe(false)
+    expect(rowOf("a").getAttribute("data-dragging")).toBe("true")
+    harness.grid.state.drag.$(null)
+    expect(guideOf().hasAttribute("data-axis")).toBe(false)
+    expect(root.querySelectorAll("[data-dragging]")).toHaveLength(0)
   })
 })

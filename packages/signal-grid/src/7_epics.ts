@@ -1,6 +1,6 @@
 // Where an intent becomes a change or an effect. Nothing here touches the DOM and nothing here is
 // async: an epic reads the state signal, reads the derived view, and returns the next action.
-import { filter, map, merge, Observable } from "rxjs"
+import { concatMap, filter, map, merge, Observable } from "rxjs"
 import type { Epic, Signal } from "@hafley66/signals"
 import { descendantsOf } from "./1_axis.js"
 import {
@@ -32,6 +32,8 @@ import {
   type CellId,
   type ColId,
   type ColumnDef,
+  type DragPreview,
+  type DropSide,
   type GridAction,
   type GridIntent,
   type GridState,
@@ -73,6 +75,33 @@ const clamp = (value: number, low: number, high: number): number =>
 
 const defOf = <TRow>(ctx: GridEpicCtx<TRow>, col: ColId): ColumnDef<TRow> | undefined =>
   ctx.columns.$().find((it) => it.id === col)
+
+/** `live` writes the grid on every pointermove. `preview` publishes where the gesture will land,
+ * leaves every width and every order where it is, and writes once on the lift. */
+export type DragMode = "live" | "preview"
+
+export const DEFAULT_DRAG_MODE: DragMode = "preview"
+
+/** One key of `GridState`, so the preview reaches the renderer the way every other change does. */
+const shows = <TRow>(preview: DragPreview | null): GridAction<TRow> => ({
+  phase: "change",
+  type: "drag",
+  drag: preview,
+})
+
+// A deferred gesture writes two keys on the lift, and `drag` maps one action per pointer event, so
+// the action type is a batch and `concatMap` unrolls it in order.
+const kept = <TRow>(
+  batch: readonly (GridAction<TRow> | null)[],
+): readonly GridAction<TRow>[] =>
+  batch.filter((it): it is GridAction<TRow> => it !== null)
+
+const unrolled = <TRow>(
+  batches$: Observable<readonly GridAction<TRow>[]>,
+): Observable<GridAction<TRow>> => batches$.pipe(concatMap((it) => it))
+
+/** Which side of the landing entry the line sits on: past the origin it is the trailing edge. */
+const dropSide = (from: number, to: number): DropSide => (to > from ? "end" : "start")
 
 /** Visible leaves in current order. Header group nodes carry no def, so they are not draggable. */
 const colOrderOf = <TRow>(ctx: GridEpicCtx<TRow>): readonly ColId[] => {
@@ -223,8 +252,8 @@ const headerOf = <TRow>(ctx: GridEpicCtx<TRow>, col: ColId, kind: BuiltInId): bo
   return def !== undefined && isBuiltIn(def) && def.builtIn === kind
 }
 
-/** Opt-in: the header draws the tri-state whether or not this is installed, and installing it is
- * what makes the header a control. @feature row.select */
+/** In `defaultEpics`: the header draws the tri-state whether or not this is installed, and
+ * installing it is what makes the header a control. @feature row.select */
 export function toggleSelectAllOnHeaderClick<TRow>(): GridEpic<TRow> {
   return (actions$, state, ctx) =>
     intents<TRow, "header.click">(actions$, "header.click").pipe(
@@ -279,17 +308,23 @@ interface ResizeStart {
 
 const DEFAULT_COL_WIDTH = 100
 
-export function resizeOnHeaderDrag<TRow>(streams?: DragStreams): GridEpic<TRow> {
+export function resizeOnHeaderDrag<TRow>(
+  streams?: DragStreams,
+  mode: DragMode = DEFAULT_DRAG_MODE,
+): GridEpic<TRow> {
   return (actions$, state, ctx) => {
-    const widthAt = (start: ResizeStart, x: number): GridAction<TRow> => ({
+    const widthAt = (start: ResizeStart, x: number): number =>
+      clamp(start.width + (x - start.x), start.min, start.max)
+    const sized = (start: ResizeStart, width: number): GridAction<TRow> => ({
       phase: "change",
       type: "colWidth",
-      colWidth: {
-        ...state.colWidth.$(),
-        [start.col]: clamp(start.width + (x - start.x), start.min, start.max),
-      },
+      colWidth: { ...state.colWidth.$(), [start.col]: width },
     })
-    return drag<ResizeStart, GridAction<TRow>, Intent<"header.pointerdown">>(
+    // The guide is a line at the prospective edge, so every column keeps the width it is painting
+    // and one lift writes the only number that moved.
+    const guide = (start: ResizeStart, width: number): GridAction<TRow> =>
+      shows<TRow>({ kind: "colSize", col: start.col, width })
+    return unrolled(drag<ResizeStart, readonly GridAction<TRow>[], Intent<"header.pointerdown">>(
       intents<TRow, "header.pointerdown">(actions$, "header.pointerdown").pipe(
         filter((it) => it.part === "resize"),
       ),
@@ -308,11 +343,19 @@ export function resizeOnHeaderDrag<TRow>(streams?: DragStreams): GridEpic<TRow> 
             max: def?.maxWidth ?? Infinity,
           }
         },
-        move: (start, e) => widthAt(start, e.clientX),
-        commit: (start, e) => widthAt(start, e.clientX),
+        move: (start, e) => {
+          const width = widthAt(start, e.clientX)
+          return [mode === "live" ? sized(start, width) : guide(start, width)]
+        },
+        commit: (start, e) => {
+          const width = widthAt(start, e.clientX)
+          return mode === "live"
+            ? [sized(start, width)]
+            : [sized(start, width), shows<TRow>(null)]
+        },
       },
       streams,
-    )
+    ))
   }
 }
 
@@ -336,17 +379,31 @@ const reinsert = <K extends string>(order: readonly K[], from: number, to: numbe
 const same = (a: readonly string[], b: readonly string[]): boolean =>
   a.length === b.length && a.every((key, index) => key === b[index])
 
-export function moveColumnOnHeaderDrag<TRow>(streams?: DragStreams): GridEpic<TRow> {
+export function moveColumnOnHeaderDrag<TRow>(
+  streams?: DragStreams,
+  mode: DragMode = DEFAULT_DRAG_MODE,
+): GridEpic<TRow> {
   return (actions$, state, ctx) => {
     // Measured against the order the drag started from, so travelling back to the origin restores
     // it rather than compounding every earlier swap.
-    const landing = (start: ColMoveStart, x: number): GridAction<TRow> | null => {
+    const landingAt = (start: ColMoveStart, x: number): number => {
       const widths = ctx.view.widths.$()
-      const to = landingIndex(start.order, start.from, x - start.x, (key) => widths.get(key) ?? 0)
+      return landingIndex(start.order, start.from, x - start.x, (key) => widths.get(key) ?? 0)
+    }
+    const ordered = (start: ColMoveStart, to: number): GridAction<TRow> | null => {
       const colOrder = reinsert(start.order, start.from, to)
       return same(colOrder, state.colOrder.$()) ? null : { phase: "change", type: "colOrder", colOrder }
     }
-    return drag<ColMoveStart, GridAction<TRow>, Intent<"header.pointerdown">>(
+    // Under `preview` nothing rewrites `colOrder` while the pointer is down, so the header is never
+    // rebuilt mid-drag and the cell holding the grip is still the element the pointer grabbed.
+    const guide = (start: ColMoveStart, to: number): GridAction<TRow> =>
+      shows<TRow>({
+        kind: "colMove",
+        col: start.col,
+        over: start.order[to] ?? start.col,
+        side: dropSide(start.from, to),
+      })
+    return unrolled(drag<ColMoveStart, readonly GridAction<TRow>[], Intent<"header.pointerdown">>(
       intents<TRow, "header.pointerdown">(actions$, "header.pointerdown").pipe(
         filter((it) => it.part === "move"),
       ),
@@ -356,11 +413,19 @@ export function moveColumnOnHeaderDrag<TRow>(streams?: DragStreams): GridEpic<TR
           const from = order.indexOf(down.col)
           return from === -1 ? null : { col: down.col, x: down.x, order, from }
         },
-        move: (start, e) => landing(start, e.clientX),
-        commit: (start, e) => landing(start, e.clientX),
+        move: (start, e) => {
+          const to = landingAt(start, e.clientX)
+          return mode === "live" ? kept([ordered(start, to)]) : [guide(start, to)]
+        },
+        commit: (start, e) => {
+          const to = landingAt(start, e.clientX)
+          return mode === "live"
+            ? kept([ordered(start, to)])
+            : kept([ordered(start, to), shows<TRow>(null)])
+        },
       },
       streams,
-    )
+    ))
   }
 }
 
@@ -375,7 +440,7 @@ interface RowMoveStart {
 
 export function moveRowOnRowDrag<TRow>(streams?: DragStreams): GridEpic<TRow> {
   return (actions$, _state, ctx) =>
-    drag<RowMoveStart, GridAction<TRow>, Intent<"row.pointerdown">>(
+    unrolled(drag<RowMoveStart, readonly GridAction<TRow>[], Intent<"row.pointerdown">>(
       intents<TRow, "row.pointerdown">(actions$, "row.pointerdown"),
       {
         from: (down) => {
@@ -383,23 +448,37 @@ export function moveRowOnRowDrag<TRow>(streams?: DragStreams): GridEpic<TRow> {
           const from = order.indexOf(down.row)
           return from === -1 ? null : { row: down.row, y: down.y, order, from }
         },
-        // Commit only. The grid does not own source order, so a per-move effect would ask the
-        // consumer to rewrite its data once per pointermove.
-        move: () => null,
+        // The grid does not own source order, so a per-move effect would ask the consumer to rewrite
+        // its data once per pointermove. What travels with the pointer is the line, and only it.
+        move: (start, e) => {
+          const to = landingIndex(start.order, start.from, e.clientY - start.y, ctx.rowHeight)
+          return [
+            shows<TRow>({
+              kind: "rowMove",
+              row: start.row,
+              over: start.order[to] ?? start.row,
+              side: dropSide(start.from, to),
+            }),
+          ]
+        },
         commit: (start, e) => {
           const to = landingIndex(start.order, start.from, e.clientY - start.y, ctx.rowHeight)
-          if (to === start.from) return null
+          const cleared = shows<TRow>(null)
+          if (to === start.from) return [cleared]
           const next = reinsert(start.order, start.from, to)
-          return {
-            phase: "effect",
-            type: "reorderRow",
-            row: start.row,
-            before: next[to + 1] ?? null,
-          }
+          return [
+            {
+              phase: "effect",
+              type: "reorderRow",
+              row: start.row,
+              before: next[to + 1] ?? null,
+            },
+            cleared,
+          ]
         },
       },
       streams,
-    )
+    ))
 }
 
 // --- Keyboard ---------------------------------------------------------------
@@ -666,14 +745,19 @@ export function selectColumnsOnDrag<TRow>(
 // --- The set ----------------------------------------------------------------
 
 /** Every epic `grid()` installs. Each is exported alone so a consumer can drop one. */
-export function defaultEpics<TRow>(streams?: DragStreams): readonly GridEpic<TRow>[] {
+export function defaultEpics<TRow>(
+  streams?: DragStreams,
+  mode: DragMode = DEFAULT_DRAG_MODE,
+): readonly GridEpic<TRow>[] {
   return [
     sortOnHeaderClick<TRow>(),
     expandOnExpanderClick<TRow>(),
     selectRowsOnCheckboxClick<TRow>(),
+    toggleSelectAllOnHeaderClick<TRow>(),
+    toggleExpandAllOnHeaderClick<TRow>(),
     activateOnCellClick<TRow>(),
-    resizeOnHeaderDrag<TRow>(streams),
-    moveColumnOnHeaderDrag<TRow>(streams),
+    resizeOnHeaderDrag<TRow>(streams, mode),
+    moveColumnOnHeaderDrag<TRow>(streams, mode),
     moveRowOnRowDrag<TRow>(streams),
     keyboardNav<TRow>(),
     pageOnScrollNearEnd<TRow>(),

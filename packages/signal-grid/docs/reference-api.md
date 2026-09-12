@@ -9,14 +9,14 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 | module | exports | what it is |
 | --- | --- | --- |
 | [src/0_log.ts](#src-0-log-ts) | 14 | LogTape is an optional peer, so nothing here may import it statically. |
-| [src/0_types.ts](#src-0-types-ts) | 52 | The whole contract. |
+| [src/0_types.ts](#src-0-types-ts) | 54 | The whole contract. |
 | [src/1_axis.ts](#src-1-axis-ts) | 10 | The five pure operators over `Axis<K, T>`, plus the two constructors that mint one and the walks that read one. |
 | [src/2_operators.ts](#src-2-operators-ts) | 15 | Value-level operators: filter predicates and comparators. |
 | [src/3_paths.ts](#src-3-paths-ts) | 23 | One declaration per grid part yields four artifacts: element id, delegated route, CSS custom property namespace, test selector. |
 | [src/4_slice.ts](#src-4-slice-ts) | 20 | From a flat key list to the rendered window. |
 | [src/5_columns.ts](#src-5-columns-ts) | 30 | Two rules hold for every factory here, enforced in code: a built-in is never `groupable`, and it never carries `flex` (min and max are pinned to width, so the pool cannot reopen). |
 | [src/6_gestures.ts](#src-6-gestures-ts) | 8 | Resize, column move, and row move are one gesture with three hit tests. |
-| [src/7_epics.ts](#src-7-epics-ts) | 19 | Where an intent becomes a change or an effect. |
+| [src/7_epics.ts](#src-7-epics-ts) | 21 | Where an intent becomes a change or an effect. |
 | [src/8_grid.ts](#src-8-grid-ts) | 10 | The constructor. |
 | [src/9_css.ts](#src-9-css-ts) | 6 | Changing a grid track triggers one full layout, so the cost of a resize is how often the track list is written, not how it is built. |
 | [src/10_render.ts](#src-10-render-ts) | 2 | Plain DOM. |
@@ -213,6 +213,8 @@ The whole contract.
 | [`Orientation`](#src-0-types-ts-orientation) | type |
 | [`Page`](#src-0-types-ts-page) | type |
 | [`PageRequest`](#src-0-types-ts-pagerequest) | type |
+| [`DropSide`](#src-0-types-ts-dropside) | type |
+| [`DragPreview`](#src-0-types-ts-dragpreview) | type |
 | [`RangeSelection`](#src-0-types-ts-rangeselection) | type |
 | [`GridState`](#src-0-types-ts-gridstate) | type |
 | [`GridMode`](#src-0-types-ts-gridmode) | type |
@@ -228,7 +230,7 @@ The whole contract.
 
 ### `RowId` {#src-0-types-ts-rowid}
 
-`RowId` is declared at `src/0_types.ts:14`.
+`RowId` is declared at `src/0_types.ts:15`.
 
 Stable across data refresh. Selection, expansion, sizing, and pinning are keyed by it.
 
@@ -238,7 +240,7 @@ export type RowId = string
 
 ### `ColId` {#src-0-types-ts-colid}
 
-`ColId` is declared at `src/0_types.ts:16`.
+`ColId` is declared at `src/0_types.ts:17`.
 
 Unique within one column schema.
 
@@ -248,7 +250,7 @@ export type ColId = string
 
 ### `CellId` {#src-0-types-ts-cellid}
 
-`CellId` is declared at `src/0_types.ts:18`.
+`CellId` is declared at `src/0_types.ts:19`.
 
 `row + NUL + col`. NUL because ids are user strings and may contain anything else.
 
@@ -258,7 +260,7 @@ export type CellId = string
 
 ### `CELL_SEP` {#src-0-types-ts-cell-sep}
 
-`CELL_SEP` is declared at `src/0_types.ts:20`.
+`CELL_SEP` is declared at `src/0_types.ts:21`.
 
 ```ts
 CELL_SEP: string
@@ -266,7 +268,7 @@ CELL_SEP: string
 
 ### `cellId` {#src-0-types-ts-cellid-2}
 
-`cellId` is declared at `src/0_types.ts:21`.
+`cellId` is declared at `src/0_types.ts:22`.
 
 ```ts
 cellId: (row: string, col: string) => string
@@ -274,7 +276,7 @@ cellId: (row: string, col: string) => string
 
 ### `cellParts` {#src-0-types-ts-cellparts}
 
-`cellParts` is declared at `src/0_types.ts:22`.
+`cellParts` is declared at `src/0_types.ts:23`.
 
 ```ts
 cellParts: (id: string) => readonly [string, string]
@@ -282,7 +284,7 @@ cellParts: (id: string) => readonly [string, string]
 
 ### `GROUP_PREFIX` {#src-0-types-ts-group-prefix}
 
-`GROUP_PREFIX` is declared at `src/0_types.ts:28`.
+`GROUP_PREFIX` is declared at `src/0_types.ts:29`.
 
 Synthesized group rows live in their own namespace so they can never collide with a RowId.
 
@@ -292,7 +294,7 @@ GROUP_PREFIX: "g:"
 
 ### `isGroupKey` {#src-0-types-ts-isgroupkey}
 
-`isGroupKey` is declared at `src/0_types.ts:29`.
+`isGroupKey` is declared at `src/0_types.ts:30`.
 
 ```ts
 isGroupKey: (key: string) => boolean
@@ -300,7 +302,7 @@ isGroupKey: (key: string) => boolean
 
 ### `GroupRow` {#src-0-types-ts-grouprow}
 
-`GroupRow` is declared at `src/0_types.ts:33`.
+`GroupRow` is declared at `src/0_types.ts:34`.
 
 The shape behind the one `as unknown as TRow` in `8_grid.ts`. `path` is the ancestry, outermost
 level first, so a nested heading names itself without walking back up the axis.
@@ -314,7 +316,7 @@ export interface GroupRow {
 
 ### `isGroupRow` {#src-0-types-ts-isgrouprow}
 
-`isGroupRow` is declared at `src/0_types.ts:40`.
+`isGroupRow` is declared at `src/0_types.ts:41`.
 
 Narrows the value rather than testing the key: one call at the row level answers for the row and
 every cell under it, and it is the only reader that cast needs.
@@ -325,7 +327,7 @@ isGroupRow: (value: unknown) => value is GroupRow
 
 ### `Axis` {#src-0-types-ts-axis}
 
-`Axis` is declared at `src/0_types.ts:56`.
+`Axis` is declared at `src/0_types.ts:57`.
 
 An ordered forest of keyed items. `roots` and each `children` entry carry sibling order;
 `parent` is the inverse edge, stored rather than derived so ancestor walks are O(depth).
@@ -345,7 +347,7 @@ export interface Axis<K extends string, T> {
 
 ### `FlatNode` {#src-0-types-ts-flatnode}
 
-`FlatNode` is declared at `src/0_types.ts:64`.
+`FlatNode` is declared at `src/0_types.ts:65`.
 
 One node of the flattened, visible result. `index` is its position in the flat list.
 
@@ -362,7 +364,7 @@ export interface FlatNode<K extends string> {
 
 ### `IndexRange` {#src-0-types-ts-indexrange}
 
-`IndexRange` is declared at `src/0_types.ts:74`.
+`IndexRange` is declared at `src/0_types.ts:75`.
 
 Half-open `[start, end)` over a flat list. Pagination and virtualization both produce one.
 
@@ -375,7 +377,7 @@ export interface IndexRange {
 
 ### `Side` {#src-0-types-ts-side}
 
-`Side` is declared at `src/0_types.ts:80`.
+`Side` is declared at `src/0_types.ts:81`.
 
 Pinning splits a flat list into three ordered runs rendered in three sticky containers.
 
@@ -385,7 +387,7 @@ export type Side = "start" | "center" | "end"
 
 ### `Partitioned` {#src-0-types-ts-partitioned}
 
-`Partitioned` is declared at `src/0_types.ts:81`.
+`Partitioned` is declared at `src/0_types.ts:82`.
 
 ```ts
 export interface Partitioned<K extends string> {
@@ -397,7 +399,7 @@ export interface Partitioned<K extends string> {
 
 ### `FilterMode` {#src-0-types-ts-filtermode}
 
-`FilterMode` is declared at `src/0_types.ts:94`.
+`FilterMode` is declared at `src/0_types.ts:95`.
 
 How a predicate propagates through a forest.
 `prune`      keep a node only when it and every ancestor match. What a flat grid wants.
@@ -411,7 +413,7 @@ export type FilterMode = "prune" | "ancestors" | "subtree"
 
 ### `LogicOperator` {#src-0-types-ts-logicoperator}
 
-`LogicOperator` is declared at `src/0_types.ts:98`.
+`LogicOperator` is declared at `src/0_types.ts:99`.
 
 ```ts
 export type LogicOperator = "and" | "or"
@@ -419,7 +421,7 @@ export type LogicOperator = "and" | "or"
 
 ### `FilterItem` {#src-0-types-ts-filteritem}
 
-`FilterItem` is declared at `src/0_types.ts:101`.
+`FilterItem` is declared at `src/0_types.ts:102`.
 
 One row of the filter panel. `value` is undefined for unary operators (isEmpty, isNotEmpty).
 
@@ -434,7 +436,7 @@ export type FilterItem = {
 
 ### `FilterModel` {#src-0-types-ts-filtermodel}
 
-`FilterModel` is declared at `src/0_types.ts:108`.
+`FilterModel` is declared at `src/0_types.ts:109`.
 
 ```ts
 export type FilterModel = {
@@ -448,7 +450,7 @@ export type FilterModel = {
 
 ### `FilterOperator` {#src-0-types-ts-filteroperator}
 
-`FilterOperator` is declared at `src/0_types.ts:120`.
+`FilterOperator` is declared at `src/0_types.ts:121`.
 
 Compiles one filter item into a value predicate, or returns null when the item is incomplete
 (empty value on a binary operator), which means the item does not filter.
@@ -464,7 +466,7 @@ export interface FilterOperator<V = unknown> {
 
 ### `SortDirection` {#src-0-types-ts-sortdirection}
 
-`SortDirection` is declared at `src/0_types.ts:129`.
+`SortDirection` is declared at `src/0_types.ts:130`.
 
 ```ts
 export type SortDirection = "asc" | "desc"
@@ -472,7 +474,7 @@ export type SortDirection = "asc" | "desc"
 
 ### `SortItem` {#src-0-types-ts-sortitem}
 
-`SortItem` is declared at `src/0_types.ts:130`.
+`SortItem` is declared at `src/0_types.ts:131`.
 
 ```ts
 export interface SortItem {
@@ -483,7 +485,7 @@ export interface SortItem {
 
 ### `SortModel` {#src-0-types-ts-sortmodel}
 
-`SortModel` is declared at `src/0_types.ts:134`.
+`SortModel` is declared at `src/0_types.ts:135`.
 
 ```ts
 export type SortModel = readonly SortItem[]
@@ -491,7 +493,7 @@ export type SortModel = readonly SortItem[]
 
 ### `Renderable` {#src-0-types-ts-renderable}
 
-`Renderable` is declared at `src/0_types.ts:142`.
+`Renderable` is declared at `src/0_types.ts:143`.
 
 Anything a slot may hand back. React elements match structurally through `$$typeof`, so this
 package never imports React and a DOM-only consumer never pulls it in.
@@ -502,7 +504,7 @@ export type Renderable =
 
 ### `Slot` {#src-0-types-ts-slot}
 
-`Slot` is declared at `src/0_types.ts:159`.
+`Slot` is declared at `src/0_types.ts:160`.
 
 A slot returns a renderable, or a signal of one. Returning a signal is how a single cell gets
 live content without the grid minting a signal per cell: the writer subscribes that one node,
@@ -516,7 +518,7 @@ export type Slot<Ctx> = (ctx: Ctx) => SlotContent
 
 ### `SlotContent` {#src-0-types-ts-slotcontent}
 
-`SlotContent` is declared at `src/0_types.ts:159`.
+`SlotContent` is declared at `src/0_types.ts:160`.
 
 A slot may also hand back a teardown alongside its content or signal. The teardown runs when the
 row or header that mounted the slot is torn down, which is how a detail slot stops a nested grid
@@ -529,7 +531,7 @@ export type Slot<Ctx> = (ctx: Ctx) => SlotContent
 
 ### `CellCtx` {#src-0-types-ts-cellctx}
 
-`CellCtx` is declared at `src/0_types.ts:173`.
+`CellCtx` is declared at `src/0_types.ts:174`.
 
 ```ts
 export interface CellCtx<TRow> {
@@ -544,7 +546,7 @@ export interface CellCtx<TRow> {
 
 ### `HeaderCtx` {#src-0-types-ts-headerctx}
 
-`HeaderCtx` is declared at `src/0_types.ts:188`.
+`HeaderCtx` is declared at `src/0_types.ts:189`.
 
 The header band labels the horizontal run. Under `"rows"` that run is the column axis, so `col`
 is a column id, `row` is null, and `data` is undefined. Under `"columns"` the run is the row
@@ -560,12 +562,15 @@ export interface HeaderCtx<TRow = unknown> {
   readonly pinned: Side | undefined
   readonly row: RowId | null
   readonly data: TRow | undefined
+  /** The grid the band belongs to. A tri-state header derives its three states from the relation
+   * and the selection, and both of those live here rather than on the schema that named the seat. */
+  readonly grid: Grid<TRow> | undefined
 }
 ```
 
 ### `RowCtx` {#src-0-types-ts-rowctx}
 
-`RowCtx` is declared at `src/0_types.ts:196`.
+`RowCtx` is declared at `src/0_types.ts:200`.
 
 ```ts
 export interface RowCtx<TRow> {
@@ -579,7 +584,7 @@ export interface RowCtx<TRow> {
 
 ### `GroupCtx` {#src-0-types-ts-groupctx}
 
-`GroupCtx` is declared at `src/0_types.ts:206`.
+`GroupCtx` is declared at `src/0_types.ts:210`.
 
 What a group heading is about. Not generic in `TRow`: a heading stands for a level rather than
 for a row, and `GroupRow` is the whole of what the axis put behind its key.
@@ -607,7 +612,7 @@ export interface GroupCtx {
 
 ### `Slots` {#src-0-types-ts-slots}
 
-`Slots` is declared at `src/0_types.ts:226`.
+`Slots` is declared at `src/0_types.ts:230`.
 
 Every replaceable piece. Absent means the built-in is used.
 
@@ -633,7 +638,7 @@ export interface Slots<TRow> {
 
 ### `ColumnType` {#src-0-types-ts-columntype}
 
-`ColumnType` is declared at `src/0_types.ts:246`.
+`ColumnType` is declared at `src/0_types.ts:250`.
 
 ```ts
 export type ColumnType =
@@ -641,7 +646,7 @@ export type ColumnType =
 
 ### `FormulaApi` {#src-0-types-ts-formulaapi}
 
-`FormulaApi` is declared at `src/0_types.ts:249`.
+`FormulaApi` is declared at `src/0_types.ts:253`.
 
 ```ts
 export interface FormulaApi<TRow> {
@@ -651,7 +656,7 @@ export interface FormulaApi<TRow> {
 
 ### `ColumnDef` {#src-0-types-ts-columndef}
 
-`ColumnDef` is declared at `src/0_types.ts:253`.
+`ColumnDef` is declared at `src/0_types.ts:257`.
 
 ```ts
 export interface ColumnDef<TRow, V = unknown> {
@@ -708,7 +713,7 @@ export interface ColumnDef<TRow, V = unknown> {
 
 ### `fieldValue` {#src-0-types-ts-fieldvalue}
 
-`fieldValue` is declared at `src/0_types.ts:315`.
+`fieldValue` is declared at `src/0_types.ts:319`.
 
 Reads one dotted path off a row, checked against `TRow` the same way `ColumnDef.field` is.
 
@@ -718,7 +723,7 @@ fieldValue: <TRow, Path extends SignalPath<TRow> & string>(row: TRow, field: Pat
 
 ### `columnReader` {#src-0-types-ts-columnreader}
 
-`columnReader` is declared at `src/0_types.ts:345`.
+`columnReader` is declared at `src/0_types.ts:349`.
 
 What a column reads off a row: `value`, else `field`, else the id.
 
@@ -728,7 +733,7 @@ columnReader: <TRow>(col: ColumnDef<TRow, unknown> | undefined, colId: string) =
 
 ### `PageMode` {#src-0-types-ts-pagemode}
 
-`PageMode` is declared at `src/0_types.ts:370`.
+`PageMode` is declared at `src/0_types.ts:374`.
 
 Paging is one operator with three retention rules, rather than three features.
 
@@ -746,7 +751,7 @@ export type PageMode = "all" | "pages" | "infinite"
 
 ### `Orientation` {#src-0-types-ts-orientation}
 
-`Orientation` is declared at `src/0_types.ts:377`.
+`Orientation` is declared at `src/0_types.ts:381`.
 
 Which axis feeds the vertical pipeline: the one that scrolls, pages, and pins into sticky runs.
 `"columns"` is the transpose, the matrix layout whose first column holds what are normally
@@ -758,7 +763,7 @@ export type Orientation = "rows" | "columns"
 
 ### `Page` {#src-0-types-ts-page}
 
-`Page` is declared at `src/0_types.ts:379`.
+`Page` is declared at `src/0_types.ts:383`.
 
 ```ts
 export type Page = {
@@ -772,7 +777,7 @@ export type Page = {
 
 ### `PageRequest` {#src-0-types-ts-pagerequest}
 
-`PageRequest` is declared at `src/0_types.ts:391`.
+`PageRequest` is declared at `src/0_types.ts:395`.
 
 Emitted when an infinite page boundary is crossed. The caller fetches and appends; nothing in
 the kernel waits on it, so a slow fetch never blocks scrolling through loaded rows.
@@ -784,9 +789,30 @@ export type PageRequest = {
 }
 ```
 
+### `DropSide` {#src-0-types-ts-dropside}
+
+`DropSide` is declared at `src/0_types.ts:401`.
+
+Which side of the entry a drop line sits on.
+
+```ts
+export type DropSide = "start" | "end"
+```
+
+### `DragPreview` {#src-0-types-ts-dragpreview}
+
+`DragPreview` is declared at `src/0_types.ts:405`.
+
+What a deferred gesture will land, published while the pointer is down and cleared on the lift.
+The grid holds still and draws this instead of rewriting order or width once per pointermove.
+
+```ts
+export type DragPreview =
+```
+
 ### `RangeSelection` {#src-0-types-ts-rangeselection}
 
-`RangeSelection` is declared at `src/0_types.ts:397`.
+`RangeSelection` is declared at `src/0_types.ts:411`.
 
 ```ts
 export type RangeSelection = {
@@ -797,7 +823,7 @@ export type RangeSelection = {
 
 ### `GridState` {#src-0-types-ts-gridstate}
 
-`GridState` is declared at `src/0_types.ts:407`.
+`GridState` is declared at `src/0_types.ts:421`.
 
 Declared as a type alias rather than an interface on purpose: `Signal<T>`'s recursive proxy
 map gates on `T extends Record<string, unknown>`, and an interface has no implicit index
@@ -831,6 +857,9 @@ export type GridState = {
   // cross
   /** The live drag plus the blocks earlier gestures committed. `RangeSelection` is its narrow half. */
   readonly selection: GridSelection
+  /** The live gesture rather than a stored preference: written per pointermove by a deferred
+   * resize or move, and cleared on the lift, so nothing downstream of it moves until then. */
+  readonly drag: DragPreview | null
   /** @feature-declared cell.focus */
   readonly focus: CellId | null
   readonly editing: CellId | null
@@ -854,7 +883,7 @@ export type GridState = {
 
 ### `GridMode` {#src-0-types-ts-gridmode}
 
-`GridMode` is declared at `src/0_types.ts:460`.
+`GridMode` is declared at `src/0_types.ts:477`.
 
 client: the kernel runs filter, sort, group, and pagination over every row it holds.
 server: the kernel skips those stages, publishes a `QueryDescriptor` for the caller to send
@@ -867,7 +896,7 @@ export type GridMode = "client" | "server"
 
 ### `QueryDescriptor` {#src-0-types-ts-querydescriptor}
 
-`QueryDescriptor` is declared at `src/0_types.ts:464`.
+`QueryDescriptor` is declared at `src/0_types.ts:481`.
 
 ```ts
 export type QueryDescriptor = {
@@ -881,7 +910,7 @@ export type QueryDescriptor = {
 
 ### `Viewport` {#src-0-types-ts-viewport}
 
-`Viewport` is declared at `src/0_types.ts:472`.
+`Viewport` is declared at `src/0_types.ts:489`.
 
 ```ts
 export type Viewport = {
@@ -894,7 +923,7 @@ export type Viewport = {
 
 ### `Modifiers` {#src-0-types-ts-modifiers}
 
-`Modifiers` is declared at `src/0_types.ts:481`.
+`Modifiers` is declared at `src/0_types.ts:498`.
 
 ```ts
 export type Modifiers = {
@@ -908,7 +937,7 @@ export type Modifiers = {
 
 ### `isPlainClick` {#src-0-types-ts-isplainclick}
 
-`isPlainClick` is declared at `src/0_types.ts:491`.
+`isPlainClick` is declared at `src/0_types.ts:508`.
 
 A plain click: no chord, primary button. Declared beside `Modifiers`, because `3_paths.ts` and
 `7_epics.ts` both ask it and a second copy is a second answer.
@@ -919,7 +948,7 @@ isPlainClick: (mods: Modifiers) => boolean
 
 ### `GridIntent` {#src-0-types-ts-gridintent}
 
-`GridIntent` is declared at `src/0_types.ts:496`.
+`GridIntent` is declared at `src/0_types.ts:513`.
 
 The DOM saw something. No state has moved. Every entry comes from an xdom path template.
 `interactive` marks a click that landed on an anchor, a form control, or a routed glyph.
@@ -930,7 +959,7 @@ export type GridIntent =
 
 ### `GridChange` {#src-0-types-ts-gridchange}
 
-`GridChange` is declared at `src/0_types.ts:515`.
+`GridChange` is declared at `src/0_types.ts:532`.
 
 One key of GridState was written. Reduced synchronously, never asynchronously.
 
@@ -942,7 +971,7 @@ export type GridChange = {
 
 ### `GridEffect` {#src-0-types-ts-grideffect}
 
-`GridEffect` is declared at `src/0_types.ts:520`.
+`GridEffect` is declared at `src/0_types.ts:537`.
 
 Leaves the grid. The consumer decides what an activate or an edit commit means.
 
@@ -952,7 +981,7 @@ export type GridEffect<TRow> =
 
 ### `GridAction` {#src-0-types-ts-gridaction}
 
-`GridAction` is declared at `src/0_types.ts:529`.
+`GridAction` is declared at `src/0_types.ts:546`.
 
 ```ts
 export type GridAction<TRow> = GridIntent | GridChange | GridEffect<TRow>
@@ -960,7 +989,7 @@ export type GridAction<TRow> = GridIntent | GridChange | GridEffect<TRow>
 
 ### `GridPhase` {#src-0-types-ts-gridphase}
 
-`GridPhase` is declared at `src/0_types.ts:530`.
+`GridPhase` is declared at `src/0_types.ts:547`.
 
 ```ts
 export type GridPhase = GridAction<never>["phase"]
@@ -2070,7 +2099,7 @@ export interface RowNumberColumnOptions<TRow> extends BuiltInColumnOptions<TRow>
 
 ### `checkboxColumn` {#src-5-columns-ts-checkboxcolumn}
 
-`checkboxColumn` is declared at `src/5_columns.ts:288`.
+`checkboxColumn` is declared at `src/5_columns.ts:290`.
 
 Multi-select. The header is a signal, so a selection click repaints one node.
 
@@ -2080,7 +2109,7 @@ checkboxColumn: <TRow>(opts?: TriStateColumnOptions<TRow>) => BuiltInColumnDef<T
 
 ### `radioColumn` {#src-5-columns-ts-radiocolumn}
 
-`radioColumn` is declared at `src/5_columns.ts:294`.
+`radioColumn` is declared at `src/5_columns.ts:296`.
 
 Single select, same box and route as the checkbox column.
 
@@ -2090,7 +2119,7 @@ radioColumn: <TRow>(opts?: BuiltInColumnOptions<TRow>) => BuiltInColumnDef<TRow>
 
 ### `expandColumn` {#src-5-columns-ts-expandcolumn}
 
-`expandColumn` is declared at `src/5_columns.ts:311`.
+`expandColumn` is declared at `src/5_columns.ts:313`.
 
 The expander as a column, so a caller can place or pin it.
 
@@ -2100,7 +2129,7 @@ expandColumn: <TRow>(opts?: TriStateColumnOptions<TRow>) => BuiltInColumnDef<TRo
 
 ### `dragColumn` {#src-5-columns-ts-dragcolumn}
 
-`dragColumn` is declared at `src/5_columns.ts:328`.
+`dragColumn` is declared at `src/5_columns.ts:330`.
 
 `moveAttrs()` is shared with the header handle; the ancestor chain tells them apart.
 
@@ -2110,7 +2139,7 @@ dragColumn: <TRow>(opts?: BuiltInColumnOptions<TRow>) => BuiltInColumnDef<TRow>
 
 ### `detailColumn` {#src-5-columns-ts-detailcolumn}
 
-`detailColumn` is declared at `src/5_columns.ts:344`.
+`detailColumn` is declared at `src/5_columns.ts:346`.
 
 The disclosure that opens the detail area for its row.
 
@@ -2236,6 +2265,8 @@ Where an intent becomes a change or an effect.
 | --- | --- |
 | [`GridEpicCtx`](#src-7-epics-ts-gridepicctx) | interface |
 | [`GridEpic`](#src-7-epics-ts-gridepic) | type |
+| [`DragMode`](#src-7-epics-ts-dragmode) | type |
+| [`DEFAULT_DRAG_MODE`](#src-7-epics-ts-default-drag-mode) | const |
 | [`sortOnHeaderClick`](#src-7-epics-ts-sortonheaderclick) | function |
 | [`expandOnExpanderClick`](#src-7-epics-ts-expandonexpanderclick) | function |
 | [`expandOnCellDoubleClick`](#src-7-epics-ts-expandoncelldoubleclick) | function |
@@ -2256,7 +2287,7 @@ Where an intent becomes a change or an effect.
 
 ### `GridEpicCtx` {#src-7-epics-ts-gridepicctx}
 
-`GridEpicCtx` is declared at `src/7_epics.ts:47`.
+`GridEpicCtx` is declared at `src/7_epics.ts:49`.
 
 What an epic is allowed to read besides state: the derived view and the schema behind it.
 
@@ -2273,7 +2304,7 @@ export interface GridEpicCtx<TRow> {
 
 ### `GridEpic` {#src-7-epics-ts-gridepic}
 
-`GridEpic` is declared at `src/7_epics.ts:56`.
+`GridEpic` is declared at `src/7_epics.ts:58`.
 
 ```ts
 export type GridEpic<TRow> = Epic<GridAction<TRow>, GridState, GridEpicCtx<TRow>>
@@ -2281,9 +2312,28 @@ export type GridEpic<TRow> = Epic<GridAction<TRow>, GridState, GridEpicCtx<TRow>
 export function sortOnHeaderClick<TRow>(): GridEpic<TRow>
 ```
 
+### `DragMode` {#src-7-epics-ts-dragmode}
+
+`DragMode` is declared at `src/7_epics.ts:81`.
+
+`live` writes the grid on every pointermove. `preview` publishes where the gesture will land,
+leaves every width and every order where it is, and writes once on the lift.
+
+```ts
+export type DragMode = "live" | "preview"
+```
+
+### `DEFAULT_DRAG_MODE` {#src-7-epics-ts-default-drag-mode}
+
+`DEFAULT_DRAG_MODE` is declared at `src/7_epics.ts:83`.
+
+```ts
+DEFAULT_DRAG_MODE: DragMode
+```
+
 ### `sortOnHeaderClick` {#src-7-epics-ts-sortonheaderclick}
 
-`sortOnHeaderClick` is declared at `src/7_epics.ts:99`.
+`sortOnHeaderClick` is declared at `src/7_epics.ts:128`.
 
 ```ts
 sortOnHeaderClick: <TRow>() => GridEpic<TRow>
@@ -2291,7 +2341,7 @@ sortOnHeaderClick: <TRow>() => GridEpic<TRow>
 
 ### `expandOnExpanderClick` {#src-7-epics-ts-expandonexpanderclick}
 
-`expandOnExpanderClick` is declared at `src/7_epics.ts:129`.
+`expandOnExpanderClick` is declared at `src/7_epics.ts:158`.
 
 ```ts
 expandOnExpanderClick: <TRow>() => GridEpic<TRow>
@@ -2299,7 +2349,7 @@ expandOnExpanderClick: <TRow>() => GridEpic<TRow>
 
 ### `expandOnCellDoubleClick` {#src-7-epics-ts-expandoncelldoubleclick}
 
-`expandOnCellDoubleClick` is declared at `src/7_epics.ts:141`.
+`expandOnCellDoubleClick` is declared at `src/7_epics.ts:170`.
 
 The second way into a tree, for a schema that draws no glyph. Opt-in, and it composes with
 `expandOnExpanderClick`, because a double click on the glyph arrives `interactive`.
@@ -2310,7 +2360,7 @@ expandOnCellDoubleClick: <TRow>() => GridEpic<TRow>
 
 ### `selectRowsOnCheckboxClick` {#src-7-epics-ts-selectrowsoncheckboxclick}
 
-`selectRowsOnCheckboxClick` is declared at `src/7_epics.ts:198`.
+`selectRowsOnCheckboxClick` is declared at `src/7_epics.ts:227`.
 
 ```ts
 selectRowsOnCheckboxClick: <TRow>() => GridEpic<TRow>
@@ -2318,7 +2368,7 @@ selectRowsOnCheckboxClick: <TRow>() => GridEpic<TRow>
 
 ### `selectRowsOnCellClick` {#src-7-epics-ts-selectrowsoncellclick}
 
-`selectRowsOnCellClick` is declared at `src/7_epics.ts:207`.
+`selectRowsOnCellClick` is declared at `src/7_epics.ts:236`.
 
 Selection for a schema with no checkbox column. Opt-in: a cell holding a link or a button wants
 that click, and `interactive` is the intent saying one took it.
@@ -2329,10 +2379,10 @@ selectRowsOnCellClick: <TRow>() => GridEpic<TRow>
 
 ### `toggleSelectAllOnHeaderClick` {#src-7-epics-ts-toggleselectallonheaderclick}
 
-`toggleSelectAllOnHeaderClick` is declared at `src/7_epics.ts:228`.
+`toggleSelectAllOnHeaderClick` is declared at `src/7_epics.ts:257`.
 
-Opt-in: the header draws the tri-state whether or not this is installed, and installing it is
-what makes the header a control.
+In `defaultEpics`: the header draws the tri-state whether or not this is installed, and
+installing it is what makes the header a control.
 
 ```ts
 toggleSelectAllOnHeaderClick: <TRow>() => GridEpic<TRow>
@@ -2340,7 +2390,7 @@ toggleSelectAllOnHeaderClick: <TRow>() => GridEpic<TRow>
 
 ### `toggleExpandAllOnHeaderClick` {#src-7-epics-ts-toggleexpandallonheaderclick}
 
-`toggleExpandAllOnHeaderClick` is declared at `src/7_epics.ts:241`.
+`toggleExpandAllOnHeaderClick` is declared at `src/7_epics.ts:270`.
 
 The mirror on the expand column, reading the same rows `expandAllSignal` counts.
 
@@ -2350,7 +2400,7 @@ toggleExpandAllOnHeaderClick: <TRow>() => GridEpic<TRow>
 
 ### `activateOnCellClick` {#src-7-epics-ts-activateoncellclick}
 
-`activateOnCellClick` is declared at `src/7_epics.ts:256`.
+`activateOnCellClick` is declared at `src/7_epics.ts:285`.
 
 The only way a consumer hears "the user picked this row". Modified clicks belong elsewhere.
 
@@ -2360,23 +2410,23 @@ activateOnCellClick: <TRow>() => GridEpic<TRow>
 
 ### `resizeOnHeaderDrag` {#src-7-epics-ts-resizeonheaderdrag}
 
-`resizeOnHeaderDrag` is declared at `src/7_epics.ts:282`.
+`resizeOnHeaderDrag` is declared at `src/7_epics.ts:311`.
 
 ```ts
-resizeOnHeaderDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
+resizeOnHeaderDrag: <TRow>(streams?: DragStreams | undefined, mode?: DragMode) => GridEpic<TRow>
 ```
 
 ### `moveColumnOnHeaderDrag` {#src-7-epics-ts-movecolumnonheaderdrag}
 
-`moveColumnOnHeaderDrag` is declared at `src/7_epics.ts:339`.
+`moveColumnOnHeaderDrag` is declared at `src/7_epics.ts:382`.
 
 ```ts
-moveColumnOnHeaderDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
+moveColumnOnHeaderDrag: <TRow>(streams?: DragStreams | undefined, mode?: DragMode) => GridEpic<TRow>
 ```
 
 ### `moveRowOnRowDrag` {#src-7-epics-ts-moverowonrowdrag}
 
-`moveRowOnRowDrag` is declared at `src/7_epics.ts:376`.
+`moveRowOnRowDrag` is declared at `src/7_epics.ts:441`.
 
 ```ts
 moveRowOnRowDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
@@ -2384,7 +2434,7 @@ moveRowOnRowDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
 
 ### `keyboardNav` {#src-7-epics-ts-keyboardnav}
 
-`keyboardNav` is declared at `src/7_epics.ts:470`.
+`keyboardNav` is declared at `src/7_epics.ts:549`.
 
 ```ts
 keyboardNav: <TRow>() => GridEpic<TRow>
@@ -2392,7 +2442,7 @@ keyboardNav: <TRow>() => GridEpic<TRow>
 
 ### `pageOnScrollNearEnd` {#src-7-epics-ts-pageonscrollnearend}
 
-`pageOnScrollNearEnd` is declared at `src/7_epics.ts:482`.
+`pageOnScrollNearEnd` is declared at `src/7_epics.ts:561`.
 
 ```ts
 pageOnScrollNearEnd: <TRow>() => GridEpic<TRow>
@@ -2400,7 +2450,7 @@ pageOnScrollNearEnd: <TRow>() => GridEpic<TRow>
 
 ### `selectCellsOnDrag` {#src-7-epics-ts-selectcellsondrag}
 
-`selectCellsOnDrag` is declared at `src/7_epics.ts:606`.
+`selectCellsOnDrag` is declared at `src/7_epics.ts:685`.
 
 ```ts
 selectCellsOnDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
@@ -2408,7 +2458,7 @@ selectCellsOnDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
 
 ### `selectRowsOnDrag` {#src-7-epics-ts-selectrowsondrag}
 
-`selectRowsOnDrag` is declared at `src/7_epics.ts:625`.
+`selectRowsOnDrag` is declared at `src/7_epics.ts:704`.
 
 ```ts
 selectRowsOnDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
@@ -2416,7 +2466,7 @@ selectRowsOnDrag: <TRow>(streams?: DragStreams | undefined) => GridEpic<TRow>
 
 ### `selectColumnsOnDrag` {#src-7-epics-ts-selectcolumnsondrag}
 
-`selectColumnsOnDrag` is declared at `src/7_epics.ts:645`.
+`selectColumnsOnDrag` is declared at `src/7_epics.ts:724`.
 
 ```ts
 selectColumnsOnDrag: <TRow>(streams?: DragStreams | undefined, opensOn?: (part: string) => boolean) => GridEpic<TRow>
@@ -2424,12 +2474,12 @@ selectColumnsOnDrag: <TRow>(streams?: DragStreams | undefined, opensOn?: (part: 
 
 ### `defaultEpics` {#src-7-epics-ts-defaultepics}
 
-`defaultEpics` is declared at `src/7_epics.ts:669`.
+`defaultEpics` is declared at `src/7_epics.ts:748`.
 
 Every epic `grid()` installs. Each is exported alone so a consumer can drop one.
 
 ```ts
-defaultEpics: <TRow>(streams?: DragStreams | undefined) => readonly GridEpic<TRow>[]
+defaultEpics: <TRow>(streams?: DragStreams | undefined, mode?: DragMode) => readonly GridEpic<TRow>[]
 ```
 
 ## src/8_grid.ts
@@ -2489,7 +2539,7 @@ defaultState: (over?: Partial<GridState>) => GridState
 
 ### `ROW_HEIGHT` {#src-8-grid-ts-row-height}
 
-`ROW_HEIGHT` is declared at `src/8_grid.ts:123`.
+`ROW_HEIGHT` is declared at `src/8_grid.ts:124`.
 
 ```ts
 ROW_HEIGHT: Record<"comfortable" | "compact" | "standard", number>
@@ -2497,7 +2547,7 @@ ROW_HEIGHT: Record<"comfortable" | "compact" | "standard", number>
 
 ### `GridConfig` {#src-8-grid-ts-gridconfig}
 
-`GridConfig` is declared at `src/8_grid.ts:131`.
+`GridConfig` is declared at `src/8_grid.ts:132`.
 
 ```ts
 export interface GridConfig<TRow> {
@@ -2524,6 +2574,9 @@ export interface GridConfig<TRow> {
   readonly overscan?: number
   /** Absent installs `defaultEpics()`. Opt-in epics such as `detailOnCellClick` go here. */
   readonly epics?: readonly GridEpic<TRow>[]
+  /** How a resize or a move shows itself while the pointer is down. Read only when `epics` is
+   * absent, because a caller listing epics already chose the mode on each one. */
+  readonly drag?: DragMode
 }
 
 export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow>
@@ -2531,7 +2584,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow>
 
 ### `GridView` {#src-8-grid-ts-gridview}
 
-`GridView` is declared at `src/8_grid.ts:159`.
+`GridView` is declared at `src/8_grid.ts:163`.
 
 ```ts
 export interface GridView<TRow> {
@@ -2568,7 +2621,7 @@ export interface GridView<TRow> {
 
 ### `Grid` {#src-8-grid-ts-grid}
 
-`Grid` is declared at `src/8_grid.ts:190`.
+`Grid` is declared at `src/8_grid.ts:194`.
 
 ```ts
 export interface Grid<TRow> {
@@ -2607,7 +2660,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow>
 
 ### `pageWindow` {#src-8-grid-ts-pagewindow}
 
-`pageWindow` is declared at `src/8_grid.ts:238`.
+`pageWindow` is declared at `src/8_grid.ts:242`.
 
 The three retention rules of `PageMode` expressed as one `paginate` call, so paging runs inside
 `renderPlan` after pinning has already been lifted out. Paging before pinning drops pinned
@@ -2619,7 +2672,7 @@ pageWindow: (page: Page) => { page: { index: number; size: number; }; enabled: b
 
 ### `grid` {#src-8-grid-ts-grid-2}
 
-`grid` is declared at `src/8_grid.ts:252`.
+`grid` is declared at `src/8_grid.ts:256`.
 
 ```ts
 grid: <TRow>(config: GridConfig<TRow>) => Grid<TRow>
@@ -2712,7 +2765,7 @@ Plain DOM.
 
 ### `RenderHandle` {#src-10-render-ts-renderhandle}
 
-`RenderHandle` is declared at `src/10_render.ts:64`.
+`RenderHandle` is declared at `src/10_render.ts:66`.
 
 ```ts
 export interface RenderHandle {
@@ -2724,7 +2777,7 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle
 
 ### `render` {#src-10-render-ts-render}
 
-`render` is declared at `src/10_render.ts:155`.
+`render` is declared at `src/10_render.ts:167`.
 
 ```ts
 render: <TRow>(grid: Grid<TRow>, root: HTMLElement) => RenderHandle

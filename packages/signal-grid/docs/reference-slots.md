@@ -29,7 +29,7 @@ that node beside the grid rather than inside it.
 | ctx | fields | handed to |
 | --- | --- | --- |
 | `CellCtx` | `row`, `col`, `data`, `value`, `node`, `editing` | `cell`, `editor` |
-| `HeaderCtx` | `col`, `node`, `sort`, `pinned` | `header` |
+| `HeaderCtx` | `col`, `node`, `sort`, `pinned`, `row`, `data`, `grid` | `header` |
 | `RowCtx` | `row`, `data`, `node`, `selected`, `open` | `expander`, `detail` |
 
 The shapes are fixed. A slot needing more closes over it, because a slot is an ordinary function in

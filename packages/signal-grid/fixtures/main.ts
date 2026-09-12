@@ -130,6 +130,9 @@ const g = grid<FileRow>({
     colHidden: { mtime: true },
   }),
   viewport,
+  // `?drag=preview` switches to the deferred gesture. The e2e suites measure a width while the
+  // pointer is still down, which is what the live mode is.
+  drag: new URLSearchParams(location.search).get("drag") === "preview" ? "preview" : "live",
   slots: { cell: (ctx) => label(String(ctx.value ?? "")) },
 })
 

@@ -33,6 +33,7 @@ import { rangeOf, selectionTest } from "./15_selection.js"
 import {
   expandOnCellDoubleClick,
   expandOnExpanderClick,
+  type DragMode,
   selectColumnsOnDrag,
   selectRowsOnCellClick,
   toggleExpandAllOnHeaderClick,
@@ -314,10 +315,15 @@ describe("activateOnCellClick", () => {
   })
 })
 
-describe("resizeOnHeaderDrag", () => {
+/** The mode is a `grid()` option rather than an epic argument here, because that is the seat a
+ * consumer writes it in and `defaultEpics` is what reads it. */
+const dragGrid = (mode: DragMode): Grid<Row> =>
+  grid<Row>({ id: "t", rows: FLAT, columns: COLUMNS, rowId: (row) => row.id, drag: mode })
+
+describe("resizeOnHeaderDrag, live", () => {
   it("clamps to the column's minWidth", () => {
     const { move$ } = pointerStreams()
-    const { g } = withEpics(flatGrid())
+    const { g } = withEpics(dragGrid("live"))
     g.dispatch(headerDown("name", "resize", 0))
     move$.next(at({ clientX: -20 }))
     expect(g.state.colWidth.$()["name"]).toBe(100)
@@ -327,7 +333,7 @@ describe("resizeOnHeaderDrag", () => {
 
   it("clamps to the column's maxWidth and commits the last width", () => {
     const { move$, up$ } = pointerStreams()
-    const { g } = withEpics(flatGrid())
+    const { g } = withEpics(dragGrid("live"))
     g.dispatch(headerDown("name", "resize", 0))
     move$.next(at({ clientX: 500 }))
     up$.next(at({ clientX: 500 }))
@@ -336,7 +342,7 @@ describe("resizeOnHeaderDrag", () => {
 
   it("stops listening after the pointer comes up", () => {
     const { move$, up$ } = pointerStreams()
-    const { g } = withEpics(flatGrid())
+    const { g } = withEpics(dragGrid("live"))
     g.dispatch(headerDown("name", "resize", 0))
     move$.next(at({ clientX: 30 }))
     up$.next(at({ clientX: 30 }))
@@ -345,10 +351,34 @@ describe("resizeOnHeaderDrag", () => {
   })
 })
 
-describe("moveColumnOnHeaderDrag", () => {
-  it("reorders once the pointer passes half of the next column", () => {
+describe("resizeOnHeaderDrag, deferred", () => {
+  it("publishes the prospective width and leaves every column at the width it is painting", () => {
     const { move$ } = pointerStreams()
     const { g } = withEpics(flatGrid())
+    g.dispatch(headerDown("name", "resize", 0))
+    move$.next(at({ clientX: 30 }))
+    expect(g.state.drag.$()).toEqual({ kind: "colSize", col: "name", width: 150 })
+    expect(g.state.colWidth.$()).toEqual({})
+    move$.next(at({ clientX: 500 }))
+    expect(g.state.drag.$()).toEqual({ kind: "colSize", col: "name", width: 200 })
+    expect(g.state.colWidth.$()).toEqual({})
+  })
+
+  it("writes the clamped width once on the lift and clears the preview", () => {
+    const { move$, up$ } = pointerStreams()
+    const { g } = withEpics(flatGrid())
+    g.dispatch(headerDown("name", "resize", 0))
+    move$.next(at({ clientX: -500 }))
+    up$.next(at({ clientX: -500 }))
+    expect(g.state.colWidth.$()["name"]).toBe(80)
+    expect(g.state.drag.$()).toBe(null)
+  })
+})
+
+describe("moveColumnOnHeaderDrag, live", () => {
+  it("reorders once the pointer passes half of the next column", () => {
+    const { move$ } = pointerStreams()
+    const { g } = withEpics(dragGrid("live"))
     g.dispatch(headerDown("name", "move", 0))
     move$.next(at({ clientX: 10 }))
     expect(g.view.cols.$().map((n) => n.key)).toEqual(["name", "size"])
@@ -359,11 +389,47 @@ describe("moveColumnOnHeaderDrag", () => {
 
   it("restores the order when the drag returns to where it started", () => {
     const { move$, up$ } = pointerStreams()
-    const { g } = withEpics(flatGrid())
+    const { g } = withEpics(dragGrid("live"))
     g.dispatch(headerDown("name", "move", 0))
     move$.next(at({ clientX: 60 }))
     up$.next(at({ clientX: 0 }))
     expect(g.state.colOrder.$()).toEqual(["name", "size"])
+  })
+})
+
+describe("moveColumnOnHeaderDrag, deferred", () => {
+  it("names the landing column while the pointer is down and moves no column", () => {
+    const { move$ } = pointerStreams()
+    const { g } = withEpics(flatGrid())
+    g.dispatch(headerDown("name", "move", 0))
+    move$.next(at({ clientX: 10 }))
+    expect(g.state.drag.$()).toEqual({ kind: "colMove", col: "name", over: "name", side: "start" })
+    move$.next(at({ clientX: 60 }))
+    expect(g.state.drag.$()).toEqual({ kind: "colMove", col: "name", over: "size", side: "end" })
+    expect(g.state.colOrder.$()).toEqual([])
+    expect(g.view.cols.$().map((n) => n.key)).toEqual(["name", "size"])
+  })
+
+  it("writes colOrder once on the lift and clears the preview", () => {
+    const { move$, up$ } = pointerStreams()
+    const { g } = withEpics(flatGrid())
+    g.dispatch(headerDown("name", "move", 0))
+    move$.next(at({ clientX: 60 }))
+    up$.next(at({ clientX: 60 }))
+    expect(g.state.colOrder.$()).toEqual(["size", "name"])
+    expect(g.state.drag.$()).toBe(null)
+  })
+
+  it("leaves the order alone when the drag returns to where it started", () => {
+    const { move$, up$ } = pointerStreams()
+    const { g } = withEpics(flatGrid())
+    g.dispatch(headerDown("name", "move", 0))
+    move$.next(at({ clientX: 60 }))
+    up$.next(at({ clientX: 0 }))
+    // The schema order written out, which is the same seating the empty model already meant.
+    expect(g.state.colOrder.$()).toEqual(["name", "size"])
+    expect(g.view.cols.$().map((n) => n.key)).toEqual(["name", "size"])
+    expect(g.state.drag.$()).toBe(null)
   })
 })
 
@@ -376,6 +442,30 @@ describe("moveRowOnRowDrag", () => {
     expect(effects).toEqual([])
     up$.next(at({ clientY: 40 }))
     expect(effects).toEqual([{ phase: "effect", type: "reorderRow", row: "c", before: "b" }])
+  })
+
+  it("names the landing row while the pointer is down and moves nothing", () => {
+    const { move$ } = pointerStreams()
+    const { g } = withEpics(flatGrid())
+    g.dispatch(rowDown("c", 0))
+    move$.next(at({ clientY: 40 }))
+    expect(g.state.drag.$()).toEqual({ kind: "rowMove", row: "c", over: "a", side: "end" })
+    expect(g.view.flat.$().map((n) => n.key)).toEqual(["c", "a", "b"])
+  })
+
+  it("clears the preview on the lift, and on a lift that landed where it started", () => {
+    const { move$, up$ } = pointerStreams()
+    const { g, effects } = withEpics(flatGrid())
+    g.dispatch(rowDown("c", 0))
+    move$.next(at({ clientY: 40 }))
+    up$.next(at({ clientY: 40 }))
+    expect(g.state.drag.$()).toBe(null)
+    g.dispatch(rowDown("c", 0))
+    move$.next(at({ clientY: 4 }))
+    expect(g.state.drag.$()).not.toBe(null)
+    up$.next(at({ clientY: 4 }))
+    expect(g.state.drag.$()).toBe(null)
+    expect(effects).toHaveLength(1)
   })
 })
 

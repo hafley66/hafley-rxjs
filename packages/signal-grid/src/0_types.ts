@@ -7,6 +7,7 @@
 import type { Observable } from "rxjs"
 import type { SignalPath, SignalPathValue } from "@hafley66/signals"
 import type { GridSelection } from "./15_selection.js"
+import type { Grid } from "./8_grid.js"
 
 // --- Identity --------------------------------------------------------------
 
@@ -192,6 +193,9 @@ export interface HeaderCtx<TRow = unknown> {
   readonly pinned: Side | undefined
   readonly row: RowId | null
   readonly data: TRow | undefined
+  /** The grid the band belongs to. A tri-state header derives its three states from the relation
+   * and the selection, and both of those live here rather than on the schema that named the seat. */
+  readonly grid: Grid<TRow> | undefined
 }
 export interface RowCtx<TRow> {
   readonly row: RowId
@@ -393,6 +397,16 @@ export type PageRequest = {
   readonly size: number
 }
 
+/** Which side of the entry a drop line sits on. */
+export type DropSide = "start" | "end"
+
+/** What a deferred gesture will land, published while the pointer is down and cleared on the lift.
+ * The grid holds still and draws this instead of rewriting order or width once per pointermove. */
+export type DragPreview =
+  | { readonly kind: "colMove"; readonly col: ColId; readonly over: ColId; readonly side: DropSide }
+  | { readonly kind: "rowMove"; readonly row: RowId; readonly over: RowId; readonly side: DropSide }
+  | { readonly kind: "colSize"; readonly col: ColId; readonly width: number }
+
 /** @feature-declared cell.select */
 export type RangeSelection = {
   readonly anchor: CellId | null
@@ -431,6 +445,9 @@ export type GridState = {
   // cross
   /** The live drag plus the blocks earlier gestures committed. `RangeSelection` is its narrow half. */
   readonly selection: GridSelection
+  /** The live gesture rather than a stored preference: written per pointermove by a deferred
+   * resize or move, and cleared on the lift, so nothing downstream of it moves until then. */
+  readonly drag: DragPreview | null
   /** @feature-declared cell.focus */
   readonly focus: CellId | null
   readonly editing: CellId | null
