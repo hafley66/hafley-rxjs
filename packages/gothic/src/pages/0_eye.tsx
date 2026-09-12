@@ -1,7 +1,7 @@
 import type { AnySpec, ValuesOf } from "@hafley66/report-shell"
 import { type RefObject, useEffect, useRef } from "react"
 import type { PageSpec } from "../app/0_pages.js"
-import { sectionState } from "../app/2_state.js"
+import { pageRun, sectionState } from "../app/2_state.js"
 import {
   AU,
   type Au,
@@ -504,9 +504,10 @@ function EyeBody({ v, tm, p }: { v: V; tm: Timing; p: Panels }) {
       }
     }
   })
+  const playing = pageRun()
   useEffect(() => {
-    clk.run(v.run)
-  }, [clk, v.run])
+    clk.run(v.run && playing)
+  }, [clk, v.run, playing])
   useEffect(() => {
     const input = p.scrub.current
     if (!input) return

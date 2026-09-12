@@ -1,8 +1,15 @@
+import { Signal } from "@hafley66/signals"
 import { combineLatest, defer, distinctUntilChanged, fromEvent, map, Observable, of, shareReplay, startWith, switchMap } from "rxjs"
 
-export const documentVisible$ = defer(() => typeof document === "undefined" ? of(true) :
+// the page play knob (?page.run); PagePanel is its one writer. Every clock gating on documentVisible$ follows it.
+export const pagePlaying = Signal<boolean>(true)
+
+const tabVisible$ = defer(() => typeof document === "undefined" ? of(true) :
   fromEvent(document, "visibilitychange").pipe(startWith(null), map(() => !document.hidden), distinctUntilChanged()))
-  .pipe(shareReplay({ bufferSize: 1, refCount: true }))
+
+// "can play": the tab is shown and the page play knob is on
+export const documentVisible$ = combineLatest([tabVisible$, pagePlaying.$]).pipe(
+  map(([shown, playing]) => shown && playing), distinctUntilChanged(), shareReplay({ bufferSize: 1, refCount: true }))
 
 // Native observer lifetime is the source lifetime; the consuming signal owns it.
 export function inViewport(node$: Observable<Element | null>): Observable<boolean> {

@@ -15,12 +15,14 @@ export const sections = createSections({
 })
 export const { sectionState, setActivePage, syncFromUrl, commit } = sections
 
-// the page-global namespace: ?page.z, ?page.draw; every route keeps it
+// the page-global namespace: ?page.z, ?page.draw, ?page.run; every route keeps it
 export const PAGE_SPEC = {
   z: { kind: "range", min: 0, max: 1, step: 0.05, default: 0, label: "zDepth" },
   draw: { kind: "bool", default: true, label: "draw-in" },
+  run: { kind: "bool", default: true, label: "play", static: true },
 } as const satisfies AnySpec
 
 export const pageState = (): SectionState<typeof PAGE_SPEC> => sectionState("*", "page", PAGE_SPEC)
 export const zDepth = (): number => pageState().values.$().z
 export const drawIn = (): boolean => pageState().values.$().draw
+export const pageRun = (): boolean => pageState().values.$().run

@@ -100,3 +100,43 @@ it("uses Slice on every FMA and circles drawing with deterministic seeking, repl
     }
   } finally { await browser.close() }
 })
+
+it("page play knob: ?page.run=false holds slice clocks, draw-in and the eye where they are; the knob resumes them and survives shuffle all", async () => {
+  const browser = await chromium.launch()
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+    const errors: string[] = []
+    page.on("pageerror", error => errors.push(error.message))
+    const url = pathToFileURL(resolve("dist/index.html")).href
+    await page.goto(`${url}#/fma?page.run=false&page.draw=true&timing.run=true`)
+    await page.waitForSelector("[data-slice-stage]")
+    await page.locator("[data-slice-stage]").first().scrollIntoViewIfNeeded()
+    const slider = '[data-slice-stage] input[type="range"]'
+    const at = () => page.locator(slider).first().inputValue()
+    const t0 = await at()
+    await page.waitForTimeout(400)
+    expect(await at()).toBe(t0)
+    expect(await page.locator("#kit-page-run").isChecked()).toBe(false)
+    await page.locator("#kit-page-run").check()
+    await page.waitForFunction(([sel, start]) => (document.querySelector(sel) as HTMLInputElement)?.value !== start, [slider, t0] as const)
+    expect(page.url()).not.toContain("page.run=false")
+    await page.locator("#kit-page-run").uncheck()
+    expect(page.url()).toContain("page.run=false")
+    await page.locator("[data-shuffle-all]").click()
+    expect(await page.locator("#kit-page-run").isChecked()).toBe(false)
+    // draw-in: slice stages own their paths (app.css [data-slice-stage] sets animation: none), so read a plain page
+    await page.goto(`${url}#/architecture?page.run=false&page.draw=true`)
+    await page.waitForSelector(".kit-draw path")
+    const playState = () => page.locator(".kit-draw path").first().evaluate(p => getComputedStyle(p).animationPlayState)
+    expect(await playState()).toBe("paused")
+    await page.locator("#kit-page-run").check()
+    expect(await playState()).toBe("running")
+    await page.goto(`${url}#/eye?page.run=false&eye.run=true`)
+    await page.waitForSelector("#eye svg")
+    const eye = () => page.locator("#eye svg").first().innerHTML()
+    const e0 = await eye()
+    await page.waitForTimeout(400)
+    expect(await eye()).toBe(e0)
+    expect(errors).toEqual([])
+  } finally { await browser.close() }
+})

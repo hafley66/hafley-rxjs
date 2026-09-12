@@ -5,22 +5,37 @@ import { matchPage, PAGES } from "./0_pages.js"
 import { listen, loc } from "./1_router.js"
 import { pageState, sections, setActivePage, syncFromUrl } from "./2_state.js"
 import { armTransitions } from "./3_view.js"
+import { pagePlaying } from "../kit/1_browser.js"
 import { propertyMotion } from "../kit/4_propertyMotion.js"
 import { PropertySettings, PropertyTransport } from "../ui/1d_PropertySettings.js"
 import { VariationDefaults } from "../ui/1e_VariationControls.js"
 
-// page-global knobs in the tab row end slot: depth fade and draw-in; both travel as ?page.z / ?page.draw
+// page-global knobs in the tab row end slot: depth fade, draw-in and play; they travel as ?page.z / ?page.draw / ?page.run
 function PagePanel() {
   const page = pageState()
-  const { z, draw } = propertyMotion("*").values(page).$()
+  const { z, draw, run } = propertyMotion("*").values(page).$()
   const pins = pinSet(page.pins.$())
   useEffect(() => {
     document.documentElement.style.setProperty("--kit-zdepth", String(z))
     document.documentElement.style.setProperty("--kit-ms", draw ? "1400ms" : "0ms")
     document.documentElement.style.setProperty("--kit-stagger", draw ? "25ms" : "0ms")
-  }, [z, draw])
+    document.documentElement.style.setProperty("--kit-play", run ? "running" : "paused")
+    pagePlaying.$(run)
+  }, [z, draw, run])
   return (
     <span className="kit-page">
+      <label
+        htmlFor="kit-page-run"
+        title="play: every clock and draw-in on the page advances; off holds all of them where they are. url ?page.run"
+      >
+        <input
+          id="kit-page-run"
+          type="checkbox"
+          checked={run}
+          onChange={e => page.set({ run: e.currentTarget.checked })}
+        />
+        {run ? "pause" : "play"}
+      </label>
       <input type="checkbox" className="kit-pin" data-pin="z" aria-label="pin zDepth" title="pin zDepth: page shuffle skips it" checked={pins.has("z")} onChange={() => page.togglePin("z")} />
       <label
         htmlFor="kit-page-z"

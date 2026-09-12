@@ -1,7 +1,7 @@
 import { type AnySpec, inputId, type ValuesOf } from "@hafley66/report-shell"
 import { type RefObject, useEffect, useRef } from "react"
 import type { PageSpec } from "../app/0_pages.js"
-import type { SectionState } from "../app/2_state.js"
+import { pageRun, type SectionState } from "../app/2_state.js"
 import { border, f, mulberry32, type Plan, plan } from "../lib/index.js"
 import { reducedMotion, useClock } from "../ui/0_hooks.js"
 
@@ -162,7 +162,7 @@ function BorderBody({ v, state, stats, tv, playBtn, respawn }: Props) {
   const clk = useClock(
     (_e, dt, running) => {
       const input = tInput()
-      if (!running || !input) return
+      if (!running || !input || !pageRun()) return
       let t = Number(input.value) / 100 + dt / knobs.current.ms
       if (t > 1) t -= 1
       input.value = (t * 100).toFixed(1)
