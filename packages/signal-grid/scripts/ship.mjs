@@ -69,6 +69,19 @@ const buildDemo = (label) =>
     "--emptyOutDir",
   ])
 
+// The live factor page, into the same tree for the same reason. `bench/scroll/vite.config.ts`
+// already sets a relative base, so it resolves under any prefix Pages serves.
+const buildBench = (label) =>
+  run(label, "npx", [
+    "vite",
+    "build",
+    "-c",
+    "bench/scroll/vite.config.ts",
+    "--outDir",
+    join(OUT, "bench"),
+    "--emptyOutDir",
+  ])
+
 // The parity matrix is generated from source tags, so a stale one is a doc that lies.
 run("parity matrix", "node", ["scripts/parity.mjs"])
 run("measure", "node", ["scripts/stats.mjs"])
@@ -88,6 +101,7 @@ run("measure bundles", "node", [
 
 buildSite("site")
 buildDemo("demo")
+buildBench("bench")
 const copied = copyVideos()
 
 // GitHub Pages has no rewrite rule, so a deep link only resolves when a real file sits at it. One
@@ -119,6 +133,7 @@ console.log(`  site/dist  ${kb(total)} across ${entries().length} entries`)
 console.log(`  base       ${BASE}`)
 console.log(`  pages      ${SLUGS.map((slug) => `${BASE}${slug}`).join("\n             ")}`)
 console.log(`  demo       ${BASE}demo/`)
+console.log(`  bench      ${BASE}bench/gallery.html`)
 console.log(`  open       npx vite preview -c site/vite.config.ts`)
 if (copied === 0) console.log(`  note       no recordings in out/visual/mp4; run \`pnpm test:visual && pnpm videos\``)
 for (const slug of collided) {

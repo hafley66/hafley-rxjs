@@ -37,6 +37,7 @@
     "bench": "vitest bench -c bench/vitest.bench.config.ts",
     "bench:scroll": "node ../../scripts/browser-queue.mjs node bench/scroll.mjs",
     "bench:gallery": "vite -c bench/scroll/vite.config.ts --open /gallery.html",
+    "bench:memory": "NODE_OPTIONS=\"--expose-gc --max-old-space-size=8192\" npx vite-node -c bench/vitest.bench.config.ts bench/6_memory.ts",
     "typecheck:bench": "tsc --noEmit -p bench/tsconfig.json && tsc --noEmit -p bench/scroll/tsconfig.json",
     "site": "pnpm site:content && vitepress dev site",
     "site:dev": "pnpm site",

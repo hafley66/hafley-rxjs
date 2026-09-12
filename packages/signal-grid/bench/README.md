@@ -20,6 +20,7 @@ places signal-grid loses.
 | [allocation](#allocation) | retained bytes per row after a forced gc |
 | [complexity claims checked](#complexity-claims-checked-against-the-numbers) | where a comment understates |
 | [scrolling in a browser](#scrolling-in-a-browser-the-factor-matrix) | which factor costs a frame, and what a row costs in memory |
+| [where the retained bytes go](#where-the-retained-bytes-go) | the 125 bytes a row that are the grid, and the rest that are your data |
 | [known gaps](#known-gaps) | what is not measured |
 
 ## how to run
@@ -31,6 +32,7 @@ NODE_OPTIONS=--expose-gc npx vite-node -c bench/vitest.bench.config.ts bench/4_r
 npx tsc --noEmit -p bench/tsconfig.json
 pnpm bench:scroll
 pnpm bench:gallery
+pnpm bench:memory 1000000
 ```
 
 `bench/vitest.bench.config.ts` sets `outputJson: "bench/results.json"`, so the first command drops a
@@ -547,17 +549,59 @@ Asks: what a row costs in memory before anyone scrolls.
 | 200000 rows, varied | 8.3 | 9.3 | 9.4 | 0 | 27 | 207 | 743 | 76.3 | 27.6 | 0.92 | 0.47 | 0.00 | 0.00 | 0.03 | 0.38 | 0.02 |
 | 1000000 rows, uniform | 8.3 | 9.3 | 9.4 | 0 | 33 | 249 | 177 | 317.1 | 50.6 | 1.14 | 0.37 | 0.00 | 0.00 | 0.03 | 0.42 | 0.00 |
 | 1000000 rows, varied | 8.3 | 9.3 | 9.4 | 0 | 27 | 207 | 744 | 359.8 | 90.7 | 0.92 | 0.47 | 0.00 | 0.00 | 0.02 | 0.41 | 0.04 |
+### where the retained bytes go
+
+`heap MB` above rises with the row count, which does not say whose bytes they are. `bench/6_memory.ts`
+splits it: the same grid over a fat row and a slim one, with a forced collection either side of every
+stage, so the consumer's data and the kernel's structures come apart by subtraction.
+
+```
+cd packages/signal-grid
+pnpm bench:memory 1000000
+```
+
+| stage | MB at 1M | B/row | what is retained |
+| --- | --- | --- | --- |
+| slim rows, array only | 76.3 | 80 | `{ id, at, size }` per row, id string included |
+| fat rows, array only | 312.7 | 328 | the bench row, whose 16-number sparkline is most of it |
+| key strings only | 30.5 | 32 | one `r<n>` string per row |
+| `axisOfEntries` over slim | 106.6 | 112 | the rows plus the order array and the `by` map |
+| `flattenAxis` over slim | 93.9 | 98 | one `FlatNode` and one array slot per row |
+| grid over the slim proxy | 195.7 | 205 | everything a mounted grid holds |
+| grid over the fat proxy | 431.9 | 453 | the same, over a row 4x the size |
+
+The two grid rows are the answer. 205 minus 80 is 125. 453 minus 328 is 125. **The kernel costs 125
+bytes a row whatever the row is, and every byte past that is the consumer's own data.** For the
+bench row that is 72% data and 28% grid.
+
+The 125 divides as:
+
+| structure | B/row |
+| --- | --- |
+| `FlatNode` object plus its array slot | 66 |
+| the `by` map entry plus the order array slot | 32 |
+| the plan's key arrays and the sizer's offsets | 27 |
+
+Three of those are a second, third and fourth array of the same 1M keys: `verticalLeaves`, the
+partitioned center run, and the paged run. They are pointer arrays, 8 bytes each, and collapsing
+them into index ranges over one array would take about 24 B/row back. `FlatNode` is the larger
+target: five fields per row where `depth`, `index` and `hasChildren` are derivable from the axis.
+
 ### the live page
 
 ```
 cd packages/signal-grid
 pnpm bench:gallery
+pnpm bench:memory 1000000
 ```
 
-Ten tiles, every factor level from the tables, all scrolling in one animation frame. The bar in each
-tile is that grid's share of the frame, folded per grid id off the same LogTape records the matrix
-reads. The toolbar carries frames per second, the worst frame of the last second, the used heap
-against the engine's limit, and the node count of the whole page.
+It also ships with the site, at `<base>bench/gallery.html`, built by `scripts/ship.mjs` into
+`site/dist/bench/` the same way the demo is.
+
+Ten tiles, every factor level from the tables, all scrolling in one animation frame. It loads paused;
+press run. The bar in each tile is that grid's share of the frame, folded per grid id off the same
+LogTape records the matrix reads. The toolbar carries frames per second, the worst frame of the last
+second, the used heap against the engine's limit, and the node count of the whole page.
 
 Sharing one frame is the point: ten grids is what an application looks like, and a tile's cost has
 to be read against the others rather than alone.

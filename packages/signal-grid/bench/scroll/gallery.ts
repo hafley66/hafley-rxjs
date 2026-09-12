@@ -85,7 +85,9 @@ const mb = (bytes: number | undefined): string => (bytes === undefined ? "n/a" :
 
 // bench/scroll.mjs drives 240 px/frame to stress the window; this page shows ordinary scroll speed.
 const SPEED = 60
-let running = true
+// Paused on load. Ten grids at 100k rows each retain a few hundred megabytes and hold the frame at
+// about 15 fps, which a docs page should ask for rather than start doing.
+let running = false
 let at = 0
 let frames = 0
 let since = performance.now()
