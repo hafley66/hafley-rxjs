@@ -13,15 +13,23 @@ const CSS = `
 .pages-strip {
   display: flex; flex-wrap: wrap; align-items: center; column-gap: 12px; row-gap: 2px;
   padding: 6px 14px; font: 13px/1.4 ui-monospace, Menlo, monospace;
-  background: var(--panel-bg, light-dark(#fff, #161616));
-  color: var(--muted, light-dark(#4a4a4a, #9aa0ad));
-  border-bottom: 1px solid var(--line, light-dark(#ddd, #2a2a2a));
+  background: var(--panel-bg, var(--vp-c-bg-alt, light-dark(#fff, #161616)));
+  color: var(--muted, var(--vp-c-text-2, light-dark(#4a4a4a, #9aa0ad)));
+  border-bottom: 1px solid var(--line, var(--vp-c-divider, light-dark(#ddd, #2a2a2a)));
 }
 .pages-strip a { border-bottom: 2px solid transparent; padding: 1px 0; text-decoration: none; color: inherit }
-.pages-strip a:hover { color: var(--fg, light-dark(#1a1a1a, #ddd)) }
-.pages-strip a[aria-current] { border-color: var(--accent, #6fd7ad); color: var(--accent, #6fd7ad) }
+.pages-strip a:hover { color: var(--fg, var(--vp-c-text-1, light-dark(#1a1a1a, #ddd))) }
+.pages-strip a[aria-current] { border-color: var(--accent, var(--vp-c-brand-1, #6fd7ad)); color: var(--accent, var(--vp-c-brand-1, #6fd7ad)) }
 .pages-strip-mark { opacity: .55; letter-spacing: .04em; text-transform: uppercase; font-size: 10px; margin-right: 2px }
+.pages-strip-fixed .pages-strip { position: fixed; inset-inline: 0; top: 0; z-index: 60 }
 `
+
+/** VitePress paints its own nav at `position: fixed; top: var(--vp-layout-top-height, 0px)` and
+ * offsets the sidebar and the content by the same variable. A static strip prepended to the body
+ * therefore renders underneath it. Writing that variable is the supported way in. */
+const vitepress = (doc: Document): boolean =>
+  doc.defaultView !== null &&
+  doc.defaultView.getComputedStyle(doc.documentElement).getPropertyValue("--vp-nav-height").trim() !== ""
 
 function ensureStyle(doc: Document): void {
   if (doc.getElementById("pages-strip-css")) return
@@ -41,8 +49,9 @@ function findHost(doc: Document): HTMLElement {
 }
 
 /**
- * Renders the strip into `host`. Static flow, never sticky: gothic's own `.kit-top` is
- * `position: sticky; top: 0`, and a second sticky bar at the same offset would sit on top of it.
+ * Renders the strip into `host`. Static flow on a plain host: gothic's own `.kit-top` is
+ * `position: sticky; top: 0`, and a second sticky bar at the same offset would cover it. On a
+ * VitePress host it goes fixed and hands its height to `--vp-layout-top-height` instead.
  */
 export function renderStrip(host: HTMLElement, pathname: string): void {
   const doc = host.ownerDocument
@@ -78,8 +87,17 @@ export function renderStrip(host: HTMLElement, pathname: string): void {
 
   host.replaceChildren(nav)
   host.setAttribute(HOST_ATTRIBUTE, current ?? "hub")
-  const height = nav.getBoundingClientRect().height
-  if (height > 0) doc.documentElement.style.setProperty("--pages-strip-h", `${Math.round(height)}px`)
+  const under = vitepress(doc)
+  host.classList.toggle("pages-strip-fixed", under)
+  const publish = (): void => {
+    const height = Math.round(nav.getBoundingClientRect().height)
+    if (height <= 0) return
+    doc.documentElement.style.setProperty("--pages-strip-h", `${height}px`)
+    if (under) doc.documentElement.style.setProperty("--vp-layout-top-height", `${height}px`)
+  }
+  publish()
+  // The row wraps at narrow widths, so the offset it asks the host to leave has to follow it.
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(publish).observe(nav)
 }
 
 function boot(): void {

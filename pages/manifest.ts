@@ -46,6 +46,7 @@ export const SITES: readonly PageSite[] = [
       "/frames",
       "/guilloche",
       "/icons",
+      "/kh",
       "/slice",
       "/tiles",
       "/vello",

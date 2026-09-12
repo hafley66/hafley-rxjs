@@ -13,6 +13,9 @@ import { join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { REPO_BASE, SITES } from "../pages/manifest.ts"
 
+/** The tab row every site loads, served from the branch root. */
+const SHARED = `${REPO_BASE}strip.js`
+
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const OUT = join(ROOT, "out", "pages")
 const SHELL_DIST = join(ROOT, "pages", "dist")
@@ -60,6 +63,9 @@ function retargetRootAbsoluteAssets(dir, prefix) {
  * Every root-absolute URL a site's own files still point at from outside its subdirectory. On Pages
  * those resolve against the origin, not the site, so each one is a 404 waiting for a visitor. This
  * only reports: the file that emitted the URL belongs to that package's lane, not to this script.
+ *
+ * `SHARED` is the one URL that is meant to sit outside a site: every site loads the same strip from
+ * the branch root, which is the whole reason the tab row is one file rather than three copies.
  */
 function auditRootAbsolute(dir, prefix) {
   const strays = new Set()
@@ -68,7 +74,7 @@ function auditRootAbsolute(dir, prefix) {
     if (!REWRITABLE.has(file.slice(dot))) continue
     for (const match of readFileSync(file, "utf8").matchAll(/(?:src|href)=["'](\/[^"']*)["']/g)) {
       const url = match[1]
-      if (url.startsWith(prefix) || url.startsWith("//")) continue
+      if (url.startsWith(prefix) || url.startsWith("//") || url === SHARED) continue
       strays.add(url)
     }
   }
