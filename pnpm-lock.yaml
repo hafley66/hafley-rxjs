@@ -476,6 +476,9 @@ importers:
       '@hafley66/grapht':
         specifier: workspace:^
         version: link:../..
+      '@hafley66/signals':
+        specifier: workspace:*
+        version: link:../../../signals
       cytoscape:
         specifier: ^3.31.1
         version: 3.34.0
