@@ -3,7 +3,7 @@
 import { fromEvent, isObservable, Observable, Subscription, filter as rxFilter, map, share } from "rxjs"
 import { ROUTE_BOUNDARY_ATTR } from "@hafley66/xdom"
 import { createSlice, isSignal, Signal, storageSignal, urlAdapter } from "@hafley66/signals"
-import { CAT_FLATTEN, CAT_GROUP, CAT_INTENT, CAT_PLAN, CAT_SORT, LOG } from "./0_log.js"
+import { CAT_BASE, CAT_FLATTEN, CAT_GROUP, CAT_INTENT, CAT_PLAN, CAT_SORT, LOG } from "./0_log.js"
 import { axisOfEntries, axisOfTree, flattenAxis, groupAxis, sortAxis } from "./1_axis.js"
 import { buildComparator } from "./2_operators.js"
 import { withDetail } from "./11_detail.js"
@@ -15,6 +15,7 @@ import {
   spacersOf,
   uniformSizer,
   type PlanBase,
+  type PlanBaseInput,
   type PlanWindowInput,
   type RenderPlan,
   type RenderPlanInput,
@@ -562,12 +563,13 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
   // through its own memo so a scroll frame windows a base it did not rebuild: those three walk the
   // relation, and a million rows made them the whole of a 440 ms frame.
   const planBase$ = Signal<PlanBase<string>>(() => {
+    const started = LOG.on ? performance.now() : 0
     const seat = vertical.$()
     // The direction supplies the fallback, not the axis: a column standing on the y dimension is
     // one row height tall, because that is what the density setting is measuring.
     const fallback = ROW_HEIGHT[state.density.$()]
     const args = pageWindow(state.page.$())
-    return planBase<string>({
+    const input: PlanBaseInput<string> = {
       flat: verticalLeaves.$(),
       side: (key) => seat.pinning[key],
       page: args.page,
@@ -577,7 +579,15 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
       // `pages` does not, and the two modes must not disagree about who did the cut.
       paginate: mode === "client" && args.enabled,
       sizer: (keys) => sizerFor(keys, (it) => seat.extent[it], fallback),
+    }
+    if (!LOG.on) return planBase<string>(input)
+    const built = planBase<string>(input)
+    LOG.emit(CAT_BASE, "base {id} {durationMs}ms", {
+      id: loggedId,
+      count: input.flat.length,
+      durationMs: performance.now() - started,
     })
+    return built
   })
 
   const plan = Signal<RenderPlan<RowId>>(() => {

@@ -133,7 +133,7 @@ function mount(hosts: DemoHosts): DemoHandle {
 
   // The renderer only stamps a move route when `def.movable` is true, and `ColumnDef` has no such
   // key, so the grip is stamped here instead.
-  const headerSlot = (ctx: HeaderCtx): Renderable => {
+  const headerSlot = (ctx: HeaderCtx<FsRow>): Renderable => {
     const handle = h("span", "head-grip", "⁙")
     for (const [name, value] of Object.entries(moveAttrs())) handle.setAttribute(name, value)
     const def = BANDED.find((it) => it.id === ctx.col)

@@ -20,6 +20,13 @@ export const LOG: { on: boolean; emit: LogEmit } = { on: false, emit: noop }
 export const CAT_PLAN = ["signal-grid", "plan"] as const
 export const CAT_FRAME = ["signal-grid", "frame"] as const
 export const CAT_DOM = ["signal-grid", "dom"] as const
+// The custom property write pass. Its own stage because it is the one pass that scales with what
+// the consumer declared rather than with what the window drew, which is how it hid a 449 kB style
+// attribute rewalked at 240 px per frame behind a `frame` timer that read 2.5 ms.
+export const CAT_VARS = ["signal-grid", "vars"] as const
+// The half of a plan the scroll position does not reach. Timed apart from `plan` so a memoized base
+// reads as a stage that stopped running, rather than as a stage that got faster.
+export const CAT_BASE = ["signal-grid", "base"] as const
 export const CAT_SORT = ["signal-grid", "sort"] as const
 export const CAT_GROUP = ["signal-grid", "group"] as const
 export const CAT_FLATTEN = ["signal-grid", "flatten"] as const

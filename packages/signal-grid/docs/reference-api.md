@@ -8,7 +8,7 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 
 | module | exports | what it is |
 | --- | --- | --- |
-| [src/0_log.ts](#src-0-log-ts) | 14 | LogTape is an optional peer, so nothing here may import it statically. |
+| [src/0_log.ts](#src-0-log-ts) | 16 | LogTape is an optional peer, so nothing here may import it statically. |
 | [src/0_types.ts](#src-0-types-ts) | 54 | The whole contract. |
 | [src/1_axis.ts](#src-1-axis-ts) | 10 | The five pure operators over `Axis<K, T>`, plus the two constructors that mint one and the walks that read one. |
 | [src/2_operators.ts](#src-2-operators-ts) | 15 | Value-level operators: filter predicates and comparators. |
@@ -40,6 +40,8 @@ LogTape is an optional peer, so nothing here may import it statically.
 | [`CAT_PLAN`](#src-0-log-ts-cat-plan) | const |
 | [`CAT_FRAME`](#src-0-log-ts-cat-frame) | const |
 | [`CAT_DOM`](#src-0-log-ts-cat-dom) | const |
+| [`CAT_VARS`](#src-0-log-ts-cat-vars) | const |
+| [`CAT_BASE`](#src-0-log-ts-cat-base) | const |
 | [`CAT_SORT`](#src-0-log-ts-cat-sort) | const |
 | [`CAT_GROUP`](#src-0-log-ts-cat-group) | const |
 | [`CAT_FLATTEN`](#src-0-log-ts-cat-flatten) | const |
@@ -103,9 +105,25 @@ CAT_FRAME: readonly ["signal-grid", "frame"]
 CAT_DOM: readonly ["signal-grid", "dom"]
 ```
 
+### `CAT_VARS` {#src-0-log-ts-cat-vars}
+
+`CAT_VARS` is declared at `src/0_log.ts:26`.
+
+```ts
+CAT_VARS: readonly ["signal-grid", "vars"]
+```
+
+### `CAT_BASE` {#src-0-log-ts-cat-base}
+
+`CAT_BASE` is declared at `src/0_log.ts:29`.
+
+```ts
+CAT_BASE: readonly ["signal-grid", "base"]
+```
+
 ### `CAT_SORT` {#src-0-log-ts-cat-sort}
 
-`CAT_SORT` is declared at `src/0_log.ts:23`.
+`CAT_SORT` is declared at `src/0_log.ts:30`.
 
 ```ts
 CAT_SORT: readonly ["signal-grid", "sort"]
@@ -113,7 +131,7 @@ CAT_SORT: readonly ["signal-grid", "sort"]
 
 ### `CAT_GROUP` {#src-0-log-ts-cat-group}
 
-`CAT_GROUP` is declared at `src/0_log.ts:24`.
+`CAT_GROUP` is declared at `src/0_log.ts:31`.
 
 ```ts
 CAT_GROUP: readonly ["signal-grid", "group"]
@@ -121,7 +139,7 @@ CAT_GROUP: readonly ["signal-grid", "group"]
 
 ### `CAT_FLATTEN` {#src-0-log-ts-cat-flatten}
 
-`CAT_FLATTEN` is declared at `src/0_log.ts:25`.
+`CAT_FLATTEN` is declared at `src/0_log.ts:32`.
 
 ```ts
 CAT_FLATTEN: readonly ["signal-grid", "flatten"]
@@ -129,7 +147,7 @@ CAT_FLATTEN: readonly ["signal-grid", "flatten"]
 
 ### `CAT_INTENT` {#src-0-log-ts-cat-intent}
 
-`CAT_INTENT` is declared at `src/0_log.ts:26`.
+`CAT_INTENT` is declared at `src/0_log.ts:33`.
 
 ```ts
 CAT_INTENT: readonly ["signal-grid", "intent"]
@@ -137,7 +155,7 @@ CAT_INTENT: readonly ["signal-grid", "intent"]
 
 ### `setGridLogEmit` {#src-0-log-ts-setgridlogemit}
 
-`setGridLogEmit` is declared at `src/0_log.ts:30`.
+`setGridLogEmit` is declared at `src/0_log.ts:37`.
 
 ```ts
 setGridLogEmit: (emit: LogEmit | null) => void
@@ -145,7 +163,7 @@ setGridLogEmit: (emit: LogEmit | null) => void
 
 ### `isGridLogging` {#src-0-log-ts-isgridlogging}
 
-`isGridLogging` is declared at `src/0_log.ts:35`.
+`isGridLogging` is declared at `src/0_log.ts:42`.
 
 ```ts
 isGridLogging: () => boolean
@@ -153,7 +171,7 @@ isGridLogging: () => boolean
 
 ### `enableGridLogTape` {#src-0-log-ts-enablegridlogtape}
 
-`enableGridLogTape` is declared at `src/0_log.ts:40`.
+`enableGridLogTape` is declared at `src/0_log.ts:47`.
 
 ```ts
 enableGridLogTape: () => Promise<void>
@@ -161,7 +179,7 @@ enableGridLogTape: () => Promise<void>
 
 ### `disableGridLogging` {#src-0-log-ts-disablegridlogging}
 
-`disableGridLogging` is declared at `src/0_log.ts:55`.
+`disableGridLogging` is declared at `src/0_log.ts:62`.
 
 ```ts
 disableGridLogging: () => void
@@ -2501,7 +2519,7 @@ The constructor.
 
 ### `GridSource` {#src-8-grid-ts-gridsource}
 
-`GridSource` is declared at `src/8_grid.ts:74`.
+`GridSource` is declared at `src/8_grid.ts:75`.
 
 Every input accepts any source shape, so a live input and a static one are the same call.
 `@hafley66/signals` already carries this as `SignalSource`; the grid adds a fallback so a live
@@ -2515,7 +2533,7 @@ export function toGridSignal<T>(source: GridSource<T>, fallback: T): Signal<T>
 
 ### `toGridSignal` {#src-8-grid-ts-togridsignal}
 
-`toGridSignal` is declared at `src/8_grid.ts:76`.
+`toGridSignal` is declared at `src/8_grid.ts:77`.
 
 ```ts
 toGridSignal: <T>(source: GridSource<T>, fallback: T) => Signal<T>
@@ -2523,7 +2541,7 @@ toGridSignal: <T>(source: GridSource<T>, fallback: T) => Signal<T>
 
 ### `DEFAULT_PAGE` {#src-8-grid-ts-default-page}
 
-`DEFAULT_PAGE` is declared at `src/8_grid.ts:88`.
+`DEFAULT_PAGE` is declared at `src/8_grid.ts:89`.
 
 ```ts
 DEFAULT_PAGE: Page
@@ -2531,7 +2549,7 @@ DEFAULT_PAGE: Page
 
 ### `defaultState` {#src-8-grid-ts-defaultstate}
 
-`defaultState` is declared at `src/8_grid.ts:90`.
+`defaultState` is declared at `src/8_grid.ts:91`.
 
 ```ts
 defaultState: (over?: Partial<GridState>) => GridState
@@ -2539,7 +2557,7 @@ defaultState: (over?: Partial<GridState>) => GridState
 
 ### `ROW_HEIGHT` {#src-8-grid-ts-row-height}
 
-`ROW_HEIGHT` is declared at `src/8_grid.ts:124`.
+`ROW_HEIGHT` is declared at `src/8_grid.ts:125`.
 
 ```ts
 ROW_HEIGHT: Record<"comfortable" | "compact" | "standard", number>
@@ -2547,7 +2565,7 @@ ROW_HEIGHT: Record<"comfortable" | "compact" | "standard", number>
 
 ### `GridConfig` {#src-8-grid-ts-gridconfig}
 
-`GridConfig` is declared at `src/8_grid.ts:132`.
+`GridConfig` is declared at `src/8_grid.ts:133`.
 
 ```ts
 export interface GridConfig<TRow> {
@@ -2584,7 +2602,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow>
 
 ### `GridView` {#src-8-grid-ts-gridview}
 
-`GridView` is declared at `src/8_grid.ts:163`.
+`GridView` is declared at `src/8_grid.ts:164`.
 
 ```ts
 export interface GridView<TRow> {
@@ -2621,7 +2639,7 @@ export interface GridView<TRow> {
 
 ### `Grid` {#src-8-grid-ts-grid}
 
-`Grid` is declared at `src/8_grid.ts:194`.
+`Grid` is declared at `src/8_grid.ts:195`.
 
 ```ts
 export interface Grid<TRow> {
@@ -2660,7 +2678,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow>
 
 ### `pageWindow` {#src-8-grid-ts-pagewindow}
 
-`pageWindow` is declared at `src/8_grid.ts:242`.
+`pageWindow` is declared at `src/8_grid.ts:243`.
 
 The three retention rules of `PageMode` expressed as one `paginate` call, so paging runs inside
 `renderPlan` after pinning has already been lifted out. Paging before pinning drops pinned
@@ -2672,7 +2690,7 @@ pageWindow: (page: Page) => { page: { index: number; size: number; }; enabled: b
 
 ### `grid` {#src-8-grid-ts-grid-2}
 
-`grid` is declared at `src/8_grid.ts:256`.
+`grid` is declared at `src/8_grid.ts:257`.
 
 ```ts
 grid: <TRow>(config: GridConfig<TRow>) => Grid<TRow>
@@ -2693,7 +2711,7 @@ Changing a grid track triggers one full layout, so the cost of a resize is how o
 
 ### `SG_ROW_H` {#src-9-css-ts-sg-row-h}
 
-`SG_ROW_H` is declared at `src/9_css.ts:11`.
+`SG_ROW_H` is declared at `src/9_css.ts:12`.
 
 Density in pixels. The row box reads it, and so does the sticky top of the pinned row run.
 
@@ -2703,7 +2721,7 @@ SG_ROW_H: "--sg-row-h"
 
 ### `SG_TOTAL_H` {#src-9-css-ts-sg-total-h}
 
-`SG_TOTAL_H` is declared at `src/9_css.ts:13`.
+`SG_TOTAL_H` is declared at `src/9_css.ts:14`.
 
 Scroll spacer height. Measures the paginated center run, not the whole relation.
 
@@ -2713,7 +2731,7 @@ SG_TOTAL_H: "--sg-total-h"
 
 ### `SG_OFFSET_Y` {#src-9-css-ts-sg-offset-y}
 
-`SG_OFFSET_Y` is declared at `src/9_css.ts:15`.
+`SG_OFFSET_Y` is declared at `src/9_css.ts:16`.
 
 Pixels above the first rendered row, applied as a translate on the rendered run.
 
@@ -2723,7 +2741,7 @@ SG_OFFSET_Y: "--sg-offset-y"
 
 ### `SG_INLINE_TRACKS` {#src-9-css-ts-sg-inline-tracks}
 
-`SG_INLINE_TRACKS` is declared at `src/9_css.ts:18`.
+`SG_INLINE_TRACKS` is declared at `src/9_css.ts:19`.
 
 `grid-template-columns` for the horizontal run. Named for the direction because under
 `orientation: "columns"` that run holds rows and the tracks still describe the inline axis.
@@ -2734,7 +2752,7 @@ SG_INLINE_TRACKS: "--sg-inline-tracks"
 
 ### `SG_ROW_HEIGHT_SELF` {#src-9-css-ts-sg-row-height-self}
 
-`SG_ROW_HEIGHT_SELF` is declared at `src/9_css.ts:21`.
+`SG_ROW_HEIGHT_SELF` is declared at `src/9_css.ts:22`.
 
 The height one row box reads. Its own property is named after its id, which no selector can
 spell, so the row carries this alias and one generic rule serves every row.
@@ -2745,7 +2763,7 @@ SG_ROW_HEIGHT_SELF: "--sg-h"
 
 ### `writeGridVars` {#src-9-css-ts-writegridvars}
 
-`writeGridVars` is declared at `src/9_css.ts:39`.
+`writeGridVars` is declared at `src/9_css.ts:40`.
 
 Writes every geometry property onto `root` from one derived node, so two sources changing in
 the same tick cannot paint two different frames.

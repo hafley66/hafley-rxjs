@@ -2,6 +2,7 @@
 // list is written, not how it is built. No width is computed here.
 // @no-features: writes the custom properties the theme reads; the features that decide those numbers are tagged in 8_grid.ts and 4_slice.ts
 import { Signal } from "@hafley66/signals"
+import { CAT_VARS, LOG } from "./0_log.js"
 import type { ColId, ColumnDef } from "./0_types.js"
 import { rowHeightVar } from "./3_paths.js"
 import { trackList, type RenderPlan, type Spacers, type TrackColumn } from "./4_slice.js"
@@ -60,7 +61,19 @@ export function writeGridVars<TRow>(grid: Grid<TRow>, root: HTMLElement): () => 
   // recomputes this frame each time, and a property set to what it already holds still costs style.
   const held = new Map<string, string>()
   const sub = frame.$.subscribe((next) => {
+    if (!LOG.on) {
+      written = writeFrame(root, next, written, held)
+      return
+    }
+    const started = performance.now()
     written = writeFrame(root, next, written, held)
+    LOG.emit(CAT_VARS, "vars {id} {durationMs}ms", {
+      id: grid.id.$(),
+      declared: Object.keys(next.extent).length,
+      drawn: next.drawn.length,
+      written: written.size,
+      durationMs: performance.now() - started,
+    })
   })
   return () => sub.unsubscribe()
 }

@@ -12,6 +12,7 @@ import { rowHeightVar, selectorFor } from "./3_paths.js"
 import { checkboxColumn, detailColumn, dragColumn, radioColumn } from "./5_columns.js"
 import { grid, ROW_HEIGHT } from "./8_grid.js"
 import { render } from "./10_render.js"
+import { setGridLogEmit, type LogFields } from "./0_log.js"
 import {
   SG_INLINE_TRACKS,
   SG_OFFSET_Y,
@@ -150,6 +151,30 @@ describe("the write pass", () => {
     expect(root.style.getPropertyValue(rowHeightVar("a"))).toBe("64px")
     expect(root.style.getPropertyValue(rowHeightVar("b"))).toBe("")
     release()
+  })
+})
+
+// The property writer is the one pass that scales with what the consumer declared rather than with
+// what the window drew, and it had no stage of its own: a `frame` timer reading 2.5 ms sat beside a
+// 449 kB style attribute being rewalked every scroll frame.
+describe("the vars stage", () => {
+  it("reports the declared record and the drawn run as two separate numbers", () => {
+    const seen: LogFields[] = []
+    setGridLogEmit((category, _message, fields) => {
+      if (category[1] === "vars") seen.push(fields)
+    })
+    try {
+      const { g, release } = mount([{ id: "name", width: 120 }])
+      g.dispatch({ phase: "change", type: "rowHeight", rowHeight: { a: 64, ghost: 90, other: 12 } })
+      release()
+      const last = seen[seen.length - 1]
+      expect(last).toBeDefined()
+      expect(last?.declared).toBe(3)
+      expect(last?.drawn).toBe(2)
+      expect(last?.written).toBe(1)
+    } finally {
+      setGridLogEmit(null)
+    }
   })
 })
 

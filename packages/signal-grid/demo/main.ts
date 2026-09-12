@@ -3,7 +3,7 @@
 import { Route, Signal } from "@hafley66/signals"
 import { filter, map, tap } from "rxjs"
 import { mountInView, runWhenInView } from "@hafley66/docs-kit"
-import { grid, render } from "../src/index.js"
+import { grid, render, setGridLogEmit } from "../src/index.js"
 import "../src/theme.css"
 import "./demo.css"
 import { h, must } from "./controls.js"
@@ -224,13 +224,36 @@ const routed$ = route.$.pipe(
 
 mountInView(shell, () => runWhenInView(routed$))
 
-window.__sg = { grid, render, Signal }
+// The timing stages are structured records, not a console format, so the console gets the raw sink:
+// `__sg.log(r => console.table(r))` turns every stage on and hands back the stop.
+/** Every stage record, folded by category, handed to `onTotals` once per animation frame. */
+function watchStages(onTotals: (rows: readonly { stage: string; records: number; ms: number }[]) => void): () => void {
+  const by = new Map<string, { records: number; ms: number }>()
+  setGridLogEmit((category, _message, fields) => {
+    const key = category.join(".")
+    const held = by.get(key) ?? { records: 0, ms: 0 }
+    held.records += 1
+    held.ms += typeof fields["durationMs"] === "number" ? fields["durationMs"] : 0
+    by.set(key, held)
+  })
+  const tick = (): void => {
+    onTotals([...by].map(([stage, it]) => ({ stage, records: it.records, ms: Math.round(it.ms * 10) / 10 })))
+    frame = requestAnimationFrame(tick)
+  }
+  let frame = requestAnimationFrame(tick)
+  return () => {
+    cancelAnimationFrame(frame)
+    setGridLogEmit(null)
+  }
+}
+
+window.__sg = { grid, render, Signal, log: watchStages }
 window.__routes = ROUTES.map((it) => ({ slug: it.slug, title: it.title, features: it.features, defects: it.defects }))
 
 declare global {
   interface Window {
     /** The three entry points, so a console session can build a fifth grid without a bundler. */
-    __sg: { grid: typeof grid; render: typeof render; Signal: typeof Signal }
+    __sg: { grid: typeof grid; render: typeof render; Signal: typeof Signal; log: typeof watchStages }
     __routes: readonly { slug: string; title: string; features: readonly string[]; defects: readonly string[] }[]
   }
 }
