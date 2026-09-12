@@ -65,6 +65,10 @@ describe("sealed architecture diagram proof", () => {
     host.setAttribute("style", "position:fixed;inset:0;background:#0b1220")
     document.body.appendChild(host)
     const resource = createCytoscapeGraphFrameResource(host)
+    // The sealed root also owns a native hull node in Cytoscape; this proof is
+    // about the sealed svg overlay, so the default-styled hull stays hidden.
+    const cyContainer = host.querySelector("canvas")?.parentElement
+    if (cyContainer) cyContainer.style.visibility = "hidden"
     resource.render(frame, { enterIds: ["epic"], updateIds: [], exitIds: [] })
 
     await expect
@@ -93,27 +97,54 @@ describe("sealed architecture diagram proof", () => {
     const seed = boxes[0]
     const cluster = boxes.filter(box => Math.abs(box.x - seed.x) < 900 && Math.abs(box.y - seed.y) < 500)
     expect(cluster.length).toBeGreaterThan(3)
-    const left = Math.min(...cluster.map(box => box.x)) - 60
-    const top = Math.min(...cluster.map(box => box.y)) - 60
-    const right = Math.max(...cluster.map(box => box.x + box.width)) + 60
-    const bottom = Math.max(...cluster.map(box => box.y + box.height)) + 60
-    const zoomScale = Math.max(Math.min(1160 / (right - left), 680 / (bottom - top), 1.6), 0.8)
-    const zoomCamera = {
-      x: 640 - ((left + right) / 2) * zoomScale,
-      y: 400 - ((top + bottom) / 2) * zoomScale,
-      scale: zoomScale,
-      viewport: { x: 0, y: 0, width: 1280, height: 800 },
-    }
-    resource.render({ ...frame, camera: zoomCamera }, { enterIds: [], updateIds: ["epic"], exitIds: [] })
+    const left = Math.max(Math.min(...cluster.map(box => box.x)) - 60, 0)
+    const top = Math.max(Math.min(...cluster.map(box => box.y)) - 60, 0)
+    const right = Math.min(Math.max(...cluster.map(box => box.x + box.width)) + 60, width)
+    const bottom = Math.min(Math.max(...cluster.map(box => box.y + box.height)) + 60, height)
 
-    const screenLeft = left * zoomScale + zoomCamera.x
-    const screenTop = top * zoomScale + zoomCamera.y
-    const screenRight = right * zoomScale + zoomCamera.x
-    const screenBottom = bottom * zoomScale + zoomCamera.y
-    expect(screenLeft).toBeGreaterThan(0)
-    expect(screenRight).toBeLessThan(1280)
-    expect(screenTop).toBeGreaterThan(0)
-    expect(screenBottom).toBeLessThan(800)
+    // A 25k-unit svg element rasterizes into one downscaled texture and the
+    // zoomed crop reads as fuzz. The zoom artifact carries the cluster window
+    // in its root viewBox, so chromium rasterizes a viewport-sized element.
+    const cropped = new DOMParser().parseFromString(archSvg, "image/svg+xml").documentElement
+    cropped.setAttribute("viewBox", `${left} ${top} ${right - left} ${bottom - top}`)
+    cropped.removeAttribute("width")
+    cropped.removeAttribute("height")
+    const zoomFrame: GraphFrame = {
+      graph: frame.graph,
+      geometry: {
+        revisionId: "epic:zoom:1",
+        boundsById: { epic: { x: 0, y: 0, width: 1280, height: 800 } },
+        endpointAnchorById: { epic: { x: 640, y: 400 } },
+        routesById: {},
+        headerBoundsById: {},
+      },
+      camera: { x: 0, y: 0, scale: 1, viewport: { x: 0, y: 0, width: 1280, height: 800 } },
+      presentation: {
+        ...frame.presentation,
+        sealedSvgArtifactsByRootId: {
+          epic: {
+            rootId: "epic",
+            revisionId: "epic:svg:zoom:1",
+            geometryRevisionId: "epic:zoom:1",
+            svg: new XMLSerializer().serializeToString(cropped),
+            sourceBounds: { x: left, y: top, width: right - left, height: bottom - top },
+            fit: "contain",
+          },
+        },
+      },
+    }
+    resource.render(zoomFrame, { enterIds: [], updateIds: ["epic"], exitIds: [] })
+
+    const zoomView = host.querySelector<HTMLElement>('[data-grapht-overlay="sealed-svg"] [data-revision-id="epic:svg:zoom:1"]')
+    expect(zoomView).not.toBeNull()
+    const zoomSvg = zoomView?.querySelector("svg")
+    const zoomRect = zoomSvg?.getBoundingClientRect()
+    expect(zoomRect?.width).toBeGreaterThan(400)
+    const zoomedText = zoomSvg?.querySelectorAll("text")[0] as SVGTextElement
+    const textRect = zoomedText.getBoundingClientRect()
+    expect(textRect.left).toBeGreaterThan(0)
+    expect(textRect.right).toBeLessThan(1280)
+    expect(textRect.height).toBeGreaterThan(6)
 
     await page.screenshot({ path: "proof/arch-zoom.png" })
     resource.unsubscribe()
