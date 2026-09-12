@@ -13,7 +13,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./theme.css": "./dist/theme.css"
+    "./theme.css": "./dist/theme.css",
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
+    }
   },
   "scripts": {
     "build": "vite build && cp src/theme.css dist/",
@@ -54,10 +58,18 @@
     "@hafley66/signals": ">=0.1.0",
     "@hafley66/xdom": ">=0.1.0",
     "@logtape/logtape": "^2.3.3",
-    "rxjs": "^7.8.0"
+    "rxjs": "^7.8.0",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
   },
   "peerDependenciesMeta": {
     "@logtape/logtape": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
       "optional": true
     }
   },

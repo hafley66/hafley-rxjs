@@ -18,11 +18,11 @@ export default defineConfig({
     : [],
   build: {
     lib: {
-      entry: { index: "src/index.ts" },
+      entry: { index: "src/index.ts", react: "src/react/index.tsx" },
       formats: ["es"],
     },
     rollupOptions: {
-      external: [/^@hafley66\//, "rxjs", /^rxjs\//],
+      external: [/^@hafley66\//, "rxjs", /^rxjs\//, "react", "react-dom", "react-dom/client", "react/jsx-runtime"],
     },
   },
 })
