@@ -1,12 +1,12 @@
 # signal-grid demos
 
-Five routes over one shell. Each route mounts a grid, fills the control panel and the readout, and
+Six routes over one shell. Each route mounts a grid, fills the control panel and the readout, and
 hands back a teardown, so switching route stops the previous grid before the next one is built.
 
 ## Contents
 
 - [Run it](#run-it)
-- [The five routes](#the-five-routes)
+- [The six routes](#the-six-routes)
 - [Shape](#shape)
 - [Console](#console)
 - [Defects found](#defects-found)
@@ -27,7 +27,7 @@ and vite's SPA fallback serves every route.
 No dependency is added. Every route imports `../src/index.js` and `../src/theme.css` directly, so
 an edit in `src/` shows up without a package build.
 
-## The five routes
+## The six routes
 
 | Route | Data | What it is stressing |
 | --- | --- | --- |
@@ -36,6 +36,7 @@ an edit in `src/` shows up without a package build.
 | `/matrix` | 8 regions by 7 columns | `orientation: "columns"`, live, with a 2 by 3 span becoming 3 by 2 |
 | `/detail` | 400 orders, lines on demand | A second `grid()` inside a detail row, and the lazy path beside it |
 | `/sheet` | 1,000,000 rows by 240 columns, minted from the index | Both seats of the window at once, and the ratio between the model and the document |
+| `/dense` | 20,000 rows by nine slot columns of SVG, stacks and a nested table | Windowing when a row is expensive to build, rather than when there are many cheap ones |
 
 Each panel opens with a card naming the `FeatureId`s the route exercises, read from
 `src/features.ts` through `FEATURES`, so a renamed feature fails the build rather than the prose.
@@ -51,6 +52,7 @@ demo/2_tree.ts
 demo/3_matrix.ts
 demo/4_detail.ts
 demo/5_sheet.ts
+demo/6_dense.ts
 demo/5_sheet.test.ts  the chromium test behind /sheet, listed in DOM_TESTS
 demo/controls.ts    control primitives, each a lens over a signal
 demo/readout.ts     relation sizes, plan numbers, DOM counts, the frame meter, the actions$ log
@@ -73,6 +75,17 @@ The loop is inside `runWhenInView`, so a route scrolled off the page stops askin
 window is a `Float64Array` ring, one write and one 90-step sum per frame, so the meter does not
 show up in its own reading.
 
+`/dense` exists to move those three numbers. Both routes scrolled 240 px per animation frame for
+120 frames after a 40-frame warm-up, chromium 1500 by 900:
+
+| route | nodes per rendered row | rows held | nodes in the document | median frame | worst frame | frames over 32 ms |
+| --- | --- | --- | --- | --- | --- | --- |
+| `/sheet` | 17 | 33 | 565 | 8.3 ms | 33.3 ms | 1 |
+| `/dense` | 177 | 11 | 1,947 | 25.0 ms | 58.4 ms | 29 |
+
+The window holds either way: 11 rows for 20,000. What moves is the frame, and it moves because the
+cost of this kernel is per row crossing the window edge rather than per row in the relation.
+
 ## Console
 
 `window.__grid` is the active route's grid. `window.__demo` is whatever that route wanted reachable.
@@ -85,6 +98,7 @@ __grid.view.plan.$().span
 __demo.applyScenario("Everything")      // /everything only
 __demo.nested.state.sort.$([])          // /detail only, the newest nested grid
 __demo.cellCount()                      // /sheet only, cells in the document right now
+__demo.nodesPerRow()                    // /dense only, elements per rendered row
 __routes                                // slug, title, features, defects
 ```
 

@@ -1,4 +1,4 @@
-// The shell. Five routes over one set of boxes, each route a module that mounts a grid and hands
+// The shell. Six routes over one set of boxes, each route a module that mounts a grid and hands
 // back the teardown, so switching route stops the previous grid before the next one is built.
 import { Route, Signal } from "@hafley66/signals"
 import { filter, map, tap } from "rxjs"
@@ -12,9 +12,17 @@ import { treeDemo } from "./2_tree.js"
 import { matrixDemo } from "./3_matrix.js"
 import { detailDemo } from "./4_detail.js"
 import { sheetDemo } from "./5_sheet.js"
+import { denseDemo } from "./6_dense.js"
 import type { DemoHandle, DemoHosts, DemoRoute } from "./0_shell.js"
 
-const ROUTES: readonly DemoRoute[] = [everythingDemo, treeDemo, matrixDemo, detailDemo, sheetDemo]
+const ROUTES: readonly DemoRoute[] = [
+  everythingDemo,
+  treeDemo,
+  matrixDemo,
+  detailDemo,
+  sheetDemo,
+  denseDemo,
+]
 
 const shell = must("#demo")
 const panel = must("#panel")

@@ -775,3 +775,280 @@ body {
   flex-direction: column;
   gap: var(--space-1);
 }
+
+/* --- /dense ---------------------------------------------------------------- */
+
+/* Nine slot columns of charts and stacks. Every rule here is layout for one cell's contents; the
+   grid around them is `theme.css` and nothing below reaches past a `.sg-cell`. */
+
+.dz-who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  inline-size: 100%;
+}
+
+.dz-avatar {
+  flex: none;
+  inline-size: 28px;
+  block-size: 28px;
+}
+
+.dz-avatar-disc {
+  fill: color-mix(in oklab, var(--demo-accent) 18%, transparent);
+}
+
+.dz-avatar-head,
+.dz-avatar-body {
+  fill: none;
+  stroke: var(--demo-accent);
+  stroke-width: 2;
+}
+
+.dz-who-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+}
+
+.dz-who-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.dz-name {
+  font-family: var(--mono);
+  font-size: var(--text--1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dz-badge {
+  flex: none;
+  padding-inline: 5px;
+  border-radius: 999px;
+  font-size: var(--text--1);
+  line-height: 1.5;
+  background: color-mix(in oklab, var(--demo-accent) 14%, transparent);
+  color: var(--demo-fg);
+}
+
+.dz-badge-region {
+  background: color-mix(in oklab, var(--demo-muted) 22%, transparent);
+}
+
+.dz-note {
+  color: var(--demo-muted);
+  font-size: var(--text--1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dz-spark,
+.dz-bars {
+  inline-size: 100%;
+  block-size: 56px;
+}
+
+.dz-spark-area {
+  fill: color-mix(in oklab, var(--demo-accent) 16%, transparent);
+}
+
+.dz-spark-line {
+  fill: none;
+  stroke: var(--demo-accent);
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.dz-spark-mid {
+  stroke: var(--demo-line);
+  stroke-width: 0.3;
+  vector-effect: non-scaling-stroke;
+}
+
+.dz-spark-dot {
+  fill: var(--demo-accent);
+}
+
+.dz-bar {
+  fill: color-mix(in oklab, var(--demo-muted) 55%, transparent);
+}
+
+.dz-bar-warm {
+  fill: color-mix(in oklab, var(--demo-accent) 70%, transparent);
+}
+
+.dz-bar-hot {
+  fill: var(--demo-accent);
+}
+
+.dz-status {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.dz-status-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text--1);
+}
+
+.dz-dot {
+  flex: none;
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: 999px;
+  background: var(--demo-muted);
+}
+
+.dz-status-line[data-level="warm"] .dz-dot {
+  background: color-mix(in oklab, var(--demo-accent) 60%, transparent);
+}
+
+.dz-status-line[data-level="hot"] .dz-dot {
+  background: var(--demo-accent);
+}
+
+.dz-status-name {
+  flex: 1 1 auto;
+  color: var(--demo-muted);
+}
+
+.dz-status-count {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.dz-meter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.dz-meter-track {
+  position: relative;
+  flex: 1 1 auto;
+  block-size: 10px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--demo-muted) 20%, transparent);
+  overflow: hidden;
+}
+
+.dz-meter-fill {
+  block-size: 100%;
+  background: var(--demo-accent);
+}
+
+.dz-meter-tick {
+  position: absolute;
+  inset-block: 0;
+  inline-size: 1px;
+  background: var(--demo-bg);
+  opacity: 0.7;
+}
+
+.dz-meter-value {
+  flex: none;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text--1);
+}
+
+.dz-mini {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--text--1);
+}
+
+.dz-mini-th {
+  text-align: start;
+  font-weight: 600;
+  color: var(--demo-muted);
+  padding-block: 0;
+}
+
+.dz-mini-td {
+  padding-block: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dz-mini-num {
+  text-align: end;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.dz-delta {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  block-size: 44px;
+  inline-size: 100%;
+}
+
+.dz-delta-step {
+  flex: 1 1 0;
+  block-size: var(--dz-h, 50%);
+  border-radius: 2px 2px 0 0;
+  background: color-mix(in oklab, var(--demo-muted) 45%, transparent);
+}
+
+.dz-delta-step[data-up="true"] {
+  background: color-mix(in oklab, var(--demo-accent) 75%, transparent);
+}
+
+.dz-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  min-inline-size: 0;
+}
+
+.dz-tag {
+  padding-inline: 5px;
+  border: 1px solid var(--demo-line);
+  border-radius: 999px;
+  font-size: var(--text--1);
+  line-height: 1.5;
+  color: var(--demo-muted);
+}
+
+.dz-ring {
+  inline-size: 40px;
+  block-size: 40px;
+}
+
+.dz-ring-track {
+  fill: none;
+  stroke: color-mix(in oklab, var(--demo-muted) 25%, transparent);
+  stroke-width: 4;
+}
+
+.dz-ring-fill {
+  fill: none;
+  stroke: var(--demo-accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.dz-ring-text {
+  fill: var(--demo-fg);
+  font-family: var(--mono);
+  font-size: 11px;
+  text-anchor: middle;
+}
