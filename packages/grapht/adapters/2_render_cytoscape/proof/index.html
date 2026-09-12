@@ -17,6 +17,10 @@
         position: fixed;
         inset: 0;
       }
+      #host svg text {
+        user-select: text;
+        -webkit-user-select: text;
+      }
       #bar {
         position: fixed;
         top: 8px;
@@ -46,8 +50,9 @@
   </head>
   <body>
     <div id="bar">
-      <button id="fit">fit whole epic</button>
-      <button id="crop">crop to input cluster</button>
+      <button id="document">document renderer</button>
+      <button id="cytoscape">cytoscape renderer</button>
+      <button id="fit">fit</button>
     </div>
     <div id="host"></div>
     <div id="readout"></div>
