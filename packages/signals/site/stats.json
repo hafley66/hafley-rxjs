@@ -3,28 +3,24 @@
   "generatedBy": "packages/signals/scripts/stats.mjs",
   "commit": {
     "method": "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain excluding this step's own outputs, git rev-parse --abbrev-ref HEAD",
-    "hash": "ce942c24ceb9616e9be4dd22738e4a59e1756e52",
-    "short": "ce942c2",
-    "subject": "signals: a site of its own, built from the kit",
-    "authorDate": "2026-09-10T23:06:27-04:00",
-    "branch": "feature/docs-kit",
+    "hash": "5fea5a863ca978dee312b2fcd0536c0e572d7dd6",
+    "short": "5fea5a8",
+    "subject": "signal-grid: the demo's own links left the site, and eight pages talked about a grid without showing one",
+    "authorDate": "2026-09-12T11:24:31-04:00",
+    "branch": "main",
     "clean": false,
-    "dirtyCount": 11,
+    "dirtyCount": 7,
     "dirtyEntries": [
-      "M packages/docs-kit/examples/harness.ts",
-      " M packages/docs-kit/src/6_config.ts",
-      " M packages/rxjsx/tsconfig.tsbuildinfo",
+      "M packages/grapht/adapters/2_render_cytoscape/proof/arch-proof.png",
+      " M packages/grapht/adapters/2_render_cytoscape/proof/arch-zoom.png",
       " M packages/signal-grid/site/stats.json",
-      " M packages/signals/examples/6_pipe.ts",
-      " M packages/signals/examples/8_storage.ts",
-      " M packages/signals/examples/index.ts",
-      " M packages/signals/site/.vitepress/config.ts",
-      " M packages/signals/site/content.ts",
-      "?? packages/signals/docs/react.md",
-      "?? packages/signals/examples/11_react.tsx"
+      "?? .boop-briefs/",
+      "?? packages/gothic/src/lib/8a_khFit.ts",
+      "?? packages/gothic/tools/",
+      "?? packages/grapht/adapters/2_render_cytoscape/proof/depProbe.mjs"
     ],
     "repository": "hafley66/hafley-rxjs",
-    "url": "https://github.com/hafley66/hafley-rxjs/commit/ce942c24ceb9616e9be4dd22738e4a59e1756e52",
+    "url": "https://github.com/hafley66/hafley-rxjs/commit/5fea5a863ca978dee312b2fcd0536c0e572d7dd6",
     "reason": null
   },
   "machine": {
@@ -35,7 +31,7 @@
     "cpuModel": "Apple M2 Pro",
     "cores": 12,
     "totalMemoryBytes": 17179869184,
-    "builtAt": "2026-09-11T03:14:02.166Z"
+    "builtAt": "2026-09-12T15:34:52.907Z"
   },
   "package": {
     "name": "@hafley66/signals",
@@ -45,15 +41,15 @@
     "method": "statSync().size summed for raw bytes and zlib.gzipSync(readFileSync(file)).length summed for gzip, over every file in the directory; totals and a file count only, because a per-file listing of a build output answers nothing",
     "library": {
       "fileCount": 82,
-      "totalBytes": 183636,
-      "totalGzipBytes": 63837,
+      "totalBytes": 192136,
+      "totalGzipBytes": 66256,
       "reason": null
     },
     "siteMethod": "the same statSync and gzipSync pass, run after the site build and before the rebuild that ships this file; the shipped assets differ from these figures by the bytes this table adds to stats.json",
     "site": {
       "fileCount": 155,
-      "totalBytes": 6403814,
-      "totalGzipBytes": 2352978,
+      "totalBytes": 6418928,
+      "totalGzipBytes": 2355203,
       "reason": null
     },
     "demo": {
@@ -90,27 +86,32 @@
     "files": [
       {
         "file": "src/1_SignalCreator.ts",
-        "lines": 628,
+        "lines": 696,
         "kind": "source"
       },
       {
         "file": "src/4_Query.test.ts",
-        "lines": 373,
+        "lines": 427,
         "kind": "test"
       },
       {
         "file": "src/4_Query.ts",
-        "lines": 287,
+        "lines": 323,
         "kind": "source"
       },
       {
         "file": "src/0_types.ts",
-        "lines": 216,
+        "lines": 218,
         "kind": "source"
       },
       {
         "file": "src/2_Signal.memo.test.ts",
         "lines": 211,
+        "kind": "test"
+      },
+      {
+        "file": "src/2_Signal.scan.test.ts",
+        "lines": 198,
         "kind": "test"
       },
       {
@@ -169,9 +170,14 @@
         "kind": "test"
       },
       {
-        "file": "src/6_Storage.test.ts",
-        "lines": 111,
+        "file": "src/6_Storage.browser.test.ts",
+        "lines": 110,
         "kind": "test"
+      },
+      {
+        "file": "src/2_Signal.ts",
+        "lines": 106,
+        "kind": "source"
       },
       {
         "file": "src/10_slice.test.ts",
@@ -179,9 +185,9 @@
         "kind": "test"
       },
       {
-        "file": "src/2_Signal.ts",
+        "file": "src/11_pipe.test.ts",
         "lines": 93,
-        "kind": "source"
+        "kind": "test"
       },
       {
         "file": "src/7_signalMap.ts",
@@ -194,12 +200,7 @@
         "kind": "source"
       },
       {
-        "file": "src/4_jsxAuto.render.test.ts",
-        "lines": 87,
-        "kind": "test"
-      },
-      {
-        "file": "src/11_pipe.test.ts",
+        "file": "src/4_jsxAuto.render.browser.test.ts",
         "lines": 86,
         "kind": "test"
       },
@@ -217,6 +218,11 @@
         "file": "src/1_SignalCreator.bench.ts",
         "lines": 66,
         "kind": "source"
+      },
+      {
+        "file": "src/2_Signal.lifetime.test.ts",
+        "lines": 62,
+        "kind": "test"
       },
       {
         "file": "src/0_log.ts",
@@ -254,8 +260,8 @@
         "kind": "test"
       },
       {
-        "file": "src/5_Route.test.ts",
-        "lines": 20,
+        "file": "src/5_Route.browser.test.ts",
+        "lines": 19,
         "kind": "test"
       },
       {
@@ -280,61 +286,62 @@
       }
     ],
     "sourceFiles": 24,
-    "sourceLines": 2592,
-    "testFiles": 14,
-    "testLines": 1972
+    "sourceLines": 2711,
+    "testFiles": 16,
+    "testLines": 2290
   },
   "tests": {
     "method": "vitest run --reporter=json --outputFile=..., counts read from numTotalTests / numTotalTestSuites / numPassedTests / numFailedTests",
     "unit": {
       "label": "unit",
       "command": "vitest run",
-      "tests": 118,
-      "files": 41,
-      "passed": 118,
+      "tests": 119,
+      "files": 38,
+      "passed": 119,
       "failed": 0,
-      "durationMs": 1430,
+      "durationMs": 1297,
       "success": true,
       "reason": null
     },
     "browser": {
       "label": "browser",
       "command": "vitest run --config vitest.browser.config.ts",
-      "tests": null,
-      "files": 0,
-      "passed": null,
-      "failed": null,
-      "durationMs": null,
-      "reason": "vitest.browser.config.ts includes files matching .browser.test. and no file in src/ matches, so no browser suite was run"
+      "tests": 16,
+      "files": 10,
+      "passed": 16,
+      "failed": 0,
+      "durationMs": 2776,
+      "success": true,
+      "reason": null
     }
   },
   "timing": {
     "method": "Date.now() around each execFileSync call in scripts/stats.mjs; the site build time is handed over by scripts/ship.mjs",
-    "typecheckMs": 280,
+    "typecheckMs": 365,
     "typecheckReason": null,
-    "libraryBuildMs": 1472,
+    "libraryBuildMs": 1648,
     "libraryBuildReason": null,
-    "unitTestsMs": 1430,
-    "browserTestsMs": null,
-    "siteBuildMs": 3667,
+    "unitTestsMs": 1297,
+    "browserTestsMs": 2776,
+    "siteBuildMs": 4746,
     "demoBuildMs": null,
-    "statsMs": 3420
+    "statsMs": 6392
   },
   "demoMemory": {
     "method": "Playwright over CDP: HeapProfiler.enable, then per example per repeat, HeapProfiler.collectGarbage, Performance.getMetrics JSHeapUsedSize as the baseline, mount, 3 samples 50 ms apart taking the largest as the peak, teardown, two collectGarbage calls, one more JSHeapUsedSize as retained. Every example is mounted and torn down twice by the leak pass before any of this runs, so a page-lifetime allocation is already made. 3 repeats per example, reported as the median with the spread across those repeats beside it. An example retaining more than 524288 bytes over its own baseline is named as a leak. Every example here holds a handful of DOM nodes and a few subscriptions, so a peak near 0.5 MB is the measurement floor rather than a figure about the example. What the numbers are good for is the retained column: a signal whose subscription outlived its teardown shows there.",
     "command": "node scripts/examples.mjs",
     "samples": 3,
     "leakBytes": 524288,
-    "measuredAt": "2026-09-11T03:14:11.143Z",
+    "measuredAt": "2026-09-12T15:35:01.974Z",
     "examples": [
       {
         "id": "state-counter",
         "repeats": 3,
-        "baselineHeapBytes": 9388608,
-        "peakHeapBytes": 90256,
-        "peakSpreadBytes": 448,
-        "retainedHeapBytes": 748,
-        "retainedSpreadBytes": 6724,
+        "baselineHeapBytes": 9402120,
+        "peakHeapBytes": 92504,
+        "peakSpreadBytes": 784,
+        "retainedHeapBytes": 960,
+        "retainedSpreadBytes": 6428,
         "nodesAfterTeardown": 0,
         "painted": 2,
         "leaks": false,
@@ -343,11 +350,11 @@
       {
         "id": "nested-paths",
         "repeats": 3,
-        "baselineHeapBytes": 9403496,
-        "peakHeapBytes": 212004,
-        "peakSpreadBytes": 8920,
-        "retainedHeapBytes": 8164,
-        "retainedSpreadBytes": 6756,
+        "baselineHeapBytes": 9412652,
+        "peakHeapBytes": 209740,
+        "peakSpreadBytes": 13804,
+        "retainedHeapBytes": 2848,
+        "retainedSpreadBytes": 13068,
         "nodesAfterTeardown": 0,
         "painted": 4,
         "leaks": false,
@@ -356,11 +363,11 @@
       {
         "id": "source-observable",
         "repeats": 3,
-        "baselineHeapBytes": 9424028,
-        "peakHeapBytes": 153688,
-        "peakSpreadBytes": 6720,
+        "baselineHeapBytes": 9426632,
+        "peakHeapBytes": 157832,
+        "peakSpreadBytes": 224,
         "retainedHeapBytes": 144,
-        "retainedSpreadBytes": 1408,
+        "retainedSpreadBytes": 520,
         "nodesAfterTeardown": 0,
         "painted": 2,
         "leaks": false,
@@ -369,11 +376,11 @@
       {
         "id": "computed-thunk",
         "repeats": 3,
-        "baselineHeapBytes": 9432168,
-        "peakHeapBytes": 151476,
-        "peakSpreadBytes": 8848,
-        "retainedHeapBytes": 7996,
-        "retainedSpreadBytes": 4744,
+        "baselineHeapBytes": 9433468,
+        "peakHeapBytes": 151828,
+        "peakSpreadBytes": 7712,
+        "retainedHeapBytes": 6692,
+        "retainedSpreadBytes": 7752,
         "nodesAfterTeardown": 0,
         "painted": 2,
         "leaks": false,
@@ -382,11 +389,11 @@
       {
         "id": "event-bus",
         "repeats": 3,
-        "baselineHeapBytes": 9445464,
-        "peakHeapBytes": 73832,
-        "peakSpreadBytes": 1560,
+        "baselineHeapBytes": 9441708,
+        "peakHeapBytes": 75452,
+        "peakSpreadBytes": 0,
         "retainedHeapBytes": 0,
-        "retainedSpreadBytes": 1484,
+        "retainedSpreadBytes": 0,
         "nodesAfterTeardown": 0,
         "painted": 3,
         "leaks": false,
@@ -395,10 +402,10 @@
       {
         "id": "pipe-signal",
         "repeats": 3,
-        "baselineHeapBytes": 9446948,
-        "peakHeapBytes": 89384,
-        "peakSpreadBytes": 2032,
-        "retainedHeapBytes": 552,
+        "baselineHeapBytes": 9442004,
+        "peakHeapBytes": 161688,
+        "peakSpreadBytes": 2584,
+        "retainedHeapBytes": 296,
         "retainedSpreadBytes": 2004,
         "nodesAfterTeardown": 0,
         "painted": 3,
@@ -408,11 +415,11 @@
       {
         "id": "signal-map",
         "repeats": 3,
-        "baselineHeapBytes": 9448672,
-        "peakHeapBytes": 69032,
-        "peakSpreadBytes": 148,
-        "retainedHeapBytes": 112,
-        "retainedSpreadBytes": 1136,
+        "baselineHeapBytes": 9444328,
+        "peakHeapBytes": 71040,
+        "peakSpreadBytes": 196,
+        "retainedHeapBytes": 152,
+        "retainedSpreadBytes": 208,
         "nodesAfterTeardown": 0,
         "painted": 2,
         "leaks": false,
@@ -421,9 +428,9 @@
       {
         "id": "storage-signal",
         "repeats": 3,
-        "baselineHeapBytes": 9449200,
-        "peakHeapBytes": 185420,
-        "peakSpreadBytes": 652,
+        "baselineHeapBytes": 9445008,
+        "peakHeapBytes": 187764,
+        "peakSpreadBytes": 648,
         "retainedHeapBytes": 416,
         "retainedSpreadBytes": 1404,
         "nodesAfterTeardown": 0,
@@ -434,8 +441,8 @@
       {
         "id": "route-signal",
         "repeats": 3,
-        "baselineHeapBytes": 9450592,
-        "peakHeapBytes": 146712,
+        "baselineHeapBytes": 9446400,
+        "peakHeapBytes": 150384,
         "peakSpreadBytes": 23832,
         "retainedHeapBytes": 1396,
         "retainedSpreadBytes": 23808,
@@ -447,8 +454,8 @@
       {
         "id": "slice-epics",
         "repeats": 3,
-        "baselineHeapBytes": 9476024,
-        "peakHeapBytes": 209288,
+        "baselineHeapBytes": 9471832,
+        "peakHeapBytes": 210112,
         "peakSpreadBytes": 3228,
         "retainedHeapBytes": 40,
         "retainedSpreadBytes": 3208,
@@ -460,11 +467,11 @@
       {
         "id": "react-tracking",
         "repeats": 3,
-        "baselineHeapBytes": 9483940,
-        "peakHeapBytes": 116640,
-        "peakSpreadBytes": 112796,
-        "retainedHeapBytes": 4636,
-        "retainedSpreadBytes": 114512,
+        "baselineHeapBytes": 9479664,
+        "peakHeapBytes": 115448,
+        "peakSpreadBytes": 113948,
+        "retainedHeapBytes": 4552,
+        "retainedSpreadBytes": 114480,
         "nodesAfterTeardown": 0,
         "painted": 4,
         "leaks": false,
@@ -472,7 +479,7 @@
       }
     ],
     "retaining": [],
-    "durationMs": 8975,
+    "durationMs": 9071,
     "reason": null
   }
 }

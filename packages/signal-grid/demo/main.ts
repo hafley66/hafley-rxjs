@@ -99,10 +99,9 @@ for (const theme of THEMES) {
 
 // --- Routing ----------------------------------------------------------------
 
-// The base belongs in the template. `Route` matches `location.pathname` whole, so a demo served
-// under `/hafley-rxjs/signal-grid/demo/` needs that prefix in the pattern or every `href()` prints
-// a pathname that leaves the site. `import.meta.env.BASE_URL` is what vite was built with.
-const route = Route(`${import.meta.env.BASE_URL}:demo` as `/${string}:demo`)
+// The demo is served under `/hafley-rxjs/signal-grid/demo/` on pages and `/` in dev, so the base is
+// an input. `import.meta.env.BASE_URL` is what vite was built with.
+const route = Route("/:demo", { base: import.meta.env.BASE_URL })
 
 const HOME = ROUTES[0]?.slug ?? "everything"
 
@@ -130,7 +129,9 @@ document.addEventListener("click", (event) => {
   const anchor = target.closest("a")
   if (!(anchor instanceof HTMLAnchorElement)) return
   if (anchor.origin !== location.origin) return
-  const slug = anchor.pathname.slice(import.meta.env.BASE_URL.length).replace(/^\/+|\/+$/g, "")
+  const hit = route.matchPath(anchor.pathname)
+  if (!hit.matched) return
+  const slug = String(hit.demo)
   if (slug === "" || slug === slugOf()) return
   event.preventDefault()
   route.navigate({ demo: slug })

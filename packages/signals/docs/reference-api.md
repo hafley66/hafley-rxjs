@@ -10,11 +10,11 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 | --- | --- | --- |
 | [src/0_log.ts](#src-0-log-ts) | 14 | LogTape is an optional peer, so nothing here may import it statically. |
 | [src/0_types.ts](#src-0-types-ts) | 11 |  |
-| [src/1_SignalCreator.ts](#src-1-signalcreator-ts) | 9 |  |
+| [src/1_SignalCreator.ts](#src-1-signalcreator-ts) | 11 |  |
 | [src/2_Signal.ts](#src-2-signal-ts) | 6 |  |
 | [src/3_Endpoint.ts](#src-3-endpoint-ts) | 6 |  |
 | [src/3_react.ts](#src-3-react-ts) | 12 | React integration for signals. |
-| [src/4_Query.ts](#src-4-query-ts) | 7 |  |
+| [src/4_Query.ts](#src-4-query-ts) | 8 |  |
 | [src/5_Route.ts](#src-5-route-ts) | 4 |  |
 | [src/6_Storage.ts](#src-6-storage-ts) | 8 |  |
 | [src/7_signalMap.ts](#src-7-signalmap-ts) | 1 |  |
@@ -360,6 +360,8 @@ export type SignalCreatorOptions<T, Base extends object = object> = {
    * `distinctShallow()`. `null` disables it, restoring re-emission on every root write.
    */
   distinct?: MonoTypeOperatorFunction<unknown> | null
+  /** Mirror a `.$(next)` write into an external holder (writable memos). */
+  write?: (next: T) => void
   /** Factory to create Base extension for each node */
   createBase?: (root: Signal<T, Base>, path: string[]) => Base
 }
@@ -373,15 +375,17 @@ export type SignalCreatorOptions<T, Base extends object = object> = {
 | [`shallowEqual`](#src-1-signalcreator-ts-shallowequal) | function |
 | [`distinctShallow`](#src-1-signalcreator-ts-distinctshallow) | const |
 | [`SELECTOR_SLOT`](#src-1-signalcreator-ts-selector-slot) | const |
-| [`signalFromObservable`](#src-1-signalcreator-ts-signalfromobservable) | function |
 | [`inEmitTurn`](#src-1-signalcreator-ts-inemitturn) | function |
 | [`trackDependencies`](#src-1-signalcreator-ts-trackdependencies) | function |
 | [`SignalCreator`](#src-1-signalcreator-ts-signalcreator) | function |
+| [`ComputeResult`](#src-1-signalcreator-ts-computeresult) | type |
+| [`ComputeBody`](#src-1-signalcreator-ts-computebody) | type |
+| [`ComputedOptions`](#src-1-signalcreator-ts-computedoptions) | type |
 | [`createComputedSignal`](#src-1-signalcreator-ts-createcomputedsignal) | function |
 
 ### `signalDispatch` {#src-1-signalcreator-ts-signaldispatch}
 
-`signalDispatch` is declared at `src/1_SignalCreator.ts:38`.
+`signalDispatch` is declared at `src/1_SignalCreator.ts:40`.
 
 Global dispatch for signal events. Used by Signal.memo() to track dependencies.
 
@@ -391,7 +395,7 @@ signalDispatch: Subject<SignalEvent<unknown>>
 
 ### `shallowEqual` {#src-1-signalcreator-ts-shallowequal}
 
-`shallowEqual` is declared at `src/1_SignalCreator.ts:41`.
+`shallowEqual` is declared at `src/1_SignalCreator.ts:43`.
 
 One level deep, which is what immer's structural sharing already gives per branch.
 
@@ -401,7 +405,7 @@ shallowEqual: (a: unknown, b: unknown) => boolean
 
 ### `distinctShallow` {#src-1-signalcreator-ts-distinctshallow}
 
-`distinctShallow` is declared at `src/1_SignalCreator.ts:55`.
+`distinctShallow` is declared at `src/1_SignalCreator.ts:57`.
 
 The default distinction for a nested-path selector.
 
@@ -411,7 +415,7 @@ distinctShallow: <T>() => MonoTypeOperatorFunction<T>
 
 ### `SELECTOR_SLOT` {#src-1-signalcreator-ts-selector-slot}
 
-`SELECTOR_SLOT` is declared at `src/1_SignalCreator.ts:62`.
+`SELECTOR_SLOT` is declared at `src/1_SignalCreator.ts:64`.
 
 The nested-path selector is a fixed pipeline and a slot is its pipe index, so a caller swaps one
 operator without restating the rest. `distinct` is the only slot today: pass `null` for the
@@ -421,25 +425,9 @@ pre-2026-09-10 behaviour, where a sibling write re-emitted an unchanged branch.
 SELECTOR_SLOT: { readonly project: 0; readonly distinct: 1; readonly track: 2; readonly share: 3; }
 ```
 
-### `signalFromObservable` {#src-1-signalcreator-ts-signalfromobservable}
-
-`signalFromObservable` is declared at `src/1_SignalCreator.ts:73`.
-
-Wrap a piped stream back into a Signal, inheriting the parent's distinction slot.
-
-The seed probe subscribes once, keeps whatever the pipeline emits synchronously, and drops it.
-A pipeline of pure operators over a BehaviorSubject yields its value there and the result is a
-`Signal<O>` with a real current value. A pipeline that defers (debounceTime, switchMap over a
-request) yields nothing, and the result reads `undefined` until the first emission. An operator
-with a side effect runs once during the probe, which is the cost of a synchronous `.$()` read.
-
-```ts
-signalFromObservable: <O>(source$: Observable<O>, distinct: MonoTypeOperatorFunction<unknown> | null | undefined) => Signal<O>
-```
-
 ### `inEmitTurn` {#src-1-signalcreator-ts-inemitturn}
 
-`inEmitTurn` is declared at `src/1_SignalCreator.ts:108`.
+`inEmitTurn` is declared at `src/1_SignalCreator.ts:80`.
 
 ```ts
 inEmitTurn: <T>(run: () => T) => T
@@ -447,7 +435,7 @@ inEmitTurn: <T>(run: () => T) => T
 
 ### `trackDependencies` {#src-1-signalcreator-ts-trackdependencies}
 
-`trackDependencies` is declared at `src/1_SignalCreator.ts:144`.
+`trackDependencies` is declared at `src/1_SignalCreator.ts:116`.
 
 ```ts
 trackDependencies: <T>(compute: () => T, sink: Set<Signal<unknown>>) => T
@@ -455,7 +443,7 @@ trackDependencies: <T>(compute: () => T, sink: Set<Signal<unknown>>) => T
 
 ### `SignalCreator` {#src-1-signalcreator-ts-signalcreator}
 
-`SignalCreator` is declared at `src/1_SignalCreator.ts:167`.
+`SignalCreator` is declared at `src/1_SignalCreator.ts:139`.
 
 Creates a signal tree with proxy-based nested access.
 
@@ -463,12 +451,47 @@ Creates a signal tree with proxy-based nested access.
 SignalCreator: <T, Base extends object = object>(options: SignalCreatorOptions<T, Base>) => Signal<T, Base>
 ```
 
-### `createComputedSignal` {#src-1-signalcreator-ts-createcomputedsignal}
+### `ComputeResult` {#src-1-signalcreator-ts-computeresult}
 
-`createComputedSignal` is declared at `src/1_SignalCreator.ts:461`.
+`ComputeResult` is declared at `src/1_SignalCreator.ts:440`.
+
+Same shape as Solid 2.0 `ComputeFunction<Prev, Next>`: a value, or a stream of values.
 
 ```ts
-createComputedSignal: <T>(compute: () => T, name?: string | undefined) => Signal<T>
+export type ComputeResult<T> = T | Observable<T> | PromiseLike<T> | AsyncIterable<T>
+```
+
+### `ComputeBody` {#src-1-signalcreator-ts-computebody}
+
+`ComputeBody` is declared at `src/1_SignalCreator.ts:443`.
+
+Arity 1 is the scan form: the body is handed its own previous value.
+
+```ts
+export type ComputeBody<T> = (prev: T) => ComputeResult<T>
+```
+
+### `ComputedOptions` {#src-1-signalcreator-ts-computedoptions}
+
+`ComputedOptions` is declared at `src/1_SignalCreator.ts:445`.
+
+```ts
+export type ComputedOptions = {
+  /** `.$(next)` overrides the value until the next run, which sees it as `prev`. Default true. */
+  writable?: boolean
+}
+```
+
+### `createComputedSignal` {#src-1-signalcreator-ts-createcomputedsignal}
+
+`createComputedSignal` is declared at `src/1_SignalCreator.ts:463`.
+
+The body receives the current value as `prev`. A stream result feeds the value one emission at a
+time: a dependency change cancels it and reruns (switch), completion after at least one emission
+reruns (expand), completion with none settles until a dependency changes.
+
+```ts
+createComputedSignal: <T>(compute: ComputeBody<T>, seed?: T | undefined, options?: ComputedOptions) => Signal<T>
 ```
 
 ## src/2_Signal.ts
@@ -484,7 +507,7 @@ createComputedSignal: <T>(compute: () => T, name?: string | undefined) => Signal
 
 ### `Signal` {#src-2-signal-ts-signal}
 
-`Signal` is declared at `src/2_Signal.ts:5`.
+`Signal` is declared at `src/2_Signal.ts:10`.
 
 Create a reactive signal with proxy-based nested access.
 
@@ -494,13 +517,14 @@ export type Signal<T, Base extends object = object, Depth extends number = 5> = 
 export function Signal<T>(observable: Observable<T>): SignalType<T | undefined>
 export function Signal<T>(observable: Observable<T>, defaultState: T): SignalType<T>
 export function Signal<T>(memo: () => T): SignalType<T>
+export function Signal<T>(scan: ComputeBody<T>, seed: T, options?: ComputedOptions): SignalType<T>
 export function Signal<T>(state: T): SignalType<T>
 export function Signal<T>(): SignalType<T | undefined>
 ```
 
 ### `SignalSource` {#src-2-signal-ts-signalsource}
 
-`SignalSource` is declared at `src/2_Signal.ts:7`.
+`SignalSource` is declared at `src/2_Signal.ts:12`.
 
 ```ts
 export type SignalSource<T> = SignalType<T> | Observable<T> | (() => T) | T
@@ -510,7 +534,7 @@ export function toSignal<T>(source: SignalSource<T>): SignalType<T>
 
 ### `isSignal` {#src-2-signal-ts-issignal}
 
-`isSignal` is declared at `src/2_Signal.ts:9`.
+`isSignal` is declared at `src/2_Signal.ts:14`.
 
 ```ts
 isSignal: <T>(value: unknown) => value is Signal<T>
@@ -518,7 +542,7 @@ isSignal: <T>(value: unknown) => value is Signal<T>
 
 ### `toSignal` {#src-2-signal-ts-tosignal}
 
-`toSignal` is declared at `src/2_Signal.ts:17`.
+`toSignal` is declared at `src/2_Signal.ts:22`.
 
 Normalize any source accepted by Signal while preserving existing Signals.
 
@@ -528,7 +552,7 @@ toSignal: <T>(source: SignalSource<T>) => Signal<T>
 
 ### `Source$` {#src-2-signal-ts-source}
 
-`Source$` is declared at `src/2_Signal.ts:70`.
+`Source$` is declared at `src/2_Signal.ts:82`.
 
 Anything a pipeline can start from: a live stream or an existing signal node.
 
@@ -549,7 +573,7 @@ export function pipe$<T, A, B, C, D, E, F, G, H, I, J>(source: Source$<T>, op1: 
 
 ### `pipe$` {#src-2-signal-ts-pipe}
 
-`pipe$` is declared at `src/2_Signal.ts:72`.
+`pipe$` is declared at `src/2_Signal.ts:84`.
 
 ```ts
 export function pipe$<T, A>(source: Source$<T>, op1: OperatorFunction<T, A>): SignalType<A>
@@ -769,6 +793,7 @@ SignalEvent: any
 | --- | --- |
 | [`AsyncStatus`](#src-4-query-ts-asyncstatus) | type |
 | [`QueryState`](#src-4-query-ts-querystate) | type |
+| [`RefetchInterval`](#src-4-query-ts-refetchinterval) | type |
 | [`QueryOptions`](#src-4-query-ts-queryoptions) | type |
 | [`Query`](#src-4-query-ts-query) | type |
 | [`Mutation`](#src-4-query-ts-mutation) | type |
@@ -801,22 +826,32 @@ export type QueryState<T, E = unknown> = {
 }
 ```
 
-### `QueryOptions` {#src-4-query-ts-queryoptions}
+### `RefetchInterval` {#src-4-query-ts-refetchinterval}
 
-`QueryOptions` is declared at `src/4_Query.ts:37`.
+`RefetchInterval` is declared at `src/4_Query.ts:37`.
 
 ```ts
-export type QueryOptions = {
+export type RefetchInterval<O, E = unknown> =
+```
+
+### `QueryOptions` {#src-4-query-ts-queryoptions}
+
+`QueryOptions` is declared at `src/4_Query.ts:42`.
+
+```ts
+export type QueryOptions<O = unknown, E = unknown> = {
   staleTime?: number
   cacheTime?: number
   skip?: "clear" | "retain"
   now?: () => number
+  /** Poll while subscribed. A tick that lands mid-flight is dropped, never queued. */
+  refetchInterval?: RefetchInterval<O, E>
 }
 ```
 
 ### `Query` {#src-4-query-ts-query}
 
-`Query` is declared at `src/4_Query.ts:44`.
+`Query` is declared at `src/4_Query.ts:51`.
 
 ```ts
 export type Query<I, O, E = unknown> = SignalType<QueryState<O, E>> & {
@@ -829,7 +864,7 @@ export type Query<I, O, E = unknown> = SignalType<QueryState<O, E>> & {
 
 ### `Mutation` {#src-4-query-ts-mutation}
 
-`Mutation` is declared at `src/4_Query.ts:51`.
+`Mutation` is declared at `src/4_Query.ts:58`.
 
 ```ts
 export type Mutation<I, O, E = unknown> = SignalType<QueryState<O, E>> & {
@@ -840,15 +875,15 @@ export type Mutation<I, O, E = unknown> = SignalType<QueryState<O, E>> & {
 
 ### `createQuery` {#src-4-query-ts-createquery}
 
-`createQuery` is declared at `src/4_Query.ts:227`.
+`createQuery` is declared at `src/4_Query.ts:262`.
 
 ```ts
-createQuery: <I, O, E = unknown>(endpoint: Endpoint<I, O>, source: SignalSource<I | undefined>, config?: QueryOptions) => Query<I, O, E>
+createQuery: <I, O, E = unknown>(endpoint: Endpoint<I, O>, source: SignalSource<I | undefined>, config?: QueryOptions<unknown, unknown>) => Query<I, O, E>
 ```
 
 ### `createMutation` {#src-4-query-ts-createmutation}
 
-`createMutation` is declared at `src/4_Query.ts:264`.
+`createMutation` is declared at `src/4_Query.ts:300`.
 
 ```ts
 createMutation: <I, O, E = unknown>(endpoint: Endpoint<I, O>, source?: SignalSource<I | undefined>) => Mutation<I, O, E>
