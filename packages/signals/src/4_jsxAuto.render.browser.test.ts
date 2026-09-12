@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { describe, it, expect } from "vitest"
 import React, { act } from "react"
 import { createRoot } from "react-dom/client"
