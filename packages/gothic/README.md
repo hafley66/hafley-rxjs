@@ -45,6 +45,7 @@ GitHub Pages: [hafley66.github.io/hafley-rxjs](https://hafley66.github.io/hafley
 | `/fma` | fullmetal 2: a transmutation circle where one symmetry n drives the script band, the star {n/k}, n tangent satellites nested as circles of the same family, chords, the dual polygon and the core (`src/algos/2_fma.ts`) | `fma2`, `gallery` |
 | `/guilloche` | woven spirograph rosettes, three harmonic wheels, nested bands; engraving/cathedral/solar/lacework presets | `guilloche` |
 | `/architecture` | branching lancet tracery, fan vaults, flying buttress frames, crocketed spires, radial wheel windows, perspective cloisters | `architecture`, `fanvault`, `buttresses`, `spires`, `wheel`, `cloister` |
+| `/kh` | Kingdom-Hearts-style cut-stroke letterforms: one glyph's anatomy at study sizes, words set in the same strokes with a per-letter icon row | `kh`, `word`, `timing` |
 
 `/` redirects to `/eye`. The page list is `PAGES` in `src/app/0_pages.ts`; tabs, routes, query schemas and anchors all derive from it.
 

@@ -9,8 +9,8 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 | module | exports | what it is |
 | --- | --- | --- |
 | [src/0_log.ts](#src-0-log-ts) | 14 | LogTape is an optional peer, so nothing here may import it statically. |
-| [src/0_types.ts](#src-0-types-ts) | 49 | The whole contract. |
-| [src/1_axis.ts](#src-1-axis-ts) | 9 | The five pure operators over `Axis<K, T>`, plus the two constructors that mint one and the walks that read one. |
+| [src/0_types.ts](#src-0-types-ts) | 52 | The whole contract. |
+| [src/1_axis.ts](#src-1-axis-ts) | 10 | The five pure operators over `Axis<K, T>`, plus the two constructors that mint one and the walks that read one. |
 | [src/2_operators.ts](#src-2-operators-ts) | 15 | Value-level operators: filter predicates and comparators. |
 | [src/3_paths.ts](#src-3-paths-ts) | 23 | One declaration per grid part yields four artifacts: element id, delegated route, CSS custom property namespace, test selector. |
 | [src/4_slice.ts](#src-4-slice-ts) | 15 | From a flat key list to the rendered window. |
@@ -181,6 +181,8 @@ The whole contract.
 | [`cellParts`](#src-0-types-ts-cellparts) | const |
 | [`GROUP_PREFIX`](#src-0-types-ts-group-prefix) | const |
 | [`isGroupKey`](#src-0-types-ts-isgroupkey) | const |
+| [`GroupRow`](#src-0-types-ts-grouprow) | interface |
+| [`isGroupRow`](#src-0-types-ts-isgrouprow) | const |
 | [`Axis`](#src-0-types-ts-axis) | interface |
 | [`FlatNode`](#src-0-types-ts-flatnode) | interface |
 | [`IndexRange`](#src-0-types-ts-indexrange) | interface |
@@ -200,6 +202,7 @@ The whole contract.
 | [`CellCtx`](#src-0-types-ts-cellctx) | interface |
 | [`HeaderCtx`](#src-0-types-ts-headerctx) | interface |
 | [`RowCtx`](#src-0-types-ts-rowctx) | interface |
+| [`GroupCtx`](#src-0-types-ts-groupctx) | interface |
 | [`Slots`](#src-0-types-ts-slots) | interface |
 | [`ColumnType`](#src-0-types-ts-columntype) | type |
 | [`FormulaApi`](#src-0-types-ts-formulaapi) | interface |
@@ -295,9 +298,34 @@ GROUP_PREFIX: "g:"
 isGroupKey: (key: string) => boolean
 ```
 
+### `GroupRow` {#src-0-types-ts-grouprow}
+
+`GroupRow` is declared at `src/0_types.ts:33`.
+
+The shape behind the one `as unknown as TRow` in `8_grid.ts`. `path` is the ancestry, outermost
+level first, so a nested heading names itself without walking back up the axis.
+
+```ts
+export interface GroupRow {
+  readonly [GROUP_PREFIX]: RowId
+  readonly path: readonly unknown[]
+}
+```
+
+### `isGroupRow` {#src-0-types-ts-isgrouprow}
+
+`isGroupRow` is declared at `src/0_types.ts:40`.
+
+Narrows the value rather than testing the key: one call at the row level answers for the row and
+every cell under it, and it is the only reader that cast needs.
+
+```ts
+isGroupRow: (value: unknown) => value is GroupRow
+```
+
 ### `Axis` {#src-0-types-ts-axis}
 
-`Axis` is declared at `src/0_types.ts:41`.
+`Axis` is declared at `src/0_types.ts:56`.
 
 An ordered forest of keyed items. `roots` and each `children` entry carry sibling order;
 `parent` is the inverse edge, stored rather than derived so ancestor walks are O(depth).
@@ -317,7 +345,7 @@ export interface Axis<K extends string, T> {
 
 ### `FlatNode` {#src-0-types-ts-flatnode}
 
-`FlatNode` is declared at `src/0_types.ts:49`.
+`FlatNode` is declared at `src/0_types.ts:64`.
 
 One node of the flattened, visible result. `index` is its position in the flat list.
 
@@ -334,7 +362,7 @@ export interface FlatNode<K extends string> {
 
 ### `IndexRange` {#src-0-types-ts-indexrange}
 
-`IndexRange` is declared at `src/0_types.ts:59`.
+`IndexRange` is declared at `src/0_types.ts:74`.
 
 Half-open `[start, end)` over a flat list. Pagination and virtualization both produce one.
 
@@ -347,7 +375,7 @@ export interface IndexRange {
 
 ### `Side` {#src-0-types-ts-side}
 
-`Side` is declared at `src/0_types.ts:65`.
+`Side` is declared at `src/0_types.ts:80`.
 
 Pinning splits a flat list into three ordered runs rendered in three sticky containers.
 
@@ -357,7 +385,7 @@ export type Side = "start" | "center" | "end"
 
 ### `Partitioned` {#src-0-types-ts-partitioned}
 
-`Partitioned` is declared at `src/0_types.ts:66`.
+`Partitioned` is declared at `src/0_types.ts:81`.
 
 ```ts
 export interface Partitioned<K extends string> {
@@ -369,7 +397,7 @@ export interface Partitioned<K extends string> {
 
 ### `FilterMode` {#src-0-types-ts-filtermode}
 
-`FilterMode` is declared at `src/0_types.ts:79`.
+`FilterMode` is declared at `src/0_types.ts:94`.
 
 How a predicate propagates through a forest.
 `prune`      keep a node only when it and every ancestor match. What a flat grid wants.
@@ -383,7 +411,7 @@ export type FilterMode = "prune" | "ancestors" | "subtree"
 
 ### `LogicOperator` {#src-0-types-ts-logicoperator}
 
-`LogicOperator` is declared at `src/0_types.ts:83`.
+`LogicOperator` is declared at `src/0_types.ts:98`.
 
 ```ts
 export type LogicOperator = "and" | "or"
@@ -391,7 +419,7 @@ export type LogicOperator = "and" | "or"
 
 ### `FilterItem` {#src-0-types-ts-filteritem}
 
-`FilterItem` is declared at `src/0_types.ts:86`.
+`FilterItem` is declared at `src/0_types.ts:101`.
 
 One row of the filter panel. `value` is undefined for unary operators (isEmpty, isNotEmpty).
 
@@ -406,7 +434,7 @@ export type FilterItem = {
 
 ### `FilterModel` {#src-0-types-ts-filtermodel}
 
-`FilterModel` is declared at `src/0_types.ts:93`.
+`FilterModel` is declared at `src/0_types.ts:108`.
 
 ```ts
 export type FilterModel = {
@@ -420,7 +448,7 @@ export type FilterModel = {
 
 ### `FilterOperator` {#src-0-types-ts-filteroperator}
 
-`FilterOperator` is declared at `src/0_types.ts:105`.
+`FilterOperator` is declared at `src/0_types.ts:120`.
 
 Compiles one filter item into a value predicate, or returns null when the item is incomplete
 (empty value on a binary operator), which means the item does not filter.
@@ -436,7 +464,7 @@ export interface FilterOperator<V = unknown> {
 
 ### `SortDirection` {#src-0-types-ts-sortdirection}
 
-`SortDirection` is declared at `src/0_types.ts:114`.
+`SortDirection` is declared at `src/0_types.ts:129`.
 
 ```ts
 export type SortDirection = "asc" | "desc"
@@ -444,7 +472,7 @@ export type SortDirection = "asc" | "desc"
 
 ### `SortItem` {#src-0-types-ts-sortitem}
 
-`SortItem` is declared at `src/0_types.ts:115`.
+`SortItem` is declared at `src/0_types.ts:130`.
 
 ```ts
 export interface SortItem {
@@ -455,7 +483,7 @@ export interface SortItem {
 
 ### `SortModel` {#src-0-types-ts-sortmodel}
 
-`SortModel` is declared at `src/0_types.ts:119`.
+`SortModel` is declared at `src/0_types.ts:134`.
 
 ```ts
 export type SortModel = readonly SortItem[]
@@ -463,7 +491,7 @@ export type SortModel = readonly SortItem[]
 
 ### `Renderable` {#src-0-types-ts-renderable}
 
-`Renderable` is declared at `src/0_types.ts:127`.
+`Renderable` is declared at `src/0_types.ts:142`.
 
 Anything a slot may hand back. React elements match structurally through `$$typeof`, so this
 package never imports React and a DOM-only consumer never pulls it in.
@@ -474,7 +502,7 @@ export type Renderable =
 
 ### `Slot` {#src-0-types-ts-slot}
 
-`Slot` is declared at `src/0_types.ts:144`.
+`Slot` is declared at `src/0_types.ts:159`.
 
 A slot returns a renderable, or a signal of one. Returning a signal is how a single cell gets
 live content without the grid minting a signal per cell: the writer subscribes that one node,
@@ -488,7 +516,7 @@ export type Slot<Ctx> = (ctx: Ctx) => SlotContent
 
 ### `SlotContent` {#src-0-types-ts-slotcontent}
 
-`SlotContent` is declared at `src/0_types.ts:144`.
+`SlotContent` is declared at `src/0_types.ts:159`.
 
 A slot may also hand back a teardown alongside its content or signal. The teardown runs when the
 row or header that mounted the slot is torn down, which is how a detail slot stops a nested grid
@@ -501,7 +529,7 @@ export type Slot<Ctx> = (ctx: Ctx) => SlotContent
 
 ### `CellCtx` {#src-0-types-ts-cellctx}
 
-`CellCtx` is declared at `src/0_types.ts:158`.
+`CellCtx` is declared at `src/0_types.ts:173`.
 
 ```ts
 export interface CellCtx<TRow> {
@@ -516,7 +544,7 @@ export interface CellCtx<TRow> {
 
 ### `HeaderCtx` {#src-0-types-ts-headerctx}
 
-`HeaderCtx` is declared at `src/0_types.ts:173`.
+`HeaderCtx` is declared at `src/0_types.ts:188`.
 
 The header band labels the horizontal run. Under `"rows"` that run is the column axis, so `col`
 is a column id, `row` is null, and `data` is undefined. Under `"columns"` the run is the row
@@ -537,7 +565,7 @@ export interface HeaderCtx<TRow = unknown> {
 
 ### `RowCtx` {#src-0-types-ts-rowctx}
 
-`RowCtx` is declared at `src/0_types.ts:181`.
+`RowCtx` is declared at `src/0_types.ts:196`.
 
 ```ts
 export interface RowCtx<TRow> {
@@ -549,9 +577,37 @@ export interface RowCtx<TRow> {
 }
 ```
 
+### `GroupCtx` {#src-0-types-ts-groupctx}
+
+`GroupCtx` is declared at `src/0_types.ts:206`.
+
+What a group heading is about. Not generic in `TRow`: a heading stands for a level rather than
+for a row, and `GroupRow` is the whole of what the axis put behind its key.
+
+```ts
+export interface GroupCtx {
+  readonly row: RowId
+  readonly data: GroupRow
+  readonly node: FlatNode<RowId>
+  readonly path: readonly unknown[]
+  /** The last element of `path`, which is what this level grouped by. */
+  readonly value: unknown
+  /** The column the level read, and its `header` label. Undefined once `state.group` has moved on
+   * from the path the axis was built with. */
+  readonly field: ColId | undefined
+  readonly header: string | undefined
+  /** Data rows under the heading, its whole subtree, panels excluded. */
+  readonly count: number
+  /** True when more than one level is open, which is when naming the field earns its space. */
+  readonly nested: boolean
+  readonly open: boolean
+  readonly selected: boolean
+}
+```
+
 ### `Slots` {#src-0-types-ts-slots}
 
-`Slots` is declared at `src/0_types.ts:190`.
+`Slots` is declared at `src/0_types.ts:226`.
 
 Every replaceable piece. Absent means the built-in is used.
 
@@ -562,6 +618,8 @@ export interface Slots<TRow> {
   readonly header?: Slot<HeaderCtx<TRow>>
   readonly headerGroup?: Slot<HeaderCtx<TRow>>
   readonly row?: Slot<RowCtx<TRow>>
+  /** The heading a synthesized group row draws. Absent keeps the built-in field, value, and count. */
+  readonly groupRow?: Slot<GroupCtx>
   readonly detail?: Slot<RowCtx<TRow>>
   readonly expander?: Slot<RowCtx<TRow>>
   readonly checkbox?: Slot<RowCtx<TRow>>
@@ -575,7 +633,7 @@ export interface Slots<TRow> {
 
 ### `ColumnType` {#src-0-types-ts-columntype}
 
-`ColumnType` is declared at `src/0_types.ts:208`.
+`ColumnType` is declared at `src/0_types.ts:246`.
 
 ```ts
 export type ColumnType =
@@ -583,7 +641,7 @@ export type ColumnType =
 
 ### `FormulaApi` {#src-0-types-ts-formulaapi}
 
-`FormulaApi` is declared at `src/0_types.ts:211`.
+`FormulaApi` is declared at `src/0_types.ts:249`.
 
 ```ts
 export interface FormulaApi<TRow> {
@@ -593,7 +651,7 @@ export interface FormulaApi<TRow> {
 
 ### `ColumnDef` {#src-0-types-ts-columndef}
 
-`ColumnDef` is declared at `src/0_types.ts:215`.
+`ColumnDef` is declared at `src/0_types.ts:253`.
 
 ```ts
 export interface ColumnDef<TRow, V = unknown> {
@@ -650,7 +708,7 @@ export interface ColumnDef<TRow, V = unknown> {
 
 ### `fieldValue` {#src-0-types-ts-fieldvalue}
 
-`fieldValue` is declared at `src/0_types.ts:277`.
+`fieldValue` is declared at `src/0_types.ts:315`.
 
 Reads one dotted path off a row, checked against `TRow` the same way `ColumnDef.field` is.
 
@@ -660,7 +718,7 @@ fieldValue: <TRow, Path extends SignalPath<TRow> & string>(row: TRow, field: Pat
 
 ### `columnReader` {#src-0-types-ts-columnreader}
 
-`columnReader` is declared at `src/0_types.ts:307`.
+`columnReader` is declared at `src/0_types.ts:345`.
 
 What a column reads off a row: `value`, else `field`, else the id.
 
@@ -670,7 +728,7 @@ columnReader: <TRow>(col: ColumnDef<TRow, unknown> | undefined, colId: string) =
 
 ### `PageMode` {#src-0-types-ts-pagemode}
 
-`PageMode` is declared at `src/0_types.ts:332`.
+`PageMode` is declared at `src/0_types.ts:370`.
 
 Paging is one operator with three retention rules, rather than three features.
 
@@ -688,7 +746,7 @@ export type PageMode = "all" | "pages" | "infinite"
 
 ### `Orientation` {#src-0-types-ts-orientation}
 
-`Orientation` is declared at `src/0_types.ts:339`.
+`Orientation` is declared at `src/0_types.ts:377`.
 
 Which axis feeds the vertical pipeline: the one that scrolls, pages, and pins into sticky runs.
 `"columns"` is the transpose, the matrix layout whose first column holds what are normally
@@ -700,7 +758,7 @@ export type Orientation = "rows" | "columns"
 
 ### `Page` {#src-0-types-ts-page}
 
-`Page` is declared at `src/0_types.ts:341`.
+`Page` is declared at `src/0_types.ts:379`.
 
 ```ts
 export type Page = {
@@ -714,7 +772,7 @@ export type Page = {
 
 ### `PageRequest` {#src-0-types-ts-pagerequest}
 
-`PageRequest` is declared at `src/0_types.ts:353`.
+`PageRequest` is declared at `src/0_types.ts:391`.
 
 Emitted when an infinite page boundary is crossed. The caller fetches and appends; nothing in
 the kernel waits on it, so a slow fetch never blocks scrolling through loaded rows.
@@ -728,7 +786,7 @@ export type PageRequest = {
 
 ### `RangeSelection` {#src-0-types-ts-rangeselection}
 
-`RangeSelection` is declared at `src/0_types.ts:359`.
+`RangeSelection` is declared at `src/0_types.ts:397`.
 
 ```ts
 export type RangeSelection = {
@@ -739,7 +797,7 @@ export type RangeSelection = {
 
 ### `GridState` {#src-0-types-ts-gridstate}
 
-`GridState` is declared at `src/0_types.ts:369`.
+`GridState` is declared at `src/0_types.ts:407`.
 
 Declared as a type alias rather than an interface on purpose: `Signal<T>`'s recursive proxy
 map gates on `T extends Record<string, unknown>`, and an interface has no implicit index
@@ -796,7 +854,7 @@ export type GridState = {
 
 ### `GridMode` {#src-0-types-ts-gridmode}
 
-`GridMode` is declared at `src/0_types.ts:422`.
+`GridMode` is declared at `src/0_types.ts:460`.
 
 client: the kernel runs filter, sort, group, and pagination over every row it holds.
 server: the kernel skips those stages, publishes a `QueryDescriptor` for the caller to send
@@ -809,7 +867,7 @@ export type GridMode = "client" | "server"
 
 ### `QueryDescriptor` {#src-0-types-ts-querydescriptor}
 
-`QueryDescriptor` is declared at `src/0_types.ts:426`.
+`QueryDescriptor` is declared at `src/0_types.ts:464`.
 
 ```ts
 export type QueryDescriptor = {
@@ -823,7 +881,7 @@ export type QueryDescriptor = {
 
 ### `Viewport` {#src-0-types-ts-viewport}
 
-`Viewport` is declared at `src/0_types.ts:434`.
+`Viewport` is declared at `src/0_types.ts:472`.
 
 ```ts
 export type Viewport = {
@@ -836,7 +894,7 @@ export type Viewport = {
 
 ### `Modifiers` {#src-0-types-ts-modifiers}
 
-`Modifiers` is declared at `src/0_types.ts:443`.
+`Modifiers` is declared at `src/0_types.ts:481`.
 
 ```ts
 export type Modifiers = {
@@ -850,7 +908,7 @@ export type Modifiers = {
 
 ### `isPlainClick` {#src-0-types-ts-isplainclick}
 
-`isPlainClick` is declared at `src/0_types.ts:453`.
+`isPlainClick` is declared at `src/0_types.ts:491`.
 
 A plain click: no chord, primary button. Declared beside `Modifiers`, because `3_paths.ts` and
 `7_epics.ts` both ask it and a second copy is a second answer.
@@ -861,7 +919,7 @@ isPlainClick: (mods: Modifiers) => boolean
 
 ### `GridIntent` {#src-0-types-ts-gridintent}
 
-`GridIntent` is declared at `src/0_types.ts:458`.
+`GridIntent` is declared at `src/0_types.ts:496`.
 
 The DOM saw something. No state has moved. Every entry comes from an xdom path template.
 `interactive` marks a click that landed on an anchor, a form control, or a routed glyph.
@@ -872,7 +930,7 @@ export type GridIntent =
 
 ### `GridChange` {#src-0-types-ts-gridchange}
 
-`GridChange` is declared at `src/0_types.ts:477`.
+`GridChange` is declared at `src/0_types.ts:515`.
 
 One key of GridState was written. Reduced synchronously, never asynchronously.
 
@@ -884,7 +942,7 @@ export type GridChange = {
 
 ### `GridEffect` {#src-0-types-ts-grideffect}
 
-`GridEffect` is declared at `src/0_types.ts:482`.
+`GridEffect` is declared at `src/0_types.ts:520`.
 
 Leaves the grid. The consumer decides what an activate or an edit commit means.
 
@@ -894,7 +952,7 @@ export type GridEffect<TRow> =
 
 ### `GridAction` {#src-0-types-ts-gridaction}
 
-`GridAction` is declared at `src/0_types.ts:491`.
+`GridAction` is declared at `src/0_types.ts:529`.
 
 ```ts
 export type GridAction<TRow> = GridIntent | GridChange | GridEffect<TRow>
@@ -902,7 +960,7 @@ export type GridAction<TRow> = GridIntent | GridChange | GridEffect<TRow>
 
 ### `GridPhase` {#src-0-types-ts-gridphase}
 
-`GridPhase` is declared at `src/0_types.ts:492`.
+`GridPhase` is declared at `src/0_types.ts:530`.
 
 ```ts
 export type GridPhase = GridAction<never>["phase"]
@@ -920,6 +978,7 @@ The five pure operators over `Axis<K, T>`, plus the two constructors that mint o
 | [`filterAxis`](#src-1-axis-ts-filteraxis) | function |
 | [`sortAxis`](#src-1-axis-ts-sortaxis) | function |
 | [`groupAxis`](#src-1-axis-ts-groupaxis) | function |
+| [`groupCounts`](#src-1-axis-ts-groupcounts) | function |
 | [`flattenAxis`](#src-1-axis-ts-flattenaxis) | function |
 | [`descendantsOf`](#src-1-axis-ts-descendantsof) | function |
 | [`mapAxis`](#src-1-axis-ts-mapaxis) | function |
@@ -995,9 +1054,20 @@ therefore idempotent: regrouping an already grouped axis yields the same axis.
 groupAxis: <K extends string, T>(axis: Axis<K, T>, keyOf: readonly ((value: T) => unknown)[], makeGroup: (path: readonly unknown[], key: K) => T) => Axis<K, T>
 ```
 
+### `groupCounts` {#src-1-axis-ts-groupcounts}
+
+`groupCounts` is declared at `src/1_axis.ts:350`.
+
+Data rows under each group key, whole subtree. Walked upward from each row, so every node is
+visited once and a non-group key never lands in the result.
+
+```ts
+groupCounts: <K extends string, T>(axis: Axis<K, T>) => ReadonlyMap<K, number>
+```
+
 ### `flattenAxis` {#src-1-axis-ts-flattenaxis}
 
-`flattenAxis` is declared at `src/1_axis.ts:361`.
+`flattenAxis` is declared at `src/1_axis.ts:376`.
 
 Depth-first from the roots, skipping the subtree of a closed node. That skip is what keeps a
 collapsed branch out of the virtualizer's row count entirely.
@@ -1008,7 +1078,7 @@ flattenAxis: <K extends string, T>(axis: Axis<K, T>, isOpen: (key: K) => boolean
 
 ### `descendantsOf` {#src-1-axis-ts-descendantsof}
 
-`descendantsOf` is declared at `src/1_axis.ts:411`.
+`descendantsOf` is declared at `src/1_axis.ts:426`.
 
 Depth-first, excluding `key` itself. The visited set is what makes a cyclic axis terminate.
 
@@ -1018,7 +1088,7 @@ descendantsOf: <K extends string, T>(axis: Axis<K, T>, key: K) => readonly K[]
 
 ### `mapAxis` {#src-1-axis-ts-mapaxis}
 
-`mapAxis` is declared at `src/1_axis.ts:430`.
+`mapAxis` is declared at `src/1_axis.ts:445`.
 
 Values change, structure does not, so the three structural maps are shared by reference.
 
@@ -2315,7 +2385,7 @@ The constructor.
 
 ### `GridSource` {#src-8-grid-ts-gridsource}
 
-`GridSource` is declared at `src/8_grid.ts:69`.
+`GridSource` is declared at `src/8_grid.ts:70`.
 
 Every input accepts any source shape, so a live input and a static one are the same call.
 `@hafley66/signals` already carries this as `SignalSource`; the grid adds a fallback so a live
@@ -2329,7 +2399,7 @@ export function toGridSignal<T>(source: GridSource<T>, fallback: T): Signal<T>
 
 ### `toGridSignal` {#src-8-grid-ts-togridsignal}
 
-`toGridSignal` is declared at `src/8_grid.ts:71`.
+`toGridSignal` is declared at `src/8_grid.ts:72`.
 
 ```ts
 toGridSignal: <T>(source: GridSource<T>, fallback: T) => Signal<T>
@@ -2337,7 +2407,7 @@ toGridSignal: <T>(source: GridSource<T>, fallback: T) => Signal<T>
 
 ### `DEFAULT_PAGE` {#src-8-grid-ts-default-page}
 
-`DEFAULT_PAGE` is declared at `src/8_grid.ts:83`.
+`DEFAULT_PAGE` is declared at `src/8_grid.ts:84`.
 
 ```ts
 DEFAULT_PAGE: Page
@@ -2345,7 +2415,7 @@ DEFAULT_PAGE: Page
 
 ### `defaultState` {#src-8-grid-ts-defaultstate}
 
-`defaultState` is declared at `src/8_grid.ts:85`.
+`defaultState` is declared at `src/8_grid.ts:86`.
 
 ```ts
 defaultState: (over?: Partial<GridState>) => GridState
@@ -2353,7 +2423,7 @@ defaultState: (over?: Partial<GridState>) => GridState
 
 ### `ROW_HEIGHT` {#src-8-grid-ts-row-height}
 
-`ROW_HEIGHT` is declared at `src/8_grid.ts:118`.
+`ROW_HEIGHT` is declared at `src/8_grid.ts:119`.
 
 ```ts
 ROW_HEIGHT: Record<"comfortable" | "compact" | "standard", number>
@@ -2361,7 +2431,7 @@ ROW_HEIGHT: Record<"comfortable" | "compact" | "standard", number>
 
 ### `GridConfig` {#src-8-grid-ts-gridconfig}
 
-`GridConfig` is declared at `src/8_grid.ts:126`.
+`GridConfig` is declared at `src/8_grid.ts:127`.
 
 ```ts
 export interface GridConfig<TRow> {
@@ -2395,7 +2465,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow>
 
 ### `GridView` {#src-8-grid-ts-gridview}
 
-`GridView` is declared at `src/8_grid.ts:154`.
+`GridView` is declared at `src/8_grid.ts:155`.
 
 ```ts
 export interface GridView<TRow> {
@@ -2432,7 +2502,7 @@ export interface GridView<TRow> {
 
 ### `Grid` {#src-8-grid-ts-grid}
 
-`Grid` is declared at `src/8_grid.ts:185`.
+`Grid` is declared at `src/8_grid.ts:186`.
 
 ```ts
 export interface Grid<TRow> {
@@ -2471,7 +2541,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow>
 
 ### `pageWindow` {#src-8-grid-ts-pagewindow}
 
-`pageWindow` is declared at `src/8_grid.ts:233`.
+`pageWindow` is declared at `src/8_grid.ts:234`.
 
 The three retention rules of `PageMode` expressed as one `paginate` call, so paging runs inside
 `renderPlan` after pinning has already been lifted out. Paging before pinning drops pinned
@@ -2483,7 +2553,7 @@ pageWindow: (page: Page) => { page: { index: number; size: number; }; enabled: b
 
 ### `grid` {#src-8-grid-ts-grid-2}
 
-`grid` is declared at `src/8_grid.ts:247`.
+`grid` is declared at `src/8_grid.ts:248`.
 
 ```ts
 grid: <TRow>(config: GridConfig<TRow>) => Grid<TRow>
@@ -2576,7 +2646,7 @@ Plain DOM.
 
 ### `RenderHandle` {#src-10-render-ts-renderhandle}
 
-`RenderHandle` is declared at `src/10_render.ts:60`.
+`RenderHandle` is declared at `src/10_render.ts:64`.
 
 ```ts
 export interface RenderHandle {
@@ -2588,7 +2658,7 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle
 
 ### `render` {#src-10-render-ts-render}
 
-`render` is declared at `src/10_render.ts:147`.
+`render` is declared at `src/10_render.ts:155`.
 
 ```ts
 render: <TRow>(grid: Grid<TRow>, root: HTMLElement) => RenderHandle

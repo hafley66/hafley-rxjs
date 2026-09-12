@@ -15,6 +15,7 @@ import { PAGE as scaffold_guilloche } from "../pages/10_guilloche.js"
 import { PAGE as scaffold_architecture } from "../pages/11_architecture.js"
 import { PAGE as scaffold_astrolabe } from "../pages/12_astrolabe.js"
 import { PAGE as scaffold_vello } from "../pages/19_vello.js"
+import { PAGE as scaffold_kh } from "../pages/20_kh.js"
 // scaffold:imports
 
 // specs = the sections that own url namespaces; anchors = extra sections that render without a bar
@@ -49,6 +50,7 @@ export const PAGES: readonly PageDef[] = [
   scaffold_architecture,
   scaffold_astrolabe,
   scaffold_vello,
+  scaffold_kh,
   // scaffold:pages
 ].map(define)
 
