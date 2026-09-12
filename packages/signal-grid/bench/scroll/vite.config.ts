@@ -23,6 +23,7 @@ export default defineConfig({
         knobs: page("knobs.html"),
         react: page("react.html"),
         mui: page("mui.html"),
+        chaos: page("chaos.html"),
       },
     },
   },

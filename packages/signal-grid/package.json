@@ -51,7 +51,8 @@
     "site:preview": "vitepress preview site",
     "examples": "node scripts/examples.mjs",
     "ship": "node scripts/ship.mjs",
-    "api": "node scripts/api.mjs"
+    "api": "node scripts/api.mjs",
+    "bench:chaos": "vite -c bench/scroll/vite.config.ts --open /chaos.html"
   },
   "peerDependencies": {
     "@hafley66/path": ">=0.1.0",

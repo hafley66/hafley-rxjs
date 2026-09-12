@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>signal-grid under every knob at once</title>
+    <style>
+      html, body { margin: 0; background: #14161a; color: #e6e8ea; font: 13px system-ui; color-scheme: dark }
+      /* theme.css sets color-scheme: light dark on [data-route="g"], resetting the used value
+         inside the grid; this unlayered rule beats that layered one, forcing the grid dark. */
+      [data-route="g"] { color-scheme: dark }
+      header.bar { display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+        background: #1b1e24; border-block-end: 1px solid #2a2f36; flex-wrap: wrap }
+      header.bar h1 { font-size: 14px; margin: 0; font-weight: 600 }
+      button { font: inherit; color: inherit; background: #2a2f36; border: 0; border-radius: 4px; padding: 4px 10px; cursor: pointer }
+      #readout { font-variant-numeric: tabular-nums; color: #a9b1ba }
+      #readout b { color: #6fd7ad }
+      #readout b.bad { color: #ff7b72 }
+      main { display: flex; gap: 14px; padding: 14px; align-items: flex-start; flex-wrap: wrap }
+      #stage { overflow: hidden; border: 1px solid #2a2f36; border-radius: 6px }
+      aside { display: flex; flex-direction: column; gap: 8px; min-inline-size: 230px }
+      #board { display: grid; grid-template-columns: 1fr; gap: 3px }
+      .d-card { display: grid; grid-template-columns: 84px 34px 1fr; align-items: baseline; gap: 6px;
+        padding: 3px 8px; background: #1b1e24; border-radius: 4px; font-size: 11px }
+      .d-card { cursor: pointer }
+      .d-card.d-off { opacity: .32 }
+      .d-card.d-off .d-v { color: #6e7681 }
+      .d-card b { color: #cdd3da; font-weight: 600 }
+      .d-p { color: #58606a; font-variant-numeric: tabular-nums }
+      .d-v { color: #6fd7ad; font-style: normal; font-variant-numeric: tabular-nums;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+      #trace { background: #1b1e24; border-radius: 4px; inline-size: 100%; block-size: 120px }
+      p.note { margin: 0; color: #6e7681; font-size: 11px; line-height: 1.5; max-inline-size: 230px }
+      rect { fill: #6fd7ad }
+    </style>
+  </head>
+  <body>
+    <header class="bar">
+      <h1>every knob at once</h1>
+      <button id="toggle">run</button>
+      <button id="reset">reset counters</button>
+      <label style="display:flex;align-items:center;gap:5px;color:#a9b1ba">
+        <input type="checkbox" id="churn" /> churn: rewrite every signal each frame
+      </label>
+      <div id="readout"></div>
+    </header>
+    <main>
+      <div id="stage"></div>
+      <aside>
+        <canvas id="trace" width="460" height="120"></canvas>
+        <p class="note">
+          Frame ms over the last 360 frames. The three rules are 8.3, 16.6 and 33 ms.
+          Every driver runs on its own period and no two periods share a factor, so the grid
+          never sees the same combination twice inside a run. Click a driver to switch it off.
+        </p>
+        <div id="board"></div>
+      </aside>
+    </main>
+    <script type="module" src="./chaos.ts"></script>
+  </body>
+</html>

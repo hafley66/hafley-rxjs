@@ -11,6 +11,7 @@ const HOST_ATTRIBUTE = "data-pages-strip"
 
 const CSS = `
 .pages-strip {
+  --s-on: var(--accent, var(--vp-c-brand-1, #6fd7ad));
   display: flex; flex-wrap: wrap; align-items: center; column-gap: 12px; row-gap: 2px;
   padding: 6px 14px; font: 13px/1.4 ui-monospace, Menlo, monospace;
   background: var(--panel-bg, var(--vp-c-bg-alt, light-dark(#fff, #161616)));
@@ -19,8 +20,8 @@ const CSS = `
 }
 .pages-strip a { border-bottom: 2px solid transparent; padding: 1px 0; text-decoration: none; color: inherit }
 .pages-strip a:hover { color: var(--fg, var(--vp-c-text-1, light-dark(#1a1a1a, #ddd))) }
-.pages-strip a[aria-current] { border-color: var(--accent, var(--vp-c-brand-1, #6fd7ad)); color: var(--accent, var(--vp-c-brand-1, #6fd7ad)) }
-.pages-strip-mark { opacity: .55; letter-spacing: .04em; text-transform: uppercase; font-size: 10px; margin-right: 2px }
+.pages-strip a[aria-current] { border-color: var(--s-on); color: var(--s-on) }
+.pages-strip-mark { opacity: .55; letter-spacing: .04em; font-size: 10px; margin-right: 2px }
 .pages-strip-fixed .pages-strip { position: fixed; inset-inline: 0; top: 0; z-index: 60 }
 `
 
@@ -65,7 +66,8 @@ export function renderStrip(host: HTMLElement, pathname: string): void {
 
   const mark = doc.createElement("span")
   mark.className = "pages-strip-mark"
-  mark.textContent = "hafley-rxjs"
+  // Written uppercase rather than transformed: the rule costs bytes the 4 kB budget wants back.
+  mark.textContent = "HAFLEY-RXJS"
   nav.append(mark)
 
   const hub = doc.createElement("a")

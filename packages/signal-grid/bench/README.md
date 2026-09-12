@@ -22,7 +22,7 @@ places signal-grid loses.
 | [scrolling in a browser](#scrolling-in-a-browser-the-factor-matrix) | which factor costs a frame, and what a row costs in memory |
 | [head to head with MUI X](#head-to-head-with-mui-x-data-grid) | the same scroll on both grids, including where MUI X wins |
 | [where the retained bytes go](#where-the-retained-bytes-go) | the 125 bytes a row that are the grid, and the rest that are your data |
-| [the live pages](#the-live-pages) | the knob sweep and the ten-grid gallery, both on the site |
+| [the live pages](#the-live-pages) | the knob sweep, the ten-grid gallery and the chaos run, all on the site |
 | [known gaps](#known-gaps) | what is not measured |
 
 ## how to run
@@ -592,17 +592,19 @@ target: five fields per row where `depth`, `index` and `hasChildren` are derivab
 
 ### the live pages
 
-Two, both built into `site/dist/bench/` by `scripts/ship.mjs` the same way the demo is:
+Three, all built into `site/dist/bench/` by `scripts/ship.mjs` the same way the demo is:
 
 | page | what it is |
 | --- | --- |
 | [knobs](https://hafley66.github.io/hafley-rxjs/signal-grid/bench/knobs.html) | one grid, a slider per factor, the frame cost plotted while a knob moves |
 | [gallery](https://hafley66.github.io/hafley-rxjs/signal-grid/bench/gallery.html) | ten grids at ten factor levels, sharing one animation frame |
+| [chaos](https://hafley66.github.io/hafley-rxjs/signal-grid/bench/chaos.html) | one grid, sixteen drivers moving every knob at once on coprime periods |
 
 ```
 cd packages/signal-grid
 pnpm bench:knobs
 pnpm bench:gallery
+pnpm bench:chaos
 ```
 
 **knobs** separates the factors that move from the two that cannot. `overscan`, the box size, the
@@ -621,6 +623,35 @@ It loads paused; press run. The bar in each tile is that grid's share of the fra
 id off the same LogTape records the matrix reads. The toolbar carries frames per second, the worst
 frame of the last second, the used heap against the engine's limit, and the node count of the whole
 page.
+
+**chaos** runs sixteen drivers over one grid at 200,000 rows, each on its own period, and no two
+periods share a factor, so the run never repeats a combination. Eight are continuous and move every
+frame: the scroll, the box size, `overscan`, a column width, the selected band, the cell range, the
+focus ring and a hue every cell reads. Eight fire once per period the way a user's action arrives:
+the sort, the column order, pinning, hiding, row pinning, density, list view, and real
+`pointerdown` / `pointerup` / `click` / `keydown` events dispatched at the root so the epics run
+rather than the state being written behind them.
+
+The readout splits the package's own stage total out of the frame it rides in. Under all sixteen the
+package reads about 2.4 ms of a 43 ms frame, 6 per cent, and `dom` is almost all of it. Click a
+driver card to switch it off and the split moves:
+
+| drivers | package ms/f | share of frame | frames over 32 ms |
+| --- | --- | --- | --- |
+| all sixteen | 2.43 | 6% | 168 of 180 |
+| box off | 4.23 | 11% | 169 of 201 |
+| box and colWidth off | 3.99 | 16% | 44 of 314 |
+
+Switching the live column resize off takes the slow frames from 169 in 201 to 44 in 314 while the
+package's own cost goes up, which is the whole finding: writing a grid track every frame is one full
+browser layout per frame, and the package was never the term that mattered.
+
+The `churn` switch is the second finding. Every driver guards its write, so an unchanged value is
+not rewritten. Tick `churn` and each one rewrites its signal every frame with a fresh object equal
+to the one already there. A signal rejects by identity rather than by shape, so `[{ field, sort }]`
+rebuilt every frame re-sorts the relation every frame: `sort 32.7 ms/f` and `flatten 12.5 ms/f`
+appear in the stage list, and the frame goes from 40 ms to 233. Guarding the write is the consumer's
+job, and this is what skipping it costs at 200,000 rows.
 
 Sharing one frame is the point: ten grids is what an application looks like, and a tile's cost has
 to be read against the others rather than alone.
