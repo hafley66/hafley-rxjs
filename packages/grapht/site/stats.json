@@ -3,23 +3,21 @@
   "generatedBy": "grapht/site",
   "commit": {
     "method": "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain excluding this step's own outputs, git rev-parse --abbrev-ref HEAD",
-    "hash": "55dd86d2d5876ba24ec11b73538dc504bbfcf3d3",
-    "short": "55dd86d",
-    "subject": "signal-grid: 125 bytes a row is the grid, the rest is your data",
-    "authorDate": "2026-09-12T10:52:07-04:00",
+    "hash": "cf79b5a5d32e6c591195b17c8659b60741c2ef25",
+    "short": "cf79b5a",
+    "subject": "grapht: add pages workflow with strip refresh",
+    "authorDate": "2026-09-12T11:47:29-04:00",
     "branch": "feature/grapht-pages-site",
     "clean": false,
-    "dirtyCount": 6,
+    "dirtyCount": 4,
     "dirtyEntries": [
-      "M packages/grapht/package.json",
-      "M pages/manifest.ts",
-      "M pnpm-lock.yaml",
-      "?? .github/workflows/grapht-pages.yml",
-      "?? packages/grapht/scripts/ship.mjs",
-      "?? packages/grapht/site/"
+      "M .github/workflows/grapht-pages.yml",
+      "A  packages/grapht/adapters/2_render_cytoscape/proof/arch.svg",
+      "M packages/grapht/scripts/ship.mjs",
+      "M packages/grapht/site/pages/proof.md"
     ],
     "repository": "hafley66/hafley-rxjs",
-    "url": "https://github.com/hafley66/hafley-rxjs/commit/55dd86d2d5876ba24ec11b73538dc504bbfcf3d3",
+    "url": "https://github.com/hafley66/hafley-rxjs/commit/cf79b5a5d32e6c591195b17c8659b60741c2ef25",
     "reason": null
   },
   "machine": {
@@ -30,7 +28,7 @@
     "cpuModel": "Apple M2 Pro",
     "cores": 12,
     "totalMemoryBytes": 17179869184,
-    "builtAt": "2026-09-12T15:46:34.754Z"
+    "builtAt": "2026-09-12T15:51:27.511Z"
   },
   "package": {
     "name": "@hafley66/grapht",
@@ -44,17 +42,17 @@
       "totalGzipBytes": 101017,
       "reason": null
     },
-    "siteMethod": "the same statSync and gzipSync pass over site/dist, measured on the pass-1 build",
+    "siteMethod": "the same statSync and gzipSync pass over site/dist; the copy inlined into the site measures pass 1, the committed stats.json measures the final dist",
     "site": {
-      "fileCount": 127,
-      "totalBytes": 5443986,
-      "totalGzipBytes": 2182491,
+      "fileCount": 134,
+      "totalBytes": 6408736,
+      "totalGzipBytes": 2488985,
       "reason": null
     },
     "demo": {
-      "fileCount": 0,
-      "totalBytes": 0,
-      "totalGzipBytes": 0,
+      "fileCount": 5,
+      "totalBytes": 926370,
+      "totalGzipBytes": 296126,
       "reason": null
     },
     "videos": {
@@ -460,9 +458,9 @@
     "libraryBuildReason": "not measured by ship",
     "unitTestsMs": null,
     "browserTestsMs": null,
-    "siteBuildMs": 1954,
+    "siteBuildMs": 1948,
     "demoBuildMs": null,
-    "statsMs": 1789227994870
+    "statsMs": 1789228287649
   },
   "demoMemory": {
     "method": null,

@@ -59,6 +59,13 @@ jobs:
       - name: Ship
         run: pnpm --filter @hafley66/grapht ship
 
+      # The strip is an IIFE with `pages/manifest.ts` inlined, built from the workspace where vite
+      # and the manifest live. The publish step only copies the file; gh-pages has no toolchain.
+      - name: Build the strip
+        run: |
+          npx vite build -c pages/vite.config.ts --mode strip
+          test -f pages/dist/strip.js || { echo "strip build produced no pages/dist/strip.js"; exit 1; }
+
       - name: Assert the artifact is complete
         run: |
           set -euo pipefail
@@ -93,8 +100,6 @@ jobs:
           before_nojekyll="$(sha256sum .nojekyll | cut -d' ' -f1)"
           echo "root index.html before: $before_index"
 
-          npx vite build -c pages/vite.config.ts --mode strip
-          test -f pages/dist/strip.js || { echo "strip build produced no pages/dist/strip.js"; exit 1; }
           cp "$GITHUB_WORKSPACE/pages/dist/strip.js" "$worktree/strip.js"
           test -f strip.js || { echo "strip.js vanished after the copy; refusing to publish"; exit 1; }
 

@@ -5,7 +5,7 @@ fixture) panned, zoomed, and selected in both the document and cytoscape rendere
 
 <iframe
   src="/hafley-rxjs/grapht/proof/index.html"
-  style="position: fixed; inset: 64px 0 0 0; width: 100%; height: calc(100% - 64px); border: 0"
+  style="width: 100%; height: calc(100vh - 10rem); border: 0"
   title="grapht interactive proof"
 ></iframe>
 

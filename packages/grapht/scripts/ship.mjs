@@ -51,8 +51,8 @@ const contentSource = readFileSync(join(PKG, "site", "content.ts"), "utf8")
 const SLUGS = [...contentSource.matchAll(/slug:\s*"([^"]+)"/g)].map((match) => match[1] ?? "")
 if (SLUGS.length === 0) throw new Error("ship: site/content.ts declares no page slugs")
 
-// The proof app fetches `./arch.svg` at runtime, which vite does not emit. It is a gitignored d2
-// output, so regenerate it when absent and copy it into the built tree after the proof build.
+// The proof app fetches `./arch.svg` at runtime, which vite does not emit. The svg is tracked for
+// hermetic CI; `proof:svg` regenerates it from the d2 fixture when a local checkout lacks it.
 function ensureArchSvg() {
   if (existsSync(ARCH_SVG)) return
   run("arch.svg", "pnpm", ["run", "proof:svg"], PROOF_PKG)
@@ -157,7 +157,6 @@ const machine = {
 
 const siteBundle = measureBundle(OUT)
 const libraryBundle = measureBundle(join(PKG, "dist"))
-const demoBundle = measureBundle(join(OUT, "proof"))
 const source = sourceStats()
 const statsMs = Date.now()
 
@@ -170,9 +169,10 @@ const stats = {
   bundle: {
     method: "statSync().size summed for raw bytes and zlib.gzipSync(readFileSync(file)).length summed for gzip, over every file in the directory",
     library: { ...libraryBundle, reason: null },
-    siteMethod: "the same statSync and gzipSync pass over site/dist, measured on the pass-1 build",
+    siteMethod:
+      "the same statSync and gzipSync pass over site/dist; the copy inlined into the site measures pass 1, the committed stats.json measures the final dist",
     site: { ...siteBundle, reason: null },
-    demo: { ...demoBundle, reason: null },
+    demo: { fileCount: 0, totalBytes: 0, totalGzipBytes: 0, reason: "measured after the proof fold-in below" },
     videos: { fileCount: 0, totalBytes: 0, totalGzipBytes: 0, reason: "no recordings; the proof is a live app, not a filmed suite" },
     treemap: {
       method: "none",
@@ -241,6 +241,13 @@ run("proof build", "npx", [
 ])
 cpSync(ARCH_SVG, join(OUT, "proof", "arch.svg"))
 
+// The dist is final now, so the committed stats.json carries the shipped sizes. The copy inlined in
+// the site bundle still measures pass 1 above; only this file is rewritten.
+stats.bundle.site = { ...measureBundle(OUT), reason: null }
+stats.bundle.demo = { ...measureBundle(join(OUT, "proof")), reason: null }
+writeFileSync(join(PKG, "site", "stats.json"), `${JSON.stringify(stats, null, 2)}\n`)
+steps.push({ label: "final stats", ok: true, ms: 0 })
+
 const entries = walk(OUT)
 const total = entries.reduce((sum, file) => sum + bytes(file), 0)
 const largest = [...entries]
@@ -269,4 +276,4 @@ console.log(`  largest    ${largest.join(", ")}`)
 console.log("")
 console.log("  open       the published site at https://hafley66.github.io/hafley-rxjs/grapht/")
 console.log("  open       the proof in a frame at the `proof` page, or standalone:")
-console.log(`  open       npx vite preview -c site/vite.config.ts (serves ${BASE})`)
+console.log("  open       pnpm --filter @hafley66/grapht site:preview (serves " + BASE + ")")
