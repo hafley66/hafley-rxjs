@@ -49,7 +49,7 @@ describe("golden app composition", () => {
     const config = await readFile(resolve(testsDirectory, "../vite.config.ts"), "utf8")
 
     expect(config).not.toMatch(/0a_production/)
-    expect(config).toMatch(/packages\/grapht\/src\/27_browser\.ts/)
+    expect(config).toMatch(/packages\/grapht\/src\/browser\.ts/)
     expect(config).toMatch(/2_render_cytoscape\/index\.ts/)
     expect(config).toMatch(/6_render_pixijs\/src\/index\.ts/)
   })
