@@ -108,6 +108,7 @@ export { reconcileSequencePlacements } from "./1_sequence/6_placement.js"
 
 export type { GraphCamera, GraphFrame, GraphGeometry, GraphLabel, GraphPresentation, HeaderPlacement } from "./2_graph/0_frame.js"
 export { fitGraphCamera } from "./2_graph/1_fitCamera.js"
+export * from "./5_history/index.js"
 export type { SealedGeometryFit, SealedGeometryScope, SealedGeometryTransform } from "./2_graph/2_geometryScope.js"
 export { composeGraphGeometryScopes, sealedGeometryTransformOf } from "./2_graph/2_geometryScope.js"
 export type { SealedSvgArtifact, SealedSvgArtifactsByRootId } from "./2_graph/3_sealedSvgArtifact.js"

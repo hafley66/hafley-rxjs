@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+import { historyMain } from "../dist/5_history/2_cli.js"
+
+process.exitCode = await historyMain(process.argv.slice(2))
