@@ -30,8 +30,12 @@ const ROWS: readonly Row[] = [
 const gridOf = (columns: readonly ColumnDef<Row>[]) =>
   grid<Row>({ id: "t", rows: ROWS, columns, rowId: (row) => row.id })
 
+// The viewport is what makes the plan non-empty. `virtualize.vertical` is on by default and an
+// unmeasured viewport windows nothing, so a grid that was never given one draws no row and
+// therefore writes no per-row property.
 const mount = (columns: readonly ColumnDef<Row>[]) => {
   const g = gridOf(columns)
+  g.viewport.$({ top: 0, left: 0, width: 800, height: 400 })
   const root = document.createElement("div")
   const release = writeGridVars(g, root)
   return { g, root, release }
@@ -125,6 +129,17 @@ describe("the write pass", () => {
     expect(root.style.getPropertyValue(rowHeightVar("a"))).toBe("64px")
     g.dispatch({ phase: "change", type: "rowHeight", rowHeight: {} })
     expect(root.style.getPropertyValue(rowHeightVar("a"))).toBe("")
+    release()
+  })
+
+  // A consumer declaring a height per row of a large relation is the ordinary case, and writing
+  // one property per declaration put the whole relation on the root: /dense carried 20,005 inline
+  // properties and 449 kB of `style`, rewalked every scroll frame.
+  it("writes the drawn run and not the whole record", () => {
+    const { g, root, release } = mount([{ id: "name", width: 120 }])
+    g.dispatch({ phase: "change", type: "rowHeight", rowHeight: { a: 64, ghost: 90 } })
+    expect(root.style.getPropertyValue(rowHeightVar("a"))).toBe("64px")
+    expect(root.style.getPropertyValue(rowHeightVar("ghost"))).toBe("")
     release()
   })
 

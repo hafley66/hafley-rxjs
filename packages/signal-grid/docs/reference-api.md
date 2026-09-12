@@ -1477,7 +1477,7 @@ intentOf: Readonly<{ "cell.click": (event: Delegated<Simplify<{ gridId: string; 
 
 ### `encodeVarId` {#src-3-paths-ts-encodevarid}
 
-`encodeVarId` is declared at `src/3_paths.ts:400`.
+`encodeVarId` is declared at `src/3_paths.ts:404`.
 
 ```ts
 encodeVarId: (id: string) => string
@@ -1485,7 +1485,7 @@ encodeVarId: (id: string) => string
 
 ### `decodeVarId` {#src-3-paths-ts-decodevarid}
 
-`decodeVarId` is declared at `src/3_paths.ts:410`.
+`decodeVarId` is declared at `src/3_paths.ts:419`.
 
 The inverse, for reading an id back out of a stylesheet or a failing assertion.
 
@@ -1495,7 +1495,7 @@ decodeVarId: (encoded: string) => string
 
 ### `rowHeightVar` {#src-3-paths-ts-rowheightvar}
 
-`rowHeightVar` is declared at `src/3_paths.ts:417`.
+`rowHeightVar` is declared at `src/3_paths.ts:426`.
 
 ```ts
 rowHeightVar: (rowId: string) => string
@@ -1503,7 +1503,7 @@ rowHeightVar: (rowId: string) => string
 
 ### `SG_DEPTH` {#src-3-paths-ts-sg-depth}
 
-`SG_DEPTH` is declared at `src/3_paths.ts:420`.
+`SG_DEPTH` is declared at `src/3_paths.ts:429`.
 
 Tree indent. Written once per row, read by every cell in it.
 
@@ -2745,7 +2745,7 @@ SG_ROW_HEIGHT_SELF: "--sg-h"
 
 ### `writeGridVars` {#src-9-css-ts-writegridvars}
 
-`writeGridVars` is declared at `src/9_css.ts:36`.
+`writeGridVars` is declared at `src/9_css.ts:39`.
 
 Writes every geometry property onto `root` from one derived node, so two sources changing in
 the same tick cannot paint two different frames.

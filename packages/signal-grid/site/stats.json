@@ -3,28 +3,22 @@
   "generatedBy": "packages/signal-grid/scripts/stats.mjs",
   "commit": {
     "method": "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain excluding this step's own outputs, git rev-parse --abbrev-ref HEAD",
-    "hash": "21f3c36fc9c3171cf7536d9119f7372801b9999a",
-    "short": "21f3c36",
-    "subject": "docs-kit: the api reference is read out of the compiler, not typed",
-    "authorDate": "2026-09-10T22:51:05-04:00",
-    "branch": "feature/docs-kit",
+    "hash": "e1ea72979afc0b8f013d6ba948c88184983d9c38",
+    "short": "e1ea729",
+    "subject": "signal-grid: the plan-base test gets a relation a scroll can move over",
+    "authorDate": "2026-09-12T09:35:03-04:00",
+    "branch": "main",
     "clean": false,
-    "dirtyCount": 11,
+    "dirtyCount": 5,
     "dirtyEntries": [
-      "M packages/docs-kit/package.json",
-      " M packages/docs-kit/scripts/api.mjs",
-      " M packages/signals/README.md",
-      " M packages/signals/package.json",
-      " M pages/manifest.ts",
-      " M pnpm-lock.yaml",
-      "?? packages/signals/docs/",
-      "?? packages/signals/examples/",
-      "?? packages/signals/out/",
-      "?? packages/signals/scripts/",
-      "?? packages/signals/site/"
+      "M packages/signals/docs/reference-api.md",
+      " M packages/signals/site/stats.json",
+      "?? packages/gothic/src/lib/8a_khFit.ts",
+      "?? packages/gothic/tools/",
+      "?? packages/signal-grid/src/__screenshots__/"
     ],
     "repository": "hafley66/hafley-rxjs",
-    "url": "https://github.com/hafley66/hafley-rxjs/commit/21f3c36fc9c3171cf7536d9119f7372801b9999a",
+    "url": "https://github.com/hafley66/hafley-rxjs/commit/e1ea72979afc0b8f013d6ba948c88184983d9c38",
     "reason": null
   },
   "machine": {
@@ -35,7 +29,7 @@
     "cpuModel": "Apple M2 Pro",
     "cores": 12,
     "totalMemoryBytes": 17179869184,
-    "builtAt": "2026-09-11T03:04:07.386Z"
+    "builtAt": "2026-09-12T13:35:22.286Z"
   },
   "package": {
     "name": "@hafley66/signal-grid",
@@ -45,28 +39,28 @@
     "method": "statSync().size summed for raw bytes and zlib.gzipSync(readFileSync(file)).length summed for gzip, over every file in the directory; totals and a file count only, because a per-file listing of a build output answers nothing",
     "library": {
       "fileCount": 3,
-      "totalBytes": 112556,
-      "totalGzipBytes": 32279,
+      "totalBytes": 122724,
+      "totalGzipBytes": 35048,
       "reason": null
     },
     "siteMethod": "the same statSync and gzipSync pass, run after the site build and before the rebuild that ships this file; the shipped assets differ from these figures by the bytes this table adds to stats.json",
     "site": {
-      "fileCount": 235,
-      "totalBytes": 7605358,
-      "totalGzipBytes": 2600758,
+      "fileCount": 236,
+      "totalBytes": 7887223,
+      "totalGzipBytes": 2676689,
       "reason": null
     },
     "demo": {
       "fileCount": 2,
-      "totalBytes": 242517,
-      "totalGzipBytes": 79540,
+      "totalBytes": 262971,
+      "totalGzipBytes": 85129,
       "reason": null
     },
     "videos": {
-      "fileCount": null,
-      "totalBytes": null,
-      "totalGzipBytes": null,
-      "reason": "site/dist/videos holds no recordings"
+      "fileCount": 5,
+      "totalBytes": 434339,
+      "totalGzipBytes": 418725,
+      "reason": null
     },
     "treemap": {
       "method": "rollup-plugin-visualizer, wired into vite.config.ts behind SIGNAL_GRID_TREEMAP=1 because it takes the bundle step from 24 ms to 84 ms; this script does not set the flag",
@@ -83,71 +77,91 @@
     "entries": [
       {
         "name": "published javascript, dist/*.js",
-        "sizeBytes": 28659,
+        "sizeBytes": 29704,
         "limitBytes": 29000,
-        "headroomBytes": 341,
-        "passed": true,
-        "loadingMs": 560,
-        "runningMs": 118
+        "headroomBytes": -704,
+        "passed": false,
+        "loadingMs": 580,
+        "runningMs": 117
       },
       {
         "name": "the eager half, dist/index.js",
-        "sizeBytes": 24317,
+        "sizeBytes": 25362,
         "limitBytes": 24000,
-        "headroomBytes": -317,
+        "headroomBytes": -1362,
         "passed": false,
-        "loadingMs": 475,
-        "runningMs": 69
+        "loadingMs": 495,
+        "runningMs": 70
       },
       {
         "name": "grid() and render() imported",
-        "sizeBytes": 15828,
+        "sizeBytes": 17139,
         "limitBytes": 15500,
-        "headroomBytes": -328,
+        "headroomBytes": -1639,
         "passed": false,
-        "loadingMs": 309,
-        "runningMs": 49
+        "loadingMs": 335,
+        "runningMs": 60
       },
       {
         "name": "theme.css",
-        "sizeBytes": 1542,
+        "sizeBytes": 2029,
         "limitBytes": 1600,
-        "headroomBytes": 58,
-        "passed": true,
-        "loadingMs": 30,
+        "headroomBytes": -429,
+        "passed": false,
+        "loadingMs": 40,
         "runningMs": 0
       }
     ],
     "passed": false,
-    "durationMs": 15679,
-    "reason": "2 entr(y|ies) over budget: the eager half, dist/index.js, grid() and render() imported"
+    "durationMs": 5839,
+    "reason": "4 entr(y|ies) over budget: published javascript, dist/*.js, the eager half, dist/index.js, grid() and render() imported, theme.css"
   },
   "source": {
     "method": "readFileSync over src/*.{ts,css}, lines counted as \\n occurrences; a name containing .test. is a test file",
     "files": [
       {
         "file": "src/10_render.test.ts",
-        "lines": 1037,
+        "lines": 1346,
         "kind": "test"
       },
       {
         "file": "src/10_render.ts",
-        "lines": 937,
+        "lines": 1102,
         "kind": "source"
       },
       {
         "file": "src/8_grid.ts",
-        "lines": 818,
+        "lines": 846,
         "kind": "source"
       },
       {
         "file": "src/7_epics.test.ts",
-        "lines": 691,
+        "lines": 781,
         "kind": "test"
       },
       {
         "file": "src/7_epics.ts",
-        "lines": 684,
+        "lines": 768,
+        "kind": "source"
+      },
+      {
+        "file": "src/theme.css",
+        "lines": 620,
+        "kind": "source"
+      },
+      {
+        "file": "src/4_slice.test.ts",
+        "lines": 555,
+        "kind": "test"
+      },
+      {
+        "file": "src/8_grid.test.ts",
+        "lines": 553,
+        "kind": "test"
+      },
+      {
+        "file": "src/0_types.ts",
+        "lines": 547,
         "kind": "source"
       },
       {
@@ -156,33 +170,13 @@
         "kind": "test"
       },
       {
-        "file": "src/4_slice.test.ts",
-        "lines": 517,
-        "kind": "test"
-      },
-      {
-        "file": "src/8_grid.test.ts",
-        "lines": 517,
-        "kind": "test"
-      },
-      {
-        "file": "src/0_types.ts",
-        "lines": 492,
-        "kind": "source"
-      },
-      {
         "file": "src/1_axis.test.ts",
         "lines": 459,
         "kind": "test"
       },
       {
-        "file": "src/theme.css",
-        "lines": 443,
-        "kind": "source"
-      },
-      {
         "file": "src/1_axis.ts",
-        "lines": 437,
+        "lines": 452,
         "kind": "source"
       },
       {
@@ -196,13 +190,18 @@
         "kind": "source"
       },
       {
+        "file": "src/9_css.test.ts",
+        "lines": 409,
+        "kind": "test"
+      },
+      {
         "file": "src/features.ts",
         "lines": 407,
         "kind": "source"
       },
       {
         "file": "src/5_columns.test.ts",
-        "lines": 388,
+        "lines": 401,
         "kind": "test"
       },
       {
@@ -226,19 +225,14 @@
         "kind": "test"
       },
       {
-        "file": "src/9_css.test.ts",
-        "lines": 311,
-        "kind": "test"
+        "file": "src/4_slice.ts",
+        "lines": 319,
+        "kind": "source"
       },
       {
         "file": "src/3_paths.test.ts",
         "lines": 308,
         "kind": "test"
-      },
-      {
-        "file": "src/4_slice.ts",
-        "lines": 281,
-        "kind": "source"
       },
       {
         "file": "src/15_selection.test.ts",
@@ -346,19 +340,29 @@
         "kind": "test"
       },
       {
+        "file": "src/examples.dom.test.ts",
+        "lines": 38,
+        "kind": "test"
+      },
+      {
         "file": "src/index.ts",
         "lines": 25,
         "kind": "source"
+      },
+      {
+        "file": "src/examples.test.ts",
+        "lines": 24,
+        "kind": "test"
       }
     ],
     "sourceFiles": 22,
-    "sourceLines": 7423,
-    "testFiles": 23,
-    "testLines": 7627
+    "sourceLines": 7985,
+    "testFiles": 25,
+    "testLines": 8273
   },
   "epics": {
     "method": "a child node process imports defaultEpics from dist/index.js and reports the length of what it returns",
-    "count": 12,
+    "count": 14,
     "reason": null
   },
   "features": {
@@ -368,12 +372,12 @@
     "declaredOnly": 9,
     "decidedOut": 8,
     "undecided": 6,
-    "tags": 53,
+    "tags": 54,
     "modules": 19,
     "untagged": [],
-    "unread": 10,
+    "unread": 9,
     "gate": "pass",
-    "durationMs": 225,
+    "durationMs": 194,
     "reason": null
   },
   "tests": {
@@ -381,11 +385,11 @@
     "unit": {
       "label": "unit",
       "command": "vitest run",
-      "tests": 407,
-      "files": 115,
-      "passed": 407,
+      "tests": 423,
+      "files": 120,
+      "passed": 423,
       "failed": 0,
-      "durationMs": 983,
+      "durationMs": 957,
       "success": true,
       "reason": null
     },
@@ -402,15 +406,15 @@
   },
   "timing": {
     "method": "Date.now() around each execFileSync call in scripts/stats.mjs; site and demo build times are handed over by scripts/ship.mjs",
-    "typecheckMs": 388,
+    "typecheckMs": 234,
     "typecheckReason": null,
-    "libraryBuildMs": 283,
+    "libraryBuildMs": 313,
     "libraryBuildReason": null,
-    "unitTestsMs": 983,
+    "unitTestsMs": 957,
     "browserTestsMs": null,
-    "siteBuildMs": 4716,
-    "demoBuildMs": 441,
-    "statsMs": 17949
+    "siteBuildMs": 5097,
+    "demoBuildMs": 489,
+    "statsMs": 7887
   },
   "memory": {
     "method": "a child node --expose-gc process imports dist/index.js, allocates 100000 plain row objects, forces gc, reads process.memoryUsage().heapUsed, builds one grid and reads view.plan and view.flat, forces gc again, reads heapUsed again",
@@ -418,11 +422,11 @@
     "rows": 100000,
     "flatNodes": 100000,
     "windowedRows": 27,
-    "heapBeforeBytes": 24325424,
-    "heapAfterBytes": 36669832,
-    "retainedBytes": 12344408,
-    "retainedBytesPerRow": 123.4,
-    "rssBytes": 144261120,
+    "heapBeforeBytes": 24237336,
+    "heapAfterBytes": 38375376,
+    "retainedBytes": 14138040,
+    "retainedBytesPerRow": 141.4,
+    "rssBytes": 146751488,
     "reason": null
   },
   "demoMemory": {
@@ -430,16 +434,16 @@
     "command": "node scripts/examples.mjs",
     "samples": 3,
     "leakBytes": 524288,
-    "measuredAt": "2026-09-11T03:04:53.693Z",
+    "measuredAt": "2026-09-12T13:35:57.805Z",
     "examples": [
       {
         "id": "flat-list",
         "repeats": 3,
-        "baselineHeapBytes": 13130360,
-        "peakHeapBytes": 430992,
-        "peakSpreadBytes": 78840,
-        "retainedHeapBytes": 15280,
-        "retainedSpreadBytes": 36616,
+        "baselineHeapBytes": 15861560,
+        "peakHeapBytes": 439364,
+        "peakSpreadBytes": 858896,
+        "retainedHeapBytes": 12996,
+        "retainedSpreadBytes": 19384,
         "nodesAfterTeardown": 0,
         "painted": 13,
         "leaks": false,
@@ -448,11 +452,11 @@
       {
         "id": "multi-sort",
         "repeats": 3,
-        "baselineHeapBytes": 13171020,
-        "peakHeapBytes": 448748,
-        "peakSpreadBytes": 62884,
-        "retainedHeapBytes": 11732,
-        "retainedSpreadBytes": 5852,
+        "baselineHeapBytes": 15906208,
+        "peakHeapBytes": 441472,
+        "peakSpreadBytes": 852372,
+        "retainedHeapBytes": 10824,
+        "retainedSpreadBytes": 2868,
         "nodesAfterTeardown": 0,
         "painted": 13,
         "leaks": false,
@@ -461,11 +465,11 @@
       {
         "id": "tree-expand",
         "repeats": 3,
-        "baselineHeapBytes": 13200444,
-        "peakHeapBytes": 376576,
-        "peakSpreadBytes": 95844,
-        "retainedHeapBytes": 8704,
-        "retainedSpreadBytes": 15252,
+        "baselineHeapBytes": 15941976,
+        "peakHeapBytes": 430180,
+        "peakSpreadBytes": 815884,
+        "retainedHeapBytes": 14416,
+        "retainedSpreadBytes": 11676,
         "nodesAfterTeardown": 0,
         "painted": 12,
         "leaks": false,
@@ -474,11 +478,11 @@
       {
         "id": "row-grouping",
         "repeats": 3,
-        "baselineHeapBytes": 13242436,
-        "peakHeapBytes": 533012,
-        "peakSpreadBytes": 93460,
-        "retainedHeapBytes": 9404,
-        "retainedSpreadBytes": 988,
+        "baselineHeapBytes": 15990608,
+        "peakHeapBytes": 416176,
+        "peakSpreadBytes": 15436,
+        "retainedHeapBytes": 16140,
+        "retainedSpreadBytes": 7652,
         "nodesAfterTeardown": 0,
         "painted": 9,
         "leaks": false,
@@ -487,11 +491,11 @@
       {
         "id": "row-pinning",
         "repeats": 3,
-        "baselineHeapBytes": 13276264,
-        "peakHeapBytes": 580744,
-        "peakSpreadBytes": 99384,
-        "retainedHeapBytes": 8712,
-        "retainedSpreadBytes": 6552,
+        "baselineHeapBytes": 16028716,
+        "peakHeapBytes": 607552,
+        "peakSpreadBytes": 59932,
+        "retainedHeapBytes": 10952,
+        "retainedSpreadBytes": 4756,
         "nodesAfterTeardown": 0,
         "painted": 16,
         "leaks": false,
@@ -500,11 +504,11 @@
       {
         "id": "row-height",
         "repeats": 3,
-        "baselineHeapBytes": 13302272,
-        "peakHeapBytes": 386008,
-        "peakSpreadBytes": 13976,
-        "retainedHeapBytes": 8788,
-        "retainedSpreadBytes": 2208,
+        "baselineHeapBytes": 16065196,
+        "peakHeapBytes": 427644,
+        "peakSpreadBytes": 709236,
+        "retainedHeapBytes": 10652,
+        "retainedSpreadBytes": 8984,
         "nodesAfterTeardown": 0,
         "painted": 9,
         "leaks": false,
@@ -513,11 +517,11 @@
       {
         "id": "row-reorder",
         "repeats": 3,
-        "baselineHeapBytes": 13331132,
-        "peakHeapBytes": 584720,
-        "peakSpreadBytes": 92188,
-        "retainedHeapBytes": 9280,
-        "retainedSpreadBytes": 8600,
+        "baselineHeapBytes": 16106004,
+        "peakHeapBytes": 631348,
+        "peakSpreadBytes": 771444,
+        "retainedHeapBytes": 10920,
+        "retainedSpreadBytes": 1432,
         "nodesAfterTeardown": 0,
         "painted": 14,
         "leaks": false,
@@ -526,11 +530,11 @@
       {
         "id": "column-pinning",
         "repeats": 3,
-        "baselineHeapBytes": 13365972,
-        "peakHeapBytes": 633372,
-        "peakSpreadBytes": 62156,
-        "retainedHeapBytes": 8712,
-        "retainedSpreadBytes": 568,
+        "baselineHeapBytes": 16138396,
+        "peakHeapBytes": 570884,
+        "peakSpreadBytes": 817072,
+        "retainedHeapBytes": 10344,
+        "retainedSpreadBytes": 468,
         "nodesAfterTeardown": 0,
         "painted": 13,
         "leaks": false,
@@ -539,11 +543,11 @@
       {
         "id": "header-groups",
         "repeats": 3,
-        "baselineHeapBytes": 13395864,
-        "peakHeapBytes": 548636,
-        "peakSpreadBytes": 104508,
-        "retainedHeapBytes": 8656,
-        "retainedSpreadBytes": 3920,
+        "baselineHeapBytes": 16169660,
+        "peakHeapBytes": 1336852,
+        "peakSpreadBytes": 735232,
+        "retainedHeapBytes": 16260,
+        "retainedSpreadBytes": 23396,
         "nodesAfterTeardown": 0,
         "painted": 13,
         "leaks": false,
@@ -552,11 +556,11 @@
       {
         "id": "column-reorder",
         "repeats": 3,
-        "baselineHeapBytes": 13422340,
-        "peakHeapBytes": 628128,
-        "peakSpreadBytes": 856196,
-        "retainedHeapBytes": 9272,
-        "retainedSpreadBytes": 10064,
+        "baselineHeapBytes": 16231688,
+        "peakHeapBytes": 589876,
+        "peakSpreadBytes": 837380,
+        "retainedHeapBytes": 10452,
+        "retainedSpreadBytes": 1452,
         "nodesAfterTeardown": 0,
         "painted": 13,
         "leaks": false,
@@ -565,11 +569,11 @@
       {
         "id": "column-visibility",
         "repeats": 3,
-        "baselineHeapBytes": 13468852,
-        "peakHeapBytes": 1539296,
-        "peakSpreadBytes": 855672,
-        "retainedHeapBytes": 19024,
-        "retainedSpreadBytes": 16500,
+        "baselineHeapBytes": 16273140,
+        "peakHeapBytes": 1440132,
+        "peakSpreadBytes": 852080,
+        "retainedHeapBytes": 10648,
+        "retainedSpreadBytes": 10064,
         "nodesAfterTeardown": 0,
         "painted": 12,
         "leaks": false,
@@ -578,11 +582,11 @@
       {
         "id": "column-resize",
         "repeats": 3,
-        "baselineHeapBytes": 13513752,
-        "peakHeapBytes": 620000,
-        "peakSpreadBytes": 24028,
-        "retainedHeapBytes": 8656,
-        "retainedSpreadBytes": 84,
+        "baselineHeapBytes": 16307872,
+        "peakHeapBytes": 574048,
+        "peakSpreadBytes": 833948,
+        "retainedHeapBytes": 10396,
+        "retainedSpreadBytes": 3204,
         "nodesAfterTeardown": 0,
         "painted": 13,
         "leaks": false,
@@ -591,11 +595,11 @@
       {
         "id": "pagination",
         "repeats": 3,
-        "baselineHeapBytes": 13544992,
-        "peakHeapBytes": 628192,
-        "peakSpreadBytes": 37776,
-        "retainedHeapBytes": 8712,
-        "retainedSpreadBytes": 5132,
+        "baselineHeapBytes": 16339116,
+        "peakHeapBytes": 619248,
+        "peakSpreadBytes": 801708,
+        "retainedHeapBytes": 10452,
+        "retainedSpreadBytes": 0,
         "nodesAfterTeardown": 0,
         "painted": 12,
         "leaks": false,
@@ -604,11 +608,11 @@
       {
         "id": "infinite-scroll",
         "repeats": 3,
-        "baselineHeapBytes": 13571136,
-        "peakHeapBytes": 858264,
-        "peakSpreadBytes": 31692,
-        "retainedHeapBytes": 8712,
-        "retainedSpreadBytes": 844,
+        "baselineHeapBytes": 16390580,
+        "peakHeapBytes": 1466376,
+        "peakSpreadBytes": 809044,
+        "retainedHeapBytes": 10452,
+        "retainedSpreadBytes": 20108,
         "nodesAfterTeardown": 0,
         "painted": 15,
         "leaks": false,
@@ -617,11 +621,11 @@
       {
         "id": "virtualization-50k",
         "repeats": 3,
-        "baselineHeapBytes": 13592836,
-        "peakHeapBytes": 18833224,
-        "peakSpreadBytes": 2882804,
-        "retainedHeapBytes": 8032,
-        "retainedSpreadBytes": 3580,
+        "baselineHeapBytes": 16417460,
+        "peakHeapBytes": 13465924,
+        "peakSpreadBytes": 1329768,
+        "retainedHeapBytes": 9804,
+        "retainedSpreadBytes": 4528,
         "nodesAfterTeardown": 0,
         "painted": 16,
         "leaks": false,
@@ -630,11 +634,11 @@
       {
         "id": "row-selection",
         "repeats": 3,
-        "baselineHeapBytes": 13622212,
-        "peakHeapBytes": 722896,
-        "peakSpreadBytes": 89836,
-        "retainedHeapBytes": 9372,
-        "retainedSpreadBytes": 3628,
+        "baselineHeapBytes": 16453824,
+        "peakHeapBytes": 1600916,
+        "peakSpreadBytes": 872896,
+        "retainedHeapBytes": 11624,
+        "retainedSpreadBytes": 5292,
         "nodesAfterTeardown": 0,
         "painted": 13,
         "leaks": false,
@@ -643,11 +647,11 @@
       {
         "id": "radio-select",
         "repeats": 3,
-        "baselineHeapBytes": 13669368,
-        "peakHeapBytes": 588860,
-        "peakSpreadBytes": 850920,
-        "retainedHeapBytes": 8656,
-        "retainedSpreadBytes": 20104,
+        "baselineHeapBytes": 16486608,
+        "peakHeapBytes": 373784,
+        "peakSpreadBytes": 43736,
+        "retainedHeapBytes": 10396,
+        "retainedSpreadBytes": 1024,
         "nodesAfterTeardown": 0,
         "painted": 13,
         "leaks": false,
@@ -656,24 +660,24 @@
       {
         "id": "detail-nested-grid",
         "repeats": 3,
-        "baselineHeapBytes": 13695484,
-        "peakHeapBytes": 599232,
-        "peakSpreadBytes": 975700,
-        "retainedHeapBytes": 8796,
-        "retainedSpreadBytes": 92,
+        "baselineHeapBytes": 16529452,
+        "peakHeapBytes": 1288852,
+        "peakSpreadBytes": 83044,
+        "retainedHeapBytes": 21036,
+        "retainedSpreadBytes": 352,
         "nodesAfterTeardown": 0,
-        "painted": 10,
+        "painted": 14,
         "leaks": false,
         "reason": null
       },
       {
         "id": "server-mode",
         "repeats": 3,
-        "baselineHeapBytes": 13721988,
-        "peakHeapBytes": 646956,
-        "peakSpreadBytes": 27996,
-        "retainedHeapBytes": 8996,
-        "retainedSpreadBytes": 516,
+        "baselineHeapBytes": 16581620,
+        "peakHeapBytes": 1468316,
+        "peakSpreadBytes": 860704,
+        "retainedHeapBytes": 10684,
+        "retainedSpreadBytes": 1100,
         "nodesAfterTeardown": 0,
         "painted": 15,
         "leaks": false,
@@ -682,11 +686,11 @@
       {
         "id": "observable-rows",
         "repeats": 3,
-        "baselineHeapBytes": 13749868,
-        "peakHeapBytes": 533264,
-        "peakSpreadBytes": 8632,
-        "retainedHeapBytes": 8788,
-        "retainedSpreadBytes": 736,
+        "baselineHeapBytes": 16644924,
+        "peakHeapBytes": 765392,
+        "peakSpreadBytes": 1796316,
+        "retainedHeapBytes": 10528,
+        "retainedSpreadBytes": 31240,
         "nodesAfterTeardown": 0,
         "painted": 13,
         "leaks": false,
@@ -695,11 +699,11 @@
       {
         "id": "links",
         "repeats": 3,
-        "baselineHeapBytes": 13775524,
-        "peakHeapBytes": 368408,
-        "peakSpreadBytes": 21516,
-        "retainedHeapBytes": 8764,
-        "retainedSpreadBytes": 2396,
+        "baselineHeapBytes": 16676088,
+        "peakHeapBytes": 408824,
+        "peakSpreadBytes": 3924,
+        "retainedHeapBytes": 10396,
+        "retainedSpreadBytes": 1148,
         "nodesAfterTeardown": 0,
         "painted": 7,
         "leaks": false,
@@ -708,11 +712,11 @@
       {
         "id": "cell-slots",
         "repeats": 3,
-        "baselineHeapBytes": 13804460,
-        "peakHeapBytes": 460076,
-        "peakSpreadBytes": 37028,
-        "retainedHeapBytes": 9696,
-        "retainedSpreadBytes": 5212,
+        "baselineHeapBytes": 16712800,
+        "peakHeapBytes": 422272,
+        "peakSpreadBytes": 795972,
+        "retainedHeapBytes": 11492,
+        "retainedSpreadBytes": 4664,
         "nodesAfterTeardown": 0,
         "painted": 13,
         "leaks": false,
@@ -721,11 +725,11 @@
       {
         "id": "signal-slot",
         "repeats": 3,
-        "baselineHeapBytes": 13838192,
-        "peakHeapBytes": 475088,
-        "peakSpreadBytes": 50052,
-        "retainedHeapBytes": 10112,
-        "retainedSpreadBytes": 1648,
+        "baselineHeapBytes": 16747620,
+        "peakHeapBytes": 511728,
+        "peakSpreadBytes": 785648,
+        "retainedHeapBytes": 11852,
+        "retainedSpreadBytes": 1080,
         "nodesAfterTeardown": 0,
         "painted": 13,
         "leaks": false,
@@ -734,11 +738,11 @@
       {
         "id": "theming",
         "repeats": 3,
-        "baselineHeapBytes": 13872728,
-        "peakHeapBytes": 1389252,
-        "peakSpreadBytes": 915668,
-        "retainedHeapBytes": 9404,
-        "retainedSpreadBytes": 6388,
+        "baselineHeapBytes": 16788740,
+        "peakHeapBytes": 523376,
+        "peakSpreadBytes": 72372,
+        "retainedHeapBytes": 11152,
+        "retainedSpreadBytes": 7944,
         "nodesAfterTeardown": 0,
         "painted": 13,
         "leaks": false,
@@ -747,11 +751,11 @@
       {
         "id": "density",
         "repeats": 3,
-        "baselineHeapBytes": 13899940,
-        "peakHeapBytes": 595796,
-        "peakSpreadBytes": 1158008,
-        "retainedHeapBytes": 8980,
-        "retainedSpreadBytes": 30328,
+        "baselineHeapBytes": 16821612,
+        "peakHeapBytes": 599556,
+        "peakSpreadBytes": 827760,
+        "retainedHeapBytes": 12248,
+        "retainedSpreadBytes": 3628,
         "nodesAfterTeardown": 0,
         "painted": 13,
         "leaks": false,
@@ -760,10 +764,10 @@
       {
         "id": "scroll-position",
         "repeats": 3,
-        "baselineHeapBytes": 13956372,
-        "peakHeapBytes": 510892,
-        "peakSpreadBytes": 688212,
-        "retainedHeapBytes": 8680,
+        "baselineHeapBytes": 16856836,
+        "peakHeapBytes": 1129444,
+        "peakSpreadBytes": 829580,
+        "retainedHeapBytes": 10420,
         "retainedSpreadBytes": 964,
         "nodesAfterTeardown": 0,
         "painted": 13,
@@ -773,11 +777,11 @@
       {
         "id": "stress-tall-relation",
         "repeats": 3,
-        "baselineHeapBytes": 13984864,
-        "peakHeapBytes": 201295652,
-        "peakSpreadBytes": 29161416,
-        "retainedHeapBytes": 10216,
-        "retainedSpreadBytes": 4896,
+        "baselineHeapBytes": 16890572,
+        "peakHeapBytes": 144768440,
+        "peakSpreadBytes": 23436740,
+        "retainedHeapBytes": 11488,
+        "retainedSpreadBytes": 1584,
         "nodesAfterTeardown": 0,
         "painted": 14,
         "leaks": false,
@@ -786,11 +790,11 @@
       {
         "id": "stress-deep-tree",
         "repeats": 3,
-        "baselineHeapBytes": 14028892,
-        "peakHeapBytes": 1167108,
-        "peakSpreadBytes": 862788,
-        "retainedHeapBytes": 10760,
-        "retainedSpreadBytes": 10068,
+        "baselineHeapBytes": 16938660,
+        "peakHeapBytes": 1721796,
+        "peakSpreadBytes": 597412,
+        "retainedHeapBytes": 12136,
+        "retainedSpreadBytes": 15728,
         "nodesAfterTeardown": 0,
         "painted": 5,
         "leaks": false,
@@ -799,11 +803,11 @@
       {
         "id": "stress-sort-churn",
         "repeats": 3,
-        "baselineHeapBytes": 14053908,
-        "peakHeapBytes": 9795480,
-        "peakSpreadBytes": 20540,
-        "retainedHeapBytes": 9156,
-        "retainedSpreadBytes": 15092,
+        "baselineHeapBytes": 16972704,
+        "peakHeapBytes": 4663100,
+        "peakSpreadBytes": 4772,
+        "retainedHeapBytes": 10948,
+        "retainedSpreadBytes": 748,
         "nodesAfterTeardown": 0,
         "painted": 14,
         "leaks": false,
@@ -812,11 +816,11 @@
       {
         "id": "stress-wide-schema",
         "repeats": 3,
-        "baselineHeapBytes": 14093412,
-        "peakHeapBytes": 3182840,
-        "peakSpreadBytes": 35944,
-        "retainedHeapBytes": 10400,
-        "retainedSpreadBytes": 5808,
+        "baselineHeapBytes": 17016228,
+        "peakHeapBytes": 4108940,
+        "peakSpreadBytes": 897856,
+        "retainedHeapBytes": 21892,
+        "retainedSpreadBytes": 45620,
         "nodesAfterTeardown": 0,
         "painted": 14,
         "leaks": false,
@@ -824,7 +828,7 @@
       }
     ],
     "retaining": [],
-    "durationMs": 30099,
+    "durationMs": 29218,
     "reason": null
   },
   "bench": {

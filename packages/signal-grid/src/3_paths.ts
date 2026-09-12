@@ -396,15 +396,24 @@ const SAFE_IDENT_CHAR = /^[A-Za-z0-9-]$/
 
 // A custom property name is an ident, so anything outside `[A-Za-z0-9-]` becomes `_<hex>-`. The
 // terminator is never a hex digit, which is what makes the decode unambiguous at any hex length.
+// A row id is stable for the life of the row, and the renderer asks for the same handful every
+// frame, so the walk runs once per id rather than once per id per frame.
+const ENCODED = new Map<string, string>()
+
 /** @feature view.theme */
-export const encodeVarId = (id: string): string =>
-  [...id]
+export const encodeVarId = (id: string): string => {
+  const hit = ENCODED.get(id)
+  if (hit !== undefined) return hit
+  const built = [...id]
     .map(char =>
       char.length === 1 && SAFE_IDENT_CHAR.test(char)
         ? char
         : `_${(char.codePointAt(0) ?? 0).toString(16)}-`,
     )
     .join("")
+  ENCODED.set(id, built)
+  return built
+}
 
 /** The inverse, for reading an id back out of a stylesheet or a failing assertion. */
 export const decodeVarId = (encoded: string): string =>

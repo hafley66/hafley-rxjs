@@ -101,7 +101,7 @@ again through `grid()` plus `writeGridVars`.
 | a bare column defaults to `100px` | `9_css.test.ts:63` | `4_slice.test.ts:358` |
 | a mixed run joins in order | `9_css.test.ts:69` | `4_slice.test.ts:392` |
 
-`src/9_css.test.ts:44` is now `describe("what becomes a track")` and holds only what `tracksOf`
+`src/9_css.test.ts:48` is now `describe("what becomes a track")` and holds only what `tracksOf`
 adds: run order start/center/end (`:41`), a header group taking no track (`:56`), and a committed
 resize freezing a flex column (`:65`).
 

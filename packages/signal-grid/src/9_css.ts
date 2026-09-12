@@ -27,6 +27,9 @@ interface VarFrame {
   readonly rowHeight: number
   /** Per-entry overrides on the vertical axis. An entry with no value falls to `--sg-row-h`. */
   readonly extent: Readonly<Record<string, number>>
+  /** The entries the plan actually rendered, in run order. A property for a row nobody drew is
+   * read by nobody, and the dense demo declares one per row of twenty thousand. */
+  readonly drawn: readonly string[]
   readonly totalHeight: number
   readonly offsetY: number
 }
@@ -45,6 +48,7 @@ export function writeGridVars<TRow>(grid: Grid<TRow>, root: HTMLElement): () => 
       ),
       rowHeight: ROW_HEIGHT[grid.state.density.$()],
       extent: down.extent,
+      drawn: [...plan.start, ...plan.center, ...plan.end],
       totalHeight: plan.centerTotal,
       offsetY: plan.offsetTop,
     }
@@ -146,7 +150,7 @@ function writeFrame(
   setVar(style, held, SG_INLINE_TRACKS, frame.tracks)
 
   const names = new Set<string>()
-  writeExtents(root, frame.extent, names, held)
+  writeExtents(root, frame.extent, frame.drawn, names, held)
   for (const name of previous) {
     if (names.has(name)) continue
     held.delete(name)
@@ -155,15 +159,20 @@ function writeFrame(
   return names
 }
 
-// The per-row alias is written by the renderer alongside SG_DEPTH, which already holds the element
-// for every row in the plan. Sweeping the DOM from here would re-query every row every frame.
+// Walks the drawn run, never the record. A consumer declaring a height per row of a large relation
+// is the ordinary case, and `Object.entries` over it put the whole relation in every scroll frame:
+// /dense carried 20,005 inline properties and 449 kB of `style` on the root, rewalked at 240 px per
+// frame. The renderer writes the alias alongside SG_DEPTH for exactly this run, so the two agree.
 function writeExtents(
   root: HTMLElement,
   extent: Readonly<Record<string, number>>,
+  drawn: readonly string[],
   names: Set<string>,
   held: Map<string, string>,
 ): void {
-  for (const [key, height] of Object.entries(extent)) {
+  for (const key of drawn) {
+    const height = extent[key]
+    if (height === undefined) continue
     const name = rowHeightVar(key)
     setVar(root.style, held, name, px(height))
     names.add(name)
