@@ -1,7 +1,6 @@
 import { isObservable, Observable, type OperatorFunction } from "rxjs"
 import {
   createComputedSignal,
-  signalFromObservable,
   SignalCreator,
   type ComputeBody,
   type ComputedOptions,
@@ -99,8 +98,9 @@ export function pipe$(
   const source$ = isSignal(source)
     ? (source.$ as unknown as Observable<unknown>)
     : (source as Observable<unknown>)
-  return signalFromObservable(
-    source$.pipe(...(operators as [OperatorFunction<unknown, unknown>])),
-    undefined,
-  )
+  // Pure composition: the piped observable reaches SignalCreator's lazy,
+  // ref-counted observable branch. No probe and no keep-alive subscription.
+  return SignalCreator({
+    observable: source$.pipe(...(operators as [OperatorFunction<unknown, unknown>])),
+  })
 }

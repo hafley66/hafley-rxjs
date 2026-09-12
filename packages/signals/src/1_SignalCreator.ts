@@ -63,36 +63,6 @@ export const distinctShallow = <T>(): MonoTypeOperatorFunction<T> => distinctUnt
  */
 export const SELECTOR_SLOT = { project: 0, distinct: 1, track: 2, share: 3 } as const
 
-/**
- * Wrap a piped stream back into a Signal, inheriting the parent's distinction slot.
- *
- * The seed probe subscribes once, keeps whatever the pipeline emits synchronously, and drops it.
- * A pipeline of pure operators over a BehaviorSubject yields its value there and the result is a
- * `Signal<O>` with a real current value. A pipeline that defers (debounceTime, switchMap over a
- * request) yields nothing, and the result reads `undefined` until the first emission. An operator
- * with a side effect runs once during the probe, which is the cost of a synchronous `.$()` read.
- */
-export function signalFromObservable<O>(
-  source$: Observable<O>,
-  distinct: SignalCreatorOptions<O>["distinct"],
-): Signal<O> {
-  let seed: O | undefined
-  let seeded = false
-  const probe = source$.subscribe((value) => {
-    seed = value
-    seeded = true
-  })
-  probe.unsubscribe()
-  const signal = seeded
-    ? SignalCreator<O>({ initialState: seed as O, observable: source$, distinct })
-    : (SignalCreator<O>({ observable: source$, distinct }) as Signal<O>)
-  // Hot for its lifetime. The observable branch only refreshes the value inside a `tap` behind
-  // `refCount`, so an unobserved piped signal would answer `.$()` with its seed forever. A
-  // stateful operator such as `scan` also cannot survive being resubscribed per read.
-  signal.$.subscribe(() => {})
-  return signal
-}
-
 // Memo dependency tracking is stack-scoped rather than derived from the global
 // debug stream. With nested memos, only the innermost active computation owns
 // reads of its primitive dependencies; the outer memo depends on the inner memo
@@ -332,7 +302,10 @@ export function SignalCreator<T, Base extends object = object>(
             const source$ = ($proxy as unknown as Observable<unknown>).pipe(
               ...(operators as [OperatorFunction<unknown, unknown>]),
             )
-            return signalFromObservable(source$, options.distinct as SignalCreatorOptions<unknown>["distinct"])
+            return SignalCreator({
+              observable: source$,
+              distinct: options.distinct as SignalCreatorOptions<unknown>["distinct"],
+            })
           }
         }
 
