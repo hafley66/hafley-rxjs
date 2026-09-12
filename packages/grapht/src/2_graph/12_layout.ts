@@ -6,7 +6,14 @@ import type { Rect } from "../1_sequence/3_geometry.js"
 
 const HEADER_HEIGHT = 24
 
-cytoscape.use(fcose)
+// Deferred to first layout, else import registers a Cytoscape extension as a
+// load side effect and UMD interop hands it a namespace instead of the factory.
+let fcoseRegistered = false
+function ensureFcose(): void {
+  if (fcoseRegistered) return
+  cytoscape.use(fcose)
+  fcoseRegistered = true
+}
 
 function hash(text: string): string {
   let value = 0x811c9dc5
@@ -111,6 +118,7 @@ export function fcoseGraphLayout<NodeData, EdgeData>(graph: Graph<NodeData, Edge
   const ids = scope.itemIds
   const cyIdByGraphId = new Map(ids.map((id, index) => [id, `n${index}`]))
   const groupNodeIds = new Set(ids.flatMap(id => graph[id].parentId === undefined ? [] : [graph[id].parentId]))
+  ensureFcose()
   const cy = cytoscape({
     headless: true,
     styleEnabled: true,

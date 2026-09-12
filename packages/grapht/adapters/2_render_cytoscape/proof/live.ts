@@ -75,6 +75,16 @@ readout.$.subscribe(text => {
 
 let resource: { render: (frame: GraphFrame, receipt: unknown) => void; unsubscribe: () => void } | undefined
 
+async function importCytoscape(host: HTMLElement) {
+  try {
+    const { createCytoscapeGraphFrameResource } = await import("../6_graphRenderer.ts")
+    return createCytoscapeGraphFrameResource(host, { cameraInput$, focusInput$, selectionInput$ })
+  } catch (error) {
+    readout.textContent = `cytoscape renderer failed to load: ${String(error).slice(0, 140)}`
+    return undefined
+  }
+}
+
 async function mount(next: Mode): Promise<void> {
   resource?.unsubscribe()
   host.replaceChildren()
@@ -82,8 +92,8 @@ async function mount(next: Mode): Promise<void> {
   resource =
     next === "document"
       ? createDocumentGraphFrameResource(host, { cameraInput$ })
-      : (await import("../6_graphRenderer.ts")).createCytoscapeGraphFrameResource(host, { cameraInput$, focusInput$, selectionInput$ })
-  resource.render(artifactFrame, { enterIds: ["epic"], updateIds: [], exitIds: [] })
+      : await importCytoscape(host)
+  resource?.render(artifactFrame, { enterIds: ["epic"], updateIds: [], exitIds: [] })
 }
 
 await mount("document")
