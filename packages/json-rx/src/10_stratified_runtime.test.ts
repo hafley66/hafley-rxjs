@@ -1,121 +1,86 @@
 import { lastValueFrom, of, toArray } from "rxjs"
 import { describe, expect, it } from "vitest"
-import { compile, type Program, settle, type Tick } from "./10_stratified_runtime"
+import { compile, program, type Transition, tick, transition } from "./10_stratified_runtime"
 
-type Route = { path: "/lobby" } | { path: "/match/{match}/round/{round}"; match: number; round: number }
+type Route = readonly [path: string, match: number, round: number]
+type State = readonly [route: Route, score: number]
+type Event = readonly [kind: "navigate", route: Route] | readonly [kind: "hit" | "award", points: number]
+type PureEffect = readonly [kind: "damage-scored", damage: number]
+type ExternalEffect = readonly [kind: "sound", name: "hit"]
 
-type State = { route: Route; score: number }
-type Event = { type: "navigate"; route: Route } | { type: "hit"; damage: number } | { type: "award"; points: number }
-type PureEffect = { type: "damage-scored"; damage: number }
-type ExternalEffect = { type: "sound"; name: "hit" }
-
-const program: Program<State, Event, PureEffect, ExternalEffect> = {
-  initial: { route: { path: "/lobby" }, score: 0 },
-  maxEventsPerTick: 16,
-  reduce: (state, event) => {
-    if (event.type === "navigate") return { state: { ...state, route: event.route } }
-    if (event.type === "award") return { state: { ...state, score: state.score + event.points } }
-    return {
-      state,
-      pure: [{ type: "damage-scored", damage: event.damage }],
-      external: [{ type: "sound", name: "hit" }],
-    }
-  },
-  expand: (_state, effect) => [{ type: "award", points: effect.damage }],
+function reduce(state: State, event: Event): Transition<State, PureEffect, ExternalEffect> {
+  if (event[0] === "navigate") return transition([event[1], state[1]])
+  if (event[0] === "award") return transition([state[0], state[1] + event[1]])
+  return transition(state, [["damage-scored", event[1]]], [["sound", "hit"]])
 }
 
-const inputs: readonly Tick<Event>[] = [
-  {
-    tick: 0,
-    events: [
-      {
-        type: "navigate",
-        route: { path: "/match/{match}/round/{round}", match: 7, round: 1 },
-      },
-    ],
-  },
-  { tick: 1, events: [{ type: "hit", damage: 12 }] },
-]
+function expandPure(_state: State, effect: PureEffect): readonly Event[] {
+  return [["award", effect[1]]]
+}
+
+function game() {
+  return program<State, Event, PureEffect, ExternalEffect>([["/lobby", 0, 0], 0], reduce, expandPure, 16)
+}
+
+function inputs() {
+  return [tick<Event>(0, [["navigate", ["/match/{match}/round/{round}", 7, 1]]]), tick<Event>(1, [["hit", 12]])]
+}
+
+function run() {
+  return lastValueFrom(of(...inputs()).pipe(compile(game()), toArray()))
+}
 
 describe("stratified runtime", () => {
-  it("reduces, expands pure effects to a fixed point, then commits", () => {
-    const frame = settle(program, { tick: 0, state: program.initial }, inputs[1])
-
-    expect(frame).toMatchInlineSnapshot(`
-      {
-        "pendingExternal": [
-          {
-            "name": "hit",
-            "type": "sound",
-          },
+  it("expands pure effects before committing the frame", async () => {
+    expect(await lastValueFrom(of(...inputs()).pipe(compile(game()), toArray()))).toMatchInlineSnapshot(`
+      [
+        [
+          0,
+          [
+            [
+              "/match/{match}/round/{round}",
+              7,
+              1,
+            ],
+            0,
+          ],
+          [],
         ],
-        "state": {
-          "route": {
-            "path": "/lobby",
-          },
-          "score": 12,
-        },
-        "tick": 1,
-        "trace": [
-          {
-            "event": {
-              "damage": 12,
-              "type": "hit",
-            },
-            "ordinal": 0,
-            "phase": "reduce",
-          },
-          {
-            "effect": {
-              "damage": 12,
-              "type": "damage-scored",
-            },
-            "ordinal": 0,
-            "phase": "expand",
-            "produced": 1,
-          },
-          {
-            "event": {
-              "points": 12,
-              "type": "award",
-            },
-            "ordinal": 1,
-            "phase": "reduce",
-          },
+        [
+          1,
+          [
+            [
+              "/match/{match}/round/{round}",
+              7,
+              1,
+            ],
+            12,
+          ],
+          [
+            [
+              "sound",
+              "hit",
+            ],
+          ],
         ],
-      }
+      ]
     `)
   })
 
-  it("replays one cold input timeline identically", async () => {
-    const run = () => lastValueFrom(of(...inputs).pipe(compile(program), toArray()))
+  it("replays one cold timeline identically", async () => {
     expect(await run()).toEqual(await run())
   })
 
-  it("keeps the unary route value inside rollback state", async () => {
-    const frames = await lastValueFrom(of(...inputs).pipe(compile(program), toArray()))
-    expect(frames.at(-1)?.state).toMatchInlineSnapshot(`
-      {
-        "route": {
-          "match": 7,
-          "path": "/match/{match}/round/{round}",
-          "round": 1,
-        },
-        "score": 12,
-      }
-    `)
-  })
-
-  it("rejects an unbounded pure expansion", () => {
-    const looping: Program<number, "again", "again", never> = {
-      initial: 0,
-      maxEventsPerTick: 3,
-      reduce: state => ({ state: state + 1, pure: ["again"] }),
-      expand: () => ["again"],
+  it("rejects an unbounded pure expansion", async () => {
+    function again(state: number): Transition<number, "again", never> {
+      return transition(state + 1, ["again"])
+    }
+    function recur(): readonly "again"[] {
+      return ["again"]
     }
 
-    expect(() => settle(looping, { tick: -1, state: 0 }, { tick: 0, events: ["again"] as const })).toThrowError(
-      "Tick 0 exceeded 3 events",
-    )
+    await expect(
+      lastValueFrom(of(tick<"again">(0, ["again"])).pipe(compile(program(0, again, recur, 3)))),
+    ).rejects.toThrowError("Tick 0 exceeded 3 events")
   })
 })
