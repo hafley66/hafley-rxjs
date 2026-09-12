@@ -78,7 +78,7 @@ Signals layer: `step = Signal(0)`, `scene = Signal(() => scenes[step.$()])`,
 ## Library split across anim, grapht, marbler, dock-and-flow
 
 Two seams exist already: topology `Model` (`anim/src/core/model.ts:26-70`) and geometry
-`Geometry` (`grapht/src/1_geometryProtocol.ts:20`).
+`Geometry` (`grapht/src/0_bench/1_geometryProtocol.ts:20`).
 
 | lib (working name) | pull from | lines | deps | fused today by |
 |---|---|---|---|---|

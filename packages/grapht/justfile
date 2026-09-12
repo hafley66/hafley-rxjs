@@ -22,7 +22,7 @@ renderer-headed:
 # run the deterministic core scenario contract tests
 scenario-tests:
     pnpm run build
-    pnpm exec vitest run tests/1_scenarios.test.ts
+    pnpm exec vitest run tests/0_bench/1_scenarios.test.ts
 
 # run the Cytoscape scenario browser lane against the shared 1k JSON fixture
 scenario-cytoscape:

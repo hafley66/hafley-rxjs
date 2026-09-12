@@ -1,7 +1,7 @@
-import type { BenchScenario, BenchScenarioHandler, BenchScenarioHandlers } from "../../../src/0_benchProtocol.js"
-import type { Geometry } from "../../../src/1_geometryProtocol.js"
-import type { ScenarioSample } from "../../../src/11_scenarios.js"
-import { shakeOffsets, type ShakeCameraState } from "../../../src/12_shake.js"
+import type { BenchScenario, BenchScenarioHandler, BenchScenarioHandlers } from "../../../src/0_bench/0_protocol.js"
+import type { Geometry } from "../../../src/0_bench/1_geometryProtocol.js"
+import type { ScenarioSample } from "../../../src/0_bench/11_scenarios.js"
+import { shakeOffsets, type ShakeCameraState } from "../../../src/0_bench/12_shake.js"
 import type { ThreeProjection } from "./2_projection.js"
 
 export type ThreeFixture = { geometry: Geometry; bytes?: number }

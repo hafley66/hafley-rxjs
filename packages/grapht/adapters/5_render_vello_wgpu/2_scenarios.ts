@@ -2,9 +2,9 @@ import {
   type BenchScenario,
   type BenchScenarioHandler,
   type BenchScenarioHandlers,
-} from "../../src/0_benchProtocol.js"
-import { BENCH_SCENARIO_CASES, type ScenarioSample } from "../../src/11_scenarios.js"
-import { shakeOffsets } from "../../src/12_shake.js"
+} from "../../src/0_bench/0_protocol.js"
+import { BENCH_SCENARIO_CASES, type ScenarioSample } from "../../src/0_bench/11_scenarios.js"
+import { shakeOffsets } from "../../src/0_bench/12_shake.js"
 import type { FixtureLoad } from "./0_fixture.ts"
 import type { VelloBrowserRenderer } from "./1_wasm.ts"
 

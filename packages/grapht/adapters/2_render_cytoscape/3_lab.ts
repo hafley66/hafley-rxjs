@@ -1,5 +1,5 @@
 import cytoscape from "cytoscape"
-import { BENCH_SCENARIO_CASES, reduceBenchScenarioCases, type ScenarioRunReceipt, type ScenarioSample } from "../../src/11_scenarios.js"
+import { BENCH_SCENARIO_CASES, reduceBenchScenarioCases, type ScenarioRunReceipt, type ScenarioSample } from "../../src/0_bench/11_scenarios.js"
 import { createCytoscapeScenarioHandlers, initialCytoscapeScenarioState } from "./5_scenarios.js"
 import { fixtureSize, loadCommonFixture } from "./3_fixture.js"
 import "./3_style.css"

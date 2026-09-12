@@ -1,4 +1,4 @@
-import { BENCH_SCENARIO_CASES, reduceBenchScenarioCases, type ScenarioRunReceipt, type ScenarioSample } from "../../../src/11_scenarios.js"
+import { BENCH_SCENARIO_CASES, reduceBenchScenarioCases, type ScenarioRunReceipt, type ScenarioSample } from "../../../src/0_bench/11_scenarios.js"
 import { fixtureSize, loadCommonFixture } from "./1_graphology.js"
 import { createSigmaScenarioHandlers, initialSigmaScenarioState } from "./6_scenarios.js"
 

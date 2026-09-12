@@ -3,9 +3,9 @@ import type {
   BenchScenarioArguments,
   BenchScenarioHandler,
   BenchScenarioHandlers,
-} from "../../src/0_benchProtocol.js"
-import type { ScenarioSample } from "../../src/11_scenarios.js"
-import { shakeOffsets } from "../../src/12_shake.js"
+} from "../../src/0_bench/0_protocol.js"
+import type { ScenarioSample } from "../../src/0_bench/11_scenarios.js"
+import { shakeOffsets } from "../../src/0_bench/12_shake.js"
 import type { Geometry } from "./0_protocol.js"
 import { createProjection, type Projection } from "./1_projection.js"
 import type { ElementDefinition } from "cytoscape"

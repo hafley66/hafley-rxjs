@@ -6,20 +6,19 @@ import { geometryOf } from "./2_geometry"
 import { renderer } from "./4_renderer"
 
 const frame = (id: string): Frame => ({
-  scene: { items: new Map([[id, { id, kind: "node" }]]), edges: new Map() },
+  scene: { [id]: { id, type: "node" } },
   geometry: geometryOf([id], new Map([[id, [1, 1]]])),
   diff: enterAll([id]),
 })
 
 function recording() {
   const log: string[] = []
-  const r = renderer<{ host: object }>({
-    subscribe: host => {
-      log.push("subscribe")
-      return { host }
-    },
-    next: (_s, f) => log.push(`next:${f.geometry.ids[0]}`),
-    unsubscribe: () => log.push("unsubscribe"),
+  const r = renderer(() => {
+    log.push("subscribe")
+    return {
+      render: (f: Frame) => log.push(`next:${f.geometry.ids[0]}`),
+      unsubscribe: () => log.push("unsubscribe"),
+    }
   })
   return { log, r }
 }
@@ -28,13 +27,10 @@ describe("renderer", () => {
   it("supports renderer-specific value types", () => {
     const values = new Subject<{ selected: string }>()
     const applied: string[] = []
-    const selectedRenderer = renderer<undefined, { selected: string }>({
-      subscribe: () => undefined,
-      next: (_state, value) => {
-        applied.push(value.selected)
-      },
+    const selectedRenderer = renderer<{ selected: string }>(() => ({
+      render: value => applied.push(value.selected),
       unsubscribe: () => undefined,
-    })
+    }))
 
     const lifetime = values.pipe(selectedRenderer({} as HTMLElement)).subscribe()
     values.next({ selected: "viewport" })
@@ -72,13 +68,12 @@ describe("renderer", () => {
   })
   it("errors the subscriber when next throws and still tears down", () => {
     const log: string[] = []
-    const r = renderer<null>({
-      subscribe: () => null,
-      next: () => {
+    const r = renderer(() => ({
+      render: () => {
         throw new Error("boom")
       },
       unsubscribe: () => log.push("unsubscribe"),
-    })
+    }))
     const frame$ = new Subject<Frame>()
     const errors: unknown[] = []
     frame$.pipe(r({} as HTMLElement)).subscribe({ error: e => errors.push(e) })

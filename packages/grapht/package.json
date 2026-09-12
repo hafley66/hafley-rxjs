@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js"
     }
   },
   "bin": {
@@ -33,6 +37,12 @@
   },
   "dependencies": {
     "@hafley66/grapht-model": "workspace:*",
+    "@hafley66/scene": "workspace:*",
+    "@hafley66/signals": "workspace:*",
+    "cytoscape": "3.34.0",
+    "cytoscape-fcose": "2.2.0",
+    "graphology": "0.26.0",
+    "rxjs": "^7.8.2",
     "string-argv": "0.3.2",
     "zod": "^4.4.3"
   },

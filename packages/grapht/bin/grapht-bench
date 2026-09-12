@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { runBenchMain } from "../dist/5_bench.js"
-import { recordMain } from "../dist/6_record.js"
+import { runBenchMain } from "../dist/0_bench/5_bench.js"
+import { recordMain } from "../dist/0_bench/6_record.js"
 
 const args = process.argv.slice(2)
 const command = args[0] ?? ""

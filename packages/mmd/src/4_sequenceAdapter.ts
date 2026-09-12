@@ -69,11 +69,15 @@ export const mermaidSequenceAdapter: SequenceSourceAdapter<ReturnType<typeof par
   identify: identifyMermaidOccurrences,
   async render(source, { signal } = {}) {
     signal?.throwIfAborted()
-    const browser = await chromium.launch({ headless: true })
+    let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+    const abort = () => void browser?.close()
+    signal?.addEventListener("abort", abort, { once: true })
     let svg = ""
     let elements: NativeSvgElement[] = []
 
     try {
+      browser = await chromium.launch({ headless: true })
+      signal?.throwIfAborted()
       const page = await browser.newPage({ viewport: { width: 800, height: 600 } })
       const bundlePath = fileURLToPath(import.meta.resolve("mermaid/dist/mermaid.min.js"))
       await page.setContent('<div id="sequence-renderer-root"></div>')
@@ -93,7 +97,8 @@ export const mermaidSequenceAdapter: SequenceSourceAdapter<ReturnType<typeof par
       )
       elements = await inspectNativeSvg(page, svg, signal)
     } finally {
-      await browser.close()
+      signal?.removeEventListener("abort", abort)
+      await browser?.close()
     }
 
     signal?.throwIfAborted()

@@ -1,22 +1,6 @@
-export type { Diff, Frame, Geometry, Id, Item, Layout, Renderer, Scene, Tween } from "./0_types"
+export type { Diff, Frame, Geometry, Id, Layout, Renderer, Scene, Tween } from "./0_types"
 export { diff, enterAll, NO_DIFF } from "./1_diff"
 export { boundsOf, geometryOf, indexOf, pointOf } from "./2_geometry"
 export { type Easing, easeInOutCubic, linear, tween } from "./3_tween"
-export { type RendererHooks, renderer } from "./4_renderer"
+export { type RendererResource, renderer } from "./4_renderer"
 export { frames, type Keyframe, keyframes } from "./5_frames"
-export { type DomRendererOptions, dom } from "./6_dom"
-export type {
-  GraphEdgeStyle,
-  GraphFrame,
-  GraphInteraction,
-  GraphLabelStyle,
-  GraphLineStyle,
-  GraphModifiers,
-  GraphNodeShape,
-  GraphNodeStyle,
-  GraphRenderer,
-  GraphStyle,
-  GraphView,
-  GraphViewport,
-} from "./8_graph"
-export { EMPTY_GRAPH_VIEW } from "./8_graph"

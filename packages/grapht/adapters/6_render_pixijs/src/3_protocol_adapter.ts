@@ -2,8 +2,8 @@ import { createHash } from "node:crypto"
 import { mkdir, readFile, writeFile } from "node:fs/promises"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
-import { BENCH_PROTOCOL, type BenchInput, type BenchOutput } from "../../../src/0_benchProtocol.js"
-import { RENDER_FIXTURE_PROTOCOL, type RendererFixture } from "../../../src/10_rendererFixture.js"
+import { BENCH_PROTOCOL, type BenchInput, type BenchOutput } from "../../../src/0_bench/0_protocol.js"
+import { RENDER_FIXTURE_PROTOCOL, type RendererFixture } from "../../../src/0_bench/10_rendererFixture.js"
 import { fixtureSize } from "./1_fixture.js"
 
 const here = dirname(fileURLToPath(import.meta.url))

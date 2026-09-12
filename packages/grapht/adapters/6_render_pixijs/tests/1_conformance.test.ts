@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { BENCH_SCENARIOS, reduceBenchScenario } from "../../../src/0_benchProtocol.js"
-import { BENCH_SCENARIO_CASES, reduceBenchScenarioCases, type ScenarioRunReceipt, type ScenarioSample } from "../../../src/11_scenarios.js"
+import { BENCH_SCENARIOS, reduceBenchScenario } from "../../../src/0_bench/0_protocol.js"
+import { BENCH_SCENARIO_CASES, reduceBenchScenarioCases, type ScenarioRunReceipt, type ScenarioSample } from "../../../src/0_bench/11_scenarios.js"
 import { createPixiScenarioHandlers, initialPixiScenarioState, type PixiScenarioState } from "../src/6_scenarios.js"
 import type { PixiProjection } from "../src/2_projection.js"
 

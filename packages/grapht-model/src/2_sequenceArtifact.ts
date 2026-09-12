@@ -222,38 +222,3 @@ async function buildArtifact<LocalDocument>(
   sequenceArtifactSchema.parse(artifact)
   return { artifact, bindingReceipt, localDocument, renderReceipt }
 }
-
-export type SequenceArtifactCurrent<LocalDocument> =
-  | { status: "current"; result: SequenceArtifactBuild<LocalDocument> }
-  | { status: "superseded" }
-
-export function createSequenceArtifactCurrent<LocalDocument>(adapter: SequenceSourceAdapter<LocalDocument>) {
-  let controller: AbortController | undefined
-  let current: SequenceArtifactBuild<LocalDocument> | undefined
-
-  return {
-    get current() {
-      return current
-    },
-    async update(input: { locator: string; source: string; renderOptions?: unknown }) {
-      controller?.abort()
-      const request = new AbortController()
-      controller = request
-      let result: SequenceArtifactBuild<LocalDocument>
-
-      try {
-        result = await buildSequenceArtifact(adapter, { ...input, signal: request.signal })
-      } catch (error) {
-        if (request.signal.aborted) return { status: "superseded" } satisfies SequenceArtifactCurrent<LocalDocument>
-        throw error
-      }
-
-      if (controller !== request || request.signal.aborted) {
-        return { status: "superseded" } satisfies SequenceArtifactCurrent<LocalDocument>
-      }
-
-      current = result
-      return { status: "current", result } satisfies SequenceArtifactCurrent<LocalDocument>
-    },
-  }
-}

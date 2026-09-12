@@ -11,3 +11,4 @@ export {
   type RendererMode,
   type Representation,
 } from "./2_projection.js"
+export { PixiGraphFrameResource, pixiGraphRenderer, type PixiGraphRendererOptions } from "./8_graphRenderer.js"

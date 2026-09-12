@@ -703,6 +703,37 @@ declare function reconcileSequencePlacements(
 - Reconciliation has fixtures for insert, reorder, rename, regroup, and remove.
 - Mermaid and D2 use the same reconciliation function.
 
+## Tertiary adapter: Graphviz
+
+Graphviz follows the same source-adapter rhythm as Mermaid and D2:
+
+```text
+Graphviz source
+  -> Graphviz native renderer receipt
+  -> unmodified native SVG
+  -> Graphviz-specific SVG identity recovery
+  -> shared graph, geometry, binding, and presentation contracts
+  -> SVG, Cytoscape, or Pixi projection
+```
+
+This work begins after the Mermaid and D2 paths satisfy their package gates. It
+does not add Graphviz fields to the shared graph model. Graphviz-specific parser,
+renderer, identifier, and SVG-structure facts stay in the Graphviz adapter.
+
+### Definition of done
+
+- A pinned Graphviz renderer produces a deterministic native SVG receipt.
+- Graphviz nodes, edges, labels, groups or clusters, and direction map into the
+  existing flat graph and nesting contracts.
+- SVG identity recovery produces the same serialized binding shape used by the
+  Mermaid and D2 adapters.
+- The normalized `GraphFrame` renders through SVG, Cytoscape, and Pixi without
+  Graphviz branches in those renderers.
+- Fixtures cover directed, undirected, multi-edge, nested cluster, and labeled
+  edge cases.
+- Renderer version, source hash, render options hash, and SVG hash participate
+  in receipt identity.
+
 ## Package gate
 
 Package creation follows evidence from sections 0 through 4.

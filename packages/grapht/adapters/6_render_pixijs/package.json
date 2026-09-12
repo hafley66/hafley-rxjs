@@ -28,7 +28,9 @@
   },
   "dependencies": {
     "@hafley66/grapht": "workspace:^",
-    "pixi.js": "^8.9.0"
+    "@pixi-essentials/svg": "3.0.0",
+    "pixi.js": "^8.9.0",
+    "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

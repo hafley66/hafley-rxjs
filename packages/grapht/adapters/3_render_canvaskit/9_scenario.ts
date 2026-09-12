@@ -2,7 +2,7 @@ import type { Scene } from "./1_scene.js"
 import type { Geometry } from "./0_protocol.js"
 import { BENCH_SCENARIOS, pan, zoomAt, type Camera, type BenchScenario, type BenchScenarioArguments, type BenchScenarioHandlers, type BenchScenarioResult } from "./9_scenarioTypes.js"
 import { frameStats, measureUploadBytes, type FrameStatsRecord } from "./9_scenarioTypes.js"
-import { shakeOffsets } from "../../src/12_shake.js"
+import { shakeOffsets } from "../../src/0_bench/12_shake.js"
 
 export type { BenchScenario, BenchScenarioArguments, BenchScenarioHandlers, BenchScenarioResult, Camera, FrameStatsRecord, Geometry }
 export { frameStats, measureUploadBytes }

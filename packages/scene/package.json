@@ -1,7 +1,7 @@
 {
   "name": "@hafley66/scene",
   "version": "0.0.1",
-  "description": "Keyed scenes, typed-array geometry, diffs, tweens, and renderers (dom, pixi) as rxjs operators",
+  "description": "Canonical graph animation geometry, diffs, tweens, and RxJS renderer contracts",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,10 +12,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./pixi": {
-      "types": "./dist/pixi.d.ts",
-      "import": "./dist/pixi.js"
     }
   },
   "scripts": {
@@ -26,12 +22,11 @@
     "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
   },
   "peerDependencies": {
-    "pixi.js": "^8.9.0",
+    "@hafley66/grapht-model": "workspace:*",
     "rxjs": "^7.8.0"
   },
   "devDependencies": {
     "jsdom": "^26.0.0",
-    "pixi.js": "^8.9.0",
     "rxjs": "^7.8.2",
     "typescript": "7.0.2",
     "vite": "^8.2.1",
@@ -47,11 +42,7 @@
     "graph"
   ],
   "license": "MIT",
-  "peerDependenciesMeta": {
-    "pixi.js": {
-      "optional": true
-    }
-  },
+  "peerDependenciesMeta": {},
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"

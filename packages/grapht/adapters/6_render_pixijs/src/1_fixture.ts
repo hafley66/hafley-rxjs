@@ -1,5 +1,5 @@
-import type { RendererFixture } from "../../../src/10_rendererFixture.js"
-import type { Geometry } from "../../../src/1_geometryProtocol.js"
+import type { RendererFixture } from "../../../src/0_bench/10_rendererFixture.js"
+import type { Geometry } from "../../../src/0_bench/1_geometryProtocol.js"
 
 export const DEFAULT_SPACING = 10
 

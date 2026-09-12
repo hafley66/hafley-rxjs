@@ -20,7 +20,7 @@ flowchart LR
 `BenchInput` (one JSON object on stdin), then JSON Lines output of `BenchSample`, exactly one
 terminal `BenchResult` or `BenchError`, then exit. Geometry crosses binary-oriented adapters as
 files referenced by a `grapht-geometry/0` `GeometryManifest`. Types are zod-schema'd in
-`src/0_benchProtocol.ts` and `src/1_geometryProtocol.ts`.
+`src/0_bench/0_protocol.ts` and `src/0_bench/1_geometryProtocol.ts`.
 
 ## Storage
 

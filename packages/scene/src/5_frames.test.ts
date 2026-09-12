@@ -6,11 +6,10 @@ import { tween } from "./3_tween"
 import { frames, keyframes } from "./5_frames"
 
 const scene = (...ids: string[]): Scene => ({
-  items: new Map(ids.map(id => [id, { id, kind: "node" }])),
-  edges: new Map(),
+  ...Object.fromEntries(ids.map(id => [id, { id, type: "node" as const }])),
 })
 const rowLayout: Layout = s => {
-  const ids = [...s.items.keys()]
+  const ids = Object.keys(s)
   return geometryOf(ids, new Map(ids.map((id, i) => [id, [i * 10, 0] as const])))
 }
 
@@ -27,6 +26,16 @@ describe("keyframes", () => {
     const asyncLayout: Layout = async s => rowLayout(s) as ReturnType<typeof rowLayout>
     const out = await lastValueFrom(of(scene("z")).pipe(keyframes(asyncLayout), toArray()))
     expect(out[0].geometry.ids).toEqual(["z"])
+  })
+  it("passes the previous emitted geometry to the next layout", async () => {
+    const previous: Array<readonly string[] | undefined> = []
+    const incrementalLayout: Layout = (value, prior) => {
+      previous.push(prior?.ids)
+      return rowLayout(value)
+    }
+    await lastValueFrom(from([scene("a"), scene("b")]).pipe(keyframes(incrementalLayout), toArray()))
+
+    expect(previous).toEqual([undefined, ["a"]])
   })
 })
 
@@ -59,4 +68,41 @@ describe("frames", () => {
     expect(seen).toHaveLength(3)
     expect(seen[1]).toBe(seen[2])
   })
+  it("allocates transition state for each subscription", async () => {
+    const key = {
+      scene: scene("a"),
+      geometry: rowLayout(scene("a")) as Exclude<ReturnType<typeof rowLayout>, Promise<unknown>>,
+      diff: { keep: [], enter: ["a"], exit: [] },
+    }
+    const operator = frames(tween(), of(0))
+    const first = await lastValueFrom(of(key).pipe(operator))
+    const second = await lastValueFrom(of(key).pipe(operator))
+
+    expect([first, second]).toEqual([key, key])
+  })
+
+  it("continues an interrupted transition from the last emitted geometry", () => {
+    const clock = new Subject<number>()
+    const keys = new Subject<ReturnType<typeof key>>()
+    const positions: number[] = []
+    const subscription = keys.pipe(frames(tween(), clock)).subscribe(value => positions.push(value.geometry.pos[0]))
+
+    keys.next(key(0))
+    keys.next(key(10))
+    clock.next(0.5)
+    keys.next(key(20))
+    clock.next(0.5)
+    subscription.unsubscribe()
+
+    expect(positions).toEqual([0, 5, 12.5])
+  })
 })
+
+function key(x: number) {
+  const value = scene("a")
+  return {
+    scene: value,
+    geometry: geometryOf(["a"], new Map([["a", [x, 0] as const]])),
+    diff: { keep: ["a"], enter: [], exit: [] },
+  }
+}

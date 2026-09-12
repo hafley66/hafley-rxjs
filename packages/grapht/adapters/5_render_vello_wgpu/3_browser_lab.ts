@@ -2,7 +2,7 @@
 import * as wasmModule from "./wasm/pkg/grapht_render_vello_wgpu.js"
 import { loadCommonFixture } from "./0_fixture.ts"
 import { BENCH_SCENARIO_CASES, createVelloScenarioHandlers, type VelloScenarioState } from "./2_scenarios.ts"
-import { reduceBenchScenarioCases, type ScenarioRunReceipt, type ScenarioSample } from "../../src/11_scenarios.js"
+import { reduceBenchScenarioCases, type ScenarioRunReceipt, type ScenarioSample } from "../../src/0_bench/11_scenarios.js"
 import type { VelloWasmModule } from "./1_wasm.ts"
 import "./4_style.css"
 

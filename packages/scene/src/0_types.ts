@@ -1,21 +1,11 @@
 import type { MonoTypeOperatorFunction } from "rxjs"
+import type { Graph, GraphId } from "@hafley66/grapht-model"
 
 /** Stable identity. The only string that survives into a frame. */
-export type Id = string
+export type Id = GraphId
 
-/** One keyed thing in a scene. `kind` picks the renderer tier; `attrs` is opaque to this package. */
-export type Item = {
-  id: Id
-  kind: string
-  parent?: Id
-  attrs?: Readonly<Record<string, unknown>>
-}
-
-/** Topology at one step. Touched when the step changes, never per frame. */
-export type Scene = {
-  items: ReadonlyMap<Id, Item>
-  edges: ReadonlyMap<Id, readonly [Id, Id]>
-}
+/** Canonical graph topology at one animation step. */
+export type Scene<NodeData = unknown, EdgeData = unknown> = Graph<NodeData, EdgeData>
 
 /** Struct-of-arrays: `pos[2i], pos[2i+1]` is the point for `ids[i]`; `size` is `w, h` pairs; `routes` are `x, y, ...` polylines. */
 export type Geometry = {

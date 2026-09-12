@@ -2,9 +2,9 @@ import type {
   BenchScenario,
   BenchScenarioHandler,
   BenchScenarioHandlers,
-} from "../../../src/0_benchProtocol.js"
-import type { ScenarioSample } from "../../../src/11_scenarios.js"
-import { shakeOffsets } from "../../../src/12_shake.js"
+} from "../../../src/0_bench/0_protocol.js"
+import type { ScenarioSample } from "../../../src/0_bench/11_scenarios.js"
+import { shakeOffsets } from "../../../src/0_bench/12_shake.js"
 import type { Geometry } from "./0_protocol.js"
 import { buildGraph } from "./1_graphology.js"
 import { SigmaProjection } from "./2_projection.js"
