@@ -103,10 +103,18 @@ const centre = (strokes: readonly { pts: readonly Pt[] }[]): Pt => {
   return n === 0 ? [0, 0] : [x / n, y / n]
 }
 
+/** Two numbers is a start-to-end ramp, which is what the glyph tables write; three is already a
+ * `Width`, which is what an ornament hands over. */
 export interface RawStroke {
   readonly pts: readonly Pt[]
-  readonly w?: readonly [number, number]
+  readonly w?: readonly number[]
   readonly loop?: boolean
+}
+
+const widthOf = (w: readonly number[] | undefined): Width => {
+  const a = w?.[0] ?? 1
+  const c = w?.[w.length - 1] ?? 1
+  return w?.length === 3 ? [a, w[1] ?? 1, c] : [a, (a + c) / 2, c]
 }
 
 /** A glyph table entry as a fixed-shape vector: `STROKES` strokes of `POINTS` points, longest
@@ -120,9 +128,7 @@ export function toMorph(
 ): MorphGlyph {
   const built = strokes.map(s => {
     const pts = resample(crCubics(s.pts, s.loop === true, tension), points)
-    const w0 = s.w?.[0] ?? 1
-    const w1 = s.w?.[1] ?? 1
-    return { pts, w: [w0, (w0 + w1) / 2, w1] as Width, loop: s.loop === true, run: lengthOf(pts) }
+    return { pts, w: widthOf(s.w), loop: s.loop === true, run: lengthOf(pts) }
   })
   built.sort((a, b) => b.run - a.run)
   const kept = built.slice(0, count)
