@@ -1,4 +1,5 @@
 import createDOMPurify from "dompurify"
+import { foreignObjectsToText } from "../../src/2_graph/13_foreignObjectText.js"
 import type { GraphCamera, GraphFrame, GraphGeometry } from "../../src/2_graph/0_frame.ts"
 import type { GraphFrameResource } from "../../src/2_graph/10_renderer.ts"
 
@@ -14,7 +15,7 @@ function sanitizedSvg(document: Document, source: string): SVGSVGElement {
   const window = document.defaultView
   if (window === null) throw new Error("document rendering requires a document window")
   const purifier = createDOMPurify(window)
-  const fragment = purifier.sanitize(source, {
+  const fragment = purifier.sanitize(foreignObjectsToText(source), {
     USE_PROFILES: { svg: true, svgFilters: true },
     RETURN_DOM_FRAGMENT: true,
     FORBID_TAGS: ["foreignObject", "script"],

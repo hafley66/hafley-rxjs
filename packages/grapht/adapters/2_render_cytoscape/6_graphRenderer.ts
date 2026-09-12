@@ -1,5 +1,6 @@
 import cytoscape, { type Core, type ElementDefinition } from "cytoscape"
 import createDOMPurify from "dompurify"
+import { foreignObjectsToText } from "../../src/2_graph/13_foreignObjectText.js"
 import { graphLayoutScopeOf, type GraphLayoutScope } from "@hafley66/grapht-model"
 import {
   graphRenderer,
@@ -42,7 +43,7 @@ function sanitizedSvg(document: Document, source: string): SVGSVGElement {
   const window = document.defaultView
   if (window === null) throw new Error("sealed SVG rendering requires a document window")
   const purifier = createDOMPurify(window)
-  const fragment = purifier.sanitize(source, {
+  const fragment = purifier.sanitize(foreignObjectsToText(source), {
     USE_PROFILES: { svg: true, svgFilters: true },
     RETURN_DOM_FRAGMENT: true,
     FORBID_TAGS: ["foreignObject", "script"],
