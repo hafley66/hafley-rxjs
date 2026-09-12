@@ -3,29 +3,27 @@
   "generatedBy": "grapht/site",
   "commit": {
     "method": "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain excluding this step's own outputs, git rev-parse --abbrev-ref HEAD",
-    "hash": "86cd0ddf026c58e62d9803c6d7d5f2508874c652",
-    "short": "86cd0dd",
-    "subject": "grapht: vitepress site on GitHub Pages with the proof app",
-    "authorDate": "2026-09-12T11:52:49-04:00",
+    "hash": "b7d87b787f4d8119882d8329d1535ff01c4f6030",
+    "short": "b7d87b7",
+    "subject": "signal-grid demo: three fixed columns made the grid invisible in a 640px doc frame",
+    "authorDate": "2026-09-12T12:23:09-04:00",
     "branch": "main",
     "clean": false,
-    "dirtyCount": 12,
+    "dirtyCount": 10,
     "dirtyEntries": [
+      "M packages/grapht/adapters/2_render_cytoscape/9_foreignObjectText.browser.test.ts",
       "M packages/grapht/adapters/2_render_cytoscape/proof/arch-proof.png",
       "M packages/grapht/adapters/2_render_cytoscape/proof/arch-zoom.png",
-      "M packages/signal-grid/demo/main.ts",
+      "M packages/grapht/src/2_graph/13_foreignObjectText.ts",
       "M packages/signal-grid/site/stats.json",
-      "M packages/signals/docs/reference-api.md",
-      "M packages/signals/site/stats.json",
-      "M packages/signals/src/5_Route.browser.test.ts",
-      "M packages/signals/src/5_Route.ts",
       "?? .boop-briefs/",
       "?? packages/gothic/src/lib/8a_khFit.ts",
       "?? packages/gothic/tools/",
-      "?? packages/grapht/adapters/2_render_cytoscape/proof/depProbe.mjs"
+      "?? packages/grapht/adapters/2_render_cytoscape/proof/depProbe.mjs",
+      "?? packages/grapht/adapters/2_render_cytoscape/proof/textProbe.mjs"
     ],
     "repository": "hafley66/hafley-rxjs",
-    "url": "https://github.com/hafley66/hafley-rxjs/commit/86cd0ddf026c58e62d9803c6d7d5f2508874c652",
+    "url": "https://github.com/hafley66/hafley-rxjs/commit/b7d87b787f4d8119882d8329d1535ff01c4f6030",
     "reason": null
   },
   "machine": {
@@ -36,7 +34,7 @@
     "cpuModel": "Apple M2 Pro",
     "cores": 12,
     "totalMemoryBytes": 17179869184,
-    "builtAt": "2026-09-12T15:53:02.935Z"
+    "builtAt": "2026-09-12T16:35:19.944Z"
   },
   "package": {
     "name": "@hafley66/grapht",
@@ -46,21 +44,21 @@
     "method": "statSync().size summed for raw bytes and zlib.gzipSync(readFileSync(file)).length summed for gzip, over every file in the directory",
     "library": {
       "fileCount": 264,
-      "totalBytes": 529176,
-      "totalGzipBytes": 153143,
+      "totalBytes": 529200,
+      "totalGzipBytes": 153194,
       "reason": null
     },
     "siteMethod": "the same statSync and gzipSync pass over site/dist; the copy inlined into the site measures pass 1, the committed stats.json measures the final dist",
     "site": {
       "fileCount": 134,
-      "totalBytes": 6409085,
-      "totalGzipBytes": 2489079,
+      "totalBytes": 6409092,
+      "totalGzipBytes": 2489073,
       "reason": null
     },
     "demo": {
       "fileCount": 5,
-      "totalBytes": 926370,
-      "totalGzipBytes": 296126,
+      "totalBytes": 926346,
+      "totalGzipBytes": 296124,
       "reason": null
     },
     "videos": {
@@ -466,9 +464,9 @@
     "libraryBuildReason": "not measured by ship",
     "unitTestsMs": null,
     "browserTestsMs": null,
-    "siteBuildMs": 2021,
+    "siteBuildMs": 2278,
     "demoBuildMs": null,
-    "statsMs": 1789228383052
+    "statsMs": 1789230920063
   },
   "demoMemory": {
     "method": null,

@@ -61,7 +61,7 @@ export function foreignObjectsToText(source: string, startFontSize = 16): string
       for (const line of lines) {
         const tspan = parsed.createElementNS(svgNamespace, "tspan")
         tspan.setAttribute("x", x.toFixed(2))
-        tspan.setAttribute("y", "0")
+        // No y on the tspan: tspan y is an absolute override that would discard the text baseline.
         tspan.setAttribute("dy", first ? "0" : lineHeight.toFixed(2))
         tspan.textContent = line
         text.appendChild(tspan)
