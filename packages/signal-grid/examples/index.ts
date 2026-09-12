@@ -36,6 +36,9 @@ import { sortChurn } from "./27_sort_churn.js"
 import { wideSchema } from "./28_wide_schema.js"
 import { headerGroups } from "./29_header_groups.js"
 import { links } from "./30_links.js"
+import { cellSpan } from "./31_cell_span.js"
+import { cellRange } from "./32_cell_range.js"
+import { listView } from "./33_list_view.js"
 
 export type { Example, ExampleCheck } from "./0_types.js"
 export { VIDEOS, videoById, type Recording } from "./videos.js"
@@ -71,6 +74,9 @@ export const EXAMPLES: readonly Example[] = [
   deepTree,
   sortChurn,
   wideSchema,
+  cellSpan,
+  cellRange,
+  listView,
 ]
 
 export const byId = (id: string): Example | undefined =>

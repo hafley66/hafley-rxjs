@@ -5,6 +5,10 @@ list in the document.
 
 <GridDemo id="virtualization-50k" />
 
+The cost of the buffer has its own live page: [the knob sweep](https://hafley66.github.io/hafley-rxjs/signal-grid/bench/knobs.html) moves
+`overscan` from 0 to 128 on a mounted grid and plots the frame against it, and
+[the benchmarks page](/benchmarks) carries the matrix it came from.
+
 ## The switch
 
 `virtualize` carries one flag per seat, keyed the way `CellSpan` is keyed. `vertical` gates the run

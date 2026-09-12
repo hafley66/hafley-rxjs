@@ -2,8 +2,7 @@
 
 Let one cell cover its neighbours, and let the cells it covers render nothing.
 
-No panel runs on this page, because no example in `examples/index.ts` covers spanning. The
-[Matrix](/showcase-matrix) route mounts a spanning grid full screen.
+<GridDemo id="cell-span" />
 
 ## Declaring a span
 

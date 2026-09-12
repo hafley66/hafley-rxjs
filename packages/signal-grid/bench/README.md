@@ -21,6 +21,7 @@ places signal-grid loses.
 | [complexity claims checked](#complexity-claims-checked-against-the-numbers) | where a comment understates |
 | [scrolling in a browser](#scrolling-in-a-browser-the-factor-matrix) | which factor costs a frame, and what a row costs in memory |
 | [where the retained bytes go](#where-the-retained-bytes-go) | the 125 bytes a row that are the grid, and the rest that are your data |
+| [the live pages](#the-live-pages) | the knob sweep and the ten-grid gallery, both on the site |
 | [known gaps](#known-gaps) | what is not measured |
 
 ## how to run
@@ -31,6 +32,7 @@ npx vitest bench -c bench/vitest.bench.config.ts
 NODE_OPTIONS=--expose-gc npx vite-node -c bench/vitest.bench.config.ts bench/4_report.ts
 npx tsc --noEmit -p bench/tsconfig.json
 pnpm bench:scroll
+pnpm bench:knobs
 pnpm bench:gallery
 pnpm bench:memory 1000000
 ```
@@ -587,21 +589,37 @@ partitioned center run, and the paged run. They are pointer arrays, 8 bytes each
 them into index ranges over one array would take about 24 B/row back. `FlatNode` is the larger
 target: five fields per row where `depth`, `index` and `hasChildren` are derivable from the axis.
 
-### the live page
+### the live pages
+
+Two, both built into `site/dist/bench/` by `scripts/ship.mjs` the same way the demo is:
+
+| page | what it is |
+| --- | --- |
+| [knobs](https://hafley66.github.io/hafley-rxjs/signal-grid/bench/knobs.html) | one grid, a slider per factor, the frame cost plotted while a knob moves |
+| [gallery](https://hafley66.github.io/hafley-rxjs/signal-grid/bench/gallery.html) | ten grids at ten factor levels, sharing one animation frame |
 
 ```
 cd packages/signal-grid
+pnpm bench:knobs
 pnpm bench:gallery
-pnpm bench:memory 1000000
 ```
 
-It also ships with the site, at `<base>bench/gallery.html`, built by `scripts/ship.mjs` into
-`site/dist/bench/` the same way the demo is.
+**knobs** separates the factors that move from the two that cannot. `overscan`, the box size, the
+scroll speed, `content-visibility` and the declared row heights all change on a mounted grid: the
+window memo reads `config.overscan` on every recompute and a scroll recomputes it each frame, the
+ResizeObserver writes the viewport, and `state.rowHeight` is a signal. The relation and the cell
+slot are fixed when `grid()` is called, so those two sliders rebuild, and the readout counts the
+rebuilds so you can watch it happen.
 
-Ten tiles, every factor level from the tables, all scrolling in one animation frame. It loads paused;
-press run. The bar in each tile is that grid's share of the frame, folded per grid id off the same
-LogTape records the matrix reads. The toolbar carries frames per second, the worst frame of the last
-second, the used heap against the engine's limit, and the node count of the whole page.
+Press `sweep` on a knob and it eases floor to ceiling and back over 240 frames, recording one point
+per frame. The lower chart is that factor's cost curve: overscan runs green to red across its range,
+box scale barely moves.
+
+**gallery** is ten tiles, every factor level from the tables, all scrolling in one animation frame.
+It loads paused; press run. The bar in each tile is that grid's share of the frame, folded per grid
+id off the same LogTape records the matrix reads. The toolbar carries frames per second, the worst
+frame of the last second, the used heap against the engine's limit, and the node count of the whole
+page.
 
 Sharing one frame is the point: ten grids is what an application looks like, and a tile's cost has
 to be read against the others rather than alone.

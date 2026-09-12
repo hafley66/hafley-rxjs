@@ -3,6 +3,8 @@
 Eight regions by seven columns with the orientation transposed, live, and a span of two by three
 becoming three by two as it flips.
 
+<iframe class="route-frame" src="./demo/matrix" title="the matrix route"></iframe>
+
 <p><a href="./demo/matrix" target="_blank" rel="noreferrer">Open the route full screen</a></p>
 
 ## What it is stressing

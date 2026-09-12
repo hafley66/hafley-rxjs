@@ -3,6 +3,8 @@
 Every implemented feature switched on at once, over fifty thousand leaves or a tree of roughly the
 same size, with a control panel and a live readout.
 
+<iframe class="route-frame" src="./demo/everything" title="the everything route"></iframe>
+
 <p><a href="./demo/everything" target="_blank" rel="noreferrer">Open the route full screen</a></p>
 
 ## What it is stressing

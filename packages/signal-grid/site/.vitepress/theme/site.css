@@ -123,3 +123,18 @@
 .pill[data-tone="declared"] {
   color: var(--declared);
 }
+
+/* A showcase page names a demo route and used to link to it. The route itself is the page's
+   subject, so it runs in the page. */
+.route-frame {
+  inline-size: 100%;
+  block-size: 640px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background: var(--vp-c-bg-alt);
+  margin-block: 16px;
+}
+
+@media (max-width: 960px) {
+  .route-frame { block-size: 480px }
+}

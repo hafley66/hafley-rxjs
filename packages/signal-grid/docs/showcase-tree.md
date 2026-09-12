@@ -3,6 +3,8 @@
 A five-level tree over six volumes, six hundred and thirty-six directories, and fifty thousand
 files, virtualized while it is expanded.
 
+<iframe class="route-frame" src="./demo/tree" title="the tree route"></iframe>
+
 <p><a href="./demo/tree" target="_blank" rel="noreferrer">Open the route full screen</a></p>
 
 ## What it is stressing

@@ -118,6 +118,23 @@ for (const slug of SLUGS) {
   writeFileSync(join(OUT, slug, "index.html"), shell)
 }
 writeFileSync(join(OUT, "404.html"), shell)
+
+// The demo routes by pathname, so each of its routes needs a real file for the same reason. The
+// slugs come off the demo's own route table rather than a second list that could drift.
+const demoShell = join(OUT, "demo", "index.html")
+const demoSlugs = existsSync(demoShell)
+  ? readdirSync(join(PKG, "demo"))
+      .filter((name) => name.endsWith(".ts"))
+      .flatMap((name) => [...readFileSync(join(PKG, "demo", name), "utf8").matchAll(/^ {2}slug: "([^"]+)",$/gm)])
+      .map((match) => match[1] ?? "")
+  : []
+if (demoSlugs.length > 0) {
+  const page = readFileSync(demoShell, "utf8")
+  for (const slug of demoSlugs) {
+    mkdirSync(join(OUT, "demo", slug), { recursive: true })
+    writeFileSync(join(OUT, "demo", slug, "index.html"), page)
+  }
+}
 steps.push({ label: "deep links", ok: true, ms: 0 })
 
 const entries = () => readdirSync(OUT, { recursive: true })

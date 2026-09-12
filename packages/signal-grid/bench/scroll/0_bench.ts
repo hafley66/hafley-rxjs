@@ -18,6 +18,7 @@ import {
   grid,
   render,
   type ColumnDef,
+  type Grid,
   type GridState,
   type Viewport,
 } from "../../src/index.js"
@@ -187,6 +188,8 @@ export interface Mounted {
   readonly id: string
   readonly host: HTMLElement
   readonly scroll: HTMLElement
+  /** The grid's state signal, so a page can move a knob that lives in the model. */
+  readonly state: Grid<BenchRow>["state"]
   /** Advances the scroll by one frame's worth, and resizes the box when that factor is on. */
   readonly step: (px: number, at: number) => void
   readonly dispose: () => void
@@ -201,7 +204,13 @@ const RESIZE_PERIOD = 40
 
 let seq = 0
 
-export function mountBench(host: HTMLElement, cfg: Cfg): Mounted {
+/** Knobs a mounted grid can follow without being rebuilt. `overscan` is read inside the window memo
+ * on every recompute, and a scroll recomputes it each frame, so a getter tracks it live. */
+export interface Live {
+  readonly overscan: () => number
+}
+
+export function mountBench(host: HTMLElement, cfg: Cfg, live?: Live): Mounted {
   host.style.inlineSize = `${cfg.width}px`
   host.style.blockSize = `${cfg.height}px`
   if (cfg.cv === 1) {
@@ -230,7 +239,9 @@ export function mountBench(host: HTMLElement, cfg: Cfg): Mounted {
       rowHeight: extent,
     }),
     viewport,
-    overscan: cfg.overscan,
+    get overscan(): number {
+      return live === undefined ? cfg.overscan : live.overscan()
+    },
     slots: cfg.cell === "heavy" ? { cell: (ctx) => heavyCell(ctx.data as BenchRow, ctx.col) } : undefined,
   })
   const handle = render(g, host)
@@ -254,6 +265,7 @@ export function mountBench(host: HTMLElement, cfg: Cfg): Mounted {
     id,
     host,
     scroll,
+    state: g.state,
     step,
     dispose: () => {
       observer.disconnect()

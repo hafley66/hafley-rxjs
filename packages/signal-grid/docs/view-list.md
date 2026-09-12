@@ -3,9 +3,11 @@
 Flip which axis scrolls, or collapse the other axis to one entry and get a list, both by writing one
 state key.
 
-No panel runs on this page. `slots.cell` is not called under a transposed orientation, so a
-page-sized demo would mount a frame holding empty cells. The [Matrix](/showcase-matrix) route runs a
-transposed grid full screen with the workaround it needs.
+<GridDemo id="list-view" />
+
+`slots.cell` goes uncalled under a transposed orientation, so the panel above stays on the built-in
+cell renderer. The [Matrix](/showcase-matrix) route runs a transposed grid full screen with the
+workaround a custom cell needs there.
 
 ## The two keys
 

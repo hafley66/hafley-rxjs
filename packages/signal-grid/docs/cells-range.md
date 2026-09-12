@@ -3,8 +3,10 @@
 Drag a block of cells, extend it, and read back the keys inside it. Focus is the single cell the
 keyboard is standing on.
 
-No panel runs on this page, because no example in `examples/index.ts` covers ranges. Range dragging
-is live on the [Everything table](/showcase-everything) route.
+<GridDemo id="cell-range" />
+
+Range dragging also runs full screen on the [Everything table](/showcase-everything) route, beside
+every other feature at once.
 
 ## Two different keys
 

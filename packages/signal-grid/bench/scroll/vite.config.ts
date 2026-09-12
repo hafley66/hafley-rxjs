@@ -16,6 +16,7 @@ export default defineConfig({
       input: {
         index: fileURLToPath(new URL("index.html", import.meta.url)),
         gallery: fileURLToPath(new URL("gallery.html", import.meta.url)),
+        knobs: fileURLToPath(new URL("knobs.html", import.meta.url)),
       },
     },
   },
