@@ -1,0 +1,1 @@
+import{at as e,it as t,t as n,vt as r}from"./chunks/framework.CXXr-9tD.js";var i=JSON.parse(`{"title":"Interactive proof","description":"","frontmatter":{},"headers":[],"relativePath":"proof.md","filePath":"pages/proof.md"}`),a={name:`proof.md`};function o(n,i,a,o,s,c){return r(),t(`div`,null,[...i[0]||=[e("",5)]])}var s=n(a,[[`render`,o]]);export{i as __pageData,s as default};
