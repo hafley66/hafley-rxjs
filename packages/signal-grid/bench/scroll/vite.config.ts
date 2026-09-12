@@ -7,5 +7,16 @@ const here = fileURLToPath(new URL(".", import.meta.url))
 export default defineConfig({
   root: here,
   base: "./",
-  build: { outDir: "dist", emptyOutDir: true, target: "es2022", minify: false },
+  build: {
+    outDir: "dist",
+    emptyOutDir: true,
+    target: "es2022",
+    minify: false,
+    rollupOptions: {
+      input: {
+        index: fileURLToPath(new URL("index.html", import.meta.url)),
+        gallery: fileURLToPath(new URL("gallery.html", import.meta.url)),
+      },
+    },
+  },
 })

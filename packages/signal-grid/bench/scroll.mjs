@@ -23,11 +23,12 @@ const only = argv.includes("--block") ? Number(argv[argv.indexOf("--block") + 1]
 const WARM = 40
 const FRAMES = 120
 
-const BASE = { rows: 1000000, width: 1600, height: 900, cell: "heavy", extent: "uniform", overscan: 4, cv: 0 }
+const BASE = { rows: 1000000, width: 1600, height: 900, cell: "heavy", extent: "uniform", overscan: 4, cv: 0, resize: 0 }
 
 const at = (patch) => ({ ...BASE, ...patch })
 const keyOf = (c) =>
-  `rows=${c.rows}&width=${c.width}&height=${c.height}&overscan=${c.overscan}&cell=${c.cell}&extent=${c.extent}&cv=${c.cv}`
+  `rows=${c.rows}&width=${c.width}&height=${c.height}&overscan=${c.overscan}` +
+  `&cell=${c.cell}&extent=${c.extent}&cv=${c.cv}&resize=${c.resize}`
 
 // Four blocks, each answering one question. A cell repeated across blocks runs once and is read
 // twice, which is why every block is a list of configs rather than a list of runs.
@@ -46,6 +47,7 @@ const BLOCKS = [
       ["overscan 0", at({ overscan: 0 })],
       ["overscan 96", at({ overscan: 96 })],
       ["content-visibility on", at({ cv: 1 })],
+      ["box resizing", at({ resize: 1 })],
     ],
   },
   {
@@ -80,6 +82,31 @@ const BLOCKS = [
       ),
     ),
   },
+  {
+    n: 5,
+    // The grid box itself oscillating 25% every 40 frames, so each frame the ResizeObserver writes
+    // a viewport of a new size and the window is recut against a box that moved under it.
+    title: "A grid box that changes size every frame",
+    ask: "what a live resize costs on top of a scroll",
+    cells: [
+      ["fixed box, heavy", at({})],
+      ["resizing box, heavy", at({ resize: 1 })],
+      ["fixed box, plain", at({ cell: "plain" })],
+      ["resizing box, plain", at({ resize: 1, cell: "plain" })],
+      ["resizing box, overscan 0", at({ resize: 1, overscan: 0 })],
+      ["resizing box, 1k rows", at({ resize: 1, rows: 1000 })],
+    ],
+  },
+  {
+    n: 6,
+    // The `heap MB` column, read as its own sweep. Everything else here is per frame; this is what
+    // the page is holding while no frame is running.
+    title: "Retained heap against relation size",
+    ask: "what a row costs in memory before anyone scrolls",
+    cells: [1000, 20000, 200000, 1000000].flatMap((rows) =>
+      ["uniform", "varied"].map((extent) => [`${rows} rows, ${extent}`, at({ rows, extent, cell: "plain" })]),
+    ),
+  },
 ]
 
 const blocks = only === null ? BLOCKS : BLOCKS.filter((b) => b.n === only)
@@ -111,8 +138,23 @@ const server = createServer((req, res) => {
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve))
 const origin = `http://127.0.0.1:${server.address().port}`
 
-const browser = await chromium.launch({ headless: true })
+// Precise heap info, so `performance.memory` reports bytes rather than the 100 kB-quantized number
+// a page gets by default.
+const browser = await chromium.launch({ headless: true, args: ["--enable-precise-memory-info"] })
 const results = new Map()
+
+const METRICS = ["JSHeapUsedSize", "Nodes", "LayoutCount", "RecalcStyleCount", "LayoutDuration", "RecalcStyleDuration", "ScriptDuration", "TaskDuration"]
+
+/** Browser-side cost the package cannot time itself: layout, style recalc and the retained heap.
+ * Read through CDP either side of the measured burst, with a forced collection before each read so
+ * the heap delta is what survived the run rather than what churned inside it. */
+async function metricsOf(cdp) {
+  await cdp.send("HeapProfiler.collectGarbage")
+  const { metrics } = await cdp.send("Performance.getMetrics")
+  const out = {}
+  for (const it of metrics) if (METRICS.includes(it.name)) out[it.name] = it.value
+  return out
+}
 
 async function measure(cfg) {
   const key = keyOf(cfg)
@@ -122,9 +164,19 @@ async function measure(cfg) {
   try {
     await page.goto(`${origin}/index.html?${key}`, { waitUntil: "load" })
     await page.waitForSelector(".sg-row", { timeout: 30000 })
-    const run = await page.evaluate(([warm, frames]) => window.__bench(warm, frames), [WARM, FRAMES])
-    results.set(key, run)
-    return run
+    const cdp = await page.context().newCDPSession(page)
+    await cdp.send("Performance.enable")
+    await cdp.send("HeapProfiler.enable")
+    // Warmup is its own burst so the metric deltas below cover only the measured frames.
+    await page.evaluate((warm) => window.__bench(0, warm), WARM)
+    const before = await metricsOf(cdp)
+    const run = await page.evaluate((frames) => window.__bench(0, frames), FRAMES)
+    const after = await metricsOf(cdp)
+    const delta = {}
+    for (const name of METRICS) delta[name] = (after[name] ?? 0) - (before[name] ?? 0)
+    const out = { ...run, heapMb: after.JSHeapUsedSize / 1024 ** 2, heapDeltaKb: delta.JSHeapUsedSize / 1024, domNodes: after.Nodes, delta }
+    results.set(key, out)
+    return out
   } finally {
     await page.close()
   }
@@ -161,7 +213,11 @@ const machine = [
 // total only says how long the run was. `p50` sits on the vsync tick whenever the work fits, so
 // the stage columns are what separates two cells that both read 8.3.
 const table = (rows) => {
-  const head = ["case", "p50 ms", "p95 ms", "worst ms", "slow", "rows held", "nodes", "style B", ...STAGES.map((s) => s.split(".")[1] + " ms/f")]
+  const head = [
+    "case", "p50 ms", "p95 ms", "worst ms", "slow", "rows held", "nodes", "style B",
+    "heap MB", "heap kB/run", "layout ms/f", "style ms/f",
+    ...STAGES.map((s) => s.split(".")[1] + " ms/f"),
+  ]
   const body = rows.map((r) => [
     r.label,
     n1(r.p50),
@@ -171,6 +227,10 @@ const table = (rows) => {
     String(r.held),
     String(r.nodes),
     String(r.styleBytes),
+    n1(r.heapMb ?? 0),
+    n1(r.heapDeltaKb ?? 0),
+    ((r.delta?.LayoutDuration ?? 0) * 1000 / Math.max(1, r.frames)).toFixed(2),
+    ((r.delta?.RecalcStyleDuration ?? 0) * 1000 / Math.max(1, r.frames)).toFixed(2),
     ...STAGES.map((s) => (stageMs(r, s) / Math.max(1, r.frames)).toFixed(2)),
   ])
   return [
@@ -194,4 +254,6 @@ writeFileSync(
   join(PACKAGE, "bench/scroll.json"),
   JSON.stringify({ warm: WARM, frames: FRAMES, base: BASE, machine, blocks: report }, null, 2) + "\n",
 )
+const { chart } = await import("./chart.mjs")
+writeFileSync(join(PACKAGE, "bench/scroll.svg"), chart(report))
 process.stdout.write(markdown + "\n")

@@ -4,6 +4,7 @@ bench/scroll.json
 bench/scroll/dist
 out/
 site/dist
+site/scroll.svg
 site/.vitepress/cache
 site/pages
 site/benchmarks.md

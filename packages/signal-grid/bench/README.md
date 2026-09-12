@@ -19,7 +19,7 @@ places signal-grid loses.
 | [reactive derivation](#reactive-derivation) | which write reaches which memo |
 | [allocation](#allocation) | retained bytes per row after a forced gc |
 | [complexity claims checked](#complexity-claims-checked-against-the-numbers) | where a comment understates |
-| [scrolling in a browser](#scrolling-in-a-browser-the-factor-matrix) | which factor costs a frame: rows, viewport, cell, height, buffer |
+| [scrolling in a browser](#scrolling-in-a-browser-the-factor-matrix) | which factor costs a frame, and what a row costs in memory |
 | [known gaps](#known-gaps) | what is not measured |
 
 ## how to run
@@ -30,6 +30,7 @@ npx vitest bench -c bench/vitest.bench.config.ts
 NODE_OPTIONS=--expose-gc npx vite-node -c bench/vitest.bench.config.ts bench/4_report.ts
 npx tsc --noEmit -p bench/tsconfig.json
 pnpm bench:scroll
+pnpm bench:gallery
 ```
 
 `bench/vitest.bench.config.ts` sets `outputJson: "bench/results.json"`, so the first command drops a
@@ -46,8 +47,10 @@ p99 but no p95, and vitest 4.1.10 drops `benchmark.includeSamples` on the way to
 `bench/4_report.ts` exists and why every table in this file comes from it, not from the vitest table.
 
 `pnpm bench:scroll` is the browser matrix and runs on its own: it builds `bench/scroll/`, drives
-chromium through `scripts/browser-queue.mjs`, writes `bench/scroll.json` and prints the section
-this file carries under [scrolling in a browser](#scrolling-in-a-browser-the-factor-matrix).
+chromium through `scripts/browser-queue.mjs`, writes `bench/scroll.json` and `bench/scroll.svg`,
+and prints the section this file carries under
+[scrolling in a browser](#scrolling-in-a-browser-the-factor-matrix). `pnpm bench:gallery` opens
+the same factor levels as ten live grids sharing one animation frame.
 
 One consequence, stated up front: `4_report.ts` runs all three case lists in a single process, so
 every measurement carries the GC pressure of roughly a gigabyte of live fixtures. `vitest bench`
@@ -404,25 +407,30 @@ but it is the ceiling on how large a virtualized grid can get before scrolling d
 ## scrolling in a browser: the factor matrix
 
 The kernel tables above are node only. This one is chromium, one page per cell, every factor on a
-query string, one measured burst per cell. `bench/scroll/main.ts` is the page and `bench/scroll.mjs`
-walks the matrix.
+query string, one measured burst per cell. `bench/scroll/0_bench.ts` mounts a grid from a factor
+object, `bench/scroll.mjs` walks the matrix, and `bench/scroll/gallery.html` runs every level at
+once on screen.
 
 | factor | levels | why it is a factor |
 | --- | --- | --- |
-| rows | 1k, 20k, 1M | the relation the window is cut from |
+| rows | 1k, 20k, 200k, 1M | the relation the window is cut from |
 | viewport | 720x480, 1600x900, 2560x1440 | with the row height, how many rows are held |
 | cell | plain, heavy | one text node against a stack with a meter and a 16-rect sparkline |
 | extent | uniform, varied | whether the consumer declares a height per row |
 | overscan | 0, 4, 24, 96 | rows held beyond the viewport on each side |
 | content-visibility | off, on | `content-visibility: auto` plus `contain-intrinsic-size` on each row |
+| resize | off, on | the grid box itself changing size every frame, not only its contents |
 
 Baseline: 1,000,000 rows, 1600x900, heavy cells, uniform heights, overscan 4, content-visibility
-off. Every cell is 40 warm-up frames discarded then 120 measured, scrolling 240 px per frame.
+off, fixed box. Every cell is 40 warm-up frames discarded then 120 measured, scrolling 240 px per
+frame.
 
-Measured 2026-09-12 on the machine under [machine](#machine), chromium headless, through
-`scripts/browser-queue.mjs` so nothing else held the CPU.
+Measured 2026-09-12 on the machine under [machine](#machine), chromium headless with
+`--enable-precise-memory-info`, through `scripts/browser-queue.mjs` so nothing else held the CPU.
 
-Two columns deserve a warning before the tables.
+![the matrix as two bar plots per block](./scroll.svg)
+
+Four columns deserve a warning before the tables.
 
 - `p50 ms` is a `requestAnimationFrame` gap on a 120 Hz display, so it reads 8.3 whenever the work
   fits in the frame. It separates cells only once a cell stops fitting.
@@ -430,77 +438,130 @@ Two columns deserve a warning before the tables.
   are what separates two cells that both read 8.3. `base` is the half of the plan the scroll
   position does not reach; it reads 0.00 in every cell because the memo split means it does not run
   during a scroll at all.
+- `layout ms/f` and `style ms/f` come from CDP `Performance.getMetrics`, taken either side of the
+  measured burst. They are the browser's work, not the package's, and at the breaking point they are
+  four times larger than everything the package does.
+- `heap kB/run` is the retained heap delta across 120 frames with a forced collection on each side.
+  It swings either way by about 150 kB with no trend against any factor, which is what a run that
+  hands its rows back looks like. `heap MB` is the absolute number and does have a trend.
 
 ### what the matrix says
 
 | reading | evidence |
 | --- | --- |
-| Relation size is free per frame | 1k to 1M is 0.68 to 0.86 dom ms/f, and `base` never runs |
-| Viewport size costs rows, linearly | 22, 33, 48 rows held; 0.36, 0.40, 0.51 dom ms/f plain |
-| A heavy cell costs about 2x the dom stage and 8x the nodes | 0.40 to 0.86 ms/f, 249 to 1371 nodes |
-| A declared per-row height costs style bytes, not frames | 175 to 742 bytes, dom and vars unmoved |
-| Buffer size is the only factor that breaks the frame | overscan 96: 217 rows, 8915 nodes, 76 of 120 frames over 32 ms |
-| `content-visibility` pays only under an oversized buffer | no change at overscan 0, 4, 24; at 96 it halves p50 and cuts slow frames 76 to 3 |
+| Relation size is free per frame | 1k to 1M is 0.36 to 0.42 dom ms/f plain, and `base` never runs |
+| Relation size is not free in memory | 3.5 MB at 1k, 317 MB at 1M: about 318 bytes retained per row |
+| A declared per-row height adds about 43 bytes a row | 1M uniform 317 MB against 1M varied 360 MB |
+| Viewport size costs rows, linearly | 22, 33, 48 rows held; 0.36, 0.42, 0.60 dom ms/f plain |
+| A heavy cell costs about 2.3x the dom stage and 5.5x the nodes | 0.42 to 0.98 ms/f, 249 to 1371 nodes |
+| Buffer size is the only factor that breaks the frame | overscan 96: 217 rows, 8915 nodes, 104 of 120 frames over 32 ms |
+| At the breaking point the browser is the cost, not the package | 10.64 layout plus 8.27 style against 3.89 dom ms/f |
+| `content-visibility` pays only under an oversized buffer | no change at overscan 0 or 4; at 96 it halves p50 and cuts layout 10.64 to 5.29 |
 | Even rescued, an oversized buffer loses to a small one | overscan 96 with it on is 16.7 p50 against 8.3 at overscan 4 |
+| Resizing the grid box every frame costs a third of the dom stage and a worse tail | 0.98 to 1.26 ms/f, worst frame 17.5 to 25.1, no frame dropped |
 
 ### 1. Main effects, one factor off the baseline
 
 Asks: which factor moves the frame at all.
 
-| case | p50 ms | p95 ms | worst ms | slow | rows held | nodes | style B | base ms/f | plan ms/f | frame ms/f | dom ms/f | vars ms/f |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| baseline | 8.3 | 9.0 | 9.2 | 0 | 33 | 1371 | 177 | 0.00 | 0.01 | 0.01 | 0.86 | 0.00 |
-| rows 1k | 8.3 | 9.0 | 9.5 | 0 | 28 | 1166 | 174 | 0.00 | 0.00 | 0.02 | 0.68 | 0.01 |
-| rows 20k | 8.3 | 9.1 | 9.3 | 0 | 33 | 1371 | 175 | 0.00 | 0.00 | 0.03 | 0.74 | 0.00 |
-| viewport 720x480 | 8.3 | 9.0 | 9.2 | 0 | 22 | 920 | 176 | 0.00 | 0.00 | 0.02 | 0.68 | 0.01 |
-| viewport 2560x1440 | 8.3 | 9.2 | 9.3 | 0 | 48 | 1986 | 178 | 0.00 | 0.00 | 0.02 | 1.09 | 0.00 |
-| cell plain | 8.3 | 9.2 | 9.4 | 0 | 33 | 249 | 177 | 0.00 | 0.00 | 0.02 | 0.40 | 0.01 |
-| overscan 0 | 8.3 | 9.1 | 9.3 | 0 | 25 | 1043 | 177 | 0.00 | 0.00 | 0.02 | 0.76 | 0.00 |
-| overscan 96 | 33.2 | 42.4 | 125.0 | 76 | 217 | 8915 | 177 | 0.00 | 0.01 | 0.04 | 3.38 | 0.01 |
-| content-visibility on | 8.3 | 9.0 | 9.4 | 0 | 33 | 1371 | 177 | 0.00 | 0.00 | 0.02 | 0.84 | 0.00 |
+| case | p50 ms | p95 ms | worst ms | slow | rows held | nodes | style B | heap MB | heap kB/run | layout ms/f | style ms/f | base ms/f | plan ms/f | frame ms/f | dom ms/f | vars ms/f |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| baseline | 8.3 | 9.2 | 17.5 | 0 | 33 | 1371 | 177 | 317.1 | 84.3 | 1.67 | 1.32 | 0.00 | 0.00 | 0.03 | 0.98 | 0.01 |
+| rows 1k | 8.3 | 9.1 | 9.3 | 0 | 28 | 1166 | 174 | 3.6 | 12.5 | 1.32 | 1.06 | 0.00 | 0.00 | 0.03 | 0.78 | 0.00 |
+| rows 20k | 8.3 | 9.2 | 9.4 | 0 | 33 | 1371 | 175 | 9.9 | 56.3 | 1.47 | 1.15 | 0.00 | 0.00 | 0.03 | 0.84 | 0.00 |
+| viewport 720x480 | 8.3 | 9.1 | 9.4 | 0 | 22 | 920 | 176 | 317.1 | 39.5 | 1.07 | 0.87 | 0.00 | 0.00 | 0.02 | 0.74 | 0.01 |
+| viewport 2560x1440 | 8.3 | 9.4 | 25.9 | 0 | 48 | 1986 | 178 | 317.1 | 41.0 | 2.35 | 1.83 | 0.00 | 0.00 | 0.03 | 1.15 | 0.01 |
+| cell plain | 8.3 | 9.3 | 9.4 | 0 | 33 | 249 | 177 | 317.1 | 50.6 | 1.14 | 0.37 | 0.00 | 0.00 | 0.03 | 0.42 | 0.00 |
+| overscan 0 | 8.3 | 9.1 | 41.7 | 1 | 25 | 1043 | 177 | 317.2 | 92.6 | 1.21 | 0.97 | 0.00 | 0.00 | 0.02 | 0.78 | 0.01 |
+| overscan 96 | 33.3 | 41.7 | 108.3 | 88 | 217 | 8915 | 177 | 317.2 | -43.4 | 10.43 | 7.17 | 0.00 | 0.00 | 0.04 | 3.47 | 0.01 |
+| content-visibility on | 8.3 | 9.3 | 17.4 | 0 | 33 | 1371 | 177 | 317.1 | -45.0 | 1.72 | 1.49 | 0.00 | 0.01 | 0.03 | 1.04 | 0.00 |
+| box resizing | 8.3 | 9.2 | 25.1 | 0 | 32 | 1330 | 177 | 317.1 | -32.6 | 1.72 | 1.34 | 0.00 | 0.01 | 0.04 | 1.26 | 0.00 |
 
 ### 2. Buffer size against content-visibility
 
 Asks: does an oversized buffer plus content-visibility beat a small buffer.
 
-| case | p50 ms | p95 ms | worst ms | slow | rows held | nodes | style B | base ms/f | plan ms/f | frame ms/f | dom ms/f | vars ms/f |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| overscan 0, cv off | 8.3 | 9.1 | 9.3 | 0 | 25 | 1043 | 177 | 0.00 | 0.00 | 0.02 | 0.76 | 0.00 |
-| overscan 0, cv on | 8.3 | 9.3 | 9.4 | 0 | 25 | 1043 | 177 | 0.00 | 0.00 | 0.02 | 0.72 | 0.00 |
-| overscan 4, cv off | 8.3 | 9.0 | 9.2 | 0 | 33 | 1371 | 177 | 0.00 | 0.01 | 0.01 | 0.86 | 0.00 |
-| overscan 4, cv on | 8.3 | 9.0 | 9.4 | 0 | 33 | 1371 | 177 | 0.00 | 0.00 | 0.02 | 0.84 | 0.00 |
-| overscan 24, cv off | 8.4 | 17.5 | 50.0 | 2 | 73 | 3011 | 177 | 0.00 | 0.00 | 0.02 | 1.42 | 0.00 |
-| overscan 24, cv on | 8.5 | 17.5 | 66.7 | 2 | 73 | 3011 | 177 | 0.00 | 0.00 | 0.01 | 1.38 | 0.00 |
-| overscan 96, cv off | 33.2 | 42.4 | 125.0 | 76 | 217 | 8915 | 177 | 0.00 | 0.01 | 0.04 | 3.38 | 0.01 |
-| overscan 96, cv on | 16.7 | 25.0 | 58.3 | 3 | 217 | 8915 | 177 | 0.00 | 0.00 | 0.02 | 2.10 | 0.00 |
+| case | p50 ms | p95 ms | worst ms | slow | rows held | nodes | style B | heap MB | heap kB/run | layout ms/f | style ms/f | base ms/f | plan ms/f | frame ms/f | dom ms/f | vars ms/f |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| overscan 0, cv off | 8.3 | 9.1 | 41.7 | 1 | 25 | 1043 | 177 | 317.2 | 92.6 | 1.21 | 0.97 | 0.00 | 0.00 | 0.02 | 0.78 | 0.01 |
+| overscan 0, cv on | 8.3 | 9.3 | 16.7 | 0 | 25 | 1043 | 177 | 317.1 | 67.1 | 1.27 | 1.08 | 0.00 | 0.01 | 0.03 | 0.83 | 0.01 |
+| overscan 4, cv off | 8.3 | 9.2 | 17.5 | 0 | 33 | 1371 | 177 | 317.1 | 84.3 | 1.67 | 1.32 | 0.00 | 0.00 | 0.03 | 0.98 | 0.01 |
+| overscan 4, cv on | 8.3 | 9.3 | 17.4 | 0 | 33 | 1371 | 177 | 317.1 | -45.0 | 1.72 | 1.49 | 0.00 | 0.01 | 0.03 | 1.04 | 0.00 |
+| overscan 24, cv off | 8.7 | 17.3 | 24.2 | 0 | 73 | 3011 | 177 | 317.1 | 55.1 | 3.42 | 2.68 | 0.00 | 0.00 | 0.03 | 1.42 | 0.00 |
+| overscan 24, cv on | 15.7 | 17.6 | 25.0 | 0 | 73 | 3011 | 177 | 317.1 | 57.6 | 3.67 | 2.88 | 0.00 | 0.00 | 0.03 | 1.80 | 0.01 |
+| overscan 96, cv off | 33.3 | 41.7 | 108.3 | 88 | 217 | 8915 | 177 | 317.2 | -43.4 | 10.43 | 7.17 | 0.00 | 0.00 | 0.04 | 3.47 | 0.01 |
+| overscan 96, cv on | 16.8 | 25.7 | 84.2 | 3 | 217 | 8915 | 177 | 317.2 | -37.7 | 5.55 | 4.77 | 0.00 | 0.00 | 0.03 | 2.81 | 0.01 |
 
 ### 3. Viewport size against cell complexity
 
 Asks: does a bigger screen cost rows or cost nodes.
 
-| case | p50 ms | p95 ms | worst ms | slow | rows held | nodes | style B | base ms/f | plan ms/f | frame ms/f | dom ms/f | vars ms/f |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 720x480, plain | 8.3 | 9.0 | 9.4 | 0 | 22 | 172 | 176 | 0.00 | 0.00 | 0.02 | 0.36 | 0.00 |
-| 720x480, heavy | 8.3 | 9.0 | 9.2 | 0 | 22 | 920 | 176 | 0.00 | 0.00 | 0.02 | 0.68 | 0.01 |
-| 1600x900, plain | 8.3 | 9.2 | 9.4 | 0 | 33 | 249 | 177 | 0.00 | 0.00 | 0.02 | 0.40 | 0.01 |
-| 1600x900, heavy | 8.3 | 9.0 | 9.2 | 0 | 33 | 1371 | 177 | 0.00 | 0.01 | 0.01 | 0.86 | 0.00 |
-| 2560x1440, plain | 8.3 | 9.0 | 9.3 | 0 | 48 | 354 | 178 | 0.00 | 0.01 | 0.03 | 0.51 | 0.01 |
-| 2560x1440, heavy | 8.3 | 9.2 | 9.3 | 0 | 48 | 1986 | 178 | 0.00 | 0.00 | 0.02 | 1.09 | 0.00 |
+| case | p50 ms | p95 ms | worst ms | slow | rows held | nodes | style B | heap MB | heap kB/run | layout ms/f | style ms/f | base ms/f | plan ms/f | frame ms/f | dom ms/f | vars ms/f |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 720x480, plain | 8.3 | 9.3 | 16.2 | 0 | 22 | 172 | 176 | 317.1 | 59.8 | 0.82 | 0.30 | 0.00 | 0.00 | 0.03 | 0.36 | 0.01 |
+| 720x480, heavy | 8.3 | 9.1 | 9.4 | 0 | 22 | 920 | 176 | 317.1 | 39.5 | 1.07 | 0.87 | 0.00 | 0.00 | 0.02 | 0.74 | 0.01 |
+| 1600x900, plain | 8.3 | 9.3 | 9.4 | 0 | 33 | 249 | 177 | 317.1 | 50.6 | 1.14 | 0.37 | 0.00 | 0.00 | 0.03 | 0.42 | 0.00 |
+| 1600x900, heavy | 8.3 | 9.2 | 17.5 | 0 | 33 | 1371 | 177 | 317.1 | 84.3 | 1.67 | 1.32 | 0.00 | 0.00 | 0.03 | 0.98 | 0.01 |
+| 2560x1440, plain | 8.3 | 9.2 | 16.7 | 0 | 48 | 354 | 178 | 317.0 | -31.1 | 1.63 | 0.51 | 0.00 | 0.00 | 0.04 | 0.57 | 0.01 |
+| 2560x1440, heavy | 8.3 | 9.4 | 25.9 | 0 | 48 | 1986 | 178 | 317.1 | 41.0 | 2.35 | 1.83 | 0.00 | 0.00 | 0.03 | 1.15 | 0.01 |
 
 ### 4. Declared row heights against relation size
 
 Asks: what a per-row height costs the write pass.
 
-| case | p50 ms | p95 ms | worst ms | slow | rows held | nodes | style B | base ms/f | plan ms/f | frame ms/f | dom ms/f | vars ms/f |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1000 rows, uniform, plain | 8.3 | 8.9 | 9.3 | 0 | 28 | 214 | 174 | 0.00 | 0.00 | 0.01 | 0.32 | 0.00 |
-| 1000 rows, uniform, heavy | 8.3 | 9.0 | 9.5 | 0 | 28 | 1166 | 174 | 0.00 | 0.00 | 0.02 | 0.68 | 0.01 |
-| 1000 rows, varied, plain | 8.3 | 8.8 | 9.4 | 0 | 27 | 207 | 741 | 0.00 | 0.00 | 0.02 | 0.31 | 0.02 |
-| 1000 rows, varied, heavy | 8.3 | 9.2 | 9.4 | 0 | 27 | 1125 | 741 | 0.00 | 0.00 | 0.02 | 0.64 | 0.01 |
-| 20000 rows, uniform, plain | 8.3 | 9.3 | 9.4 | 0 | 33 | 249 | 175 | 0.00 | 0.00 | 0.02 | 0.35 | 0.00 |
-| 20000 rows, uniform, heavy | 8.3 | 9.1 | 9.3 | 0 | 33 | 1371 | 175 | 0.00 | 0.00 | 0.03 | 0.74 | 0.00 |
-| 20000 rows, varied, plain | 8.3 | 8.7 | 9.4 | 0 | 27 | 207 | 742 | 0.00 | 0.00 | 0.01 | 0.32 | 0.02 |
-| 20000 rows, varied, heavy | 8.3 | 9.0 | 9.3 | 0 | 27 | 1125 | 742 | 0.00 | 0.00 | 0.03 | 0.62 | 0.02 |
+| case | p50 ms | p95 ms | worst ms | slow | rows held | nodes | style B | heap MB | heap kB/run | layout ms/f | style ms/f | base ms/f | plan ms/f | frame ms/f | dom ms/f | vars ms/f |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000 rows, uniform, plain | 8.3 | 9.1 | 9.3 | 0 | 28 | 214 | 174 | 3.5 | -55.8 | 0.89 | 0.32 | 0.00 | 0.00 | 0.02 | 0.36 | 0.01 |
+| 1000 rows, uniform, heavy | 8.3 | 9.1 | 9.3 | 0 | 28 | 1166 | 174 | 3.6 | 12.5 | 1.32 | 1.06 | 0.00 | 0.00 | 0.03 | 0.78 | 0.00 |
+| 1000 rows, varied, plain | 8.3 | 8.8 | 9.3 | 0 | 27 | 207 | 741 | 3.8 | 101.5 | 0.87 | 0.45 | 0.00 | 0.00 | 0.03 | 0.40 | 0.02 |
+| 1000 rows, varied, heavy | 8.3 | 9.1 | 9.4 | 0 | 27 | 1125 | 741 | 3.8 | 92.3 | 1.27 | 1.16 | 0.00 | 0.01 | 0.03 | 0.75 | 0.02 |
+| 20000 rows, uniform, plain | 8.3 | 9.3 | 9.5 | 0 | 33 | 249 | 175 | 9.9 | 31.3 | 0.96 | 0.35 | 0.00 | 0.00 | 0.03 | 0.38 | 0.00 |
+| 20000 rows, uniform, heavy | 8.3 | 9.2 | 9.4 | 0 | 33 | 1371 | 175 | 9.9 | 56.3 | 1.47 | 1.15 | 0.00 | 0.00 | 0.03 | 0.84 | 0.00 |
+| 20000 rows, varied, plain | 8.3 | 9.2 | 9.3 | 0 | 27 | 207 | 742 | 10.5 | 72.1 | 0.84 | 0.44 | 0.00 | 0.00 | 0.03 | 0.38 | 0.02 |
+| 20000 rows, varied, heavy | 8.3 | 8.8 | 9.3 | 0 | 27 | 1125 | 742 | 10.5 | 93.5 | 1.20 | 1.12 | 0.00 | 0.01 | 0.03 | 0.71 | 0.02 |
+
+### 5. A grid box that changes size every frame
+
+Asks: what a live resize costs on top of a scroll.
+
+| case | p50 ms | p95 ms | worst ms | slow | rows held | nodes | style B | heap MB | heap kB/run | layout ms/f | style ms/f | base ms/f | plan ms/f | frame ms/f | dom ms/f | vars ms/f |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| fixed box, heavy | 8.3 | 9.2 | 17.5 | 0 | 33 | 1371 | 177 | 317.1 | 84.3 | 1.67 | 1.32 | 0.00 | 0.00 | 0.03 | 0.98 | 0.01 |
+| resizing box, heavy | 8.3 | 9.2 | 25.1 | 0 | 32 | 1330 | 177 | 317.1 | -32.6 | 1.72 | 1.34 | 0.00 | 0.01 | 0.04 | 1.26 | 0.00 |
+| fixed box, plain | 8.3 | 9.3 | 9.4 | 0 | 33 | 249 | 177 | 317.1 | 50.6 | 1.14 | 0.37 | 0.00 | 0.00 | 0.03 | 0.42 | 0.00 |
+| resizing box, plain | 8.3 | 9.1 | 16.7 | 0 | 32 | 242 | 177 | 317.1 | 28.4 | 1.18 | 0.39 | 0.00 | 0.00 | 0.03 | 0.49 | 0.00 |
+| resizing box, overscan 0 | 8.3 | 9.2 | 16.7 | 0 | 24 | 1002 | 177 | 317.2 | 90.0 | 1.32 | 1.06 | 0.00 | 0.00 | 0.04 | 0.99 | 0.01 |
+| resizing box, 1k rows | 8.3 | 9.2 | 17.3 | 0 | 27 | 1125 | 174 | 3.7 | 48.7 | 1.57 | 1.26 | 0.00 | 0.00 | 0.04 | 0.94 | 0.00 |
+
+### 6. Retained heap against relation size
+
+Asks: what a row costs in memory before anyone scrolls.
+
+| case | p50 ms | p95 ms | worst ms | slow | rows held | nodes | style B | heap MB | heap kB/run | layout ms/f | style ms/f | base ms/f | plan ms/f | frame ms/f | dom ms/f | vars ms/f |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000 rows, uniform | 8.3 | 9.1 | 9.3 | 0 | 28 | 214 | 174 | 3.5 | -55.8 | 0.89 | 0.32 | 0.00 | 0.00 | 0.02 | 0.36 | 0.01 |
+| 1000 rows, varied | 8.3 | 8.8 | 9.3 | 0 | 27 | 207 | 741 | 3.8 | 101.5 | 0.87 | 0.45 | 0.00 | 0.00 | 0.03 | 0.40 | 0.02 |
+| 20000 rows, uniform | 8.3 | 9.3 | 9.5 | 0 | 33 | 249 | 175 | 9.9 | 31.3 | 0.96 | 0.35 | 0.00 | 0.00 | 0.03 | 0.38 | 0.00 |
+| 20000 rows, varied | 8.3 | 9.2 | 9.3 | 0 | 27 | 207 | 742 | 10.5 | 72.1 | 0.84 | 0.44 | 0.00 | 0.00 | 0.03 | 0.38 | 0.02 |
+| 200000 rows, uniform | 8.3 | 9.3 | 9.4 | 0 | 33 | 249 | 176 | 67.5 | 187.3 | 1.16 | 0.39 | 0.00 | 0.00 | 0.03 | 0.42 | 0.01 |
+| 200000 rows, varied | 8.3 | 9.3 | 9.4 | 0 | 27 | 207 | 743 | 76.3 | 27.6 | 0.92 | 0.47 | 0.00 | 0.00 | 0.03 | 0.38 | 0.02 |
+| 1000000 rows, uniform | 8.3 | 9.3 | 9.4 | 0 | 33 | 249 | 177 | 317.1 | 50.6 | 1.14 | 0.37 | 0.00 | 0.00 | 0.03 | 0.42 | 0.00 |
+| 1000000 rows, varied | 8.3 | 9.3 | 9.4 | 0 | 27 | 207 | 744 | 359.8 | 90.7 | 0.92 | 0.47 | 0.00 | 0.00 | 0.02 | 0.41 | 0.04 |
+### the live page
+
+```
+cd packages/signal-grid
+pnpm bench:gallery
+```
+
+Ten tiles, every factor level from the tables, all scrolling in one animation frame. The bar in each
+tile is that grid's share of the frame, folded per grid id off the same LogTape records the matrix
+reads. The toolbar carries frames per second, the worst frame of the last second, the used heap
+against the engine's limit, and the node count of the whole page.
+
+Sharing one frame is the point: ten grids is what an application looks like, and a tile's cost has
+to be read against the others rather than alone.
+
 ### one measurement bug this matrix found
 
 Block 4 first reported 1.55 vars ms/f at 20,000 declared heights and 0.02 at 1,000. The write pass
