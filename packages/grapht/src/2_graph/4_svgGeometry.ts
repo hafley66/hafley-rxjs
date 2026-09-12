@@ -68,7 +68,12 @@ function union(left: Rect | undefined, right: Rect): Rect {
 }
 
 function parseSvg(document: Document, svg: string): SVGSVGElement {
-  const parsed = new DOMParser().parseFromString(svg, "image/svg+xml")
+  // A source without xmlns parses into no namespace and lands as a plain Element, so the
+  // namespace is injected before parsing rather than repaired after it.
+  const source = /<svg\b(?![^>]*\bxmlns=)/i.test(svg)
+    ? svg.replace(/<svg\b/i, '<svg xmlns="http://www.w3.org/2000/svg"')
+    : svg
+  const parsed = new DOMParser().parseFromString(source, "image/svg+xml")
   if (parsed.querySelector("parsererror")) throw new Error("sealed SVG artifact is not valid XML")
   for (const unsafe of parsed.querySelectorAll("script, foreignObject")) unsafe.remove()
   for (const element of parsed.querySelectorAll("*")) {

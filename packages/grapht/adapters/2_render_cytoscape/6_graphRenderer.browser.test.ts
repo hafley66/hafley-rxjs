@@ -333,10 +333,3 @@ describe("Cytoscape GraphFrame resource", () => {
     expect(layersAfterUnsubscribe).toBe(0)
   })
 })
-
-it("probe: importNode realm", () => {
-  const parsed = new DOMParser().parseFromString('<svg viewBox="0 0 10 10"><rect id="r"/></svg>', "image/svg+xml")
-  const imported = document.importNode(parsed.documentElement, true)
-  console.log("probe", imported.constructor.name, imported instanceof SVGSVGElement, String(imported))
-  expect(true).toBe(true)
-})

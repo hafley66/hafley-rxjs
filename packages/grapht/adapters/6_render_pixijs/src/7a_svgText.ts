@@ -18,7 +18,12 @@ const PRESENTATION_ATTRIBUTES = [
 
 /** Resolves stylesheet rules into presentation attributes before SVGScene consumes the detached SVG. */
 export function svgRootForPixi(document: Document, source: string): SVGSVGElement {
-  const parsed = new DOMParser().parseFromString(source, "image/svg+xml")
+  // A source without xmlns parses into no namespace and lands as a plain Element, so the
+  // namespace is injected before parsing rather than repaired after it.
+  const namespaced = /<svg\b(?![^>]*\bxmlns=)/i.test(source)
+    ? source.replace(/<svg\b/i, '<svg xmlns="http://www.w3.org/2000/svg"')
+    : source
+  const parsed = new DOMParser().parseFromString(namespaced, "image/svg+xml")
   if (parsed.querySelector("parsererror")) throw new Error("Pixi SVG source is not valid XML")
   const root = document.importNode(parsed.documentElement, true)
   if (!(root instanceof SVGSVGElement)) throw new Error("Pixi SVG source has no SVG root")
