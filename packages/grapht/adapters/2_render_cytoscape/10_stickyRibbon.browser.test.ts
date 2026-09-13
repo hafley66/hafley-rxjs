@@ -187,6 +187,39 @@ describe("document renderer sticky group headers", () => {
     }
   })
 
+  it("does not paint a group whose header sits below the viewport", () => {
+    const { host, resource } = mountGroups()
+    try {
+      resource.applyCamera({ x: 0, y: 0, scale: 1, viewport: { x: 0, y: 0, width: 800, height: 200 } })
+      expect(bars(host).map(bar => bar.id)).toEqual(["outer"])
+    } finally {
+      resource.unsubscribe()
+      host.remove()
+    }
+  })
+
+  it("stacks group headers below the ribbon when both are on", () => {
+    const host = document.createElement("div")
+    host.style.cssText = "position:relative;width:800px;height:600px"
+    document.body.appendChild(host)
+    const withColumns: GraphFrame = {
+      ...groupFrame,
+      geometry: { ...groupFrame.geometry, columnBoundsById: { outer: { x: 0, y: 0, width: 200, height: 3900 } } },
+    }
+    const resource = createDocumentGraphFrameResource(host, undefined, { inset: 8, gap: 4, height: 22 })
+    try {
+      resource.render(withColumns, { enterIds: ["seq"], updateIds: [], exitIds: [] })
+      resource.applyCamera({ x: 0, y: -500, scale: 1, viewport: { x: 0, y: 0, width: 800, height: 600 } })
+      expect(bars(host).map(bar => [bar.id, bar.top])).toEqual([
+        ["outer", 34],
+        ["inner", 60],
+      ])
+    } finally {
+      resource.unsubscribe()
+      host.remove()
+    }
+  })
+
   it("paints nothing when group headers are switched off", () => {
     const { host, resource } = mountGroups({ groups: false })
     try {

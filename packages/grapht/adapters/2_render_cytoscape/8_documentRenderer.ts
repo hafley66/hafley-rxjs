@@ -157,11 +157,13 @@ export function createDocumentGraphFrameResource(
     const layer = ensureOverlay().groups
     // Heights go in pre-divided by the camera scale, so a stacked slot is the same
     // screen height at any zoom and the bars stay readable.
+    // The ribbon owns the first row, so the group stack starts under it.
+    const top = inset + (wantsRibbon && ribbonItems.length > 0 ? headerHeight + gap : 0)
     const placements = stackGroupHeaders({
       graph: groupGraph,
       headers: groupHeaders.map(header => ({ ...header, height: headerHeight / next.scale })),
       camera: next,
-      inset,
+      inset: top,
       gap,
     })
     const live = new Set<string>()
@@ -169,6 +171,9 @@ export function createDocumentGraphFrameResource(
       if (!placement.visible) continue
       const bounds = groupBounds[placement.id]
       if (bounds === undefined) continue
+      const bottomEdge = next.viewport.y + next.viewport.height - headerHeight
+      if (placement.top < next.viewport.y || placement.top > bottomEdge) continue
+      if (placement.state === "stuck" && placement.top < top) continue
       live.add(placement.id)
       const entry = upsert(paintedGroups, layer, placement.id, "#EDF0FD")
       const left = Math.max(next.viewport.x + inset, bounds.x * next.scale + next.x)
