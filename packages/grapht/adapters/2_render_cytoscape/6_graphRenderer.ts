@@ -1,4 +1,4 @@
-import { wheelCamera } from "../../src/lib/1_wheelCamera.js"
+import { WheelMomentum } from "../../src/lib/2_wheelMomentum.js"
 import { createStickyOverlay, type StickyOptions } from "../../src/lib/0_stickyOverlay.js"
 import cytoscape, { type Core, type ElementDefinition } from "cytoscape"
 import createDOMPurify from "dompurify"
@@ -297,6 +297,23 @@ export function createCytoscapeGraphFrameResource(
     }
   })
 
+  const momentum = new WheelMomentum()
+  let momentumFrame = 0
+  const unsubscribeMomentum = (): void => {
+    cancelAnimationFrame(momentumFrame)
+    momentumFrame = 0
+    momentum.unsubscribe()
+  }
+  const coast = (now: number): void => {
+    momentumFrame = 0
+    const pan = cy.pan()
+    const next = momentum.step({ x: pan.x, y: pan.y, scale: cy.zoom(), viewport: { x: 0, y: 0, width: cy.width(), height: cy.height() } }, now)
+    if (next === undefined) return
+    cy.viewport({ zoom: next.scale, pan: { x: next.x, y: next.y } })
+    momentumFrame = requestAnimationFrame(coast)
+  }
+  cy.on("mousedown touchstart", unsubscribeMomentum)
+
   function onWheel(event: WheelEvent): void {
     if (!host || renderedFrame === undefined) return
     event.preventDefault()
@@ -304,8 +321,9 @@ export function createCytoscapeGraphFrameResource(
     event.stopImmediatePropagation()
     const rect = host.getBoundingClientRect()
     const pan = cy.pan()
-    const next = wheelCamera({ x: pan.x, y: pan.y, scale: cy.zoom(), viewport: { x: 0, y: 0, width: cy.width(), height: cy.height() } }, event, { x: event.clientX - rect.left, y: event.clientY - rect.top })
+    const next = momentum.push({ x: pan.x, y: pan.y, scale: cy.zoom(), viewport: { x: 0, y: 0, width: cy.width(), height: cy.height() } }, event, { x: event.clientX - rect.left, y: event.clientY - rect.top }, performance.now())
     cy.viewport({ zoom: next.scale, pan: { x: next.x, y: next.y } })
+    if (!momentumFrame) momentumFrame = requestAnimationFrame(coast)
   }
   if (interactions) {
     const dragPositionByElementId = new Map<string, { x: number; y: number }>()
@@ -343,6 +361,7 @@ export function createCytoscapeGraphFrameResource(
     headerViews,
     sealedSvgViews,
     render(frame, receipt) {
+      unsubscribeMomentum()
       renderedFrame = frame
       const sourcePrimitives = Object.values(frame.presentation.sealedSvgArtifactsByRootId).flatMap(artifact => {
         const cached = primitivesByRevision.get(artifact.revisionId)
@@ -463,6 +482,7 @@ export function createCytoscapeGraphFrameResource(
       stickyOverlay?.render(frame)
     },
     unsubscribe() {
+      unsubscribeMomentum()
       host?.removeEventListener("wheel", onWheel, { capture: true })
       stickyOverlay?.unsubscribe()
       headerLayer?.remove()

@@ -1,4 +1,4 @@
-import { wheelCamera } from "../../src/lib/1_wheelCamera.js"
+import { WheelMomentum } from "../../src/lib/2_wheelMomentum.js"
 import createDOMPurify from "dompurify"
 import { createStickyOverlay, type StickyOptions } from "../../src/lib/0_stickyOverlay.js"
 import { foreignObjectsToText } from "../../src/2_graph/13_foreignObjectText.js"
@@ -79,10 +79,28 @@ export function createDocumentGraphFrameResource(
     y: event.clientY - host.getBoundingClientRect().top,
   })
 
+  const momentum = new WheelMomentum()
+  let momentumFrame = 0
+  const unsubscribeMomentum = (): void => {
+    cancelAnimationFrame(momentumFrame)
+    momentumFrame = 0
+    momentum.unsubscribe()
+  }
+  const coast = (now: number): void => {
+    momentumFrame = 0
+    if (camera === undefined) return
+    const next = momentum.step(camera, now)
+    if (next === undefined) return
+    applyCamera(next)
+    interactions?.cameraInput$.next(next)
+    momentumFrame = requestAnimationFrame(coast)
+  }
+
   const onWheel = (event: WheelEvent): void => {
     if (camera === undefined) return
     event.preventDefault()
-    applyCamera(wheelCamera(camera, event, pointer(event)))
+    applyCamera(momentum.push(camera, event, pointer(event), performance.now()))
+    if (!momentumFrame) momentumFrame = requestAnimationFrame(coast)
     interactions?.cameraInput$.next(camera)
   }
 
@@ -92,6 +110,7 @@ export function createDocumentGraphFrameResource(
     // Text owns the gesture so selection works, and page chrome owns its own clicks: capturing the
     // pointer here would retarget their click event to the host and swallow it. Everything else pans.
     if (event.target instanceof Element && event.target.closest("text, tspan, [data-gesture-legend]")) return
+    unsubscribeMomentum()
     dragging = { pointerId: event.pointerId, last: pointer(event) }
     host.setPointerCapture(event.pointerId)
   }
@@ -114,6 +133,7 @@ export function createDocumentGraphFrameResource(
 
   return {
     render(frame) {
+      unsubscribeMomentum()
       const artifact = frame.presentation.sealedSvgArtifactsByRootId.epic ?? Object.values(frame.presentation.sealedSvgArtifactsByRootId)[0]
       if (artifact === undefined) return
       if (revisionId !== artifact.revisionId) {
@@ -129,10 +149,11 @@ export function createDocumentGraphFrameResource(
       stickyOverlay.render(frame)
       applyCamera(frame.camera)
     },
-    applyCamera,
+    applyCamera(next) { unsubscribeMomentum(); applyCamera(next) },
     applySticky: stickyOverlay.applySticky,
     legend,
     unsubscribe() {
+      unsubscribeMomentum()
       host.removeEventListener("wheel", onWheel)
       host.removeEventListener("pointerdown", onPointerDown)
       host.removeEventListener("pointermove", onPointerMove)
