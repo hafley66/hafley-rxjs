@@ -447,3 +447,51 @@ describe("a pinned run covers what it scrolls over", () => {
     })
   }
 })
+
+// The `light-dark()` tokens on the root resolve against the scheme the host declared on an ancestor.
+// The grid declared its own until this test, which is what forced the bench pages to out-specify it
+// back to dark, and what made a grid inside a dark page impossible to lighten from outside.
+describe("the color scheme the host declared", () => {
+  const mountUnder = (scheme: string | null) => {
+    const host = document.createElement("div")
+    if (scheme !== null) host.style.colorScheme = scheme
+    const root = document.createElement("div")
+    host.append(root)
+    document.body.append(host)
+    const g = grid<Row>({
+      id: "scheme",
+      rows: ROWS,
+      columns: [{ id: "name", width: 120 }],
+      rowId: (it) => it.id,
+    })
+    const handle = render(g, root)
+    return {
+      root,
+      release: () => {
+        handle.stop()
+        host.remove()
+      },
+    }
+  }
+
+  it("resolves the root background against a dark host", () => {
+    const view = mountUnder("dark")
+    expect(getComputedStyle(view.root).backgroundColor).toBe("rgb(20, 22, 26)")
+    view.release()
+  })
+
+  it("resolves the root background against a light host", () => {
+    const view = mountUnder("light")
+    expect(getComputedStyle(view.root).backgroundColor).toBe("rgb(255, 255, 255)")
+    view.release()
+  })
+
+  // A host that declares nothing leaves the grid with the document default, which is light. The
+  // old `color-scheme: light dark` on the root answered with the OS preference instead, so this is
+  // the case that proves the grid stopped forcing a scheme of its own.
+  it("reads the light value under a host that declares nothing", () => {
+    const view = mountUnder(null)
+    expect(getComputedStyle(view.root).backgroundColor).toBe("rgb(255, 255, 255)")
+    view.release()
+  })
+})

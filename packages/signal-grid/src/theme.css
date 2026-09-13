@@ -95,7 +95,6 @@
   --sg-range-bg: light-dark(#e8f0fe, #1b2735);
   --sg-range-edge: light-dark(#2f6feb, #6ea8fe);
 
-  color-scheme: light dark;
   position: relative;
   display: block;
   block-size: 100%;

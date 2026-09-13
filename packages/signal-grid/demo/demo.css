@@ -8,6 +8,7 @@
  */
 
 :root {
+  color-scheme: light dark;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -66,7 +67,6 @@ body {
 /* Narrowest of three steps, and the base: one column, the grid last and tallest, both side
    panels closed disclosures above it. 760c adds the panel column, 1180c adds the readout. */
 .demo {
-  color-scheme: var(--demo-scheme);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto auto minmax(0, 1fr);
@@ -271,7 +271,6 @@ body {
 /* --- The one mapping rule ------------------------------------------------- */
 
 .demo [data-route="g"] {
-  color-scheme: var(--demo-scheme);
   --sg-bg: var(--demo-bg);
   --sg-fg: var(--demo-fg);
   --sg-line: var(--demo-line);
