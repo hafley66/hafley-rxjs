@@ -13,6 +13,6 @@ export default defineConfig({
       headless: true,
       screenshotFailures: true,
     },
-    include: ["6_graphRenderer.browser.test.ts", "7_proof.browser.test.ts", "9_foreignObjectText.browser.test.ts", "10_stickyRibbon.browser.test.ts", "11_gestureLegend.browser.test.ts"],
+    include: ["6_graphRenderer.browser.test.ts", "7_proof.browser.test.ts", "9_foreignObjectText.browser.test.ts", "10_stickyRibbon.browser.test.ts", "11_gestureLegend.browser.test.ts", "12_performanceReadout.browser.test.ts"],
   },
 })

@@ -9,6 +9,7 @@ on:
       - main
     paths:
       - "packages/signal-grid/**"
+      - "packages/docs-kit/**"
       - ".github/workflows/signal-grid-pages.yml"
 
 # `contents: write` is the whole grant. No `pages: write`, no `id-token: write`, no environment:

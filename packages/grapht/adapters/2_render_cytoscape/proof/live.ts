@@ -1,3 +1,4 @@
+import { performanceReadout } from "../../../../docs-kit/src/3a_performanceReadout.ts"
 import { BehaviorSubject, EMPTY, merge, Subject, switchMap, tap } from "rxjs"
 import { Signal, StorageSignal } from "@hafley66/signals"
 import { createDocumentGraphFrameResource } from "../8_documentRenderer.ts"
@@ -124,7 +125,7 @@ async function sequenceFrame(viewport: { width: number; height: number }): Promi
   }
 }
 
-const ui = Signal({ mode: "document" as Mode, source: "arch" as Source, fps: 0 })
+const ui = Signal({ mode: "document" as Mode, source: "arch" as Source })
 const camera = Signal(cameraInput$, artifactFrame.camera)
 /** One store for the view switches, kept across reloads by the signals library's storage backend. */
 const view = StorageSignal("grapht.proof.view", { ribbon: true, groups: true, legend: false })
@@ -135,7 +136,7 @@ const readout = Signal(() => {
   const current = camera.$()
   const broken = failure.$()
   if (broken !== "") return broken
-  return `${ui.source.$()} | ${ui.mode.$()} | fps ${ui.fps.$()} | camera x ${current.x.toFixed(0)} y ${current.y.toFixed(0)} scale ${current.scale.toFixed(3)}`
+  return `${ui.source.$()} | ${ui.mode.$()} | camera x ${current.x.toFixed(0)} y ${current.y.toFixed(0)} scale ${current.scale.toFixed(3)}`
 })
 type StickyResource = {
   render: (frame: GraphFrame, receipt: unknown) => void
@@ -148,7 +149,12 @@ type StickyResource = {
 // captured reference; switchMap drops the previous renderer's wiring with it.
 const mounted$ = new BehaviorSubject<StickyResource | undefined>(undefined)
 
+const perf = performanceReadout(host)
+perf.el.style.cssText += ";position:fixed;right:8px;bottom:8px;z-index:10"
+document.body.appendChild(perf.el)
+
 const painted$ = merge(
+  perf.painted$,
   readout.$.pipe(tap(text => { readoutElement.textContent = text })),
   view.ribbon.$.pipe(tap(on => { ribbonToggle.checked = on })),
   view.groups.$.pipe(tap(on => { groupsToggle.checked = on })),
@@ -206,19 +212,6 @@ async function useSource(next: Source): Promise<void> {
 await mount("document")
 // The page entry is the runtime boundary; this subscription is its only one.
 painted$.subscribe()
-
-let frames = 0
-let windowStart = performance.now()
-requestAnimationFrame(function tick() {
-  frames += 1
-  const now = performance.now()
-  if (now - windowStart >= 500) {
-    ui.fps.$(Math.round((frames * 1000) / (now - windowStart)))
-    frames = 0
-    windowStart = now
-  }
-  requestAnimationFrame(tick)
-})
 
 document.querySelector("#document")?.addEventListener("click", () => void mount("document"))
 document.querySelector("#renderer-cytoscape")?.addEventListener("click", () => void mount("cytoscape"))

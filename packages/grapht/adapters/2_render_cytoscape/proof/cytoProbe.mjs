@@ -18,6 +18,9 @@ try {
   page.on("pageerror", error => errors.push(error.message))
   await page.goto(process.argv[2] ?? server.resolvedUrls.local[0])
   await expect(page.locator("#host svg").first()).toBeVisible()
+  await expect(page.locator('[data-performance-readout]')).toHaveCount(1)
+  await expect(page.locator('[data-metric="fps"]')).toHaveText(/^\d+$/)
+  await expect(page.locator('[data-metric="used"]')).toHaveText(/^(\d+\.\d MiB|unavailable)$/)
   for (const source of ["arch", "sequence"]) {
     const rootId = source === "arch" ? "epic" : "seq"
     await page.locator(`#${source}`).click()
