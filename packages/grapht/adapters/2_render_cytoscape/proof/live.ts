@@ -1,8 +1,9 @@
-import { Subject } from "rxjs"
-import { Signal } from "@hafley66/signals"
+import { BehaviorSubject, EMPTY, merge, Subject, switchMap, tap } from "rxjs"
+import { Signal, StorageSignal } from "@hafley66/signals"
 import { createDocumentGraphFrameResource } from "../8_documentRenderer.ts"
 import { fitGraphCamera } from "../../../src/2_graph/1_fitCamera.ts"
 import type { Graph, GraphId } from "@hafley66/grapht-model"
+import type { Observable } from "rxjs"
 import type { GraphCamera, GraphFrame, GraphGeometry } from "../../../src/2_graph/0_frame.ts"
 import sequenceFixture from "../../../fixtures/sequence/large.json"
 import sequenceSvgUrl from "../../../fixtures/sequence/large.svg?url"
@@ -125,16 +126,40 @@ async function sequenceFrame(viewport: { width: number; height: number }): Promi
 
 const ui = Signal({ mode: "document" as Mode, source: "arch" as Source, fps: 0 })
 const camera = Signal(cameraInput$, artifactFrame.camera)
+/** One store for the view switches, kept across reloads by the signals library's storage backend. */
+const view = StorageSignal("grapht.proof.view", { ribbon: true, groups: true, legend: false })
+
 const readout = Signal(() => {
   const current = camera.$()
   return `${ui.source.$()} | ${ui.mode.$()} | fps ${ui.fps.$()} | camera x ${current.x.toFixed(0)} y ${current.y.toFixed(0)} scale ${current.scale.toFixed(3)}`
 })
-// The page entry is the runtime boundary; this subscription is its only one.
-readout.$.subscribe(text => {
-  readoutElement.textContent = text
-})
+type StickyResource = {
+  render: (frame: GraphFrame, receipt: unknown) => void
+  unsubscribe: () => void
+  applySticky?: (sticky: { ribbon: boolean; groups: boolean }) => void
+  legend?: { setOpen: (open: boolean) => void; toggled$: Observable<boolean> }
+}
 
-let resource: { render: (frame: GraphFrame, receipt: unknown) => void; unsubscribe: () => void } | undefined
+// Every mount replaces the renderer, so the view effects follow the current one rather than a
+// captured reference; switchMap drops the previous renderer's wiring with it.
+const mounted$ = new BehaviorSubject<StickyResource | undefined>(undefined)
+
+const painted$ = merge(
+  readout.$.pipe(tap(text => { readoutElement.textContent = text })),
+  view.ribbon.$.pipe(tap(on => { ribbonToggle.checked = on })),
+  view.groups.$.pipe(tap(on => { groupsToggle.checked = on })),
+  mounted$.pipe(
+    switchMap(current =>
+      merge(
+        view.$.pipe(tap(next => current?.applySticky?.({ ribbon: next.ribbon, groups: next.groups }))),
+        view.legend.$.pipe(tap(open => current?.legend?.setOpen(open))),
+        current?.legend?.toggled$.pipe(tap(open => view.legend.$(open))) ?? EMPTY,
+      ),
+    ),
+  ),
+)
+
+let resource: StickyResource | undefined
 
 async function importCytoscape(host: HTMLElement) {
   try {
@@ -156,15 +181,12 @@ async function mount(next: Mode): Promise<void> {
   ui.mode.$(next)
   resource =
     next === "document"
-      ? createDocumentGraphFrameResource(
-          host,
-          { cameraInput$ },
-          { ribbon: ribbonToggle.checked, groups: groupsToggle.checked, inset: 44, fullWidth: 70, chipWidth: 34, gap: 4 },
-        )
+      ? createDocumentGraphFrameResource(host, { cameraInput$ }, { ...view.$(), inset: 44, fullWidth: 70, chipWidth: 34, gap: 4 })
       : await importCytoscape(host)
   const rootId = ui.source.$() === "arch" ? "epic" : "seq"
   resource?.render(frame, { enterIds: [rootId], updateIds: [], exitIds: [] })
   cameraInput$.next(frame.camera)
+  mounted$.next(resource)
 }
 
 async function useSource(next: Source): Promise<void> {
@@ -177,6 +199,8 @@ async function useSource(next: Source): Promise<void> {
 }
 
 await mount("document")
+// The page entry is the runtime boundary; this subscription is its only one.
+painted$.subscribe()
 
 let frames = 0
 let windowStart = performance.now()
@@ -195,8 +219,8 @@ document.querySelector("#document")?.addEventListener("click", () => void mount(
 document.querySelector("#cytoscape")?.addEventListener("click", () => void mount("cytoscape"))
 document.querySelector("#arch")?.addEventListener("click", () => void useSource("arch"))
 document.querySelector("#sequence")?.addEventListener("click", () => void useSource("sequence"))
-ribbonToggle.addEventListener("change", () => void mount(ui.mode.$()))
-groupsToggle.addEventListener("change", () => void mount(ui.mode.$()))
+ribbonToggle.addEventListener("change", () => view.ribbon.$(ribbonToggle.checked))
+groupsToggle.addEventListener("change", () => view.groups.$(groupsToggle.checked))
 document.querySelector("#fit")?.addEventListener("click", () => {
   const rootId = ui.source.$() === "arch" ? "epic" : "seq"
   resource?.render(frame, { enterIds: [rootId], updateIds: [], exitIds: [] })

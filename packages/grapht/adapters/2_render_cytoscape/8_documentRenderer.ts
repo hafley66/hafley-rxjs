@@ -2,6 +2,7 @@ import createDOMPurify from "dompurify"
 import { layoutStickyRibbon, type RibbonItem } from "@hafley66/grapht-model"
 import { foreignObjectsToText } from "../../src/2_graph/13_foreignObjectText.js"
 import { stackGroupHeaders, type GroupHeader } from "../../src/2_graph/6_stackGroupHeaders.js"
+import { createGestureLegend, type GestureLegendHandle } from "../../src/2_graph/14_gestureLegend.js"
 import type { GraphCamera, GraphFrame, GraphGeometry } from "../../src/2_graph/0_frame.ts"
 import type { GraphFrameResource } from "../../src/2_graph/10_renderer.ts"
 
@@ -21,6 +22,8 @@ export type DocumentStickyOptions = {
 
 type DocumentGraphFrameResource = GraphFrameResource & {
   applyCamera: (camera: GraphCamera) => void
+  applySticky: (sticky: Pick<DocumentStickyOptions, "ribbon" | "groups">) => void
+  legend: GestureLegendHandle
 }
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg"
@@ -91,13 +94,14 @@ export function createDocumentGraphFrameResource(
   const painted = new Map<string, { group: SVGGElement; rect: SVGRectElement; text: SVGTextElement }>()
   const paintedGroups = new Map<string, { group: SVGGElement; rect: SVGRectElement; text: SVGTextElement }>()
 
+  let wantsRibbon = sticky.ribbon ?? true
+  let wantsGroups = sticky.groups ?? true
   const inset = sticky.inset ?? 8
   const fullWidth = sticky.fullWidth ?? 60
   const chipWidth = sticky.chipWidth ?? 32
   const gap = sticky.gap ?? 4
   const headerHeight = sticky.height ?? 22
-  const wantsRibbon = sticky.ribbon ?? true
-  const wantsGroups = sticky.groups ?? true
+  const legend = createGestureLegend(host)
 
   const ensureOverlay = (): { ribbon: SVGGElement; groups: SVGGElement } => {
     const document = host.ownerDocument
@@ -221,6 +225,14 @@ export function createDocumentGraphFrameResource(
     sweep(painted, live)
   }
 
+  const applySticky = (next: Pick<DocumentStickyOptions, "ribbon" | "groups">): void => {
+    wantsRibbon = next.ribbon ?? wantsRibbon
+    wantsGroups = next.groups ?? wantsGroups
+    if (!wantsRibbon) sweep(painted, new Set())
+    if (!wantsGroups) sweep(paintedGroups, new Set())
+    if (camera !== undefined) applyCamera(camera)
+  }
+
   const applyCamera = (next: GraphCamera): void => {
     camera = next
     paintGroups(next)
@@ -265,8 +277,9 @@ export function createDocumentGraphFrameResource(
   let dragging: { pointerId: number; last: { x: number; y: number } } | undefined
   const onPointerDown = (event: PointerEvent): void => {
     if (camera === undefined || event.button !== 0) return
-    // Text owns the gesture so selection works; everything else pans.
-    if (event.target instanceof Element && event.target.closest("text, tspan")) return
+    // Text owns the gesture so selection works, and page chrome owns its own clicks: capturing the
+    // pointer here would retarget their click event to the host and swallow it. Everything else pans.
+    if (event.target instanceof Element && event.target.closest("text, tspan, [data-gesture-legend]")) return
     dragging = { pointerId: event.pointerId, last: pointer(event) }
     host.setPointerCapture(event.pointerId)
   }
@@ -329,6 +342,8 @@ export function createDocumentGraphFrameResource(
       applyCamera(frame.camera)
     },
     applyCamera,
+    applySticky,
+    legend,
     unsubscribe() {
       host.removeEventListener("wheel", onWheel)
       host.removeEventListener("pointerdown", onPointerDown)
@@ -337,6 +352,7 @@ export function createDocumentGraphFrameResource(
       host.removeEventListener("pointercancel", onPointerUp)
       root?.remove()
       root = undefined
+      legend.remove()
       overlay?.remove()
       overlay = undefined
       ribbonLayer = undefined
