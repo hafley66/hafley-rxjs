@@ -983,7 +983,8 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       gridId = current.gridId
       setAttrs(root, gridAttrs(gridId))
     }
-    setDiffed(root, "role", "grid")
+    // A nesting row axis reads as a treegrid: `aria-expanded` on a row is only well-formed there.
+    setDiffed(root, "role", current.treeAxis ? "treegrid" : "grid")
     // The full table the window draws a slice of, header rows included.
     setDiffed(root, "aria-rowcount", String(current.band.length + current.verticalKeys.length))
     setDiffed(root, "aria-colcount", String(current.horizontalKeys.length))
