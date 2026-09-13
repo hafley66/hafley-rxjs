@@ -271,7 +271,6 @@ body {
 /* --- The one mapping rule ------------------------------------------------- */
 
 .demo [data-route="g"] {
-  color-scheme: var(--demo-scheme);
   --sg-bg: var(--demo-bg);
   --sg-fg: var(--demo-fg);
   --sg-line: var(--demo-line);
