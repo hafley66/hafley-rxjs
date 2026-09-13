@@ -1,4 +1,5 @@
 import createDOMPurify from "dompurify"
+import { layoutStickyRibbon, type RibbonItem } from "@hafley66/grapht-model"
 import { foreignObjectsToText } from "../../src/2_graph/13_foreignObjectText.js"
 import type { GraphCamera, GraphFrame, GraphGeometry } from "../../src/2_graph/0_frame.ts"
 import type { GraphFrameResource } from "../../src/2_graph/10_renderer.ts"
@@ -7,8 +8,28 @@ export type DocumentRendererInteractions = {
   cameraInput$: { next: (camera: GraphCamera) => void }
 }
 
+export type DocumentStickyOptions = {
+  inset?: number
+  fullWidth?: number
+  chipWidth?: number
+  gap?: number
+  height?: number
+}
+
 type DocumentGraphFrameResource = GraphFrameResource & {
   applyCamera: (camera: GraphCamera) => void
+}
+
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg"
+
+/** A condensed header has room for a mark, not a name: one letter per word, three at most. */
+function initialsOf(label: string): string {
+  const letters = label
+    .split(/\s+/)
+    .filter(word => word.length > 0)
+    .map(word => word[0]?.toUpperCase() ?? "")
+    .join("")
+  return letters.slice(0, 3) || label.slice(0, 2).toUpperCase()
 }
 
 function sanitizedSvg(document: Document, source: string): SVGSVGElement {
@@ -51,20 +72,94 @@ function fitCamera(geometry: GraphGeometry, viewport: { width: number; height: n
 export function createDocumentGraphFrameResource(
   host: HTMLElement,
   interactions?: DocumentRendererInteractions,
+  sticky: DocumentStickyOptions = {},
 ): DocumentGraphFrameResource {
   let camera: GraphCamera | undefined
   let root: SVGSVGElement | undefined
   let revisionId: string | undefined
+  let ribbonItems: RibbonItem[] = []
+  let ribbonLabels: Record<string, string> = {}
+  let overlay: SVGSVGElement | undefined
+  const painted = new Map<string, { group: SVGGElement; rect: SVGRectElement; text: SVGTextElement }>()
+
+  const inset = sticky.inset ?? 8
+  const fullWidth = sticky.fullWidth ?? 60
+  const chipWidth = sticky.chipWidth ?? 32
+  const gap = sticky.gap ?? 4
+  const headerHeight = sticky.height ?? 22
+
+  const ensureOverlay = (): SVGSVGElement => {
+    if (overlay !== undefined) return overlay
+    const document = host.ownerDocument
+    if (getComputedStyle(host).position === "static") host.style.position = "relative"
+    const element = document.createElementNS(SVG_NAMESPACE, "svg")
+    element.setAttribute("data-sticky-ribbon", "")
+    element.setAttribute("style", "position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible")
+    host.appendChild(element)
+    overlay = element
+    return element
+  }
+
+  const paintRibbon = (next: GraphCamera): void => {
+    if (ribbonItems.length === 0) return
+    const layer = ensureOverlay()
+    const document = host.ownerDocument
+    const placements = layoutStickyRibbon({
+      items: ribbonItems,
+      camera: { x: next.x, y: next.y, scale: next.scale },
+      viewport: next.viewport,
+      inset,
+      fullWidth,
+      chipWidth,
+      gap,
+    })
+    const live = new Set<string>()
+    for (const placement of placements) {
+      if (placement.state === "released") continue
+      live.add(placement.id)
+      const label = ribbonLabels[placement.id] ?? placement.id
+      let entry = painted.get(placement.id)
+      if (entry === undefined) {
+        const group = document.createElementNS(SVG_NAMESPACE, "g")
+        group.setAttribute("data-sticky-id", placement.id)
+        const rect = document.createElementNS(SVG_NAMESPACE, "rect")
+        rect.setAttribute("rx", "4")
+        rect.setAttribute("fill", "#E3E9FD")
+        rect.setAttribute("stroke", "#0D32B2")
+        const text = document.createElementNS(SVG_NAMESPACE, "text")
+        text.setAttribute("fill", "#0A0F25")
+        text.setAttribute("style", "font:12px ui-monospace,Menlo,monospace")
+        group.append(rect, text)
+        layer.appendChild(group)
+        entry = { group, rect, text }
+        painted.set(placement.id, entry)
+      }
+      entry.group.setAttribute("data-detail", placement.detail)
+      entry.rect.setAttribute("x", String(placement.left))
+      entry.rect.setAttribute("y", String(placement.top))
+      entry.rect.setAttribute("width", String(placement.width))
+      entry.rect.setAttribute("height", String(headerHeight))
+      entry.text.setAttribute("x", String(placement.left + 5))
+      entry.text.setAttribute("y", String(placement.top + headerHeight - 7))
+      entry.text.textContent = placement.detail === "chip" ? initialsOf(label) : label
+    }
+    for (const [id, entry] of painted) {
+      if (live.has(id)) continue
+      entry.group.remove()
+      painted.delete(id)
+    }
+  }
 
   const applyCamera = (next: GraphCamera): void => {
     camera = next
+    paintRibbon(next)
     if (root === undefined) return
     const left = -next.x / next.scale
     const top = -next.y / next.scale
     root.setAttribute("viewBox", `${left} ${top} ${next.viewport.width / next.scale} ${next.viewport.height / next.scale}`)
   }
 
-  const pointer = (event: PointerEvent): { x: number; y: number } => ({
+  const pointer = (event: { clientX: number; clientY: number }): { x: number; y: number } => ({
     x: event.clientX - host.getBoundingClientRect().left,
     y: event.clientY - host.getBoundingClientRect().top,
   })
@@ -133,7 +228,16 @@ export function createDocumentGraphFrameResource(
         root.style.display = "block"
         host.appendChild(root)
         revisionId = artifact.revisionId
+        overlay?.remove()
+        overlay = undefined
+        painted.clear()
       }
+      const columns = frame.geometry.columnBoundsById ?? {}
+      ribbonItems = Object.entries(columns)
+        .map(([id, bounds], index) => ({ id, left: bounds.x, width: bounds.width, top: bounds.y, bottom: bounds.y + bounds.height, order: index }))
+        .sort((left, right) => left.left - right.left)
+        .map((item, order) => ({ ...item, order }))
+      ribbonLabels = Object.fromEntries(Object.entries(frame.presentation.labelsById).map(([id, label]) => [id, label.text]))
       applyCamera(frame.camera)
     },
     applyCamera,
@@ -145,6 +249,10 @@ export function createDocumentGraphFrameResource(
       host.removeEventListener("pointercancel", onPointerUp)
       root?.remove()
       root = undefined
+      overlay?.remove()
+      overlay = undefined
+      painted.clear()
+      ribbonItems = []
       revisionId = undefined
     },
   }

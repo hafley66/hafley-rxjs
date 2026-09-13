@@ -3,27 +3,26 @@
   "generatedBy": "grapht/site",
   "commit": {
     "method": "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain excluding this step's own outputs, git rev-parse --abbrev-ref HEAD",
-    "hash": "b7d87b787f4d8119882d8329d1535ff01c4f6030",
-    "short": "b7d87b7",
-    "subject": "signal-grid demo: three fixed columns made the grid invisible in a 640px doc frame",
-    "authorDate": "2026-09-12T12:23:09-04:00",
+    "hash": "2cf157f95f3036599b37593730cf0fdca0188620",
+    "short": "2cf157f",
+    "subject": "signal-grid: fifteen of the sixteen chaos drivers are free, and the sixteenth was mine being unfair",
+    "authorDate": "2026-09-13T10:30:14-04:00",
     "branch": "main",
     "clean": false,
-    "dirtyCount": 10,
+    "dirtyCount": 9,
     "dirtyEntries": [
-      "M packages/grapht/adapters/2_render_cytoscape/9_foreignObjectText.browser.test.ts",
       "M packages/grapht/adapters/2_render_cytoscape/proof/arch-proof.png",
       "M packages/grapht/adapters/2_render_cytoscape/proof/arch-zoom.png",
-      "M packages/grapht/src/2_graph/13_foreignObjectText.ts",
       "M packages/signal-grid/site/stats.json",
+      "M packages/signals/docs/reference-api.md",
+      "M packages/signals/site/stats.json",
       "?? .boop-briefs/",
       "?? packages/gothic/src/lib/8a_khFit.ts",
       "?? packages/gothic/tools/",
-      "?? packages/grapht/adapters/2_render_cytoscape/proof/depProbe.mjs",
-      "?? packages/grapht/adapters/2_render_cytoscape/proof/textProbe.mjs"
+      "?? packages/grapht/adapters/2_render_cytoscape/proof/depProbe.mjs"
     ],
     "repository": "hafley66/hafley-rxjs",
-    "url": "https://github.com/hafley66/hafley-rxjs/commit/b7d87b787f4d8119882d8329d1535ff01c4f6030",
+    "url": "https://github.com/hafley66/hafley-rxjs/commit/2cf157f95f3036599b37593730cf0fdca0188620",
     "reason": null
   },
   "machine": {
@@ -34,7 +33,7 @@
     "cpuModel": "Apple M2 Pro",
     "cores": 12,
     "totalMemoryBytes": 17179869184,
-    "builtAt": "2026-09-12T16:35:19.944Z"
+    "builtAt": "2026-09-13T14:31:38.352Z"
   },
   "package": {
     "name": "@hafley66/grapht",
@@ -51,8 +50,8 @@
     "siteMethod": "the same statSync and gzipSync pass over site/dist; the copy inlined into the site measures pass 1, the committed stats.json measures the final dist",
     "site": {
       "fileCount": 134,
-      "totalBytes": 6409092,
-      "totalGzipBytes": 2489073,
+      "totalBytes": 6408979,
+      "totalGzipBytes": 2489064,
       "reason": null
     },
     "demo": {
@@ -464,9 +463,9 @@
     "libraryBuildReason": "not measured by ship",
     "unitTestsMs": null,
     "browserTestsMs": null,
-    "siteBuildMs": 2278,
+    "siteBuildMs": 1439,
     "demoBuildMs": null,
-    "statsMs": 1789230920063
+    "statsMs": 1789309898477
   },
   "demoMemory": {
     "method": null,

@@ -8,6 +8,9 @@ export type GraphGeometry = {
   endpointAnchorById: Readonly<Record<GraphId, { x: number; y: number }>>
   routesById: Readonly<Record<GraphId, Float32Array>>
   headerBoundsById: Readonly<Record<GraphId, Rect>>
+  // Sequence actors and any other item that owns a vertical column; a renderer pins their
+  // headers in a screen-space row so a tall diagram stays readable while it scrolls.
+  columnBoundsById?: Readonly<Record<GraphId, Rect>>
 }
 
 export type GraphCamera = {
