@@ -42,3 +42,19 @@ export function consoleEmit(over?: Partial<Ident>): LogEmit {
     console.debug(`${id.prefix} ${category.join(".")} ${message}`, fields)
   }
 }
+
+/** Dynamic import, so LogTape stays an optional peer. A logger per category is cached because
+ * `getLogger` walks the category tree on every call. */
+export async function logtapeEmit(): Promise<LogEmit> {
+  const { getLogger } = await import("@logtape/logtape")
+  const cache = new Map<string, ReturnType<typeof getLogger>>()
+  return (category, message, fields) => {
+    const key = category.join(".")
+    let logger = cache.get(key)
+    if (logger === undefined) {
+      logger = getLogger(category as unknown as string[])
+      cache.set(key, logger)
+    }
+    logger.debug(message, fields)
+  }
+}

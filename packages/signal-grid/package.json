@@ -54,9 +54,13 @@
     "api": "node scripts/api.mjs",
     "bench:chaos": "vite -c bench/scroll/vite.config.ts --open /chaos.html"
   },
+  "dependencies": {
+    "@hafley66/trace": "workspace:*"
+  },
   "peerDependencies": {
     "@hafley66/path": ">=0.1.0",
     "@hafley66/signals": ">=0.1.0",
+    "@hafley66/trace": ">=0.1.0",
     "@hafley66/xdom": ">=0.1.0",
     "@logtape/logtape": "^2.3.3",
     "react": ">=18.0.0",

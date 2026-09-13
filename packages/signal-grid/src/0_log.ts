@@ -1,20 +1,15 @@
 // LogTape is an optional peer, so nothing here may import it statically. Every call site reads
 // `LOG.on` first and does no other work when false: a 100k-row sort must not pay to be explainable.
+// The shell moved to `@hafley66/trace`; this file is the grid-shaped surface over it.
 
 // @no-features: the timing surface. It measures stages the other modules own, and each of those is tagged at its own stage
 
-export type LogFields = Record<string, unknown>
+import { emitter, logtapeEmit, setEmit } from "@hafley66/trace"
+import type { Emitter, LogEmit, LogFields } from "@hafley66/trace"
 
-// Structured only. Callers pass a template plus fields, never a pre-formatted line.
-export type LogEmit = (
-  category: readonly string[],
-  message: string,
-  fields: LogFields,
-) => void
+export type { LogEmit, LogFields }
 
-const noop: LogEmit = () => {}
-
-export const LOG: { on: boolean; emit: LogEmit } = { on: false, emit: noop }
+export const LOG: Emitter = emitter("signal-grid")
 
 // Module constants so a hot path never allocates a category array.
 export const CAT_PLAN = ["signal-grid", "plan"] as const
@@ -35,30 +30,17 @@ export const CAT_INTENT = ["signal-grid", "intent"] as const
 // Raw sink, so a panel can count records without paying for LogTape formatting, and without
 // LogTape installed at all.
 export function setGridLogEmit(emit: LogEmit | null): void {
-  LOG.emit = emit ?? noop
-  LOG.on = emit !== null
+  setEmit(LOG, emit)
 }
 
 export function isGridLogging(): boolean {
   return LOG.on
 }
 
-// A logger per category is cached because `getLogger` walks the category tree on every call.
 export async function enableGridLogTape(): Promise<void> {
-  const { getLogger } = await import("@logtape/logtape")
-  const cache = new Map<string, ReturnType<typeof getLogger>>()
-
-  setGridLogEmit((category, message, fields) => {
-    const key = category.join(".")
-    let logger = cache.get(key)
-    if (!logger) {
-      logger = getLogger(category as unknown as string[])
-      cache.set(key, logger)
-    }
-    logger.debug(message, fields)
-  })
+  setEmit(LOG, await logtapeEmit())
 }
 
 export function disableGridLogging(): void {
-  setGridLogEmit(null)
+  setEmit(LOG, null)
 }

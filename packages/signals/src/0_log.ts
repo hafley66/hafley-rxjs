@@ -1,18 +1,12 @@
 // LogTape is an optional peer, so nothing here may import it statically. Every call site reads
 // `LOG.on` first and does no other work when false: a 50k-row write must not pay to be explainable.
+// The shell moved to `@hafley66/trace`; this file is the signals-shaped surface over it.
+import { emitter, logtapeEmit, setEmit } from "@hafley66/trace"
+import type { Emitter, LogEmit, LogFields } from "@hafley66/trace"
 
-export type LogFields = Record<string, unknown>
+export type { LogEmit, LogFields }
 
-// Structured only. Callers pass a template plus fields, never a pre-formatted line.
-export type LogEmit = (
-  category: readonly string[],
-  message: string,
-  fields: LogFields,
-) => void
-
-const noop: LogEmit = () => {}
-
-export const LOG: { on: boolean; emit: LogEmit } = { on: false, emit: noop }
+export const LOG: Emitter = emitter("signals")
 
 // Module constants so a hot path never allocates a category array.
 export const CAT_WRITE = ["signals", "write"] as const
@@ -25,30 +19,17 @@ export const CAT_UNSUBSCRIBE = ["signals", "unsubscribe"] as const
 
 // Raw sink, so a benchmark can count records without paying for LogTape formatting.
 export function setSignalLogEmit(emit: LogEmit | null): void {
-  LOG.emit = emit ?? noop
-  LOG.on = emit !== null
+  setEmit(LOG, emit)
 }
 
 export function isSignalLogging(): boolean {
   return LOG.on
 }
 
-// A logger per category is cached because `getLogger` walks the category tree on every call.
 export async function enableSignalLogTape(): Promise<void> {
-  const { getLogger } = await import("@logtape/logtape")
-  const cache = new Map<string, ReturnType<typeof getLogger>>()
-
-  setSignalLogEmit((category, message, fields) => {
-    const key = category.join(".")
-    let logger = cache.get(key)
-    if (!logger) {
-      logger = getLogger(category as unknown as string[])
-      cache.set(key, logger)
-    }
-    logger.debug(message, fields)
-  })
+  setEmit(LOG, await logtapeEmit())
 }
 
 export function disableSignalLogging(): void {
-  setSignalLogEmit(null)
+  setEmit(LOG, null)
 }

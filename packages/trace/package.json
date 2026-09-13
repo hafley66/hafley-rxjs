@@ -25,6 +25,14 @@
   "dependencies": {
     "rxjs": "^7.8.2"
   },
+  "peerDependencies": {
+    "@logtape/logtape": "^2.3.3"
+  },
+  "peerDependenciesMeta": {
+    "@logtape/logtape": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@vitest/browser": "^4.1.10",
     "@vitest/browser-playwright": "^4.1.10",
