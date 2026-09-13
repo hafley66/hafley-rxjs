@@ -2801,7 +2801,7 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle
 
 ### `render` {#src-10-render-ts-render}
 
-`render` is declared at `src/10_render.ts:167`.
+`render` is declared at `src/10_render.ts:179`.
 
 ```ts
 render: <TRow>(grid: Grid<TRow>, root: HTMLElement) => RenderHandle

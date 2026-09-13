@@ -71,6 +71,7 @@ export const GROUPS: readonly SiteGroup[] = [
       { slug: "view-density", title: "Density", source: "pages/view-density.md" },
       { slug: "view-list", title: "List view and the transpose", source: "pages/view-list.md" },
       { slug: "view-theme", title: "Theming", source: "pages/view-theme.md" },
+      { slug: "accessibility", title: "Accessibility", source: "pages/9_accessibility.md" },
     ],
   },
   {
