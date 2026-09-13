@@ -62,6 +62,11 @@ jobs:
       - name: Ship
         run: pnpm --filter @hafley66/grapht ship
 
+      - name: Verify production renderer switches
+        run: |
+          pnpm --filter @hafley66/grapht-render-cytoscape exec playwright install --with-deps chromium
+          pnpm --filter @hafley66/grapht-render-cytoscape test:proof
+
       # The strip is an IIFE with `pages/manifest.ts` inlined, built from the workspace where vite
       # and the manifest live. The publish step only copies the file; gh-pages has no toolchain.
       - name: Build the strip

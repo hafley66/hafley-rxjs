@@ -182,6 +182,7 @@ let frame = artifactFrame
 async function mount(next: Mode): Promise<void> {
   resource?.unsubscribe()
   host.replaceChildren()
+  failure.$("")
   ui.mode.$(next)
   resource =
     next === "document"
@@ -220,7 +221,7 @@ requestAnimationFrame(function tick() {
 })
 
 document.querySelector("#document")?.addEventListener("click", () => void mount("document"))
-document.querySelector("#cytoscape")?.addEventListener("click", () => void mount("cytoscape"))
+document.querySelector("#renderer-cytoscape")?.addEventListener("click", () => void mount("cytoscape"))
 document.querySelector("#arch")?.addEventListener("click", () => void useSource("arch"))
 document.querySelector("#sequence")?.addEventListener("click", () => void useSource("sequence"))
 ribbonToggle.addEventListener("change", () => view.ribbon.$(ribbonToggle.checked))
