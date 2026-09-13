@@ -129,11 +129,12 @@ function definitions(frame: GraphFrame, sourcePrimitives: readonly BoundPrimitiv
   ])
   const nativeRootIds = new Set(Object.values(frame.presentation.sealedSvgArtifactsByRootId).filter(artifact => (artifact.bindings?.length ?? 0) > 0).map(artifact => artifact.rootId))
   for (const rootId of nativeRootIds) renderIds.delete(rootId)
+  const sealedRootIds = new Set(Object.keys(frame.presentation.sealedSvgArtifactsByRootId))
   const nativeDescendantIds = new Set<string>()
   for (const id of renderIds) {
     let parentId = frame.graph[id]?.parentId
     while (parentId !== undefined) {
-      if (nativeRootIds.has(parentId)) {
+      if (sealedRootIds.has(parentId)) {
         nativeDescendantIds.add(id)
         break
       }
@@ -162,6 +163,7 @@ function definitions(frame: GraphFrame, sourcePrimitives: readonly BoundPrimitiv
           parent: item.parentId && !nativeDescendant ? endpointId(frame, scope, renderIds, item.parentId) : undefined,
         },
         ...(isGroup && !nativeDescendant ? {} : { position: position(frame, id) }),
+        ...(sealedRootIds.has(id) ? { classes: "graph-sealed-root", grabbable: false } : {}),
       })
       continue
     }
@@ -224,6 +226,7 @@ export function createCytoscapeGraphFrameResource(
       { selector: "node[nativeKind = 'note-shape']", style: { shape: "rectangle", backgroundColor: "#fef3c7", borderColor: "#d97706", color: "#111827", textOutlineWidth: 0, textHalign: "center", textValign: "center" } },
       { selector: "node:parent", style: { backgroundColor: "#172554", backgroundOpacity: 0.38, borderColor: "#64748b", borderWidth: 1, padding: 24 } },
       { selector: "edge", style: { label: "data(label)", curveStyle: "bezier", lineColor: "#94a3b8", targetArrowColor: "#94a3b8", sourceArrowColor: "#94a3b8", color: "#f8fafc", fontSize: 12, textBackgroundColor: "#10141c", textBackgroundOpacity: 0.86, textBackgroundPadding: 2 } },
+      { selector: ".graph-sealed-root", style: { opacity: 0, events: "no" } },
       { selector: ".graph-endpoint-anchor", style: { width: "data(width)", height: "data(height)", opacity: 0 } },
       { selector: ".graph-route-endpoint", style: { width: 1, height: 1, opacity: 0 } },
       { selector: ".graph-native-message", style: { curveStyle: "straight" } },
@@ -251,6 +254,25 @@ export function createCytoscapeGraphFrameResource(
   let applyingFrame = false
   let renderedGeometryRevision: string | undefined
   const primitivesByRevision = new Map<string, readonly SvgGraphPrimitive[]>()
+
+  // Canvas viewport changes must move the sealed DOM artifacts in the same event.
+  let renderedFrame: GraphFrame | undefined
+  cy.on("viewport", () => {
+    if (applyingFrame || renderedFrame === undefined) return
+    const pan = cy.pan()
+    const scale = cy.zoom()
+    for (const [rootId, view] of sealedSvgViews) {
+      const artifact = renderedFrame.presentation.sealedSvgArtifactsByRootId[rootId]
+      const bounds = renderedFrame.geometry.boundsById[rootId]
+      const transform = sealedGeometryTransformOf(artifact.sourceBounds, bounds, artifact.fit)
+      view.style.transform = `matrix(${transform.scaleX * scale},0,0,${transform.scaleY * scale},${pan.x + transform.translateX * scale},${pan.y + transform.translateY * scale})`
+    }
+    for (const [id, view] of headerViews) {
+      const bounds = renderedFrame.geometry.headerBoundsById[id]
+      view.style.left = `${bounds.x * scale + pan.x}px`
+      view.style.width = `${bounds.width * scale}px`
+    }
+  })
 
   if (interactions) {
     const dragPositionByElementId = new Map<string, { x: number; y: number }>()
@@ -287,6 +309,7 @@ export function createCytoscapeGraphFrameResource(
     headerViews,
     sealedSvgViews,
     render(frame, receipt) {
+      renderedFrame = frame
       const sourcePrimitives = Object.values(frame.presentation.sealedSvgArtifactsByRootId).flatMap(artifact => {
         const cached = primitivesByRevision.get(artifact.revisionId)
         if (cached !== undefined) return cached.map(primitive => ({ ...primitive, rootId: artifact.rootId }))
@@ -313,6 +336,7 @@ export function createCytoscapeGraphFrameResource(
               continue
             }
             current.data(definition.data ?? {})
+            current.classes(definition.classes ?? "")
             if (geometryChanged && definition.position && current.isNode()) current.position(definition.position)
           }
           for (const element of cy.elements()) {
@@ -396,7 +420,7 @@ export function createCytoscapeGraphFrameResource(
         const transform = sealedGeometryTransformOf(artifact.sourceBounds, bounds, artifact.fit)
         view.setAttribute(
           "style",
-          `position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;pointer-events:auto;transform:matrix(${transform.scaleX * frame.camera.scale},0,0,${transform.scaleY * frame.camera.scale},${frame.camera.x + transform.translateX * frame.camera.scale},${frame.camera.y + transform.translateY * frame.camera.scale})`,
+          `position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;pointer-events:none;transform:matrix(${transform.scaleX * frame.camera.scale},0,0,${transform.scaleY * frame.camera.scale},${frame.camera.x + transform.translateX * frame.camera.scale},${frame.camera.y + transform.translateY * frame.camera.scale})`,
         )
       }
     },

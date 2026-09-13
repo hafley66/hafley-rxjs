@@ -29,6 +29,13 @@ try {
       canvas: await page.locator('#host canvas').count() > 0,
       svg: await page.locator(`#host [data-revision-id="${rootId}:svg:1"] svg`).count() > 0,
     })).toEqual({ failed: false, canvas: true, svg: true })
+    const artifact = page.locator(`#host [data-revision-id="${rootId}:svg:1"]`)
+    const before = await artifact.getAttribute("style")
+    await page.mouse.move(640, 400)
+    await page.mouse.wheel(0, -100)
+    await expect.poll(() => artifact.getAttribute("style")).not.toBe(before)
+    await page.getByRole("button", { name: "fit", exact: true }).click()
+    await expect(artifact).toHaveAttribute("style", before)
     await page.getByRole("button", { name: "document renderer", exact: true }).click()
     await expect(page.locator('#host canvas')).toHaveCount(0)
     await expect(page.locator("#host svg").first()).toBeVisible()

@@ -247,7 +247,7 @@ describe("Cytoscape GraphFrame resource", () => {
       },
       geometry: {
         revisionId: "outer:1",
-        boundsById: { sequence: { x: 100, y: 200, width: 300, height: 100 }, sibling: { x: 10, y: 10, width: 20, height: 20 } },
+        boundsById: { group: { x: 120, y: 220, width: 80, height: 40 }, sequence: { x: 100, y: 200, width: 300, height: 100 }, sibling: { x: 10, y: 10, width: 20, height: 20 } },
         endpointAnchorById: { sequence: { x: 250, y: 250 }, sibling: { x: 20, y: 20 } },
         routesById: {},
         headerBoundsById: {},
@@ -271,6 +271,23 @@ describe("Cytoscape GraphFrame resource", () => {
     resource.render(sealedFrame, { enterIds: Object.keys(sealedFrame.graph), updateIds: [], exitIds: [] })
     const first = resource.sealedSvgViews.get("sequence")
     const firstTransform = first?.getAttribute("style")
+    resource.cy.viewport({ zoom: 3, pan: { x: 12, y: 18 } })
+    expect({
+      ids: resource.cy.elements().map(element => element.id()).sort(),
+      rootOpacity: resource.cy.$id("sequence").style("opacity"),
+      rootGrabbable: resource.cy.$id("sequence").grabbable(),
+      transform: first?.style.transform,
+    }).toMatchInlineSnapshot(`
+      {
+        "ids": [
+          "sequence",
+          "sibling",
+        ],
+        "rootGrabbable": false,
+        "rootOpacity": "0",
+        "transform": "matrix(1.5, 0, 0, 1.5, 672, 588)",
+      }
+    `)
     resource.render({ ...sealedFrame, camera: { ...sealedFrame.camera, x: 10 } }, { enterIds: [], updateIds: Object.keys(sealedFrame.graph), exitIds: [] })
     const retained = resource.sealedSvgViews.get("sequence")
     const cameraTransform = retained?.getAttribute("style")
@@ -310,13 +327,14 @@ describe("Cytoscape GraphFrame resource", () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "cameraTransform": "position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;pointer-events:auto;transform:matrix(1,0,0,1,450,385)",
+        "cameraTransform": "position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;pointer-events:none;transform:matrix(1,0,0,1,450,385)",
         "cyIds": [
+          "group",
           "sequence",
           "sibling",
         ],
         "firstSvg": "<svg viewBox="10 20 100 200" style="position: absolute; left: 10px; top: 20px; width: 100px; height: 200px;"><rect id="native"></rect><a id="unsafe-link">bad</a></svg>",
-        "firstTransform": "position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;pointer-events:auto;transform:matrix(1,0,0,1,444,385)",
+        "firstTransform": "position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;pointer-events:none;transform:matrix(1,0,0,1,444,385)",
         "replacedByRevision": true,
         "replacementSvg": "<svg viewBox="10 20 100 200" style="position: absolute; left: 10px; top: 20px; width: 100px; height: 200px;"><circle id="replacement"></circle></svg>",
         "retainedAcrossCamera": true,
