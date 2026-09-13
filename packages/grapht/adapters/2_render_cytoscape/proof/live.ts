@@ -168,7 +168,7 @@ let resource: StickyResource | undefined
 async function importCytoscape(host: HTMLElement) {
   try {
     const { createCytoscapeGraphFrameResource } = await import("../6_graphRenderer.ts")
-    return createCytoscapeGraphFrameResource(host, { cameraInput$, focusInput$, selectionInput$ })
+    return createCytoscapeGraphFrameResource(host, { cameraInput$, focusInput$, selectionInput$ }, { ...view.$(), inset: 44, fullWidth: 70, chipWidth: 34, gap: 4 })
   } catch (error) {
     failure.$(`cytoscape renderer failed: ${String(error).slice(0, 180)}`)
     return undefined

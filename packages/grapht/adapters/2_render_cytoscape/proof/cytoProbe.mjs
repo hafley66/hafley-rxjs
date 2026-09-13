@@ -21,6 +21,10 @@ try {
   for (const source of ["arch", "sequence"]) {
     const rootId = source === "arch" ? "epic" : "seq"
     await page.locator(`#${source}`).click()
+    const ribbon = page.locator("[data-sticky-ribbon] [data-sticky-id]")
+    const groups = page.locator("[data-sticky-groups] [data-sticky-id]")
+    if (source === "sequence") await expect(ribbon).toHaveCount(16)
+    const expectedHeaders = await page.locator("[data-sticky-id] text").allTextContents()
     await page.getByRole("button", { name: "cytoscape renderer", exact: true }).click()
     await expect(page.locator('#readout')).toContainText(`${source} | cytoscape`)
     // Wait for the lazy import and render, including failures caught by the page itself.
@@ -29,6 +33,19 @@ try {
       canvas: await page.locator('#host canvas').count() > 0,
       svg: await page.locator(`#host [data-revision-id="${rootId}:svg:1"] svg`).count() > 0,
     })).toEqual({ failed: false, canvas: true, svg: true })
+    await expect.poll(() => page.locator("[data-sticky-id] text").allTextContents()).toEqual(expectedHeaders)
+    if (source === "sequence") {
+      const groupCount = await groups.count()
+      expect(groupCount).toBeGreaterThan(0)
+      await page.locator("#ribbon").uncheck()
+      await expect(ribbon).toHaveCount(0)
+      await page.locator("#groups").uncheck()
+      await expect(groups).toHaveCount(0)
+      await page.locator("#ribbon").check()
+      await page.locator("#groups").check()
+      await expect(ribbon).toHaveCount(16)
+      await expect(groups).toHaveCount(groupCount)
+    }
     const artifact = page.locator(`#host [data-revision-id="${rootId}:svg:1"]`)
     const before = await artifact.getAttribute("style")
     await page.mouse.move(640, 400)

@@ -1,3 +1,4 @@
+import { createStickyOverlay, type StickyOptions } from "../../src/lib/0_stickyOverlay.js"
 import cytoscape, { type Core, type ElementDefinition } from "cytoscape"
 import createDOMPurify from "dompurify"
 import { foreignObjectsToText } from "../../src/2_graph/13_foreignObjectText.js"
@@ -201,6 +202,7 @@ function definitions(frame: GraphFrame, sourcePrimitives: readonly BoundPrimitiv
 
 export type CytoscapeGraphFrameResource = GraphFrameResource & {
   cy: Core
+  applySticky: (options: Pick<StickyOptions, "ribbon" | "groups">) => void
   headerViews: ReadonlyMap<string, HTMLElement>
   sealedSvgViews: ReadonlyMap<string, HTMLElement>
 }
@@ -208,6 +210,7 @@ export type CytoscapeGraphFrameResource = GraphFrameResource & {
 export function createCytoscapeGraphFrameResource(
   host?: HTMLElement,
   interactions?: RendererInteractions,
+  sticky?: StickyOptions,
 ): CytoscapeGraphFrameResource {
   const cy = cytoscape({
     container: host,
@@ -251,6 +254,7 @@ export function createCytoscapeGraphFrameResource(
     sealedSvgLayer.setAttribute("style", "position:absolute;inset:0;overflow:hidden;pointer-events:none")
     host.appendChild(sealedSvgLayer)
   }
+  const stickyOverlay = host && sticky ? createStickyOverlay(host, sticky) : undefined
   let applyingFrame = false
   let renderedGeometryRevision: string | undefined
   const primitivesByRevision = new Map<string, readonly SvgGraphPrimitive[]>()
@@ -261,6 +265,7 @@ export function createCytoscapeGraphFrameResource(
     if (applyingFrame || renderedFrame === undefined) return
     const pan = cy.pan()
     const scale = cy.zoom()
+    stickyOverlay?.applyCamera({ x: pan.x, y: pan.y, scale, viewport: { x: 0, y: 0, width: cy.width(), height: cy.height() } })
     for (const [rootId, view] of sealedSvgViews) {
       const artifact = renderedFrame.presentation.sealedSvgArtifactsByRootId[rootId]
       const bounds = renderedFrame.geometry.boundsById[rootId]
@@ -306,6 +311,7 @@ export function createCytoscapeGraphFrameResource(
 
   return {
     cy,
+    applySticky: options => stickyOverlay?.applySticky(options),
     headerViews,
     sealedSvgViews,
     render(frame, receipt) {
@@ -362,31 +368,33 @@ export function createCytoscapeGraphFrameResource(
         if (movable.nonempty()) host.dataset.graphtMovablePosition = JSON.stringify(movable.renderedPosition())
       }
 
-      const visibleHeaders = new Set(frame.presentation.stickyHeaders.filter(placement => placement.visible && placement.state === "stuck").map(placement => placement.id))
-      for (const [id, view] of headerViews) {
-        if (visibleHeaders.has(id)) continue
-        view.remove()
-        headerViews.delete(id)
-      }
       const scope = graphLayoutScopeOf(frame.graph)
       const outerIds = new Set(scope.itemIds)
-      for (const placement of frame.presentation.stickyHeaders) {
-        if (!placement.visible || placement.state !== "stuck" || !headerLayer) continue
-        const bounds = frame.geometry.headerBoundsById[placement.id]
-        if (!bounds) continue
-        const view = headerViews.get(placement.id) ?? headerLayer.ownerDocument.createElement("div")
-        if (!headerViews.has(placement.id)) {
-          view.dataset.graphId = placement.id
-          headerViews.set(placement.id, view)
-          headerLayer.appendChild(view)
+      if (stickyOverlay === undefined) {
+        const visibleHeaders = new Set(frame.presentation.stickyHeaders.filter(placement => placement.visible && placement.state === "stuck").map(placement => placement.id))
+        for (const [id, view] of headerViews) {
+          if (visibleHeaders.has(id)) continue
+          view.remove()
+          headerViews.delete(id)
         }
-        view.textContent = frame.presentation.labelsById[placement.id]?.text ?? ""
-        view.setAttribute(
-          "style",
-          `position:absolute;box-sizing:border-box;left:${bounds.x * frame.camera.scale + frame.camera.x}px;top:${placement.top}px;width:${bounds.width * frame.camera.scale}px;height:${bounds.height * frame.camera.scale}px;pointer-events:none;background:#172554;border:1px solid #93c5fd;border-radius:3px;color:#f8fafc;font:600 12px/1.2 system-ui,sans-serif;padding:2px 6px;white-space:nowrap`,
-        )
-      }
+        for (const placement of frame.presentation.stickyHeaders) {
+          if (!placement.visible || placement.state !== "stuck" || !headerLayer) continue
+          const bounds = frame.geometry.headerBoundsById[placement.id]
+          if (!bounds) continue
+          const view = headerViews.get(placement.id) ?? headerLayer.ownerDocument.createElement("div")
+          if (!headerViews.has(placement.id)) {
+            view.dataset.graphId = placement.id
+            headerViews.set(placement.id, view)
+            headerLayer.appendChild(view)
+          }
+          view.textContent = frame.presentation.labelsById[placement.id]?.text ?? ""
+          view.setAttribute(
+            "style",
+            `position:absolute;box-sizing:border-box;left:${bounds.x * frame.camera.scale + frame.camera.x}px;top:${placement.top}px;width:${bounds.width * frame.camera.scale}px;height:${bounds.height * frame.camera.scale}px;pointer-events:none;background:#172554;border:1px solid #93c5fd;border-radius:3px;color:#f8fafc;font:600 12px/1.2 system-ui,sans-serif;padding:2px 6px;white-space:nowrap`,
+          )
+        }
 
+      }
       const artifacts = frame.presentation.sealedSvgArtifactsByRootId
       const activeSealedRootIds = new Set(
         Object.keys(artifacts).filter(rootId => (artifacts[rootId].bindings?.length ?? 0) === 0 && outerIds.has(rootId) && frame.geometry.boundsById[rootId] !== undefined),
@@ -423,8 +431,10 @@ export function createCytoscapeGraphFrameResource(
           `position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;pointer-events:none;transform:matrix(${transform.scaleX * frame.camera.scale},0,0,${transform.scaleY * frame.camera.scale},${frame.camera.x + transform.translateX * frame.camera.scale},${frame.camera.y + transform.translateY * frame.camera.scale})`,
         )
       }
+      stickyOverlay?.render(frame)
     },
     unsubscribe() {
+      stickyOverlay?.unsubscribe()
       headerLayer?.remove()
       headerViews.clear()
       sealedSvgLayer?.remove()

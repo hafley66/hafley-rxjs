@@ -230,3 +230,40 @@ describe("document renderer sticky group headers", () => {
     }
   })
 })
+
+it("matches document headers in Cytoscape through zoom, pan, toggles and teardown", async () => {
+  const { createCytoscapeGraphFrameResource } = await import("./6_graphRenderer.ts")
+  const hosts = [document.createElement("div"), document.createElement("div")]
+  for (const host of hosts) {
+    host.style.cssText = "position:relative;width:800px;height:600px"
+    document.body.appendChild(host)
+  }
+  const options = { inset: 8, gap: 4, height: 22 }
+  const dom = createDocumentGraphFrameResource(hosts[0], undefined, options)
+  const cyto = createCytoscapeGraphFrameResource(hosts[1], undefined, options)
+  const combined = { ...groupFrame, geometry: { ...groupFrame.geometry, columnBoundsById: frame.geometry.columnBoundsById } }
+  const headers = (host: HTMLElement) => [...host.querySelectorAll("[data-sticky-id]")].map(node => node.outerHTML)
+  try {
+    for (const resource of [dom, cyto]) resource.render(combined, { enterIds: ["seq"], updateIds: [], exitIds: [] })
+    expect(headers(hosts[1])).toEqual(headers(hosts[0]))
+    expect(hosts[1].querySelectorAll("[data-sticky-ribbon] [data-sticky-id]").length).toBe(3)
+    for (const camera of [{ ...frame.camera, y: -500 }, { ...frame.camera, scale: 0.3 }, { ...frame.camera, y: -5000 }]) {
+      dom.applyCamera(camera)
+      cyto.cy.viewport({ zoom: camera.scale, pan: { x: camera.x, y: camera.y } })
+      expect(headers(hosts[1])).toEqual(headers(hosts[0]))
+    }
+    for (const resource of [dom, cyto]) {
+      resource.render(combined, { enterIds: [], updateIds: ["seq"], exitIds: [] })
+      resource.applySticky({ ribbon: false, groups: false })
+    }
+    expect(hosts.map(headers)).toEqual([[], []])
+    for (const resource of [dom, cyto]) resource.applySticky({ ribbon: true, groups: true })
+    expect(headers(hosts[1])).toEqual(headers(hosts[0]))
+    expect(hosts[1].querySelectorAll("[data-sticky-ribbon] [data-sticky-id]").length).toBe(3)
+  } finally {
+    dom.unsubscribe()
+    cyto.unsubscribe()
+    expect(hosts.map(host => host.querySelectorAll("[data-sticky-id]").length)).toEqual([0, 0])
+    for (const host of hosts) host.remove()
+  }
+})
