@@ -61,12 +61,12 @@ export interface Axis<K extends string, T> {
   readonly by: ReadonlyMap<K, T>
 }
 
-/** One node of the flattened, visible result. `index` is its position in the flat list. */
+/** One node of the flattened, visible result. `index` is its position in the flat list. One object
+ * per visible row, so a field costs 8 bytes per row; the parent edge is read off `Axis.parent`. */
 export interface FlatNode<K extends string> {
   readonly key: K
   readonly depth: number
   readonly index: number
-  readonly parent: K | null
   /** True when the node has children, open or not. Drives the expander glyph. */
   readonly hasChildren: boolean
 }

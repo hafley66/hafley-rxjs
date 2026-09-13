@@ -94,7 +94,7 @@ export function collapseToOneEntry<K extends string>(
   if (!on) return nodes
   const first = nodes.find((it) => !it.hasChildren)
   if (first === undefined) return []
-  return [{ key: first.key, depth: 0, index: 0, parent: null, hasChildren: false }]
+  return [{ key: first.key, depth: 0, index: 0, hasChildren: false }]
 }
 
 // --- Spanning as a relation over the cross ----------------------------------

@@ -28,7 +28,6 @@ const node = (key: RowId, index: number): FlatNode<RowId> => ({
   key,
   depth: 0,
   index,
-  parent: null,
   hasChildren: false,
 })
 

@@ -312,8 +312,9 @@ export function groupAxis<K extends string, T>(
   for (const [key, up] of axis.parent) if (!isGroupKey(key) && !isGroupKey(up)) parent.set(key, up)
   for (const [key, kids] of axis.children) {
     if (isGroupKey(key)) continue
+    // `filter` already hands back an array nothing else holds, so the seats go in as they are.
     const data = kids.filter((child) => !isGroupKey(child))
-    if (data.length > 0) children.set(key, [...data])
+    if (data.length > 0) children.set(key, data)
   }
   const attach = (key: K, up: K | undefined): void => {
     if (up === undefined) {
@@ -365,7 +366,6 @@ export function groupCounts<K extends string, T>(axis: Axis<K, T>): ReadonlyMap<
 interface Step<K extends string> {
   readonly key: K
   readonly depth: number
-  readonly up: K | null
 }
 
 /**
@@ -382,7 +382,7 @@ export function flattenAxis<K extends string, T>(
   const stack: Step<K>[] = []
   pushBack(
     stack,
-    axis.roots.map((key) => ({ key, depth: 0, up: null })),
+    axis.roots.map((key) => ({ key, depth: 0 })),
   )
   while (stack.length > 0) {
     const frame = stack.pop()
@@ -391,17 +391,11 @@ export function flattenAxis<K extends string, T>(
     seen.add(frame.key)
     const kids = kidsOf(axis, frame.key)
     const hasChildren = kids.length > 0
-    out.push({
-      key: frame.key,
-      depth: frame.depth,
-      index: out.length,
-      parent: frame.up,
-      hasChildren,
-    })
+    out.push({ key: frame.key, depth: frame.depth, index: out.length, hasChildren })
     if (!hasChildren || !isOpen(frame.key)) continue
     pushBack(
       stack,
-      kids.map((key) => ({ key, depth: frame.depth + 1, up: frame.key })),
+      kids.map((key) => ({ key, depth: frame.depth + 1 })),
     )
   }
   return out

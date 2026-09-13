@@ -18,7 +18,7 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 | [src/6_gestures.ts](#src-6-gestures-ts) | 8 | Resize, column move, and row move are one gesture with three hit tests. |
 | [src/7_epics.ts](#src-7-epics-ts) | 21 | Where an intent becomes a change or an effect. |
 | [src/8_grid.ts](#src-8-grid-ts) | 10 | The constructor. |
-| [src/9_css.ts](#src-9-css-ts) | 6 | Changing a grid track triggers one full layout, so the cost of a resize is how often the track list is written, not how it is built. |
+| [src/9_css.ts](#src-9-css-ts) | 7 | Changing a grid track triggers one full layout, so the cost of a resize is how often the track list is written, not how it is built. |
 | [src/10_render.ts](#src-10-render-ts) | 2 | Plain DOM. |
 | [src/11_detail.ts](#src-11-detail-ts) | 15 | A detail row is a real node in the row axis, model (a). |
 | [src/12_transpose.ts](#src-12-transpose-ts) | 22 | The one place the two-axis design stopped being two-axis. |
@@ -34,8 +34,8 @@ LogTape is an optional peer, so nothing here may import it statically.
 
 | export | kind |
 | --- | --- |
-| [`LogFields`](#src-0-log-ts-logfields) | type |
-| [`LogEmit`](#src-0-log-ts-logemit) | type |
+| [`LogEmit`](#src-0-log-ts-logemit) | re-export |
+| [`LogFields`](#src-0-log-ts-logfields) | re-export |
 | [`LOG`](#src-0-log-ts-log) | const |
 | [`CAT_PLAN`](#src-0-log-ts-cat-plan) | const |
 | [`CAT_FRAME`](#src-0-log-ts-cat-frame) | const |
@@ -51,39 +51,33 @@ LogTape is an optional peer, so nothing here may import it statically.
 | [`enableGridLogTape`](#src-0-log-ts-enablegridlogtape) | function |
 | [`disableGridLogging`](#src-0-log-ts-disablegridlogging) | function |
 
-### `LogFields` {#src-0-log-ts-logfields}
-
-`LogFields` is declared at `src/0_log.ts:6`.
-
-```ts
-export type LogFields = Record<string, unknown>
-```
-
 ### `LogEmit` {#src-0-log-ts-logemit}
 
-`LogEmit` is declared at `src/0_log.ts:9`.
+`LogEmit` is declared at `src/0_log.ts:10`.
 
 ```ts
-export type LogEmit = (
-  category: readonly string[],
-  message: string,
-  fields: LogFields,
-) => void
+LogEmit: any
+```
 
-export function setGridLogEmit(emit: LogEmit | null): void
+### `LogFields` {#src-0-log-ts-logfields}
+
+`LogFields` is declared at `src/0_log.ts:10`.
+
+```ts
+LogFields: any
 ```
 
 ### `LOG` {#src-0-log-ts-log}
 
-`LOG` is declared at `src/0_log.ts:17`.
+`LOG` is declared at `src/0_log.ts:12`.
 
 ```ts
-LOG: { on: boolean; emit: LogEmit; }
+LOG: Emitter
 ```
 
 ### `CAT_PLAN` {#src-0-log-ts-cat-plan}
 
-`CAT_PLAN` is declared at `src/0_log.ts:20`.
+`CAT_PLAN` is declared at `src/0_log.ts:15`.
 
 ```ts
 CAT_PLAN: readonly ["signal-grid", "plan"]
@@ -91,7 +85,7 @@ CAT_PLAN: readonly ["signal-grid", "plan"]
 
 ### `CAT_FRAME` {#src-0-log-ts-cat-frame}
 
-`CAT_FRAME` is declared at `src/0_log.ts:21`.
+`CAT_FRAME` is declared at `src/0_log.ts:16`.
 
 ```ts
 CAT_FRAME: readonly ["signal-grid", "frame"]
@@ -99,7 +93,7 @@ CAT_FRAME: readonly ["signal-grid", "frame"]
 
 ### `CAT_DOM` {#src-0-log-ts-cat-dom}
 
-`CAT_DOM` is declared at `src/0_log.ts:22`.
+`CAT_DOM` is declared at `src/0_log.ts:17`.
 
 ```ts
 CAT_DOM: readonly ["signal-grid", "dom"]
@@ -107,7 +101,7 @@ CAT_DOM: readonly ["signal-grid", "dom"]
 
 ### `CAT_VARS` {#src-0-log-ts-cat-vars}
 
-`CAT_VARS` is declared at `src/0_log.ts:26`.
+`CAT_VARS` is declared at `src/0_log.ts:21`.
 
 ```ts
 CAT_VARS: readonly ["signal-grid", "vars"]
@@ -115,7 +109,7 @@ CAT_VARS: readonly ["signal-grid", "vars"]
 
 ### `CAT_BASE` {#src-0-log-ts-cat-base}
 
-`CAT_BASE` is declared at `src/0_log.ts:29`.
+`CAT_BASE` is declared at `src/0_log.ts:24`.
 
 ```ts
 CAT_BASE: readonly ["signal-grid", "base"]
@@ -123,7 +117,7 @@ CAT_BASE: readonly ["signal-grid", "base"]
 
 ### `CAT_SORT` {#src-0-log-ts-cat-sort}
 
-`CAT_SORT` is declared at `src/0_log.ts:30`.
+`CAT_SORT` is declared at `src/0_log.ts:25`.
 
 ```ts
 CAT_SORT: readonly ["signal-grid", "sort"]
@@ -131,7 +125,7 @@ CAT_SORT: readonly ["signal-grid", "sort"]
 
 ### `CAT_GROUP` {#src-0-log-ts-cat-group}
 
-`CAT_GROUP` is declared at `src/0_log.ts:31`.
+`CAT_GROUP` is declared at `src/0_log.ts:26`.
 
 ```ts
 CAT_GROUP: readonly ["signal-grid", "group"]
@@ -139,7 +133,7 @@ CAT_GROUP: readonly ["signal-grid", "group"]
 
 ### `CAT_FLATTEN` {#src-0-log-ts-cat-flatten}
 
-`CAT_FLATTEN` is declared at `src/0_log.ts:32`.
+`CAT_FLATTEN` is declared at `src/0_log.ts:27`.
 
 ```ts
 CAT_FLATTEN: readonly ["signal-grid", "flatten"]
@@ -147,7 +141,7 @@ CAT_FLATTEN: readonly ["signal-grid", "flatten"]
 
 ### `CAT_INTENT` {#src-0-log-ts-cat-intent}
 
-`CAT_INTENT` is declared at `src/0_log.ts:33`.
+`CAT_INTENT` is declared at `src/0_log.ts:28`.
 
 ```ts
 CAT_INTENT: readonly ["signal-grid", "intent"]
@@ -155,7 +149,7 @@ CAT_INTENT: readonly ["signal-grid", "intent"]
 
 ### `setGridLogEmit` {#src-0-log-ts-setgridlogemit}
 
-`setGridLogEmit` is declared at `src/0_log.ts:37`.
+`setGridLogEmit` is declared at `src/0_log.ts:32`.
 
 ```ts
 setGridLogEmit: (emit: LogEmit | null) => void
@@ -163,7 +157,7 @@ setGridLogEmit: (emit: LogEmit | null) => void
 
 ### `isGridLogging` {#src-0-log-ts-isgridlogging}
 
-`isGridLogging` is declared at `src/0_log.ts:42`.
+`isGridLogging` is declared at `src/0_log.ts:36`.
 
 ```ts
 isGridLogging: () => boolean
@@ -171,7 +165,7 @@ isGridLogging: () => boolean
 
 ### `enableGridLogTape` {#src-0-log-ts-enablegridlogtape}
 
-`enableGridLogTape` is declared at `src/0_log.ts:47`.
+`enableGridLogTape` is declared at `src/0_log.ts:40`.
 
 ```ts
 enableGridLogTape: () => Promise<void>
@@ -179,7 +173,7 @@ enableGridLogTape: () => Promise<void>
 
 ### `disableGridLogging` {#src-0-log-ts-disablegridlogging}
 
-`disableGridLogging` is declared at `src/0_log.ts:62`.
+`disableGridLogging` is declared at `src/0_log.ts:44`.
 
 ```ts
 disableGridLogging: () => void
@@ -365,16 +359,16 @@ export interface Axis<K extends string, T> {
 
 ### `FlatNode` {#src-0-types-ts-flatnode}
 
-`FlatNode` is declared at `src/0_types.ts:65`.
+`FlatNode` is declared at `src/0_types.ts:66`.
 
-One node of the flattened, visible result. `index` is its position in the flat list.
+One node of the flattened, visible result. `index` is its position in the flat list. One object
+per visible row, so a field costs 8 bytes per row; the parent edge is read off `Axis.parent`.
 
 ```ts
 export interface FlatNode<K extends string> {
   readonly key: K
   readonly depth: number
   readonly index: number
-  readonly parent: K | null
   /** True when the node has children, open or not. Drives the expander glyph. */
   readonly hasChildren: boolean
 }
@@ -1103,7 +1097,7 @@ groupAxis: <K extends string, T>(axis: Axis<K, T>, keyOf: readonly ((value: T) =
 
 ### `groupCounts` {#src-1-axis-ts-groupcounts}
 
-`groupCounts` is declared at `src/1_axis.ts:350`.
+`groupCounts` is declared at `src/1_axis.ts:351`.
 
 Data rows under each group key, whole subtree. Walked upward from each row, so every node is
 visited once and a non-group key never lands in the result.
@@ -1125,7 +1119,7 @@ flattenAxis: <K extends string, T>(axis: Axis<K, T>, isOpen: (key: K) => boolean
 
 ### `descendantsOf` {#src-1-axis-ts-descendantsof}
 
-`descendantsOf` is declared at `src/1_axis.ts:426`.
+`descendantsOf` is declared at `src/1_axis.ts:420`.
 
 Depth-first, excluding `key` itself. The visited set is what makes a cyclic axis terminate.
 
@@ -1135,7 +1129,7 @@ descendantsOf: <K extends string, T>(axis: Axis<K, T>, key: K) => readonly K[]
 
 ### `mapAxis` {#src-1-axis-ts-mapaxis}
 
-`mapAxis` is declared at `src/1_axis.ts:445`.
+`mapAxis` is declared at `src/1_axis.ts:439`.
 
 Values change, structure does not, so the three structural maps are shared by reference.
 
@@ -2707,6 +2701,7 @@ Changing a grid track triggers one full layout, so the cost of a resize is how o
 | [`SG_OFFSET_Y`](#src-9-css-ts-sg-offset-y) | const |
 | [`SG_INLINE_TRACKS`](#src-9-css-ts-sg-inline-tracks) | const |
 | [`SG_ROW_HEIGHT_SELF`](#src-9-css-ts-sg-row-height-self) | const |
+| [`SG_SEAT`](#src-9-css-ts-sg-seat) | const |
 | [`writeGridVars`](#src-9-css-ts-writegridvars) | function |
 
 ### `SG_ROW_H` {#src-9-css-ts-sg-row-h}
@@ -2761,9 +2756,20 @@ spell, so the row carries this alias and one generic rule serves every row.
 SG_ROW_HEIGHT_SELF: "--sg-h"
 ```
 
+### `SG_SEAT` {#src-9-css-ts-sg-seat}
+
+`SG_SEAT` is declared at `src/9_css.ts:25`.
+
+The track a cell occupies inside its run, counted from 1. A covered seat renders no element, so
+auto-placement would pull every cell after a span into the tracks the span already holds.
+
+```ts
+SG_SEAT: "--sg-seat"
+```
+
 ### `writeGridVars` {#src-9-css-ts-writegridvars}
 
-`writeGridVars` is declared at `src/9_css.ts:40`.
+`writeGridVars` is declared at `src/9_css.ts:43`.
 
 Writes every geometry property onto `root` from one derived node, so two sources changing in
 the same tick cannot paint two different frames.
