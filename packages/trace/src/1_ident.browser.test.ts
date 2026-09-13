@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { firstValueFrom } from "rxjs"
-import { ident, resetIdent, runtimeOf, workerName } from "./1_ident.js"
+import { ident, key, resetIdent, runtimeOf } from "./1_ident.js"
+import { workerName } from "./6_spawn.js"
 import { lag$, lagKinds } from "./4_lag.js"
 import { ATTR, resource } from "./2_resource.js"
 
@@ -22,10 +23,12 @@ describe("ident in a browser", () => {
     // `window.open` copy does: the id already in storage belongs to whoever opened this document.
     resetIdent()
     sessionStorage.setItem(TAB_KEY, "parent99")
+    sessionStorage.setItem("hafley.trace.born", "1700000000123")
     const child = ident({ service: "grid" })
     expect(window.top === window.self).toBe(false)
     expect(child.pid).not.toBe("parent99")
     expect(child.parent).toBe("parent99")
+    expect(child.parentBorn).toBe(1700000000123)
     expect(ident({ service: "grid" }).pid).toBe(child.pid)
   })
 
@@ -42,23 +45,26 @@ describe("a worker", () => {
   it("reads its parent and its service off the one channel it has before its first message", async () => {
     const host = ident({ service: "host", pid: "0bfcc223" })
     const code = `
-      const WORKER_NAME = /^hafley:([^:]*):([^:]*)$/
-      const hit = WORKER_NAME.exec(self.name)
+      const hit = /^hafley:([^:]*):([^:]*)$/.exec(self.name)
+      const held = hit === null ? null : hit[1]
+      const at = held === null ? -1 : held.indexOf("@")
       self.postMessage({
         name: self.name,
-        parent: hit === null ? null : hit[1],
+        parent: held === null ? null : at === -1 ? held : held.slice(0, at),
+        parentBorn: held === null ? null : at === -1 ? null : Number(held.slice(at + 1)),
         service: hit === null ? null : hit[2],
         sessionStorage: typeof sessionStorage !== "undefined",
       })`
     const url = URL.createObjectURL(new Blob([code], { type: "text/javascript" }))
-    const worker = new Worker(url, { name: workerName(host.pid, "sorter"), type: "module" })
+    const worker = new Worker(url, { name: workerName(host, "sorter"), type: "module" })
     const got = await new Promise<Record<string, unknown>>((resolve) => {
       worker.onmessage = (event: MessageEvent) => resolve(event.data as Record<string, unknown>)
     })
     worker.terminate()
     URL.revokeObjectURL(url)
-    expect(got["name"]).toBe("hafley:0bfcc223:sorter")
+    expect(got["name"]).toBe(`hafley:${key(host)}:sorter`)
     expect(got["parent"]).toBe("0bfcc223")
+    expect(got["parentBorn"]).toBe(Math.round(host.born))
     expect(got["service"]).toBe("sorter")
     // The reason the name is the channel at all: a worker has no storage to read an id out of.
     expect(got["sessionStorage"]).toBe(false)

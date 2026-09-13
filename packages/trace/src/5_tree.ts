@@ -9,9 +9,9 @@
 // A pid is reused by the operating system, so `pid` alone is not a key. `pid` plus `born` is, which
 // is what `key()` prints and what a child's `parent` has to match.
 import type { Ident } from "./0_types.js"
+import { key } from "./1_ident.js"
 
-/** The unique one. An operating system reuses a pid; it cannot reuse a pid at the same instant. */
-export const key = (id: Ident): string => `${id.pid}@${Math.round(id.born)}`
+export { key } from "./1_ident.js"
 
 const GLYPH: Readonly<Record<Ident["runtime"], string>> = {
   nodejs: "node", bun: "bun", deno: "deno", browser: "tab", worker: "wrk", unknown: "?",

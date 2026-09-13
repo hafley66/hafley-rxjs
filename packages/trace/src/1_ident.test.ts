@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { ident, runtimeOf, workerName } from "./1_ident.js"
+import { ident, key, parentKey, runtimeOf } from "./1_ident.js"
+import { workerName } from "./6_spawn.js"
 import { ATTR, resource } from "./2_resource.js"
 
 describe("ident in node", () => {
@@ -36,8 +37,18 @@ describe("ident in node", () => {
 })
 
 describe("workerName", () => {
-  it("round trips the parent pid and the service through the one channel a worker has", () => {
-    expect(workerName("0bfcc223", "grid")).toBe("hafley:0bfcc223:grid")
+  it("round trips the parent key and the service through the one channel a worker has", () => {
+    const host = ident({ service: "grid", pid: "0bfcc223" })
+    expect(workerName(host, "sorter")).toBe(`hafley:${key(host)}:sorter`)
+  })
+})
+
+describe("parentKey", () => {
+  it("forms the parent's key only when a handoff carried the birth time", () => {
+    const handed = ident({ parent: "17", parentBorn: 1700000000000 })
+    expect(parentKey(handed)).toBe("17@1700000000000")
+    expect(parentKey(ident({ parent: "17", parentBorn: undefined }))).toBeUndefined()
+    expect(parentKey(ident({ parent: undefined }))).toBeUndefined()
   })
 })
 
