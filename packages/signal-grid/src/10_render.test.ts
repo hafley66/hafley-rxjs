@@ -463,10 +463,24 @@ describe("a cell that is a link", () => {
     const seen: GridIntent[] = []
     const subs = made.intent$.subscribe((it) => seen.push(it))
     const event = new MouseEvent("click", { bubbles: true, cancelable: true, metaKey: true })
+    // A command-click the grid leaves alone reaches the browser, and the browser opens `#row-a` in
+    // a new tab. That tab is the vitest tester URL with this iframe's id, so it boots a second
+    // tester on the same BroadcastChannel and the two echo `response:` at each other until the
+    // run ends (6489 unhandled errors in a full run). The window listener is the last stop on the
+    // bubble path: it records whether the grid prevented anything, then prevents the tab itself.
+    let reachedWindowUnprevented: boolean | undefined
+    window.addEventListener(
+      "click",
+      (it) => {
+        reachedWindowUnprevented = !it.defaultPrevented
+        it.preventDefault()
+      },
+      { once: true },
+    )
     linkAt("a", "name")?.dispatchEvent(event)
     subs.unsubscribe()
     expect(seen).toEqual([])
-    expect(event.defaultPrevented).toBe(false)
+    expect(reachedWindowUnprevented).toBe(true)
   })
 })
 
