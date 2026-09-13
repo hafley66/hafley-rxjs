@@ -1,3 +1,4 @@
+import { wheelCamera } from "../../src/lib/1_wheelCamera.js"
 import { createStickyOverlay, type StickyOptions } from "../../src/lib/0_stickyOverlay.js"
 import cytoscape, { type Core, type ElementDefinition } from "cytoscape"
 import createDOMPurify from "dompurify"
@@ -95,10 +96,22 @@ function primitiveDefinitions(frame: GraphFrame, sourcePrimitives: readonly Boun
       const sourceId = routeEndpointId(sourcePrimitive, "source")
       const targetId = routeEndpointId(sourcePrimitive, "target")
       const graphItem = frame.graph[primitive.graphId]
+      const route = primitive.route
+      const dx = route[route.length - 2] - route[0]
+      const dy = route[route.length - 1] - route[1]
+      const length = Math.hypot(dx, dy)
+      const segmentWeights: number[] = []
+      const segmentDistances: number[] = []
+      if (length > 0) for (let at = 2; at < route.length - 2; at += 2) {
+        const x = route[at] - route[0]
+        const y = route[at + 1] - route[1]
+        segmentWeights.push((x * dx + y * dy) / (length * length))
+        segmentDistances.push((dx * y - dy * x) / length)
+      }
       definitions.push(
-        { data: { id: sourceId, graphId: primitive.graphId, kind: "route-endpoint", label: "" }, position: { x: primitive.route[0], y: primitive.route[1] }, classes: "graph-route-endpoint" },
-        { data: { id: targetId, graphId: primitive.graphId, kind: "route-endpoint", label: "" }, position: { x: primitive.route[primitive.route.length - 2], y: primitive.route[primitive.route.length - 1] }, classes: "graph-route-endpoint" },
-        { data: { id, graphId: primitive.graphId, kind: "edge", source: sourceId, target: targetId, direction: graphItem?.type === "edge" ? graphItem.direction : "none", label: labelsById[primitive.graphId]?.text ?? "" }, classes: "graph-native-message" },
+        { data: { id: sourceId, graphId: primitive.graphId, kind: "route-endpoint", label: "" }, position: { x: primitive.route[0], y: primitive.route[1] }, classes: "graph-route-endpoint", grabbable: false },
+        { data: { id: targetId, graphId: primitive.graphId, kind: "route-endpoint", label: "" }, position: { x: primitive.route[primitive.route.length - 2], y: primitive.route[primitive.route.length - 1] }, classes: "graph-route-endpoint", grabbable: false },
+        { data: { id, graphId: primitive.graphId, kind: "edge", source: sourceId, target: targetId, segmentWeights, segmentDistances, direction: graphItem?.type === "edge" ? graphItem.direction : "none", label: labelsById[primitive.graphId]?.text ?? "" }, classes: `graph-native-message${segmentWeights.length ? " graph-native-segments" : ""}` },
       )
       continue
     }
@@ -110,6 +123,7 @@ function primitiveDefinitions(frame: GraphFrame, sourcePrimitives: readonly Boun
       data: { id, graphId: primitive.graphId, kind: "svg-primitive", nativeKind: primitive.role, width: Math.max(1, primitive.bounds.width), height: Math.max(1, primitive.bounds.height), label },
       position: { x: primitive.bounds.x + primitive.bounds.width / 2, y: primitive.bounds.y + primitive.bounds.height / 2 },
       classes: `graph-svg-primitive graph-${primitive.role}`,
+      grabbable: false,
     })
   }
   return definitions
@@ -212,6 +226,7 @@ export function createCytoscapeGraphFrameResource(
   interactions?: RendererInteractions,
   sticky?: StickyOptions,
 ): CytoscapeGraphFrameResource {
+  host?.addEventListener("wheel", onWheel, { capture: true, passive: false })
   const cy = cytoscape({
     container: host,
     headless: host === undefined,
@@ -232,7 +247,10 @@ export function createCytoscapeGraphFrameResource(
       { selector: ".graph-sealed-root", style: { opacity: 0, events: "no" } },
       { selector: ".graph-endpoint-anchor", style: { width: "data(width)", height: "data(height)", opacity: 0 } },
       { selector: ".graph-route-endpoint", style: { width: 1, height: 1, opacity: 0 } },
-      { selector: ".graph-native-message", style: { curveStyle: "straight" } },
+      { selector: ".graph-native-message", style: { curveStyle: "straight", color: "#111827", textBackgroundColor: "#ffffff", lineColor: "#475569", targetArrowColor: "#475569", width: 1, zIndex: 3, zIndexCompare: "manual" } },
+      { selector: ".graph-native-segments", style: { curveStyle: "segments", segmentWeights: "data(segmentWeights)", segmentDistances: "data(segmentDistances)", edgeDistances: "node-position" } },
+      { selector: ".graph-group-frame", style: { zIndex: 0, zIndexCompare: "manual" } },
+      { selector: ".graph-lifeline", style: { zIndex: 1, zIndexCompare: "manual" } },
       { selector: "edge[direction = 'forward']", style: { targetArrowShape: "triangle" } },
       { selector: "edge[direction = 'both']", style: { sourceArrowShape: "triangle", targetArrowShape: "triangle" } },
       { selector: "node.graph-focused", style: { borderColor: "#fbbf24", borderWidth: 3, backgroundColor: "#334155" } },
@@ -279,6 +297,16 @@ export function createCytoscapeGraphFrameResource(
     }
   })
 
+  function onWheel(event: WheelEvent): void {
+    if (!host || renderedFrame === undefined) return
+    event.preventDefault()
+    // Capture before Cytoscape's built-in wheel zoom sees this event.
+    event.stopImmediatePropagation()
+    const rect = host.getBoundingClientRect()
+    const pan = cy.pan()
+    const next = wheelCamera({ x: pan.x, y: pan.y, scale: cy.zoom(), viewport: { x: 0, y: 0, width: cy.width(), height: cy.height() } }, event, { x: event.clientX - rect.left, y: event.clientY - rect.top })
+    cy.viewport({ zoom: next.scale, pan: { x: next.x, y: next.y } })
+  }
   if (interactions) {
     const dragPositionByElementId = new Map<string, { x: number; y: number }>()
     cy.on("viewport", () => {
@@ -364,6 +392,7 @@ export function createCytoscapeGraphFrameResource(
       if (host) {
         host.dataset.graphtRenderer = "cytoscape"
         host.dataset.graphtItemCount = String(cy.elements().length)
+        host.dataset.graphtNativeEdgeCount = String(cy.edges(".graph-native-message").length)
         const movable = cy.$("node[nativeKind = 'actor-shape']").nodes().first()
         if (movable.nonempty()) host.dataset.graphtMovablePosition = JSON.stringify(movable.renderedPosition())
       }
@@ -434,6 +463,7 @@ export function createCytoscapeGraphFrameResource(
       stickyOverlay?.render(frame)
     },
     unsubscribe() {
+      host?.removeEventListener("wheel", onWheel, { capture: true })
       stickyOverlay?.unsubscribe()
       headerLayer?.remove()
       headerViews.clear()

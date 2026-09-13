@@ -1,3 +1,4 @@
+import { wheelCamera } from "../../src/lib/1_wheelCamera.js"
 import createDOMPurify from "dompurify"
 import { createStickyOverlay, type StickyOptions } from "../../src/lib/0_stickyOverlay.js"
 import { foreignObjectsToText } from "../../src/2_graph/13_foreignObjectText.js"
@@ -81,26 +82,7 @@ export function createDocumentGraphFrameResource(
   const onWheel = (event: WheelEvent): void => {
     if (camera === undefined) return
     event.preventDefault()
-    // Shift scrolls horizontally, command or control zooms at the cursor
-    // (ctrl carries the trackpad pinch), and a plain wheel pans.
-    if (event.shiftKey) {
-      const delta = event.deltaX !== 0 ? event.deltaX : event.deltaY
-      applyCamera({ ...camera, x: camera.x - delta })
-    } else if (event.metaKey || event.ctrlKey) {
-      const at = pointer(event)
-      const factor = Math.exp(-event.deltaY * 0.0015)
-      const scale = Math.min(Math.max(camera.scale * factor, 0.01), 8)
-      const worldX = (at.x - camera.x) / camera.scale
-      const worldY = (at.y - camera.y) / camera.scale
-      applyCamera({
-        x: at.x - worldX * scale,
-        y: at.y - worldY * scale,
-        scale,
-        viewport: camera.viewport,
-      })
-    } else {
-      applyCamera({ ...camera, x: camera.x - event.deltaX, y: camera.y - event.deltaY })
-    }
+    applyCamera(wheelCamera(camera, event, pointer(event)))
     interactions?.cameraInput$.next(camera)
   }
 

@@ -3,15 +3,12 @@ import { BehaviorSubject, EMPTY, merge, Subject, switchMap, tap } from "rxjs"
 import { Signal, StorageSignal } from "@hafley66/signals"
 import { createDocumentGraphFrameResource } from "../8_documentRenderer.ts"
 import { fitGraphCamera } from "../../../src/2_graph/1_fitCamera.ts"
-import type { Graph, GraphId } from "@hafley66/grapht-model"
 import type { Observable } from "rxjs"
-import type { GraphCamera, GraphFrame, GraphGeometry } from "../../../src/2_graph/0_frame.ts"
-import sequenceFixture from "../../../fixtures/sequence/large.json"
-import sequenceSvgUrl from "../../../fixtures/sequence/large.svg?url"
+import type { GraphCamera, GraphFrame } from "../../../src/2_graph/0_frame.ts"
+import { sequenceFrame } from "./0_sequenceFrame.ts"
 
 type Mode = "document" | "cytoscape"
 type Source = "arch" | "sequence"
-type FixtureRect = { id: string; label: string; left: number; width: number; top: number; bottom: number }
 
 const cameraInput$ = new Subject<GraphCamera>()
 const focusInput$ = new Subject<ReadonlySet<string>>()
@@ -67,62 +64,6 @@ const artifactFrame: GraphFrame = {
       },
     },
   },
-}
-
-/** The smallest group that strictly contains this one, which is its header's parent in the stack. */
-function containerOf(group: FixtureRect, groups: readonly FixtureRect[]): string | undefined {
-  return groups
-    .filter(other => other.id !== group.id && other.top <= group.top && other.bottom >= group.bottom && other.left <= group.left)
-    .sort((left, right) => left.bottom - left.top - (right.bottom - right.top))
-    .at(0)?.id
-}
-
-async function sequenceFrame(viewport: { width: number; height: number }): Promise<GraphFrame> {
-  const svg = await (await fetch(sequenceSvgUrl)).text()
-  const box = sequenceFixture.viewBox
-  const actors = sequenceFixture.actors as FixtureRect[]
-  const groups = sequenceFixture.groups as FixtureRect[]
-  const bounds = { x: box.x, y: box.y, width: box.width, height: box.height }
-
-  const graph: Record<string, unknown> = {
-    seq: { id: "seq", type: "node", layout: { mode: "sealed", bounds, geometryRevisionId: "seq:geometry:1" } },
-  }
-  for (const actor of actors) graph[actor.id] = { id: actor.id, type: "node", parentId: "seq" }
-  for (const group of groups) graph[group.id] = { id: group.id, type: "node", parentId: containerOf(group, groups) ?? "seq" }
-
-  const geometry: GraphGeometry = {
-    revisionId: "seq:1",
-    boundsById: {
-      seq: bounds,
-      ...Object.fromEntries(groups.map(group => [group.id, { x: group.left, y: group.top, width: group.width, height: group.bottom - group.top }])),
-    },
-    endpointAnchorById: { seq: { x: box.x + box.width / 2, y: box.y + box.height / 2 } },
-    routesById: {},
-    headerBoundsById: Object.fromEntries(groups.map(group => [group.id, { x: group.left, y: group.top, width: group.width, height: 22 }])),
-    columnBoundsById: Object.fromEntries(actors.map(actor => [actor.id, { x: actor.left, y: actor.top, width: actor.width, height: actor.bottom - actor.top }])),
-  }
-
-  return {
-    graph: graph as Graph,
-    geometry,
-    camera: fitGraphCamera(geometry, { x: 0, y: 0, width: viewport.width, height: viewport.height }, 24),
-    presentation: {
-      stickyHeaders: [],
-      hiddenIds: new Set<GraphId>(),
-      focusedIds: new Set<GraphId>(),
-      labelsById: Object.fromEntries([...actors, ...groups].map(item => [item.id, { text: item.label }])),
-      sealedSvgArtifactsByRootId: {
-        seq: {
-          rootId: "seq",
-          revisionId: "seq:svg:1",
-          geometryRevisionId: "seq:geometry:1",
-          svg,
-          sourceBounds: bounds,
-          fit: "contain",
-        },
-      },
-    },
-  }
 }
 
 const ui = Signal({ mode: "document" as Mode, source: "arch" as Source })
@@ -186,6 +127,7 @@ const groupsToggle = document.querySelector<HTMLInputElement>("#groups") as HTML
 let frame = artifactFrame
 
 async function mount(next: Mode): Promise<void> {
+  if (next === "cytoscape" && ui.source.$() === "arch") return
   resource?.unsubscribe()
   host.replaceChildren()
   failure.$("")
@@ -206,10 +148,13 @@ async function useSource(next: Source): Promise<void> {
   document.body.setAttribute("data-source", next)
   document.querySelector("#arch")?.setAttribute("aria-pressed", String(next === "arch"))
   document.querySelector("#sequence")?.setAttribute("aria-pressed", String(next === "sequence"))
-  await mount(ui.mode.$())
+  const cytoButton = document.querySelector<HTMLButtonElement>("#renderer-cytoscape")!
+  cytoButton.disabled = next === "arch"
+  cytoButton.title = next === "arch" ? "Native Cytoscape is available for the large sequence; architecture has no native graph bindings yet." : "Native Cytoscape nodes and edges"
+  await mount(next === "arch" ? "document" : ui.mode.$())
 }
 
-await mount("document")
+await useSource("sequence")
 // The page entry is the runtime boundary; this subscription is its only one.
 painted$.subscribe()
 

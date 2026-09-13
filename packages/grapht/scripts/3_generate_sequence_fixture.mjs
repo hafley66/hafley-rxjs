@@ -10,6 +10,7 @@ const resolveHook = `export async function resolve(specifier, context, nextResol
 register("data:text/javascript," + encodeURIComponent(resolveHook))
 
 const { buildSequenceArtifact, decorateSvg, measureSequenceSvg } = await import("@hafley66/grapht")
+const { sequenceDocumentToGraph } = await import("@hafley66/grapht-model")
 const { mermaidSequenceAdapter } = await import("@hafley66/mmd")
 
 const fixtureDir = new URL("../fixtures/sequence/", import.meta.url)
@@ -100,7 +101,9 @@ const groups = [...groupRects.entries()].map(([occurrenceId, rect]) => {
 const messageCount = artifact.occurrences.filter(occurrence => occurrence.kind === "message").length
 
 const json = {
-  schema: 1,
+  schema: 2,
+  graph: sequenceDocumentToGraph(artifact),
+  bindings: bindingReceipt.bindings.map(({ elementId, occurrenceId, role, ordinal }) => ({ elementId, graphId: occurrenceId, role, ordinal })),
   source: sourceLocator,
   viewBox: {
     x: round(viewBox.x),

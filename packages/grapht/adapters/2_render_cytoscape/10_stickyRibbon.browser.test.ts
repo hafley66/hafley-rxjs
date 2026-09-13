@@ -267,3 +267,55 @@ it("matches document headers in Cytoscape through zoom, pan, toggles and teardow
     for (const host of hosts) host.remove()
   }
 })
+
+it("uses the same wheel pan and cursor zoom in both renderers", async () => {
+  const { createCytoscapeGraphFrameResource } = await import("./6_graphRenderer.ts")
+  const hosts = [document.createElement("div"), document.createElement("div")]
+  for (const host of hosts) { host.style.cssText = "position:relative;width:800px;height:600px"; document.body.appendChild(host) }
+  let domCamera = frame.camera
+  const dom = createDocumentGraphFrameResource(hosts[0], { cameraInput$: { next: camera => { domCamera = camera } } })
+  const cyto = createCytoscapeGraphFrameResource(hosts[1], undefined, {})
+  const results: unknown[] = []
+  try {
+    for (const resource of [dom, cyto]) resource.render(frame, { enterIds: ["seq"], updateIds: [], exitIds: [] })
+    for (const gesture of [{ deltaY: 100 }, { deltaY: 50, shiftKey: true }, { deltaY: -100, ctrlKey: true }, { deltaY: 100, metaKey: true }, { deltaX: 1, deltaY: 2, deltaMode: 1 }]) {
+      for (const host of hosts) {
+        const rect = host.getBoundingClientRect()
+        const target = host.querySelector("canvas") ?? host.querySelector("svg")!
+        target.dispatchEvent(new WheelEvent("wheel", { ...gesture, clientX: rect.left + 400, clientY: rect.top + 300, bubbles: true, cancelable: true }))
+      }
+      const pan = cyto.cy.pan()
+      expect({ x: pan.x, y: pan.y, scale: cyto.cy.zoom() }).toEqual({ x: domCamera.x, y: domCamera.y, scale: domCamera.scale })
+      results.push({ x: Math.round(pan.x), y: Math.round(pan.y), scale: Number(cyto.cy.zoom().toFixed(3)) })
+    }
+    expect(results).toMatchInlineSnapshot(`
+      [
+        {
+          "scale": 1,
+          "x": 0,
+          "y": -100,
+        },
+        {
+          "scale": 1,
+          "x": -50,
+          "y": -100,
+        },
+        {
+          "scale": 1.162,
+          "x": -123,
+          "y": -165,
+        },
+        {
+          "scale": 1,
+          "x": -50,
+          "y": -100,
+        },
+        {
+          "scale": 1,
+          "x": -66,
+          "y": -132,
+        },
+      ]
+    `)
+  } finally { dom.unsubscribe(); cyto.unsubscribe(); for (const host of hosts) host.remove() }
+})
