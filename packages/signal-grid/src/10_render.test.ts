@@ -96,6 +96,7 @@ interface Options {
   /** Absent installs `defaultEpics()`, which is what every test above the interaction ones wants. */
   readonly epics?: readonly GridEpic<Row>[]
   readonly rowHref?: (row: Row) => string | undefined
+  readonly viewport?: { top: number; left: number; width: number; height: number }
 }
 
 let root: HTMLElement
@@ -140,7 +141,7 @@ function mountGrid(options: Options = {}): Harness {
     rowId: (item) => item.id,
     subRows: options.subRows,
     state: { virtualize: { vertical: false, horizontal: false }, ...options.state },
-    viewport: { top: 0, left: 0, width: 600, height: 400 },
+    viewport: options.viewport ?? { top: 0, left: 0, width: 600, height: 400 },
     slots: options.slots,
     epics: options.epics,
     rowHref: options.rowHref,
@@ -1419,3 +1420,100 @@ describe("a deferred move or resize draws a line and marks what is travelling", 
     expect(root.querySelectorAll("[data-dragging]")).toHaveLength(0)
   })
 })
+
+// --- ARIA --------------------------------------------------------------------
+
+describe("aria", () => {
+  test("the root names itself a grid with the full counts", () => {
+    mountGrid()
+    expect(root.getAttribute("role")).toBe("grid")
+    expect(root.getAttribute("aria-rowcount")).toBe("3")
+    expect(root.getAttribute("aria-colcount")).toBe("2")
+    expect(root.getAttribute("aria-multiselectable")).toBe("true")
+    const header = root.querySelector("[role='columnheader']")
+    expect(header?.getAttribute("aria-colindex")).toBe("1")
+    const cell = cellAt("a", "name")
+    expect(cell?.getAttribute("role")).toBe("gridcell")
+    expect(cell?.getAttribute("aria-colindex")).toBe("1")
+    expect(cellAt("b", "size")?.getAttribute("aria-colindex")).toBe("2")
+  })
+
+  test("a radio column makes the grid single select", () => {
+    mountGrid({ columns: [radioColumn<Row>(), NAME] })
+    expect(root.hasAttribute("aria-multiselectable")).toBe(false)
+  })
+
+  test("the row index is absolute under vertical virtualization", () => {
+    const twenty: readonly Row[] = Array.from({ length: 20 }, (_, at) => ({
+      id: `r${String(at)}`,
+      name: `Row ${String(at)}`,
+      size: at,
+    }))
+    // Three rows tall at 36 px each, scrolled so index 2 is the first rendered row, with the
+    // four-row overscan leaving row index 2 the window's own top.
+    mountGrid({
+      rows: twenty,
+      state: { virtualize: { vertical: true, horizontal: false } },
+      viewport: { top: 216, left: 0, width: 600, height: 108 },
+    })
+    expect(root.querySelector("[role='row']")?.getAttribute("aria-rowindex")).toBe("1")
+    expect(rowAriaOf("r2")?.getAttribute("aria-rowindex")).toBe("4")
+    expect(rowAriaOf("r2")?.hasAttribute("data-row-id")).toBe(true)
+    expect(rowAriaOf("r0")).toBeNull()
+  })
+
+  test("aria-selected flips with the row's selection state", () => {
+    const made = mountGrid({ columns: [checkboxColumn<Row>(), NAME] })
+    const row = rowAriaOf("a")
+    expect(row?.getAttribute("aria-selected")).toBe("false")
+    // Row selection is what makes the stamps true: the checkbox toggles the row map.
+    click(root.querySelector(selectorFor("rowCheck")))
+    expect(rowAriaOf("a")?.getAttribute("aria-selected")).toBe("true")
+    expect(rowAriaOf("b")?.getAttribute("aria-selected")).toBe("false")
+    // A cell range paints the cells the same way the row map painted the row.
+    made.grid.state.selection.$({
+      anchor: cellId("a", "name"),
+      head: cellId("a", "name"),
+      mode: "cell",
+      blocks: [],
+    })
+    expect(cellAt("a", "name")?.getAttribute("aria-selected")).toBe("true")
+    click(root.querySelector(selectorFor("rowCheck")))
+    expect(rowAriaOf("a")?.getAttribute("aria-selected")).toBe("false")
+  })
+
+  test("the checked glyph speaks as a checkbox", () => {
+    mountGrid({ columns: [checkboxColumn<Row>(), NAME] })
+    const glyph = root.querySelector(selectorFor("rowCheck"))
+    expect(glyph?.getAttribute("role")).toBe("checkbox")
+    expect(glyph?.getAttribute("aria-checked")).toBe("false")
+    click(glyph)
+    expect(glyph?.getAttribute("aria-checked")).toBe("true")
+  })
+
+  test("a tree child carries its level", () => {
+    mountGrid({ rows: TREE, subRows: (it) => it.kids, state: { expanded: { a: true } } })
+    expect(rowAriaOf("a")?.getAttribute("aria-level")).toBe("1")
+    expect(rowAriaOf("b")?.getAttribute("aria-level")).toBe("2")
+  })
+
+  test("a spanned cell carries its span", () => {
+    mountGrid({
+      columns: [{ ...NAME, span: () => ({ rows: 1, cols: 2 }) }, SIZE],
+    })
+    expect(cellAt("a", "name")?.getAttribute("aria-colspan")).toBe("2")
+    expect(cellAt("a", "size")).toBeNull()
+  })
+
+  test("a group heading row names the row it stands over", () => {
+    mountGrouped(["kind"], { [keyOf("document")]: true })
+    const heading = headingRow("document")
+    expect(heading?.getAttribute("role")).toBe("row")
+    expect(heading?.getAttribute("aria-rowindex")).toBe("2")
+    expect(heading?.getAttribute("aria-expanded")).toBe("true")
+    expect(heading?.querySelector(".sg-group-cell")?.getAttribute("role")).toBe("rowheader")
+  })
+})
+
+const rowAriaOf = (rowId: string): HTMLElement | null =>
+  root.querySelector<HTMLElement>(`[role='row']${selectorFor("row", { rowId })}`)
