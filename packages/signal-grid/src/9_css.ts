@@ -20,6 +20,9 @@ export const SG_INLINE_TRACKS = "--sg-inline-tracks"
 /** The height one row box reads. Its own property is named after its id, which no selector can
  * spell, so the row carries this alias and one generic rule serves every row. */
 export const SG_ROW_HEIGHT_SELF = "--sg-h"
+/** The track a cell occupies inside its run, counted from 1. A covered seat renders no element, so
+ * auto-placement would pull every cell after a span into the tracks the span already holds. */
+export const SG_SEAT = "--sg-seat"
 
 /** One emission is one write pass, so a frame can never show two columns from different plans. */
 interface VarFrame {

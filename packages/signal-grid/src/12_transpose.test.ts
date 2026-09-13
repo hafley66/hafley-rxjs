@@ -151,8 +151,8 @@ describe("list view collapses the horizontal axis", () => {
     ])
     // "meta" is a band over its leaves, and a band of one leaf is the leaf. Keeping the group node
     // instead would leave a run whose only entry has no cell under it.
-    expect(gauge.view.cols.$().map((node) => [node.key, node.depth, node.parent])).toEqual([
-      ["name", 0, null],
+    expect(gauge.view.cols.$().map((node) => [node.key, node.depth, node.hasChildren])).toEqual([
+      ["name", 0, false],
     ])
   })
 

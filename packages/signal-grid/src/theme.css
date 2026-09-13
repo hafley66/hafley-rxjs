@@ -218,9 +218,17 @@
   text-overflow: ellipsis;
 }
 
+/* The track the entry owns, written per cell by `10_render.ts` as `--sg-seat`. Without it a row a
+   span crosses renders fewer cells than it has tracks and auto-placement packs the survivors into
+   the covered tracks, leaving every cell after the span out of line with its header. */
+[data-route="g"] .sg-cell {
+  grid-column: var(--sg-seat, auto) / span 1;
+}
+
 /* The seat the leading spacer track holds when the column window skipped columns before this run.
    It draws nothing and takes no pointer; its width is the track's, written into the track list. */
 [data-route="g"] .sg-spacer {
+  grid-column: 1;
   min-inline-size: 0;
   pointer-events: none;
 }
@@ -568,20 +576,15 @@
 }
 
 /* A span is counted in entries, never in pixels: a run laid out as a grid reads the pair as tracks,
-   and the covered neighbours render nothing, so the anchor grows into the seats they left. */
+   and the covered neighbours render nothing, so the anchor grows into the seats they left. The
+   start is the anchor's own seat, the same number every plain cell carries, because a span that
+   auto-placed would land wherever the cells before it happened to leave the cursor. */
 [data-route="g"] .sg-cell[data-span="true"] {
-  grid-row: span var(--sg-span-vertical, 1);
-  grid-column: span var(--sg-span-horizontal, 1);
+  grid-column: var(--sg-seat, auto) / span var(--sg-span-horizontal, 1);
+  grid-row: 1 / span var(--sg-span-vertical, 1);
   block-size: calc(var(--sg-span-vertical, 1) * var(--sg-h, var(--sg-row-h)));
   align-self: start;
   z-index: 1;
-}
-
-
-/* A span is counted in entries, so the pair reads straight into grid placement. */
-[data-route="g"] .sg-cell[data-span="true"] {
-  grid-column: span var(--sg-span-horizontal, 1);
-  grid-row: span var(--sg-span-vertical, 1);
 }
 
 /* Presence, not "true": a cell out of the range carries no attribute, so the common case is one

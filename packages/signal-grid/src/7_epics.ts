@@ -521,9 +521,9 @@ function keyAction<TRow>(
     case "ArrowLeft": {
       if (node === undefined) return null
       if (node.hasChildren && state.expanded.$()[node.key] === true) return open(node.key, false)
-      return node.parent === null
-        ? null
-        : { phase: "change", type: "focus", focus: cellId(node.parent, col) }
+      // `detailed` is the axis `flat` was walked over, so its parent edge is the one the walk used.
+      const up = ctx.view.detailed.$().parent.get(node.key)
+      return up === undefined ? null : { phase: "change", type: "focus", focus: cellId(up, col) }
     }
     case " ": {
       if (node === undefined) return null

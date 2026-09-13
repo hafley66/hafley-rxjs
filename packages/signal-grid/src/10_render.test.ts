@@ -1013,6 +1013,67 @@ describe("the second rendering an example offers", () => {
   })
 })
 
+// --- a row a span crosses ---------------------------------------------------
+
+/** Four rows, so the two the span covers both have a row of plain cells to be measured against. */
+const SPAN_GRID_ROWS: readonly Row[] = [
+  { id: "a", name: "Alpha", size: 1, kind: "one", owner: "ana" },
+  { id: "b", name: "Beta", size: 2, kind: "two", owner: "bo" },
+  { id: "c", name: "Cass", size: 3, kind: "three", owner: "cy" },
+  { id: "d", name: "Dee", size: 4, kind: "four", owner: "di" },
+]
+
+/** Four different widths, so a cell placed one track off lands on a left no other track holds. */
+const SPANNING: ColumnDef<Row> = {
+  ...NAME,
+  span: (_row: Row, index: number) => (index === 1 ? { rows: 2, cols: 2 } : undefined),
+}
+const SPAN_COLUMNS: readonly ColumnDef<Row>[] = [
+  SPANNING,
+  { ...SIZE, width: 80 },
+  { id: "kind", header: "Kind", width: 140 },
+  { id: "owner", header: "Owner", width: 100 },
+]
+
+const headCellAt = (colId: string): HTMLElement | null =>
+  root.querySelector<HTMLElement>(`.sg-head-cell[data-col-id="${colId}"]`)
+
+const leftOf = (el: Element | null): number => {
+  if (el === null) throw new Error("no element at that address")
+  return el.getBoundingClientRect().left
+}
+
+describe("a cell after a span keeps its column", () => {
+  // The anchor sits on row `b` and reaches two rows down and two columns across, so rows `b` and
+  // `c` render `kind` and `owner` alone. Auto-placement would seat those two in the tracks the
+  // span holds, which is the whole defect: the cell reads under the wrong header.
+  test("the two cells beside the anchor stand under their own headers", () => {
+    mountGrid({ rows: SPAN_GRID_ROWS, columns: SPAN_COLUMNS })
+    for (const rowId of ["b", "c"]) {
+      for (const colId of ["kind", "owner"]) {
+        expect(leftOf(cellAt(rowId, colId))).toBeCloseTo(leftOf(headCellAt(colId)), 1)
+      }
+    }
+  })
+
+  test("a row the span never reaches is placed on the same tracks", () => {
+    mountGrid({ rows: SPAN_GRID_ROWS, columns: SPAN_COLUMNS })
+    for (const colId of ["name", "size", "kind", "owner"]) {
+      expect(leftOf(cellAt("a", colId))).toBeCloseTo(leftOf(headCellAt(colId)), 1)
+    }
+  })
+
+  test("the anchor covers the two tracks it declared and starts on its own", () => {
+    mountGrid({ rows: SPAN_GRID_ROWS, columns: SPAN_COLUMNS })
+    const anchor = cellAt("b", "name")
+    expect(leftOf(anchor)).toBeCloseTo(leftOf(headCellAt("name")), 1)
+    // `name` is 120 and `size` is 80, and the anchor is the only cell that can be 200 wide.
+    expect(anchor?.getBoundingClientRect().width).toBeCloseTo(200, 1)
+    expect(cellAt("b", "size")).toBe(null)
+    expect(cellAt("c", "name")).toBe(null)
+  })
+})
+
 // --- the transpose ----------------------------------------------------------
 //
 // One table, both seatings. Every assertion below runs against each row of `CROSSINGS`, so a

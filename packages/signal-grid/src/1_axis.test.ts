@@ -77,10 +77,11 @@ describe("a flat relation is the degenerate forest", () => {
   })
 
   it("reports depth zero and no children for every node of a flat axis", () => {
-    const nodes = flattenAxis(flat(), () => true)
+    const axis = flat()
+    const nodes = flattenAxis(axis, () => true)
     expect(nodes.map((node) => node.depth)).toEqual([0, 0, 0, 0, 0, 0, 0, 0])
     expect(nodes.every((node) => node.hasChildren === false)).toBe(true)
-    expect(nodes.every((node) => node.parent === null)).toBe(true)
+    expect(nodes.every((node) => axis.parent.get(node.key) === undefined)).toBe(true)
   })
 })
 
@@ -394,11 +395,13 @@ describe("flattenAxis", () => {
     expect(all.map((node) => node.index)).toEqual(all.map((_node, at) => at))
   })
 
-  it("carries depth and parent down each branch", () => {
-    const nodes = flattenAxis(tree(), () => true)
+  it("carries depth down each branch, with the parent left on the axis", () => {
+    const axis = tree()
+    const nodes = flattenAxis(axis, () => true)
     expect(nodes.map((node) => node.key)).toEqual(["a", "b", "d", "e", "c", "f", "g", "h"])
     expect(nodes.map((node) => node.depth)).toEqual([0, 1, 2, 2, 1, 2, 0, 1])
-    expect(nodes.map((node) => node.parent)).toEqual([
+    // The edge the walk descended is the axis's own, so the node carries no second copy of it.
+    expect(nodes.map((node) => axis.parent.get(node.key) ?? null)).toEqual([
       null,
       "a",
       "b",
