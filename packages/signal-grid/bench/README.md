@@ -649,15 +649,21 @@ browser layout per frame, and the package was never the term that mattered.
 The `cells through reactSlot` switch rebuilds the grid with every cell handed to React, and the
 `cells filled` counter is why the page carries one. Under sustained chaos:
 
-| writer | fps | package ms/f | cells filled |
-| --- | --- | --- | --- |
-| DOM | 24 | 2.87 | 120 of 120 |
-| reactSlot | 30 | 4.91 | **0 of 416** |
+| `reactSlot` | fps | package ms/f | cells filled | heap |
+| --- | --- | --- | --- | --- |
+| `createRoot` + `render` | 30 | 4.91 | **0 of 416** | 309 MB |
+| plus `flushSync` | 21 | 2.79 | 224 of 224 | 174 MB |
+| plus a root pool | 23 | 2.52 | 192 of 192 | 154 MB |
+| the DOM slot, for scale | 25 | 2.75 | 120 of 120 | 106 MB |
 
-React's concurrent root commits a cell body off the animation frame, and a chaos run never gives it
-an idle one, so the rows stay empty for as long as the grid is moving. Pause it and 292 of them
-fill in under a second. The higher frame rate is the grid rendering nothing. `docs/2_versus.md`
-found the same effect at overscan 32 and this is its limit case.
+A concurrent root commits a cell body off the animation frame, and a chaos run never gives it an
+idle one, so the rows stayed empty for as long as the grid was moving. Pause it and 292 of them
+filled in under a second. The higher frame rate was the grid rendering nothing.
+
+Both fixes ship on by default in `src/react/index.tsx`: `sync` wraps the render in `flushSync` so
+the cell commits inside the frame that asked for it, and `pool` keeps the `{ host, root }` pair when
+a cell leaves rather than building a root per cell per frame. The opt-in went from 2.0x the DOM
+slot's script time to 1.34x on the head-to-head matrix.
 
 The `churn` switch is the third finding. Every driver guards its write, so an unchanged value is
 not rewritten. Tick `churn` and each one rewrites its signal every frame with a fresh object equal

@@ -193,42 +193,59 @@ nothing.
 `@hafley66/signal-grid/react` is deliberately small. `GridView` mounts the box with
 `useEffect(() => render(grid, el).stop, [grid])` and nothing else; the grid owns every node inside
 it, and cell content never passes through React reconciliation. A consumer opts back in per slot
-with `reactSlot`, which wraps the returned JSX in its own root and hands back the
-`{ content, unsubscribe }` shape the slot contract already carries.
+with `reactSlot`, which hands the returned JSX a root and gives back the `{ content, unsubscribe }`
+shape the slot contract already carries.
 
 The `signal-grid + reactSlot` rows of the matrix are that opt-in applied to every cell, which is the
 worst case a consumer can build.
 
 | what it costs | plain DOM slot | every cell a `reactSlot` | change |
 | --- | --- | --- | --- |
-| script ms per frame, 100k heavy | 1.53 | 3.06 | 2.00x |
-| script ms per frame, 100k plain | 0.74 | 1.95 | 2.63x |
-| script ms per frame, 101 rows heavy | 0.94 | 2.16 | 2.31x |
-| layout + style ms per frame, 100k heavy | 3.50 | 3.22 | 0.92x |
-| retained heap, 1k rows | 3.8 MB | 6.1 MB | +2.3 MB |
-| retained heap, 100k rows | 35.6 MB | 38.3 MB | +2.6 MB |
-| retained heap, overscan 32 | 35.6 MB | 40.7 MB | +5.1 MB |
+| script ms per frame, 100k heavy | 0.89 | 1.24 | 1.39x |
+| script ms per frame, 100k plain | 0.47 | 0.59 | 1.26x |
+| script ms per frame, 101 rows heavy | 0.73 | 0.98 | 1.34x |
+| layout ms per frame, 100k heavy | 1.16 | 1.17 | 1.01x |
+| retained heap, 1k rows | 3.8 MB | 6.8 MB | +3.0 MB |
+| retained heap, 100k rows | 35.6 MB | 38.7 MB | +3.1 MB |
+| retained heap, overscan 32 | 35.6 MB | 41.4 MB | +5.8 MB |
 | DOM elements | one per cell content | one extra `div.sg-react` wrapper per cell | +1 per cell |
 
-Roughly double the script time per frame, a constant two to three megabytes of roots, and one extra
-element per cell. Layout and style stay where they were, because the nodes React commits are the
-same nodes the DOM slot would have written.
+About a third more script time per frame, three megabytes of retained roots, and one extra element
+per cell. Layout and style do not move, because the nodes React commits are the nodes the DOM slot
+would have written. On the script column the opt-in still costs less than MUI X does: 1.24 ms
+against 1.71 at 100k heavy.
 
-One number on that table needs reading before it is believed. At overscan 32 the `reactSlot` page
-reports a better p50 than the plain DOM slot, 8.4 against 16.7, and it is not faster. It counted
-1,226 elements on the last measured frame and 4,841 once the burst finished, against 3,667 and 4,424
-for the DOM slot. React's concurrent root commits the cell bodies after the animation frame ends, so
-the scroll frame carries the row scaffolding and the cells arrive late. The work did not shrink; it
-moved off the frame the harness was timing, and a user sees empty cells for it.
+### The two things that got it there
 
-`bench/scroll/chaos.html` is that effect's limit case. Sixteen drivers moving at once never leave
-React an idle frame, and its `cells filled` counter reads 0 of 416 against the DOM writer's 120 of
-120 while the grid reports the higher frame rate of the two. Pausing fills 292 of them in under a
-second.
+The first measurement of this page read 3.06 ms per frame at 100k heavy, and the number was a lie in
+both directions. `createRoot` gives a concurrent root, which commits the cell body off the animation
+frame; at overscan 32 the react page counted 1,226 elements on the last measured frame against 4,841
+once the burst had finished. The scroll frame carried the row scaffolding and the cells arrived
+late, so the harness timed a grid that was rendering nothing.
+
+`bench/scroll/chaos.html` is that effect's limit case, and it is where the two fixes came from.
+Sixteen drivers moving at once never leave React an idle frame:
+
+| `reactSlot` | fps | package ms/f | cells filled | heap |
+| --- | --- | --- | --- | --- |
+| `createRoot` + `render` | 30 | 4.91 | 0 of 416 | 309 MB |
+| plus `flushSync` | 21 | 2.79 | 224 of 224 | 174 MB |
+| plus a root pool | 23 | 2.52 | 192 of 192 | 154 MB |
+| the DOM slot, for scale | 25 | 2.75 | 120 of 120 | 106 MB |
+
+`sync: true` wraps the render in `flushSync`, so the cell commits inside the frame that asked for
+it. `flushSync` is a no-op while React is already rendering, which is where the initial mount runs,
+so the first commit still lands on React's own schedule and no warning is emitted.
+
+`pool: 256` keeps the `{ host, root }` pair when a cell leaves and hands it to the next cell instead
+of building a root and tearing it down. A scroll retires every rendered cell each frame, so without
+a pool the page builds and destroys a root per cell per frame.
+
+Both default on. `reactSlot(view, { sync: false, pool: 0 })` is the old behaviour if a consumer
+wants React's own scheduling back.
 
 Use `GridView` for the box. Reach for `reactSlot` on the cells that need a React component in them,
-expect about twice the per-frame script time on those cells, and expect them to arrive late under a
-load that never yields.
+and expect about a third more per-frame script time on those cells.
 
 ## 8. What this does not measure
 
