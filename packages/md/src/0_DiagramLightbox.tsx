@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { copyText } from "./0_copyText.js";
 import "./0_diagramLightbox.css";
@@ -92,6 +92,10 @@ function sourceBox(svg: SVGSVGElement): SvgBox {
 
 function VectorDiagramViewport({ svg, toolbarStart }: { svg: string; toolbarStart: ReactNode }) {
   const host = useRef<HTMLDivElement>(null);
+  // A fresh innerHTML object makes React replace the SVG on parent renders,
+  // discarding the viewBox written by pan and zoom even when svg is unchanged.
+  const markup = useMemo(() => ({ __html: svg }), [svg]);
+  const initialized = useRef(false);
   const original = useRef<SvgBox>({ x: 0, y: 0, width: 1, height: 1 });
   const current = useRef<SvgBox>(original.current);
   const drag = useRef<{ pointerId: number; x: number; y: number; box: SvgBox } | null>(null);
@@ -110,12 +114,15 @@ function VectorDiagramViewport({ svg, toolbarStart }: { svg: string; toolbarStar
     write({ x: box.x + (box.width - width) / 2, y: box.y + (box.height - height) / 2, width, height });
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = host.current;
     const element = root?.querySelector("svg");
     if (!root || !element) return;
     original.current = sourceBox(element);
-    write(original.current);
+    // An updated rendering of the same diagram keeps its reading position.
+    // The active-entry key remounts this viewport when selecting another one.
+    write(initialized.current ? current.current : original.current);
+    initialized.current = true;
     const wheel = (event: WheelEvent) => {
       event.preventDefault();
       if (event.ctrlKey || event.metaKey) {
@@ -172,7 +179,7 @@ function VectorDiagramViewport({ svg, toolbarStart }: { svg: string; toolbarStar
         <span ref={zoomLabel}>100%</span>
         <button type="button" title="zoom in" onClick={() => setZoom(original.current.width / current.current.width * 1.2)}>+</button>
       </div>
-      <div ref={host} className="diagram-vector-stage" onDoubleClick={doubleClick} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerEnd} onPointerCancel={pointerEnd} dangerouslySetInnerHTML={{ __html: svg }} />
+      <div ref={host} className="diagram-vector-stage" onDoubleClick={doubleClick} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerEnd} onPointerCancel={pointerEnd} dangerouslySetInnerHTML={markup} />
     </div>
   );
 }

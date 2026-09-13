@@ -914,6 +914,9 @@ importers:
       dockview:
         specifier: ^6.6.1
         version: 6.6.1(react@19.2.8)
+      jsdom:
+        specifier: 26.1.0
+        version: 26.1.0
       mermaid:
         specifier: ^11.16.0
         version: 11.16.0
