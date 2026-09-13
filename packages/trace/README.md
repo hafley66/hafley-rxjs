@@ -10,6 +10,7 @@ resource attribute names.
 | [identity](#identity) | who am I, who started me, what runtime is this |
 | [the browser has no pid](#the-browser-has-no-pid) | what stands in for one, and where the parent link comes from |
 | [a worker has no storage](#a-worker-has-no-storage) | the one channel that reaches it before its first message |
+| [two renders](#two-renders) | who parents whom, and who appeared first |
 | [resource](#resource) | the rename to OpenTelemetry attributes |
 | [emitter](#emitter) | the shell every instrumented package was copying |
 | [lag](#lag) | frame, timeout and event-loop delay, one shape |
@@ -69,6 +70,40 @@ new Worker(url, { name: workerName(ident().pid, "sorter") })   // "hafley:0bfcc2
 // inside the worker
 ident()      // { pid: <fresh>, parent: "0bfcc223", service: "sorter", runtime: "worker" }
 ```
+
+## Two renders
+
+Three fields carry the whole model, and the same list of `Ident` draws two ways.
+
+| field | what it is | which render |
+| --- | --- | --- |
+| `pid` | who am I, not unique | neither, alone |
+| `born` | when I started | the gantt, and the sibling order in the tree |
+| `parent` | who started me | the tree edge |
+| `pid@born` | the key, from `key(id)` | printed on both |
+
+An operating system reuses a pid and cannot reuse one at the same instant, so `key()` is the join a
+child's `parent` resolves against. That is also why `born` has to be the process start rather than
+module-load time: in node it reads `performance.timeOrigin`, which matches
+`Date.now() - process.uptime() * 1000` and predates the first import.
+
+```
+tree(session)                          gantt(session, { width: 48 })
+
+node pnpm 40112@…560782                                +--------------------------------+ 0 to 9000ms
+`-- node vite 48231@…560962            node pnpm       |#===============================| 0ms
+    `-- node vitest 48260@…561022      node vite       | #==============================| 180ms
+tab signal-grid 0bfcc223@…562682       node vitest     | #==============================| 240ms
+|-- wrk sorter a71f@…563182            tab signal-grid |      #=========================| 1900ms
+|-- wrk sorter b03e@…563192            wrk sorter      |        #=======================| 2400ms
+`-- tab signal-grid 25f930b9@…565982   wrk sorter      |        #=======================| 2410ms
+    `-- wrk sorter c918@…566382        tab signal-grid |                  #=============| 5200ms
+                                       wrk sorter      |                    #===========| 5600ms
+```
+
+Two forests, not one. `pnpm` never parents the browser tab, because a tab's parent is its opener and
+a dev server is not that. The two join on `service.name`, which is what a collector groups by
+anyway. The second tab is a `window.open` from the first, so that edge does exist.
 
 ## Resource
 
