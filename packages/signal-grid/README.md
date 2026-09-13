@@ -52,6 +52,7 @@ Writing `state.orientation` transposes the grid, and `src/` holds no branch on i
 | pagination, infinite scroll, server mode | the Loading rows group |
 | the constructor, the state shape, the action grammar | the Reference group |
 | why it is shaped this way | the Why group |
+| what a screen reader hears | [Accessibility](/accessibility) |
 | bundle size, benchmarks, filmed proof | the Receipts group |
 
 ## Bundle budget

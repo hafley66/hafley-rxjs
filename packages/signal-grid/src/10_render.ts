@@ -35,7 +35,7 @@ import {
 } from "./0_types.js"
 import { CAT_DOM, CAT_FRAME, LOG } from "./0_log.js"
 import { groupCounts } from "./1_axis.js"
-import { isBuiltIn } from "./5_columns.js"
+import { isBuiltIn, rowSelectionMode } from "./5_columns.js"
 import {
   addressedEntry,
   conventionalParts,
@@ -45,7 +45,7 @@ import {
   type SpanRelation,
 } from "./12_transpose.js"
 import { bandDepth, bandRow, SG_HEAD_ROWS, type BandCell } from "./18_bands.js"
-import { rangeOf, selectionTest } from "./15_selection.js"
+import { rangeOf, selectionTest, type SelectionMode } from "./15_selection.js"
 import { isDetailKey, rowOfDetailKey, type DetailOpen } from "./11_detail.js"
 import {
   cellAttrs,
@@ -162,6 +162,18 @@ interface Frame<TRow> {
   /** The vertical run's declared sizes: row heights under `"rows"`, column widths transposed. */
   readonly extent: Readonly<Record<string, number>>
   readonly editing: CellId | null
+  /** The grid's own focus address, read for the roving tabindex. Conventional order. */
+  readonly focus: CellId | null
+  /** The selection mode, which decides `aria-multiselectable` on the root and `aria-selected` on rows. */
+  readonly selectionMode: SelectionMode
+  /** The row select mode the schema names: a radio column is single select, everything else is multi. */
+  readonly selectMode: "single" | "multi"
+  /** True when a row can be selected at all, which is what makes `aria-selected` a fact. */
+  readonly rowSelectable: boolean
+  /** Seat order of the horizontal run, so a cell stamps `aria-colindex` without re-walking the run. */
+  readonly leafIndex: ReadonlyMap<string, number>
+  /** True when the row axis actually nests, so `aria-level` is a fact and not always 1. */
+  readonly treeAxis: boolean
 }
 
 export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle {
@@ -171,8 +183,11 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
 
   // No `data-route`: `fromDelegatedRoute` joins every ancestor segment, so a routed box between the
   // grid and its rows would make each row read `g/vp/r`, a chain no template declares.
+  // `role="presentation"` on the chrome: the grid's owned rows must be reachable through these
+  // wrappers, and a presentational node is transparent to that walk.
   const scroll = document.createElement("div")
   scroll.className = "sg-scroll"
+  scroll.setAttribute("role", "presentation")
   const head = box("sg-head")
   const pinnedStart = box("sg-rows sg-pinned-start")
   const canvas = box("sg-canvas")
@@ -185,6 +200,8 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
   scroll.append(head, pinnedStart, canvas, pinnedEnd, guide)
   root.append(scroll)
   const marked: HTMLElement[] = []
+  for (const el of [head, pinnedStart, canvas, center, pinnedEnd, guide])
+    el.setAttribute("role", "presentation")
 
   const rows = new Map<RowId, RowRecord>()
   let headerSubs = new Subscription()
@@ -309,6 +326,19 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       drag: grid.state.drag.$(),
       extent: down.extent,
       editing: grid.state.editing.$(),
+      focus: grid.state.focus.$(),
+      selectionMode: grid.state.selection.$().mode,
+      // Single select is the radio column's call: its toggle replaces the map instead of extending it.
+      selectMode: rowSelectionMode(schema),
+      rowSelectable:
+        grid.state.selection.$().mode === "row" ||
+        schema.some(
+          (it) => isBuiltIn(it) && (it.builtIn === "check" || it.builtIn === "radio"),
+        ),
+      leafIndex: new Map(leaves.map((key, index) => [key, index] as const)),
+      // A tree and a group both carry `hasChildren`; `aria-level` is stamped on data rows only,
+      // so the heading depth never leaks into the level count.
+      treeAxis: rowsVertical && anyChildren.$(),
     }
   }
 
@@ -317,6 +347,11 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
   function headerCell(colId: ColId, current: Frame<TRow>, subs: Subscription): HTMLElement {
     const cell = box("sg-head-cell")
     setAttrs(cell, headerAttrs(colId))
+    if (current.rowsVertical) {
+      cell.setAttribute("role", "columnheader")
+      const seat = current.leafIndex.get(colId)
+      if (seat !== undefined) cell.setAttribute("aria-colindex", String(seat + 1))
+    }
     // The horizontal entry is a column under `"rows"` and a row under the transpose, and the band
     // stands on no vertical entry at all, so the seat it does not hold is `NO_ENTRY`.
     const entry = addressedEntry(NO_ENTRY, colId, current.orientation, current.defs, current.data)
@@ -368,6 +403,12 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     el.style.gridColumn = `span ${cell.span}`
     if (key === null) return el
     el.setAttribute("data-band", key)
+    if (current.rowsVertical) {
+      el.setAttribute("role", "columnheader")
+      // The band sits over several columns, so its start index alone would misstate the position;
+      // a span is the one honest number it can carry.
+      el.setAttribute("aria-colspan", String(cell.span))
+    }
     const entry = addressedEntry(NO_ENTRY, key, current.orientation, current.defs, current.data)
     const node = current.horizontalNodes.get(key)
     const label = box("sg-head-label")
@@ -420,6 +461,11 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       const row = box("sg-head-row")
       row.replaceChildren(...runs)
       rows.push(row)
+      // One-based over the rows actually built, so a skipped band depth does not leave a hole.
+      if (current.rowsVertical) {
+        row.setAttribute("role", "row")
+        row.setAttribute("aria-rowindex", String(rows.length))
+      }
     }
     head.replaceChildren(...rows)
     // The header's height and the sticky offset under it, which no selector can count for itself.
@@ -446,16 +492,28 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     const glyph = carriesRowRoute(def)
     const cell = box(glyph ? "sg-cell sg-cell-glyph" : "sg-cell")
     if (!glyph) setAttrs(cell, cellAttrs(col))
+    // ARIA follows the conventional seating, which is the shape the row axis reads under
+    // `"rows"`. Under the transpose the seats swap and these numbers would name the wrong axis.
+    // A glyph cell keeps the role: it is still a position in the row the reader walks.
+    if (current.rowsVertical) {
+      cell.setAttribute("role", "gridcell")
+      const seat = current.leafIndex.get(across)
+      if (seat !== undefined) cell.setAttribute("aria-colindex", String(seat + 1))
+    }
+    const span = current.spans.get(address)
+    if (span !== undefined) {
+      cell.setAttribute("data-span", "true")
+      if (current.rowsVertical) {
+        if (span.vertical > 1) cell.setAttribute("aria-rowspan", String(span.vertical))
+        if (span.horizontal > 1) cell.setAttribute("aria-colspan", String(span.horizontal))
+      }
+      cell.style.setProperty("--sg-span-vertical", String(span.vertical))
+      cell.style.setProperty("--sg-span-horizontal", String(span.horizontal))
+    }
     // The ancestor row names the seat that scrolls, and under the transpose that is a column, so
     // the pair an intent reads would arrive swapped. Delegation takes each param from the closest
     // ancestor carrying it, so the cell's own copy is the one every epic and selector then sees.
     if (row !== key) setAttrs(cell, rowIdAttrs(row))
-    const span = current.spans.get(address)
-    if (span !== undefined) {
-      cell.setAttribute("data-span", "true")
-      cell.style.setProperty("--sg-span-vertical", String(span.vertical))
-      cell.style.setProperty("--sg-span-horizontal", String(span.horizontal))
-    }
     // Keyed by the conventional row, because `detailed` is the row axis's own map and a vertical
     // key under the transpose is a column, which owns no row value.
     const data = entry.data
@@ -579,6 +637,9 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     record.subs = subs
     record.cells.clear()
     const host = box("sg-group-cell")
+    // The heading row must hold a cell for a reader to walk into; the row itself names the level
+    // it stands over, so the heading is a row header rather than a plain cell.
+    host.setAttribute("role", "rowheader")
     // Unconditionally, unlike a data row: the heading has no cell for an `expandColumn()` glyph to
     // sit in, so `drawsExpander` would leave a nesting level with nothing to open it.
     host.append(expanderFor(key, node, undefined, current, subs))
@@ -658,6 +719,10 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
         if (on) cell.setAttribute("data-selected", "true")
         else cell.removeAttribute("data-selected")
       }
+      // The cell mirrors the row state for a reader: selected or not, with no absent state, since
+      // every cell always has an answer.
+      setDiffed(cell, "aria-selected", String(on))
+      stampGlyph(cell, key, current)
       if (!on) {
         cell.removeAttribute("data-edge")
         continue
@@ -665,6 +730,16 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       const edge = edgeOf(current, key, node.index, index)
       if (cell.getAttribute("data-edge") !== edge) cell.setAttribute("data-edge", edge)
     }
+  }
+
+  /** The check and radio glyphs are the row's own control, so the row's selection is their
+   * checked state. Role and value are stamped here, where the selection is already in hand. */
+  function stampGlyph(cell: HTMLElement, key: RowId, current: Frame<TRow>): void {
+    const glyph = cell.querySelector<HTMLElement>("[data-check]")
+    if (glyph === null) return
+    const kind = glyph.getAttribute("data-check")
+    setDiffed(glyph, "role", kind === "radio" ? "radio" : "checkbox")
+    setDiffed(glyph, "aria-checked", String(current.selection[key] === true))
   }
 
   /** Which sides of the block a selected cell sits on, so one rectangle draws one border. */
@@ -740,11 +815,85 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     else record.el.style.setProperty(SG_ROW_HEIGHT_SELF, `var(${rowHeightVar(key)}, var(${SG_ROW_H}))`)
     record.el.setAttribute("data-selected", String(current.selection[owner] === true))
     stampSelection(record, key, node, current)
+    stampFocus(record, key, current)
     record.el.setAttribute("data-open", String(current.expanded[owner] === true))
     record.el.setAttribute("data-detail-open", String(current.detail[owner] !== undefined))
     if (node.hasChildren) record.el.setAttribute("aria-expanded", String(current.expanded[owner] === true))
     else record.el.removeAttribute("aria-expanded")
+    stampAriaRow(record, panel, heading, key, node, owner, current)
     return record
+  }
+
+  /** Cells whose DOM focus must move before their tab stop can be cleared. Cleared at the end of
+   * the pass, so removing the old stop never blurs the user onto body. */
+  const pendingFocusLoss = new Set<HTMLElement>()
+
+  /** The focused cell is the one tab stop inside the grid. Every other cell carries no tabindex
+   * attribute at all, so ten thousand cells never each hold a `-1`. The new cell is focused before
+   * the old stop is cleared, so the browser never lands on body between the two writes. */
+  function stampFocus(record: RowRecord, key: RowId, current: Frame<TRow>): void {
+    if (!current.rowsVertical) return
+    const parts = current.focus === null ? null : cellParts(current.focus)
+    if (parts !== null && parts[0] === key) {
+      const cell = record.cells.get(parts[1])
+      if (cell !== undefined) {
+        cell.setAttribute("data-focus", "true")
+        setDiffed(cell, "tabindex", "0")
+        if (root.contains(document.activeElement) && document.activeElement !== cell) {
+          cell.focus({ preventScroll: true })
+        }
+      }
+    }
+    for (const across of current.horizontalKeys) {
+      const cell = record.cells.get(across)
+      if (cell === undefined) continue
+      const on = parts !== null && parts[0] === key && parts[1] === across
+      if (on !== cell.hasAttribute("data-focus")) {
+        if (on) cell.setAttribute("data-focus", "true")
+        else cell.removeAttribute("data-focus")
+      }
+      // The cell holding the pointer of focus loses it the moment its tabindex goes, so its write
+      // is held until the pass has moved that focus.
+      if (!on) {
+        if (cell === document.activeElement && parts !== null) pendingFocusLoss.add(cell)
+        else removeDiffed(cell, "tabindex")
+      }
+    }
+  }
+
+  function settleFocus(): void {
+    for (const cell of pendingFocusLoss) {
+      if (cell === document.activeElement) continue
+      removeDiffed(cell, "tabindex")
+      pendingFocusLoss.delete(cell)
+    }
+  }
+
+  /** The row's ARIA stamps, diffed because this runs for every held row of every frame. Roles ride
+   * on the elements that already carry the matching `data-route`; the transpose is left alone. */
+  function stampAriaRow(
+    record: RowRecord,
+    panel: boolean,
+    heading: boolean,
+    key: RowId,
+    node: FlatNode<RowId>,
+    owner: RowId,
+    current: Frame<TRow>,
+  ): void {
+    if (!current.rowsVertical || panel) {
+      removeDiffed(record.el, "role")
+      removeDiffed(record.el, "aria-rowindex")
+      removeDiffed(record.el, "aria-level")
+      return
+    }
+    setDiffed(record.el, "role", "row")
+    // Absolute over the flat run, so a windowed grid still reads as its full size.
+    setDiffed(record.el, "aria-rowindex", String(node.index + 2))
+    if (current.rowSelectable) {
+      setDiffed(record.el, "aria-selected", String(current.selection[owner] === true))
+    } else removeDiffed(record.el, "aria-selected")
+    if (!heading && current.treeAxis) setDiffed(record.el, "aria-level", String(node.depth + 1))
+    else removeDiffed(record.el, "aria-level")
   }
 
   // Cursor walk. `insertBefore` on a node already in another host moves it across hosts, which is
@@ -834,6 +983,14 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       gridId = current.gridId
       setAttrs(root, gridAttrs(gridId))
     }
+    // A nesting row axis reads as a treegrid: `aria-expanded` on a row is only well-formed there.
+    setDiffed(root, "role", current.treeAxis ? "treegrid" : "grid")
+    // The full table the window draws a slice of, header rows included.
+    setDiffed(root, "aria-rowcount", String(current.band.length + current.verticalKeys.length))
+    setDiffed(root, "aria-colcount", String(current.horizontalKeys.length))
+    // A radio column means one row at a time, so the grid is not multi-selectable.
+    if (current.selectMode === "multi") setDiffed(root, "aria-multiselectable", "true")
+    else removeDiffed(root, "aria-multiselectable")
     if (
       current.colRunSignature !== headKey ||
       current.bandSignature !== headBand ||
@@ -855,14 +1012,50 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       record.el.remove()
       rows.delete(key)
     }
+    // Focus moves before the root loses its stop, so the browser never lands on body between them.
+    moveFocus(current)
+    stampRootFocus(current)
+    settleFocus()
     paintPreview(current)
+  }
+
+  /** The roving tabindex: the root stops Tab only while no cell holds focus, and the focused cell
+   * is the one stop inside. Written on the edge so a passive frame rewrites nothing. */
+  function stampRootFocus(current: Frame<TRow>): void {
+    if (!rootTabOwned) return
+    if (current.focus === null) {
+      if (!root.hasAttribute("tabindex")) root.tabIndex = 0
+      return
+    }
+    removeDiffed(root, "tabindex")
+  }
+
+  /** DOM focus follows `state.focus`, but only when the grid already holds it: a grid the pointer
+   * left must not pull focus back from wherever the user went. */
+  function moveFocus(current: Frame<TRow>): void {
+    if (!current.rowsVertical || current.focus === null) return
+    const [vertical, horizontal] = cellParts(current.focus)
+    const record = rows.get(vertical)
+    const cell = record?.cells.get(horizontal)
+    if (cell === undefined) return
+    if (root.contains(document.activeElement) && document.activeElement !== cell) {
+      cell.focus({ preventScroll: true })
+    }
   }
 
   const subscription = new Subscription()
   let stopped = false
+  // The root is the grid's tab stop until a cell takes focus, and only a tabindex this render set
+  // is ever removed again; a consumer's own value is left alone. Declared before the frame
+  // subscribes, because the first pass can fire inside `subscribe`.
+  let rootTabOwned = false
+
   // `bindRoot` listens for keydown on the root, and an element with no tabindex never receives one,
   // so every keyboard epic was unreachable by default. Set only when the consumer left it unset.
-  if (!root.hasAttribute("tabindex")) root.tabIndex = 0
+  if (!root.hasAttribute("tabindex")) {
+    root.tabIndex = 0
+    rootTabOwned = true
+  }
 
   // Bound before the first pass, so the header this pass builds is already clickable.
   subscription.add(grid.bind(root))
@@ -1059,6 +1252,7 @@ const runBox = (side: Side, tracks: number): HTMLElement => {
   const el = box("sg-run")
   // No `data-route`: a run between a row and its cells would lengthen every cell chain.
   el.setAttribute("data-side", side)
+  el.setAttribute("role", "presentation")
   el.style.gridColumn = `span ${Math.max(1, tracks)}`
   return el
 }
@@ -1068,7 +1262,9 @@ const runBox = (side: Side, tracks: number): HTMLElement => {
 function openRun(side: Side, count: number, spacers: Spacers): HTMLElement {
   if (side !== "center" || !spacers.tracked) return runBox(side, count)
   const run = runBox(side, count + 2)
-  run.append(box("sg-spacer"))
+  const spacer = box("sg-spacer")
+  spacer.setAttribute("role", "presentation")
+  run.append(spacer)
   return run
 }
 
@@ -1084,6 +1280,17 @@ const rowIdAttrs = (rowId: RowId): Record<string, string> =>
 
 const setAttrs = (el: Element, attrs: Readonly<Record<string, string>>): void => {
   for (const [name, value] of Object.entries(attrs)) el.setAttribute(name, value)
+}
+
+/** Attribute writes run for every visible element of every frame, so each one compares first: an
+ * attribute set to the value it already holds still invalidates style. Same shape as the
+ * `data-selected` edge write in `stampSelection`. */
+const setDiffed = (el: Element, name: string, value: string): void => {
+  if (el.getAttribute(name) !== value) el.setAttribute(name, value)
+}
+
+const removeDiffed = (el: Element, name: string): void => {
+  if (el.hasAttribute(name)) el.removeAttribute(name)
 }
 
 const sortOf = (model: SortModel, colId: ColId): SortDirection | null => {

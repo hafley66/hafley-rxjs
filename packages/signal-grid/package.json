@@ -100,6 +100,7 @@
     "@vitejs/plugin-react": "^6.0.5",
     "@vitest/browser": "^4.1.10",
     "@vitest/browser-playwright": "^4.1.10",
+    "axe-core": "^4.13.0",
     "mermaid": "^11.16.0",
     "playwright": "^1.62.1",
     "react": "^19.2.8",
