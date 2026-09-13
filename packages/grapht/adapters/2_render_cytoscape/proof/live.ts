@@ -129,8 +129,12 @@ const camera = Signal(cameraInput$, artifactFrame.camera)
 /** One store for the view switches, kept across reloads by the signals library's storage backend. */
 const view = StorageSignal("grapht.proof.view", { ribbon: true, groups: true, legend: false })
 
+const failure = Signal("")
+
 const readout = Signal(() => {
   const current = camera.$()
+  const broken = failure.$()
+  if (broken !== "") return broken
   return `${ui.source.$()} | ${ui.mode.$()} | fps ${ui.fps.$()} | camera x ${current.x.toFixed(0)} y ${current.y.toFixed(0)} scale ${current.scale.toFixed(3)}`
 })
 type StickyResource = {
@@ -166,7 +170,7 @@ async function importCytoscape(host: HTMLElement) {
     const { createCytoscapeGraphFrameResource } = await import("../6_graphRenderer.ts")
     return createCytoscapeGraphFrameResource(host, { cameraInput$, focusInput$, selectionInput$ })
   } catch (error) {
-    readout.textContent = `cytoscape renderer failed to load: ${String(error).slice(0, 140)}`
+    failure.$(`cytoscape renderer failed: ${String(error).slice(0, 180)}`)
     return undefined
   }
 }
