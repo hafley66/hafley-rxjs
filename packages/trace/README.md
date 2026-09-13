@@ -105,6 +105,19 @@ Two forests, not one. `pnpm` never parents the browser tab, because a tab's pare
 a dev server is not that. The two join on `service.name`, which is what a collector groups by
 anyway. The second tab is a `window.open` from the first, so that edge does exist.
 
+Both renders also take a `Span` instead of an `Ident`. A span's row stops where it died: a tree line
+ends in `x@<at>` for a reported death and `?@<at>` for a timeout, and a gantt bar runs `born` to
+`died.at` before ending in the same marker.
+
+```ts
+tree(session)                          // dead spans end in x@<at>, timeouts in ?@<at>
+tree(session, edges)                   // an ended edge draws the child under the parent it had
+```
+
+Pass an `edges` array to either render. An edge whose `until` is set draws the child under the
+parent it had at the time, and the row's label gains `until +Nms`; a renderer that wants to show a
+reparent draws that transition from `until`.
+
 ## Resource
 
 ```ts
