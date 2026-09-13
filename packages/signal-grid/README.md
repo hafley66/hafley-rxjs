@@ -54,6 +54,12 @@ Writing `state.orientation` transposes the grid, and `src/` holds no branch on i
 | why it is shaped this way | the Why group |
 | bundle size, benchmarks, filmed proof | the Receipts group |
 
+## Bundle budget
+
+Measured 2026-09-13, gzipped: 50.68 kB published javascript, 21.37 kB eager half, 17.38 kB for
+`{ grid, render }`, 2.04 kB theme.css. `.size-limit.json` holds the next 0.5 kB above each, so
+`pnpm size` fails on a gain rather than reporting a gap that was set four modules ago.
+
 ## What is not built
 
 | gap | evidence |
