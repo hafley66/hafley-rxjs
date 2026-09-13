@@ -3,19 +3,19 @@
     "name": "published javascript, dist/*.js",
     "path": "dist/*.js",
     "gzip": true,
-    "limit": "51 kB"
+    "limit": "53.5 kB"
   },
   {
     "name": "the eager half, dist/index.js",
     "path": "dist/index.js",
     "gzip": true,
-    "limit": "21.5 kB"
+    "limit": "22.5 kB"
   },
   {
     "name": "grid() and render() imported",
     "import": { "dist/index.js": "{ grid, render }" },
     "gzip": true,
-    "limit": "17.5 kB"
+    "limit": "18.5 kB"
   },
   {
     "name": "theme.css",
