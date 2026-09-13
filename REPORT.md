@@ -1,6 +1,8 @@
 # signal-grid color-scheme lane
 
 - Step 1 commit: `6c513bf signal-grid: the host owns color-scheme`
+- Step 1 correction: `4e31a77 signal-grid: the demo picker still owns its scheme`. `.demo`
+  keeps `color-scheme: var(--demo-scheme)`; the added `:root` override is removed.
 - Step 2 commit: none; neither test command printed a warning
 - Chromium before: 240 (task baseline). After: 243 passed (240 + 3 new tests)
 - typecheck: exit 0. docs: exit 1, pre-existing (see below)
