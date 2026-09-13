@@ -61,7 +61,7 @@ import {
 } from "./3_paths.js"
 import { type RenderPlan, type Spacers } from "./4_slice.js"
 import type { Grid } from "./8_grid.js"
-import { SG_ROW_H, SG_ROW_HEIGHT_SELF, writeGridVars } from "./9_css.js"
+import { SG_ROW_H, SG_ROW_HEIGHT_SELF, SG_SEAT, writeGridVars } from "./9_css.js"
 
 export interface RenderHandle {
   readonly stop: () => void
@@ -533,11 +533,19 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       if (keys.length === 0) continue
       const run = openRun(side, keys.length, current.spacers)
       const built: HTMLElement[] = []
-      for (const across of keys) {
+      // The leading spacer takes track 1 of a windowed center run, so the entries behind it start
+      // one track further along.
+      const lead = side === "center" && current.spacers.tracked ? 1 : 0
+      for (let seat = 0; seat < keys.length; seat++) {
+        const across = keys[seat]
+        if (across === undefined) continue
         const cell = cellFor(key, across, node, current, subs)
         // Null is a seat a neighbour's span already occupies, and two elements in one seat is how
         // a spanning grid tears.
         if (cell === null) continue
+        // Every cell names its own track. A covered seat contributes no element, and auto-placement
+        // would then slide each cell after the span into the tracks the span already occupies.
+        cell.style.setProperty(SG_SEAT, String(lead + seat + 1))
         built.push(cell)
         record.cells.set(across, cell)
       }

@@ -85,6 +85,7 @@ describe("theme.css targets only what the router can address", () => {
       "--sg-h",
       "--sg-head-rows",
       "--sg-inline-tracks",
+      "--sg-seat",
       "--sg-span-vertical",
       "--sg-span-horizontal",
     ])
