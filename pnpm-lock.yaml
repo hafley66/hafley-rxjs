@@ -488,6 +488,9 @@ importers:
       '@hafley66/grapht':
         specifier: workspace:^
         version: link:../..
+      '@hafley66/grapht-model':
+        specifier: workspace:*
+        version: link:../../../grapht-model
       '@hafley66/signals':
         specifier: workspace:*
         version: link:../../../signals
