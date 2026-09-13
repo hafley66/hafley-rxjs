@@ -1,6 +1,6 @@
 // One press: build the site, fold the proof app in, measure, rebuild with the real stats, and print
-// what a reviewer should open. There is no docs:render stage for grapht; the pages/ sources are
-// authored markdown, so `pnpm site:build` is the whole document build.
+// what a reviewer should open. The site build regenerates API and plan pages, checks docs, and
+// renders VitePress before the proof app is folded into the output.
 import { execFileSync } from "node:child_process"
 import {
   cpSync,
@@ -48,7 +48,7 @@ const BASE = baseMatch[1]
 if (!BASE.startsWith("/") || !BASE.endsWith("/")) throw new Error(`ship: BASE must start and end with "/", found ${BASE}`)
 
 const contentSource = readFileSync(join(PKG, "site", "content.ts"), "utf8")
-const SLUGS = [...contentSource.matchAll(/slug:\s*"([^"]+)"/g)].map((match) => match[1] ?? "")
+const SLUGS = [...contentSource.replace(/^\s*\/\/.*$/gm, "").matchAll(/slug:\s*"([^"]+)"/g)].map((match) => match[1] ?? "")
 if (SLUGS.length === 0) throw new Error("ship: site/content.ts declares no page slugs")
 
 // The proof app fetches `./arch.svg` at runtime, which vite does not emit. The svg is tracked for
@@ -59,13 +59,14 @@ function ensureArchSvg() {
 }
 
 // The build emits `index.html` and `assets/`. GitHub Pages has no rewrite rule, so a deep link only
-// resolves when a real file sits at it; one copy of the shell per slug does that.
+// resolves when a real file sits at it. Each directory receives its own rendered page.
 function deepLinkShells() {
   const shell = readFileSync(join(OUT, "index.html"), "utf8")
   for (const slug of SLUGS) {
     if (existsSync(join(OUT, slug, "index.html"))) continue
     mkdirSync(join(OUT, slug), { recursive: true })
-    writeFileSync(join(OUT, slug, "index.html"), shell)
+    const page = join(OUT, `${slug}.html`)
+    writeFileSync(join(OUT, slug, "index.html"), existsSync(page) ? readFileSync(page, "utf8") : shell)
   }
   writeFileSync(join(OUT, "404.html"), shell)
   steps.push({ label: "deep links", ok: true, ms: 0 })

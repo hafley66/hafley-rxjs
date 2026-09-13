@@ -1,3 +1,4 @@
+// Apply caller-owned manual offsets to captured graph geometry.
 import { documentFingerprint, type Graph, type GraphId, type GraphPoint } from "@hafley66/grapht-model"
 import type { GraphGeometry } from "./0_frame.js"
 
@@ -7,6 +8,11 @@ function translated(point: GraphPoint, delta: GraphPoint | undefined): GraphPoin
   return delta === undefined ? point : { x: point.x + delta.x, y: point.y + delta.y }
 }
 
+/**
+ * Return geometry with per-ID offsets applied to bounds, anchors, headers, and attached route endpoints.
+ * The input remains unchanged. An empty or all-zero translation returns the same geometry object.
+ * Group descendants require their own entries; this function does not create an undo journal or rerun layout.
+ */
 export function translateGraphGeometry(graph: Graph, geometry: GraphGeometry, translations: GraphTranslations): GraphGeometry {
   const entries = Object.entries(translations).filter(([, delta]) => delta.x !== 0 || delta.y !== 0).sort(([left], [right]) => left.localeCompare(right))
   if (entries.length === 0) return geometry

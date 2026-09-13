@@ -29,7 +29,22 @@ export const GROUPS: readonly SiteGroup[] = [
   },
   {
     text: "Reference",
-    pages: [{ slug: "reference-api", title: "Every export", source: "pages/reference-api.md" }],
+    pages: [
+      { slug: "reference-api", title: "Every export", source: "pages/reference-api.md" },
+      { slug: "documentation", title: "Documentation and evidence", source: "pages/documentation.md" },
+    ],
+  },
+  {
+    text: "Proposed work",
+    pages: [
+      { slug: "roadmap", title: "Feature status", source: "pages/roadmap.md" },
+      { slug: "plan-source-order", title: "Source ordering", source: "pages/plan-source-order.md" },
+      { slug: "plan-graph-identity", title: "Identity and placements", source: "pages/plan-graph-identity.md" },
+      { slug: "plan-neighbor-highlighting", title: "Neighbor highlighting", source: "pages/plan-neighbor-highlighting.md" },
+      { slug: "plan-hop-gradient", title: "Hop gradient", source: "pages/plan-hop-gradient.md" },
+      { slug: "plan-dom-groups-and-collapse", title: "DOM groups and collapse", source: "pages/plan-dom-groups-and-collapse.md" },
+      { slug: "plan-optional-movement-journal", title: "Optional undo and persistence", source: "pages/plan-optional-movement-journal.md" },
+    ],
   },
   {
     text: "Demos",

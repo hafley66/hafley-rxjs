@@ -8,7 +8,7 @@
 ## The adapter contract
 
 A renderer is a `GraphFrameResource`: one `render(frame, receipt)` call plus an `unsubscribe`.
-Declared at `packages/grapht/src/2_graph/10_renderer.ts:12`.
+Declared at `packages/grapht/src/2_graph/10_renderer.ts:15`.
 
 ```ts
 type GraphFrameResource<NodeData, EdgeData> = {
@@ -19,7 +19,7 @@ type GraphFrameResource<NodeData, EdgeData> = {
 
 The adapter owns no lifetime beyond this pair. `render` is pure projection of the current frame; the
 resource is torn down through `unsubscribe` when the stream ends. `graphRenderer` wraps an acquire
-function into an RxJS operator (`src/2_graph/10_renderer.ts:30`): it calls `acquire(host)` once per subscription
+function into an RxJS operator (`src/2_graph/10_renderer.ts:39`): it calls `acquire(host)` once per subscription
 and `resource.unsubscribe()` in `finalize`.
 
 ## Which adapters exist
@@ -42,7 +42,7 @@ geometry rather than projecting a frame, so they sit beside, not behind, this co
 ## The render receipt
 
 `GraphRenderReceipt` tells the adapter what changed since the last frame
-(`src/2_graph/10_renderer.ts:6`), so an adapter can update in place instead of re-rendering the world.
+(`src/2_graph/10_renderer.ts:8`), so an adapter can update in place instead of re-rendering the world.
 
 | field | content |
 | --- | --- |
@@ -50,7 +50,7 @@ geometry rather than projecting a frame, so they sit beside, not behind, this co
 | `updateIds` | ids present in both frames |
 | `exitIds` | ids in the previous frame now gone |
 
-`graphRenderReceipt` computes these from the sorted id sets (`src/2_graph/10_renderer.ts:21`). The caller keeps
+`graphRenderReceipt` computes these from the sorted id sets (`src/2_graph/10_renderer.ts:25`). The caller keeps
 `previousIds` across frames and feeds it back on the next call, which is why the same resource
 moves a diagram forward frame by frame.
 

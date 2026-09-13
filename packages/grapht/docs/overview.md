@@ -54,3 +54,7 @@ renderer answers.
 
 `grapht-history` walks git and writes a self-contained JSONL journal, one revision per line with a
 content hash. The [history](./history) page covers the format and verification.
+
+## Planned interactions
+
+[Feature status](./roadmap) separates the planned interaction experience from existing components. Each proposal links its source evidence, open decisions, and acceptance checks.

@@ -64,4 +64,4 @@ slot is the active one.
 
 A header whose parent is hidden is itself hidden (`src/2_graph/6_stackGroupHeaders.ts:79`), so collapsing a
 group takes its whole stack with it. `HeaderPlacement` itself is declared at
-`packages/grapht/src/2_graph/0_frame.ts:23`.
+`packages/grapht/src/2_graph/0_frame.ts:26`.

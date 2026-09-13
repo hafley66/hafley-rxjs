@@ -11,6 +11,8 @@ on:
       - main
     paths:
       - "packages/grapht/**"
+      - "packages/docs-kit/**"
+      - "plans/2026-09-13-anim-to-grapht/**"
       - "pages/**"
       - "pnpm-lock.yaml"
       - ".github/workflows/grapht-pages.yml"

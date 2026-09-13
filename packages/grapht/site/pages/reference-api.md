@@ -8,21 +8,23 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 
 | module | exports | what it is |
 | --- | --- | --- |
-| [src/2_graph/0_frame.ts](#src-2-graph-0-frame-ts) | 6 |  |
+| [src/2_graph/0_frame.ts](#src-2-graph-0-frame-ts) | 6 | Render a graph from explicit geometry, camera, and presentation state. |
 | [src/2_graph/1_fitCamera.ts](#src-2-graph-1-fitcamera-ts) | 1 |  |
 | [src/2_graph/2_geometryScope.ts](#src-2-graph-2-geometryscope-ts) | 5 |  |
 | [src/2_graph/3_sealedSvgArtifact.ts](#src-2-graph-3-sealedsvgartifact-ts) | 4 |  |
 | [src/2_graph/4_svgGeometry.ts](#src-2-graph-4-svggeometry-ts) | 3 |  |
-| [src/2_graph/5_translateGeometry.ts](#src-2-graph-5-translategeometry-ts) | 2 |  |
+| [src/2_graph/5_translateGeometry.ts](#src-2-graph-5-translategeometry-ts) | 2 | Apply caller-owned manual offsets to captured graph geometry. |
 | [src/2_graph/6_stackGroupHeaders.ts](#src-2-graph-6-stackgroupheaders-ts) | 3 |  |
 | [src/2_graph/9_operators.ts](#src-2-graph-9-operators-ts) | 5 |  |
-| [src/2_graph/10_renderer.ts](#src-2-graph-10-renderer-ts) | 4 |  |
+| [src/2_graph/10_renderer.ts](#src-2-graph-10-renderer-ts) | 4 | Project graph frames through one renderer resource for each stream lifetime. |
 | [src/2_graph/13_foreignObjectText.ts](#src-2-graph-13-foreignobjecttext-ts) | 1 | d2 renders markdown labels as foreignObject HTML, which the sanitizers remove; each block becomes width-measured svg text instead. |
 | [src/5_history/0_journal.ts](#src-5-history-0-journal-ts) | 6 |  |
 | [src/5_history/1_gitWalk.ts](#src-5-history-1-gitwalk-ts) | 1 |  |
 | [src/5_history/2_cli.ts](#src-5-history-2-cli-ts) | 1 |  |
 
 ## src/2_graph/0_frame.ts
+
+Render a graph from explicit geometry, camera, and presentation state.
 
 | export | kind |
 | --- | --- |
@@ -35,7 +37,9 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 
 ### `GraphGeometry` {#src-2-graph-0-frame-ts-graphgeometry}
 
-`GraphGeometry` is declared at `src/2_graph/0_frame.ts:5`.
+`GraphGeometry` is declared at `src/2_graph/0_frame.ts:7`.
+
+Geometry keyed by graph item ID. The revision identifies the captured layout; bounds and routes use world coordinates.
 
 ```ts
 export type GraphGeometry = {
@@ -52,7 +56,9 @@ export type GraphGeometry = {
 
 ### `GraphCamera` {#src-2-graph-0-frame-ts-graphcamera}
 
-`GraphCamera` is declared at `src/2_graph/0_frame.ts:16`.
+`GraphCamera` is declared at `src/2_graph/0_frame.ts:19`.
+
+Map world coordinates to screen pixels with world * scale + translation; the viewport defines the visible screen rectangle.
 
 ```ts
 export type GraphCamera = {
@@ -65,7 +71,7 @@ export type GraphCamera = {
 
 ### `HeaderPlacement` {#src-2-graph-0-frame-ts-headerplacement}
 
-`HeaderPlacement` is declared at `src/2_graph/0_frame.ts:23`.
+`HeaderPlacement` is declared at `src/2_graph/0_frame.ts:26`.
 
 ```ts
 export type HeaderPlacement = {
@@ -79,7 +85,7 @@ export type HeaderPlacement = {
 
 ### `GraphLabel` {#src-2-graph-0-frame-ts-graphlabel}
 
-`GraphLabel` is declared at `src/2_graph/0_frame.ts:31`.
+`GraphLabel` is declared at `src/2_graph/0_frame.ts:34`.
 
 ```ts
 export type GraphLabel = {
@@ -89,7 +95,9 @@ export type GraphLabel = {
 
 ### `GraphPresentation` {#src-2-graph-0-frame-ts-graphpresentation}
 
-`GraphPresentation` is declared at `src/2_graph/0_frame.ts:35`.
+`GraphPresentation` is declared at `src/2_graph/0_frame.ts:39`.
+
+Presentation projected onto graph IDs: visibility, focus, labels, sticky layers, and optional manual translations.
 
 ```ts
 export type GraphPresentation = {
@@ -105,7 +113,9 @@ export type GraphPresentation = {
 
 ### `GraphFrame` {#src-2-graph-0-frame-ts-graphframe}
 
-`GraphFrame` is declared at `src/2_graph/0_frame.ts:45`.
+`GraphFrame` is declared at `src/2_graph/0_frame.ts:50`.
+
+A complete render input combining the graph with its geometry, camera, and presentation. The caller owns state and lifetime.
 
 ```ts
 export type GraphFrame<NodeData = unknown, EdgeData = unknown> = {
@@ -307,6 +317,8 @@ svgGraphGeometryOf: (document: Document, artifact: SealedSvgArtifact) => GraphGe
 
 ## src/2_graph/5_translateGeometry.ts
 
+Apply caller-owned manual offsets to captured graph geometry.
+
 | export | kind |
 | --- | --- |
 | [`GraphTranslations`](#src-2-graph-5-translategeometry-ts-graphtranslations) | type |
@@ -314,7 +326,7 @@ svgGraphGeometryOf: (document: Document, artifact: SealedSvgArtifact) => GraphGe
 
 ### `GraphTranslations` {#src-2-graph-5-translategeometry-ts-graphtranslations}
 
-`GraphTranslations` is declared at `src/2_graph/5_translateGeometry.ts:4`.
+`GraphTranslations` is declared at `src/2_graph/5_translateGeometry.ts:5`.
 
 ```ts
 export type GraphTranslations = Readonly<Record<GraphId, GraphPoint>>
@@ -324,7 +336,11 @@ export function translateGraphGeometry(graph: Graph, geometry: GraphGeometry, tr
 
 ### `translateGraphGeometry` {#src-2-graph-5-translategeometry-ts-translategraphgeometry}
 
-`translateGraphGeometry` is declared at `src/2_graph/5_translateGeometry.ts:10`.
+`translateGraphGeometry` is declared at `src/2_graph/5_translateGeometry.ts:16`.
+
+Return geometry with per-ID offsets applied to bounds, anchors, headers, and attached route endpoints.
+The input remains unchanged. An empty or all-zero translation returns the same geometry object.
+Group descendants require their own entries; this function does not create an undo journal or rerun layout.
 
 ```ts
 translateGraphGeometry: (graph: Readonly<Record<string, GraphItem<unknown, unknown>>>, geometry: GraphGeometry, translations: Readonly<Record<string, GraphPoint>>) => GraphGeometry
@@ -428,6 +444,8 @@ present: <NodeData, EdgeData>(input: { camera$: Observable<GraphCamera>; focusId
 
 ## src/2_graph/10_renderer.ts
 
+Project graph frames through one renderer resource for each stream lifetime.
+
 | export | kind |
 | --- | --- |
 | [`GraphRenderReceipt`](#src-2-graph-10-renderer-ts-graphrenderreceipt) | type |
@@ -437,7 +455,9 @@ present: <NodeData, EdgeData>(input: { camera$: Observable<GraphCamera>; focusId
 
 ### `GraphRenderReceipt` {#src-2-graph-10-renderer-ts-graphrenderreceipt}
 
-`GraphRenderReceipt` is declared at `src/2_graph/10_renderer.ts:6`.
+`GraphRenderReceipt` is declared at `src/2_graph/10_renderer.ts:8`.
+
+ID membership changes between frames; update IDs include every retained item, regardless of content equality.
 
 ```ts
 export type GraphRenderReceipt = {
@@ -451,7 +471,9 @@ export function graphRenderReceipt(previousIds: ReadonlySet<GraphId>, frame: Gra
 
 ### `GraphFrameResource` {#src-2-graph-10-renderer-ts-graphframeresource}
 
-`GraphFrameResource` is declared at `src/2_graph/10_renderer.ts:12`.
+`GraphFrameResource` is declared at `src/2_graph/10_renderer.ts:15`.
+
+A renderer-owned resource that accepts frames and releases its listeners and elements through unsubscribe.
 
 ```ts
 export type GraphFrameResource<NodeData = unknown, EdgeData = unknown> = {
@@ -462,7 +484,9 @@ export type GraphFrameResource<NodeData = unknown, EdgeData = unknown> = {
 
 ### `graphRenderReceipt` {#src-2-graph-10-renderer-ts-graphrenderreceipt-2}
 
-`graphRenderReceipt` is declared at `src/2_graph/10_renderer.ts:21`.
+`graphRenderReceipt` is declared at `src/2_graph/10_renderer.ts:25`.
+
+Compare current graph IDs with the prior set and return sorted enter, update, and exit lists.
 
 ```ts
 graphRenderReceipt: (previousIds: ReadonlySet<string>, frame: GraphFrame) => GraphRenderReceipt
@@ -470,7 +494,11 @@ graphRenderReceipt: (previousIds: ReadonlySet<string>, frame: GraphFrame) => Gra
 
 ### `graphRenderer` {#src-2-graph-10-renderer-ts-graphrenderer}
 
-`graphRenderer` is declared at `src/2_graph/10_renderer.ts:30`.
+`graphRenderer` is declared at `src/2_graph/10_renderer.ts:39`.
+
+Return a renderer operator that acquires its resource when the caller activates the stream.
+Each frame carries an ID receipt; completion, error, or unsubscription releases the resource.
+The returned stream leaves activation and cancellation at the caller's boundary.
 
 ```ts
 graphRenderer: <NodeData = unknown, EdgeData = unknown>(acquire: (host: HTMLElement) => GraphFrameResource<NodeData, EdgeData>) => GraphRenderer<NodeData, EdgeData>

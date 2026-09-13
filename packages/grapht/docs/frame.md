@@ -9,21 +9,21 @@
 ## What a GraphFrame is
 
 `GraphFrame` is the whole renderable state of a diagram at one instant: the graph, its geometry, the
-camera, and the presentation. Declared at `packages/grapht/src/2_graph/0_frame.ts:45`.
+camera, and the presentation. Declared at `packages/grapht/src/2_graph/0_frame.ts:50`.
 
 | field | type | declared at | carries |
 | --- | --- | --- | --- |
-| `graph` | `Graph` | `src/2_graph/0_frame.ts:46` | the model |
-| `geometry` | `GraphGeometry` | `src/2_graph/0_frame.ts:5` | bounds, routes, headers |
-| `camera` | `GraphCamera` | `src/2_graph/0_frame.ts:16` | pan and zoom |
-| `presentation` | `GraphPresentation` | `src/2_graph/0_frame.ts:35` | sticky headers, hidden and focused ids, labels, sealed artifacts |
+| `graph` | `Graph` | `src/2_graph/0_frame.ts:51` | the model |
+| `geometry` | `GraphGeometry` | `src/2_graph/0_frame.ts:7` | bounds, routes, headers |
+| `camera` | `GraphCamera` | `src/2_graph/0_frame.ts:19` | pan and zoom |
+| `presentation` | `GraphPresentation` | `src/2_graph/0_frame.ts:39` | sticky headers, hidden and focused ids, labels, sealed artifacts |
 
 A renderer never reads the model for position. It reads `geometry` and `camera` together to place
 each node on screen, and `presentation` to decide what is hidden, stuck, or focused.
 
 ## The camera convention
 
-`GraphCamera` is three fields plus the viewport (`src/2_graph/0_frame.ts:16`):
+`GraphCamera` is three fields plus the viewport (`src/2_graph/0_frame.ts:19`):
 
 ```ts
 type GraphCamera = { x: number; y: number; scale: number; viewport: Rect }
@@ -76,6 +76,6 @@ diagram that has since grown, and the sticky headers keep agreeing with the stal
 ## Geometry
 
 `GraphGeometry` carries the revision id, per-id bounds and endpoint anchors, edge routes, and header
-bounds (`src/2_graph/0_frame.ts:5`). The `revisionId` is the compatibility record: geometry captured under one
+bounds (`src/2_graph/0_frame.ts:7`). The `revisionId` is the compatibility record: geometry captured under one
 revision is replayed without a live layout engine, which is what lets a sealed SVG artifact stay
 immutable while the diagram scrolls.

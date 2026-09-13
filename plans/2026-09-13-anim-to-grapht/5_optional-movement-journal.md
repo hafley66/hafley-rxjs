@@ -1,0 +1,20 @@
+# Optional movement journal, undo, and persistence
+
+Status: proposed. Depends on [identity reconciliation](1_graph-identity.md) and renderer move events from [group interaction](4_dom-groups-and-collapse.md).
+
+```ts
+type MoveEvent = { ids: readonly GraphId[]; before: Positions; after: Positions; baseRevisionId: string }
+type MovementJournal = { events: readonly MoveEvent[]; cursor: number }
+function replayPlacements(base, journal: MovementJournal): Placements {
+  // Apply events through cursor; derive positions without mutating the event list.
+}
+```
+
+- Lifetime: optional journal per interactive grid/view; caller may supply restored state. Read-only mode allocates no movement journal.
+- Storage/reads/writes: expose a journal signal and undo/redo inputs. Completed drags append one event; preview moves remain transient. Undo/redo move the cursor; a new move after undo truncates the future.
+- Persistence: caller can read/serialize the journal or bind storage through the existing StorageSignal adapter. Persist format version, view/base identity, events, and cursor; restore through graph identity reconciliation before applying positions.
+- Uniqueness: one completed gesture = one entry; group moves carry all affected IDs. Store enough base/identity evidence to avoid applying a restored move to another source/view. Ambiguous or missing IDs produce receipts while retaining the original log.
+- Work: extract/reuse the rectangle journal semantics; join graph move events to it; derive translations into graph frames. Return effect streams to the existing application boundary; no additional library subscription roots.
+- Acceptance: move/undo/redo/branch timeline, atomic group move, cancelled/no-op gesture, reload restoration, changed source revision, unmatched identities, and two independent views. Disabling the feature leaves read-only rendering operational.
+
+References: [existing journal](/Users/chrishafley/projects/hafley-rxjs/packages/react-dock-and-flow/src/2_rectangleJournal.ts), [completed-move input](/Users/chrishafley/projects/hafley-rxjs/packages/react-dock-and-flow/src/3_RectangleCanvas.tsx), [StorageSignal](/Users/chrishafley/projects/hafley-rxjs/packages/signals/src/6_Storage.ts), [current delta accumulation](/Users/chrishafley/projects/hafley-rxjs/packages/grapht-golden/src/1_app.ts).

@@ -38,12 +38,13 @@
     "receipts": "pnpm run typecheck && pnpm run test",
     "api": "node scripts/4_api.mjs",
     "docs": "node scripts/5_docs.mjs",
-    "docs:render": "pnpm api && node scripts/5_docs.mjs --render",
+    "docs:render": "pnpm plans && pnpm api && node scripts/5_docs.mjs && node scripts/5_docs.mjs --render",
     "site:content": "pnpm docs:render && rm -rf site/pages && mkdir site/pages && cp docs/dist/*.md site/pages/",
     "site": "pnpm site:content && vitepress dev site",
     "site:build": "pnpm site:content && vitepress build site",
     "site:preview": "vitepress preview site",
-    "ship": "node scripts/ship.mjs"
+    "ship": "node scripts/ship.mjs",
+    "plans": "node scripts/6_plans.mjs"
   },
   "dependencies": {
     "@hafley66/grapht-model": "workspace:*",
