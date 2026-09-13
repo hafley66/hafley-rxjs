@@ -33,6 +33,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "pnpm run build && vitest run tests",
     "renderer-fixture": "node scripts/0_generate_renderer_fixture.mjs",
+    "fixture:sequence": "node scripts/3_generate_sequence_fixture.mjs",
     "bench:fixture-memory": "node scripts/2_compare_fixture_memory.mjs",
     "receipts": "pnpm run typecheck && pnpm run test",
     "site": "vitepress dev site",
