@@ -10,7 +10,26 @@ export const BASE = "/hafley-rxjs/grapht/"
 export const GROUPS: readonly SiteGroup[] = [
   {
     text: "Start",
-    pages: [{ slug: "overview", title: "Overview", source: "pages/overview.md" }],
+    pages: [
+      { slug: "overview", title: "Overview", source: "pages/overview.md" },
+      { slug: "model", title: "The canonical model", source: "pages/model.md" },
+      { slug: "frame", title: "Frame and camera", source: "pages/frame.md" },
+    ],
+  },
+  {
+    text: "Rendering",
+    pages: [
+      { slug: "sticky", title: "Sticky layers", source: "pages/sticky.md" },
+      { slug: "renderers", title: "Renderers", source: "pages/renderers.md" },
+    ],
+  },
+  {
+    text: "History",
+    pages: [{ slug: "history", title: "The offline journal", source: "pages/history.md" }],
+  },
+  {
+    text: "Reference",
+    pages: [{ slug: "reference-api", title: "Every export", source: "pages/reference-api.md" }],
   },
   {
     text: "Demos",
