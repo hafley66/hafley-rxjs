@@ -1,0 +1,167 @@
+sequenceDiagram
+  participant Client as Customer
+  participant Gateway as API Gateway
+  participant AuthSvc as Auth Service
+  participant IdP as Identity Provider
+  participant Tokens as Token Cache
+  participant Orders as Order Service
+  participant Inventory as Inventory Service
+  participant Warehouse as Warehouse System
+  participant Payment as Payment Service
+  participant CardNet as Card Network
+  participant Ledger as Ledger Service
+  participant Notify as Notification Service
+  participant Email as Email Provider
+  participant Search as Search Index
+  participant Analytics as Analytics Sink
+  participant Audit as Audit Log
+
+  Client->>Gateway: POST /checkout
+  Gateway->>AuthSvc: validate bearer token
+  AuthSvc->>Tokens: get cached session
+  Tokens->>AuthSvc: cache miss
+  AuthSvc->>IdP: introspect access token
+  opt token renewal
+    AuthSvc->>IdP: request fresh token
+    IdP->>AuthSvc: token expired
+    loop retry renewal
+      AuthSvc->>IdP: refresh token grant
+      IdP->>AuthSvc: renewal granted
+    end
+    IdP->>AuthSvc: session reinstated
+  end
+  IdP->>AuthSvc: token valid
+  AuthSvc->>Tokens: store session
+  AuthSvc->>Gateway: authenticated
+  Gateway->>Audit: record login attempt
+  Audit->>Gateway: audit accepted
+  Gateway->>Orders: create order
+  Orders->>Gateway: order draft created
+  Gateway->>Client: 202 order accepted
+
+  Orders->>Inventory: reserve line items
+  Inventory->>Orders: reservation quote
+  loop per line item
+    Orders->>Inventory: check stock
+    alt stock available
+      Inventory->>Orders: reserve unit
+      Inventory->>Warehouse: hold unit
+      Warehouse->>Inventory: unit held
+    else stock short
+      Inventory->>Orders: backorder unit
+      Orders->>Notify: queue backorder event
+    end
+    Orders->>Audit: log reservation
+  end
+  Inventory->>Orders: reservation summary
+  Orders->>Payment: authorize payment
+
+  Payment->>CardNet: authorize card
+  alt card approved
+    CardNet->>Payment: approval code
+    Payment->>Ledger: post authorization hold
+    Ledger->>Payment: hold posted
+    Payment->>Orders: payment authorized
+  else card declined
+    CardNet->>Payment: decline reason
+    Payment->>Notify: queue decline notice
+    Notify->>Email: send decline email
+    Payment->>Orders: payment failed
+    Orders->>Client: 402 payment required
+  end
+
+  Payment->>Audit: record charge attempt
+  Payment->>Analytics: emit auth metric
+
+  Orders->>Ledger: capture charge
+  Ledger->>CardNet: settle capture
+  CardNet->>Ledger: settlement id
+  Ledger->>Orders: charge captured
+  Orders->>Ledger: create ledger entries
+  Ledger->>Orders: entries posted
+  Orders->>Inventory: commit reserved stock
+  Inventory->>Warehouse: pick and ship
+  Warehouse->>Inventory: shipment created
+  Inventory->>Orders: shipment confirmed
+  Orders->>Notify: order shipped
+  Notify->>Email: send shipment email
+  Email->>Notify: queued
+  Notify->>Orders: notification sent
+
+  Orders->>Search: index order
+  Search->>Orders: indexed
+  Orders->>Analytics: emit funnel event
+  Orders->>Audit: record order lifecycle
+  Orders->>Gateway: order completed
+  Gateway->>Client: 200 order complete
+  Client->>Gateway: GET /orders/123
+  Gateway->>Orders: fetch order status
+  Orders->>Search: query recent orders
+  Search->>Orders: result set
+  Orders->>Gateway: order snapshot
+  Gateway->>Client: 200 order snapshot
+  Client->>Gateway: GET /orders/123/invoice
+  Gateway->>Orders: fetch invoice
+  Orders->>Ledger: build invoice lines
+  Ledger->>Orders: invoice lines
+  Orders->>Gateway: invoice document
+  Gateway->>Client: 200 invoice
+  Client->>Gateway: POST /orders/123/cancel
+  Gateway->>AuthSvc: revalidate token
+  AuthSvc->>Tokens: touch session
+  Tokens->>AuthSvc: refreshed
+  AuthSvc->>Gateway: still valid
+  Gateway->>Orders: request cancellation
+  Orders->>Inventory: release reserved units
+  Inventory->>Warehouse: void shipment
+  Warehouse->>Inventory: shipment voided
+  Inventory->>Orders: units released
+  Orders->>Payment: refund authorization
+  Payment->>CardNet: void authorization
+  CardNet->>Payment: void ack
+  Payment->>Ledger: reverse hold
+  Ledger->>Payment: reversed
+  Payment->>Orders: refund pending
+  Orders->>Notify: queue cancellation email
+  Notify->>Email: send cancellation email
+  Orders->>Ledger: post cancellation
+  Ledger->>Orders: cancelled
+  Orders->>Search: remove order from index
+  Search->>Orders: removed
+  Orders->>Analytics: emit cancellation metric
+  Orders->>Audit: record cancellation
+  Orders->>Gateway: cancelled
+  Gateway->>Client: 200 cancelled
+
+  Client->>Gateway: POST /orders/123/return
+  Gateway->>Orders: request return
+  Orders->>Inventory: receive returned unit
+  Inventory->>Warehouse: process return
+  Warehouse->>Inventory: return accepted
+  Inventory->>Orders: unit restocked
+  Orders->>Ledger: post return credit
+  Ledger->>Orders: credit posted
+  Orders->>Payment: issue refund
+  Payment->>CardNet: refund charge
+  CardNet->>Payment: refund id
+  Payment->>Orders: refund issued
+  Orders->>Notify: queue refund email
+  Notify->>Email: send refund email
+  Orders->>Audit: record return
+  Orders->>Analytics: emit return metric
+  Orders->>Gateway: return processed
+  Gateway->>Client: 200 return accepted
+
+  opt reindex
+    Orders->>Search: full rebuild
+    loop batch pages
+      Search->>Orders: pull batch
+      Orders->>Search: batch rows
+      Search->>Analytics: report index progress
+    end
+    Search->>Orders: rebuild complete
+  end
+
+  Gateway->>Analytics: emit request latency
+  Analytics->>Audit: persist trace
+  Gateway->>Client: 200 done
