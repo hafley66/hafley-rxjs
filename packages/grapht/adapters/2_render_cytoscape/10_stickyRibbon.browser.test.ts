@@ -107,3 +107,93 @@ describe("document renderer sticky ribbon", () => {
     }
   })
 })
+
+const groupArtifact = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 4000"><rect width="700" height="4000" fill="#fff"/></svg>`
+
+const groupFrame: GraphFrame = {
+  graph: {
+    seq: { id: "seq", type: "node", layout: { mode: "sealed", bounds: { x: 0, y: 0, width: 700, height: 4000 }, geometryRevisionId: "seq:g1" } },
+    outer: { id: "outer", type: "node", parentId: "seq" },
+    inner: { id: "inner", type: "node", parentId: "outer" },
+  },
+  geometry: {
+    revisionId: "seq:2",
+    boundsById: {
+      seq: { x: 0, y: 0, width: 700, height: 4000 },
+      outer: { x: 40, y: 100, width: 600, height: 2000 },
+      inner: { x: 80, y: 300, width: 500, height: 900 },
+    },
+    endpointAnchorById: {},
+    routesById: {},
+    headerBoundsById: {
+      outer: { x: 40, y: 100, width: 600, height: 22 },
+      inner: { x: 80, y: 300, width: 500, height: 22 },
+    },
+  },
+  camera: { x: 0, y: 0, scale: 1, viewport: { x: 0, y: 0, width: 800, height: 600 } },
+  presentation: {
+    stickyHeaders: [],
+    hiddenIds: new Set(),
+    focusedIds: new Set(),
+    labelsById: { outer: { text: "loop retry" }, inner: { text: "alt cache hit" } },
+    sealedSvgArtifactsByRootId: {
+      seq: { rootId: "seq", revisionId: "seq:svg:2", geometryRevisionId: "seq:g1", svg: groupArtifact, sourceBounds: { x: 0, y: 0, width: 700, height: 4000 }, fit: "contain" },
+    },
+  },
+}
+
+const bars = (host: HTMLElement) =>
+  [...host.querySelectorAll("[data-sticky-groups] [data-sticky-id]")].map(node => ({
+    id: node.getAttribute("data-sticky-id"),
+    state: node.getAttribute("data-state"),
+    top: Math.round(Number(node.querySelector("rect")?.getAttribute("y"))),
+    text: node.querySelector("text")?.textContent,
+  }))
+
+const mountGroups = (sticky = {}) => {
+  const host = document.createElement("div")
+  host.style.cssText = "position:relative;width:800px;height:600px"
+  document.body.appendChild(host)
+  const resource = createDocumentGraphFrameResource(host, undefined, { inset: 8, gap: 4, height: 22, ...sticky })
+  resource.render(groupFrame, { enterIds: ["seq"], updateIds: [], exitIds: [] })
+  return { host, resource }
+}
+
+describe("document renderer sticky group headers", () => {
+  it("leaves a group header in place while its frame is on screen", () => {
+    const { host, resource } = mountGroups()
+    try {
+      expect(bars(host)).toEqual([
+        { id: "outer", state: "natural", top: 100, text: "loop retry" },
+        { id: "inner", state: "natural", top: 300, text: "alt cache hit" },
+      ])
+    } finally {
+      resource.unsubscribe()
+      host.remove()
+    }
+  })
+
+  it("stacks a nested group under its parent once both scroll past the top", () => {
+    const { host, resource } = mountGroups()
+    try {
+      resource.applyCamera({ x: 0, y: -500, scale: 1, viewport: { x: 0, y: 0, width: 800, height: 600 } })
+      expect(bars(host)).toEqual([
+        { id: "outer", state: "stuck", top: 8, text: "loop retry" },
+        { id: "inner", state: "stuck", top: 34, text: "alt cache hit" },
+      ])
+    } finally {
+      resource.unsubscribe()
+      host.remove()
+    }
+  })
+
+  it("paints nothing when group headers are switched off", () => {
+    const { host, resource } = mountGroups({ groups: false })
+    try {
+      expect(bars(host)).toEqual([])
+    } finally {
+      resource.unsubscribe()
+      host.remove()
+    }
+  })
+})
