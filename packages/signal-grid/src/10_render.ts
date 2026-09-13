@@ -815,12 +815,58 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     else record.el.style.setProperty(SG_ROW_HEIGHT_SELF, `var(${rowHeightVar(key)}, var(${SG_ROW_H}))`)
     record.el.setAttribute("data-selected", String(current.selection[owner] === true))
     stampSelection(record, key, node, current)
+    stampFocus(record, key, current)
     record.el.setAttribute("data-open", String(current.expanded[owner] === true))
     record.el.setAttribute("data-detail-open", String(current.detail[owner] !== undefined))
     if (node.hasChildren) record.el.setAttribute("aria-expanded", String(current.expanded[owner] === true))
     else record.el.removeAttribute("aria-expanded")
     stampAriaRow(record, panel, heading, key, node, owner, current)
     return record
+  }
+
+  /** Cells whose DOM focus must move before their tab stop can be cleared. Cleared at the end of
+   * the pass, so removing the old stop never blurs the user onto body. */
+  const pendingFocusLoss = new Set<HTMLElement>()
+
+  /** The focused cell is the one tab stop inside the grid. Every other cell carries no tabindex
+   * attribute at all, so ten thousand cells never each hold a `-1`. The new cell is focused before
+   * the old stop is cleared, so the browser never lands on body between the two writes. */
+  function stampFocus(record: RowRecord, key: RowId, current: Frame<TRow>): void {
+    if (!current.rowsVertical) return
+    const parts = current.focus === null ? null : cellParts(current.focus)
+    if (parts !== null && parts[0] === key) {
+      const cell = record.cells.get(parts[1])
+      if (cell !== undefined) {
+        cell.setAttribute("data-focus", "true")
+        setDiffed(cell, "tabindex", "0")
+        if (root.contains(document.activeElement) && document.activeElement !== cell) {
+          cell.focus({ preventScroll: true })
+        }
+      }
+    }
+    for (const across of current.horizontalKeys) {
+      const cell = record.cells.get(across)
+      if (cell === undefined) continue
+      const on = parts !== null && parts[0] === key && parts[1] === across
+      if (on !== cell.hasAttribute("data-focus")) {
+        if (on) cell.setAttribute("data-focus", "true")
+        else cell.removeAttribute("data-focus")
+      }
+      // The cell holding the pointer of focus loses it the moment its tabindex goes, so its write
+      // is held until the pass has moved that focus.
+      if (!on) {
+        if (cell === document.activeElement && parts !== null) pendingFocusLoss.add(cell)
+        else removeDiffed(cell, "tabindex")
+      }
+    }
+  }
+
+  function settleFocus(): void {
+    for (const cell of pendingFocusLoss) {
+      if (cell === document.activeElement) continue
+      removeDiffed(cell, "tabindex")
+      pendingFocusLoss.delete(cell)
+    }
   }
 
   /** The row's ARIA stamps, diffed because this runs for every held row of every frame. Roles ride
@@ -965,14 +1011,50 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       record.el.remove()
       rows.delete(key)
     }
+    // Focus moves before the root loses its stop, so the browser never lands on body between them.
+    moveFocus(current)
+    stampRootFocus(current)
+    settleFocus()
     paintPreview(current)
+  }
+
+  /** The roving tabindex: the root stops Tab only while no cell holds focus, and the focused cell
+   * is the one stop inside. Written on the edge so a passive frame rewrites nothing. */
+  function stampRootFocus(current: Frame<TRow>): void {
+    if (!rootTabOwned) return
+    if (current.focus === null) {
+      if (!root.hasAttribute("tabindex")) root.tabIndex = 0
+      return
+    }
+    removeDiffed(root, "tabindex")
+  }
+
+  /** DOM focus follows `state.focus`, but only when the grid already holds it: a grid the pointer
+   * left must not pull focus back from wherever the user went. */
+  function moveFocus(current: Frame<TRow>): void {
+    if (!current.rowsVertical || current.focus === null) return
+    const [vertical, horizontal] = cellParts(current.focus)
+    const record = rows.get(vertical)
+    const cell = record?.cells.get(horizontal)
+    if (cell === undefined) return
+    if (root.contains(document.activeElement) && document.activeElement !== cell) {
+      cell.focus({ preventScroll: true })
+    }
   }
 
   const subscription = new Subscription()
   let stopped = false
+  // The root is the grid's tab stop until a cell takes focus, and only a tabindex this render set
+  // is ever removed again; a consumer's own value is left alone. Declared before the frame
+  // subscribes, because the first pass can fire inside `subscribe`.
+  let rootTabOwned = false
+
   // `bindRoot` listens for keydown on the root, and an element with no tabindex never receives one,
   // so every keyboard epic was unreachable by default. Set only when the consumer left it unset.
-  if (!root.hasAttribute("tabindex")) root.tabIndex = 0
+  if (!root.hasAttribute("tabindex")) {
+    root.tabIndex = 0
+    rootTabOwned = true
+  }
 
   // Bound before the first pass, so the header this pass builds is already clickable.
   subscription.add(grid.bind(root))

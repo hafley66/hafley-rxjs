@@ -1517,3 +1517,48 @@ describe("aria", () => {
 
 const rowAriaOf = (rowId: string): HTMLElement | null =>
   root.querySelector<HTMLElement>(`[role='row']${selectorFor("row", { rowId })}`)
+
+describe("roving tabindex", () => {
+  const pressKey = (target: Element, key: string): void => {
+    target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }))
+  }
+
+  test("the root is the tab stop until a cell takes focus", () => {
+    const made = mountGrid()
+    expect(made.root.getAttribute("tabindex")).toBe("0")
+    expect(document.activeElement).not.toBe(cellAt("a", "name"))
+    made.root.focus()
+    console.log("DBG0", document.activeElement === made.root, document.activeElement?.tagName)
+    pressKey(made.root, "ArrowDown")
+    console.log("DBG", made.grid.state.focus.$(), cellAt("a", "name")?.getAttribute("tabindex"), document.activeElement?.tagName)
+    expect(document.activeElement).toBe(cellAt("a", "name"))
+    expect(cellAt("a", "name")?.getAttribute("tabindex")).toBe("0")
+    expect(cellAt("b", "name")?.hasAttribute("tabindex")).toBe(false)
+    expect(made.root.hasAttribute("tabindex")).toBe(false)
+  })
+
+  test("a second arrow moves DOM focus one row down", () => {
+    const made = mountGrid()
+    made.root.focus()
+    pressKey(made.root, "ArrowDown")
+    expect(document.activeElement).toBe(cellAt("a", "name"))
+    pressKey(cellAt("a", "name") as HTMLElement, "ArrowDown")
+    expect(document.activeElement).toBe(cellAt("b", "name"))
+    expect(cellAt("a", "name")?.hasAttribute("tabindex")).toBe(false)
+    expect(cellAt("b", "name")?.getAttribute("tabindex")).toBe("0")
+  })
+
+  test("a render pass does not pull focus back from outside the grid", () => {
+    const made = mountGrid()
+    made.root.focus()
+    pressKey(made.root, "ArrowDown")
+    expect(document.activeElement).toBe(cellAt("a", "name"))
+    const outside = document.createElement("button")
+    document.body.append(outside)
+    outside.focus()
+    expect(document.activeElement).toBe(outside)
+    made.grid.state.rowSelection.$({ a: true })
+    expect(document.activeElement).toBe(outside)
+    outside.remove()
+  })
+})
