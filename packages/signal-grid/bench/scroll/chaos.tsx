@@ -102,6 +102,9 @@ interface Driver {
   /** `frame` runs every frame and reads its phase off the period, which is how a continuous knob
    * moves. `period` fires once per period, which is how a user's click arrives. */
   readonly every: "frame" | "period"
+  /** Starts switched off. A driver whose cost is the point of the page rather than part of its
+   * baseline, so the run it opens with is the one an application could produce. */
+  readonly off?: boolean
   readonly run: (phase: number, at: number) => string
 }
 
@@ -180,7 +183,24 @@ const DRIVERS: readonly Driver[] = [
   {
     name: "colWidth",
     period: 67,
+    every: "period",
+    // One committed width per period, which is what a real resize writes: `DEFAULT_DRAG_MODE` is
+    // `preview`, so `resizeOnHeaderDrag` leaves every width alone and writes once on the lift.
+    run: (_phase, at) => {
+      const col = pick(COL_IDS, Math.floor(at / 67))
+      const width = 80 + ((Math.floor(at / 67) * 57) % 220)
+      put(state.colWidth, { ...state.colWidth.$(), [col]: width })
+      return `${col} ${width}`
+    },
+  },
+  {
+    name: "colWidthLive",
+    period: 67,
     every: "frame",
+    off: true,
+    // The same resize written every frame instead of once on the lift. Alone it takes the page from
+    // 120 fps to 38 and 101 slow frames of 193, at 1.28 ms/f of package time, so the cost is one
+    // browser layout per frame rather than anything the package does.
     run: (phase, at) => {
       const col = pick(COL_IDS, Math.floor(at / 67))
       const width = Math.round(80 + tri(phase) * 220)
@@ -324,10 +344,10 @@ const DRIVERS: readonly Driver[] = [
 ]
 
 const cards = new Map<string, HTMLElement>()
-const off = new Set<string>()
+const off = new Set<string>(DRIVERS.filter((it) => it.off === true).map((it) => it.name))
 for (const driver of DRIVERS) {
   const card = document.createElement("div")
-  card.className = "d-card"
+  card.className = off.has(driver.name) ? "d-card d-off" : "d-card"
   card.innerHTML = `<b>${driver.name}</b><span class="d-p">${driver.every === "frame" ? "1f" : `${driver.period}f`}</span><i class="d-v">idle</i>`
   // Click a driver off to see what it was costing. The readout splits the package's own stage total
   // from the frame it rides in, so switching one off names its share of the browser's half too.

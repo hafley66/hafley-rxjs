@@ -633,18 +633,39 @@ the sort, the column order, pinning, hiding, row pinning, density, list view, an
 rather than the state being written behind them.
 
 The readout splits the package's own stage total out of the frame it rides in. Under all sixteen the
-package reads about 2.4 ms of a 43 ms frame, 6 per cent, and `dom` is almost all of it. Click a
-driver card to switch it off and the split moves:
+package reads about 3.4 ms of a 28 ms frame, 13 per cent, and `dom` is almost all of it.
 
-| drivers | package ms/f | share of frame | frames over 32 ms |
+Click a driver card to switch it off. Running each one alone against the scroll names its cost, and
+fifteen of the sixteen are free:
+
+| scroll plus | fps | frames over 32 ms | package ms/f |
 | --- | --- | --- | --- |
-| all sixteen | 2.43 | 6% | 168 of 180 |
-| box off | 4.23 | 11% | 169 of 201 |
-| box and colWidth off | 3.99 | 16% | 44 of 314 |
+| nothing | 120 | 1 of 670 | 1.43 |
+| hue | 123 | 0 of 671 | 0.50 |
+| listView | 123 | 2 of 664 | 0.51 |
+| focus | 120 | 0 of 659 | 0.51 |
+| rowSelection | 117 | 0 of 713 | 0.57 |
+| colHidden | 120 | 4 of 609 | 0.39 |
+| rowPinning | 120 | 3 of 678 | 0.49 |
+| box | 108 | 1 of 671 | 1.81 |
+| overscan | 108 | 4 of 599 | 1.40 |
+| events | 105 | 23 of 599 | 1.65 |
+| density | 93 | 8 of 503 | 1.96 |
+| colPinning | 86 | 9 of 515 | 2.00 |
+| colOrder | 83 | 8 of 529 | 2.27 |
+| sort | 74 | 7 of 454 | 2.35 |
+| range | 64 | 10 of 336 | 0.63 |
+| **colWidthLive** | **38** | **101 of 193** | **1.28** |
 
-Switching the live column resize off takes the slow frames from 169 in 201 to 44 in 314 while the
-package's own cost goes up, which is the whole finding: writing a grid track every frame is one full
-browser layout per frame, and the package was never the term that mattered.
+`colWidthLive` is the one that breaks the frame, and it has the lowest package cost of everything
+above it. Writing a grid track is one full browser layout of every rendered row, and doing it every
+frame is that layout sixty times a second. The package's own share of the damage is 1.28 ms.
+
+A real resize never does this. `DEFAULT_DRAG_MODE` at `src/7_epics.ts:83` is `preview`, so
+`resizeOnHeaderDrag` publishes a guide line at the prospective edge, leaves every width where it is,
+and writes the one number that moved on the lift. `colWidthLive` is the `live` mode nobody gets by
+default, which is why it starts switched off; the `colWidth` driver beside it commits one width per
+period the way a lift does, and costs nothing.
 
 The `cells through reactSlot` switch rebuilds the grid with every cell handed to React, and the
 `cells filled` counter is why the page carries one. Under sustained chaos:
