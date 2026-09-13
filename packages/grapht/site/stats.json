@@ -3,24 +3,23 @@
   "generatedBy": "grapht/site",
   "commit": {
     "method": "git rev-parse HEAD / --short HEAD, git log -1 --format=%s %aI, git status --porcelain excluding this step's own outputs, git rev-parse --abbrev-ref HEAD",
-    "hash": "6ae399d7ebe548e67b69ef322b15cd184f61f752",
-    "short": "6ae399d",
-    "subject": "grapht: the live proof reads a 16-actor sequence diagram",
-    "authorDate": "2026-09-13T13:39:08-04:00",
+    "hash": "09c7d124ea746ba49909994470c36a66f3cb9538",
+    "short": "09c7d12",
+    "subject": "grapht: a corner legend names the gestures a renderer answers",
+    "authorDate": "2026-09-13T13:55:21-04:00",
     "branch": "main",
     "clean": false,
-    "dirtyCount": 7,
+    "dirtyCount": 6,
     "dirtyEntries": [
       "M packages/signal-grid/site/stats.json",
       "M packages/signals/docs/reference-api.md",
       "M packages/signals/site/stats.json",
-      "M pnpm-lock.yaml",
       "?? .boop-briefs/",
       "?? packages/gothic/src/lib/8a_khFit.ts",
       "?? packages/gothic/tools/"
     ],
     "repository": "hafley66/hafley-rxjs",
-    "url": "https://github.com/hafley66/hafley-rxjs/commit/6ae399d7ebe548e67b69ef322b15cd184f61f752",
+    "url": "https://github.com/hafley66/hafley-rxjs/commit/09c7d124ea746ba49909994470c36a66f3cb9538",
     "reason": null
   },
   "machine": {
@@ -31,7 +30,7 @@
     "cpuModel": "Apple M2 Pro",
     "cores": 12,
     "totalMemoryBytes": 17179869184,
-    "builtAt": "2026-09-13T17:39:21.341Z"
+    "builtAt": "2026-09-13T17:55:33.842Z"
   },
   "package": {
     "name": "@hafley66/grapht",
@@ -48,14 +47,14 @@
     "siteMethod": "the same statSync and gzipSync pass over site/dist; the copy inlined into the site measures pass 1, the committed stats.json measures the final dist",
     "site": {
       "fileCount": 136,
-      "totalBytes": 6536505,
-      "totalGzipBytes": 2507296,
+      "totalBytes": 6541171,
+      "totalGzipBytes": 2508896,
       "reason": null
     },
     "demo": {
       "fileCount": 7,
-      "totalBytes": 1054031,
-      "totalGzipBytes": 314413,
+      "totalBytes": 1058647,
+      "totalGzipBytes": 315998,
       "reason": null
     },
     "videos": {
@@ -222,6 +221,11 @@
       {
         "file": "src/2_graph/13_foreignObjectText.ts",
         "lines": 104,
+        "kind": "source"
+      },
+      {
+        "file": "src/2_graph/14_gestureLegend.ts",
+        "lines": 97,
         "kind": "source"
       },
       {
@@ -430,8 +434,8 @@
         "kind": "test"
       }
     ],
-    "sourceFiles": 45,
-    "sourceLines": 3961,
+    "sourceFiles": 46,
+    "sourceLines": 4058,
     "testFiles": 24,
     "testLines": 7600
   },
@@ -466,9 +470,9 @@
     "libraryBuildReason": "not measured by ship",
     "unitTestsMs": null,
     "browserTestsMs": null,
-    "siteBuildMs": 1848,
+    "siteBuildMs": 2229,
     "demoBuildMs": null,
-    "statsMs": 1789321161458
+    "statsMs": 1789322133992
   },
   "demoMemory": {
     "method": null,
