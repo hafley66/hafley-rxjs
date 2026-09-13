@@ -221,8 +221,14 @@ for the DOM slot. React's concurrent root commits the cell bodies after the anim
 the scroll frame carries the row scaffolding and the cells arrive late. The work did not shrink; it
 moved off the frame the harness was timing, and a user sees empty cells for it.
 
+`bench/scroll/chaos.html` is that effect's limit case. Sixteen drivers moving at once never leave
+React an idle frame, and its `cells filled` counter reads 0 of 416 against the DOM writer's 120 of
+120 while the grid reports the higher frame rate of the two. Pausing fills 292 of them in under a
+second.
+
 Use `GridView` for the box. Reach for `reactSlot` on the cells that need a React component in them,
-and expect to pay about twice the per-frame script time on the cells that use it.
+expect about twice the per-frame script time on those cells, and expect them to arrive late under a
+load that never yields.
 
 ## 8. What this does not measure
 

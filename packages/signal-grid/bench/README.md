@@ -646,7 +646,20 @@ Switching the live column resize off takes the slow frames from 169 in 201 to 44
 package's own cost goes up, which is the whole finding: writing a grid track every frame is one full
 browser layout per frame, and the package was never the term that mattered.
 
-The `churn` switch is the second finding. Every driver guards its write, so an unchanged value is
+The `cells through reactSlot` switch rebuilds the grid with every cell handed to React, and the
+`cells filled` counter is why the page carries one. Under sustained chaos:
+
+| writer | fps | package ms/f | cells filled |
+| --- | --- | --- | --- |
+| DOM | 24 | 2.87 | 120 of 120 |
+| reactSlot | 30 | 4.91 | **0 of 416** |
+
+React's concurrent root commits a cell body off the animation frame, and a chaos run never gives it
+an idle one, so the rows stay empty for as long as the grid is moving. Pause it and 292 of them
+fill in under a second. The higher frame rate is the grid rendering nothing. `docs/2_versus.md`
+found the same effect at overscan 32 and this is its limit case.
+
+The `churn` switch is the third finding. Every driver guards its write, so an unchanged value is
 not rewritten. Tick `churn` and each one rewrites its signal every frame with a fresh object equal
 to the one already there. A signal rejects by identity rather than by shape, so `[{ field, sort }]`
 rebuilt every frame re-sorts the relation every frame: `sort 32.7 ms/f` and `flatten 12.5 ms/f`

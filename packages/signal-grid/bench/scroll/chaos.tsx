@@ -22,9 +22,12 @@
 // | listView | 233 | the degenerate transpose, one cell per row |
 // | hue | 71 | a CSS custom property every cell reads |
 // | events | 23 | real pointer and keyboard events at the root, so the epics run |
+import { createElement, type ReactNode } from "react"
 import { setGridLogEmit } from "../../src/index.js"
 import { cellId, type CellId, type ColId, type Side } from "../../src/0_types.js"
-import { COLUMNS, DEFAULTS, mountBench, ROW_PX, type Cfg } from "./0_bench.js"
+import { reactSlot } from "../../src/react/index.js"
+import { COLUMNS, DEFAULTS, mountBench, ROW_PX, type BenchRow, type Cfg, type Mounted } from "./0_bench.js"
+import { Heavy } from "./2_heavy.js"
 
 const must = (id: string): HTMLElement => {
   const found = document.getElementById(id)
@@ -40,8 +43,38 @@ const trace = must("trace") as HTMLCanvasElement
 const cfg: Cfg = { ...DEFAULTS, rows: 200_000, width: 1180, height: 620, cell: "heavy", src: "proxy" }
 
 let overscan = 4
-const mounted = mountBench(stage, cfg, { overscan: () => overscan })
-const state = mounted.state
+
+interface CellProps {
+  readonly data: BenchRow
+  readonly col: string
+  readonly value: unknown
+}
+
+// The slot is fixed when `grid()` is called, so switching writers is a rebuild rather than a knob.
+// Everything else on this page survives it: the drivers read `mounted` and `state` through the
+// bindings below, which the rebuild re-points.
+const jsx = reactSlot<CellProps>((ctx: CellProps): ReactNode =>
+  createElement(Heavy, { row: ctx.data, col: ctx.col }),
+)
+
+let cells: "dom" | "react" = "dom"
+let mounted: Mounted = mountBench(stage, cfg, { overscan: () => overscan })
+let state = mounted.state
+
+function remount(): void {
+  mounted.dispose()
+  stage.replaceChildren()
+  mounted = mountBench(
+    stage,
+    cfg,
+    { overscan: () => overscan },
+    cells === "react"
+      ? (ctx) => jsx({ data: ctx.data as BenchRow, col: ctx.col, value: ctx.value })
+      : undefined,
+  )
+  state = mounted.state
+}
+
 const COL_IDS: readonly ColId[] = COLUMNS.map((it) => it.id)
 
 // A triangle rather than a sine for anything discrete: a sine spends most of its time near the
@@ -370,11 +403,19 @@ const paint = (): void => {
   const heap = (performance as { memory?: { usedJSHeapSize?: number } }).memory
   const rows = stage.getElementsByClassName("sg-row").length
   const nodes = stage.getElementsByTagName("*").length
+  // A cell with no content is a cell whose writer has not committed yet. React's concurrent root
+  // defers that commit off the animation frame, so a moving grid can report a frame rate for rows
+  // that are empty; counting the filled ones is the only way the readout cannot lie.
+  const total = stage.getElementsByClassName("sg-cell").length
+  const filled = stage.querySelectorAll(".sg-cell .b-stack").length
+  const bare = total > 0 && filled * 4 < total
   readout.innerHTML =
     `<b>${fps.toFixed(0)} fps</b> ${mean.toFixed(1)} ms mean, p95 ${p95.toFixed(1)} ms` +
     ` &middot; <b class="${slow === 0 ? "ok" : "bad"}">${slow}</b> frames over 32 ms of ${at}` +
     ` &middot; <b>package ${pkgPerFrame.toFixed(2)} ms/f</b>, ${share.toFixed(0)}% of the frame (${stages})` +
     ` &middot; ${rows} rows, ${nodes} nodes` +
+    ` &middot; <b class="${bare ? "bad" : "ok"}">${filled} of ${total}</b> cells filled` +
+    ` &middot; <b>${cells === "react" ? "reactSlot" : "DOM"}</b> writer` +
     ` &middot; heap ${mb(heap?.usedJSHeapSize)}`
 }
 
@@ -423,6 +464,15 @@ toggle.addEventListener("click", () => {
   running = !running
   toggle.textContent = running ? "pause" : "run"
 })
+const cellsBox = must("cells") as HTMLInputElement
+cellsBox.addEventListener("change", () => {
+  cells = cellsBox.checked ? "react" : "dom"
+  remount()
+  at = 0
+  slow = 0
+  times.length = 0
+})
+
 const churnBox = must("churn") as HTMLInputElement
 churnBox.addEventListener("change", () => {
   setChurn(churnBox.checked)
