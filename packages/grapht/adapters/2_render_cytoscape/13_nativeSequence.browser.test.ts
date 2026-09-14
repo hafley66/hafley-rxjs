@@ -36,3 +36,60 @@ it("renders all source messages as native edges without an SVG artifact or node 
     expect(host.querySelectorAll("svg:not(:has([data-sticky-ribbon]))").length).toBe(0)
   } finally { native.unsubscribe(); host.remove() }
 })
+
+it("rethemes native sequence canvas and sticky overlays without moving the camera", async () => {
+  const frame = await sequenceFrame({ width: 1280, height: 800 })
+  const host = document.createElement("div")
+  host.style.cssText = "position:relative;width:1280px;height:800px"
+  document.body.appendChild(host)
+  const native = createCytoscapeGraphFrameResource(host, undefined, { inset: 44, fullWidth: 70, chipWidth: 34, gap: 4 })
+  try {
+    native.render(frame, { enterIds: ["seq"], updateIds: [], exitIds: [] })
+    const sample = () => ({
+      actorFill: native.cy.$(".graph-actor-shape").first().style("background-color"),
+      actorBorder: native.cy.$(".graph-actor-shape").first().style("border-color"),
+      lifelineFill: native.cy.$("node[nativeKind = 'lifeline']").first().style("background-color"),
+      messageLine: native.cy.$(".graph-native-message").first().style("line-color"),
+      messageText: native.cy.$(".graph-native-message").first().style("color"),
+      ribbonFill: host.querySelector("[data-sticky-ribbon] [data-sticky-id] rect")?.getAttribute("fill"),
+      groupFill: host.querySelector("[data-sticky-groups] [data-sticky-id] rect")?.getAttribute("fill"),
+      background: host.style.background,
+    })
+    const cameraBefore = { pan: native.cy.pan(), zoom: native.cy.zoom() }
+    const light = sample()
+    native.applyTheme("dark")
+    const dark = sample()
+    native.applyTheme("light")
+    const restored = sample()
+    expect(host.querySelectorAll("[data-sticky-ribbon] [data-sticky-id]").length).toBeGreaterThan(0)
+    expect(host.querySelectorAll("[data-sticky-groups] [data-sticky-id]").length).toBeGreaterThan(0)
+    expect(dark).not.toEqual(light)
+    expect(restored).toEqual(light)
+    expect({
+      darkActorFill: dark.actorFill,
+      darkActorBorder: dark.actorBorder,
+      darkLifelineFill: dark.lifelineFill,
+      darkMessageLine: dark.messageLine,
+      darkMessageText: dark.messageText,
+      darkRibbonFill: dark.ribbonFill,
+      darkGroupFill: dark.groupFill,
+      lightRibbonFill: light.ribbonFill,
+      lightGroupFill: light.groupFill,
+    }).toMatchInlineSnapshot(`
+      {
+        "darkActorBorder": "rgb(96,165,250)",
+        "darkActorFill": "rgb(30,41,59)",
+        "darkGroupFill": "#172554",
+        "darkLifelineFill": "rgb(71,85,105)",
+        "darkMessageLine": "rgb(148,163,184)",
+        "darkMessageText": "rgb(226,232,240)",
+        "darkRibbonFill": "#1e293b",
+        "lightGroupFill": "#EDF0FD",
+        "lightRibbonFill": "#E3E9FD",
+      }
+    `)
+    expect(dark.background).not.toBe("")
+    expect(restored.background).toBe("")
+    expect({ pan: native.cy.pan(), zoom: native.cy.zoom() }).toEqual(cameraBefore)
+  } finally { native.unsubscribe(); host.remove() }
+})

@@ -13,6 +13,21 @@ export type StickyOptions = {
   groups?: boolean
 }
 
+export type GraphTheme = "light" | "dark"
+
+type StickyTokens = { fill: string; stroke: string; text: string }
+
+const STICKY_THEME: Record<GraphTheme, { ribbon: StickyTokens; group: StickyTokens }> = {
+  light: {
+    ribbon: { fill: "#E3E9FD", stroke: "#0D32B2", text: "#0A0F25" },
+    group: { fill: "#EDF0FD", stroke: "#0D32B2", text: "#0A0F25" },
+  },
+  dark: {
+    ribbon: { fill: "#1e293b", stroke: "#93c5fd", text: "#e2e8f0" },
+    group: { fill: "#172554", stroke: "#64748b", text: "#e2e8f0" },
+  },
+}
+
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg"
 
 /** A condensed header has room for a mark, not a name: one letter per word, three at most. */
@@ -40,6 +55,7 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
 
   let wantsRibbon = sticky.ribbon ?? true
   let wantsGroups = sticky.groups ?? true
+  let theme: GraphTheme = "light"
   const inset = sticky.inset ?? 8
   const fullWidth = sticky.fullWidth ?? 60
   const chipWidth = sticky.chipWidth ?? 32
@@ -67,25 +83,44 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
     store: Map<string, { group: SVGGElement; rect: SVGRectElement; text: SVGTextElement }>,
     layer: SVGGElement,
     id: string,
-    fill: string,
+    role: "ribbon" | "group",
   ) => {
     const existing = store.get(id)
     if (existing !== undefined) return existing
+    const token = STICKY_THEME[theme][role]
     const document = host.ownerDocument
     const group = document.createElementNS(SVG_NAMESPACE, "g")
     group.setAttribute("data-sticky-id", id)
     const rect = document.createElementNS(SVG_NAMESPACE, "rect")
     rect.setAttribute("rx", "4")
-    rect.setAttribute("fill", fill)
-    rect.setAttribute("stroke", "#0D32B2")
+    rect.setAttribute("fill", token.fill)
+    rect.setAttribute("stroke", token.stroke)
     const text = document.createElementNS(SVG_NAMESPACE, "text")
-    text.setAttribute("fill", "#0A0F25")
+    text.setAttribute("fill", token.text)
     text.setAttribute("style", "font:12px ui-monospace,Menlo,monospace")
     group.append(rect, text)
     layer.appendChild(group)
     const entry = { group, rect, text }
     store.set(id, entry)
     return entry
+  }
+
+  const recolor = (
+    store: Map<string, { group: SVGGElement; rect: SVGRectElement; text: SVGTextElement }>,
+    role: "ribbon" | "group",
+  ): void => {
+    const token = STICKY_THEME[theme][role]
+    for (const entry of store.values()) {
+      entry.rect.setAttribute("fill", token.fill)
+      entry.rect.setAttribute("stroke", token.stroke)
+      entry.text.setAttribute("fill", token.text)
+    }
+  }
+
+  const applyTheme = (next: GraphTheme): void => {
+    theme = next
+    recolor(painted, "ribbon")
+    recolor(paintedGroups, "group")
   }
 
   const sweep = (
@@ -122,7 +157,7 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
       if (placement.top < next.viewport.y || placement.top > bottomEdge) continue
       if (placement.state === "stuck" && placement.top < top) continue
       live.add(placement.id)
-      const entry = upsert(paintedGroups, layer, placement.id, "#EDF0FD")
+      const entry = upsert(paintedGroups, layer, placement.id, "group")
       const left = Math.max(next.viewport.x + inset, bounds.x * next.scale + next.x)
       const right = Math.min(next.viewport.x + next.viewport.width - inset, (bounds.x + bounds.width) * next.scale + next.x)
       entry.group.setAttribute("data-state", placement.state)
@@ -155,7 +190,7 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
       if (placement.state === "released") continue
       live.add(placement.id)
       const label = ribbonLabels[placement.id] ?? placement.id
-      const entry = upsert(painted, layer, placement.id, "#E3E9FD")
+      const entry = upsert(painted, layer, placement.id, "ribbon")
       entry.group.setAttribute("data-detail", placement.detail)
       entry.rect.setAttribute("x", String(placement.left))
       entry.rect.setAttribute("y", String(placement.top))
@@ -210,6 +245,7 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
     },
     applyCamera,
     applySticky,
+    applyTheme,
     unsubscribe() {
       overlay?.remove()
       painted.clear()

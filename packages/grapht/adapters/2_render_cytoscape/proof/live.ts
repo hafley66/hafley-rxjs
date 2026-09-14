@@ -69,7 +69,7 @@ const artifactFrame: GraphFrame = {
 const ui = Signal({ mode: "document" as Mode, source: "arch" as Source })
 const camera = Signal(cameraInput$, artifactFrame.camera)
 /** One store for the view switches, kept across reloads by the signals library's storage backend. */
-const view = StorageSignal("grapht.proof.view", { ribbon: true, groups: true, legend: false })
+const view = StorageSignal("grapht.proof.view", { ribbon: true, groups: true, legend: false, dark: true })
 
 const failure = Signal("")
 
@@ -83,6 +83,7 @@ type StickyResource = {
   render: (frame: GraphFrame, receipt: unknown) => void
   unsubscribe: () => void
   applySticky?: (sticky: { ribbon: boolean; groups: boolean }) => void
+  applyTheme?: (theme: "light" | "dark") => void
   legend?: { setOpen: (open: boolean) => void; toggled$: Observable<boolean> }
 }
 
@@ -99,10 +100,12 @@ const painted$ = merge(
   readout.$.pipe(tap(text => { readoutElement.textContent = text })),
   view.ribbon.$.pipe(tap(on => { ribbonToggle.checked = on })),
   view.groups.$.pipe(tap(on => { groupsToggle.checked = on })),
+  view.dark.$.pipe(tap(on => { darkToggle.checked = on !== false })),
   mounted$.pipe(
     switchMap(current =>
       merge(
         view.$.pipe(tap(next => current?.applySticky?.({ ribbon: next.ribbon, groups: next.groups }))),
+        view.dark.$.pipe(tap(dark => current?.applyTheme?.(dark === false ? "light" : "dark"))),
         view.legend.$.pipe(tap(open => current?.legend?.setOpen(open))),
         current?.legend?.toggled$.pipe(tap(open => view.legend.$(open))) ?? EMPTY,
       ),
@@ -115,7 +118,9 @@ let resource: StickyResource | undefined
 async function importCytoscape(host: HTMLElement) {
   try {
     const { createCytoscapeGraphFrameResource } = await import("../6_graphRenderer.ts")
-    return createCytoscapeGraphFrameResource(host, { cameraInput$, focusInput$, selectionInput$ }, { ...view.$(), inset: 44, fullWidth: 70, chipWidth: 34, gap: 4 })
+    const resource = createCytoscapeGraphFrameResource(host, { cameraInput$, focusInput$, selectionInput$ }, { ...view.$(), inset: 44, fullWidth: 70, chipWidth: 34, gap: 4 })
+    resource.applyTheme(view.dark.$() === false ? "light" : "dark")
+    return resource
   } catch (error) {
     failure.$(`cytoscape renderer failed: ${String(error).slice(0, 180)}`)
     return undefined
@@ -124,6 +129,7 @@ async function importCytoscape(host: HTMLElement) {
 
 const ribbonToggle = document.querySelector<HTMLInputElement>("#ribbon") as HTMLInputElement
 const groupsToggle = document.querySelector<HTMLInputElement>("#groups") as HTMLInputElement
+const darkToggle = document.querySelector<HTMLInputElement>("#dark") as HTMLInputElement
 let frame = artifactFrame
 
 async function mount(next: Mode): Promise<void> {
@@ -164,6 +170,7 @@ document.querySelector("#arch")?.addEventListener("click", () => void useSource(
 document.querySelector("#sequence")?.addEventListener("click", () => void useSource("sequence"))
 ribbonToggle.addEventListener("change", () => view.ribbon.$(ribbonToggle.checked))
 groupsToggle.addEventListener("change", () => view.groups.$(groupsToggle.checked))
+darkToggle.addEventListener("change", () => view.dark.$(darkToggle.checked))
 document.querySelector("#fit")?.addEventListener("click", () => {
   const rootId = ui.source.$() === "arch" ? "epic" : "seq"
   resource?.render(frame, { enterIds: [rootId], updateIds: [], exitIds: [] })
