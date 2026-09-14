@@ -176,30 +176,37 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
       gap,
     })
     const live = new Set<string>()
-    for (const placement of placements) {
+    const occupied: { left: number; right: number; bottom: number }[] = []
+    for (const placement of [...placements].sort((a, b) => a.top - b.top || a.depth - b.depth)) {
       if (!placement.visible) continue
       const bounds = groupBounds[placement.id]
       if (bounds === undefined) continue
       const bottomEdge = next.viewport.y + next.viewport.height - headerHeight
       if (placement.top < next.viewport.y || placement.top > bottomEdge) continue
       if (placement.state === "stuck" && placement.top < top) continue
-      live.add(placement.id)
-      const entry = upsert(paintedGroups, layer, placement.id, "group")
       const left = Math.max(next.viewport.x + inset, bounds.x * next.scale + next.x)
       const right = Math.min(next.viewport.x + next.viewport.width - inset, (bounds.x + bounds.width) * next.scale + next.x)
+      // Source headers can be only a few screen pixels apart at fitted zoom.
+      // Pack overlapping horizontal spans into readable rows with reachable controls.
+      let paintedTop = placement.top
+      for (const row of occupied) if (left < row.right && right > row.left && paintedTop < row.bottom + gap) paintedTop = row.bottom + gap
+      if (paintedTop > bottomEdge) continue
+      occupied.push({ left, right, bottom: paintedTop + headerHeight })
+      live.add(placement.id)
+      const entry = upsert(paintedGroups, layer, placement.id, "group")
       entry.group.setAttribute("data-state", placement.state)
       entry.rect.setAttribute("x", String(left))
-      entry.rect.setAttribute("y", String(placement.top))
+      entry.rect.setAttribute("y", String(paintedTop))
       entry.rect.setAttribute("width", String(Math.max(0, right - left)))
       entry.rect.setAttribute("height", String(headerHeight))
       entry.text.setAttribute("x", String(left + (entry.button ? 24 : 5)))
       if (entry.button && entry.icon) {
-        entry.button.setAttribute("transform", `translate(${left},${placement.top})`)
+        entry.button.setAttribute("transform", `translate(${left},${paintedTop})`)
         entry.button.setAttribute("aria-expanded", String(!collapsedIds.has(placement.id)))
         entry.button.setAttribute("aria-label", `${collapsedIds.has(placement.id) ? "Expand" : "Collapse"} ${ribbonLabels[placement.id] ?? placement.id}`)
         entry.icon.textContent = collapsedIds.has(placement.id) ? "+" : "−"
       }
-      entry.text.setAttribute("y", String(placement.top + headerHeight - 7))
+      entry.text.setAttribute("y", String(paintedTop + headerHeight - 7))
       entry.text.textContent = ribbonLabels[placement.id] ?? placement.id
     }
     sweep(paintedGroups, live)

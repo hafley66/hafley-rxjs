@@ -81,6 +81,11 @@ it("sticky actor/group headers emit their graph IDs and expose reversible keyboa
       const actor = host.querySelector<SVGGElement>("[data-sticky-ribbon] [data-sticky-id]")!
       const button = host.querySelector<SVGGElement>("[data-sticky-collapse]")!
       const group = button.closest<SVGGElement>("[data-sticky-id]")!
+      for (const control of host.querySelectorAll<SVGGElement>("[data-sticky-collapse]")) {
+        const bounds = control.getBoundingClientRect()
+        const hit = document.elementFromPoint(bounds.x + 11, bounds.y + 11)
+        expect(hit?.closest<SVGGElement>("[data-sticky-collapse]")?.dataset.stickyCollapse).toBe(control.dataset.stickyCollapse)
+      }
       actor.dispatchEvent(new PointerEvent("pointerenter"))
       actor.dispatchEvent(new PointerEvent("pointerleave"))
       group.dispatchEvent(new PointerEvent("pointerenter"))
