@@ -33,6 +33,8 @@
         display: flex;
         gap: 8px;
         align-items: center;
+        flex-wrap: wrap;
+        max-width: calc(100vw - 16px);
       }
       #bar label {
         display: flex;
@@ -62,10 +64,10 @@
         color: #7dd3fc;
       }
     </style>
-    <script type="module" crossorigin src="/hafley-rxjs/grapht/proof/assets/index-BdRg3imH.js"></script>
+    <script type="module" crossorigin src="/hafley-rxjs/grapht/proof/assets/index-ClQyqLjI.js"></script>
     <link rel="modulepreload" crossorigin href="/hafley-rxjs/grapht/proof/assets/rolldown-runtime-CbXtAM7H.js">
-    <link rel="modulepreload" crossorigin href="/hafley-rxjs/grapht/proof/assets/1_graphStylesheet-CMhDtDaq.js">
-    <link rel="modulepreload" crossorigin href="/hafley-rxjs/grapht/proof/assets/13_foreignObjectText-RY7JQxwD.js">
+    <link rel="modulepreload" crossorigin href="/hafley-rxjs/grapht/proof/assets/1_graphStylesheet-BICY6VA0.js">
+    <link rel="modulepreload" crossorigin href="/hafley-rxjs/grapht/proof/assets/13_foreignObjectText-D_XcQ0Or.js">
   </head>
   <body>
     <div id="bar">
@@ -75,6 +77,7 @@
       <!-- IDs become window properties; "cytoscape" triggers fCoSE global auto-registration. -->
       <button id="renderer-cytoscape">cytoscape renderer</button>
       <button id="fit">fit</button>
+      <label>Open SVG <input id="svg-import" type="file" accept=".svg,.json" multiple style="width:100px" title="SVG plus optional JSON containing graph and bindings"></label>
       <button id="layout-lab">layout policy</button>
       <label><input id="ribbon" type="checkbox" checked />actor ribbon</label>
       <label><input id="groups" type="checkbox" checked />group headers</label>
@@ -93,6 +96,7 @@
       <label>Hover <select id="hover-mode"><option>neighbors</option><option>upstream</option><option>downstream</option><option selected>both</option><option>off</option></select></label>
       <label>Relations <select id="hover-relations"><option value="actors">Actor links</option><option value="sequence">Sequence steps</option></select></label>
       <label>Hops <input id="hover-depth" type="number" min="1" max="20" value="2" style="width:44px"></label>
+      <div id="hop-colors" aria-label="Hop colors"></div>
       <label><input id="hover-debug" type="checkbox">Debug hover</label>
       <details><summary>Group actors</summary><select id="actor-members" multiple size="6" style="width:100%"></select>
       <input id="actor-group-name" placeholder="Group name" value="Actor group"><button id="group-actors">Group selected</button></details>
