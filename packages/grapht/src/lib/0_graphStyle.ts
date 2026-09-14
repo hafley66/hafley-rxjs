@@ -3,6 +3,8 @@ export type GraphTheme = "light" | "dark"
 
 /** Complete renderer-neutral palette. Spread a preset to customize individual colors. */
 export type GraphStyle = {
+  /** Fade uses one hue; color assigns a hue per hop. Both interpolate edge endpoint alpha. */
+  hopMode?: "fade" | "color"
   canvasBackground: string
   ribbon: { fill: string; stroke: string; text: string }
   group: { fill: string; stroke: string; text: string }
@@ -123,4 +125,9 @@ export function graphStyleOf(style: GraphStyleInput): GraphStyle {
 export function graphHopColor(style: GraphStyle, hop: number): string {
   const colors = style.hopColors ?? []
   return colors[Math.min(colors.length - 1, Math.max(0, Math.floor(hop)))] ?? style.focusBorder
+}
+
+/** Hover paint defaults to a single hue with distance expressed through opacity. */
+export function graphHoverColor(style: GraphStyle, hop: number): string {
+  return graphHopColor(style, style.hopMode === "color" ? hop : 0)
 }

@@ -25,5 +25,6 @@ export type RendererInteractions = {
   cameraInput$: Subject<GraphCamera>
   focusInput$: Subject<ReadonlySet<GraphId>>
   selectionInput$: Subject<ReadonlySet<GraphId>>
+  collapseInput$?: Subject<GraphId>
   moveInput$?: Subject<{ id: GraphId; dx: number; dy: number }>
 }

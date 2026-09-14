@@ -1,3 +1,4 @@
+import { GRAPH_STYLES } from "../../src/lib/0_graphStyle.js"
 import { expect, it } from "vitest"
 import { sequenceFrame } from "./proof/0_sequenceFrame.ts"
 import { createCytoscapeGraphFrameResource } from "./6_graphRenderer.ts"
@@ -154,7 +155,7 @@ it("shares hover gradients, logical hit IDs, and reversible fragment collapse", 
   try {
     doc.applyTheme("dark")
     doc.render(focused, { enterIds: [], updateIds: [], exitIds: [] })
-    const element = [...host.querySelectorAll<SVGElement>("[data-graph-id]")].find(el => el.dataset.graphId === message.id)!
+    const element = [...host.querySelectorAll<SVGElement>('[data-graph-role="message-label"]')].find(el => el.dataset.graphId === message.id)!
     element.dispatchEvent(new PointerEvent("pointerover", { bubbles: true }))
     expect({ opacity: element.style.opacity, focused: element.classList.contains("graph-focused"), hoverEvents }).toEqual({ opacity: "0.55", focused: true, hoverEvents: [[message.id]] })
     doc.render(collapsed, { enterIds: [], updateIds: [], exitIds: [] })
@@ -167,7 +168,7 @@ it("shares hover gradients, logical hit IDs, and reversible fragment collapse", 
   try {
     native.render(focused, { enterIds: [], updateIds: [], exitIds: [] })
     const edge = native.cy.edges().filter(el => el.data("graphId") === message.id).first()
-    expect({ opacity: edge.style("opacity"), focused: edge.hasClass("graph-focused") }).toEqual({ opacity: "0.55", focused: true })
+    expect({ opacity: edge.style("opacity"), textOpacity: edge.style("text-opacity"), focused: edge.hasClass("graph-focused") }).toEqual({ opacity: "1", textOpacity: "0.55", focused: true })
     native.render(collapsed, { enterIds: [], updateIds: [], exitIds: [] })
     expect(native.cy.elements().filter(el => collapsed.presentation.hiddenIds.has(el.data("graphId"))).toArray().every(el => el.hasClass("graph-hidden"))).toBe(true)
     native.render(frame, { enterIds: [], updateIds: [], exitIds: [] })
@@ -204,36 +205,36 @@ it("groups existing actors in both adapters and restores all bindings after expa
 
 it("shares hop colors, restores original paint, and keeps fitted DOM lifelines visible", async () => {
   const frame = await sequenceFrame({ width: 1280, height: 800 })
-  const id = Object.values(frame.graph).find(item => item.type === "edge")!.id
+  const id = Object.keys(frame.geometry.columnBoundsById!)[0]
   const host = document.createElement("div")
   host.style.cssText = "position:relative;width:1280px;height:800px"
   document.body.appendChild(host)
   const doc = createDocumentGraphFrameResource(host)
-  doc.applyTheme("dark")
+  doc.applyTheme({ ...GRAPH_STYLES.dark, hopMode: "color" })
   doc.render(frame, { enterIds: [], updateIds: [], exitIds: [] })
-  const binding = frame.presentation.sealedSvgArtifactsByRootId.seq.bindings!.find(b => b.graphId === id && b.role === "message-line")!
+  const binding = frame.presentation.sealedSvgArtifactsByRootId.seq.bindings!.find(b => b.graphId === id && b.role === "lifeline")!
   const line = host.querySelector<SVGElement>(`[id="${binding.elementId}"]`)!
   const original = getComputedStyle(line).stroke
   const colors = []
   for (const hop of [1, 2, 3]) { doc.applyHover!({ [id]: hop }); colors.push(getComputedStyle(line).stroke) }
-  doc.applyTheme("light")
+  doc.applyTheme({ ...GRAPH_STYLES.light, hopMode: "color" })
   expect(getComputedStyle(line).stroke).toBe("rgb(194, 65, 12)")
-  doc.applyTheme("dark")
+  doc.applyTheme({ ...GRAPH_STYLES.dark, hopMode: "color" })
   doc.applyHover!({})
   expect(getComputedStyle(line).stroke).toBe(original)
   expect(getComputedStyle(host.querySelector(".actor-line")!).vectorEffect).toBe("non-scaling-stroke")
   doc.unsubscribe()
   const native = createCytoscapeGraphFrameResource(host)
   try {
-    native.applyTheme("dark")
+    native.applyTheme({ ...GRAPH_STYLES.dark, hopMode: "color" })
     native.render(frame, { enterIds: [], updateIds: [], exitIds: [] })
-    const edge = native.cy.edges().filter(edge => edge.data("graphId") === id).first()
+    const edge = native.cy.nodes().filter(edge => edge.data("graphId") === id && edge.data("nativeKind") === "lifeline").first()
     const nativeColors = []
-    for (const hop of [1, 2, 3]) { native.applyHover!({ [id]: hop }); nativeColors.push(edge.style("line-color")) }
+    for (const hop of [1, 2, 3]) { native.applyHover!({ [id]: hop }); nativeColors.push(edge.style("background-color")) }
     expect(colors.map(color => color.replaceAll(" ", ""))).toEqual(nativeColors)
     expect(nativeColors).toEqual(["rgb(56,189,248)", "rgb(74,222,128)", "rgb(251,146,60)"])
     native.applyHover!({})
-    expect(edge.style("line-color")).toBe("rgb(148,163,184)")
+    expect(edge.style("background-color")).toBe("rgb(71,85,105)")
   } finally { native.unsubscribe(); host.remove() }
 })
 

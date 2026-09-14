@@ -1,4 +1,4 @@
-import { GRAPH_STYLES, graphHopColor } from "../../../src/lib/0_graphStyle.ts"
+import { GRAPH_STYLES, graphHoverColor, type GraphStyleInput } from "../../../src/lib/0_graphStyle.ts"
 import { svgFrame, type SvgFrameInput } from "../../../src/2_graph/21_svgFrame.ts"
 import { DEFAULT_WHEEL_SETTINGS, wheelSettingsOf, type WheelSettings } from "../../../src/lib/1_wheelCamera.ts"
 import archSource from "../../../0_rendered_artifact_state_epic.d2?raw"
@@ -6,7 +6,7 @@ import { groupSequenceActors } from "../../../src/2_graph/20_groupActors.ts"
 import { sequenceNeighborhood } from "../../../src/2_graph/19_sequenceNeighborhood.ts"
 import type { SequenceGraph } from "@hafley66/grapht-model"
 import { collapseSequenceFrame } from "../../../src/2_graph/18_sequenceCollapse.ts"
-import { graphNeighborhood, type HoverMode } from "../../../src/2_graph/16_neighborhood.ts"
+import { graphNeighborhood, hoverOpacity, type HoverMode } from "../../../src/2_graph/16_neighborhood.ts"
 import { performanceReadout } from "../../../../docs-kit/src/3a_performanceReadout.ts"
 import { BehaviorSubject, EMPTY, merge, Subject, switchMap, tap } from "rxjs"
 import { Signal, StorageSignal, storageSignal, urlAdapter, sync } from "@hafley66/signals"
@@ -21,6 +21,7 @@ type Source = "arch" | "sequence" | "svg"
 
 const cameraInput$ = new Subject<GraphCamera>()
 const focusInput$ = new Subject<ReadonlySet<string>>()
+const collapseInput$ = new Subject<string>()
 const selectionInput$ = new Subject<ReadonlySet<string>>()
 
 const host = document.querySelector<HTMLElement>("#host") as HTMLElement
@@ -81,6 +82,11 @@ const camera = Signal(cameraInput$, artifactFrame.camera)
 /** One store for the view switches, kept across reloads by the signals library's storage backend. */
 const view = StorageSignal("grapht.proof.view", { ribbon: true, groups: true, legend: false, dark: true })
 
+const hoverColors = StorageSignal("grapht.proof.hop-colors", false)
+const hoverColorToggle = document.querySelector<HTMLInputElement>("#hover-color-mode")!
+hoverColorToggle.addEventListener("change", () => hoverColors.$(hoverColorToggle.checked))
+const hoverStyle = () => ({ ...GRAPH_STYLES[view.dark.$() === false ? "light" : "dark"], hopMode: hoverColors.$() ? "color" as const : "fade" as const })
+
 const wheelSettings = StorageSignal("grapht.proof.wheel", { ...DEFAULT_WHEEL_SETTINGS }, { parse: text => wheelSettingsOf(JSON.parse(text)) })
 const wheelRoute = storageSignal(urlAdapter("wheel"), wheelSettings.$(), { parse: text => wheelSettingsOf(JSON.parse(text)) })
 const wheelSync = sync(wheelSettings, wheelRoute, { to: wheelSettingsOf, from: wheelSettingsOf })
@@ -108,7 +114,7 @@ type StickyResource = {
   render: (frame: GraphFrame, receipt: unknown) => void
   unsubscribe: () => void
   applySticky?: (sticky: { ribbon: boolean; groups: boolean }) => void
-  applyTheme?: (theme: "light" | "dark") => void
+  applyTheme?: (theme: GraphStyleInput) => void
   legend?: { setOpen: (open: boolean) => void; toggled$: Observable<boolean> }
 }
 
@@ -133,22 +139,26 @@ const painted$ = merge(
       if (output) output.textContent = String(value)
     }
   })),
+  collapseInput$.pipe(tap(id => {
+    if (collapsedIds.has(id)) collapsedIds.delete(id); else collapsedIds.add(id)
+    frame = collapseSequenceFrame(document, originalFrame, collapsedIds)
+    paintInteraction(true)
+    rebuildGroupControls()
+  })),
+  hoverColors.$.pipe(tap(on => { hoverColorToggle.checked = on; paintHopLegend() })),
   focusInput$.pipe(tap(ids => { hoveredIds = ids; paintInteraction() })),
   readout.$.pipe(tap(text => { readoutElement.textContent = text })),
   view.ribbon.$.pipe(tap(on => { ribbonToggle.checked = on })),
   view.groups.$.pipe(tap(on => { groupsToggle.checked = on })),
   view.dark.$.pipe(tap(on => { darkToggle.checked = on !== false; layoutLab?.applyTheme(on === false ? "light" : "dark")
-    const palette = GRAPH_STYLES[on === false ? "light" : "dark"]
-    document.querySelector("#hop-colors")!.replaceChildren("Colors: ", ...["focus", "1", "2", "3", "4+"].map((label, hop) => {
-      const span = document.createElement("span"); span.textContent = `${label}  `; span.style.color = graphHopColor(palette, hop); return span
-    }))
+    paintHopLegend()
   })),
   mounted$.pipe(
     switchMap(current =>
       merge(
         wheelSettings.$.pipe(tap(settings => current?.applyWheelSettings?.(settings))),
         view.$.pipe(tap(next => current?.applySticky?.({ ribbon: next.ribbon, groups: next.groups }))),
-        view.dark.$.pipe(tap(dark => current?.applyTheme?.(dark === false ? "light" : "dark"))),
+        merge(view.dark.$, hoverColors.$).pipe(tap(() => current?.applyTheme?.(hoverStyle()))),
         view.legend.$.pipe(tap(open => current?.legend?.setOpen(open))),
         current?.legend?.toggled$.pipe(tap(open => view.legend.$(open))) ?? EMPTY,
       ),
@@ -161,8 +171,8 @@ let resource: StickyResource | undefined
 async function importCytoscape(host: HTMLElement) {
   try {
     const { createCytoscapeGraphFrameResource } = await import("../6_graphRenderer.ts")
-    const resource = createCytoscapeGraphFrameResource(host, { cameraInput$, focusInput$, selectionInput$ }, { ...view.$(), inset: 44, fullWidth: 70, chipWidth: 34, gap: 4 })
-    resource.applyTheme(view.dark.$() === false ? "light" : "dark")
+    const resource = createCytoscapeGraphFrameResource(host, { cameraInput$, focusInput$, selectionInput$, collapseInput$ }, { ...view.$(), inset: 44, fullWidth: 70, chipWidth: 34, gap: 4 })
+    resource.applyTheme(hoverStyle())
     return resource
   } catch (error) {
     failure.$(`cytoscape renderer failed: ${String(error).slice(0, 180)}`)
@@ -183,8 +193,17 @@ const hoverDepth = document.querySelector<HTMLInputElement>("#hover-depth")!
 const hoverDebug = document.querySelector<HTMLInputElement>("#hover-debug")!
 const inspector = document.querySelector<HTMLElement>("#hover-inspector")!
 
+function paintHopLegend(): void {
+  const palette = hoverStyle()
+  document.querySelector("#hop-colors")!.replaceChildren("Hops: ", ...["focus", "1", "2", "3", "4+"].map((label, hop) => {
+    const span = document.createElement("span")
+    span.textContent = `${label}  `; span.style.color = graphHoverColor(palette, hop); span.style.opacity = String(hoverOpacity(hop, true))
+    return span
+  }))
+}
+
 function paintInteraction(renderFrame = false): void {
-  const options = { mode: hoverMode.value as HoverMode, depth: Number(hoverDepth.value) }
+  const options = { mode: hoverMode.value as HoverMode, depth: Number(hoverDepth.value), components: collapsedIds }
   const hops = hoverRelations.value === "sequence" ? sequenceNeighborhood(frame.graph as SequenceGraph, hoveredIds, options) : graphNeighborhood(frame.graph, hoveredIds, options)
   if (renderFrame) resource?.render({ ...frame, camera: camera.$(), presentation: { ...frame.presentation, hopsById: hops } }, { enterIds: [], updateIds: [], exitIds: [] })
   else resource?.applyHover?.(hops)
@@ -265,10 +284,10 @@ async function mount(next: Mode): Promise<void> {
 
   resource =
     next === "document"
-      ? createDocumentGraphFrameResource(host, { cameraInput$, focusInput$ }, { ...view.$(), inset: 44, fullWidth: 70, chipWidth: 34, gap: 4 })
+      ? createDocumentGraphFrameResource(host, { cameraInput$, focusInput$, collapseInput$ }, { ...view.$(), inset: 44, fullWidth: 70, chipWidth: 34, gap: 4 })
       : await importCytoscape(host)
   resource?.applyWheelSettings?.(wheelSettings.$())
-  resource?.applyTheme?.(view.dark.$() === false ? "light" : "dark")
+  resource?.applyTheme?.(hoverStyle())
   const rootId = Object.keys(frame.presentation.sealedSvgArtifactsByRootId)[0]
   resource?.render(frame, { enterIds: [rootId], updateIds: [], exitIds: [] })
   cameraInput$.next(frame.camera)

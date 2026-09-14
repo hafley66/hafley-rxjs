@@ -1,0 +1,90 @@
+diff --git a/dist/cytoscape.cjs.js b/dist/cytoscape.cjs.js
+index f7479288ca7ab533fa0c87055513b3a8728bc4dc..4158bdf90b4a1bd4686fe0f1e92ea2c9cd964c1c 100644
+--- a/dist/cytoscape.cjs.js
++++ b/dist/cytoscape.cjs.js
+@@ -30045,6 +30045,7 @@ CRp$9.drawArrowhead = function (context, edge, prefix, x, y, angle, opacity) {
+     opacity = edgeOpacity;
+   }
+   var gco = context.globalCompositeOperation;
++  opacity *= edge.pstyle(prefix + '-arrow-color').value[3] == null ? 1 : edge.pstyle(prefix + '-arrow-color').value[3];
+   if (opacity !== 1 || arrowFill === 'hollow') {
+     // then extra clear is needed
+     context.globalCompositeOperation = 'destination-out';
+@@ -31390,7 +31391,7 @@ CRp$5.createGradientStyleFor = function (context, shapeStyleName, ele, fill, opa
+   var hasPositions = positions.length === colors.length;
+   var length = colors.length;
+   for (var i = 0; i < length; i++) {
+-    gradientStyle.addColorStop(hasPositions ? positions[i] : i / (length - 1), 'rgba(' + colors[i][0] + ',' + colors[i][1] + ',' + colors[i][2] + ',' + opacity + ')');
++    gradientStyle.addColorStop(hasPositions ? positions[i] : i / (length - 1), 'rgba(' + colors[i][0] + ',' + colors[i][1] + ',' + colors[i][2] + ',' + (opacity * (colors[i][3] == null ? 1 : colors[i][3])) + ')');
+   }
+   return gradientStyle;
+ };
+diff --git a/dist/cytoscape.esm.mjs b/dist/cytoscape.esm.mjs
+index d81a2b6072e6f9a0f563f5dc1b87e3fa1a099b3d..4ef9d8bc886720e0236a417096e2fdc26558ed64 100644
+--- a/dist/cytoscape.esm.mjs
++++ b/dist/cytoscape.esm.mjs
+@@ -30043,6 +30043,7 @@ CRp$9.drawArrowhead = function (context, edge, prefix, x, y, angle, opacity) {
+     opacity = edgeOpacity;
+   }
+   var gco = context.globalCompositeOperation;
++  opacity *= edge.pstyle(prefix + '-arrow-color').value[3] == null ? 1 : edge.pstyle(prefix + '-arrow-color').value[3];
+   if (opacity !== 1 || arrowFill === 'hollow') {
+     // then extra clear is needed
+     context.globalCompositeOperation = 'destination-out';
+@@ -31388,7 +31389,7 @@ CRp$5.createGradientStyleFor = function (context, shapeStyleName, ele, fill, opa
+   var hasPositions = positions.length === colors.length;
+   var length = colors.length;
+   for (var i = 0; i < length; i++) {
+-    gradientStyle.addColorStop(hasPositions ? positions[i] : i / (length - 1), 'rgba(' + colors[i][0] + ',' + colors[i][1] + ',' + colors[i][2] + ',' + opacity + ')');
++    gradientStyle.addColorStop(hasPositions ? positions[i] : i / (length - 1), 'rgba(' + colors[i][0] + ',' + colors[i][1] + ',' + colors[i][2] + ',' + (opacity * (colors[i][3] == null ? 1 : colors[i][3])) + ')');
+   }
+   return gradientStyle;
+ };
+diff --git a/dist/cytoscape.umd.js b/dist/cytoscape.umd.js
+index cca44095d3553edb3343aaefa5ea0e28e0af35a8..8eecdbb2d6cb1206b26827080068d0569c0c878f 100644
+--- a/dist/cytoscape.umd.js
++++ b/dist/cytoscape.umd.js
+@@ -30049,7 +30049,8 @@ var printLayoutInfo;
+       opacity = edgeOpacity;
+     }
+     var gco = context.globalCompositeOperation;
+-    if (opacity !== 1 || arrowFill === 'hollow') {
++    opacity *= edge.pstyle(prefix + '-arrow-color').value[3] == null ? 1 : edge.pstyle(prefix + '-arrow-color').value[3];
++  if (opacity !== 1 || arrowFill === 'hollow') {
+       // then extra clear is needed
+       context.globalCompositeOperation = 'destination-out';
+       self.colorFillStyle(context, 255, 255, 255, 1);
+@@ -31394,7 +31395,7 @@ var printLayoutInfo;
+     var hasPositions = positions.length === colors.length;
+     var length = colors.length;
+     for (var i = 0; i < length; i++) {
+-      gradientStyle.addColorStop(hasPositions ? positions[i] : i / (length - 1), 'rgba(' + colors[i][0] + ',' + colors[i][1] + ',' + colors[i][2] + ',' + opacity + ')');
++      gradientStyle.addColorStop(hasPositions ? positions[i] : i / (length - 1), 'rgba(' + colors[i][0] + ',' + colors[i][1] + ',' + colors[i][2] + ',' + (opacity * (colors[i][3] == null ? 1 : colors[i][3])) + ')');
+     }
+     return gradientStyle;
+   };
+diff --git a/src/extensions/renderer/canvas/drawing-edges.mjs b/src/extensions/renderer/canvas/drawing-edges.mjs
+index fc71ef5d59833424041981c322aa0aa89671899b..57c092a35e496cd55d36737253cb52cf7feed97e 100644
+--- a/src/extensions/renderer/canvas/drawing-edges.mjs
++++ b/src/extensions/renderer/canvas/drawing-edges.mjs
+@@ -337,6 +337,7 @@ CRp.drawArrowhead = function( context, edge, prefix, x, y, angle, opacity ){
+ 
+   let gco = context.globalCompositeOperation;
+ 
++  opacity *= edge.pstyle(prefix + '-arrow-color').value[3] == null ? 1 : edge.pstyle(prefix + '-arrow-color').value[3];
+   if( opacity !== 1 || arrowFill === 'hollow' ){ // then extra clear is needed
+     context.globalCompositeOperation = 'destination-out';
+ 
+diff --git a/src/extensions/renderer/canvas/drawing-redraw.mjs b/src/extensions/renderer/canvas/drawing-redraw.mjs
+index 59c8f2ae110b2822d92e2b03e60925f5f8c1e4a2..fa8e424b59ca5a90409d99b00b55f08939cec020 100644
+--- a/src/extensions/renderer/canvas/drawing-redraw.mjs
++++ b/src/extensions/renderer/canvas/drawing-redraw.mjs
+@@ -119,7 +119,7 @@ CRp.createGradientStyleFor = function( context, shapeStyleName, ele, fill, opaci
+ 
+   let length = colors.length;
+   for (let i = 0; i < length; i++) {
+-    gradientStyle.addColorStop(hasPositions ? positions[i] : i / (length - 1), 'rgba(' + colors[i][0] + ',' + colors[i][1] + ',' + colors[i][2] + ',' + opacity + ')');
++    gradientStyle.addColorStop(hasPositions ? positions[i] : i / (length - 1), 'rgba(' + colors[i][0] + ',' + colors[i][1] + ',' + colors[i][2] + ',' + (opacity * (colors[i][3] == null ? 1 : colors[i][3])) + ')');
+   }
+ 
+   return gradientStyle;

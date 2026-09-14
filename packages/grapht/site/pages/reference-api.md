@@ -8,7 +8,7 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 
 | module | exports | what it is |
 | --- | --- | --- |
-| [src/lib/0_graphStyle.ts](#src-lib-0-graphstyle-ts) | 7 | Shared graph colors for native primitives, document SVG, and screen-space headers. |
+| [src/lib/0_graphStyle.ts](#src-lib-0-graphstyle-ts) | 8 | Shared graph colors for native primitives, document SVG, and screen-space headers. |
 | [src/lib/1_wheelCamera.ts](#src-lib-1-wheelcamera-ts) | 3 | Shared wheel interpretation for graph renderers; coordinates are local to the graph viewport. |
 | [src/lib/1_graphStylesheet.ts](#src-lib-1-graphstylesheet-ts) | 2 | Cytoscape-compatible primitive rules are the shared style floor for canvas and SVG adapters. |
 | [src/2_graph/15_groupLayout.ts](#src-2-graph-15-grouplayout-ts) | 6 | Per-group automatic-layout ownership, with retained manual positions across collapse/expand. |
@@ -45,6 +45,7 @@ Shared graph colors for native primitives, document SVG, and screen-space header
 | [`GraphStyleResource`](#src-lib-0-graphstyle-ts-graphstyleresource) | interface |
 | [`graphStyleOf`](#src-lib-0-graphstyle-ts-graphstyleof) | function |
 | [`graphHopColor`](#src-lib-0-graphstyle-ts-graphhopcolor) | function |
+| [`graphHoverColor`](#src-lib-0-graphstyle-ts-graphhovercolor) | function |
 
 ### `GraphTheme` {#src-lib-0-graphstyle-ts-graphtheme}
 
@@ -62,6 +63,8 @@ Complete renderer-neutral palette. Spread a preset to customize individual color
 
 ```ts
 export type GraphStyle = {
+  /** Fade uses one hue; color assigns a hue per hop. Both interpolate edge endpoint alpha. */
+  hopMode?: "fade" | "color"
   canvasBackground: string
   ribbon: { fill: string; stroke: string; text: string }
   group: { fill: string; stroke: string; text: string }
@@ -101,7 +104,7 @@ export function graphStyleOf(style: GraphStyleInput): GraphStyle
 
 ### `GRAPH_STYLES` {#src-lib-0-graphstyle-ts-graph-styles}
 
-`GRAPH_STYLES` is declared at `src/lib/0_graphStyle.ts:40`.
+`GRAPH_STYLES` is declared at `src/lib/0_graphStyle.ts:42`.
 
 ```ts
 GRAPH_STYLES: Readonly<Record<GraphTheme, GraphStyle>>
@@ -109,7 +112,7 @@ GRAPH_STYLES: Readonly<Record<GraphTheme, GraphStyle>>
 
 ### `GraphStyleInput` {#src-lib-0-graphstyle-ts-graphstyleinput}
 
-`GraphStyleInput` is declared at `src/lib/0_graphStyle.ts:110`.
+`GraphStyleInput` is declared at `src/lib/0_graphStyle.ts:112`.
 
 Both renderer resources accept the same preset name or complete caller-owned palette.
 
@@ -121,7 +124,7 @@ export function graphStyleOf(style: GraphStyleInput): GraphStyle
 
 ### `GraphStyleResource` {#src-lib-0-graphstyle-ts-graphstyleresource}
 
-`GraphStyleResource` is declared at `src/lib/0_graphStyle.ts:112`.
+`GraphStyleResource` is declared at `src/lib/0_graphStyle.ts:114`.
 
 ```ts
 export interface GraphStyleResource {
@@ -132,7 +135,7 @@ export interface GraphStyleResource {
 
 ### `graphStyleOf` {#src-lib-0-graphstyle-ts-graphstyleof}
 
-`graphStyleOf` is declared at `src/lib/0_graphStyle.ts:118`.
+`graphStyleOf` is declared at `src/lib/0_graphStyle.ts:120`.
 
 Resolve a preset name once at the renderer boundary. Custom palettes are read without mutation.
 
@@ -142,12 +145,22 @@ graphStyleOf: (style: GraphStyleInput) => GraphStyle
 
 ### `graphHopColor` {#src-lib-0-graphstyle-ts-graphhopcolor}
 
-`graphHopColor` is declared at `src/lib/0_graphStyle.ts:123`.
+`graphHopColor` is declared at `src/lib/0_graphStyle.ts:125`.
 
 Reuse the final palette color for deeper hops; opacity still expresses increasing distance.
 
 ```ts
 graphHopColor: (style: GraphStyle, hop: number) => string
+```
+
+### `graphHoverColor` {#src-lib-0-graphstyle-ts-graphhovercolor}
+
+`graphHoverColor` is declared at `src/lib/0_graphStyle.ts:131`.
+
+Hover paint defaults to a single hue with distance expressed through opacity.
+
+```ts
+graphHoverColor: (style: GraphStyle, hop: number) => string
 ```
 
 ## src/lib/1_wheelCamera.ts
@@ -320,7 +333,7 @@ export type HoverMode = "off" | "neighbors" | "upstream" | "downstream" | "both"
 `HoverOptions` is declared at `src/2_graph/16_neighborhood.ts:4`.
 
 ```ts
-export type HoverOptions = { mode: HoverMode; depth: number }
+export type HoverOptions = { mode: HoverMode; depth: number; components?: ReadonlySet<GraphId> }
 
 export function graphNeighborhood(graph: Graph, focus: ReadonlySet<GraphId>, options: HoverOptions): Record<GraphId, number>
 ```
@@ -339,7 +352,7 @@ graphNeighborhood: (graph: Readonly<Record<string, GraphItem<unknown, unknown>>>
 
 ### `hoverOpacity` {#src-2-graph-16-neighborhood-ts-hoveropacity}
 
-`hoverOpacity` is declared at `src/2_graph/16_neighborhood.ts:50`.
+`hoverOpacity` is declared at `src/2_graph/16_neighborhood.ts:56`.
 
 Focus and first-hop neighbors share full intensity; subsequent hops fade geometrically.
 
@@ -556,6 +569,8 @@ export type GraphPresentation = {
   stickyHeaders: readonly HeaderPlacement[]
   hiddenIds: ReadonlySet<GraphId>
   focusedIds: ReadonlySet<GraphId>
+  /** Collapsed groups retain their logical IDs and header controls. */
+  collapsedIds?: ReadonlySet<GraphId>
   /** Hover distance by logical graph ID; missing IDs are faded context while nonempty. */
   hopsById?: Readonly<Record<GraphId, number>>
   labelsById: Readonly<Record<GraphId, GraphLabel>>
@@ -567,7 +582,7 @@ export type GraphPresentation = {
 
 ### `GraphFrame` {#src-2-graph-0-frame-ts-graphframe}
 
-`GraphFrame` is declared at `src/2_graph/0_frame.ts:52`.
+`GraphFrame` is declared at `src/2_graph/0_frame.ts:54`.
 
 A complete render input combining the graph with its geometry, camera, and presentation. The caller owns state and lifetime.
 

@@ -35,5 +35,5 @@ export function collapsedGraphIds(graph: Graph, collapsed: ReadonlySet<string>):
 
 /** Visibility projection is renderer-independent and never deletes source topology. */
 export function collapseGraphFrame(frame: GraphFrame, collapsed: ReadonlySet<string>): GraphFrame {
-  return { ...frame, presentation: { ...frame.presentation, hiddenIds: new Set([...frame.presentation.hiddenIds, ...collapsedGraphIds(frame.graph, collapsed)]) } }
+  return { ...frame, presentation: { ...frame.presentation, collapsedIds: new Set(collapsed), hiddenIds: new Set([...frame.presentation.hiddenIds, ...collapsedGraphIds(frame.graph, collapsed)]) } }
 }

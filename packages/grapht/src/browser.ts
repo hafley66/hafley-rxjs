@@ -18,7 +18,7 @@ export type { GraphFrameResource, GraphRenderReceipt } from "./2_graph/10_render
 export { graphRenderer, graphRenderReceipt } from "./2_graph/10_renderer.js"
 export { fcoseGraphLayout } from "./2_graph/12_layout.js"
 
-export { GRAPH_STYLES, graphStyleOf, graphHopColor, type GraphStyle, type GraphStyleInput, type GraphStyleResource, type GraphTheme } from "./lib/0_graphStyle.js"
+export { GRAPH_STYLES, graphStyleOf, graphHopColor, graphHoverColor, type GraphStyle, type GraphStyleInput, type GraphStyleResource, type GraphTheme } from "./lib/0_graphStyle.js"
 export { graphStylesheet, type GraphStyleRule } from "./lib/1_graphStylesheet.js"
 export { reduceGroupLayout, groupAllowsAutoLayout, groupPositionsOf, type GroupPositions, type GroupLayoutState, type GroupLayoutEvent } from "./2_graph/15_groupLayout.js"
 

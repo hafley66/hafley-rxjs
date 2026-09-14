@@ -21,7 +21,9 @@ document-only because it has no native graph bindings.
 | End wheel gesture | Damped pan/zoom momentum |
 | Zoom / momentum settings | Stored sensitivity, momentum on/off, strength, decay, and maximum tail |
 | Fit | Restore fitted camera and cancel momentum |
-| Actor ribbon / group headers | Toggle shared screen-space headers |
+| Actor ribbon / group headers | Toggle shared screen-space headers; hover uses the represented actor/group ID |
+| Floating group + / − | Expand/collapse that group; keyboard Enter or Space also works |
+| Hop colors | Switch between one hue with fading (default) and per-hop hues; preference persists |
 | Dark mode (both renderers) | Change shared SVG/canvas/header colors; preference persists |
 | Interaction / hover | Neighbors, upstream, downstream, both, or off; configurable depth |
 | Relations | Traverse actor links or ordered sequence steps |
@@ -33,7 +35,20 @@ document-only because it has no native graph bindings.
 The document renderer supports text selection. Native sequence shapes are currently ungrabbable.
 Manual movement, undo, and arrangement persistence are not connected in this proof. Hover is transient:
 it does not commit selection or history, move the camera, or cancel momentum. Focus and first-hop
-neighbors use full intensity. Hop colors are amber (focus), blue (1), green (2), orange (3), and red (4+); light mode uses darker variants. Subsequent hops multiply opacity by 0.55, with unrelated context at 0.15.
+neighbors use full intensity. Fading is the default; enable **Hop colors** for amber (focus),
+blue (1), green (2), orange (3), and red (4+), with darker variants in light mode. Subsequent
+hops multiply opacity by 0.55, with unrelated context at 0.15. Edges interpolate their logical
+source and target colors and opacity in both modes; arrowheads use their endpoint paint.
+SVG uses user-space gradients, including horizontal and reversed paths. Native Cytoscape uses
+[source-to-target line gradients](https://js.cytoscape.org/#style/edge-line).
+The pinned Cytoscape 3.34.0 patch preserves RGBA stop and arrow alpha in its canvas renderer;
+upstream otherwise ignores those alpha components. The patch covers the source, ESM, CJS,
+and unminified UMD entries used by this workspace.
+
+Sticky actor names use the same hover origin as their in-diagram labels. Group headers show the
+nearest reached member's hop. Collapsed ownership groups are traversal components: their internal
+members share a distance, and each boundary crossing consumes one hop. This uses explicit group
+membership; it does not infer strongly connected components from arbitrary cycles.
 Parallel branches receive equal step distance and converge at their following event. Actor links and
 sequence steps are separate relations because repeated messages between the same actors have distinct order.
 Native mobile touch-pinch momentum is unverified.
@@ -45,7 +60,7 @@ and collapsed state survive renderer switches and last until source replacement 
 ## Shared styles and layout policy lab
 
 Both renderers accept `applyTheme("light" | "dark" | GraphStyle)`. Presets and caller palettes
-feed one Cytoscape-compatible rule set. The SVG adapter maps known Mermaid/D2 primitive paint
+feed one Cytoscape-compatible rule set. `GraphStyle.hopMode` accepts `"fade"` (default) or `"color"`; `hopColors` customizes the palette. The SVG adapter maps known Mermaid/D2 primitive paint
 properties, retaining source geometry and text metrics. Theme changes preserve the camera.
 
 Open **layout policy** to try two draggable groups. Moving a child freezes automatic layout for

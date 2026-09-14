@@ -1,4 +1,5 @@
-import { graphHopColor } from "../../src/lib/0_graphStyle.js"
+import { graphHoverColor } from "../../src/lib/0_graphStyle.js"
+import { hoverEdgeStops } from "../../src/lib/3_hoverPaint.js"
 import type { WheelSettings } from "../../src/lib/1_wheelCamera.js"
 import { hoverOpacity } from "../../src/2_graph/16_neighborhood.js"
 import { graphStylesheet } from "../../src/lib/1_graphStylesheet.js"
@@ -263,7 +264,7 @@ export function createCytoscapeGraphFrameResource(
     sealedSvgLayer.setAttribute("style", "position:absolute;inset:0;overflow:hidden;pointer-events:none")
     host.appendChild(sealedSvgLayer)
   }
-  const stickyOverlay = host && sticky ? createStickyOverlay(host, sticky) : undefined
+  const stickyOverlay = host && sticky ? createStickyOverlay(host, sticky, interactions) : undefined
   let theme: GraphStyle = GRAPH_STYLES.light
   let themed = false
   let applyingFrame = false
@@ -357,16 +358,27 @@ export function createCytoscapeGraphFrameResource(
       for (const element of cy.elements()) {
         const id = String(element.data("graphId") ?? element.id())
         element.toggleClass("graph-focused", committedFocus.has(id) || hops[id] !== undefined)
-        element.removeStyle("border-color line-color target-arrow-color source-arrow-color color")
+        element.removeStyle("border-color line-color line-fill line-gradient-stop-colors line-gradient-stop-positions target-arrow-color source-arrow-color color")
         if (element.data("nativeKind") === "lifeline") element.removeStyle("background-color")
         if (hops[id] !== undefined) {
-          const color = graphHopColor(theme, hops[id])
+          const color = graphHoverColor(theme, hops[id])
           element.style("color", color)
           element.style(element.group() === "edges" ? { "line-color": color, "target-arrow-color": color, "source-arrow-color": color } : element.data("nativeKind") === "lifeline" ? { "background-color": color } : { "border-color": color })
         }
         if (!element.hasClass("graph-route-endpoint") && !element.hasClass("graph-endpoint-anchor") && !element.hasClass("graph-sealed-root")) element.style("opacity", hoverOpacity(hops[id], active))
+        const item = renderedFrame?.graph[id]
+        if (active && element.group() === "edges" && item?.type === "edge") {
+          const stops = hoverEdgeStops(theme, hops, item.fromId, item.toId)
+          const colors = stops.map(stop => {
+            element.style("line-color", stop.color)
+            const rgb = element.style("line-color")
+            return rgb.replace("rgb(", "rgba(").replace(")", `,${stop.opacity})`)
+          })
+          element.style({ "opacity": 1, "line-color": stops[0].color, "line-fill": "linear-gradient", "line-gradient-stop-colors": colors.join(" "), "line-gradient-stop-positions": "0% 100%", "source-arrow-color": colors[0], "target-arrow-color": colors[1], "text-opacity": hoverOpacity(hops[id], active) })
+        } else element.removeStyle("text-opacity")
       }
     })
+    stickyOverlay?.applyHover(hops)
   }
   return {
     applyWheelSettings(settings) { unsubscribeMomentum(); momentum.configure(settings) },

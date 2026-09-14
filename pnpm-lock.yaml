@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  cytoscape@3.34.0: 5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27
+
 importers:
 
   .:
@@ -364,10 +367,10 @@ importers:
         version: link:../signals
       cytoscape:
         specifier: 3.34.0
-        version: 3.34.0
+        version: 3.34.0(patch_hash=5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27)
       cytoscape-fcose:
         specifier: 2.2.0
-        version: 2.2.0(cytoscape@3.34.0)
+        version: 2.2.0(cytoscape@3.34.0(patch_hash=5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27))
       graphology:
         specifier: 0.26.0
         version: 0.26.0(graphology-types@0.24.8)
@@ -428,7 +431,7 @@ importers:
         version: 3.0.0(pixi.js@8.19.0)
       cytoscape-fcose:
         specifier: 2.2.0
-        version: 2.2.0(cytoscape@3.34.0)
+        version: 2.2.0(cytoscape@3.34.0(patch_hash=5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27))
       pixi.js:
         specifier: ^8.9.0
         version: 8.19.0
@@ -499,7 +502,7 @@ importers:
         version: link:../../../signals
       cytoscape:
         specifier: ^3.31.1
-        version: 3.34.0
+        version: 3.34.0(patch_hash=5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27)
       dompurify:
         specifier: 3.4.14
         version: 3.4.14
@@ -1049,7 +1052,7 @@ importers:
         version: 12.11.2(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(immer@10.2.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       cytoscape:
         specifier: ^3.33.1
-        version: 3.34.0
+        version: 3.34.0(patch_hash=5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27)
       dockview:
         specifier: ^6.6.1
         version: 6.6.1(react@19.2.8)
@@ -8242,9 +8245,9 @@ snapshots:
   '@mermaid-js/mermaid-mindmap@9.3.0':
     dependencies:
       '@braintree/sanitize-url': 6.0.4
-      cytoscape: 3.34.0
-      cytoscape-cose-bilkent: 4.1.0(cytoscape@3.34.0)
-      cytoscape-fcose: 2.2.0(cytoscape@3.34.0)
+      cytoscape: 3.34.0(patch_hash=5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27)
+      cytoscape-cose-bilkent: 4.1.0(cytoscape@3.34.0(patch_hash=5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27))
+      cytoscape-fcose: 2.2.0(cytoscape@3.34.0(patch_hash=5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27))
       d3: 7.9.0
       khroma: 2.1.0
       non-layered-tidy-tree-layout: 2.0.2
@@ -10838,17 +10841,17 @@ snapshots:
 
   csstype@3.2.3: {}
 
-  cytoscape-cose-bilkent@4.1.0(cytoscape@3.34.0):
+  cytoscape-cose-bilkent@4.1.0(cytoscape@3.34.0(patch_hash=5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27)):
     dependencies:
       cose-base: 1.0.3
-      cytoscape: 3.34.0
+      cytoscape: 3.34.0(patch_hash=5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27)
 
-  cytoscape-fcose@2.2.0(cytoscape@3.34.0):
+  cytoscape-fcose@2.2.0(cytoscape@3.34.0(patch_hash=5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27)):
     dependencies:
       cose-base: 2.2.0
-      cytoscape: 3.34.0
+      cytoscape: 3.34.0(patch_hash=5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27)
 
-  cytoscape@3.34.0: {}
+  cytoscape@3.34.0(patch_hash=5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27): {}
 
   d-path-parser@1.0.0: {}
 
@@ -12002,9 +12005,9 @@ snapshots:
       '@mermaid-js/parser': 1.2.1
       '@types/d3': 7.4.3
       '@upsetjs/venn.js': 2.0.0
-      cytoscape: 3.34.0
-      cytoscape-cose-bilkent: 4.1.0(cytoscape@3.34.0)
-      cytoscape-fcose: 2.2.0(cytoscape@3.34.0)
+      cytoscape: 3.34.0(patch_hash=5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27)
+      cytoscape-cose-bilkent: 4.1.0(cytoscape@3.34.0(patch_hash=5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27))
+      cytoscape-fcose: 2.2.0(cytoscape@3.34.0(patch_hash=5e55ff0eda98a8fa9063606417ad90d3f7a115f760d754db7ba9634c917cea27))
       d3: 7.9.0
       d3-sankey: 0.12.3
       dagre-d3-es: 7.0.14

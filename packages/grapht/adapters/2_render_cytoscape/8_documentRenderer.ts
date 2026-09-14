@@ -1,4 +1,5 @@
-import { graphHopColor, GRAPH_STYLES } from "../../src/lib/0_graphStyle.js"
+import { hoverEdgeStops } from "../../src/lib/3_hoverPaint.js"
+import { graphHoverColor, GRAPH_STYLES } from "../../src/lib/0_graphStyle.js"
 import type { WheelSettings } from "../../src/lib/1_wheelCamera.js"
 import { hoverOpacity } from "../../src/2_graph/16_neighborhood.js"
 import { graphStyleOf, type GraphStyle, type GraphStyleInput } from "../../src/lib/0_graphStyle.js"
@@ -12,6 +13,7 @@ import type { GraphCamera, GraphFrame, GraphGeometry } from "../../src/2_graph/0
 import type { GraphFrameResource } from "../../src/2_graph/10_renderer.ts"
 
 export type DocumentRendererInteractions = {
+  collapseInput$?: { next: (id: string) => void }
   focusInput$?: { next: (ids: ReadonlySet<string>) => void }
   cameraInput$: { next: (camera: GraphCamera) => void }
 }
@@ -75,7 +77,7 @@ export function createDocumentGraphFrameResource(
   const boundElements = new Map<SVGElement, string>()
   let hovered: string | undefined
   let revisionId: string | undefined
-  const stickyOverlay = createStickyOverlay(host, sticky)
+  const stickyOverlay = createStickyOverlay(host, sticky, interactions)
   const legend = createGestureLegend(host)
   const applyCamera = (next: GraphCamera): void => {
     camera = next
@@ -154,27 +156,73 @@ export function createDocumentGraphFrameResource(
   host.addEventListener("pointerup", onPointerUp)
   host.addEventListener("pointercancel", onPointerUp)
 
+  let renderedFrame: GraphFrame | undefined
+  let hoverDefs: SVGDefsElement | undefined
+  const gradientPrefix = `grapht-hover-${crypto.randomUUID()}`
   let currentHops: Readonly<Record<string, number>> = {}
-  const originalPaint = new Map<SVGElement, { property: string; value: string; priority: string }>()
+  const originalPaint = new Map<SVGElement, { property: string; value: string; priority: string }[]>()
   let committedFocus: ReadonlySet<string> = new Set()
   const applyHover = (hops: Readonly<Record<string, number>>): void => {
     currentHops = hops
     const active = Object.keys(hops).length > 0
+    hoverDefs?.remove()
+    hoverDefs = undefined
+    const palette = theme ?? GRAPH_STYLES.light
     for (const [element, id] of boundElements) {
+      if (!originalPaint.has(element)) originalPaint.set(element, ["stroke", "fill", "marker-start", "marker-mid", "marker-end"].map(property => ({ property, value: element.style.getPropertyValue(property), priority: element.style.getPropertyPriority(property) })))
+      for (const original of originalPaint.get(element)!) {
+        if (original.value) element.style.setProperty(original.property, original.value, original.priority)
+        else element.style.removeProperty(original.property)
+      }
       element.classList.toggle("graph-focused", committedFocus.has(id) || hops[id] !== undefined)
       element.style.opacity = String(hoverOpacity(hops[id], active))
       const property = ["text", "tspan"].includes(element.tagName.toLowerCase()) ? "fill" : "stroke"
-      if (!originalPaint.has(element)) originalPaint.set(element, { property, value: element.style.getPropertyValue(property), priority: element.style.getPropertyPriority(property) })
-      const original = originalPaint.get(element)!
-      if (hops[id] !== undefined) element.style.setProperty(property, graphHopColor(theme ?? GRAPH_STYLES.light, hops[id]), "important")
-      else if (original.value) element.style.setProperty(original.property, original.value, original.priority)
-      else element.style.removeProperty(original.property)
+      const item = renderedFrame?.graph[id]
+      if (active && item?.type === "edge" && element instanceof SVGGeometryElement && element.getTotalLength() > 0 && root) {
+        const ns = "http://www.w3.org/2000/svg"
+        if (!hoverDefs) { hoverDefs = document.createElementNS(ns, "defs"); hoverDefs.dataset.hoverGradients = ""; root.appendChild(hoverDefs) }
+        const gradient = document.createElementNS(ns, "linearGradient")
+        gradient.id = `${gradientPrefix}-${hoverDefs.childElementCount}`
+        gradient.setAttribute("gradientUnits", "userSpaceOnUse")
+        const start = element.getPointAtLength(0), end = element.getPointAtLength(element.getTotalLength())
+        // A closed path has coincident endpoints: use its midpoint as the gradient axis.
+        const finish = start.x === end.x && start.y === end.y ? element.getPointAtLength(element.getTotalLength() / 2) : end
+        for (const [name, value] of Object.entries({ x1: start.x, y1: start.y, x2: finish.x, y2: finish.y })) gradient.setAttribute(name, String(value))
+        const stops = hoverEdgeStops(palette, hops, item.fromId, item.toId)
+        stops.forEach((paint, index) => {
+          const stop = document.createElementNS(ns, "stop")
+          stop.setAttribute("offset", String(index)); stop.setAttribute("stop-color", paint.color); stop.setAttribute("stop-opacity", String(paint.opacity)); gradient.appendChild(stop)
+        })
+        hoverDefs.appendChild(gradient)
+        const computed = getComputedStyle(element)
+        const filled = computed.fill !== "none"
+        for (const [markerProperty, index] of [["marker-start", 0], ["marker-end", 1], ["marker-mid", 1]] as const) {
+          const markerId = computed.getPropertyValue(markerProperty).match(/#([^"')]+)/)?.[1]
+          const source = markerId && root.querySelector<SVGMarkerElement>(`[id="${CSS.escape(markerId)}"]`)
+          if (!source) continue
+          const marker = source.cloneNode(true) as SVGMarkerElement
+          marker.id = `${gradient.id}-${markerProperty}`
+          for (const shape of marker.querySelectorAll<SVGElement>("path, polygon, polyline, circle, rect, line")) {
+            shape.removeAttribute("id")
+            shape.style.setProperty("fill", stops[index].color, "important")
+            shape.style.setProperty("stroke", stops[index].color, "important")
+            shape.style.setProperty("opacity", String(stops[index].opacity), "important")
+          }
+          hoverDefs.appendChild(marker)
+          element.style.setProperty(markerProperty, `url(#${marker.id})`, "important")
+        }
+        element.style.opacity = "1"
+        element.style.setProperty("stroke", `url(#${gradient.id})`, "important")
+        if (filled) element.style.setProperty("fill", `url(#${gradient.id})`, "important")
+      } else if (hops[id] !== undefined) element.style.setProperty(property, graphHoverColor(palette, hops[id]), "important")
     }
+    stickyOverlay.applyHover(hops)
   }
   return {
     applyWheelSettings(settings) { unsubscribeMomentum(); momentum.configure(settings) },
     applyHover,
     render(frame) {
+      renderedFrame = frame
       unsubscribeMomentum()
       const artifact = frame.presentation.sealedSvgArtifactsByRootId.epic ?? Object.values(frame.presentation.sealedSvgArtifactsByRootId)[0]
       if (artifact === undefined) return
@@ -221,6 +269,10 @@ export function createDocumentGraphFrameResource(
       host.removeEventListener("pointerleave", onLeave)
       boundElements.clear()
       originalPaint.clear()
+      hoverDefs?.remove()
+      hoverDefs = undefined
+      renderedFrame = undefined
+      currentHops = {}
       host.removeEventListener("wheel", onWheel)
       host.removeEventListener("pointerdown", onPointerDown)
       host.removeEventListener("pointermove", onPointerMove)

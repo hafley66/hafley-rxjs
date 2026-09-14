@@ -11,3 +11,5 @@ minimumReleaseAgeExclude:
   - '@logtape/file@2.3.3'
   - '@logtape/logtape@2.3.3'
   - '@logtape/otel@2.3.3'
+patchedDependencies:
+  cytoscape@3.34.0: patches/cytoscape@3.34.0.patch
