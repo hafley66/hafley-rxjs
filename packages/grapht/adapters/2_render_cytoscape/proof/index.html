@@ -76,6 +76,19 @@
       <label><input id="groups" type="checkbox" checked />group headers</label>
       <label><input id="dark" type="checkbox" checked />dark theme</label>
     </div>
+    <details id="interaction-controls" style="position:fixed;left:8px;top:48px;z-index:10;background:#172554;padding:6px;max-width:420px">
+      <summary>Interaction / hover</summary>
+      <label>Hover <select id="hover-mode"><option>neighbors</option><option>upstream</option><option>downstream</option><option selected>both</option><option>off</option></select></label>
+      <label>Relations <select id="hover-relations"><option value="actors">Actor links</option><option value="sequence">Sequence steps</option></select></label>
+      <label>Hops <input id="hover-depth" type="number" min="1" max="20" value="2" style="width:44px"></label>
+      <label><input id="hover-debug" type="checkbox">Debug hover</label>
+      <details><summary>Group actors</summary><select id="actor-members" multiple size="6" style="width:100%"></select>
+      <input id="actor-group-name" placeholder="Group name" value="Actor group"><button id="group-actors">Group selected</button></details>
+      <div id="collapse-controls"></div>
+      <button id="source-text">Original source</button>
+      <pre id="source-preview" hidden style="max-height:40vh;overflow:auto;white-space:pre-wrap"></pre>
+    </details>
+    <pre id="hover-inspector" hidden style="position:fixed;right:8px;top:52px;z-index:11;max-width:540px;max-height:60vh;overflow:auto;pointer-events:auto;background:#0f172a;color:#e2e8f0;padding:10px;white-space:pre-wrap"></pre>
     <div id="host"></div>
     <div id="readout"></div>
     <script type="module" src="./live.ts"></script>

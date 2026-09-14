@@ -561,6 +561,20 @@ describe("grapht-sequence/0 shared artifact", () => {
               "rendererVersion": "0.7.1",
               "sourceRevisionId": "source:c2e8fa5b",
             },
+            "source": "shape: sequence_diagram
+      alice: Alice
+      bob: Bob
+      archive: Archive Service Far Right
+      outer exchange: {
+        nested review: {
+          alice -> bob.work: repeat
+          bob.work -> bob.work: inspect
+          bob."local note"
+          alice -> bob.work: repeat
+        }
+      }
+      bob -> archive: archive
+      ",
             "sourceRevision": {
               "adapterVersion": "d2-sequence-adapter/0",
               "id": "source:c2e8fa5b",
@@ -1043,6 +1057,22 @@ describe("grapht-sequence/0 shared artifact", () => {
               "rendererVersion": "11.16.0",
               "sourceRevisionId": "source:10b3b203",
             },
+            "source": "sequenceDiagram
+        participant alice as Alice
+        participant bob as Bob
+        participant archive as Archive Service Far Right
+        loop outer exchange
+          alt nested review
+            alice->>bob: repeat
+            activate bob
+            bob->>bob: inspect
+            Note right of bob: local note
+            alice->>bob: repeat
+            deactivate bob
+          end
+        end
+        bob->>archive: archive
+      ",
             "sourceRevision": {
               "adapterVersion": "mermaid-sequence-adapter/0",
               "id": "source:10b3b203",
@@ -1091,4 +1121,62 @@ describe("grapht-sequence/0 shared artifact", () => {
     `)
   }, 60_000)
 
+})
+
+test("retains source, actor box containment, and parallel branches through Mermaid SVG binding", async () => {
+  const text = `sequenceDiagram
+box Services
+ participant A
+ participant B
+end
+participant C
+A->>C: before
+par left
+ A->>B: left work
+and right
+ C->>B: right work
+end
+B->>A: joined`
+  const { artifact, bindingReceipt } = await buildSequenceArtifact(mermaidSequenceAdapter, { locator: "parallel.mmd", source: text })
+  const labels = new Map(artifact.occurrences.map(item => [item.id, item.label]))
+  expect({ sourceRetained: artifact.source === text, unbound: bindingReceipt.unboundOccurrenceIds,
+    groups: artifact.occurrences.filter(item => item.kind === "group").map(item => ({ label: item.label, branches: item.branches?.map(branch => branch.map(id => labels.get(id))) ?? null })),
+    actors: artifact.occurrences.filter(item => item.kind === "actor").map(item => ({ label: item.label, parent: item.parentId ? labels.get(item.parentId) : null })),
+  }).toMatchInlineSnapshot(`
+    {
+      "actors": [
+        {
+          "label": "A",
+          "parent": "Services",
+        },
+        {
+          "label": "B",
+          "parent": "Services",
+        },
+        {
+          "label": "C",
+          "parent": null,
+        },
+      ],
+      "groups": [
+        {
+          "branches": null,
+          "label": "Services",
+        },
+        {
+          "branches": [
+            [
+              "left work",
+            ],
+            [
+              "right work",
+            ],
+          ],
+          "label": "left",
+        },
+      ],
+      "sourceRetained": true,
+      "unbound": [],
+    }
+  `)
 })

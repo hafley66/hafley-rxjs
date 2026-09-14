@@ -42,12 +42,15 @@ export function identifyMermaidOccurrences(document: MermaidSequenceDocument): S
     occurrences.push({
       id,
       kind: "actor",
+      ...(participant.groupKey ? { parentId: occurrenceId("mermaid", revision, participant.groupKey) } : {}),
       ordinal: participant.ordinal,
       sourceSpan: participant.sourceSpan,
       structuralKey: actorStructuralKey(participant.id),
       label: participant.label,
     })
   }
+
+  for (const participant of document.participants) if (participant.groupKey) addRelation("contains", occurrenceId("mermaid", revision, participant.groupKey), actorIds.get(participant.id)!)
 
   const lowerStatement = (statement: MermaidStatement, parentId: string | undefined, parentKey: string) => {
     if (statement.kind === "group") {
@@ -86,6 +89,7 @@ export function identifyMermaidOccurrences(document: MermaidSequenceDocument): S
       sourceSpan: statement.sourceSpan,
       structuralKey,
       label: statement.label,
+      ...(statement.branches ? { branches: statement.branches.map(branch => branch.map(child => occurrenceId("mermaid", revision, child.key))) } : {}),
     })
     if (parentId) addRelation("contains", parentId, id)
     for (const child of statement.statements) lowerStatement(child, id, structuralKey)

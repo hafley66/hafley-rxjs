@@ -18,6 +18,7 @@ export type MermaidDiagnostic = {
 export type MermaidParticipant = {
   kind: "participant"
   key: string
+  groupKey?: string
   form: "participant" | "actor"
   id: string
   label: string
@@ -58,11 +59,12 @@ export type MermaidNoteStatement = {
 export type MermaidGroupStatement = {
   kind: "group"
   key: string
-  form: "loop" | "alt" | "opt" | "par" | "critical" | "break" | "rect"
+  form: "loop" | "alt" | "opt" | "par" | "critical" | "break" | "rect" | "box"
   label: string
   ordinal: number
   sourceSpan: MermaidSourceSpan
   statements: MermaidStatement[]
+  branches?: MermaidStatement[][]
 }
 
 export type MermaidStatement =

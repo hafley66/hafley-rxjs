@@ -295,3 +295,90 @@ describe("Mermaid local sequence document", () => {
     `)
   })
 })
+
+test("preserves actor boxes and parallel branch membership", async () => {
+  const { identifyMermaidOccurrences } = await import("./2_identity")
+  const document = parseMermaidSequence(`sequenceDiagram
+box Services
+ participant A
+ participant B
+end
+participant C
+A->>C: before
+par left
+ A->>B: left work
+and right
+ C->>B: right work
+end
+B->>A: joined`)
+  const model = identifyMermaidOccurrences(document)
+  const labels = new Map(model.occurrences.map(item => [item.id, item.label]))
+  expect({ diagnostics: document.diagnostics, items: model.occurrences.map(item => ({ kind: item.kind, label: item.label, parent: item.parentId ? labels.get(item.parentId) : null, branches: item.branches?.map(branch => branch.map(id => labels.get(id))) ?? null })) }).toMatchInlineSnapshot(`
+    {
+      "diagnostics": [],
+      "items": [
+        {
+          "branches": null,
+          "kind": "actor",
+          "label": "A",
+          "parent": "Services",
+        },
+        {
+          "branches": null,
+          "kind": "actor",
+          "label": "B",
+          "parent": "Services",
+        },
+        {
+          "branches": null,
+          "kind": "actor",
+          "label": "C",
+          "parent": null,
+        },
+        {
+          "branches": null,
+          "kind": "group",
+          "label": "Services",
+          "parent": null,
+        },
+        {
+          "branches": null,
+          "kind": "message",
+          "label": "before",
+          "parent": null,
+        },
+        {
+          "branches": [
+            [
+              "left work",
+            ],
+            [
+              "right work",
+            ],
+          ],
+          "kind": "group",
+          "label": "left",
+          "parent": null,
+        },
+        {
+          "branches": null,
+          "kind": "message",
+          "label": "left work",
+          "parent": "left",
+        },
+        {
+          "branches": null,
+          "kind": "message",
+          "label": "right work",
+          "parent": "left",
+        },
+        {
+          "branches": null,
+          "kind": "message",
+          "label": "joined",
+          "parent": null,
+        },
+      ],
+    }
+  `)
+})

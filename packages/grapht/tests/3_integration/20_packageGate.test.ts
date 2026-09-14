@@ -92,12 +92,14 @@ describe("sequence package gate", () => {
         "3_sequenceFocus.ts",
         "4_sequencePlacement.ts",
         "5_stickyStack.ts",
+        "5a_stickyRibbon.ts",
         "6_graph.ts",
         "6a_layoutParticipation.ts",
         "6b_portLocation.ts",
         "6c_resolvePortLocation.ts",
         "6d_graphVisual.ts",
         "7_sequenceGraph.ts",
+        "8_sequenceFlow.ts",
       ],
       nonNumericSources: { model: [], mmd: [], d2: [] },
       adapterImports: {
@@ -565,6 +567,20 @@ describe("sequence package gate", () => {
               "rendererVersion": "0.7.1",
               "sourceRevisionId": "source:c2e8fa5b",
             },
+            "source": "shape: sequence_diagram
+      alice: Alice
+      bob: Bob
+      archive: Archive Service Far Right
+      outer exchange: {
+        nested review: {
+          alice -> bob.work: repeat
+          bob.work -> bob.work: inspect
+          bob."local note"
+          alice -> bob.work: repeat
+        }
+      }
+      bob -> archive: archive
+      ",
             "sourceRevision": {
               "adapterVersion": "d2-sequence-adapter/0",
               "id": "source:c2e8fa5b",
@@ -1073,6 +1089,22 @@ describe("sequence package gate", () => {
               "rendererVersion": "11.16.0",
               "sourceRevisionId": "source:10b3b203",
             },
+            "source": "sequenceDiagram
+        participant alice as Alice
+        participant bob as Bob
+        participant archive as Archive Service Far Right
+        loop outer exchange
+          alt nested review
+            alice->>bob: repeat
+            activate bob
+            bob->>bob: inspect
+            Note right of bob: local note
+            alice->>bob: repeat
+            deactivate bob
+          end
+        end
+        bob->>archive: archive
+      ",
             "sourceRevision": {
               "adapterVersion": "mermaid-sequence-adapter/0",
               "id": "source:10b3b203",

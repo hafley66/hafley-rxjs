@@ -6,6 +6,7 @@ export type SealedSvgArtifact = {
   revisionId: string
   geometryRevisionId: string
   svg: string
+  source?: { language: "mermaid" | "d2"; text: string; locator: string }
   sourceBounds: Rect
   fit: "contain"
   graphIdByElementId?: Readonly<Record<string, GraphId>>

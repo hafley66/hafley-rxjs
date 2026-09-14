@@ -14,6 +14,8 @@ export type SequenceOccurrence = {
   ordinal: number
   sourceSpan?: SequenceSourceSpan
   authoredId?: string
+  /** Parallel branches retain event/group IDs independently of SVG bindings. */
+  branches?: string[][]
   structuralKey: string
   label?: string
 }

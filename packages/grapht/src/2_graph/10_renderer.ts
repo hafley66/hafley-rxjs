@@ -14,6 +14,8 @@ export type GraphRenderReceipt = {
 /** A renderer-owned resource that accepts frames and releases its listeners and elements through unsubscribe. */
 export type GraphFrameResource<NodeData = unknown, EdgeData = unknown> = {
   render(frame: GraphFrame<NodeData, EdgeData>, receipt: GraphRenderReceipt): void
+  /** Paint hover without replacing geometry, changing the camera, or cancelling momentum. */
+  applyHover?(hopsById: Readonly<Record<GraphId, number>>): void
   unsubscribe(): void
 }
 

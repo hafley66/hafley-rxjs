@@ -8,7 +8,7 @@ This page describes a plan. Its signatures are sketches, and its acceptance chec
 [Canonical plan](https://github.com/hafley66/hafley-rxjs/blob/main/plans/2026-09-13-anim-to-grapht/3_hop-gradient.md) · [Feature status](./roadmap)
 
 
-Status: proposed. Depends on [neighbor queries](./plan-neighbor-highlighting).
+Status: partially implemented. Both proof renderers share hop opacity: focus and hop 1 at 1, hop 2 at 0.55, then geometric fading; unrelated context at 0.15. Depends on [neighbor queries](./plan-neighbor-highlighting).
 
 ```ts
 function hopOpacity(hop: number, decay: number, floor: number): number {

@@ -1,3 +1,4 @@
+import { hoverOpacity } from "../../src/2_graph/16_neighborhood.js"
 import { graphStylesheet } from "../../src/lib/1_graphStylesheet.js"
 import { GRAPH_STYLES, graphStyleOf, type GraphStyle, type GraphStyleInput } from "../../src/lib/0_graphStyle.js"
 import { applySvgStyle } from "../../src/lib/2_svgStyle.js"
@@ -344,7 +345,19 @@ export function createCytoscapeGraphFrameResource(
     cy.on("free", "node[nativeKind = 'actor-shape']", event => dragPositionByElementId.delete(event.target.id()))
   }
 
+  let committedFocus: ReadonlySet<string> = new Set()
+  const applyHover = (hops: Readonly<Record<string, number>>): void => {
+    const active = Object.keys(hops).length > 0
+    cy.batch(() => {
+      for (const element of cy.elements()) {
+        const id = String(element.data("graphId") ?? element.id())
+        element.toggleClass("graph-focused", committedFocus.has(id) || hops[id] !== undefined)
+        if (!element.hasClass("graph-route-endpoint") && !element.hasClass("graph-endpoint-anchor") && !element.hasClass("graph-sealed-root")) element.style("opacity", hoverOpacity(hops[id], active))
+      }
+    })
+  }
   return {
+    applyHover,
     cy,
     applySticky: options => stickyOverlay?.applySticky(options),
     applyTheme: next => {
@@ -407,7 +420,9 @@ export function createCytoscapeGraphFrameResource(
             if (!nextById.has(element.id())) element.remove()
             else element.removeClass("graph-hidden graph-focused")
           }
-          for (const id of frame.presentation.hiddenIds) cy.$id(id).addClass("graph-hidden")
+          committedFocus = frame.presentation.focusedIds
+          for (const element of cy.elements()) element.toggleClass("graph-hidden", frame.presentation.hiddenIds.has(String(element.data("graphId") ?? element.id())))
+          applyHover(frame.presentation.hopsById ?? {})
           for (const id of frame.presentation.focusedIds) {
             cy.$id(id).addClass("graph-focused")
             cy.$id(anchorId(id)).addClass("graph-focused")

@@ -8,7 +8,7 @@ This page describes a plan. Its signatures are sketches, and its acceptance chec
 [Canonical plan](https://github.com/hafley66/hafley-rxjs/blob/main/plans/2026-09-13-anim-to-grapht/4_dom-groups-and-collapse.md) · [Feature status](./roadmap)
 
 
-Status: proposed. Initial grouping may render group shells before leaf detail. Depends on [source order](./plan-source-order) for initial arrangement.
+Status: partially implemented: actor view groups, shared visibility projection, and sequence-fragment compaction are connected in both proof renderers. Initial grouping may render group shells before leaf detail. Depends on [source order](./plan-source-order) for initial arrangement.
 
 ```ts
 type GroupMove = { ids: readonly GraphId[]; before: Positions; after: Positions }
@@ -30,7 +30,7 @@ References: [anim DOM renderer](https://github.com/hafley66/anim/blob/main/src/C
 
 ## Configurable layout ownership
 
-Policy core and interactive lab implemented; large-sequence integration remains open.
+Policy core and interactive lab implemented. Large-sequence collapse is connected; manual movement remains open.
 
 - Each group starts automatic. A completed manual move switches only that group to manual.
 - Collapse permits automatic placement of its collapsed representation.
@@ -38,3 +38,11 @@ Policy core and interactive lab implemented; large-sequence integration remains 
 - The toggle affects expansion, not the current open arrangement. Saved positions are retained in both branches.
 - Local positions and stable group identity belong to the caller; source reconciliation and undo remain separate.
 - Evidence: `src/2_graph/15_groupLayout.ts`, `tests/15_groupLayout.test.ts`, and `adapters/2_render_cytoscape/proof/1_groupLayoutLab.ts`.
+
+## Connected collapse evidence
+
+`src/2_graph/17_groupProjection.ts` preserves topology and hides descendants/incident edges. `src/2_graph/18_sequenceCollapse.ts`
+compacts sequence fragments from original geometry; `src/2_graph/20_groupActors.ts` adds source-preserving actor view
+groups. The proof retains group/collapse state across renderer switches. Browser tests cover actor groups,
+fragment collapse, restored visibility, and sealed-artifact validation. Actor lane spacing remains fixed;
+boundary messages are hidden rather than aggregated. Source text remains unchanged.

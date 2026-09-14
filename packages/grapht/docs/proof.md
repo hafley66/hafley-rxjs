@@ -22,11 +22,24 @@ document-only because it has no native graph bindings.
 | Fit | Restore fitted camera and cancel momentum |
 | Actor ribbon / group headers | Toggle shared screen-space headers |
 | Dark mode (both renderers) | Change shared SVG/canvas/header colors; preference persists |
+| Interaction / hover | Neighbors, upstream, downstream, both, or off; configurable depth |
+| Relations | Traverse actor links or ordered sequence steps |
+| Debug hover | Show logical ID, parent, endpoint IDs, source span, measured anchor, route attachment points, bindings, and incident relations |
+| Group actors | Select actors and name a view group; original source stays available |
+| Collapse | Hide descendants; sequence fragments compact vertically; expansion restores source geometry |
+| Original source | Inspect the retained Mermaid or D2 text |
 
 The document renderer supports text selection. Native sequence shapes are currently ungrabbable.
-Manual movement, undo, and arrangement persistence are not connected in this proof. Cytoscape emits
-focus/selection inputs, but the proof does not consume them into visible hover or neighborhood
-highlights. Hop-gradient highlighting remains planned. Native mobile touch-pinch momentum is unverified.
+Manual movement, undo, and arrangement persistence are not connected in this proof. Hover is transient:
+it does not commit selection or history, move the camera, or cancel momentum. Focus and first-hop
+neighbors use full intensity; subsequent hops multiply opacity by 0.55, with unrelated context at 0.15.
+Parallel branches receive equal step distance and converge at their following event. Actor links and
+sequence steps are separate relations because repeated messages between the same actors have distinct order.
+Native mobile touch-pinch momentum is unverified.
+
+Actor-group collapse hides incident messages and retains lane spacing; it does not create aggregated
+boundary messages. Fragment collapse preserves a header row and compacts vertical space. View groups
+and collapsed state survive renderer switches and last until source replacement or page reload.
 
 ## Shared styles and layout policy lab
 
@@ -39,7 +52,7 @@ its group. Collapse allows automatic placement of the collapsed representation. 
 on expand** checkbox chooses automatic placement or saved manual positions on expansion. Saved
 positions survive either choice, and the other group keeps its own mode. The **auto layout** button
 only rearranges groups still in automatic mode. This lab uses Cytoscape's grid layout; it does not
-enable movement/collapse for the large sequence. The lab state lasts until the page ends.
+enable manual movement for the large sequence. The lab state lasts until the page ends.
 
 ## Performance evidence
 

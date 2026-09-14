@@ -208,6 +208,7 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
     render(frame: GraphFrame) {
       const columns = frame.geometry.columnBoundsById ?? {}
       ribbonItems = Object.entries(columns)
+        .filter(([id]) => !frame.presentation.hiddenIds.has(id))
         .map(([id, bounds], index) => ({ id, left: bounds.x, width: bounds.width, top: bounds.y, bottom: bounds.y + bounds.height, order: index }))
         .sort((left, right) => left.left - right.left)
         .map((item, order) => ({ ...item, order }))
@@ -217,6 +218,7 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
         Object.entries(frame.geometry.headerBoundsById).map(([id, header]) => [id, { x: header.x, width: header.width }]),
       )
       groupHeaders = Object.entries(frame.geometry.headerBoundsById)
+        .filter(([id]) => !frame.presentation.hiddenIds.has(id))
         .map(([id, header]) => ({
           id,
           naturalTop: header.y,

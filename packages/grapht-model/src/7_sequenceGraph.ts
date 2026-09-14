@@ -8,6 +8,7 @@ export type SequenceGraphNodeData = {
   structuralKey: string
   ordinal: number
   sourceSpan?: SequenceSourceSpan
+  branches?: string[][]
   activationTarget?: string
 }
 
@@ -66,6 +67,7 @@ export function sequenceDocumentToGraph(document: SequenceOccurrenceDocument): S
         ...(occurrence.label !== undefined ? { label: occurrence.label } : {}),
         ...(occurrence.authoredId !== undefined ? { authoredId: occurrence.authoredId } : {}),
         structuralKey: occurrence.structuralKey,
+        ...(occurrence.branches ? { branches: occurrence.branches } : {}),
         ordinal: occurrence.ordinal,
         ...(occurrence.sourceSpan ? { sourceSpan: occurrence.sourceSpan } : {}),
         ...(activation ? { activationTarget: activation.targetId } : {}),

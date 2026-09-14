@@ -112,6 +112,15 @@ export function bindMermaidSvg(
     if (statement.kind !== "group") continue
     const group = occurrenceAt(occurrences, "group", statement.sourceSpan)
     if (!group) continue
+    if (statement.form === "box") {
+      const label = receipt.elements.find(element => ["text", "tspan"].includes(element.tag) && element.text && (element.text === statement.label || statement.label.endsWith(` ${element.text}`)))
+      if (label) {
+        builder.add(group, "group-label", label)
+        const frame = svgDescendantsOf(receipt.elements, parentPath(label.path)).find(element => element.tag === "rect")
+        if (frame) builder.add(group, "group-frame", frame)
+      }
+      continue
+    }
     const text = receipt.elements.find(element => element.tag === "tspan" && element.text === `[${statement.label}]`)
     if (!text) continue
 

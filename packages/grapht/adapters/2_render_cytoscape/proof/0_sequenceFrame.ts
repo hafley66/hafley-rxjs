@@ -1,9 +1,11 @@
 /// <reference types="vite/client" />
+import { svgGraphGeometryOf } from "../../../src/2_graph/4_svgGeometry.ts"
 import { fitGraphCamera } from "../../../src/2_graph/1_fitCamera.ts"
 import type { Graph, GraphId } from "@hafley66/grapht-model"
 import type { GraphFrame, GraphGeometry } from "../../../src/2_graph/0_frame.ts"
 import sequenceFixture from "../../../fixtures/sequence/large.json"
 import sequenceSvgUrl from "../../../fixtures/sequence/large.svg?url"
+import sequenceSource from "../../../fixtures/sequence/large.mmd?raw"
 type FixtureRect = { id: string; label: string; left: number; width: number; top: number; bottom: number }
 
 /** The smallest group that strictly contains this one, which is its header's parent in the stack. */
@@ -26,7 +28,7 @@ export async function sequenceFrame(viewport: { width: number; height: number })
     seq: { id: "seq", type: "node", layout: { mode: "sealed", bounds, geometryRevisionId: "seq:geometry:1" } },
   }
   for (const actor of actors) graph[actor.id] ??= { id: actor.id, type: "node", parentId: "seq" }
-  for (const group of groups) graph[group.id] = { id: group.id, type: "node", parentId: containerOf(group, groups) ?? "seq" }
+  for (const group of groups) graph[group.id] = { ...(graph[group.id] as object), id: group.id, type: "node", parentId: containerOf(group, groups) ?? "seq" }
 
   const geometry: GraphGeometry = {
     revisionId: "seq:1",
@@ -40,7 +42,7 @@ export async function sequenceFrame(viewport: { width: number; height: number })
     columnBoundsById: Object.fromEntries(actors.map(actor => [actor.id, { x: actor.left, y: actor.top, width: actor.width, height: actor.bottom - actor.top }])),
   }
 
-  return {
+  const frame: GraphFrame = {
     graph: graph as Graph,
     geometry,
     camera: fitGraphCamera(geometry, { x: 0, y: 0, width: viewport.width, height: viewport.height }, 24),
@@ -56,11 +58,15 @@ export async function sequenceFrame(viewport: { width: number; height: number })
           bindings: sequenceFixture.bindings as import("../../../src/2_graph/3_sealedSvgArtifact.ts").SealedSvgArtifact["bindings"],
           geometryRevisionId: "seq:geometry:1",
           svg,
+          source: { language: "mermaid", text: sequenceSource, locator: sequenceFixture.source },
           sourceBounds: bounds,
           fit: "contain",
         },
       },
     },
   }
+  const measured = svgGraphGeometryOf(document, frame.presentation.sealedSvgArtifactsByRootId.seq)
+  frame.geometry = { ...frame.geometry, boundsById: { ...measured.boundsById, ...geometry.boundsById }, endpointAnchorById: { ...measured.endpointAnchorById, ...geometry.endpointAnchorById }, routesById: measured.routesById }
+  return frame
 }
 

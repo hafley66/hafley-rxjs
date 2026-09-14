@@ -1,6 +1,6 @@
 # Neighbor modes, multi-selection, hover preview
 
-Status: proposed. Port anim's graph queries and interaction flow into grapht presentation.
+Status: partially implemented. Directional hover modes, hop gradients, sequence-step traversal, and debug hover are connected in both proof renderers. Committed multi-selection combinations remain proposed.
 
 ```ts
 type NeighborMode = "neighbors" | "upstream" | "downstream" | "cone"
@@ -17,3 +17,12 @@ function neighborhood(graph, focus: readonly GraphId[], mode: NeighborMode): Nei
 - Boundary: intersection/subtraction or per-focus modes require explicit configuration design; the initial port preserves anim's union semantics.
 
 References: [anim queries](/Users/chrishafley/projects/anim/src/core/views.ts), [anim painter and preview](/Users/chrishafley/projects/anim/src/AtlasPanel.tsx), [grapht presentation](/Users/chrishafley/projects/hafley-rxjs/packages/grapht/src/2_graph/9_operators.ts), [graph adjacency indexes](/Users/chrishafley/projects/hafley-rxjs/packages/grapht-model/src/6_graph.ts).
+
+## Connected hover evidence
+
+- `packages/grapht/src/2_graph/16_neighborhood.ts`: breadth-first actor/general adjacency.
+- `packages/grapht-model/src/8_sequenceFlow.ts`: ordered message transitions with parallel fork/join.
+- `packages/grapht/src/2_graph/19_sequenceNeighborhood.ts`: event hops projected onto messages and actor endpoints.
+- `packages/grapht/adapters/2_render_cytoscape/proof/live.ts`: caller-owned hover input and mode/depth controls; debug IDs, anchors, bindings, and relations.
+- Renderer `applyHover` updates paint without geometry rebuilds or momentum cancellation.
+- Validation: deterministic branch/cycle tests, DOM/native opacity and picking tests, built proof UI checks.

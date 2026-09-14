@@ -51,6 +51,8 @@ export type SequenceBindingRevision = {
 }
 
 export type SequenceArtifact = {
+  /** Original author text. Optional when reading older artifacts. */
+  source?: string
   protocol: typeof SEQUENCE_ARTIFACT_PROTOCOL
   language: "mermaid" | "d2"
   sourceRevision: SequenceSourceRevision
@@ -83,6 +85,7 @@ const occurrenceSchema = z.object({
   sourceSpan: sourceSpanSchema.optional(),
   authoredId: z.string().min(1).optional(),
   structuralKey: z.string().min(1),
+  branches: z.array(z.array(z.string())).optional(),
   label: z.string().optional(),
 })
 
@@ -116,6 +119,7 @@ const bindingSchema = z.object({
 })
 
 export const sequenceArtifactSchema = z.object({
+  source: z.string().optional(),
   protocol: z.literal(SEQUENCE_ARTIFACT_PROTOCOL),
   language: z.enum(["mermaid", "d2"]),
   sourceRevision: z.object({
@@ -209,6 +213,7 @@ async function buildArtifact<LocalDocument>(
     bindingHash: documentFingerprint([bindingReceipt.bindings, bindingReceipt.elementPaths]),
   }
   const artifact: SequenceArtifact = {
+    source: input.source,
     protocol: SEQUENCE_ARTIFACT_PROTOCOL,
     language: adapter.language,
     sourceRevision,

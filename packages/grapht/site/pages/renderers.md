@@ -50,7 +50,7 @@ geometry rather than projecting a frame, so they sit beside, not behind, this co
 | `updateIds` | ids present in both frames |
 | `exitIds` | ids in the previous frame now gone |
 
-`graphRenderReceipt` computes these from the sorted id sets (`src/2_graph/10_renderer.ts:25`). The caller keeps
+`graphRenderReceipt` computes these from the sorted id sets (`src/2_graph/10_renderer.ts:27`). The caller keeps
 `previousIds` across frames and feeds it back on the next call, which is why the same resource
 moves a diagram forward frame by frame.
 
@@ -102,3 +102,22 @@ resource.applyTheme(style)
 ```
 
 [Generated styling and group-policy API](./reference-api) · [Interactive policy lab](./proof)
+
+## Hover and group projection
+
+`graphNeighborhood(graph, focus, { mode, depth })` walks actor/general graph links.
+`sequenceNeighborhood(graph, focus, options)` walks ordered message events; parallel branch entries
+share a distance, and branch exits join the following event. The caller chooses which relation to inspect.
+`GraphPresentation.hopsById` shares hover paint between adapters. `applyHover(hops)` updates only
+paint, retaining geometry, camera, and momentum. Empty hops restore committed focus and ordinary opacity.
+
+`groupGraphItems` adds explicit containment. `collapseGraphFrame` hides descendants and their incident
+edges while retaining topology. `groupSequenceActors` adds a bound view-group header to the source
+artifact; `collapseSequenceFrame` additionally compacts vertical fragment intervals. Actor view groups
+retain horizontal lane spacing. Aggregated boundary edges and source-aware manual routing remain open.
+
+Sealed artifacts may retain `{ language, locator, text }` under `source`. New sequence artifacts retain
+`source` text alongside their revision hash. Both fields are optional for existing serialized artifacts.
+
+Evidence: `tests/16_neighborhood.test.ts`, `tests/1_sequence/2_artifact.test.ts`,
+`adapters/2_render_cytoscape/13_nativeSequence.browser.test.ts`, and the production `adapters/2_render_cytoscape/proof/cytoProbe.mjs`.

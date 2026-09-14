@@ -11,6 +11,11 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 | [src/lib/0_graphStyle.ts](#src-lib-0-graphstyle-ts) | 6 | Shared graph colors for native primitives, document SVG, and screen-space headers. |
 | [src/lib/1_graphStylesheet.ts](#src-lib-1-graphstylesheet-ts) | 2 | Cytoscape-compatible primitive rules are the shared style floor for canvas and SVG adapters. |
 | [src/2_graph/15_groupLayout.ts](#src-2-graph-15-grouplayout-ts) | 6 | Per-group automatic-layout ownership, with retained manual positions across collapse/expand. |
+| [src/2_graph/16_neighborhood.ts](#src-2-graph-16-neighborhood-ts) | 4 |  |
+| [src/2_graph/17_groupProjection.ts](#src-2-graph-17-groupprojection-ts) | 3 |  |
+| [src/2_graph/18_sequenceCollapse.ts](#src-2-graph-18-sequencecollapse-ts) | 1 |  |
+| [src/2_graph/19_sequenceNeighborhood.ts](#src-2-graph-19-sequenceneighborhood-ts) | 1 |  |
+| [src/2_graph/20_groupActors.ts](#src-2-graph-20-groupactors-ts) | 1 |  |
 | [src/2_graph/0_frame.ts](#src-2-graph-0-frame-ts) | 6 | Render a graph from explicit geometry, camera, and presentation state. |
 | [src/2_graph/1_fitCamera.ts](#src-2-graph-1-fitcamera-ts) | 1 |  |
 | [src/2_graph/2_geometryScope.ts](#src-2-graph-2-geometryscope-ts) | 5 |  |
@@ -240,6 +245,145 @@ Resolve local child positions after the caller has obtained an automatic arrange
 groupPositionsOf: (state: GroupLayoutState, groupId: string, automatic: Readonly<Record<string, GraphPoint>>) => Readonly<Record<string, GraphPoint>>
 ```
 
+## src/2_graph/16_neighborhood.ts
+
+| export | kind |
+| --- | --- |
+| [`HoverMode`](#src-2-graph-16-neighborhood-ts-hovermode) | type |
+| [`HoverOptions`](#src-2-graph-16-neighborhood-ts-hoveroptions) | type |
+| [`graphNeighborhood`](#src-2-graph-16-neighborhood-ts-graphneighborhood) | function |
+| [`hoverOpacity`](#src-2-graph-16-neighborhood-ts-hoveropacity) | function |
+
+### `HoverMode` {#src-2-graph-16-neighborhood-ts-hovermode}
+
+`HoverMode` is declared at `src/2_graph/16_neighborhood.ts:3`.
+
+```ts
+export type HoverMode = "off" | "neighbors" | "upstream" | "downstream" | "both"
+```
+
+### `HoverOptions` {#src-2-graph-16-neighborhood-ts-hoveroptions}
+
+`HoverOptions` is declared at `src/2_graph/16_neighborhood.ts:4`.
+
+```ts
+export type HoverOptions = { mode: HoverMode; depth: number }
+
+export function graphNeighborhood(graph: Graph, focus: ReadonlySet<GraphId>, options: HoverOptions): Record<GraphId, number>
+```
+
+### `graphNeighborhood` {#src-2-graph-16-neighborhood-ts-graphneighborhood}
+
+`graphNeighborhood` is declared at `src/2_graph/16_neighborhood.ts:10`.
+
+Breadth-first traversal gives every branch the same distance; cycles retain shortest paths.
+Edge focus starts at its endpoints. Group focus starts at descendant nodes. Ownership does
+not consume a hop; traversing a message/edge consumes one. Source order is never rewritten.
+
+```ts
+graphNeighborhood: (graph: Readonly<Record<string, GraphItem<unknown, unknown>>>, focus: ReadonlySet<string>, options: HoverOptions) => Record<string, number>
+```
+
+### `hoverOpacity` {#src-2-graph-16-neighborhood-ts-hoveropacity}
+
+`hoverOpacity` is declared at `src/2_graph/16_neighborhood.ts:50`.
+
+Focus and first-hop neighbors share full intensity; subsequent hops fade geometrically.
+
+```ts
+hoverOpacity: (hop: number | undefined, active: boolean) => number
+```
+
+## src/2_graph/17_groupProjection.ts
+
+| export | kind |
+| --- | --- |
+| [`groupGraphItems`](#src-2-graph-17-groupprojection-ts-groupgraphitems) | function |
+| [`collapsedGraphIds`](#src-2-graph-17-groupprojection-ts-collapsedgraphids) | function |
+| [`collapseGraphFrame`](#src-2-graph-17-groupprojection-ts-collapsegraphframe) | function |
+
+### `groupGraphItems` {#src-2-graph-17-groupprojection-ts-groupgraphitems}
+
+`groupGraphItems` is declared at `src/2_graph/17_groupProjection.ts:5`.
+
+Add explicit containment without changing source IDs or source ordering.
+
+```ts
+groupGraphItems: (graph: Readonly<Record<string, GraphItem<unknown, unknown>>>, id: string, members: readonly string[], label: string, parentId?: string | undefined) => Readonly<Record<string, GraphItem<...>>>
+```
+
+### `collapsedGraphIds` {#src-2-graph-17-groupprojection-ts-collapsedgraphids}
+
+`collapsedGraphIds` is declared at `src/2_graph/17_groupProjection.ts:21`.
+
+Hidden descendants and internal/incident edges; the full source graph remains available.
+
+```ts
+collapsedGraphIds: (graph: Readonly<Record<string, GraphItem<unknown, unknown>>>, collapsed: ReadonlySet<string>) => Set<string>
+```
+
+### `collapseGraphFrame` {#src-2-graph-17-groupprojection-ts-collapsegraphframe}
+
+`collapseGraphFrame` is declared at `src/2_graph/17_groupProjection.ts:37`.
+
+Visibility projection is renderer-independent and never deletes source topology.
+
+```ts
+collapseGraphFrame: (frame: GraphFrame, collapsed: ReadonlySet<string>) => GraphFrame
+```
+
+## src/2_graph/18_sequenceCollapse.ts
+
+| export | kind |
+| --- | --- |
+| [`collapseSequenceFrame`](#src-2-graph-18-sequencecollapse-ts-collapsesequenceframe) | function |
+
+### `collapseSequenceFrame` {#src-2-graph-18-sequencecollapse-ts-collapsesequenceframe}
+
+`collapseSequenceFrame` is declared at `src/2_graph/18_sequenceCollapse.ts:9`.
+
+Compact collapsed sequence fragments in source coordinates, retaining one header row.
+Both renderers consume the same projected SVG and geometry. The input artifact and its source
+remain unchanged; expansion simply projects again from the original frame.
+
+```ts
+collapseSequenceFrame: (document: Document, frame: GraphFrame, collapsed: ReadonlySet<string>) => GraphFrame
+```
+
+## src/2_graph/19_sequenceNeighborhood.ts
+
+| export | kind |
+| --- | --- |
+| [`sequenceNeighborhood`](#src-2-graph-19-sequenceneighborhood-ts-sequenceneighborhood) | function |
+
+### `sequenceNeighborhood` {#src-2-graph-19-sequenceneighborhood-ts-sequenceneighborhood}
+
+`sequenceNeighborhood` is declared at `src/2_graph/19_sequenceNeighborhood.ts:5`.
+
+Traverse ordered message events, including fork/join branches, then paint their actor endpoints.
+
+```ts
+sequenceNeighborhood: (graph: Readonly<Record<string, GraphItem<SequenceGraphNodeData, SequenceGraphEdgeData>>>, focus: ReadonlySet<...>, options: HoverOptions) => Record<...>
+```
+
+## src/2_graph/20_groupActors.ts
+
+| export | kind |
+| --- | --- |
+| [`groupSequenceActors`](#src-2-graph-20-groupactors-ts-groupsequenceactors) | function |
+
+### `groupSequenceActors` {#src-2-graph-20-groupactors-ts-groupsequenceactors}
+
+`groupSequenceActors` is declared at `src/2_graph/20_groupActors.ts:8`.
+
+Group existing actor IDs without rewriting source text or message endpoints.
+Adds a bound header to the sealed SVG so both adapters render the same authored view group.
+Collapsing the group uses the shared containment visibility projection.
+
+```ts
+groupSequenceActors: (frame: GraphFrame, id: string, actors: readonly string[], label: string) => GraphFrame
+```
+
 ## src/2_graph/0_frame.ts
 
 Render a graph from explicit geometry, camera, and presentation state.
@@ -322,6 +466,8 @@ export type GraphPresentation = {
   stickyHeaders: readonly HeaderPlacement[]
   hiddenIds: ReadonlySet<GraphId>
   focusedIds: ReadonlySet<GraphId>
+  /** Hover distance by logical graph ID; missing IDs are faded context while nonempty. */
+  hopsById?: Readonly<Record<GraphId, number>>
   labelsById: Readonly<Record<GraphId, GraphLabel>>
   sealedSvgArtifactsByRootId: SealedSvgArtifactsByRootId
   translationsById?: Readonly<Record<GraphId, { x: number; y: number }>>
@@ -331,7 +477,7 @@ export type GraphPresentation = {
 
 ### `GraphFrame` {#src-2-graph-0-frame-ts-graphframe}
 
-`GraphFrame` is declared at `src/2_graph/0_frame.ts:50`.
+`GraphFrame` is declared at `src/2_graph/0_frame.ts:52`.
 
 A complete render input combining the graph with its geometry, camera, and presentation. The caller owns state and lifetime.
 
@@ -448,6 +594,7 @@ export type SealedSvgArtifact = {
   revisionId: string
   geometryRevisionId: string
   svg: string
+  source?: { language: "mermaid" | "d2"; text: string; locator: string }
   sourceBounds: Rect
   fit: "contain"
   graphIdByElementId?: Readonly<Record<string, GraphId>>
@@ -462,7 +609,7 @@ export type SealedSvgArtifact = {
 
 ### `SealedSvgArtifactsByRootId` {#src-2-graph-3-sealedsvgartifact-ts-sealedsvgartifactsbyrootid}
 
-`SealedSvgArtifactsByRootId` is declared at `src/2_graph/3_sealedSvgArtifact.ts:20`.
+`SealedSvgArtifactsByRootId` is declared at `src/2_graph/3_sealedSvgArtifact.ts:21`.
 
 ```ts
 export type SealedSvgArtifactsByRootId = Readonly<Record<GraphId, SealedSvgArtifact>>
@@ -472,7 +619,7 @@ export function validateSealedSvgArtifacts(graph: Graph, artifacts: SealedSvgArt
 
 ### `EMPTY_SEALED_SVG_ARTIFACTS_BY_ROOT_ID` {#src-2-graph-3-sealedsvgartifact-ts-empty-sealed-svg-artifacts-by-root-id}
 
-`EMPTY_SEALED_SVG_ARTIFACTS_BY_ROOT_ID` is declared at `src/2_graph/3_sealedSvgArtifact.ts:22`.
+`EMPTY_SEALED_SVG_ARTIFACTS_BY_ROOT_ID` is declared at `src/2_graph/3_sealedSvgArtifact.ts:23`.
 
 ```ts
 EMPTY_SEALED_SVG_ARTIFACTS_BY_ROOT_ID: Readonly<Record<string, SealedSvgArtifact>>
@@ -480,7 +627,7 @@ EMPTY_SEALED_SVG_ARTIFACTS_BY_ROOT_ID: Readonly<Record<string, SealedSvgArtifact
 
 ### `validateSealedSvgArtifacts` {#src-2-graph-3-sealedsvgartifact-ts-validatesealedsvgartifacts}
 
-`validateSealedSvgArtifacts` is declared at `src/2_graph/3_sealedSvgArtifact.ts:29`.
+`validateSealedSvgArtifacts` is declared at `src/2_graph/3_sealedSvgArtifact.ts:30`.
 
 Validates presentation artifacts while preserving their record identity.
 
@@ -696,13 +843,15 @@ A renderer-owned resource that accepts frames and releases its listeners and ele
 ```ts
 export type GraphFrameResource<NodeData = unknown, EdgeData = unknown> = {
   render(frame: GraphFrame<NodeData, EdgeData>, receipt: GraphRenderReceipt): void
+  /** Paint hover without replacing geometry, changing the camera, or cancelling momentum. */
+  applyHover?(hopsById: Readonly<Record<GraphId, number>>): void
   unsubscribe(): void
 }
 ```
 
 ### `graphRenderReceipt` {#src-2-graph-10-renderer-ts-graphrenderreceipt-2}
 
-`graphRenderReceipt` is declared at `src/2_graph/10_renderer.ts:25`.
+`graphRenderReceipt` is declared at `src/2_graph/10_renderer.ts:27`.
 
 Compare current graph IDs with the prior set and return sorted enter, update, and exit lists.
 
@@ -712,7 +861,7 @@ graphRenderReceipt: (previousIds: ReadonlySet<string>, frame: GraphFrame) => Gra
 
 ### `graphRenderer` {#src-2-graph-10-renderer-ts-graphrenderer}
 
-`graphRenderer` is declared at `src/2_graph/10_renderer.ts:39`.
+`graphRenderer` is declared at `src/2_graph/10_renderer.ts:41`.
 
 Return a renderer operator that acquires its resource when the caller activates the stream.
 Each frame carries an ID receipt; completion, error, or unsubscription releases the resource.

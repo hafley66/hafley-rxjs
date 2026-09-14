@@ -1,6 +1,6 @@
 # Hop-distance highlight gradient
 
-Status: proposed. Depends on [neighbor queries](2_neighbor-highlighting.md).
+Status: partially implemented. Both proof renderers share hop opacity: focus and hop 1 at 1, hop 2 at 0.55, then geometric fading; unrelated context at 0.15. Depends on [neighbor queries](2_neighbor-highlighting.md).
 
 ```ts
 function hopOpacity(hop: number, decay: number, floor: number): number {

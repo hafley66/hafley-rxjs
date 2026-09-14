@@ -138,3 +138,66 @@ it("shares presets and caller palettes across DOM and native renderers without c
     expect(hosts[0].querySelectorAll("style[data-grapht-style]").length).toBe(1)
   } finally { doc.unsubscribe(); cy.unsubscribe(); hosts.forEach(host => host.remove()) }
 })
+
+it("shares hover gradients, logical hit IDs, and reversible fragment collapse", async () => {
+  const { collapseSequenceFrame } = await import("../../src/2_graph/18_sequenceCollapse.ts")
+  const frame = await sequenceFrame({ width: 1280, height: 800 })
+  const groupId = Object.keys(frame.geometry.headerBoundsById)[0]
+  const collapsed = collapseSequenceFrame(document, frame, new Set([groupId]))
+  const host = document.createElement("div")
+  host.style.cssText = "position:relative;width:1280px;height:800px"
+  document.body.appendChild(host)
+  const message = Object.values(frame.graph).find(item => item.type === "edge")!
+  const focused = { ...frame, presentation: { ...frame.presentation, hopsById: { [message.id]: 2 } } }
+  const hoverEvents: string[][] = []
+  const doc = createDocumentGraphFrameResource(host, { cameraInput$: { next() {} }, focusInput$: { next(ids) { hoverEvents.push([...ids]) } } })
+  try {
+    doc.applyTheme("dark")
+    doc.render(focused, { enterIds: [], updateIds: [], exitIds: [] })
+    const element = [...host.querySelectorAll<SVGElement>("[data-graph-id]")].find(el => el.dataset.graphId === message.id)!
+    element.dispatchEvent(new PointerEvent("pointerover", { bubbles: true }))
+    expect({ opacity: element.style.opacity, focused: element.classList.contains("graph-focused"), hoverEvents }).toEqual({ opacity: "0.55", focused: true, hoverEvents: [[message.id]] })
+    doc.render(collapsed, { enterIds: [], updateIds: [], exitIds: [] })
+    expect([...host.querySelectorAll<SVGElement>("[data-graph-id]")].filter(el => collapsed.presentation.hiddenIds.has(el.dataset.graphId!)).every(el => el.style.display === "none")).toBe(true)
+    expect(collapsed.geometry.boundsById.seq.height).toBeLessThan(frame.geometry.boundsById.seq.height)
+    doc.render(frame, { enterIds: [], updateIds: [], exitIds: [] })
+    expect([...host.querySelectorAll<SVGElement>("[data-graph-id]")].every(el => el.style.display !== "none")).toBe(true)
+  } finally { doc.unsubscribe() }
+  const native = createCytoscapeGraphFrameResource(host)
+  try {
+    native.render(focused, { enterIds: [], updateIds: [], exitIds: [] })
+    const edge = native.cy.edges().filter(el => el.data("graphId") === message.id).first()
+    expect({ opacity: edge.style("opacity"), focused: edge.hasClass("graph-focused") }).toEqual({ opacity: "0.55", focused: true })
+    native.render(collapsed, { enterIds: [], updateIds: [], exitIds: [] })
+    expect(native.cy.elements().filter(el => collapsed.presentation.hiddenIds.has(el.data("graphId"))).toArray().every(el => el.hasClass("graph-hidden"))).toBe(true)
+    native.render(frame, { enterIds: [], updateIds: [], exitIds: [] })
+    expect(native.cy.elements(".graph-hidden").length).toBe(0)
+  } finally { native.unsubscribe(); host.remove() }
+})
+
+it("groups existing actors in both adapters and restores all bindings after expansion", async () => {
+  const { groupSequenceActors } = await import("../../src/2_graph/20_groupActors.ts")
+  const { collapseSequenceFrame } = await import("../../src/2_graph/18_sequenceCollapse.ts")
+  const { validateSealedSvgArtifacts } = await import("../../src/2_graph/3_sealedSvgArtifact.ts")
+  const original = await sequenceFrame({ width: 1280, height: 800 })
+  const actors = Object.keys(original.geometry.columnBoundsById!).slice(0, 2)
+  const grouped = groupSequenceActors(original, "services", actors, "Services")
+  const collapsed = collapseSequenceFrame(document, grouped, new Set(["services"]))
+  expect(validateSealedSvgArtifacts(collapsed.graph, collapsed.presentation.sealedSvgArtifactsByRootId)).toBe(collapsed.presentation.sealedSvgArtifactsByRootId)
+  expect({ parents: actors.map(id => grouped.graph[id].parentId), originalParents: actors.map(id => original.graph[id].parentId), retainedSource: grouped.presentation.sealedSvgArtifactsByRootId.seq.source }).toEqual({ parents: ["services", "services"], originalParents: ["seq", "seq"], retainedSource: original.presentation.sealedSvgArtifactsByRootId.seq.source })
+  const host = document.createElement("div")
+  host.style.cssText = "position:relative;width:1280px;height:800px"
+  document.body.appendChild(host)
+  for (const create of [createDocumentGraphFrameResource, createCytoscapeGraphFrameResource]) {
+    const renderer = create(host)
+    try {
+      renderer.render(collapsed, { enterIds: [], updateIds: [], exitIds: [] })
+      if ("cy" in renderer) {
+        expect(renderer.cy.elements().filter(element => actors.includes(element.data("graphId"))).toArray().every(element => element.hasClass("graph-hidden"))).toBe(true)
+        expect(renderer.cy.elements().filter(element => element.data("graphId") === "services").length).toBe(2)
+      } else expect([...host.querySelectorAll<SVGElement>("[data-graph-id]")].filter(element => actors.includes(element.dataset.graphId!)).every(element => element.style.display === "none")).toBe(true)
+      renderer.render(grouped, { enterIds: [], updateIds: [], exitIds: [] })
+    } finally { renderer.unsubscribe() }
+  }
+  host.remove()
+})

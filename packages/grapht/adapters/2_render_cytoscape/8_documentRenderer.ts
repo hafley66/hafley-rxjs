@@ -1,3 +1,4 @@
+import { hoverOpacity } from "../../src/2_graph/16_neighborhood.js"
 import { graphStyleOf, type GraphStyle, type GraphStyleInput } from "../../src/lib/0_graphStyle.js"
 import { applySvgStyle } from "../../src/lib/2_svgStyle.js"
 import { WheelMomentum } from "../../src/lib/2_wheelMomentum.js"
@@ -9,6 +10,7 @@ import type { GraphCamera, GraphFrame, GraphGeometry } from "../../src/2_graph/0
 import type { GraphFrameResource } from "../../src/2_graph/10_renderer.ts"
 
 export type DocumentRendererInteractions = {
+  focusInput$?: { next: (ids: ReadonlySet<string>) => void }
   cameraInput$: { next: (camera: GraphCamera) => void }
 }
 
@@ -67,6 +69,8 @@ export function createDocumentGraphFrameResource(
   let theme: GraphStyle | undefined
   let camera: GraphCamera | undefined
   let root: SVGSVGElement | undefined
+  const boundElements = new Map<SVGElement, string>()
+  let hovered: string | undefined
   let revisionId: string | undefined
   const stickyOverlay = createStickyOverlay(host, sticky)
   const legend = createGestureLegend(host)
@@ -130,13 +134,33 @@ export function createDocumentGraphFrameResource(
     if (dragging?.pointerId === event.pointerId) dragging = undefined
   }
 
+  const onHover = (event: PointerEvent): void => {
+    let target = event.target instanceof Element ? event.target : null
+    let id: string | undefined
+    while (target && target !== host) { id = boundElements.get(target as SVGElement); if (id) break; target = target.parentElement }
+    if (id === hovered) return
+    hovered = id
+    interactions?.focusInput$?.next(new Set(id ? [id] : []))
+  }
+  const onLeave = (): void => { hovered = undefined; interactions?.focusInput$?.next(new Set()) }
+  host.addEventListener("pointerover", onHover)
+  host.addEventListener("pointerleave", onLeave)
   host.addEventListener("wheel", onWheel, { passive: false })
   host.addEventListener("pointerdown", onPointerDown)
   host.addEventListener("pointermove", onPointerMove)
   host.addEventListener("pointerup", onPointerUp)
   host.addEventListener("pointercancel", onPointerUp)
 
+  let committedFocus: ReadonlySet<string> = new Set()
+  const applyHover = (hops: Readonly<Record<string, number>>): void => {
+    const active = Object.keys(hops).length > 0
+    for (const [element, id] of boundElements) {
+      element.classList.toggle("graph-focused", committedFocus.has(id) || hops[id] !== undefined)
+      element.style.opacity = String(hoverOpacity(hops[id], active))
+    }
+  }
   return {
+    applyHover,
     render(frame) {
       unsubscribeMomentum()
       const artifact = frame.presentation.sealedSvgArtifactsByRootId.epic ?? Object.values(frame.presentation.sealedSvgArtifactsByRootId)[0]
@@ -150,8 +174,20 @@ export function createDocumentGraphFrameResource(
         root.style.userSelect = "text"
         root.style.display = "block"
         host.appendChild(root)
+        boundElements.clear()
+        for (const binding of artifact.bindings ?? []) {
+          const element = root.querySelector<SVGElement>(`[id="${CSS.escape(binding.elementId)}"]`)
+          if (element) { boundElements.set(element, binding.graphId); element.dataset.graphId = binding.graphId }
+        }
+        for (const [elementId, graphId] of Object.entries(artifact.graphIdByElementId ?? {})) {
+          const element = root.querySelector<SVGElement>(`[id="${CSS.escape(elementId)}"]`)
+          if (element) { boundElements.set(element, graphId); element.dataset.graphId = graphId }
+        }
         revisionId = artifact.revisionId
       }
+      committedFocus = frame.presentation.focusedIds
+      applyHover(frame.presentation.hopsById ?? {})
+      for (const [element, id] of boundElements) element.style.display = frame.presentation.hiddenIds.has(id) ? "none" : ""
       stickyOverlay.render(frame)
       applyCamera(frame.camera)
     },
@@ -166,6 +202,9 @@ export function createDocumentGraphFrameResource(
     legend,
     unsubscribe() {
       unsubscribeMomentum()
+      host.removeEventListener("pointerover", onHover)
+      host.removeEventListener("pointerleave", onLeave)
+      boundElements.clear()
       host.removeEventListener("wheel", onWheel)
       host.removeEventListener("pointerdown", onPointerDown)
       host.removeEventListener("pointermove", onPointerMove)

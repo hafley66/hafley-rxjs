@@ -17,7 +17,7 @@ type SourceLine = {
   line: number
 }
 
-const groupForms = new Set(["loop", "alt", "opt", "par", "critical", "break", "rect"] as const)
+const groupForms = new Set(["loop", "alt", "opt", "par", "critical", "break", "rect", "box"] as const)
 
 function sourceLines(source: string): SourceLine[] {
   const lines: SourceLine[] = []
@@ -61,7 +61,7 @@ function diagnostic(
 }
 
 function currentStatements(roots: MermaidStatement[], groups: MermaidGroupStatement[]): MermaidStatement[] {
-  return groups.at(-1)?.statements ?? roots
+  return groups.at(-1)?.branches?.at(-1) ?? groups.at(-1)?.statements ?? roots
 }
 
 /**
@@ -93,6 +93,7 @@ export function parseMermaidSequence(source: string): MermaidSequenceDocument {
     if (participant) {
       participants.push({
         kind: "participant",
+        ...(groups.at(-1)?.form === "box" ? { groupKey: groups.at(-1)!.key } : {}),
         key: `participant:${participant[2]}#${participants.length}`,
         form: participant[1] as MermaidParticipant["form"],
         id: participant[2],
@@ -103,7 +104,7 @@ export function parseMermaidSequence(source: string): MermaidSequenceDocument {
       continue
     }
 
-    const group = /^(loop|alt|opt|par|critical|break|rect)(?:\s+(.+))?$/.exec(text)
+    const group = /^(loop|alt|opt|par|critical|break|rect|box)(?:\s+(.+))?$/.exec(text)
 
     if (group && groupForms.has(group[1] as MermaidGroupStatement["form"])) {
       const statement: MermaidGroupStatement = {
@@ -115,8 +116,14 @@ export function parseMermaidSequence(source: string): MermaidSequenceDocument {
         sourceSpan: span,
         statements: [],
       }
+      if (statement.form === "par") statement.branches = [statement.statements]
       currentStatements(statements, groups).push(statement)
       groups.push(statement)
+      continue
+    }
+
+    if (/^and(?:\s|$)/.test(text) && groups.at(-1)?.form === "par") {
+      groups.at(-1)!.branches!.push([])
       continue
     }
 
@@ -127,6 +134,7 @@ export function parseMermaidSequence(source: string): MermaidSequenceDocument {
         diagnostics.push(diagnostic("MERMAID_UNMATCHED_END", `line ${line.line}: end has no open group`, span))
       } else {
         groupToClose.sourceSpan = groupSpan(groupToClose.sourceSpan, span)
+        if (groupToClose.branches) groupToClose.statements = groupToClose.branches.flat()
       }
       continue
     }

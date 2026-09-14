@@ -40,6 +40,8 @@ export type GraphPresentation = {
   stickyHeaders: readonly HeaderPlacement[]
   hiddenIds: ReadonlySet<GraphId>
   focusedIds: ReadonlySet<GraphId>
+  /** Hover distance by logical graph ID; missing IDs are faded context while nonempty. */
+  hopsById?: Readonly<Record<GraphId, number>>
   labelsById: Readonly<Record<GraphId, GraphLabel>>
   sealedSvgArtifactsByRootId: SealedSvgArtifactsByRootId
   translationsById?: Readonly<Record<GraphId, { x: number; y: number }>>

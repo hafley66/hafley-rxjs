@@ -1,3 +1,9 @@
+import archSource from "../../../0_rendered_artifact_state_epic.d2?raw"
+import { groupSequenceActors } from "../../../src/2_graph/20_groupActors.ts"
+import { sequenceNeighborhood } from "../../../src/2_graph/19_sequenceNeighborhood.ts"
+import type { SequenceGraph } from "@hafley66/grapht-model"
+import { collapseSequenceFrame } from "../../../src/2_graph/18_sequenceCollapse.ts"
+import { graphNeighborhood, type HoverMode } from "../../../src/2_graph/16_neighborhood.ts"
 import { performanceReadout } from "../../../../docs-kit/src/3a_performanceReadout.ts"
 import { BehaviorSubject, EMPTY, merge, Subject, switchMap, tap } from "rxjs"
 import { Signal, StorageSignal } from "@hafley66/signals"
@@ -59,6 +65,7 @@ const artifactFrame: GraphFrame = {
         revisionId: "epic:svg:1",
         geometryRevisionId: "epic:geometry:1",
         svg: archSvg,
+        source: { language: "d2", text: archSource, locator: "0_rendered_artifact_state_epic.d2" },
         sourceBounds: { x: 0, y: 0, width, height },
         fit: "contain",
       },
@@ -80,6 +87,7 @@ const readout = Signal(() => {
   return `${ui.source.$()} | ${ui.mode.$()} | camera x ${current.x.toFixed(0)} y ${current.y.toFixed(0)} scale ${current.scale.toFixed(3)}`
 })
 type StickyResource = {
+  applyHover?: (hops: Readonly<Record<string, number>>) => void
   render: (frame: GraphFrame, receipt: unknown) => void
   unsubscribe: () => void
   applySticky?: (sticky: { ribbon: boolean; groups: boolean }) => void
@@ -99,6 +107,7 @@ let layoutLab: ReturnType<typeof import("./1_groupLayoutLab.ts").createGroupLayo
 
 const painted$ = merge(
   perf.painted$,
+  focusInput$.pipe(tap(ids => { hoveredIds = ids; paintInteraction() })),
   readout.$.pipe(tap(text => { readoutElement.textContent = text })),
   view.ribbon.$.pipe(tap(on => { ribbonToggle.checked = on })),
   view.groups.$.pipe(tap(on => { groupsToggle.checked = on })),
@@ -132,7 +141,88 @@ async function importCytoscape(host: HTMLElement) {
 const ribbonToggle = document.querySelector<HTMLInputElement>("#ribbon") as HTMLInputElement
 const groupsToggle = document.querySelector<HTMLInputElement>("#groups") as HTMLInputElement
 const darkToggle = document.querySelector<HTMLInputElement>("#dark") as HTMLInputElement
+let originalFrame = artifactFrame
+const collapsedIds = new Set<string>()
 let frame = artifactFrame
+let hoveredIds: ReadonlySet<string> = new Set()
+const hoverMode = document.querySelector<HTMLSelectElement>("#hover-mode")!
+const hoverRelations = document.querySelector<HTMLSelectElement>("#hover-relations")!
+const hoverDepth = document.querySelector<HTMLInputElement>("#hover-depth")!
+const hoverDebug = document.querySelector<HTMLInputElement>("#hover-debug")!
+const inspector = document.querySelector<HTMLElement>("#hover-inspector")!
+
+function paintInteraction(renderFrame = false): void {
+  const options = { mode: hoverMode.value as HoverMode, depth: Number(hoverDepth.value) }
+  const hops = hoverRelations.value === "sequence" ? sequenceNeighborhood(frame.graph as SequenceGraph, hoveredIds, options) : graphNeighborhood(frame.graph, hoveredIds, options)
+  if (renderFrame) resource?.render({ ...frame, camera: camera.$(), presentation: { ...frame.presentation, hopsById: hops } }, { enterIds: [], updateIds: [], exitIds: [] })
+  else resource?.applyHover?.(hops)
+  if (!hoverDebug.checked) { inspector.hidden = true; return }
+  if (!hoveredIds.size) return
+  inspector.hidden = false
+  inspector.textContent = "Last hover\n" + [...hoveredIds].map(id => {
+    const item = frame.graph[id]
+    const data = item?.data as { kind?: string; label?: string; sourceSpan?: { lineStart: number; lineEnd: number } } | undefined
+    const route = frame.geometry.routesById[id]
+    const artifacts = Object.values(frame.presentation.sealedSvgArtifactsByRootId)
+    const bindings = artifacts.flatMap(artifact => artifact.bindings?.filter(binding => binding.graphId === id) ?? [])
+    const relations = Object.values(frame.graph).filter(other => other.parentId === id || other.type === "edge" && (other.fromId === id || other.toId === id))
+    return [
+      `${data?.kind ?? item?.type ?? "unknown"}: ${data?.label ?? frame.presentation.labelsById[id]?.text ?? ""}`,
+      `id: ${id}`, `parent: ${item?.parentId ?? "none"}`, `hop: ${hops[id] ?? "outside mode/depth"}`,
+      `bounds: ${JSON.stringify(frame.geometry.boundsById[id] ?? null)}`,
+      `anchor: ${JSON.stringify(frame.geometry.endpointAnchorById[id] ?? null)}`,
+      ...(item?.type === "edge" ? [`from: ${item.fromId}`, `to: ${item.toId}`] : []),
+      ...(route ? [`route start: ${JSON.stringify([...route.slice(0, 2)])}`, `route end: ${JSON.stringify([...route.slice(-2)])}`, `route points: ${route.length / 2}`] : []),
+      ...(data?.sourceSpan ? [`source lines: ${data.sourceSpan.lineStart}..${data.sourceSpan.lineEnd}`] : []),
+      '"bindings":', ...bindings.map(binding => `  ${binding.role}: ${binding.elementId}`),
+      "relations:", ...relations.map(other => other.type === "edge" ? `  ${other.id}: ${other.fromId} -> ${other.toId}` : `  contains ${other.id}`),
+    ].join("\n")
+  }).join("\n\n")
+}
+for (const input of [hoverMode, hoverRelations, hoverDepth, hoverDebug]) input.addEventListener("change", () => paintInteraction())
+document.querySelector("#source-text")!.addEventListener("click", () => {
+  const preview = document.querySelector<HTMLElement>("#source-preview")!
+  preview.hidden = !preview.hidden
+  preview.textContent = Object.values(frame.presentation.sealedSvgArtifactsByRootId).map(artifact => artifact.source?.text ?? "Source text unavailable for this artifact.").join("\n")
+})
+
+function rebuildGroupControls(): void {
+  const controls = document.querySelector<HTMLElement>("#collapse-controls")!
+  controls.replaceChildren()
+  for (const id of Object.keys(frame.geometry.headerBoundsById)) {
+    const label = document.createElement("label")
+    label.style.display = "block"
+    const input = document.createElement("input")
+    input.type = "checkbox"
+    input.dataset.collapseId = id
+    input.checked = collapsedIds.has(id)
+    label.append(input, `Collapse ${frame.presentation.labelsById[id]?.text ?? id}`)
+    input.addEventListener("change", () => {
+      if (input.checked) collapsedIds.add(id); else collapsedIds.delete(id)
+      frame = collapseSequenceFrame(document, originalFrame, collapsedIds)
+      paintInteraction(true)
+    })
+    controls.appendChild(label)
+  }
+  const actors = document.querySelector<HTMLSelectElement>("#actor-members")!
+  actors.replaceChildren(...Object.keys(originalFrame.geometry.columnBoundsById ?? {}).map(id => {
+    const option = document.createElement("option")
+    option.value = id; option.textContent = originalFrame.presentation.labelsById[id]?.text ?? id
+    return option
+  }))
+}
+let actorGroupOrdinal = 0
+document.querySelector("#group-actors")!.addEventListener("click", () => {
+  const actors = document.querySelector<HTMLSelectElement>("#actor-members")!
+  const name = document.querySelector<HTMLInputElement>("#actor-group-name")!.value
+  try {
+    originalFrame = groupSequenceActors(originalFrame, `view-actor-group:${++actorGroupOrdinal}`, [...actors.selectedOptions].map(option => option.value), name)
+    frame = collapseSequenceFrame(document, originalFrame, collapsedIds)
+    rebuildGroupControls()
+    paintInteraction(true)
+    failure.$("")
+  } catch (error) { failure.$(String(error)) }
+})
 
 async function mount(next: Mode): Promise<void> {
   if (next === "cytoscape" && ui.source.$() === "arch") return
@@ -143,7 +233,7 @@ async function mount(next: Mode): Promise<void> {
 
   resource =
     next === "document"
-      ? createDocumentGraphFrameResource(host, { cameraInput$ }, { ...view.$(), inset: 44, fullWidth: 70, chipWidth: 34, gap: 4 })
+      ? createDocumentGraphFrameResource(host, { cameraInput$, focusInput$ }, { ...view.$(), inset: 44, fullWidth: 70, chipWidth: 34, gap: 4 })
       : await importCytoscape(host)
   resource?.applyTheme?.(view.dark.$() === false ? "light" : "dark")
   const rootId = ui.source.$() === "arch" ? "epic" : "seq"
@@ -155,6 +245,11 @@ async function mount(next: Mode): Promise<void> {
 async function useSource(next: Source): Promise<void> {
   ui.source.$(next)
   frame = next === "arch" ? artifactFrame : await sequenceFrame({ width: window.innerWidth, height: window.innerHeight })
+  originalFrame = frame
+  collapsedIds.clear()
+  hoveredIds = new Set()
+  inspector.hidden = true
+  rebuildGroupControls()
   document.body.setAttribute("data-source", next)
   document.querySelector("#arch")?.setAttribute("aria-pressed", String(next === "arch"))
   document.querySelector("#sequence")?.setAttribute("aria-pressed", String(next === "sequence"))

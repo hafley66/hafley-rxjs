@@ -21,3 +21,12 @@ export { fcoseGraphLayout } from "./2_graph/12_layout.js"
 export { GRAPH_STYLES, graphStyleOf, type GraphStyle, type GraphStyleInput, type GraphStyleResource, type GraphTheme } from "./lib/0_graphStyle.js"
 export { graphStylesheet, type GraphStyleRule } from "./lib/1_graphStylesheet.js"
 export { reduceGroupLayout, groupAllowsAutoLayout, groupPositionsOf, type GroupPositions, type GroupLayoutState, type GroupLayoutEvent } from "./2_graph/15_groupLayout.js"
+
+export { graphNeighborhood, hoverOpacity, type HoverMode, type HoverOptions } from "./2_graph/16_neighborhood.js"
+
+export { groupGraphItems, collapsedGraphIds, collapseGraphFrame } from "./2_graph/17_groupProjection.js"
+export { collapseSequenceFrame } from "./2_graph/18_sequenceCollapse.js"
+
+export { sequenceNeighborhood } from "./2_graph/19_sequenceNeighborhood.js"
+
+export { groupSequenceActors } from "./2_graph/20_groupActors.js"
