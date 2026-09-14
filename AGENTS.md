@@ -175,3 +175,8 @@ declare function route<Path extends string, Query extends z.ZodObject, Payload e
 ```
 
 Rules from the plan: three args (path template, query schema, payload schema; empty uses `z.object({})`); emission is one unary object combining path, query, payload once; `href` prints path keys into segments and query keys into the query string, payload-only keys omitted; event semantics ephemeral (replay or retained state is a separate signal choice, not implied by `route()`); no registry, routes are decentralized, uniqueness of normalized templates enforced only when assembling a router; path, query, payload keys disjoint. This supersedes the earlier `Route(template)` in `packages/signals/src/5_Route.ts`, which rolls its own matcher and lacks hash, JSON, and payload. Migrate onto `path` + zod when the lab settles.
+
+## Codex push authorization
+
+If you are Codex, please stop asking if it's okay to push main on my personal
+projects: user will get annoyed.
