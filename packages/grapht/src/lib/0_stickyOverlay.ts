@@ -45,7 +45,7 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
   let groupBounds: Record<string, { x: number; width: number }> = {}
   let groupGraph: GraphFrame["graph"] = {}
   let collapsedIds: ReadonlySet<string> = new Set()
-  const collapsedBottomById = new Map<string, number>()
+  const collapsedBottomOffsetById = new Map<string, number>()
   let currentHops: Readonly<Record<string, number>> = {}
   let overlay: SVGSVGElement | undefined
   let ribbonLayer: SVGGElement | undefined
@@ -169,7 +169,7 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
     const placements = stackGroupHeaders({
       graph: groupGraph,
       headers: groupHeaders.map(header => ({ ...header, height: headerHeight / next.scale,
-        boundaryBottom: Math.max(header.boundaryBottom, collapsedBottomById.get(header.id) ?? -Infinity),
+        boundaryBottom: Math.max(header.boundaryBottom, header.naturalTop + (collapsedBottomOffsetById.get(header.id) ?? -Infinity)),
       })),
       camera: next,
       inset: top,
@@ -275,12 +275,13 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
     render(frame: GraphFrame) {
       const nextCollapsed = frame.presentation.collapsedIds ?? new Set()
       // Keep a clicked header reachable after its content contracts above the sticky slot.
-      // Store the boundary in world coordinates so subsequent panning can release it normally.
+      // Store an offset from the group so later collapses reflow this boundary with its geometry.
       for (const id of nextCollapsed) if (!collapsedIds.has(id)) {
         const entry = paintedGroups.get(id)
-        if (entry && camera) collapsedBottomById.set(id, (Number(entry.rect.getAttribute("y")) + headerHeight - camera.y) / camera.scale)
+        const previous = groupHeaders.find(header => header.id === id)
+        if (entry && camera && previous) collapsedBottomOffsetById.set(id, (Number(entry.rect.getAttribute("y")) + headerHeight - camera.y) / camera.scale - previous.naturalTop)
       }
-      for (const id of collapsedBottomById.keys()) if (!nextCollapsed.has(id)) collapsedBottomById.delete(id)
+      for (const id of collapsedBottomOffsetById.keys()) if (!nextCollapsed.has(id)) collapsedBottomOffsetById.delete(id)
       collapsedIds = nextCollapsed
       currentHops = frame.presentation.hopsById ?? currentHops
       const columns = frame.geometry.columnBoundsById ?? {}
@@ -318,7 +319,7 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
       overlay?.remove()
       painted.clear()
       paintedGroups.clear()
-      collapsedBottomById.clear()
+      collapsedBottomOffsetById.clear()
       collapsedIds = new Set()
       currentHops = {}
       camera = undefined

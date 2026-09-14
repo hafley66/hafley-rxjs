@@ -6,6 +6,8 @@ import { collapseSequenceFrame } from "../../src/2_graph/18_sequenceCollapse.js"
 import { createDocumentGraphFrameResource } from "./8_documentRenderer.ts"
 import { createCytoscapeGraphFrameResource } from "./6_graphRenderer.ts"
 import { sequenceFrame } from "./proof/0_sequenceFrame.ts"
+import { createStickyOverlay } from "../../src/lib/0_stickyOverlay.js"
+import type { GraphFrame } from "../../src/2_graph/0_frame.js"
 
 it("interpolates endpoint hue and alpha in both directions, including native Canvas gradient stops", () => {
   const host = document.createElement("div")
@@ -104,4 +106,32 @@ it("sticky actor/group headers emit their graph IDs and expose reversible keyboa
     } finally { subscriptions.forEach(subscription => subscription.unsubscribe()); resource.unsubscribe() }
   }
   host.remove()
+})
+
+it("reflows a collapsed sticky boundary when an earlier group contracts", () => {
+  const host = document.createElement("div")
+  host.style.cssText = "position:relative;width:600px;height:400px"
+  document.body.appendChild(host)
+  const frame: GraphFrame = {
+    graph: { a: { id: "a", type: "node" }, b: { id: "b", type: "node" } },
+    camera: { x: 0, y: -210, scale: 1, viewport: { x: 0, y: 0, width: 600, height: 400 } },
+    geometry: {
+      revisionId: "groups", routesById: {}, endpointAnchorById: {},
+      boundsById: { a: { x: 0, y: 0, width: 300, height: 200 }, b: { x: 0, y: 200, width: 300, height: 200 } },
+      headerBoundsById: { a: { x: 0, y: 0, width: 300, height: 22 }, b: { x: 0, y: 200, width: 300, height: 22 } },
+    },
+    presentation: { stickyHeaders: [], hiddenIds: new Set(), focusedIds: new Set(), labelsById: {}, sealedSvgArtifactsByRootId: {} },
+  }
+  const overlay = createStickyOverlay(host, { ribbon: false, inset: 8 })
+  try {
+    overlay.render(frame)
+    expect(host.querySelector('[data-sticky-id="b"] rect')?.getAttribute("y")).toBe("8")
+    overlay.render(collapseSequenceFrame(document, frame, new Set(["b"])))
+    expect(host.querySelector('[data-sticky-id="b"] rect')?.getAttribute("y")).toBe("8")
+    // Both groups now fit above the camera: the previous sticky boundary must move with B.
+    overlay.render(collapseSequenceFrame(document, frame, new Set(["a", "b"])))
+    expect(host.querySelectorAll("[data-sticky-id]").length).toBe(0)
+    overlay.render(frame)
+    expect(host.querySelector('[data-sticky-id="b"] rect')?.getAttribute("y")).toBe("8")
+  } finally { overlay.unsubscribe(); host.remove() }
 })

@@ -289,14 +289,14 @@ async function mount(next: Mode): Promise<void> {
   resource?.applyWheelSettings?.(wheelSettings.$())
   resource?.applyTheme?.(hoverStyle())
   const rootId = Object.keys(frame.presentation.sealedSvgArtifactsByRootId)[0]
-  resource?.render(frame, { enterIds: [rootId], updateIds: [], exitIds: [] })
-  cameraInput$.next(frame.camera)
+  resource?.render({ ...frame, camera: camera.$() }, { enterIds: [rootId], updateIds: [], exitIds: [] })
   mounted$.next(resource)
 }
 
 async function useSource(next: "arch" | "sequence"): Promise<void> {
   ui.source.$(next)
   frame = next === "arch" ? artifactFrame : await sequenceFrame({ width: window.innerWidth, height: window.innerHeight })
+  cameraInput$.next(frame.camera)
   originalFrame = frame
   collapsedIds.clear()
   hoveredIds = new Set()
@@ -319,6 +319,7 @@ document.querySelector<HTMLInputElement>("#svg-import")!.addEventListener("chang
     const metadata = files.find(file => file.name.toLowerCase().endsWith(".json"))
     const bindingInput: Pick<SvgFrameInput, "graph" | "bindings"> = metadata ? JSON.parse(await metadata.text()) : {}
     frame = svgFrame(document, { svg: await source.text(), locator: source.name, graph: bindingInput.graph, bindings: bindingInput.bindings, viewport: { width: innerWidth, height: innerHeight } })
+    cameraInput$.next(frame.camera)
     originalFrame = frame
     collapsedIds.clear(); hoveredIds = new Set(); inspector.hidden = true
     ui.source.$("svg")
@@ -332,9 +333,9 @@ document.querySelector<HTMLInputElement>("#svg-import")!.addEventListener("chang
   } catch (error) { failure.$(String(error)) }
 })
 
-await useSource("sequence")
 // The page entry is the runtime boundary; this subscription is its only one.
 painted$.subscribe()
+await useSource("sequence")
 
 document.querySelector("#document")?.addEventListener("click", () => void mount("document"))
 document.querySelector("#renderer-cytoscape")?.addEventListener("click", () => void mount("cytoscape"))
