@@ -24,7 +24,8 @@
     "@lezer/highlight": "^1.2.3",
     "codemirror": "^6.0.2",
     "rxjs": "^7.8.2",
-    "sucrase": "^3.35.1"
+    "sucrase": "^3.35.1",
+    "@hafley66/trace": "workspace:*"
   },
   "devDependencies": {
     "typescript": "7.0.2"

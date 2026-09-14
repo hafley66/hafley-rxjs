@@ -62,6 +62,14 @@ try {
       return { x: Number(match[1]), y: Number(match[2]), scale: Number(match[3]) }
     }
     const before = await camera()
+    await expect(page.locator("#dark")).toBeEnabled()
+    await expect(page.locator("#dark")).toBeChecked()
+    await expect(page.locator("#host")).toHaveCSS("background-color", "rgb(11, 18, 32)")
+    await page.locator("#dark").uncheck()
+    await expect(page.locator("#host")).toHaveCSS("background-color", "rgb(253, 253, 251)")
+    await page.locator("#dark").check()
+    await expect(page.locator("#host")).toHaveCSS("background-color", "rgb(11, 18, 32)")
+    expect(await camera()).toEqual(before)
     await page.mouse.move(640, 400)
     await page.mouse.wheel(0, 100)
     await expect.poll(async () => (await camera()).y).toBeLessThan(before.y - 100)
@@ -75,10 +83,13 @@ try {
     // Fit must cancel the entire half-second tail, including pending animation frames.
     await page.waitForTimeout(550)
     expect(await camera()).toEqual(before)
+    if (process.env.SCREENSHOT) await page.screenshot({ path: process.env.SCREENSHOT })
     console.log(`Native sequence: DOM ${documentNodes} -> ${nativeNodes}`)
     await page.getByRole("button", { name: "document renderer", exact: true }).click()
     await expect(page.locator('#host canvas')).toHaveCount(0)
     await expect(page.locator("#host svg").first()).toBeVisible()
+    await expect(page.locator("#dark")).toBeDisabled()
+    await expect(page.locator("#host")).toHaveCSS("background-color", "rgb(253, 253, 251)")
     const domBefore = await camera()
     await page.mouse.move(640, 400)
     await page.mouse.wheel(0, 100)

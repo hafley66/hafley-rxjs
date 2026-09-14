@@ -150,7 +150,7 @@ explainable.
 Ask for a tick, record how late it was.
 
 ```ts
-lag$("raf", 1000).subscribe(...)     // at the application's boundary, never in a library
+const frames$ = lag$("raf", 1000)   // compose into the application boundary
 ```
 
 | kind | node | browser | worker |
@@ -181,3 +181,35 @@ This package is the join, not a logger and not an SDK.
 
 What has no prior art, and is the reason this package exists: a browser and worker identity that
 answers the same three questions a pid does, and one `Lag` shape both runtimes fill.
+
+
+## Renderer performance metrics
+
+`metrics$(host)` returns frame delivery FPS, worst gap over a 90-frame window, cumulative gaps
+above 32 ms, `memory.heap`, `memory.domElements`, and `memoryAt` (performance-clock milliseconds).
+Heap and host-descendant elements are sampled at most once per second. The stream is cold and
+cancels its rAF on unsubscribe. The docs-kit widget consumes it for signal-grid and grapht.
+
+`lag$("raf", windowMs)` also returns `elapsedMs` and `fps` based on the actual window duration.
+Its p50/p95/worst describe callback gaps. FPS is absent for timeout/eventloop samples.
+Callback rate does not establish display-presented FPS. Long-frame timing fields cover only
+reported Long Animation Frames.
+
+For the requested total resident PID memory, import `processMemory` from `@hafley66/trace/node`.
+Pass OS PIDs to receive `{ pid, rssBytes }` records from macOS/Linux `ps`. This includes resident
+JS and native pages. Exited PIDs are omitted; invalid PIDs or unsupported platforms reject.
+The external harness owns sampling. Shared pages may occur in several PIDs; their RSS sum is
+not unique physical memory. Browser tab identities from `ident()` are not OS PIDs.
+
+`chromiumMemory(cdpSession)` optionally provides a breakdown: isolate JS heap used/allocated bytes,
+embedder GC heap bytes, array-buffer/external-string backing bytes, and target DOM/document/listener
+counters. It accepts a Playwright-compatible CDP session without importing Playwright. The caller
+owns the session, cadence, and any forced GC. Protocol errors reject; absent optional fields remain
+undefined. Embedder heap covers part of native memory. These counters do not establish GPU bytes or RSS.
+CDP node counts include text and potentially detached nodes; widget counts are host elements only.
+
+A hosted page cannot read OS PID RSS itself. Use an external collector and transport samples to the
+page if needed. The current hosted widget displays page-accessible frame/heap/DOM values.
+
+Sources: [Runtime.getHeapUsage](https://chromedevtools.github.io/devtools-protocol/tot/Runtime/#method-getHeapUsage),
+[Memory.getDOMCounters](https://chromedevtools.github.io/devtools-protocol/tot/Memory/#method-getDOMCounters).

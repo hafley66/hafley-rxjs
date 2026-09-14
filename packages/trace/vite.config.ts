@@ -21,12 +21,13 @@ export default defineConfig(({ command }) => ({
   ],
   build: {
     lib: {
-      entry: { index: resolve(__dirname, "src/index.ts") },
+      entry: { index: resolve(__dirname, "src/index.ts"), "10_processMemory": resolve(__dirname, "src/10_processMemory.ts") },
       formats: ["es"],
       fileName: () => "[name].js",
     },
     rollupOptions: {
       external: (id) => {
+        if (id.startsWith("node:")) return true
         if (id.includes("node_modules")) return true
         if (!id.startsWith(".") && !id.startsWith("/")) {
           return external.some(dep => id.startsWith(dep))

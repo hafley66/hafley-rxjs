@@ -341,6 +341,7 @@ function headerViewStyle(theme: GraphTheme, left: number, top: number, width: nu
 export type CytoscapeGraphFrameResource = GraphFrameResource & {
   cy: Core
   applySticky: (options: Pick<StickyOptions, "ribbon" | "groups">) => void
+  /** Recolor native primitives and headers while retaining the current camera and geometry. */
   applyTheme: (theme: GraphTheme) => void
   headerViews: ReadonlyMap<string, HTMLElement>
   sealedSvgViews: ReadonlyMap<string, HTMLElement>
@@ -351,6 +352,7 @@ export function createCytoscapeGraphFrameResource(
   interactions?: RendererInteractions,
   sticky?: StickyOptions,
 ): CytoscapeGraphFrameResource {
+  const originalBackground = host?.style.background ?? ""
   host?.addEventListener("wheel", onWheel, { capture: true, passive: false })
   const cy = cytoscape({
     container: host,
@@ -466,7 +468,7 @@ export function createCytoscapeGraphFrameResource(
       cy.style(cytoscapeStyle(next) as any)
       if (host) {
         if (next === "dark") host.style.background = "#0b1220"
-        else host.style.removeProperty("background")
+        else host.style.background = originalBackground
       }
       stickyOverlay?.applyTheme(next)
       if (renderedFrame !== undefined) {
@@ -476,7 +478,7 @@ export function createCytoscapeGraphFrameResource(
           const top = renderedFrame.presentation.stickyHeaders.find(placement => placement.id === id)?.top ?? 0
           view.setAttribute(
             "style",
-            headerViewStyle(next, bounds.x * renderedFrame.camera.scale + renderedFrame.camera.x, top, bounds.width * renderedFrame.camera.scale, bounds.height * renderedFrame.camera.scale),
+            headerViewStyle(next, bounds.x * cy.zoom() + cy.pan().x, top, bounds.width * cy.zoom(), bounds.height * cy.zoom()),
           )
         }
       }
@@ -607,7 +609,7 @@ export function createCytoscapeGraphFrameResource(
     unsubscribe() {
       unsubscribeMomentum()
       host?.removeEventListener("wheel", onWheel, { capture: true })
-      host?.style.removeProperty("background")
+      if (host) host.style.background = originalBackground
       stickyOverlay?.unsubscribe()
       headerLayer?.remove()
       headerViews.clear()

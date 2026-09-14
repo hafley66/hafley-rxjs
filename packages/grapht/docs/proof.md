@@ -1,12 +1,9 @@
 # Interactive proof
 
-- [The app](#the-app)
-- [Wheel semantics](#wheel-semantics)
-
-## The app
-
-The rendered-artifact proof app: a sealed SVG diagram (from the `0_rendered_artifact_state_epic.d2`
-fixture) panned, zoomed, and selected in both the document and cytoscape renderers.
+The large sequence opens in the document renderer. Switch to Cytoscape for native actors,
+lifelines, groups, notes, and 125 message edges. SVG geometry is measured during import;
+the native sequence retains no full SVG diagram in the DOM. The architecture fixture is
+document-only because it has no native graph bindings.
 
 <iframe
   src="/hafley-rxjs/grapht/proof/index.html"
@@ -14,12 +11,29 @@ fixture) panned, zoomed, and selected in both the document and cytoscape rendere
   title="grapht interactive proof"
 ></iframe>
 
-## Wheel semantics
+## Controls
 
-| gesture | action |
+| Gesture or control | Behavior |
 | --- | --- |
-| plain scroll | vertical pan |
-| shift + scroll | horizontal pan |
-| cmd/ctrl + scroll | zoom at the cursor |
-| double-click | select under the cursor |
-| fit button | re-fit the graph to the viewport |
+| Scroll | Pan along wheel/trackpad axes |
+| Shift + scroll | Horizontal pan |
+| Ctrl/Cmd + scroll or trackpad pinch | Zoom at cursor |
+| End wheel gesture | Damped pan/zoom momentum |
+| Fit | Restore fitted camera and cancel momentum |
+| Actor ribbon / group headers | Toggle shared screen-space headers |
+| Dark mode (Cytoscape) | Change native canvas and header colors; preference persists |
+
+The document renderer supports text selection. Native sequence shapes are currently ungrabbable.
+Manual movement, undo, and arrangement persistence are not connected in this proof. Cytoscape emits
+focus/selection inputs, but the proof does not consume them into visible hover or neighborhood
+highlights. Hop-gradient highlighting remains planned. Native mobile touch-pinch momentum is unverified.
+
+## Performance evidence
+
+The docs-kit widget consumes `@hafley66/trace` frame and memory samples. FPS means animation-frame
+callback delivery. Heap is a browser JS estimate; DOM counts cover descendants of the graph host.
+The external benchmark uses trace's OS PID RSS collector for resident memory and its Chromium
+collector for heap breakdowns. The hosted widget cannot read OS RSS directly.
+
+[Benchmark and raw measurements](https://github.com/hafley66/hafley-rxjs/blob/main/packages/grapht/adapters/2_render_cytoscape/bench/4_report.md).
+[Remaining interaction work](./roadmap).

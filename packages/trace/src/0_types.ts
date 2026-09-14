@@ -84,6 +84,9 @@ export interface Lag {
   readonly kind: LagKind
   readonly expectedMs: number
   readonly samples: number
+  readonly elapsedMs: number
+  /** Animation-frame callback rate; absent for timeout/eventloop samples. */
+  readonly fps: number | undefined
   readonly p50: number
   readonly p95: number
   readonly worst: number

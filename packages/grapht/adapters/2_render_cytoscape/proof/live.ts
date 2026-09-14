@@ -138,6 +138,7 @@ async function mount(next: Mode): Promise<void> {
   host.replaceChildren()
   failure.$("")
   ui.mode.$(next)
+  darkToggle.disabled = next !== "cytoscape"
   resource =
     next === "document"
       ? createDocumentGraphFrameResource(host, { cameraInput$ }, { ...view.$(), inset: 44, fullWidth: 70, chipWidth: 34, gap: 4 })

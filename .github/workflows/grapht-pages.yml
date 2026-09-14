@@ -12,6 +12,7 @@ on:
     paths:
       - "packages/grapht/**"
       - "packages/docs-kit/**"
+      - "packages/trace/**"
       - "plans/2026-09-13-anim-to-grapht/**"
       - "pages/**"
       - "pnpm-lock.yaml"

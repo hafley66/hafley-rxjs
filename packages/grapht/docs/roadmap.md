@@ -22,3 +22,12 @@ Each plan records lifetime, storage, identity joins, unresolved policy, and acce
 A feature moves out of this section when its exported contract, connected caller path, deterministic fixtures, and relevant browser behavior have been checked. Verification should record the command, source revision, observed result, and known limits. A passing source test alone does not establish a browser interaction.
 
 [Current API reference](./reference-api) · [Documentation and evidence](./documentation) · [Interactive proof](./proof)
+
+
+## Current proof integration
+
+Native sequence rendering, shared sticky overlays, wheel pan/pinch momentum, Cytoscape dark mode,
+and the trace-backed widget are implemented. The architecture fixture remains document-only.
+Manual movement is disabled for native sequence shapes. Focus events are emitted but visible hover
+effects are not connected. The plans above still cover the movement journal, optional persistence,
+neighborhood combinations, and hop-opacity gradients.

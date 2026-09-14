@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/10_processMemory.d.ts",
+      "import": "./dist/10_processMemory.js"
     }
   },
   "scripts": {
@@ -40,7 +44,8 @@
     "typescript": "7.0.2",
     "vite": "^8.2.1",
     "vite-plugin-dts": "^5.0.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "@types/node": "^25.0.8"
   },
   "keywords": [
     "telemetry",

@@ -1,0 +1,2018 @@
+[
+  {
+    "copies": 1,
+    "messages": 125,
+    "trial": 0,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895336,
+    "prepared": 2078464,
+    "mounted": 2344208,
+    "rendererDelta": 265744,
+    "released": 2265688,
+    "mountAndMeasureMs": 248.66658299999995,
+    "dom": 595,
+    "graph": 149,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 92503,
+        "rssBytes": 81887232,
+        "type": "browser"
+      },
+      {
+        "pid": 92750,
+        "rssBytes": 59031552,
+        "type": "GPU"
+      },
+      {
+        "pid": 92781,
+        "rssBytes": 42926080,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 92827,
+        "rssBytes": 115179520,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 2344208,
+      "jsHeapAllocatedBytes": 2949120,
+      "embedderHeapUsedBytes": 2179792,
+      "backingStorageBytes": 360487,
+      "domNodes": 4988,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 1,
+    "messages": 125,
+    "trial": 0,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733952,
+    "prepared": 2921176,
+    "mounted": 7209320,
+    "rendererDelta": 4288144,
+    "released": 6623268,
+    "mountAndMeasureMs": 236.4156250000001,
+    "dom": 72,
+    "graph": 149,
+    "edges": 125,
+    "rss": [
+      {
+        "pid": 92890,
+        "rssBytes": 81641472,
+        "type": "browser"
+      },
+      {
+        "pid": 92932,
+        "rssBytes": 70811648,
+        "type": "GPU"
+      },
+      {
+        "pid": 92934,
+        "rssBytes": 42942464,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 92972,
+        "rssBytes": 180568064,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 7209320,
+      "jsHeapAllocatedBytes": 8192000,
+      "embedderHeapUsedBytes": 1606904,
+      "backingStorageBytes": 964445,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 1,
+    "messages": 125,
+    "trial": 1,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733952,
+    "prepared": 2921176,
+    "mounted": 7207000,
+    "rendererDelta": 4285824,
+    "released": 6620332,
+    "mountAndMeasureMs": 221.67108300000018,
+    "dom": 72,
+    "graph": 149,
+    "edges": 125,
+    "rss": [
+      {
+        "pid": 93085,
+        "rssBytes": 81772544,
+        "type": "browser"
+      },
+      {
+        "pid": 93093,
+        "rssBytes": 70696960,
+        "type": "GPU"
+      },
+      {
+        "pid": 93094,
+        "rssBytes": 43024384,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 93096,
+        "rssBytes": 181649408,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 7207000,
+      "jsHeapAllocatedBytes": 8192000,
+      "embedderHeapUsedBytes": 1608872,
+      "backingStorageBytes": 964445,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 1,
+    "messages": 125,
+    "trial": 1,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895312,
+    "prepared": 2078440,
+    "mounted": 2345072,
+    "rendererDelta": 266632,
+    "released": 2265688,
+    "mountAndMeasureMs": 133.83725000000004,
+    "dom": 595,
+    "graph": 149,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 93142,
+        "rssBytes": 81756160,
+        "type": "browser"
+      },
+      {
+        "pid": 93151,
+        "rssBytes": 59080704,
+        "type": "GPU"
+      },
+      {
+        "pid": 93152,
+        "rssBytes": 42467328,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 93154,
+        "rssBytes": 114884608,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 2345072,
+      "jsHeapAllocatedBytes": 3211264,
+      "embedderHeapUsedBytes": 2190152,
+      "backingStorageBytes": 360487,
+      "domNodes": 4988,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 1,
+    "messages": 125,
+    "trial": 2,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895312,
+    "prepared": 2078440,
+    "mounted": 2344240,
+    "rendererDelta": 265800,
+    "released": 2265688,
+    "mountAndMeasureMs": 158.5039999999999,
+    "dom": 595,
+    "graph": 149,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 93190,
+        "rssBytes": 81494016,
+        "type": "browser"
+      },
+      {
+        "pid": 93200,
+        "rssBytes": 59293696,
+        "type": "GPU"
+      },
+      {
+        "pid": 93201,
+        "rssBytes": 42647552,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 93221,
+        "rssBytes": 114704384,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 2344240,
+      "jsHeapAllocatedBytes": 2949120,
+      "embedderHeapUsedBytes": 2525696,
+      "backingStorageBytes": 360487,
+      "domNodes": 4988,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 1,
+    "messages": 125,
+    "trial": 2,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733952,
+    "prepared": 2921176,
+    "mounted": 7213552,
+    "rendererDelta": 4292376,
+    "released": 6627492,
+    "mountAndMeasureMs": 230.58075000000008,
+    "dom": 72,
+    "graph": 149,
+    "edges": 125,
+    "rss": [
+      {
+        "pid": 93263,
+        "rssBytes": 81805312,
+        "type": "browser"
+      },
+      {
+        "pid": 93272,
+        "rssBytes": 70746112,
+        "type": "GPU"
+      },
+      {
+        "pid": 93273,
+        "rssBytes": 42958848,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 93275,
+        "rssBytes": 181305344,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 7213552,
+      "jsHeapAllocatedBytes": 8192000,
+      "embedderHeapUsedBytes": 1555272,
+      "backingStorageBytes": 964445,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 8,
+    "messages": 1000,
+    "trial": 0,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1893000,
+    "prepared": 2523260,
+    "mounted": 2826864,
+    "rendererDelta": 303604,
+    "released": 2275500,
+    "mountAndMeasureMs": 294.3237909999998,
+    "dom": 4186,
+    "graph": 1185,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 93301,
+        "rssBytes": 81788928,
+        "type": "browser"
+      },
+      {
+        "pid": 93305,
+        "rssBytes": 59719680,
+        "type": "GPU"
+      },
+      {
+        "pid": 93306,
+        "rssBytes": 43319296,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 93307,
+        "rssBytes": 153206784,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 2826864,
+      "jsHeapAllocatedBytes": 3473408,
+      "embedderHeapUsedBytes": 12965640,
+      "backingStorageBytes": 1179761,
+      "domNodes": 38931,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 8,
+    "messages": 1000,
+    "trial": 0,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733952,
+    "prepared": 3365656,
+    "mounted": 23537792,
+    "rendererDelta": 20172136,
+    "released": 18622624,
+    "mountAndMeasureMs": 505.59799999999996,
+    "dom": 72,
+    "graph": 1185,
+    "edges": 1000,
+    "rss": [
+      {
+        "pid": 93329,
+        "rssBytes": 71041024,
+        "type": "browser"
+      },
+      {
+        "pid": 93336,
+        "rssBytes": 65224704,
+        "type": "GPU"
+      },
+      {
+        "pid": 93337,
+        "rssBytes": 37666816,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 93339,
+        "rssBytes": 196018176,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 23537792,
+      "jsHeapAllocatedBytes": 25755648,
+      "embedderHeapUsedBytes": 1408272,
+      "backingStorageBytes": 1998825,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 8,
+    "messages": 1000,
+    "trial": 1,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733952,
+    "prepared": 3365656,
+    "mounted": 23540804,
+    "rendererDelta": 20175148,
+    "released": 4335308,
+    "mountAndMeasureMs": 565.1584589999993,
+    "dom": 72,
+    "graph": 1185,
+    "edges": 1000,
+    "rss": [
+      {
+        "pid": 93387,
+        "rssBytes": 81821696,
+        "type": "browser"
+      },
+      {
+        "pid": 93394,
+        "rssBytes": 70402048,
+        "type": "GPU"
+      },
+      {
+        "pid": 93396,
+        "rssBytes": 43008000,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 93397,
+        "rssBytes": 212434944,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 23540804,
+      "jsHeapAllocatedBytes": 26279936,
+      "embedderHeapUsedBytes": 1408272,
+      "backingStorageBytes": 1998825,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 8,
+    "messages": 1000,
+    "trial": 1,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895428,
+    "prepared": 2523376,
+    "mounted": 2826980,
+    "rendererDelta": 303604,
+    "released": 2275616,
+    "mountAndMeasureMs": 392.8702919999996,
+    "dom": 4186,
+    "graph": 1185,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 93521,
+        "rssBytes": 82280448,
+        "type": "browser"
+      },
+      {
+        "pid": 93563,
+        "rssBytes": 59506688,
+        "type": "GPU"
+      },
+      {
+        "pid": 93564,
+        "rssBytes": 42303488,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 93565,
+        "rssBytes": 153714688,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 2826980,
+      "jsHeapAllocatedBytes": 3473408,
+      "embedderHeapUsedBytes": 13246096,
+      "backingStorageBytes": 1179761,
+      "domNodes": 38931,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 8,
+    "messages": 1000,
+    "trial": 2,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1894916,
+    "prepared": 2522524,
+    "mounted": 2826372,
+    "rendererDelta": 303848,
+    "released": 2275008,
+    "mountAndMeasureMs": 294.0266249999995,
+    "dom": 4186,
+    "graph": 1185,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 93585,
+        "rssBytes": 81870848,
+        "type": "browser"
+      },
+      {
+        "pid": 93587,
+        "rssBytes": 59195392,
+        "type": "GPU"
+      },
+      {
+        "pid": 93588,
+        "rssBytes": 42500096,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 93589,
+        "rssBytes": 155189248,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 2826372,
+      "jsHeapAllocatedBytes": 3473408,
+      "embedderHeapUsedBytes": 13306200,
+      "backingStorageBytes": 1179761,
+      "domNodes": 38931,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 8,
+    "messages": 1000,
+    "trial": 2,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2734068,
+    "prepared": 3365772,
+    "mounted": 23536912,
+    "rendererDelta": 20171140,
+    "released": 18620936,
+    "mountAndMeasureMs": 483.9851659999995,
+    "dom": 72,
+    "graph": 1185,
+    "edges": 1000,
+    "rss": [
+      {
+        "pid": 93626,
+        "rssBytes": 82264064,
+        "type": "browser"
+      },
+      {
+        "pid": 93632,
+        "rssBytes": 70795264,
+        "type": "GPU"
+      },
+      {
+        "pid": 93633,
+        "rssBytes": 43188224,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 93635,
+        "rssBytes": 213090304,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 23543904,
+      "jsHeapAllocatedBytes": 26804224,
+      "embedderHeapUsedBytes": 1408272,
+      "backingStorageBytes": 1998825,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 32,
+    "messages": 4000,
+    "trial": 0,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895312,
+    "prepared": 4037328,
+    "mounted": 4556684,
+    "rendererDelta": 519356,
+    "released": 2277756,
+    "mountAndMeasureMs": 828.1500419999993,
+    "dom": 16498,
+    "graph": 4737,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 93689,
+        "rssBytes": 71172096,
+        "type": "browser"
+      },
+      {
+        "pid": 93690,
+        "rssBytes": 53133312,
+        "type": "GPU"
+      },
+      {
+        "pid": 93691,
+        "rssBytes": 36896768,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 93692,
+        "rssBytes": 233357312,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 4556684,
+      "jsHeapAllocatedBytes": 5308416,
+      "embedderHeapUsedBytes": 50326392,
+      "backingStorageBytes": 4000132,
+      "domNodes": 155307,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 32,
+    "messages": 4000,
+    "trial": 0,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733952,
+    "prepared": 4878880,
+    "mounted": 78860000,
+    "rendererDelta": 73981120,
+    "released": 59709340,
+    "mountAndMeasureMs": 1528.2254170000015,
+    "dom": 72,
+    "graph": 4737,
+    "edges": 4000,
+    "rss": [
+      {
+        "pid": 93770,
+        "rssBytes": 70746112,
+        "type": "browser"
+      },
+      {
+        "pid": 93771,
+        "rssBytes": 76267520,
+        "type": "GPU"
+      },
+      {
+        "pid": 93772,
+        "rssBytes": 38862848,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 93773,
+        "rssBytes": 296288256,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 78860000,
+      "jsHeapAllocatedBytes": 82837504,
+      "embedderHeapUsedBytes": 1487880,
+      "backingStorageBytes": 5564718,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 32,
+    "messages": 4000,
+    "trial": 1,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733952,
+    "prepared": 4878880,
+    "mounted": 78859212,
+    "rendererDelta": 73980332,
+    "released": 59705776,
+    "mountAndMeasureMs": 1501.7119579999999,
+    "dom": 72,
+    "graph": 4737,
+    "edges": 4000,
+    "rss": [
+      {
+        "pid": 94023,
+        "rssBytes": 71532544,
+        "type": "browser"
+      },
+      {
+        "pid": 94024,
+        "rssBytes": 76890112,
+        "type": "GPU"
+      },
+      {
+        "pid": 94025,
+        "rssBytes": 38830080,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 94026,
+        "rssBytes": 294486016,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 78859212,
+      "jsHeapAllocatedBytes": 82837504,
+      "embedderHeapUsedBytes": 1437328,
+      "backingStorageBytes": 5564718,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 32,
+    "messages": 4000,
+    "trial": 1,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895312,
+    "prepared": 4036224,
+    "mounted": 4554548,
+    "rendererDelta": 518324,
+    "released": 2276616,
+    "mountAndMeasureMs": 803.428084000001,
+    "dom": 16498,
+    "graph": 4737,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 94087,
+        "rssBytes": 81920000,
+        "type": "browser"
+      },
+      {
+        "pid": 94088,
+        "rssBytes": 59375616,
+        "type": "GPU"
+      },
+      {
+        "pid": 94089,
+        "rssBytes": 42614784,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 94090,
+        "rssBytes": 254836736,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 4554548,
+      "jsHeapAllocatedBytes": 5046272,
+      "embedderHeapUsedBytes": 49951368,
+      "backingStorageBytes": 4000132,
+      "domNodes": 155307,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 32,
+    "messages": 4000,
+    "trial": 2,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895312,
+    "prepared": 4036944,
+    "mounted": 4551332,
+    "rendererDelta": 514388,
+    "released": 2277104,
+    "mountAndMeasureMs": 834.9145420000004,
+    "dom": 16498,
+    "graph": 4737,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 94122,
+        "rssBytes": 70270976,
+        "type": "browser"
+      },
+      {
+        "pid": 94123,
+        "rssBytes": 53460992,
+        "type": "GPU"
+      },
+      {
+        "pid": 94124,
+        "rssBytes": 37175296,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 94125,
+        "rssBytes": 237748224,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 4551332,
+      "jsHeapAllocatedBytes": 5308416,
+      "embedderHeapUsedBytes": 50326496,
+      "backingStorageBytes": 4000132,
+      "domNodes": 155307,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 32,
+    "messages": 4000,
+    "trial": 2,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733952,
+    "prepared": 4878880,
+    "mounted": 78831396,
+    "rendererDelta": 73952516,
+    "released": 4331212,
+    "mountAndMeasureMs": 1455.6599160000005,
+    "dom": 72,
+    "graph": 4737,
+    "edges": 4000,
+    "rss": [
+      {
+        "pid": 94202,
+        "rssBytes": 71974912,
+        "type": "browser"
+      },
+      {
+        "pid": 94204,
+        "rssBytes": 77725696,
+        "type": "GPU"
+      },
+      {
+        "pid": 94205,
+        "rssBytes": 38895616,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 94206,
+        "rssBytes": 293076992,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 78831396,
+      "jsHeapAllocatedBytes": 83099648,
+      "embedderHeapUsedBytes": 1461304,
+      "backingStorageBytes": 5564718,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 128,
+    "messages": 16000,
+    "trial": 0,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895312,
+    "prepared": 10135644,
+    "mounted": 11147324,
+    "rendererDelta": 1011680,
+    "released": 2340732,
+    "mountAndMeasureMs": 2941.3781249999993,
+    "dom": 65746,
+    "graph": 18945,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 94331,
+        "rssBytes": 71860224,
+        "type": "browser"
+      },
+      {
+        "pid": 94332,
+        "rssBytes": 53460992,
+        "type": "GPU"
+      },
+      {
+        "pid": 94333,
+        "rssBytes": 38797312,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 94334,
+        "rssBytes": 615890944,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 11147324,
+      "jsHeapAllocatedBytes": 11993088,
+      "embedderHeapUsedBytes": 197828688,
+      "backingStorageBytes": 15300328,
+      "domNodes": 620811,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 128,
+    "messages": 16000,
+    "trial": 0,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733992,
+    "prepared": 10981012,
+    "mounted": 300132056,
+    "rendererDelta": 289151044,
+    "released": 4363596,
+    "mountAndMeasureMs": 5308.69025,
+    "dom": 72,
+    "graph": 18945,
+    "edges": 16000,
+    "rss": [
+      {
+        "pid": 94442,
+        "rssBytes": 66486272,
+        "type": "browser"
+      },
+      {
+        "pid": 94443,
+        "rssBytes": 62832640,
+        "type": "GPU"
+      },
+      {
+        "pid": 94444,
+        "rssBytes": 36257792,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 94445,
+        "rssBytes": 581713920,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 300132056,
+      "jsHeapAllocatedBytes": 357859328,
+      "embedderHeapUsedBytes": 1458064,
+      "backingStorageBytes": 19860214,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 128,
+    "messages": 16000,
+    "trial": 1,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733952,
+    "prepared": 10981772,
+    "mounted": 300120980,
+    "rendererDelta": 289139208,
+    "released": 4359888,
+    "mountAndMeasureMs": 5244.999749999999,
+    "dom": 72,
+    "graph": 18945,
+    "edges": 16000,
+    "rss": [
+      {
+        "pid": 95165,
+        "rssBytes": 66174976,
+        "type": "browser"
+      },
+      {
+        "pid": 95185,
+        "rssBytes": 68943872,
+        "type": "GPU"
+      },
+      {
+        "pid": 95186,
+        "rssBytes": 36323328,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 95188,
+        "rssBytes": 583827456,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 300120980,
+      "jsHeapAllocatedBytes": 354713600,
+      "embedderHeapUsedBytes": 1499552,
+      "backingStorageBytes": 19860214,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 128,
+    "messages": 16000,
+    "trial": 1,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895312,
+    "prepared": 10135644,
+    "mounted": 11147324,
+    "rendererDelta": 1011680,
+    "released": 2340732,
+    "mountAndMeasureMs": 2960.768333,
+    "dom": 65746,
+    "graph": 18945,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 95770,
+        "rssBytes": 67239936,
+        "type": "browser"
+      },
+      {
+        "pid": 95807,
+        "rssBytes": 51724288,
+        "type": "GPU"
+      },
+      {
+        "pid": 95808,
+        "rssBytes": 37240832,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 95809,
+        "rssBytes": 621936640,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 11147324,
+      "jsHeapAllocatedBytes": 11468800,
+      "embedderHeapUsedBytes": 197828688,
+      "backingStorageBytes": 15300328,
+      "domNodes": 620811,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 128,
+    "messages": 16000,
+    "trial": 2,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895428,
+    "prepared": 10136864,
+    "mounted": 11148480,
+    "rendererDelta": 1011616,
+    "released": 2341624,
+    "mountAndMeasureMs": 3020.4495830000014,
+    "dom": 65746,
+    "graph": 18945,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 96353,
+        "rssBytes": 67502080,
+        "type": "browser"
+      },
+      {
+        "pid": 96360,
+        "rssBytes": 51920896,
+        "type": "GPU"
+      },
+      {
+        "pid": 96361,
+        "rssBytes": 37273600,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 96365,
+        "rssBytes": 622264320,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 11148480,
+      "jsHeapAllocatedBytes": 11730944,
+      "embedderHeapUsedBytes": 197949648,
+      "backingStorageBytes": 15300328,
+      "domNodes": 620811,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 128,
+    "messages": 16000,
+    "trial": 2,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733704,
+    "prepared": 10981908,
+    "mounted": 300143900,
+    "rendererDelta": 289161992,
+    "released": 4362512,
+    "mountAndMeasureMs": 5255.4964589999945,
+    "dom": 72,
+    "graph": 18945,
+    "edges": 16000,
+    "rss": [
+      {
+        "pid": 96750,
+        "rssBytes": 66387968,
+        "type": "browser"
+      },
+      {
+        "pid": 96755,
+        "rssBytes": 60833792,
+        "type": "GPU"
+      },
+      {
+        "pid": 96756,
+        "rssBytes": 36274176,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 96758,
+        "rssBytes": 569212928,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 300143900,
+      "jsHeapAllocatedBytes": 354189312,
+      "embedderHeapUsedBytes": 1467664,
+      "backingStorageBytes": 19860214,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 64,
+    "messages": 8000,
+    "trial": 0,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895568,
+    "prepared": 6076196,
+    "mounted": 6716512,
+    "rendererDelta": 640316,
+    "released": 2278816,
+    "mountAndMeasureMs": 1728.395833,
+    "dom": 32914,
+    "graph": 9473,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 13290,
+        "rssBytes": 73564160,
+        "type": "browser"
+      },
+      {
+        "pid": 13346,
+        "rssBytes": 54640640,
+        "type": "GPU"
+      },
+      {
+        "pid": 13347,
+        "rssBytes": 39501824,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 13352,
+        "rssBytes": 372523008,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 6716512,
+      "jsHeapAllocatedBytes": 7667712,
+      "embedderHeapUsedBytes": 99709016,
+      "backingStorageBytes": 7762020,
+      "domNodes": 310475,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 64,
+    "messages": 8000,
+    "trial": 0,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733992,
+    "prepared": 6917448,
+    "mounted": 152609144,
+    "rendererDelta": 145691696,
+    "released": 4346652,
+    "mountAndMeasureMs": 2974.0652919999993,
+    "dom": 72,
+    "graph": 9473,
+    "edges": 8000,
+    "rss": [
+      {
+        "pid": 13491,
+        "rssBytes": 67190784,
+        "type": "browser"
+      },
+      {
+        "pid": 13512,
+        "rssBytes": 69042176,
+        "type": "GPU"
+      },
+      {
+        "pid": 13513,
+        "rssBytes": 36519936,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 13515,
+        "rssBytes": 368721920,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 152609144,
+      "jsHeapAllocatedBytes": 165412864,
+      "embedderHeapUsedBytes": 1453456,
+      "backingStorageBytes": 10321614,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 64,
+    "messages": 8000,
+    "trial": 1,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733952,
+    "prepared": 6917408,
+    "mounted": 152612836,
+    "rendererDelta": 145695428,
+    "released": 4344820,
+    "mountAndMeasureMs": 2914.416541999999,
+    "dom": 72,
+    "graph": 9473,
+    "edges": 8000,
+    "rss": [
+      {
+        "pid": 13747,
+        "rssBytes": 65961984,
+        "type": "browser"
+      },
+      {
+        "pid": 13759,
+        "rssBytes": 66060288,
+        "type": "GPU"
+      },
+      {
+        "pid": 13760,
+        "rssBytes": 35405824,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 13761,
+        "rssBytes": 367214592,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 152612836,
+      "jsHeapAllocatedBytes": 166723584,
+      "embedderHeapUsedBytes": 1447944,
+      "backingStorageBytes": 10321614,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 64,
+    "messages": 8000,
+    "trial": 1,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895312,
+    "prepared": 6074752,
+    "mounted": 6714796,
+    "rendererDelta": 640044,
+    "released": 2277388,
+    "mountAndMeasureMs": 1539.2467079999988,
+    "dom": 32914,
+    "graph": 9473,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 13988,
+        "rssBytes": 72630272,
+        "type": "browser"
+      },
+      {
+        "pid": 14013,
+        "rssBytes": 53805056,
+        "type": "GPU"
+      },
+      {
+        "pid": 14014,
+        "rssBytes": 38961152,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 14016,
+        "rssBytes": 372342784,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 6714796,
+      "jsHeapAllocatedBytes": 7667712,
+      "embedderHeapUsedBytes": 99709160,
+      "backingStorageBytes": 7762020,
+      "domNodes": 310475,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 64,
+    "messages": 8000,
+    "trial": 2,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895312,
+    "prepared": 6074752,
+    "mounted": 6715020,
+    "rendererDelta": 640268,
+    "released": 2277572,
+    "mountAndMeasureMs": 1564.3620409999985,
+    "dom": 32914,
+    "graph": 9473,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 14186,
+        "rssBytes": 71368704,
+        "type": "browser"
+      },
+      {
+        "pid": 14192,
+        "rssBytes": 52461568,
+        "type": "GPU"
+      },
+      {
+        "pid": 14193,
+        "rssBytes": 38256640,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 14194,
+        "rssBytes": 374128640,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 6715020,
+      "jsHeapAllocatedBytes": 7667712,
+      "embedderHeapUsedBytes": 99264488,
+      "backingStorageBytes": 7762020,
+      "domNodes": 310475,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 64,
+    "messages": 8000,
+    "trial": 2,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733952,
+    "prepared": 6918560,
+    "mounted": 152595764,
+    "rendererDelta": 145677204,
+    "released": 4345632,
+    "mountAndMeasureMs": 2528.2394170000007,
+    "dom": 72,
+    "graph": 9473,
+    "edges": 8000,
+    "rss": [
+      {
+        "pid": 14356,
+        "rssBytes": 73531392,
+        "type": "browser"
+      },
+      {
+        "pid": 14393,
+        "rssBytes": 70762496,
+        "type": "GPU"
+      },
+      {
+        "pid": 14395,
+        "rssBytes": 39419904,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 14411,
+        "rssBytes": 388317184,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 152595764,
+      "jsHeapAllocatedBytes": 165412864,
+      "embedderHeapUsedBytes": 1428280,
+      "backingStorageBytes": 10321614,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 96,
+    "messages": 12000,
+    "trial": 0,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895312,
+    "prepared": 8364188,
+    "mounted": 9288380,
+    "rendererDelta": 924192,
+    "released": 2340300,
+    "mountAndMeasureMs": 2246.579833,
+    "dom": 49330,
+    "graph": 14209,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 14727,
+        "rssBytes": 68059136,
+        "type": "browser"
+      },
+      {
+        "pid": 14750,
+        "rssBytes": 51888128,
+        "type": "GPU"
+      },
+      {
+        "pid": 14751,
+        "rssBytes": 37421056,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 14754,
+        "rssBytes": 500449280,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 9288380,
+      "jsHeapAllocatedBytes": 10158080,
+      "embedderHeapUsedBytes": 150010104,
+      "backingStorageBytes": 11523908,
+      "domNodes": 465643,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 96,
+    "messages": 12000,
+    "trial": 0,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733992,
+    "prepared": 9210740,
+    "mounted": 227619368,
+    "rendererDelta": 218408628,
+    "released": 4354484,
+    "mountAndMeasureMs": 4074.458708000002,
+    "dom": 72,
+    "graph": 14209,
+    "edges": 12000,
+    "rss": [
+      {
+        "pid": 14945,
+        "rssBytes": 66338816,
+        "type": "browser"
+      },
+      {
+        "pid": 14948,
+        "rssBytes": 58195968,
+        "type": "GPU"
+      },
+      {
+        "pid": 14949,
+        "rssBytes": 35373056,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 14950,
+        "rssBytes": 465059840,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 227619368,
+      "jsHeapAllocatedBytes": 255983616,
+      "embedderHeapUsedBytes": 1406432,
+      "backingStorageBytes": 15078510,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 96,
+    "messages": 12000,
+    "trial": 1,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733992,
+    "prepared": 9209556,
+    "mounted": 227600468,
+    "rendererDelta": 218390912,
+    "released": 4351464,
+    "mountAndMeasureMs": 3899.056124999999,
+    "dom": 72,
+    "graph": 14209,
+    "edges": 12000,
+    "rss": [
+      {
+        "pid": 15290,
+        "rssBytes": 70959104,
+        "type": "browser"
+      },
+      {
+        "pid": 15300,
+        "rssBytes": 77479936,
+        "type": "GPU"
+      },
+      {
+        "pid": 15301,
+        "rssBytes": 38961152,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 15303,
+        "rssBytes": 527155200,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 227600468,
+      "jsHeapAllocatedBytes": 258342912,
+      "embedderHeapUsedBytes": 1488216,
+      "backingStorageBytes": 15078510,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 96,
+    "messages": 12000,
+    "trial": 1,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895312,
+    "prepared": 8364908,
+    "mounted": 9289136,
+    "rendererDelta": 924228,
+    "released": 2340776,
+    "mountAndMeasureMs": 2440.1734579999975,
+    "dom": 49330,
+    "graph": 14209,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 15558,
+        "rssBytes": 72253440,
+        "type": "browser"
+      },
+      {
+        "pid": 15577,
+        "rssBytes": 53805056,
+        "type": "GPU"
+      },
+      {
+        "pid": 15578,
+        "rssBytes": 38617088,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 15580,
+        "rssBytes": 502431744,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 9289136,
+      "jsHeapAllocatedBytes": 9895936,
+      "embedderHeapUsedBytes": 149555144,
+      "backingStorageBytes": 11523908,
+      "domNodes": 465643,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 96,
+    "messages": 12000,
+    "trial": 2,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895312,
+    "prepared": 8365260,
+    "mounted": 9289520,
+    "rendererDelta": 924260,
+    "released": 2341140,
+    "mountAndMeasureMs": 2288.6920000000027,
+    "dom": 49330,
+    "graph": 14209,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 15713,
+        "rssBytes": 69992448,
+        "type": "browser"
+      },
+      {
+        "pid": 15729,
+        "rssBytes": 52822016,
+        "type": "GPU"
+      },
+      {
+        "pid": 15730,
+        "rssBytes": 38289408,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 15732,
+        "rssBytes": 503676928,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 9289520,
+      "jsHeapAllocatedBytes": 9895936,
+      "embedderHeapUsedBytes": 150008208,
+      "backingStorageBytes": 11523908,
+      "domNodes": 465643,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 96,
+    "messages": 12000,
+    "trial": 2,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733732,
+    "prepared": 9210504,
+    "mounted": 227691620,
+    "rendererDelta": 218481116,
+    "released": 4353828,
+    "mountAndMeasureMs": 3965.564459000001,
+    "dom": 72,
+    "graph": 14209,
+    "edges": 12000,
+    "rss": [
+      {
+        "pid": 15917,
+        "rssBytes": 65961984,
+        "type": "browser"
+      },
+      {
+        "pid": 15918,
+        "rssBytes": 75677696,
+        "type": "GPU"
+      },
+      {
+        "pid": 15919,
+        "rssBytes": 35340288,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 15921,
+        "rssBytes": 500793344,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 227691620,
+      "jsHeapAllocatedBytes": 256245760,
+      "embedderHeapUsedBytes": 1461208,
+      "backingStorageBytes": 15078510,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 112,
+    "messages": 14000,
+    "trial": 0,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895312,
+    "prepared": 9261852,
+    "mounted": 10229984,
+    "rendererDelta": 968132,
+    "released": 2340360,
+    "mountAndMeasureMs": 2517.448666999997,
+    "dom": 57538,
+    "graph": 16577,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 16132,
+        "rssBytes": 71581696,
+        "type": "browser"
+      },
+      {
+        "pid": 16138,
+        "rssBytes": 53608448,
+        "type": "GPU"
+      },
+      {
+        "pid": 16139,
+        "rssBytes": 38617088,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 16144,
+        "rssBytes": 562839552,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 10229984,
+      "jsHeapAllocatedBytes": 10682368,
+      "embedderHeapUsedBytes": 173675088,
+      "backingStorageBytes": 13411080,
+      "domNodes": 543227,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 112,
+    "messages": 14000,
+    "trial": 0,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733992,
+    "prepared": 10107220,
+    "mounted": 263545612,
+    "rendererDelta": 253438392,
+    "released": 4362676,
+    "mountAndMeasureMs": 4289.723959000003,
+    "dom": 72,
+    "graph": 16577,
+    "edges": 14000,
+    "rss": [
+      {
+        "pid": 16308,
+        "rssBytes": 69812224,
+        "type": "browser"
+      },
+      {
+        "pid": 16313,
+        "rssBytes": 76595200,
+        "type": "GPU"
+      },
+      {
+        "pid": 16315,
+        "rssBytes": 37339136,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 16317,
+        "rssBytes": 579518464,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 263545612,
+      "jsHeapAllocatedBytes": 304480256,
+      "embedderHeapUsedBytes": 1379720,
+      "backingStorageBytes": 17467590,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 112,
+    "messages": 14000,
+    "trial": 1,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733952,
+    "prepared": 10107180,
+    "mounted": 263673168,
+    "rendererDelta": 253565988,
+    "released": 4363100,
+    "mountAndMeasureMs": 4319.296167,
+    "dom": 72,
+    "graph": 16577,
+    "edges": 14000,
+    "rss": [
+      {
+        "pid": 16526,
+        "rssBytes": 66682880,
+        "type": "browser"
+      },
+      {
+        "pid": 16527,
+        "rssBytes": 75677696,
+        "type": "GPU"
+      },
+      {
+        "pid": 16528,
+        "rssBytes": 36306944,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 16529,
+        "rssBytes": 582336512,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 263673168,
+      "jsHeapAllocatedBytes": 305266688,
+      "embedderHeapUsedBytes": 1411224,
+      "backingStorageBytes": 17467590,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  },
+  {
+    "copies": 112,
+    "messages": 14000,
+    "trial": 1,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895312,
+    "prepared": 9261852,
+    "mounted": 10229944,
+    "rendererDelta": 968092,
+    "released": 2340360,
+    "mountAndMeasureMs": 2372.7888749999984,
+    "dom": 57538,
+    "graph": 16577,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 17224,
+        "rssBytes": 72138752,
+        "type": "browser"
+      },
+      {
+        "pid": 17234,
+        "rssBytes": 53329920,
+        "type": "GPU"
+      },
+      {
+        "pid": 17235,
+        "rssBytes": 38830080,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 17237,
+        "rssBytes": 561348608,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 10229944,
+      "jsHeapAllocatedBytes": 10682368,
+      "embedderHeapUsedBytes": 173674064,
+      "backingStorageBytes": 13411080,
+      "domNodes": 543227,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 112,
+    "messages": 14000,
+    "trial": 2,
+    "mode": "document",
+    "browser": "151.0.7922.34",
+    "imported": 1895312,
+    "prepared": 9261852,
+    "mounted": 10229944,
+    "rendererDelta": 968092,
+    "released": 2340360,
+    "mountAndMeasureMs": 2376.762208,
+    "dom": 57538,
+    "graph": 16577,
+    "edges": 0,
+    "rss": [
+      {
+        "pid": 17356,
+        "rssBytes": 69730304,
+        "type": "browser"
+      },
+      {
+        "pid": 17357,
+        "rssBytes": 53198848,
+        "type": "GPU"
+      },
+      {
+        "pid": 17358,
+        "rssBytes": 37781504,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 17359,
+        "rssBytes": 565575680,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 10229944,
+      "jsHeapAllocatedBytes": 10682368,
+      "embedderHeapUsedBytes": 173674064,
+      "backingStorageBytes": 13411080,
+      "domNodes": 543227,
+      "documents": 2,
+      "eventListeners": 18
+    }
+  },
+  {
+    "copies": 112,
+    "messages": 14000,
+    "trial": 2,
+    "mode": "cytoscape",
+    "browser": "151.0.7922.34",
+    "imported": 2733952,
+    "prepared": 10107180,
+    "mounted": 263663592,
+    "rendererDelta": 253556412,
+    "released": 4362956,
+    "mountAndMeasureMs": 4394.545166999997,
+    "dom": 72,
+    "graph": 16577,
+    "edges": 14000,
+    "rss": [
+      {
+        "pid": 17495,
+        "rssBytes": 65912832,
+        "type": "browser"
+      },
+      {
+        "pid": 17500,
+        "rssBytes": 63356928,
+        "type": "GPU"
+      },
+      {
+        "pid": 17501,
+        "rssBytes": 35373056,
+        "type": "network.mojom.NetworkService"
+      },
+      {
+        "pid": 17502,
+        "rssBytes": 528367616,
+        "type": "renderer"
+      }
+    ],
+    "chromium": {
+      "source": "chromium-cdp",
+      "jsHeapUsedBytes": 263663592,
+      "jsHeapAllocatedBytes": 305266688,
+      "embedderHeapUsedBytes": 1399024,
+      "backingStorageBytes": 17467590,
+      "domNodes": 114,
+      "documents": 2,
+      "eventListeners": 41
+    }
+  }
+]

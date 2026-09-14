@@ -70,4 +70,17 @@ The document renderer answers a fixed set of gestures, named in `DOCUMENT_GESTUR
 
 `createGestureLegend(host, hints)` renders a corner legend for these
 (`src/2_graph/14_gestureLegend.ts:52`). It returns an element, a `setOpen` switch, a `toggled$` Observable that
-the application runs at its own boundary, and a `remove` handle.
+the application runs at its own boundary, and an `unsubscribe` handle.
+
+
+## Native sequence status
+
+The proof uses native Cytoscape nodes and message edges for the large sequence, with shared sticky
+headers. `applyTheme("dark" | "light")` changes canvas and header colors without replacing geometry.
+The architecture proof remains document-only. Library callers without native bindings can still use
+the sealed SVG fallback; choosing this adapter alone does not establish native translation.
+
+Both proof renderers share wheel pan, cursor zoom, and damped wheel momentum. Native sequence shapes
+are ungrabbable. The adapter emits focus/selection events, but the proof leaves those inputs unconsumed.
+Hover neighbors, hop fading, movement journaling, and persistence remain pending.
+See [interactive proof](./proof) and [feature status](./roadmap).

@@ -75,6 +75,8 @@ export function lag$(kind: LagKind = lagKinds()[0] ?? "timeout", windowMs = 1000
         kind,
         expectedMs: everyMs,
         samples: sorted.length,
+        elapsedMs: at - since,
+        fps: kind === "raf" && at > since ? 1000 * sorted.length / (at - since) : undefined,
         p50: quantile(sorted, 0.5),
         p95: quantile(sorted, 0.95),
         worst: sorted[sorted.length - 1] ?? 0,
