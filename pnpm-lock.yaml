@@ -905,6 +905,21 @@ importers:
         specifier: ^0.1.33
         version: 0.1.33
     devDependencies:
+      '@hafley66/d2':
+        specifier: workspace:*
+        version: link:../d2
+      '@hafley66/grapht':
+        specifier: workspace:*
+        version: link:../grapht
+      '@hafley66/grapht-model':
+        specifier: workspace:*
+        version: link:../grapht-model
+      '@hafley66/grapht-render-cytoscape':
+        specifier: workspace:*
+        version: link:../grapht/adapters/2_render_cytoscape
+      '@hafley66/mmd':
+        specifier: workspace:*
+        version: link:../mmd
       '@hafley66/signals':
         specifier: workspace:*
         version: link:../signals
@@ -920,6 +935,15 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.8)
+      '@vitejs/plugin-react':
+        specifier: ^6.0.5
+        version: 6.0.5(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+      '@vitest/browser':
+        specifier: 4.1.10
+        version: 4.1.10(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.1.10)
+      '@vitest/browser-playwright':
+        specifier: 4.1.10
+        version: 4.1.10(playwright@1.62.1)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.1.10)
       dockview:
         specifier: ^6.6.1
         version: 6.6.1(react@19.2.8)
@@ -929,6 +953,9 @@ importers:
       mermaid:
         specifier: ^11.16.0
         version: 11.16.0
+      playwright:
+        specifier: ^1.62.1
+        version: 1.62.1
       react:
         specifier: ^19.2.7
         version: 19.2.8
@@ -1253,6 +1280,9 @@ importers:
       '@mui/x-data-grid':
         specifier: ^9.13.0
         version: 9.13.0(@emotion/react@11.14.0(@types/react@19.2.8)(react@19.2.8))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.8)(react@19.2.8))(@types/react@19.2.8)(react@19.2.8))(@mui/material@7.3.11(@emotion/react@11.14.0(@types/react@19.2.8)(react@19.2.8))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.8)(react@19.2.8))(@types/react@19.2.8)(react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(@mui/system@9.4.0(@emotion/react@11.14.0(@types/react@19.2.8)(react@19.2.8))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.8)(react@19.2.8))(@types/react@19.2.8)(react@19.2.8))(@types/react@19.2.8)(react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@opentelemetry/api':
+        specifier: 1.9.0
+        version: 1.9.0
       '@size-limit/preset-small-lib':
         specifier: ^13.0.3
         version: 13.0.3(size-limit@13.0.3)

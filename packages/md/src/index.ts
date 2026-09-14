@@ -16,6 +16,10 @@ export type { MdviewHost } from "./ports.js";
 export { DiagramLightbox, diagramSvgMarkup } from "./0_DiagramLightbox.js";
 export type { DiagramLightboxEntry } from "./0_DiagramLightbox.js";
 export { d2ThemeId, diagramPalette, mermaidTheme } from "./0_diagramTheme.js";
+export { SequenceDiagram } from "./0b_SequenceDiagram.js";
+export { isSequenceSource, type DiagramLanguage } from "./0b_isSequenceSource.js";
+export { sequenceFrame, sequenceRenderReceipt } from "./0b_sequenceFrame.js";
+export { renderMermaidSvg } from "./0a_mermaid.js";
 export { preloadD2, renderD2 } from "./d2.js";
 export { parseMdSections } from "./model.js";
 

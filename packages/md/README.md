@@ -26,6 +26,7 @@ state. A host application supplies those facilities.
 | Markdown rendering | Streamdown | Render the original Markdown slices as React elements |
 | Code highlighting | `@streamdown/code` | Render fenced code with Shiki |
 | Mermaid diagrams | `mermaid` | Render `mermaid` fences to SVG |
+| Sequence diagrams | `@hafley66/grapht` plus `@hafley66/grapht-render-cytoscape` | Ingest `sequenceDiagram` and `shape: sequence_diagram` fences as grapht frames |
 | D2 diagrams | `@terrastruct/d2` | Compile and render `d2` fences to SVG |
 | Split layout | `react-resizable-panels` | Resize the explorer and content panels |
 | Diagram viewing | Package React components | Display SVG with pan, zoom, source data, and diagram history |
@@ -216,3 +217,37 @@ d2ThemeId
 ```
 
 The package exports `MdviewHost` and `DiagramLightboxEntry` as types.
+
+## Sequence diagrams through grapht
+
+Two fence shapes leave the plain SVG path and mount a grapht frame instead:
+
+| fence | condition | component |
+| --- | --- | --- |
+| `mermaid` | first non-frontmatter, non-directive, non-comment line starts with `sequenceDiagram` | `SequenceDiagram` |
+| `d2` | source contains `shape: sequence_diagram` | `SequenceDiagram` |
+| every other `mermaid` fence | | `MermaidDiagram` |
+| every other `d2` fence | | `D2Diagram` |
+
+`isSequenceSource(language, code)` is the pure routing predicate; `0_Streamdown.tsx` calls it
+inside the two stable renderer callbacks.
+
+```mermaid
+flowchart LR
+  fence[fenced block] --> route{isSequenceSource}
+  route -- yes --> render[mermaid.render / renderD2]
+  render --> bind[mmd or d2 browser adapter binds the SVG]
+  bind --> frame[svgFrame sealed frame]
+  frame --> cyto[createCytoscapeGraphFrameResource]
+  route -- no --> pure[MermaidDiagram / D2Diagram]
+```
+
+`sequenceFrame` recovers native actor and message bindings through `@hafley66/mmd/browser` or
+`@hafley66/d2/browser`. A source the language adapter cannot bind still ingests as a
+source-preserving sealed frame, so the fence keeps rendering.
+
+Known limitation: `@hafley66/mmd`'s message pattern reads `Bob-->>Alice` as a participant named
+`Bob-`, so dashed-arrow mermaid messages take the unbound sealed path.
+
+The grapht host carries `data-grapht-host="<language>"` and `data-grapht-items="<graph size>"`.
+The corner button opens the rendered SVG in the existing `DiagramLightbox`.

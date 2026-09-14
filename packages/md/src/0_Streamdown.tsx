@@ -4,6 +4,8 @@ import { code as shikiCode } from "@streamdown/code";
 import "streamdown/styles.css";
 import { MermaidDiagram } from "./0a_MermaidDiagram.js";
 import { D2Diagram } from "./0a_D2Diagram.js";
+import { SequenceDiagram } from "./0b_SequenceDiagram.js";
+import { isSequenceSource } from "./0b_isSequenceSource.js";
 
 const controls = {
   code: { copy: true, download: false },
@@ -43,11 +45,15 @@ export default function StreamdownBody({
   // both values stable across Markdown signal re-renders, otherwise an open
   // MermaidDiagram remounts and its lightbox state returns to false.
   const MermaidRenderer = useCallback(
-    ({ code }: CustomRendererProps) => <MermaidDiagram code={code} dark={dark} />,
+    ({ code }: CustomRendererProps) => isSequenceSource("mermaid", code)
+      ? <SequenceDiagram code={code} language="mermaid" dark={dark} />
+      : <MermaidDiagram code={code} dark={dark} />,
     [dark],
   );
   const D2Renderer = useCallback(
-    ({ code }: CustomRendererProps) => <D2Diagram code={code} dark={dark} />,
+    ({ code }: CustomRendererProps) => isSequenceSource("d2", code)
+      ? <SequenceDiagram code={code} language="d2" dark={dark} />
+      : <D2Diagram code={code} dark={dark} />,
     [dark],
   );
   const plugins = useMemo(
