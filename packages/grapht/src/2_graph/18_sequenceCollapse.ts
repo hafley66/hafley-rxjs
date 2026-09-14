@@ -9,9 +9,46 @@ import { collapseGraphFrame } from "./17_groupProjection.js"
 export function collapseSequenceFrame(document: Document, frame: GraphFrame, collapsed: ReadonlySet<string>): GraphFrame {
   const next = collapseGraphFrame(frame, collapsed)
   if (!collapsed.size) return next
-  const intervals = [...collapsed].filter(id => !next.presentation.hiddenIds.has(id))
-    .map(id => frame.geometry.boundsById[id]).filter(bounds => bounds && bounds.height > 30)
-    .map(bounds => ({ start: bounds.y + 30, end: bounds.y + bounds.height })).sort((a, b) => a.start - b.start)
+  const hidden = new Set(next.presentation.hiddenIds)
+  const suppressed = new Set(Object.keys(frame.geometry.columnBoundsById ?? {}).filter(id => hidden.has(id) || collapsed.has(id)))
+  const children = new Map<string, string[]>()
+  for (const item of Object.values(frame.graph)) {
+    if (item.parentId) {
+      const siblings = children.get(item.parentId) ?? []
+      siblings.push(item.id); children.set(item.parentId, siblings)
+    }
+    // A directly collapsed actor retains its header but suppresses its messages too.
+    if (item.type === "edge" && (suppressed.has(item.fromId) || suppressed.has(item.toId))) { hidden.add(item.id); suppressed.add(item.id) }
+  }
+  const emptyGroups = new Set<string>()
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const id of Object.keys(frame.geometry.headerBoundsById)) {
+      const members = children.get(id) ?? []
+      const actorSuppressed = members.length > 0 && members.every(member => suppressed.has(member)) && !members.some(member => frame.geometry.columnBoundsById?.[member])
+      if (actorSuppressed && !suppressed.has(id)) { suppressed.add(id); changed = true }
+      if (hidden.has(id)) continue
+      if (actorSuppressed || !collapsed.has(id) && members.length && members.every(member => hidden.has(member))) {
+        hidden.add(id); emptyGroups.add(id); changed = true
+      }
+    }
+  }
+  next.presentation = { ...next.presentation, hiddenIds: hidden }
+  const visibleContent = Object.values(frame.graph).filter(item => !hidden.has(item.id) &&
+    (item.type === "edge" || ["note", "activation"].includes((item.data as { kind?: string } | undefined)?.kind ?? "")))
+  // Empty containers release their entire interval; explicitly collapsed groups retain a header.
+  const intervals = [...collapsed, ...emptyGroups].filter(id => emptyGroups.has(id) || !hidden.has(id))
+    .flatMap(id => {
+      const bounds = frame.geometry.boundsById[id]
+      const retained = emptyGroups.has(id) ? 0 : 30
+      // A parallel sibling may still occupy these rows even when this container is empty.
+      if (bounds && emptyGroups.has(id) && visibleContent.some(item => {
+        const content = frame.geometry.boundsById[item.id]
+        return content && content.y < bounds.y + bounds.height && content.y + content.height > bounds.y
+      })) return []
+      return bounds && bounds.height > retained ? [{ start: bounds.y + retained, end: bounds.y + bounds.height }] : []
+    }).sort((a, b) => a.start - b.start)
   const merged: typeof intervals = []
   for (const interval of intervals) {
     const previous = merged.at(-1)

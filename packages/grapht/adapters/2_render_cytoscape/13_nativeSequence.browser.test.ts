@@ -238,6 +238,55 @@ it("shares hop colors, restores original paint, and keeps fitted DOM lifelines v
   } finally { native.unsubscribe(); host.remove() }
 })
 
+it("actor collapse removes empty nested message groups and retains groups with visible messages", async () => {
+  const { groupSequenceActors } = await import("../../src/2_graph/20_groupActors.ts")
+  const { collapseSequenceFrame } = await import("../../src/2_graph/18_sequenceCollapse.ts")
+  const original = await sequenceFrame({ width: 1280, height: 800 })
+  const actors = Object.keys(original.geometry.columnBoundsById!).filter(id => /:(AuthSvc|Inventory)#/.test(id))
+  expect(actors.length).toBe(2)
+  const grouped = groupSequenceActors(original, "services", actors, "Services")
+  const collapsed = collapseSequenceFrame(document, grouped, new Set(["services"]))
+  const empty = Object.keys(original.geometry.headerBoundsById).filter(id => /:(token renewal|retry renewal)#/.test(id))
+  const mixed = Object.keys(original.geometry.headerBoundsById).find(id => id.includes(":stock available#"))!
+  expect(empty.length).toBe(2)
+  expect(empty.map(id => collapsed.presentation.hiddenIds.has(id))).toEqual([true, true])
+  const preCollapsed = collapseSequenceFrame(document, grouped, new Set(["services", ...empty]))
+  expect(empty.map(id => preCollapsed.presentation.hiddenIds.has(id))).toEqual([true, true])
+  const restoredActors = collapseSequenceFrame(document, grouped, new Set(empty))
+  expect(empty.filter(id => !restoredActors.presentation.hiddenIds.has(id)).length).toBe(1)
+
+  expect(collapsed.presentation.hiddenIds.has(mixed)).toBe(false)
+  expect(Object.values(collapsed.graph).filter(item => item.parentId === mixed && item.type === "edge" && !collapsed.presentation.hiddenIds.has(item.id)).length).toBeGreaterThan(0)
+  expect(collapsed.geometry.boundsById.seq.height).toBeLessThan(grouped.geometry.boundsById.seq.height)
+  const survivor = Object.values(collapsed.graph).find(item => item.parentId === mixed && item.type === "edge" && !collapsed.presentation.hiddenIds.has(item.id))!
+  const outer = empty.find(id => id.includes(":token renewal#"))!
+  const parallel = { ...grouped, geometry: { ...grouped.geometry, boundsById: { ...grouped.geometry.boundsById, [survivor.id]: grouped.geometry.boundsById[outer] } } }
+  const sharedRows = collapseSequenceFrame(document, parallel, new Set(["services"]))
+  expect(sharedRows.geometry.boundsById.seq.height).toBe(grouped.geometry.boundsById.seq.height)
+  expect(sharedRows.presentation.hiddenIds.has(survivor.id)).toBe(false)
+
+  expect(collapsed.camera).toEqual(grouped.camera)
+  expect(collapsed.presentation.sealedSvgArtifactsByRootId.seq.source).toEqual(original.presentation.sealedSvgArtifactsByRootId.seq.source)
+  const host = document.createElement("div")
+  host.style.cssText = "position:relative;width:1280px;height:800px"
+  document.body.appendChild(host)
+  for (const create of [createDocumentGraphFrameResource, createCytoscapeGraphFrameResource]) {
+    const renderer = create(host, undefined, { inset: 44 })
+    try {
+      renderer.render(collapsed, { enterIds: [], updateIds: [], exitIds: [] })
+      for (const id of empty) {
+        expect(host.querySelectorAll(`[data-sticky-id="${CSS.escape(id)}"]`).length).toBe(0)
+        if ("cy" in renderer) expect(renderer.cy.elements().filter(element => element.data("graphId") === id).toArray().every(element => element.hasClass("graph-hidden"))).toBe(true)
+        else expect([...host.querySelectorAll<SVGElement>(`[data-graph-id="${CSS.escape(id)}"]`)].every(element => element.style.display === "none")).toBe(true)
+      }
+      renderer.render(collapseSequenceFrame(document, grouped, new Set()), { enterIds: [], updateIds: [], exitIds: [] })
+      if ("cy" in renderer) expect(renderer.cy.elements(".graph-hidden").length).toBe(0)
+      else expect([...host.querySelectorAll<SVGElement>("[data-graph-id]")].every(element => element.style.display !== "none")).toBe(true)
+    } finally { renderer.unsubscribe() }
+  }
+  host.remove()
+})
+
 it("ingests plain and semantically bound SVG without inventing endpoints", async () => {
   const { svgFrame } = await import("../../src/2_graph/21_svgFrame.ts")
   const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100"><rect id="a" x="10" y="10" width="40" height="40"/><rect id="b" x="210" y="10" width="40" height="40"/><path id="ab" d="M50 30 L210 30"/></svg>'

@@ -54,7 +54,10 @@ sequence steps are separate relations because repeated messages between the same
 Native mobile touch-pinch momentum is unverified.
 
 Actor-group collapse hides incident messages and retains lane spacing; it does not create aggregated
-boundary messages. Fragment collapse preserves a header row and compacts vertical space. View groups
+boundary messages. Message groups with no remaining visible content disappear recursively, including
+their floating headers and controls. Their empty rows compact unless a visible parallel sibling still
+occupies them. Groups with surviving messages or notes remain. Expanding actors restores their groups.
+Fragment collapse preserves a header row and compacts vertical space. View groups
 and collapsed state survive renderer switches and last until source replacement or page reload.
 
 ## Shared styles and layout policy lab

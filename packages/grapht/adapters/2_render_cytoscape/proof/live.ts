@@ -241,6 +241,7 @@ function rebuildGroupControls(): void {
   const controls = document.querySelector<HTMLElement>("#collapse-controls")!
   controls.replaceChildren()
   for (const id of Object.keys(frame.geometry.headerBoundsById)) {
+    if (frame.presentation.hiddenIds.has(id)) continue
     const label = document.createElement("label")
     label.style.display = "block"
     const input = document.createElement("input")
@@ -252,6 +253,7 @@ function rebuildGroupControls(): void {
       if (input.checked) collapsedIds.add(id); else collapsedIds.delete(id)
       frame = collapseSequenceFrame(document, originalFrame, collapsedIds)
       paintInteraction(true)
+      rebuildGroupControls()
     })
     controls.appendChild(label)
   }
