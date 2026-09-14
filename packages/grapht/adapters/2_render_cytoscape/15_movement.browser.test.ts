@@ -51,6 +51,14 @@ it("retains scoped D2 object identities and resolves local connection endpoints"
   expect([...frame.geometry.routesById[edge.id]].slice(0, 2)).toEqual([50, 30])
 })
 
+it("binds a D2 sequence lifeline to its actor instead of failing on the empty target", () => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200"><g class="${btoa("alice")}"><g class="shape"><rect x="0" y="0" width="40" height="40"/></g><text>alice</text></g><g class="${btoa("bob")}"><g class="shape"><rect x="200" y="0" width="40" height="40"/></g><text>bob</text></g><g class="${btoa("(alice -- )[0]")}"><path class="connection" d="M20 40 L20 200"/></g><g class="${btoa("(bob -- )[0]")}"><path class="connection" d="M220 40 L220 200"/></g><g class="${btoa("(alice -&gt; bob)[0]")}"><path class="connection" d="M20 80 L220 80"/></g></svg>`
+  const frame = d2SvgFrame(document, svg, "shape: sequence_diagram\nalice -> bob", { width: 600, height: 400 })
+  expect(Object.values(frame.graph).filter(item => item.type === "edge").map(item => item.id)).toEqual(["(alice -> bob)[0]"])
+  const bindings = frame.presentation.sealedSvgArtifactsByRootId.epic.bindings ?? []
+  expect(bindings.filter(binding => binding.role === "lifeline").map(binding => binding.graphId)).toEqual(["alice", "bob"])
+})
+
 it("keeps D2 multiline labels at their measured position with bounded native wrapping", () => {
   const frame = d2SvgFrame(document, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><g class="${btoa("container")}"><g class="shape"><rect width="400" height="300"/></g><text x="20" y="25" style="font-size:16px"><tspan x="20" dy="0">Source identity</tspan><tspan x="20" dy="24">Revision IDs preserve source states.</tspan></text></g></svg>`, "container: source identity", { width: 800, height: 600 })
   const host = document.createElement("div")

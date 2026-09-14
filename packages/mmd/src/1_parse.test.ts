@@ -204,6 +204,21 @@ describe("Mermaid local sequence document", () => {
     `)
   })
 
+  test("keeps a dashed arrow out of the sender's name", () => {
+    const source = "sequenceDiagram\n  Bob-->>Alice: hi back\n  Bob-->Alice: dotted\n  Bob--xAlice: lost\n  Bob->>Alice: solid\n  Bob-x-->>Alice: dashed name\n"
+    const document = parseMermaidSequence(source)
+    expect(document.diagnostics).toEqual([])
+    expect(
+      document.statements.filter(statement => statement.kind === "message").map(statement => [statement.from, statement.arrow, statement.to]),
+    ).toEqual([
+      ["Bob", "-->>", "Alice"],
+      ["Bob", "-->", "Alice"],
+      ["Bob", "--x", "Alice"],
+      ["Bob", "->>", "Alice"],
+      ["Bob-x", "-->>", "Alice"],
+    ])
+  })
+
   test("reports local source diagnostics deterministically", () => {
     expect(
       parseMermaidSequence(

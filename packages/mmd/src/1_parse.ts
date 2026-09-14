@@ -170,7 +170,9 @@ export function parseMermaidSequence(source: string): MermaidSequenceDocument {
       continue
     }
 
-    const message = /^([A-Za-z_][\w-]*)\s*(-->>|->>|-->|->|--x|->x)\s*([A-Za-z_][\w-]*)\s*:\s*(.*)$/.exec(text)
+    // The sender is lazy: a greedy `[\w-]*` swallows the leading dash of `-->>`, `-->` and `--x`
+    // and hands `Bob-` to the participant slot with `->>` as the arrow.
+    const message = /^([A-Za-z_][\w-]*?)\s*(-->>|->>|-->|->|--x|->x)\s*([A-Za-z_][\w-]*)\s*:\s*(.*)$/.exec(text)
 
     if (message) {
       const statement: MermaidMessageStatement = {

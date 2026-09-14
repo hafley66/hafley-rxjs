@@ -36,9 +36,15 @@ export function d2SvgFrame(document: Document, svg: string, source: string, view
   for (const { element, id } of groups) {
     const line = element.querySelector(":scope > path.connection")
     if (!line) continue
-    const match = /^(.*?)\((.+?) (<?-+>?) (.+)\)\[\d+\]$/.exec(id)
+    const match = /^(.*?)\((.+?) (<?-+>?) (.*)\)\[\d+\]$/.exec(id)
     const fromId = match ? match[1] + match[2] : ""
     const toId = match ? match[1] + match[4] : ""
+    // A sequence diagram draws each actor's lifeline as a connection with no target, `(alice -- )[0]`.
+    // It is the actor's own line, so it binds to the actor and adds no edge.
+    if (match && match[4] === "" && graph[fromId]) {
+      bind(line, fromId, "lifeline")
+      continue
+    }
     if (!match || !graph[fromId] || !graph[toId]) throw new Error(`Unsupported D2 connection identity: ${id}`)
     graph[id] = { id, type: "edge", fromId, toId, direction: match[3].startsWith("<") && match[3].endsWith(">") ? "both" : match[3].endsWith(">") ? "forward" : "none", data: { label: element.querySelector("text")?.textContent ?? "" } }
     bind(line, id, "message-line")
