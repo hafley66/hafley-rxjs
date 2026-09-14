@@ -1,6 +1,6 @@
 # Optional movement journal, undo, and persistence
 
-Status: proposed. Depends on [identity reconciliation](1_graph-identity.md) and renderer move events from [group interaction](4_dom-groups-and-collapse.md).
+Status: partially implemented. The proof connects actor/message drags in both renderers to a stored event list with cursor-based undo/redo. One completed drag adds one event; previews remain transient. Source metadata fingerprints isolate histories. Cross-revision reconciliation, atomic multi-item moves, and a versioned persistence contract remain planned. Depends on [identity reconciliation](1_graph-identity.md) and renderer move events from [group interaction](4_dom-groups-and-collapse.md).
 
 ```ts
 type MoveEvent = { ids: readonly GraphId[]; before: Positions; after: Positions; baseRevisionId: string }

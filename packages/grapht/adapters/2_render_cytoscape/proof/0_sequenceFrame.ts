@@ -3,9 +3,20 @@ import { svgGraphGeometryOf } from "../../../src/2_graph/4_svgGeometry.ts"
 import { fitGraphCamera } from "../../../src/2_graph/1_fitCamera.ts"
 import type { Graph, GraphId } from "@hafley66/grapht-model"
 import type { GraphFrame, GraphGeometry } from "../../../src/2_graph/0_frame.ts"
-import sequenceFixture from "../../../fixtures/sequence/large.json"
-import sequenceSvgUrl from "../../../fixtures/sequence/large.svg?url"
-import sequenceSource from "../../../fixtures/sequence/large.mmd?raw"
+import largeFixture from "../../../fixtures/sequence/large.json"
+import largeSvgUrl from "../../../fixtures/sequence/large.svg?url"
+import largeSource from "../../../fixtures/sequence/large.mmd?raw"
+import d2Fixture from "../../../fixtures/sequence/paired-d2.json"
+import d2SvgUrl from "../../../fixtures/sequence/paired-d2.svg?url"
+import d2Source from "../../../fixtures/sequence/paired-d2.d2?raw"
+import mermaidFixture from "../../../fixtures/sequence/paired-mermaid.json"
+import mermaidSvgUrl from "../../../fixtures/sequence/paired-mermaid.svg?url"
+import mermaidSource from "../../../fixtures/sequence/paired-mermaid.mmd?raw"
+const fixtures = {
+  sequence: { metadata: largeFixture, url: largeSvgUrl, source: largeSource, language: "mermaid" as const },
+  "paired-d2": { metadata: d2Fixture, url: d2SvgUrl, source: d2Source, language: "d2" as const },
+  "paired-mermaid": { metadata: mermaidFixture, url: mermaidSvgUrl, source: mermaidSource, language: "mermaid" as const },
+}
 type FixtureRect = { id: string; label: string; left: number; width: number; top: number; bottom: number }
 
 /** The smallest group that strictly contains this one, which is its header's parent in the stack. */
@@ -16,8 +27,10 @@ function containerOf(group: FixtureRect, groups: readonly FixtureRect[]): string
     .at(0)?.id
 }
 
-export async function sequenceFrame(viewport: { width: number; height: number }): Promise<GraphFrame> {
-  const svg = await (await fetch(sequenceSvgUrl)).text()
+export async function sequenceFrame(viewport: { width: number; height: number }, example: keyof typeof fixtures = "sequence"): Promise<GraphFrame> {
+  const fixture = fixtures[example]
+  const sequenceFixture = fixture.metadata
+  const svg = await (await fetch(fixture.url)).text()
   const box = sequenceFixture.viewBox
   const actors = sequenceFixture.actors as FixtureRect[]
   const groups = sequenceFixture.groups as FixtureRect[]
@@ -31,7 +44,7 @@ export async function sequenceFrame(viewport: { width: number; height: number })
   for (const group of groups) graph[group.id] = { ...(graph[group.id] as object), id: group.id, type: "node", parentId: containerOf(group, groups) ?? "seq" }
 
   const geometry: GraphGeometry = {
-    revisionId: "seq:1",
+    revisionId: `${example}:1`,
     boundsById: {
       seq: bounds,
       ...Object.fromEntries(groups.map(group => [group.id, { x: group.left, y: group.top, width: group.width, height: group.bottom - group.top }])),
@@ -54,11 +67,11 @@ export async function sequenceFrame(viewport: { width: number; height: number })
       sealedSvgArtifactsByRootId: {
         seq: {
           rootId: "seq",
-          revisionId: "seq:svg:1",
+          revisionId: `${example}:svg:1`,
           bindings: sequenceFixture.bindings as import("../../../src/2_graph/3_sealedSvgArtifact.ts").SealedSvgArtifact["bindings"],
           geometryRevisionId: "seq:geometry:1",
           svg,
-          source: { language: "mermaid", text: sequenceSource, locator: sequenceFixture.source },
+          source: { language: fixture.language, text: fixture.source, locator: sequenceFixture.source },
           sourceBounds: bounds,
           fit: "contain",
         },

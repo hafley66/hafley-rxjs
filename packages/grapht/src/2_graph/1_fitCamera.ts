@@ -38,7 +38,7 @@ function extentOf(geometry: GraphGeometry): Extent | undefined {
 }
 
 /** Fits all declared graph geometry into a viewport using a screen-space padding. */
-export function fitGraphCamera(geometry: GraphGeometry, viewport: Rect, padding: number): GraphCamera {
+export function fitGraphCamera(geometry: GraphGeometry, viewport: Rect, padding: number, mode: "contain" | "width" | "height" | "readable" = "contain"): GraphCamera {
   const viewportX = finite(viewport.x) ? viewport.x : 0
   const viewportY = finite(viewport.y) ? viewport.y : 0
   const viewportWidth = finite(viewport.width) ? Math.max(0, viewport.width) : 0
@@ -60,14 +60,14 @@ export function fitGraphCamera(geometry: GraphGeometry, viewport: Rect, padding:
   const availableHeight = Math.max(0, viewportHeight - safePadding * 2)
   const scaleX = contentWidth > 0 ? availableWidth / contentWidth : Number.POSITIVE_INFINITY
   const scaleY = contentHeight > 0 ? availableHeight / contentHeight : Number.POSITIVE_INFINITY
-  const requestedScale = Math.min(scaleX, scaleY)
+  const requestedScale = mode === "width" ? scaleX : mode === "height" ? scaleY : mode === "readable" ? Math.max(0.75, Math.min(scaleX, scaleY)) : Math.min(scaleX, scaleY)
   const scale = Number.isFinite(requestedScale) && requestedScale > 0 ? requestedScale : requestedScale === 0 ? Number.MIN_VALUE : 1
   const contentCenterX = (extent.left + extent.right) / 2
   const contentCenterY = (extent.top + extent.bottom) / 2
 
   return {
-    x: viewportX + viewportWidth / 2 - contentCenterX * scale,
-    y: viewportY + viewportHeight / 2 - contentCenterY * scale,
+    x: mode !== "contain" && contentWidth * scale > availableWidth ? viewportX + safePadding - extent.left * scale : viewportX + viewportWidth / 2 - contentCenterX * scale,
+    y: mode !== "contain" && contentHeight * scale > availableHeight ? viewportY + safePadding - extent.top * scale : viewportY + viewportHeight / 2 - contentCenterY * scale,
     scale,
     viewport,
   }

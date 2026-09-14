@@ -8,7 +8,7 @@ This page describes a plan. Its signatures are sketches, and its acceptance chec
 [Canonical plan](https://github.com/hafley66/hafley-rxjs/blob/main/plans/2026-09-13-anim-to-grapht/3_hop-gradient.md) · [Feature status](./roadmap)
 
 
-Status: partially implemented. Both proof renderers share hop opacity: focus and hop 1 at 1, hop 2 at 0.55, then geometric fading; unrelated context at 0.15. Depends on [neighbor queries](./plan-neighbor-highlighting).
+Status: partially implemented. Both proof renderers share hop opacity: focus and hop 1 at 1, hop 2 at 0.55, then geometric fading; unrelated context at 0.15. The proof also supports stored start/end colors and interpolation distance through `GraphStyle.hopGradient`, with endpoint gradients on edges in both renderers. Configurable decay/floor and direction-overlap policy remain planned. Depends on [neighbor queries](./plan-neighbor-highlighting).
 
 ```ts
 function hopOpacity(hop: number, decay: number, floor: number): number {
@@ -19,7 +19,7 @@ function hopOpacity(hop: number, decay: number, floor: number): number {
 - Lifetime: derive styles for each current focus/preview result; no stored gradient history.
 - Storage/reads/writes: read directional hop maps and caller style configuration; write per-ID opacity into graph presentation. Renderers apply the same derived values.
 - Uniqueness: for multiple focals, nearest eligible hop wins. Preserve direction color while reducing alpha; carry both directions where a node belongs to both closures.
-- Proposed edge rule: use the farther endpoint's eligible hop for each direction, so focal-to-first-hop edges receive full strength. Configure overlapping-direction color explicitly.
+- Implemented edge rule: interpolate logical source and target endpoint hue and alpha; arrowheads use their endpoint paint. Configure overlapping-direction color explicitly in future work.
 - Work: add a shared pure style derivation, presentation fields, and supported renderer mappings. Keep isolated/faded-context visibility and transient preview strength separate from distance alpha.
 - Acceptance: deterministic 0/1/2/3-hop panel, branching, cycles, multiple focals, direction overlap, and hover restoration. Verify first hop is strongest and subsequent hops monotonically fade with the same hue.
 - Configuration: caller supplies decay/floor and direction colors; choose visual defaults during the fixture review.

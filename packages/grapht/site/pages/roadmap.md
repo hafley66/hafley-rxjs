@@ -27,12 +27,12 @@ A feature moves out of this section when its exported contract, connected caller
 ## Current proof integration
 
 Native sequence rendering, shared sticky overlays, wheel pan/pinch momentum, shared DOM/Cytoscape themes,
-and the trace-backed widget are implemented. The architecture fixture remains document-only.
-Manual movement is disabled for native sequence shapes. Both renderers now paint hover neighborhoods
+and the trace-backed widget are implemented. The architecture fixture supports native Cytoscape
+bindings. Both renderers support actor/message movement with stored undo history and paint hover neighborhoods
 with directional modes, depth-based opacity, and a debug inspector. The proof supports actor view groups
 and nested sequence-fragment collapse. Mermaid ingest retains box membership, parallel branch IDs,
 and original source text. Remaining interaction work includes committed multi-selection combinations,
-movement history, optional persistence, and boundary-edge aggregation.
+cross-source identity reconciliation and boundary-edge aggregation.
 
 
 The group-layout policy core and the interactive policy lab now implement automatic layout until a

@@ -26,5 +26,5 @@ export type RendererInteractions = {
   focusInput$: Subject<ReadonlySet<GraphId>>
   selectionInput$: Subject<ReadonlySet<GraphId>>
   collapseInput$?: Subject<GraphId>
-  moveInput$?: Subject<{ id: GraphId; dx: number; dy: number }>
+  moveInput$?: Subject<import("./23_manualMovement.js").GraphMove>
 }

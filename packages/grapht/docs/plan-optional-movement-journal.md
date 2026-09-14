@@ -8,7 +8,7 @@ This page describes a plan. Its signatures are sketches, and its acceptance chec
 [Canonical plan](https://github.com/hafley66/hafley-rxjs/blob/main/plans/2026-09-13-anim-to-grapht/5_optional-movement-journal.md) · [Feature status](./roadmap)
 
 
-Status: proposed. Depends on [identity reconciliation](./plan-graph-identity) and renderer move events from [group interaction](./plan-dom-groups-and-collapse).
+Status: partially implemented. The proof connects actor/message drags in both renderers to a stored event list with cursor-based undo/redo. One completed drag adds one event; previews remain transient. Source metadata fingerprints isolate histories. Cross-revision reconciliation, atomic multi-item moves, and a versioned persistence contract remain planned. Depends on [identity reconciliation](./plan-graph-identity) and renderer move events from [group interaction](./plan-dom-groups-and-collapse).
 
 ```ts
 type MoveEvent = { ids: readonly GraphId[]; before: Positions; after: Positions; baseRevisionId: string }

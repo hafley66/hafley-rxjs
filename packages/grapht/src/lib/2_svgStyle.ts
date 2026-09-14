@@ -8,7 +8,7 @@ const styleIds = new WeakMap<SVGSVGElement, string>()
 let nextStyleId = 0
 
 const SVG_ROLES: Record<string, { shape?: string; text?: string; edge?: string; arrow?: string }> = {
-  node: { shape: ".shape rect, .shape ellipse, .shape polygon, rect.actor", text: "text, tspan" },
+  node: { shape: ".shape rect, .shape ellipse, .shape polygon, .shape path, rect.actor", text: "text, tspan" },
   "node[nativeKind = 'actor-shape']": { shape: 'rect.actor, [data-graph-role="actor-shape"], [data-graph-role="actor-bottom-shape"]', text: 'text.actor, text.actor-box, text.actor tspan, [data-graph-role="actor-label"], [data-graph-role="actor-bottom-label"]' },
   "node[nativeKind = 'lifeline']": { shape: ".actor-line" },
   "node[nativeKind = 'group-frame']": { shape: '.loopLine, [data-graph-role="group-frame"]' },
@@ -51,6 +51,8 @@ export function applySvgStyle(svg: SVGSVGElement, palette: GraphStyle): void {
   emit('.actor-line, [data-graph-role="lifeline"]', { stroke: palette.lifelineBackground, "stroke-width": 1, "vector-effect": "non-scaling-stroke" })
   emit(".labelBox", { fill: palette.group.fill, stroke: palette.group.stroke })
   emit(".loopText, .loopText tspan, .labelText", { fill: palette.group.text })
+  emit(".d2-svg text, .d2-svg tspan", { fill: palette.nodeText })
+  emit(".d2-svg .connection ~ text", { fill: palette.edgeText })
   emit(".d2-svg > rect:first-child", { fill: palette.canvasBackground })
   sheet.textContent = rules.join("\n")
 }

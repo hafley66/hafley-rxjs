@@ -17,8 +17,8 @@ export type SvgGraphPrimitive = {
 
 function rectOf(element: SVGGraphicsElement, root: SVGSVGElement): Rect {
   const local = element.getBBox()
-  const matrix = element.getCTM()
-  const rootMatrix = root.getCTM()
+  const matrix = element.getScreenCTM()
+  const rootMatrix = root.getScreenCTM()
   if (matrix === null || rootMatrix === null) throw new Error("bound SVG element has no coordinate transform")
   const inverseRoot = rootMatrix.inverse()
   const relative = inverseRoot.multiply(matrix)
@@ -39,8 +39,8 @@ function rectOf(element: SVGGraphicsElement, root: SVGSVGElement): Rect {
 }
 
 function routeOf(element: SVGGraphicsElement, root: SVGSVGElement): Float32Array {
-  const matrix = element.getCTM()
-  const rootMatrix = root.getCTM()
+  const matrix = element.getScreenCTM()
+  const rootMatrix = root.getScreenCTM()
   if (matrix === null || rootMatrix === null) throw new Error("bound SVG message line has no coordinate transform")
   const relative = rootMatrix.inverse().multiply(matrix)
   if (element instanceof SVGGeometryElement) {

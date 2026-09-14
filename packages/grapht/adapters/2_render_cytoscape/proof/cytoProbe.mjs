@@ -1,3 +1,4 @@
+import { verifyMovement } from "./2_movementProbe.mjs"
 // Exercise the shipped chunks: a development-server import can hide UMD/global collisions.
 import { chromium, expect } from "@playwright/test"
 import { preview } from "vite"
@@ -60,8 +61,14 @@ try {
   await expect(page.locator('[data-wheel="momentum"]')).toBeChecked()
   await page.locator("#interaction-controls > summary").click()
   await page.locator("#arch").click()
-  await expect(page.locator("#renderer-cytoscape")).toBeDisabled()
+  await expect(page.locator("#renderer-cytoscape")).toBeEnabled()
   await expect(page.locator("#host canvas")).toHaveCount(0)
+  await expect(page.locator("#host .d2-svg text").first()).toHaveCSS("fill", "rgb(226, 232, 240)")
+  await page.locator("#renderer-cytoscape").click()
+  await expect(page.locator("#host")).toHaveAttribute("data-grapht-native-edge-count", "51")
+  await expect(page.locator("#renderer-cytoscape")).toHaveAttribute("aria-pressed", "true")
+  await page.locator("#document").click()
+  await expect(page.locator("#document")).toHaveAttribute("aria-pressed", "true")
   for (const source of ["sequence", "sequence"]) {
     const rootId = source === "arch" ? "epic" : "seq"
     await page.locator(`#${source}`).click()
@@ -232,6 +239,7 @@ try {
   await expect(lab.locator("[data-policy]")).toHaveText("A: manual · B: automatic")
   if (process.env.LAB_SCREENSHOT) await page.screenshot({ path: process.env.LAB_SCREENSHOT })
   await lab.locator("[data-close]").click()
+  await verifyMovement(page)
   expect(errors).toEqual([])
   console.log("Production proof passed: shared DOM/native themes, wheel momentum, native sequence, hover/debug modes, actor grouping, sequence collapse, and group layout expansion toggle.")
 } finally {

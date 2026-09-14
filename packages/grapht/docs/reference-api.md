@@ -18,6 +18,8 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 | [src/2_graph/19_sequenceNeighborhood.ts](#src-2-graph-19-sequenceneighborhood-ts) | 1 |  |
 | [src/2_graph/20_groupActors.ts](#src-2-graph-20-groupactors-ts) | 1 |  |
 | [src/2_graph/21_svgFrame.ts](#src-2-graph-21-svgframe-ts) | 2 |  |
+| [src/2_graph/22_d2SvgFrame.ts](#src-2-graph-22-d2svgframe-ts) | 1 |  |
+| [src/2_graph/23_manualMovement.ts](#src-2-graph-23-manualmovement-ts) | 4 |  |
 | [src/2_graph/0_frame.ts](#src-2-graph-0-frame-ts) | 6 | Render a graph from explicit geometry, camera, and presentation state. |
 | [src/2_graph/1_fitCamera.ts](#src-2-graph-1-fitcamera-ts) | 1 |  |
 | [src/2_graph/2_geometryScope.ts](#src-2-graph-2-geometryscope-ts) | 5 |  |
@@ -65,6 +67,8 @@ Complete renderer-neutral palette. Spread a preset to customize individual color
 export type GraphStyle = {
   /** Fade uses one hue; color assigns a hue per hop. Both interpolate edge endpoint alpha. */
   hopMode?: "fade" | "color"
+  /** Interpolate between endpoint colors across this many hops; omitted keeps the indexed palette. */
+  hopGradient?: { from: string; to: string; distance: number }
   canvasBackground: string
   ribbon: { fill: string; stroke: string; text: string }
   group: { fill: string; stroke: string; text: string }
@@ -104,7 +108,7 @@ export function graphStyleOf(style: GraphStyleInput): GraphStyle
 
 ### `GRAPH_STYLES` {#src-lib-0-graphstyle-ts-graph-styles}
 
-`GRAPH_STYLES` is declared at `src/lib/0_graphStyle.ts:42`.
+`GRAPH_STYLES` is declared at `src/lib/0_graphStyle.ts:44`.
 
 ```ts
 GRAPH_STYLES: Readonly<Record<GraphTheme, GraphStyle>>
@@ -112,7 +116,7 @@ GRAPH_STYLES: Readonly<Record<GraphTheme, GraphStyle>>
 
 ### `GraphStyleInput` {#src-lib-0-graphstyle-ts-graphstyleinput}
 
-`GraphStyleInput` is declared at `src/lib/0_graphStyle.ts:112`.
+`GraphStyleInput` is declared at `src/lib/0_graphStyle.ts:114`.
 
 Both renderer resources accept the same preset name or complete caller-owned palette.
 
@@ -124,7 +128,7 @@ export function graphStyleOf(style: GraphStyleInput): GraphStyle
 
 ### `GraphStyleResource` {#src-lib-0-graphstyle-ts-graphstyleresource}
 
-`GraphStyleResource` is declared at `src/lib/0_graphStyle.ts:114`.
+`GraphStyleResource` is declared at `src/lib/0_graphStyle.ts:116`.
 
 ```ts
 export interface GraphStyleResource {
@@ -135,7 +139,7 @@ export interface GraphStyleResource {
 
 ### `graphStyleOf` {#src-lib-0-graphstyle-ts-graphstyleof}
 
-`graphStyleOf` is declared at `src/lib/0_graphStyle.ts:120`.
+`graphStyleOf` is declared at `src/lib/0_graphStyle.ts:122`.
 
 Resolve a preset name once at the renderer boundary. Custom palettes are read without mutation.
 
@@ -145,7 +149,7 @@ graphStyleOf: (style: GraphStyleInput) => GraphStyle
 
 ### `graphHopColor` {#src-lib-0-graphstyle-ts-graphhopcolor}
 
-`graphHopColor` is declared at `src/lib/0_graphStyle.ts:125`.
+`graphHopColor` is declared at `src/lib/0_graphStyle.ts:127`.
 
 Reuse the final palette color for deeper hops; opacity still expresses increasing distance.
 
@@ -155,7 +159,7 @@ graphHopColor: (style: GraphStyle, hop: number) => string
 
 ### `graphHoverColor` {#src-lib-0-graphstyle-ts-graphhovercolor}
 
-`graphHoverColor` is declared at `src/lib/0_graphStyle.ts:131`.
+`graphHoverColor` is declared at `src/lib/0_graphStyle.ts:143`.
 
 Hover paint defaults to a single hue with distance expressed through opacity.
 
@@ -487,6 +491,76 @@ SVG at their mounting boundary. Source text remains caller-owned.
 svgFrame: (document: Document, input: SvgFrameInput) => GraphFrame
 ```
 
+## src/2_graph/22_d2SvgFrame.ts
+
+| export | kind |
+| --- | --- |
+| [`d2SvgFrame`](#src-2-graph-22-d2svgframe-ts-d2svgframe) | function |
+
+### `d2SvgFrame` {#src-2-graph-22-d2svgframe-ts-d2svgframe}
+
+`d2SvgFrame` is declared at `src/2_graph/22_d2SvgFrame.ts:8`.
+
+Recover D2 object IDs and endpoint relations from the renderer's base64 group classes.
+Source layout and source text are retained. Unrecognized connection IDs fail ingestion.
+
+```ts
+d2SvgFrame: (document: Document, svg: string, source: string, viewport: { width: number; height: number; }) => GraphFrame
+```
+
+## src/2_graph/23_manualMovement.ts
+
+| export | kind |
+| --- | --- |
+| [`GraphMove`](#src-2-graph-23-manualmovement-ts-graphmove) | type |
+| [`MoveHistory`](#src-2-graph-23-manualmovement-ts-movehistory) | type |
+| [`movementOffsets`](#src-2-graph-23-manualmovement-ts-movementoffsets) | function |
+| [`moveGraphFrame`](#src-2-graph-23-manualmovement-ts-movegraphframe) | function |
+
+### `GraphMove` {#src-2-graph-23-manualmovement-ts-graphmove}
+
+`GraphMove` is declared at `src/2_graph/23_manualMovement.ts:5`.
+
+Deltas are world units from the start of one gesture. One commit becomes one undo entry.
+
+```ts
+export type GraphMove = { id: string; dx: number; dy: number; phase?: "preview" | "commit" | "cancel" }
+
+export function movementOffsets(frame: GraphFrame, history: MoveHistory, preview?: GraphMove): GraphTranslations
+```
+
+### `MoveHistory` {#src-2-graph-23-manualmovement-ts-movehistory}
+
+`MoveHistory` is declared at `src/2_graph/23_manualMovement.ts:6`.
+
+```ts
+export type MoveHistory = { events: GraphMove[]; cursor: number }
+
+export function movementOffsets(frame: GraphFrame, history: MoveHistory, preview?: GraphMove): GraphTranslations
+```
+
+### `movementOffsets` {#src-2-graph-23-manualmovement-ts-movementoffsets}
+
+`movementOffsets` is declared at `src/2_graph/23_manualMovement.ts:9`.
+
+Fold the retained event prefix and the current preview without mutating either.
+
+```ts
+movementOffsets: (frame: GraphFrame, history: MoveHistory, preview?: GraphMove | undefined) => Readonly<Record<string, GraphPoint>>
+```
+
+### `moveGraphFrame` {#src-2-graph-23-manualmovement-ts-movegraphframe}
+
+`moveGraphFrame` is declared at `src/2_graph/23_manualMovement.ts:26`.
+
+Sequence actor moves translate the lane, with attached message routes stretched between
+their actor offsets. Message moves shift the row along those lanes. General edge moves
+shift interior route points while retaining endpoint anchors.
+
+```ts
+moveGraphFrame: (frame: GraphFrame, translations: Readonly<Record<string, GraphPoint>>, editable: boolean) => GraphFrame
+```
+
 ## src/2_graph/0_frame.ts
 
 Render a graph from explicit geometry, camera, and presentation state.
@@ -575,6 +649,8 @@ export type GraphPresentation = {
   hopsById?: Readonly<Record<GraphId, number>>
   labelsById: Readonly<Record<GraphId, GraphLabel>>
   sealedSvgArtifactsByRootId: SealedSvgArtifactsByRootId
+  /** Enables manual movement gestures. Camera gestures remain available when false. */
+  editable?: boolean
   translationsById?: Readonly<Record<GraphId, { x: number; y: number }>>
   resolvedPortsById?: Readonly<Record<GraphId, ResolvedPortLocation>>
 }
@@ -582,7 +658,7 @@ export type GraphPresentation = {
 
 ### `GraphFrame` {#src-2-graph-0-frame-ts-graphframe}
 
-`GraphFrame` is declared at `src/2_graph/0_frame.ts:54`.
+`GraphFrame` is declared at `src/2_graph/0_frame.ts:56`.
 
 A complete render input combining the graph with its geometry, camera, and presentation. The caller owns state and lifetime.
 
@@ -608,7 +684,7 @@ export type GraphFrame<NodeData = unknown, EdgeData = unknown> = {
 Fits all declared graph geometry into a viewport using a screen-space padding.
 
 ```ts
-fitGraphCamera: (geometry: GraphGeometry, viewport: Rect, padding: number) => GraphCamera
+fitGraphCamera: (geometry: GraphGeometry, viewport: Rect, padding: number, mode?: "contain" | "height" | "readable" | "width") => GraphCamera
 ```
 
 ## src/2_graph/2_geometryScope.ts

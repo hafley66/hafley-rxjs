@@ -77,12 +77,13 @@ the application runs at its own boundary, and an `unsubscribe` handle.
 
 The proof uses native Cytoscape nodes and message edges for the large sequence, with shared sticky
 headers. Both document and Cytoscape resources accept `applyTheme("dark" | "light" | GraphStyle)` for shared canvas/SVG/header colors without replacing geometry.
-The architecture proof remains document-only. Library callers without native bindings can still use
-the sealed SVG fallback; choosing this adapter alone does not establish native translation.
+The architecture proof recovers native bindings from D2 SVG object IDs and scoped connection IDs.
+Plain SVG imports still require explicit graph bindings for native translation.
 
-Both proof renderers share wheel pan, cursor zoom, and damped wheel momentum. Native sequence shapes
-are ungrabbable. The adapter emits focus/selection events, but the proof leaves those inputs unconsumed.
-Hover neighbors, hop fading, movement journaling, and persistence remain pending.
+Both proof renderers share wheel pan, cursor zoom, damped wheel momentum, configurable hop-color
+interpolation, and hover inspection. Movement mode connects actor and edge gestures to a source-keyed
+stored event list with undo/redo. Sequence actors move horizontally and messages vertically; lane
+endpoints stay attached. The paired D2/Mermaid sequence examples exercise both renderers.
 See [interactive proof](./proof) and [feature status](./roadmap).
 
 

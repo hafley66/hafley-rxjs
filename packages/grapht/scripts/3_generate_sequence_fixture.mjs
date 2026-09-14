@@ -14,15 +14,18 @@ const { sequenceDocumentToGraph } = await import("@hafley66/grapht-model")
 const { mermaidSequenceAdapter } = await import("@hafley66/mmd")
 
 const fixtureDir = new URL("../fixtures/sequence/", import.meta.url)
-const sourceUrl = new URL("large.mmd", fixtureDir)
-const svgUrl = new URL("large.svg", fixtureDir)
-const jsonUrl = new URL("large.json", fixtureDir)
-const sourceLocator = "fixtures/sequence/large.mmd"
+const stem = process.argv[2] ?? "large"
+const language = process.argv[3] ?? "mermaid"
+const extension = language === "d2" ? "d2" : "mmd"
+const sourceUrl = new URL(`${stem}.${extension}`, fixtureDir)
+const svgUrl = new URL(`${stem}.svg`, fixtureDir)
+const jsonUrl = new URL(`${stem}.json`, fixtureDir)
+const sourceLocator = `fixtures/sequence/${stem}.${extension}`
 
 const round = value => Math.round(value * 100) / 100
 
 const source = await readFile(sourceUrl, "utf8")
-const { artifact, bindingReceipt, renderReceipt } = await buildSequenceArtifact(mermaidSequenceAdapter, {
+const { artifact, bindingReceipt, renderReceipt } = await buildSequenceArtifact(language === "d2" ? (await import("@hafley66/d2")).d2SequenceAdapter : mermaidSequenceAdapter, {
   locator: sourceLocator,
   source,
 })

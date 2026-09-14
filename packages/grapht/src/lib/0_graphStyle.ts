@@ -5,6 +5,8 @@ export type GraphTheme = "light" | "dark"
 export type GraphStyle = {
   /** Fade uses one hue; color assigns a hue per hop. Both interpolate edge endpoint alpha. */
   hopMode?: "fade" | "color"
+  /** Interpolate between endpoint colors across this many hops; omitted keeps the indexed palette. */
+  hopGradient?: { from: string; to: string; distance: number }
   canvasBackground: string
   ribbon: { fill: string; stroke: string; text: string }
   group: { fill: string; stroke: string; text: string }
@@ -123,6 +125,16 @@ export function graphStyleOf(style: GraphStyleInput): GraphStyle {
 
 /** Reuse the final palette color for deeper hops; opacity still expresses increasing distance. */
 export function graphHopColor(style: GraphStyle, hop: number): string {
+  const gradient = style.hopGradient
+  if (gradient && /^#[0-9a-f]{6}$/i.test(gradient.from) && /^#[0-9a-f]{6}$/i.test(gradient.to)) {
+    const t = Math.min(1, Math.max(0, hop / Math.max(1, gradient.distance)))
+    const channels = [1, 3, 5].map(at => {
+      const from = parseInt(gradient.from.slice(at, at + 2), 16)
+      const to = parseInt(gradient.to.slice(at, at + 2), 16)
+      return Math.round(from + (to - from) * t).toString(16).padStart(2, "0")
+    })
+    return `#${channels.join("")}`
+  }
   const colors = style.hopColors ?? []
   return colors[Math.min(colors.length - 1, Math.max(0, Math.floor(hop)))] ?? style.focusBorder
 }

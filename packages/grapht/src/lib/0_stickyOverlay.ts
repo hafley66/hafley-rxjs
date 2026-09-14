@@ -33,11 +33,13 @@ type StickyEntry = { group: SVGGElement; rect: SVGRectElement; text: SVGTextElem
 
 /** Input sinks share logical graph IDs with the underlying renderer. */
 export type StickyInteractions = {
+  moveInput$?: { next(move: import("../2_graph/23_manualMovement.js").GraphMove): void }
   focusInput$?: { next(ids: ReadonlySet<string>): void }
   collapseInput$?: { next(id: string): void }
 }
 
 export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {}, interactions?: StickyInteractions) {
+  let editable = false
   let camera: GraphCamera | undefined
   let ribbonItems: RibbonItem[] = []
   let ribbonLabels: Record<string, string> = {}
@@ -95,7 +97,29 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
     group.addEventListener("pointerenter", () => interactions?.focusInput$?.next(new Set([id])))
     group.addEventListener("pointerleave", () => interactions?.focusInput$?.next(new Set()))
     group.addEventListener("pointerover", event => event.stopPropagation())
-    group.addEventListener("pointerdown", event => event.stopPropagation())
+    let drag: { pointerId: number; x: number; dx: number } | undefined
+    group.addEventListener("pointerdown", event => {
+      event.stopPropagation()
+      if (!editable || role !== "ribbon" || event.button !== 0 || !camera) return
+      event.preventDefault()
+      drag = { pointerId: event.pointerId, x: event.clientX, dx: 0 }
+      group.setPointerCapture(event.pointerId)
+    })
+    group.addEventListener("pointermove", event => {
+      if (!drag || !camera || drag.pointerId !== event.pointerId) return
+      event.stopPropagation()
+      drag.dx = (event.clientX - drag.x) / camera.scale
+      interactions?.moveInput$?.next({ id, dx: drag.dx, dy: 0, phase: "preview" })
+    })
+    const finish = (event: PointerEvent) => {
+      if (!drag || drag.pointerId !== event.pointerId) return
+      event.stopPropagation()
+      const dx = drag.dx
+      drag = undefined
+      interactions?.moveInput$?.next({ id, dx, dy: 0, phase: event.type === "pointercancel" ? "cancel" : "commit" })
+    }
+    group.addEventListener("pointerup", finish)
+    group.addEventListener("pointercancel", finish)
     const rect = document.createElementNS(SVG_NAMESPACE, "rect")
     rect.setAttribute("rx", "4")
     rect.setAttribute("fill", token.fill)
@@ -273,6 +297,7 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
   }
   return {
     render(frame: GraphFrame) {
+      editable = frame.presentation.editable ?? false
       const nextCollapsed = frame.presentation.collapsedIds ?? new Set()
       // Keep a clicked header reachable after its content contracts above the sticky slot.
       // Store an offset from the group so later collapses reflow this boundary with its geometry.

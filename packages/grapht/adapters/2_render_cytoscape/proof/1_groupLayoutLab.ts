@@ -57,7 +57,7 @@ export function createGroupLayoutLab(host: HTMLElement, theme: GraphStyleInput) 
       cy.$id(id).layout({ name: "grid", boundingBox: { x1: id === "a" ? 40 : 320, y1: 60, w: 180, h: 150 }, fit: false, animate: false }).run()
     } else {
       send({ type: "expand", groupId: id })
-      cy.add(children.get(id)!)
+      cy.add(children.get(id)! as cytoscape.ElementDefinition[])
       if (groupAllowsAutoLayout(model.state, id)) layout(id)
       else {
         const saved = groupPositionsOf(model.state, id, {})

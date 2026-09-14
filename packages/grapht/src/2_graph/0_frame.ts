@@ -46,6 +46,8 @@ export type GraphPresentation = {
   hopsById?: Readonly<Record<GraphId, number>>
   labelsById: Readonly<Record<GraphId, GraphLabel>>
   sealedSvgArtifactsByRootId: SealedSvgArtifactsByRootId
+  /** Enables manual movement gestures. Camera gestures remain available when false. */
+  editable?: boolean
   translationsById?: Readonly<Record<GraphId, { x: number; y: number }>>
   resolvedPortsById?: Readonly<Record<GraphId, ResolvedPortLocation>>
 }

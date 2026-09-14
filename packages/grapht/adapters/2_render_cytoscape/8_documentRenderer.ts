@@ -1,3 +1,5 @@
+import { applySvgMovement, type SvgMovementBase } from "../../src/lib/4_svgMovement.js"
+import type { GraphMove } from "../../src/2_graph/23_manualMovement.js"
 import { hoverEdgeStops } from "../../src/lib/3_hoverPaint.js"
 import { graphHoverColor, GRAPH_STYLES } from "../../src/lib/0_graphStyle.js"
 import type { WheelSettings } from "../../src/lib/1_wheelCamera.js"
@@ -13,6 +15,7 @@ import type { GraphCamera, GraphFrame, GraphGeometry } from "../../src/2_graph/0
 import type { GraphFrameResource } from "../../src/2_graph/10_renderer.ts"
 
 export type DocumentRendererInteractions = {
+  moveInput$?: { next: (move: GraphMove) => void }
   collapseInput$?: { next: (id: string) => void }
   focusInput$?: { next: (ids: ReadonlySet<string>) => void }
   cameraInput$: { next: (camera: GraphCamera) => void }
@@ -75,6 +78,8 @@ export function createDocumentGraphFrameResource(
   let camera: GraphCamera | undefined
   let root: SVGSVGElement | undefined
   const boundElements = new Map<SVGElement, string>()
+  const movementBase: SvgMovementBase = new Map()
+  let moving: { id: string; pointerId: number; start: { x: number; y: number }; dx: number; dy: number } | undefined
   let hovered: string | undefined
   let revisionId: string | undefined
   const stickyOverlay = createStickyOverlay(host, sticky, interactions)
@@ -121,6 +126,16 @@ export function createDocumentGraphFrameResource(
   let dragging: { pointerId: number; last: { x: number; y: number } } | undefined
   const onPointerDown = (event: PointerEvent): void => {
     if (camera === undefined || event.button !== 0) return
+    const target = event.target instanceof Element ? event.target.closest("[data-graph-id]") : null
+    const id = target?.getAttribute("data-graph-id")
+    const role = target?.getAttribute("data-graph-role")
+    if (renderedFrame?.presentation.editable && id && (renderedFrame.graph[id]?.type === "edge" || role === "actor-shape" || role === "actor-label" || role === "lifeline")) {
+      unsubscribeMomentum()
+      event.preventDefault()
+      moving = { id, pointerId: event.pointerId, start: pointer(event), dx: 0, dy: 0 }
+      host.setPointerCapture(event.pointerId)
+      return
+    }
     // Text owns the gesture so selection works, and page chrome owns its own clicks: capturing the
     // pointer here would retarget their click event to the host and swallow it. Everything else pans.
     if (event.target instanceof Element && event.target.closest("text, tspan, [data-gesture-legend]")) return
@@ -129,6 +144,13 @@ export function createDocumentGraphFrameResource(
     host.setPointerCapture(event.pointerId)
   }
   const onPointerMove = (event: PointerEvent): void => {
+    if (camera && moving?.pointerId === event.pointerId) {
+      const at = pointer(event)
+      moving.dx = (at.x - moving.start.x) / camera.scale
+      moving.dy = (at.y - moving.start.y) / camera.scale
+      interactions?.moveInput$?.next({ id: moving.id, dx: moving.dx, dy: moving.dy, phase: "preview" })
+      return
+    }
     if (camera === undefined || dragging?.pointerId !== event.pointerId) return
     const at = pointer(event)
     applyCamera({ ...camera, x: camera.x + at.x - dragging.last.x, y: camera.y + at.y - dragging.last.y })
@@ -136,6 +158,11 @@ export function createDocumentGraphFrameResource(
     interactions?.cameraInput$.next(camera)
   }
   const onPointerUp = (event: PointerEvent): void => {
+    if (moving?.pointerId === event.pointerId) {
+      const finished = moving
+      moving = undefined
+      interactions?.moveInput$?.next({ id: finished.id, dx: finished.dx, dy: finished.dy, phase: event.type === "pointercancel" ? "cancel" : "commit" })
+    }
     if (dragging?.pointerId === event.pointerId) dragging = undefined
   }
 
@@ -237,6 +264,7 @@ export function createDocumentGraphFrameResource(
         host.appendChild(root)
         boundElements.clear()
         originalPaint.clear()
+        movementBase.clear()
         for (const binding of artifact.bindings ?? []) {
           const element = root.querySelector<SVGElement>(`[id="${CSS.escape(binding.elementId)}"]`)
           if (element) { boundElements.set(element, binding.graphId); element.dataset.graphId = binding.graphId; element.dataset.graphRole = binding.role }
@@ -247,6 +275,7 @@ export function createDocumentGraphFrameResource(
         }
         revisionId = artifact.revisionId
       }
+      if (root) applySvgMovement(root, frame, boundElements, movementBase)
       committedFocus = frame.presentation.focusedIds
       applyHover(frame.presentation.hopsById ?? {})
       for (const [element, id] of boundElements) element.style.display = frame.presentation.hiddenIds.has(id) ? "none" : ""
@@ -269,6 +298,7 @@ export function createDocumentGraphFrameResource(
       host.removeEventListener("pointerleave", onLeave)
       boundElements.clear()
       originalPaint.clear()
+      movementBase.clear()
       hoverDefs?.remove()
       hoverDefs = undefined
       renderedFrame = undefined

@@ -20,6 +20,8 @@ const result = generateApi({
     "src/2_graph/19_sequenceNeighborhood.ts",
     "src/2_graph/20_groupActors.ts",
     "src/2_graph/21_svgFrame.ts",
+    "src/2_graph/22_d2SvgFrame.ts",
+    "src/2_graph/23_manualMovement.ts",
     "src/2_graph/0_frame.ts",
     "src/2_graph/1_fitCamera.ts",
     "src/2_graph/2_geometryScope.ts",

@@ -34,3 +34,6 @@ export { groupSequenceActors } from "./2_graph/20_groupActors.js"
 export { DEFAULT_WHEEL_SETTINGS, wheelSettingsOf, type WheelSettings } from "./lib/1_wheelCamera.js"
 
 export { svgFrame, type SvgFrameInput } from "./2_graph/21_svgFrame.js"
+
+export { d2SvgFrame } from "./2_graph/22_d2SvgFrame.js"
+export { moveGraphFrame, movementOffsets, type GraphMove, type MoveHistory } from "./2_graph/23_manualMovement.js"

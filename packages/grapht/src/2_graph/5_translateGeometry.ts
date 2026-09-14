@@ -19,12 +19,15 @@ export function translateGraphGeometry(graph: Graph, geometry: GraphGeometry, tr
   const boundsById = { ...geometry.boundsById }
   const endpointAnchorById = { ...geometry.endpointAnchorById }
   const headerBoundsById = { ...geometry.headerBoundsById }
+  const columnBoundsById = geometry.columnBoundsById ? { ...geometry.columnBoundsById } : undefined
   const routesById = { ...geometry.routesById }
   for (const [id, delta] of entries) {
     const bounds = boundsById[id]
     if (bounds !== undefined) boundsById[id] = { ...bounds, x: bounds.x + delta.x, y: bounds.y + delta.y }
     const anchor = endpointAnchorById[id]
     if (anchor !== undefined) endpointAnchorById[id] = translated(anchor, delta)
+    const column = columnBoundsById?.[id]
+    if (column && columnBoundsById) columnBoundsById[id] = { ...column, x: column.x + delta.x, y: column.y + delta.y }
     const header = headerBoundsById[id]
     if (header !== undefined) headerBoundsById[id] = { ...header, x: header.x + delta.x, y: header.y + delta.y }
   }
@@ -59,5 +62,6 @@ export function translateGraphGeometry(graph: Graph, geometry: GraphGeometry, tr
     endpointAnchorById,
     routesById,
     headerBoundsById,
+    ...(columnBoundsById ? { columnBoundsById } : {}),
   }
 }

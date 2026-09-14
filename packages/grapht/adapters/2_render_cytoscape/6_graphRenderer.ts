@@ -320,7 +320,25 @@ export function createCytoscapeGraphFrameResource(
     if (!momentumFrame) momentumFrame = requestAnimationFrame(coast)
   }
   if (interactions) {
-    const dragPositionByElementId = new Map<string, { x: number; y: number }>()
+    let moving: { id: string; x: number; y: number; dx: number; dy: number } | undefined
+    cy.on("mousedown touchstart", "node, edge", event => {
+      if (!renderedFrame?.presentation.editable) return
+      const id = String(event.target.data("graphId"))
+      if (renderedFrame.graph[id]?.type !== "edge" && !["actor-shape", "lifeline"].includes(event.target.data("nativeKind"))) return
+      moving = { id, x: event.position.x, y: event.position.y, dx: 0, dy: 0 }
+    })
+    cy.on("mousemove touchmove", event => {
+      if (!moving) return
+      moving.dx = event.position.x - moving.x
+      moving.dy = event.position.y - moving.y
+      interactions.moveInput$?.next({ id: moving.id, dx: moving.dx, dy: moving.dy, phase: "preview" })
+    })
+    cy.on("mouseup touchend", () => {
+      if (!moving) return
+      const finished = moving
+      moving = undefined
+      interactions.moveInput$?.next({ id: finished.id, dx: finished.dx, dy: finished.dy, phase: "commit" })
+    })
     cy.on("viewport", () => {
       if (applyingFrame) return
       const pan = cy.pan()
@@ -336,17 +354,7 @@ export function createCytoscapeGraphFrameResource(
     cy.on("select unselect", "node, edge", () => {
       interactions.selectionInput$.next(new Set(cy.$(":selected").map(element => String(element.data("graphId")))))
     })
-    cy.on("grab", "node[nativeKind = 'actor-shape']", event => {
-      dragPositionByElementId.set(event.target.id(), event.target.position())
-    })
-    cy.on("drag", "node[nativeKind = 'actor-shape']", event => {
-      const previous = dragPositionByElementId.get(event.target.id())
-      const current = event.target.position()
-      dragPositionByElementId.set(event.target.id(), current)
-      if (previous === undefined) return
-      interactions.moveInput$?.next({ id: String(event.target.data("graphId")), dx: current.x - previous.x, dy: current.y - previous.y })
-    })
-    cy.on("free", "node[nativeKind = 'actor-shape']", event => dragPositionByElementId.delete(event.target.id()))
+
   }
 
   let currentHops: Readonly<Record<string, number>> = {}
@@ -413,6 +421,9 @@ export function createCytoscapeGraphFrameResource(
     render(frame, receipt) {
       unsubscribeMomentum()
       renderedFrame = frame
+      cy.userPanningEnabled(!frame.presentation.editable)
+      const activeRevisions = new Set(Object.values(frame.presentation.sealedSvgArtifactsByRootId).map(artifact => artifact.revisionId))
+      for (const revision of primitivesByRevision.keys()) if (!activeRevisions.has(revision)) primitivesByRevision.delete(revision)
       const sourcePrimitives = Object.values(frame.presentation.sealedSvgArtifactsByRootId).flatMap(artifact => {
         const cached = primitivesByRevision.get(artifact.revisionId)
         if (cached !== undefined) return cached.map(primitive => ({ ...primitive, rootId: artifact.rootId }))
@@ -466,6 +477,11 @@ export function createCytoscapeGraphFrameResource(
         host.dataset.graphtNativeEdgeCount = String(cy.edges(".graph-native-message").length)
         const movable = cy.$("node[nativeKind = 'actor-shape']").nodes().first()
         if (movable.nonempty()) host.dataset.graphtMovablePosition = JSON.stringify(movable.renderedPosition())
+        const movableEdge = cy.edges(".graph-native-message").not(".graph-hidden").first() as cytoscape.EdgeSingular
+        if (movableEdge.nonempty()) {
+          const point = movableEdge.midpoint(), pan = cy.pan(), scale = cy.zoom()
+          if (point) host.dataset.graphtMovableEdgePosition = JSON.stringify({ x: point.x * scale + pan.x, y: point.y * scale + pan.y })
+        }
       }
 
       const scope = graphLayoutScopeOf(frame.graph)

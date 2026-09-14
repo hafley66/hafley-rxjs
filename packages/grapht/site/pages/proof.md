@@ -2,8 +2,9 @@
 
 The large sequence opens in the document renderer. Switch to Cytoscape for native actors,
 lifelines, groups, notes, and 125 message edges. SVG geometry is measured during import;
-the native sequence retains no full SVG diagram in the DOM. The architecture fixture is
-document-only because it has no native graph bindings.
+the native sequence retains no full SVG diagram in the DOM. The D2 architecture also has native
+bindings: 51 connections, with object IDs and scoped endpoint relations recovered from D2 SVG metadata.
+The paired examples exercise the same 3 actors, 4 messages, and 2 nested groups through D2 and Mermaid ingestion.
 
 <iframe
   src="/hafley-rxjs/grapht/proof/index.html"
@@ -20,10 +21,14 @@ document-only because it has no native graph bindings.
 | Ctrl/Cmd + scroll or trackpad pinch | Zoom at cursor |
 | End wheel gesture | Damped pan/zoom momentum |
 | Zoom / momentum settings | Stored sensitivity, momentum on/off, strength, decay, and maximum tail |
-| Fit | Restore fitted camera and cancel momentum |
+| Fit | Fit all, width, height, or readable text; cancels momentum. The chosen mode persists and applies on source load and resize |
+| Paired examples | Equivalent D2 / Mermaid sequences, available in both renderers |
+| Move actors / edges | Enable horizontal actor-lane dragging and vertical message-row dragging |
+| Undo move / Redo move | Traverse the stored movement-event prefix; one drag commits one event |
 | Actor ribbon / group headers | Toggle shared screen-space headers; hover uses the represented actor/group ID |
 | Floating group + / − | Expand/collapse that group; keyboard Enter or Space also works |
 | Hop colors | Switch between one hue with fading (default) and per-hop hues; preference persists |
+| Interpolate hop colors | Blend the configurable From / To colors across the chosen hop distance; disable to use indexed palette colors |
 | Dark mode (both renderers) | Change shared SVG/canvas/header colors; preference persists |
 | Interaction / hover | Neighbors, upstream, downstream, both, or off; configurable depth |
 | Relations | Traverse actor links or ordered sequence steps |
@@ -32,11 +37,24 @@ document-only because it has no native graph bindings.
 | Collapse | Hide descendants; sequence fragments compact vertically; expansion restores source geometry |
 | Original source | Inspect the retained Mermaid or D2 text |
 
-The document renderer supports text selection. Native sequence shapes are currently ungrabbable.
-Manual movement, undo, and arrangement persistence are not connected in this proof. Hover is transient:
-it does not commit selection or history, move the camera, or cancel momentum. Focus and first-hop
-neighbors use full intensity. Fading is the default; enable **Hop colors** for amber (focus),
-blue (1), green (2), orange (3), and red (4+), with darker variants in light mode. Subsequent
+The document renderer supports text selection while movement is off. With movement enabled,
+actor shapes and lifelines move horizontally, keeping message endpoints attached. Message rows
+move vertically along the lanes. General architecture nodes move in both axes; dragging an
+architecture edge bends its interior route while preserving endpoint anchors. Undo/redo and the
+movement list persist in local storage, keyed by a fingerprint of the retained source metadata.
+An edited source receives a separate history. View grouping itself is not stored across reloads.
+
+The debug inspector lets pointer gestures pass through while movement mode is enabled.
+
+Camera, source/collapse, movement, and hover state have separate signal dependencies. Hover and
+camera changes do not rerun collapse geometry. The active renderer consumes derived frames and
+hover paint; renderer switches release the previous effect wiring and resource. SVG primitive
+measurement caches retain only revisions used by the current frame.
+
+Hover is transient: it does not commit selection or movement history. Focus and first-hop
+neighbors use full intensity. Fading is the default. With **Hop colors** enabled, the default
+interpolation runs from amber to blue over six hops; both endpoints and distance are configurable.
+Disable interpolation for the preset indexed palette. Subsequent
 hops multiply opacity by 0.55, with unrelated context at 0.15. Edges interpolate their logical
 source and target colors and opacity in both modes; arrowheads use their endpoint paint.
 SVG uses user-space gradients, including horizontal and reversed paths. Native Cytoscape uses
@@ -100,7 +118,26 @@ when opening a shared URL. Changes replace the URL entry, preserving unrelated p
 camera. Original source is retained. Duplicate element IDs, missing binding targets, and invalid graph
 references are rejected. A plain SVG opens in document mode. Native Cytoscape requires explicit
 semantic bindings, using the supported primitive roles; arbitrary SVG artwork remains source-rendered.
-The architecture fixture still needs this binding metadata before its native renderer can be enabled.
+The architecture fixture recovers these bindings from D2-generated object and connection identities.
 
 DOM sequence lifelines keep a one-pixel stroke at fitted zoom. Hop palettes are shared through
 `GraphStyle.hopColors`, with separate light/dark defaults and the existing distance opacity.
+
+## Large diagrams and zoom configuration
+
+Fit-all contains the source geometry without changing source orientation. The architecture source
+explicitly sets `direction: right` and spans 25,347 × 4,431 source units. **Readable text** uses a
+minimum scale of 0.75 and starts at the upper-left when the diagram exceeds the viewport; pan to
+inspect the rest. Fit width and fit height expose the other axis choices. Source layout remains
+a D2/Mermaid authoring choice, independent of camera fit.
+
+Open **Interaction / hover → Zoom / momentum settings**. Defaults and clamping live in
+`src/lib/1_wheelCamera.ts`: sensitivity 1.2, momentum enabled, strength 1, decay 85 ms, maximum
+tail 500 ms. The proof stores these through `StorageSignal("grapht.proof.wheel", ...)` and syncs
+the `wheel` URL parameter in `adapters/2_render_cytoscape/proof/live.ts`. Both renderers receive
+the same settings.
+
+The paired fixture sources are `fixtures/sequence/paired-d2.d2` and
+`fixtures/sequence/paired-mermaid.mmd`. Regenerate their measured SVG and graph bindings with
+`node scripts/3_generate_sequence_fixture.mjs paired-d2 d2` and
+`node scripts/3_generate_sequence_fixture.mjs paired-mermaid mermaid` from the Grapht package.
