@@ -33,7 +33,7 @@ document-only because it has no native graph bindings.
 The document renderer supports text selection. Native sequence shapes are currently ungrabbable.
 Manual movement, undo, and arrangement persistence are not connected in this proof. Hover is transient:
 it does not commit selection or history, move the camera, or cancel momentum. Focus and first-hop
-neighbors use full intensity; subsequent hops multiply opacity by 0.55, with unrelated context at 0.15.
+neighbors use full intensity. Hop colors are amber (focus), blue (1), green (2), orange (3), and red (4+); light mode uses darker variants. Subsequent hops multiply opacity by 0.55, with unrelated context at 0.15.
 Parallel branches receive equal step distance and converge at their following event. Actor links and
 sequence steps are separate relations because repeated messages between the same actors have distinct order.
 Native mobile touch-pinch momentum is unverified.
@@ -74,3 +74,15 @@ Changes apply immediately to both renderers and cancel an active tail. Reset res
 The proof reuses `StorageSignal`, `storageSignal(urlAdapter("wheel"))`, and `sync` from
 `@hafley66/signals`. Local settings survive reloads; the `wheel` URL parameter overrides local settings
 when opening a shared URL. Changes replace the URL entry, preserving unrelated parameters and the hash.
+
+## SVG import
+
+**Open SVG** accepts a local `.svg` file and optionally a `.json` file containing `graph` and
+`bindings`. Files stay in the browser. The source viewBox (or pixel width/height) sets the initial
+camera. Original source is retained. Duplicate element IDs, missing binding targets, and invalid graph
+references are rejected. A plain SVG opens in document mode. Native Cytoscape requires explicit
+semantic bindings, using the supported primitive roles; arbitrary SVG artwork remains source-rendered.
+The architecture fixture still needs this binding metadata before its native renderer can be enabled.
+
+DOM sequence lifelines keep a one-pixel stroke at fitted zoom. Hop palettes are shared through
+`GraphStyle.hopColors`, with separate light/dark defaults and the existing distance opacity.

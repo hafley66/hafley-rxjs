@@ -9,14 +9,14 @@ let nextStyleId = 0
 
 const SVG_ROLES: Record<string, { shape?: string; text?: string; edge?: string; arrow?: string }> = {
   node: { shape: ".shape rect, .shape ellipse, .shape polygon, rect.actor", text: "text, tspan" },
-  "node[nativeKind = 'actor-shape']": { shape: "rect.actor", text: "text.actor, text.actor-box, text.actor tspan" },
+  "node[nativeKind = 'actor-shape']": { shape: 'rect.actor, [data-graph-role="actor-shape"], [data-graph-role="actor-bottom-shape"]', text: 'text.actor, text.actor-box, text.actor tspan, [data-graph-role="actor-label"], [data-graph-role="actor-bottom-label"]' },
   "node[nativeKind = 'lifeline']": { shape: ".actor-line" },
-  "node[nativeKind = 'group-frame']": { shape: ".loopLine" },
+  "node[nativeKind = 'group-frame']": { shape: '.loopLine, [data-graph-role="group-frame"]' },
   "node[nativeKind = 'group-label']": { text: ".labelText, .loopText, .loopText tspan" },
   "node[nativeKind = 'activation']": { shape: '[class^="activation"]' },
-  "node[nativeKind = 'note-shape']": { shape: "rect.note", text: ".noteText, .noteText tspan" },
+  "node[nativeKind = 'note-shape']": { shape: 'rect.note, [data-graph-role="note-shape"]', text: ".noteText, .noteText tspan" },
   edge: { edge: ".connection", text: ".connection ~ text", arrow: "marker path, marker polygon" },
-  ".graph-native-message": { edge: ".messageLine0, .messageLine1", text: ".messageText, .messageText tspan", arrow: "marker path, marker polygon" },
+  ".graph-native-message": { edge: '.messageLine0, .messageLine1, [data-graph-role="message-line"]', text: '.messageText, .messageText tspan, [data-graph-role="message-label"]', arrow: "marker path, marker polygon" },
   "node.graph-focused": { shape: ".graph-focused:is(rect, polygon, ellipse)" },
   "edge.graph-focused": { edge: ".graph-focused:is(line, path)" },
 }
@@ -48,7 +48,7 @@ export function applySvgStyle(svg: SVGSVGElement, palette: GraphStyle): void {
     emit(role.edge, { stroke: s.lineColor, "stroke-width": s.width })
     emit(role.arrow, { fill: s.targetArrowColor ?? s.lineColor, stroke: s.targetArrowColor ?? s.lineColor })
   }
-  emit(".actor-line", { stroke: palette.lifelineBackground })
+  emit('.actor-line, [data-graph-role="lifeline"]', { stroke: palette.lifelineBackground, "stroke-width": 1, "vector-effect": "non-scaling-stroke" })
   emit(".labelBox", { fill: palette.group.fill, stroke: palette.group.stroke })
   emit(".loopText, .loopText tspan, .labelText", { fill: palette.group.text })
   emit(".d2-svg > rect:first-child", { fill: palette.canvasBackground })

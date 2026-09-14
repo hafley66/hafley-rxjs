@@ -1,3 +1,4 @@
+import { graphHopColor } from "../../src/lib/0_graphStyle.js"
 import type { WheelSettings } from "../../src/lib/1_wheelCamera.js"
 import { hoverOpacity } from "../../src/2_graph/16_neighborhood.js"
 import { graphStylesheet } from "../../src/lib/1_graphStylesheet.js"
@@ -347,13 +348,22 @@ export function createCytoscapeGraphFrameResource(
     cy.on("free", "node[nativeKind = 'actor-shape']", event => dragPositionByElementId.delete(event.target.id()))
   }
 
+  let currentHops: Readonly<Record<string, number>> = {}
   let committedFocus: ReadonlySet<string> = new Set()
   const applyHover = (hops: Readonly<Record<string, number>>): void => {
+    currentHops = hops
     const active = Object.keys(hops).length > 0
     cy.batch(() => {
       for (const element of cy.elements()) {
         const id = String(element.data("graphId") ?? element.id())
         element.toggleClass("graph-focused", committedFocus.has(id) || hops[id] !== undefined)
+        element.removeStyle("border-color line-color target-arrow-color source-arrow-color color")
+        if (element.data("nativeKind") === "lifeline") element.removeStyle("background-color")
+        if (hops[id] !== undefined) {
+          const color = graphHopColor(theme, hops[id])
+          element.style("color", color)
+          element.style(element.group() === "edges" ? { "line-color": color, "target-arrow-color": color, "source-arrow-color": color } : element.data("nativeKind") === "lifeline" ? { "background-color": color } : { "border-color": color })
+        }
         if (!element.hasClass("graph-route-endpoint") && !element.hasClass("graph-endpoint-anchor") && !element.hasClass("graph-sealed-root")) element.style("opacity", hoverOpacity(hops[id], active))
       }
     })
@@ -367,6 +377,7 @@ export function createCytoscapeGraphFrameResource(
       theme = graphStyleOf(next)
       themed = true
       cy.style(graphStylesheet(theme) as any)
+      applyHover(currentHops)
       if (host) host.style.background = theme.canvasBackground
       stickyOverlay?.applyTheme(theme)
       for (const view of sealedSvgViews.values()) {

@@ -8,7 +8,7 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 
 | module | exports | what it is |
 | --- | --- | --- |
-| [src/lib/0_graphStyle.ts](#src-lib-0-graphstyle-ts) | 6 | Shared graph colors for native primitives, document SVG, and screen-space headers. |
+| [src/lib/0_graphStyle.ts](#src-lib-0-graphstyle-ts) | 7 | Shared graph colors for native primitives, document SVG, and screen-space headers. |
 | [src/lib/1_wheelCamera.ts](#src-lib-1-wheelcamera-ts) | 3 | Shared wheel interpretation for graph renderers; coordinates are local to the graph viewport. |
 | [src/lib/1_graphStylesheet.ts](#src-lib-1-graphstylesheet-ts) | 2 | Cytoscape-compatible primitive rules are the shared style floor for canvas and SVG adapters. |
 | [src/2_graph/15_groupLayout.ts](#src-2-graph-15-grouplayout-ts) | 6 | Per-group automatic-layout ownership, with retained manual positions across collapse/expand. |
@@ -17,6 +17,7 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 | [src/2_graph/18_sequenceCollapse.ts](#src-2-graph-18-sequencecollapse-ts) | 1 |  |
 | [src/2_graph/19_sequenceNeighborhood.ts](#src-2-graph-19-sequenceneighborhood-ts) | 1 |  |
 | [src/2_graph/20_groupActors.ts](#src-2-graph-20-groupactors-ts) | 1 |  |
+| [src/2_graph/21_svgFrame.ts](#src-2-graph-21-svgframe-ts) | 2 |  |
 | [src/2_graph/0_frame.ts](#src-2-graph-0-frame-ts) | 6 | Render a graph from explicit geometry, camera, and presentation state. |
 | [src/2_graph/1_fitCamera.ts](#src-2-graph-1-fitcamera-ts) | 1 |  |
 | [src/2_graph/2_geometryScope.ts](#src-2-graph-2-geometryscope-ts) | 5 |  |
@@ -43,6 +44,7 @@ Shared graph colors for native primitives, document SVG, and screen-space header
 | [`GraphStyleInput`](#src-lib-0-graphstyle-ts-graphstyleinput) | type |
 | [`GraphStyleResource`](#src-lib-0-graphstyle-ts-graphstyleresource) | interface |
 | [`graphStyleOf`](#src-lib-0-graphstyle-ts-graphstyleof) | function |
+| [`graphHopColor`](#src-lib-0-graphstyle-ts-graphhopcolor) | function |
 
 ### `GraphTheme` {#src-lib-0-graphstyle-ts-graphtheme}
 
@@ -85,6 +87,8 @@ export type GraphStyle = {
   messageText: string
   messageTextBackground: string
   messageLine: string
+  /** Index 0 is the hovered item; subsequent entries are hop distances. */
+  hopColors?: readonly string[]
   focusBorder: string
   focusBackground: string
   headerBackground: string
@@ -97,7 +101,7 @@ export function graphStyleOf(style: GraphStyleInput): GraphStyle
 
 ### `GRAPH_STYLES` {#src-lib-0-graphstyle-ts-graph-styles}
 
-`GRAPH_STYLES` is declared at `src/lib/0_graphStyle.ts:38`.
+`GRAPH_STYLES` is declared at `src/lib/0_graphStyle.ts:40`.
 
 ```ts
 GRAPH_STYLES: Readonly<Record<GraphTheme, GraphStyle>>
@@ -105,7 +109,7 @@ GRAPH_STYLES: Readonly<Record<GraphTheme, GraphStyle>>
 
 ### `GraphStyleInput` {#src-lib-0-graphstyle-ts-graphstyleinput}
 
-`GraphStyleInput` is declared at `src/lib/0_graphStyle.ts:106`.
+`GraphStyleInput` is declared at `src/lib/0_graphStyle.ts:110`.
 
 Both renderer resources accept the same preset name or complete caller-owned palette.
 
@@ -117,7 +121,7 @@ export function graphStyleOf(style: GraphStyleInput): GraphStyle
 
 ### `GraphStyleResource` {#src-lib-0-graphstyle-ts-graphstyleresource}
 
-`GraphStyleResource` is declared at `src/lib/0_graphStyle.ts:108`.
+`GraphStyleResource` is declared at `src/lib/0_graphStyle.ts:112`.
 
 ```ts
 export interface GraphStyleResource {
@@ -128,12 +132,22 @@ export interface GraphStyleResource {
 
 ### `graphStyleOf` {#src-lib-0-graphstyle-ts-graphstyleof}
 
-`graphStyleOf` is declared at `src/lib/0_graphStyle.ts:114`.
+`graphStyleOf` is declared at `src/lib/0_graphStyle.ts:118`.
 
 Resolve a preset name once at the renderer boundary. Custom palettes are read without mutation.
 
 ```ts
 graphStyleOf: (style: GraphStyleInput) => GraphStyle
+```
+
+### `graphHopColor` {#src-lib-0-graphstyle-ts-graphhopcolor}
+
+`graphHopColor` is declared at `src/lib/0_graphStyle.ts:123`.
+
+Reuse the final palette color for deeper hops; opacity still expresses increasing distance.
+
+```ts
+graphHopColor: (style: GraphStyle, hop: number) => string
 ```
 
 ## src/lib/1_wheelCamera.ts
@@ -423,6 +437,43 @@ Collapsing the group uses the shared containment visibility projection.
 groupSequenceActors: (frame: GraphFrame, id: string, actors: readonly string[], label: string) => GraphFrame
 ```
 
+## src/2_graph/21_svgFrame.ts
+
+| export | kind |
+| --- | --- |
+| [`SvgFrameInput`](#src-2-graph-21-svgframe-ts-svgframeinput) | type |
+| [`svgFrame`](#src-2-graph-21-svgframe-ts-svgframe) | function |
+
+### `SvgFrameInput` {#src-2-graph-21-svgframe-ts-svgframeinput}
+
+`SvgFrameInput` is declared at `src/2_graph/21_svgFrame.ts:7`.
+
+```ts
+export type SvgFrameInput = {
+  svg: string
+  locator: string
+  rootId?: string
+  viewport: { width: number; height: number }
+  /** Optional semantic graph and explicit SVG-element bindings enable native interaction. */
+  graph?: Graph
+  bindings?: SealedSvgArtifact["bindings"]
+}
+
+export function svgFrame(document: Document, input: SvgFrameInput): GraphFrame
+```
+
+### `svgFrame` {#src-2-graph-21-svgframe-ts-svgframe}
+
+`svgFrame` is declared at `src/2_graph/21_svgFrame.ts:21`.
+
+Ingest any SVG as a source-preserving sealed frame. XML geometry alone does not establish
+edge endpoints. Supply graph + bindings for native Cytoscape nodes/edges; renderers sanitize
+SVG at their mounting boundary. Source text remains caller-owned.
+
+```ts
+svgFrame: (document: Document, input: SvgFrameInput) => GraphFrame
+```
+
 ## src/2_graph/0_frame.ts
 
 Render a graph from explicit geometry, camera, and presentation state.
@@ -633,7 +684,7 @@ export type SealedSvgArtifact = {
   revisionId: string
   geometryRevisionId: string
   svg: string
-  source?: { language: "mermaid" | "d2"; text: string; locator: string }
+  source?: { language: "mermaid" | "d2" | "svg"; text: string; locator: string }
   sourceBounds: Rect
   fit: "contain"
   graphIdByElementId?: Readonly<Record<string, GraphId>>

@@ -1,3 +1,5 @@
+import { GRAPH_STYLES, graphHopColor } from "../../../src/lib/0_graphStyle.ts"
+import { svgFrame, type SvgFrameInput } from "../../../src/2_graph/21_svgFrame.ts"
 import { DEFAULT_WHEEL_SETTINGS, wheelSettingsOf, type WheelSettings } from "../../../src/lib/1_wheelCamera.ts"
 import archSource from "../../../0_rendered_artifact_state_epic.d2?raw"
 import { groupSequenceActors } from "../../../src/2_graph/20_groupActors.ts"
@@ -15,7 +17,7 @@ import type { GraphCamera, GraphFrame } from "../../../src/2_graph/0_frame.ts"
 import { sequenceFrame } from "./0_sequenceFrame.ts"
 
 type Mode = "document" | "cytoscape"
-type Source = "arch" | "sequence"
+type Source = "arch" | "sequence" | "svg"
 
 const cameraInput$ = new Subject<GraphCamera>()
 const focusInput$ = new Subject<ReadonlySet<string>>()
@@ -135,7 +137,12 @@ const painted$ = merge(
   readout.$.pipe(tap(text => { readoutElement.textContent = text })),
   view.ribbon.$.pipe(tap(on => { ribbonToggle.checked = on })),
   view.groups.$.pipe(tap(on => { groupsToggle.checked = on })),
-  view.dark.$.pipe(tap(on => { darkToggle.checked = on !== false; layoutLab?.applyTheme(on === false ? "light" : "dark") })),
+  view.dark.$.pipe(tap(on => { darkToggle.checked = on !== false; layoutLab?.applyTheme(on === false ? "light" : "dark")
+    const palette = GRAPH_STYLES[on === false ? "light" : "dark"]
+    document.querySelector("#hop-colors")!.replaceChildren("Colors: ", ...["focus", "1", "2", "3", "4+"].map((label, hop) => {
+      const span = document.createElement("span"); span.textContent = `${label}  `; span.style.color = graphHopColor(palette, hop); return span
+    }))
+  })),
   mounted$.pipe(
     switchMap(current =>
       merge(
@@ -250,7 +257,7 @@ document.querySelector("#group-actors")!.addEventListener("click", () => {
 })
 
 async function mount(next: Mode): Promise<void> {
-  if (next === "cytoscape" && ui.source.$() === "arch") return
+  if (next === "cytoscape" && !Object.values(frame.presentation.sealedSvgArtifactsByRootId).some(artifact => artifact.bindings?.length)) return
   resource?.unsubscribe()
   host.replaceChildren()
   failure.$("")
@@ -262,13 +269,13 @@ async function mount(next: Mode): Promise<void> {
       : await importCytoscape(host)
   resource?.applyWheelSettings?.(wheelSettings.$())
   resource?.applyTheme?.(view.dark.$() === false ? "light" : "dark")
-  const rootId = ui.source.$() === "arch" ? "epic" : "seq"
+  const rootId = Object.keys(frame.presentation.sealedSvgArtifactsByRootId)[0]
   resource?.render(frame, { enterIds: [rootId], updateIds: [], exitIds: [] })
   cameraInput$.next(frame.camera)
   mounted$.next(resource)
 }
 
-async function useSource(next: Source): Promise<void> {
+async function useSource(next: "arch" | "sequence"): Promise<void> {
   ui.source.$(next)
   frame = next === "arch" ? artifactFrame : await sequenceFrame({ width: window.innerWidth, height: window.innerHeight })
   originalFrame = frame
@@ -285,6 +292,27 @@ async function useSource(next: Source): Promise<void> {
   await mount(next === "arch" ? "document" : ui.mode.$())
 }
 
+document.querySelector<HTMLInputElement>("#svg-import")!.addEventListener("change", async event => {
+  const files = [...(event.target as HTMLInputElement).files ?? []]
+  const source = files.find(file => file.name.toLowerCase().endsWith(".svg"))
+  if (!source) return
+  try {
+    const metadata = files.find(file => file.name.toLowerCase().endsWith(".json"))
+    const bindingInput: Pick<SvgFrameInput, "graph" | "bindings"> = metadata ? JSON.parse(await metadata.text()) : {}
+    frame = svgFrame(document, { svg: await source.text(), locator: source.name, graph: bindingInput.graph, bindings: bindingInput.bindings, viewport: { width: innerWidth, height: innerHeight } })
+    originalFrame = frame
+    collapsedIds.clear(); hoveredIds = new Set(); inspector.hidden = true
+    ui.source.$("svg")
+    document.body.dataset.source = "svg"
+    for (const id of ["arch", "sequence"]) document.querySelector(`#${id}`)?.setAttribute("aria-pressed", "false")
+    rebuildGroupControls()
+    const cyto = document.querySelector<HTMLButtonElement>("#renderer-cytoscape")!
+    cyto.disabled = !bindingInput.bindings?.length
+    cyto.title = cyto.disabled ? "Supply graph and SVG element bindings for native Cytoscape interaction." : "Native Cytoscape nodes and edges"
+    await mount("document")
+  } catch (error) { failure.$(String(error)) }
+})
+
 await useSource("sequence")
 // The page entry is the runtime boundary; this subscription is its only one.
 painted$.subscribe()
@@ -297,7 +325,7 @@ ribbonToggle.addEventListener("change", () => view.ribbon.$(ribbonToggle.checked
 groupsToggle.addEventListener("change", () => view.groups.$(groupsToggle.checked))
 darkToggle.addEventListener("change", () => view.dark.$(darkToggle.checked))
 document.querySelector("#fit")?.addEventListener("click", () => {
-  const rootId = ui.source.$() === "arch" ? "epic" : "seq"
+  const rootId = Object.keys(frame.presentation.sealedSvgArtifactsByRootId)[0]
   resource?.render(frame, { enterIds: [rootId], updateIds: [], exitIds: [] })
   cameraInput$.next(frame.camera)
 })

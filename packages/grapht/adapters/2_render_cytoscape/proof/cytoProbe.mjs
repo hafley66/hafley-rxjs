@@ -156,6 +156,22 @@ try {
   await page.locator('[data-collapse-id="view-actor-group:1"]').uncheck()
   await expect(page.locator("[data-sticky-ribbon] [data-sticky-id]")).toHaveCount(16)
   await page.locator("#interaction-controls > summary").click()
+  const svgInput = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100"><rect id="a" x="10" y="10" width="40" height="40"/><rect id="b" x="210" y="10" width="40" height="40"/><path id="ab" d="M50 30 L210 30"/></svg>'
+  await page.locator("#svg-import").setInputFiles({ name: "example.svg", mimeType: "image/svg+xml", buffer: Buffer.from(svgInput) })
+  await expect(page.locator("#readout")).toContainText("svg | document")
+  await expect(page.locator("#renderer-cytoscape")).toBeDisabled()
+  const metadata = { graph: { a: { id: "a", type: "node" }, b: { id: "b", type: "node" }, ab: { id: "ab", type: "edge", fromId: "a", toId: "b", direction: "forward" } }, bindings: [
+    { elementId: "a", graphId: "a", role: "actor-shape", ordinal: 0 },
+    { elementId: "b", graphId: "b", role: "actor-shape", ordinal: 0 },
+    { elementId: "ab", graphId: "ab", role: "message-line", ordinal: 0 },
+  ] }
+  await page.locator("#svg-import").setInputFiles([
+    { name: "example.svg", mimeType: "image/svg+xml", buffer: Buffer.from(svgInput) },
+    { name: "example.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(metadata)) },
+  ])
+  await expect(page.locator("#renderer-cytoscape")).toBeEnabled()
+  await page.locator("#renderer-cytoscape").click()
+  await expect(page.locator("#host")).toHaveAttribute("data-grapht-native-edge-count", "1")
   await page.locator("#layout-lab").click()
   const lab = page.locator("[data-layout-lab]")
   await expect(lab.locator("[data-policy]")).toHaveText("A: automatic · B: automatic")

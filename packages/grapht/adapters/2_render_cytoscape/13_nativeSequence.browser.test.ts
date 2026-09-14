@@ -201,3 +201,69 @@ it("groups existing actors in both adapters and restores all bindings after expa
   }
   host.remove()
 })
+
+it("shares hop colors, restores original paint, and keeps fitted DOM lifelines visible", async () => {
+  const frame = await sequenceFrame({ width: 1280, height: 800 })
+  const id = Object.values(frame.graph).find(item => item.type === "edge")!.id
+  const host = document.createElement("div")
+  host.style.cssText = "position:relative;width:1280px;height:800px"
+  document.body.appendChild(host)
+  const doc = createDocumentGraphFrameResource(host)
+  doc.applyTheme("dark")
+  doc.render(frame, { enterIds: [], updateIds: [], exitIds: [] })
+  const binding = frame.presentation.sealedSvgArtifactsByRootId.seq.bindings!.find(b => b.graphId === id && b.role === "message-line")!
+  const line = host.querySelector<SVGElement>(`[id="${binding.elementId}"]`)!
+  const original = getComputedStyle(line).stroke
+  const colors = []
+  for (const hop of [1, 2, 3]) { doc.applyHover!({ [id]: hop }); colors.push(getComputedStyle(line).stroke) }
+  doc.applyTheme("light")
+  expect(getComputedStyle(line).stroke).toBe("rgb(194, 65, 12)")
+  doc.applyTheme("dark")
+  doc.applyHover!({})
+  expect(getComputedStyle(line).stroke).toBe(original)
+  expect(getComputedStyle(host.querySelector(".actor-line")!).vectorEffect).toBe("non-scaling-stroke")
+  doc.unsubscribe()
+  const native = createCytoscapeGraphFrameResource(host)
+  try {
+    native.applyTheme("dark")
+    native.render(frame, { enterIds: [], updateIds: [], exitIds: [] })
+    const edge = native.cy.edges().filter(edge => edge.data("graphId") === id).first()
+    const nativeColors = []
+    for (const hop of [1, 2, 3]) { native.applyHover!({ [id]: hop }); nativeColors.push(edge.style("line-color")) }
+    expect(colors.map(color => color.replaceAll(" ", ""))).toEqual(nativeColors)
+    expect(nativeColors).toEqual(["rgb(56,189,248)", "rgb(74,222,128)", "rgb(251,146,60)"])
+    native.applyHover!({})
+    expect(edge.style("line-color")).toBe("rgb(148,163,184)")
+  } finally { native.unsubscribe(); host.remove() }
+})
+
+it("ingests plain and semantically bound SVG without inventing endpoints", async () => {
+  const { svgFrame } = await import("../../src/2_graph/21_svgFrame.ts")
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100"><rect id="a" x="10" y="10" width="40" height="40"/><rect id="b" x="210" y="10" width="40" height="40"/><path id="ab" d="M50 30 L210 30"/></svg>'
+  const input = { svg, locator: "example.svg", viewport: { width: 600, height: 300 } }
+  const plain = svgFrame(document, input)
+  expect(Object.keys(plain.graph)).toEqual(["svg"])
+  const frame = svgFrame(document, { ...input, graph: {
+    a: { id: "a", type: "node" }, b: { id: "b", type: "node" },
+    ab: { id: "ab", type: "edge", fromId: "a", toId: "b", direction: "forward" },
+  }, bindings: [
+    { elementId: "a", graphId: "a", role: "actor-shape", ordinal: 0 },
+    { elementId: "b", graphId: "b", role: "actor-shape", ordinal: 0 },
+    { elementId: "ab", graphId: "ab", role: "message-line", ordinal: 0 },
+  ] })
+  expect(frame.geometry.boundsById.a).toEqual({ x: 10, y: 10, width: 40, height: 40 })
+  expect(frame.presentation.sealedSvgArtifactsByRootId.svg.source).toEqual({ language: "svg", locator: "example.svg", text: svg })
+  expect(() => svgFrame(document, { ...input, svg: "<svg/>" })).toThrow("viewBox")
+  expect(() => svgFrame(document, { ...input, bindings: [{ elementId: "missing", graphId: "svg", role: "actor-shape", ordinal: 0 }] })).toThrow("Missing bound SVG element")
+  const host = document.createElement("div"); host.style.cssText = "width:600px;height:300px"; document.body.appendChild(host)
+  const doc = createDocumentGraphFrameResource(host)
+  doc.applyTheme("dark")
+  doc.render(frame, { enterIds: [], updateIds: [], exitIds: [] })
+  expect(getComputedStyle(host.querySelector("#a")!).fill).toBe("rgb(30, 41, 59)")
+  doc.unsubscribe()
+  const renderer = createCytoscapeGraphFrameResource(host)
+  try {
+    renderer.render(frame, { enterIds: [], updateIds: [], exitIds: [] })
+    expect({ nodes: renderer.cy.nodes(".graph-actor-shape").length, edges: renderer.cy.edges().length }).toEqual({ nodes: 2, edges: 1 })
+  } finally { renderer.unsubscribe(); host.remove() }
+})

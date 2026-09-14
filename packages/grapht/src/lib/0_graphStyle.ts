@@ -28,6 +28,8 @@ export type GraphStyle = {
   messageText: string
   messageTextBackground: string
   messageLine: string
+  /** Index 0 is the hovered item; subsequent entries are hop distances. */
+  hopColors?: readonly string[]
   focusBorder: string
   focusBackground: string
   headerBackground: string
@@ -62,8 +64,9 @@ export const GRAPH_STYLES: Readonly<Record<GraphTheme, GraphStyle>> = {
     messageText: "#111827",
     messageTextBackground: "#ffffff",
     messageLine: "#475569",
+    hopColors: ["#b45309", "#0369a1", "#15803d", "#c2410c", "#b91c1c"],
     focusBorder: "#fbbf24",
-    focusBackground: "#334155",
+    focusBackground: "#eff6ff",
     headerBackground: "#172554",
     headerBorder: "#93c5fd",
     headerText: "#f8fafc",
@@ -94,6 +97,7 @@ export const GRAPH_STYLES: Readonly<Record<GraphTheme, GraphStyle>> = {
     messageText: "#e2e8f0",
     messageTextBackground: "#0b1220",
     messageLine: "#94a3b8",
+    hopColors: ["#fbbf24", "#38bdf8", "#4ade80", "#fb923c", "#f87171"],
     focusBorder: "#fbbf24",
     focusBackground: "#1e293b",
     headerBackground: "#0f172a",
@@ -113,4 +117,10 @@ export interface GraphStyleResource {
 /** Resolve a preset name once at the renderer boundary. Custom palettes are read without mutation. */
 export function graphStyleOf(style: GraphStyleInput): GraphStyle {
   return typeof style === "string" ? GRAPH_STYLES[style] : style
+}
+
+/** Reuse the final palette color for deeper hops; opacity still expresses increasing distance. */
+export function graphHopColor(style: GraphStyle, hop: number): string {
+  const colors = style.hopColors ?? []
+  return colors[Math.min(colors.length - 1, Math.max(0, Math.floor(hop)))] ?? style.focusBorder
 }

@@ -1,3 +1,4 @@
+import { graphHopColor, GRAPH_STYLES } from "../../src/lib/0_graphStyle.js"
 import type { WheelSettings } from "../../src/lib/1_wheelCamera.js"
 import { hoverOpacity } from "../../src/2_graph/16_neighborhood.js"
 import { graphStyleOf, type GraphStyle, type GraphStyleInput } from "../../src/lib/0_graphStyle.js"
@@ -153,12 +154,21 @@ export function createDocumentGraphFrameResource(
   host.addEventListener("pointerup", onPointerUp)
   host.addEventListener("pointercancel", onPointerUp)
 
+  let currentHops: Readonly<Record<string, number>> = {}
+  const originalPaint = new Map<SVGElement, { property: string; value: string; priority: string }>()
   let committedFocus: ReadonlySet<string> = new Set()
   const applyHover = (hops: Readonly<Record<string, number>>): void => {
+    currentHops = hops
     const active = Object.keys(hops).length > 0
     for (const [element, id] of boundElements) {
       element.classList.toggle("graph-focused", committedFocus.has(id) || hops[id] !== undefined)
       element.style.opacity = String(hoverOpacity(hops[id], active))
+      const property = ["text", "tspan"].includes(element.tagName.toLowerCase()) ? "fill" : "stroke"
+      if (!originalPaint.has(element)) originalPaint.set(element, { property, value: element.style.getPropertyValue(property), priority: element.style.getPropertyPriority(property) })
+      const original = originalPaint.get(element)!
+      if (hops[id] !== undefined) element.style.setProperty(property, graphHopColor(theme ?? GRAPH_STYLES.light, hops[id]), "important")
+      else if (original.value) element.style.setProperty(original.property, original.value, original.priority)
+      else element.style.removeProperty(original.property)
     }
   }
   return {
@@ -178,9 +188,10 @@ export function createDocumentGraphFrameResource(
         root.style.display = "block"
         host.appendChild(root)
         boundElements.clear()
+        originalPaint.clear()
         for (const binding of artifact.bindings ?? []) {
           const element = root.querySelector<SVGElement>(`[id="${CSS.escape(binding.elementId)}"]`)
-          if (element) { boundElements.set(element, binding.graphId); element.dataset.graphId = binding.graphId }
+          if (element) { boundElements.set(element, binding.graphId); element.dataset.graphId = binding.graphId; element.dataset.graphRole = binding.role }
         }
         for (const [elementId, graphId] of Object.entries(artifact.graphIdByElementId ?? {})) {
           const element = root.querySelector<SVGElement>(`[id="${CSS.escape(elementId)}"]`)
@@ -199,6 +210,7 @@ export function createDocumentGraphFrameResource(
       host.style.background = theme.canvasBackground
       stickyOverlay.applyTheme(theme)
       if (root) applySvgStyle(root, theme)
+      applyHover(currentHops)
     },
     applyCamera(next) { unsubscribeMomentum(); applyCamera(next) },
     applySticky: stickyOverlay.applySticky,
@@ -208,6 +220,7 @@ export function createDocumentGraphFrameResource(
       host.removeEventListener("pointerover", onHover)
       host.removeEventListener("pointerleave", onLeave)
       boundElements.clear()
+      originalPaint.clear()
       host.removeEventListener("wheel", onWheel)
       host.removeEventListener("pointerdown", onPointerDown)
       host.removeEventListener("pointermove", onPointerMove)
