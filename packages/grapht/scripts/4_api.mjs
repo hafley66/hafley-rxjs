@@ -10,6 +10,9 @@ const result = generateApi({
   pkg: PKG,
   barrel: "src/index.ts",
   modules: [
+    "src/lib/0_graphStyle.ts",
+    "src/lib/1_graphStylesheet.ts",
+    "src/2_graph/15_groupLayout.ts",
     "src/2_graph/0_frame.ts",
     "src/2_graph/1_fitCamera.ts",
     "src/2_graph/2_geometryScope.ts",

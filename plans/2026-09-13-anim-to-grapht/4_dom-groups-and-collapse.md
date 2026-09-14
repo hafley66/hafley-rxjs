@@ -18,3 +18,15 @@ function projectGroups(graph, geometry, collapsedIds): GroupProjection {
 - Existing gap: anim canvas uses the collapse plugin; its CSS collapse methods are no-ops. Sequence vertical collapse does not establish arbitrary graph collapse behavior.
 
 References: [anim DOM renderer](/Users/chrishafley/projects/anim/src/CssGraph.ts), [canvas collapse wiring](/Users/chrishafley/projects/anim/src/AtlasPanel.tsx), [grapht sealed scopes](/Users/chrishafley/projects/hafley-rxjs/packages/grapht/src/2_graph/2_geometryScope.ts), [sequence projection](/Users/chrishafley/projects/hafley-rxjs/packages/grapht/src/1_sequence/5_collapse.ts), [geometry translation](/Users/chrishafley/projects/hafley-rxjs/packages/grapht/src/2_graph/5_translateGeometry.ts).
+
+
+## Configurable layout ownership
+
+Policy core and interactive lab implemented; large-sequence integration remains open.
+
+- Each group starts automatic. A completed manual move switches only that group to manual.
+- Collapse permits automatic placement of its collapsed representation.
+- Toggle **auto layout on expand**: checked resumes automatic placement; unchecked restores the saved manual arrangement.
+- The toggle affects expansion, not the current open arrangement. Saved positions are retained in both branches.
+- Local positions and stable group identity belong to the caller; source reconciliation and undo remain separate.
+- Evidence: `src/2_graph/15_groupLayout.ts`, `tests/15_groupLayout.test.ts`, and `adapters/2_render_cytoscape/proof/1_groupLayoutLab.ts`.

@@ -8,6 +8,9 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 
 | module | exports | what it is |
 | --- | --- | --- |
+| [src/lib/0_graphStyle.ts](#src-lib-0-graphstyle-ts) | 6 | Shared graph colors for native primitives, document SVG, and screen-space headers. |
+| [src/lib/1_graphStylesheet.ts](#src-lib-1-graphstylesheet-ts) | 2 | Cytoscape-compatible primitive rules are the shared style floor for canvas and SVG adapters. |
+| [src/2_graph/15_groupLayout.ts](#src-2-graph-15-grouplayout-ts) | 6 | Per-group automatic-layout ownership, with retained manual positions across collapse/expand. |
 | [src/2_graph/0_frame.ts](#src-2-graph-0-frame-ts) | 6 | Render a graph from explicit geometry, camera, and presentation state. |
 | [src/2_graph/1_fitCamera.ts](#src-2-graph-1-fitcamera-ts) | 1 |  |
 | [src/2_graph/2_geometryScope.ts](#src-2-graph-2-geometryscope-ts) | 5 |  |
@@ -21,6 +24,221 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 | [src/5_history/0_journal.ts](#src-5-history-0-journal-ts) | 6 |  |
 | [src/5_history/1_gitWalk.ts](#src-5-history-1-gitwalk-ts) | 1 |  |
 | [src/5_history/2_cli.ts](#src-5-history-2-cli-ts) | 1 |  |
+
+## src/lib/0_graphStyle.ts
+
+Shared graph colors for native primitives, document SVG, and screen-space headers.
+
+| export | kind |
+| --- | --- |
+| [`GraphTheme`](#src-lib-0-graphstyle-ts-graphtheme) | type |
+| [`GraphStyle`](#src-lib-0-graphstyle-ts-graphstyle) | type |
+| [`GRAPH_STYLES`](#src-lib-0-graphstyle-ts-graph-styles) | const |
+| [`GraphStyleInput`](#src-lib-0-graphstyle-ts-graphstyleinput) | type |
+| [`GraphStyleResource`](#src-lib-0-graphstyle-ts-graphstyleresource) | interface |
+| [`graphStyleOf`](#src-lib-0-graphstyle-ts-graphstyleof) | function |
+
+### `GraphTheme` {#src-lib-0-graphstyle-ts-graphtheme}
+
+`GraphTheme` is declared at `src/lib/0_graphStyle.ts:2`.
+
+```ts
+export type GraphTheme = "light" | "dark"
+```
+
+### `GraphStyle` {#src-lib-0-graphstyle-ts-graphstyle}
+
+`GraphStyle` is declared at `src/lib/0_graphStyle.ts:5`.
+
+Complete renderer-neutral palette. Spread a preset to customize individual colors.
+
+```ts
+export type GraphStyle = {
+  canvasBackground: string
+  ribbon: { fill: string; stroke: string; text: string }
+  group: { fill: string; stroke: string; text: string }
+  nodeBackground: string
+  nodeBorder: string
+  nodeText: string
+  nodeOutline: string
+  actorBackground: string
+  actorBorder: string
+  actorText: string
+  lifelineBackground: string
+  groupFrameBorder: string
+  activationBackground: string
+  activationBorder: string
+  noteBackground: string
+  noteBorder: string
+  noteText: string
+  parentBackground: string
+  parentBorder: string
+  edgeLine: string
+  edgeText: string
+  edgeTextBackground: string
+  messageText: string
+  messageTextBackground: string
+  messageLine: string
+  focusBorder: string
+  focusBackground: string
+  headerBackground: string
+  headerBorder: string
+  headerText: string
+}
+
+export function graphStyleOf(style: GraphStyleInput): GraphStyle
+```
+
+### `GRAPH_STYLES` {#src-lib-0-graphstyle-ts-graph-styles}
+
+`GRAPH_STYLES` is declared at `src/lib/0_graphStyle.ts:38`.
+
+```ts
+GRAPH_STYLES: Readonly<Record<GraphTheme, GraphStyle>>
+```
+
+### `GraphStyleInput` {#src-lib-0-graphstyle-ts-graphstyleinput}
+
+`GraphStyleInput` is declared at `src/lib/0_graphStyle.ts:106`.
+
+Both renderer resources accept the same preset name or complete caller-owned palette.
+
+```ts
+export type GraphStyleInput = GraphTheme | GraphStyle
+
+export function graphStyleOf(style: GraphStyleInput): GraphStyle
+```
+
+### `GraphStyleResource` {#src-lib-0-graphstyle-ts-graphstyleresource}
+
+`GraphStyleResource` is declared at `src/lib/0_graphStyle.ts:108`.
+
+```ts
+export interface GraphStyleResource {
+  /** Recolor the current view without replacing graph geometry, camera, or source artifact. */
+  applyTheme(style: GraphStyleInput): void
+}
+```
+
+### `graphStyleOf` {#src-lib-0-graphstyle-ts-graphstyleof}
+
+`graphStyleOf` is declared at `src/lib/0_graphStyle.ts:114`.
+
+Resolve a preset name once at the renderer boundary. Custom palettes are read without mutation.
+
+```ts
+graphStyleOf: (style: GraphStyleInput) => GraphStyle
+```
+
+## src/lib/1_graphStylesheet.ts
+
+Cytoscape-compatible primitive rules are the shared style floor for canvas and SVG adapters.
+
+| export | kind |
+| --- | --- |
+| [`GraphStyleRule`](#src-lib-1-graphstylesheet-ts-graphstylerule) | type |
+| [`graphStylesheet`](#src-lib-1-graphstylesheet-ts-graphstylesheet) | function |
+
+### `GraphStyleRule` {#src-lib-1-graphstylesheet-ts-graphstylerule}
+
+`GraphStyleRule` is declared at `src/lib/1_graphStylesheet.ts:3`.
+
+```ts
+export type GraphStyleRule = { selector: string; style: Record<string, unknown> }
+
+export function graphStylesheet(c: GraphStyle): GraphStyleRule[]
+```
+
+### `graphStylesheet` {#src-lib-1-graphstylesheet-ts-graphstylesheet}
+
+`graphStylesheet` is declared at `src/lib/1_graphStylesheet.ts:6`.
+
+Native Cytoscape consumes these rules directly. SVG maps supported primitive paint properties.
+
+```ts
+graphStylesheet: (c: GraphStyle) => GraphStyleRule[]
+```
+
+## src/2_graph/15_groupLayout.ts
+
+Per-group automatic-layout ownership, with retained manual positions across collapse/expand.
+
+| export | kind |
+| --- | --- |
+| [`GroupPositions`](#src-2-graph-15-grouplayout-ts-grouppositions) | type |
+| [`GroupLayoutState`](#src-2-graph-15-grouplayout-ts-grouplayoutstate) | type |
+| [`GroupLayoutEvent`](#src-2-graph-15-grouplayout-ts-grouplayoutevent) | type |
+| [`reduceGroupLayout`](#src-2-graph-15-grouplayout-ts-reducegrouplayout) | function |
+| [`groupAllowsAutoLayout`](#src-2-graph-15-grouplayout-ts-groupallowsautolayout) | function |
+| [`groupPositionsOf`](#src-2-graph-15-grouplayout-ts-grouppositionsof) | function |
+
+### `GroupPositions` {#src-2-graph-15-grouplayout-ts-grouppositions}
+
+`GroupPositions` is declared at `src/2_graph/15_groupLayout.ts:4`.
+
+```ts
+export type GroupPositions = Readonly<Record<GraphId, GraphPoint>>
+
+export function groupPositionsOf(state: GroupLayoutState, groupId: GraphId, automatic: GroupPositions): GroupPositions
+```
+
+### `GroupLayoutState` {#src-2-graph-15-grouplayout-ts-grouplayoutstate}
+
+`GroupLayoutState` is declared at `src/2_graph/15_groupLayout.ts:5`.
+
+```ts
+export type GroupLayoutState = {
+  /** UI toggle: checked means expansion resumes automatic layout. */
+  autoOnExpand: boolean
+  groups: Readonly<Record<GraphId, { collapsed: boolean; mode: "auto" | "manual"; manual?: GroupPositions }>>
+}
+
+export function reduceGroupLayout(state: GroupLayoutState, event: GroupLayoutEvent): GroupLayoutState
+```
+
+### `GroupLayoutEvent` {#src-2-graph-15-grouplayout-ts-grouplayoutevent}
+
+`GroupLayoutEvent` is declared at `src/2_graph/15_groupLayout.ts:10`.
+
+```ts
+export type GroupLayoutEvent =
+
+export function reduceGroupLayout(state: GroupLayoutState, event: GroupLayoutEvent): GroupLayoutState
+```
+
+### `reduceGroupLayout` {#src-2-graph-15-grouplayout-ts-reducegrouplayout}
+
+`reduceGroupLayout` is declared at `src/2_graph/15_groupLayout.ts:22`.
+
+Caller-owned state, suitable for a signal or event-log fold. Manual move means one completed
+gesture and supplies the affected group's full local arrangement. Other groups remain unchanged.
+Collapse permits automatic placement of the collapsed representation. Expansion uses the current
+toggle; neither toggle branch deletes the saved manual arrangement. Identity reconciliation,
+layout execution, and undo cursor remain caller-owned.
+
+```ts
+reduceGroupLayout: (state: GroupLayoutState, event: GroupLayoutEvent) => GroupLayoutState
+```
+
+### `groupAllowsAutoLayout` {#src-2-graph-15-grouplayout-ts-groupallowsautolayout}
+
+`groupAllowsAutoLayout` is declared at `src/2_graph/15_groupLayout.ts:34`.
+
+Whether the group's current representation may be laid out automatically. Unknown groups start automatic.
+
+```ts
+groupAllowsAutoLayout: (state: GroupLayoutState, groupId: string) => boolean
+```
+
+### `groupPositionsOf` {#src-2-graph-15-grouplayout-ts-grouppositionsof}
+
+`groupPositionsOf` is declared at `src/2_graph/15_groupLayout.ts:40`.
+
+Resolve local child positions after the caller has obtained an automatic arrangement.
+
+```ts
+groupPositionsOf: (state: GroupLayoutState, groupId: string, automatic: Readonly<Record<string, GraphPoint>>) => Readonly<Record<string, GraphPoint>>
+```
 
 ## src/2_graph/0_frame.ts
 

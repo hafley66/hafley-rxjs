@@ -1,5 +1,8 @@
+import { graphStylesheet } from "../../src/lib/1_graphStylesheet.js"
+import { GRAPH_STYLES, graphStyleOf, type GraphStyle, type GraphStyleInput } from "../../src/lib/0_graphStyle.js"
+import { applySvgStyle } from "../../src/lib/2_svgStyle.js"
 import { WheelMomentum } from "../../src/lib/2_wheelMomentum.js"
-import { createStickyOverlay, type GraphTheme, type StickyOptions } from "../../src/lib/0_stickyOverlay.js"
+import { createStickyOverlay, type StickyOptions } from "../../src/lib/0_stickyOverlay.js"
 import cytoscape, { type Core, type ElementDefinition } from "cytoscape"
 import createDOMPurify from "dompurify"
 import { foreignObjectsToText } from "../../src/2_graph/13_foreignObjectText.js"
@@ -214,127 +217,7 @@ function definitions(frame: GraphFrame, sourcePrimitives: readonly BoundPrimitiv
   return [...nodes, ...edges, ...primitiveDefinitions(frame, sourcePrimitives)]
 }
 
-type CytoscapeThemeTokens = {
-  nodeBackground: string
-  nodeBorder: string
-  nodeText: string
-  nodeOutline: string
-  actorBackground: string
-  actorBorder: string
-  actorText: string
-  lifelineBackground: string
-  groupFrameBorder: string
-  activationBackground: string
-  activationBorder: string
-  noteBackground: string
-  noteBorder: string
-  noteText: string
-  parentBackground: string
-  parentBorder: string
-  edgeLine: string
-  edgeText: string
-  edgeTextBackground: string
-  messageText: string
-  messageTextBackground: string
-  messageLine: string
-  focusBorder: string
-  focusBackground: string
-  headerBackground: string
-  headerBorder: string
-  headerText: string
-}
-
-const CYTOSCAPE_THEME: Record<GraphTheme, CytoscapeThemeTokens> = {
-  light: {
-    nodeBackground: "#1e293b",
-    nodeBorder: "#93c5fd",
-    nodeText: "#f8fafc",
-    nodeOutline: "#10141c",
-    actorBackground: "#dbeafe",
-    actorBorder: "#3b82f6",
-    actorText: "#111827",
-    lifelineBackground: "#64748b",
-    groupFrameBorder: "#64748b",
-    activationBackground: "#c4b5fd",
-    activationBorder: "#8b5cf6",
-    noteBackground: "#fef3c7",
-    noteBorder: "#d97706",
-    noteText: "#111827",
-    parentBackground: "#172554",
-    parentBorder: "#64748b",
-    edgeLine: "#94a3b8",
-    edgeText: "#f8fafc",
-    edgeTextBackground: "#10141c",
-    messageText: "#111827",
-    messageTextBackground: "#ffffff",
-    messageLine: "#475569",
-    focusBorder: "#fbbf24",
-    focusBackground: "#334155",
-    headerBackground: "#172554",
-    headerBorder: "#93c5fd",
-    headerText: "#f8fafc",
-  },
-  dark: {
-    nodeBackground: "#0f172a",
-    nodeBorder: "#60a5fa",
-    nodeText: "#e2e8f0",
-    nodeOutline: "#020617",
-    actorBackground: "#1e293b",
-    actorBorder: "#60a5fa",
-    actorText: "#e2e8f0",
-    lifelineBackground: "#475569",
-    groupFrameBorder: "#64748b",
-    activationBackground: "#4c1d95",
-    activationBorder: "#a78bfa",
-    noteBackground: "#422006",
-    noteBorder: "#d97706",
-    noteText: "#fde68a",
-    parentBackground: "#0f172a",
-    parentBorder: "#475569",
-    edgeLine: "#64748b",
-    edgeText: "#e2e8f0",
-    edgeTextBackground: "#0b1220",
-    messageText: "#e2e8f0",
-    messageTextBackground: "#0b1220",
-    messageLine: "#94a3b8",
-    focusBorder: "#fbbf24",
-    focusBackground: "#1e293b",
-    headerBackground: "#0f172a",
-    headerBorder: "#64748b",
-    headerText: "#e2e8f0",
-  },
-}
-
-function cytoscapeStyle(theme: GraphTheme): unknown[] {
-  const c = CYTOSCAPE_THEME[theme]
-  return [
-    { selector: "node", style: { label: "data(label)", backgroundColor: c.nodeBackground, borderColor: c.nodeBorder, borderWidth: 1, color: c.nodeText, fontSize: 12, textOutlineColor: c.nodeOutline, textOutlineWidth: 2 } },
-    { selector: "node[width][height]", style: { width: "data(width)", height: "data(height)" } },
-    { selector: "node[nativeKind = 'actor-shape']", style: { shape: "roundrectangle", backgroundColor: c.actorBackground, borderColor: c.actorBorder, color: c.actorText, textOutlineWidth: 0, textHalign: "center", textValign: "center" } },
-    { selector: "node[nativeKind = 'lifeline']", style: { shape: "rectangle", backgroundColor: c.lifelineBackground, borderWidth: 0 } },
-    { selector: "node[nativeKind = 'group-frame']", style: { shape: "rectangle", backgroundOpacity: 0.04, borderColor: c.groupFrameBorder } },
-    { selector: "node[nativeKind = 'group-label']", style: { shape: "rectangle", backgroundOpacity: 0, borderWidth: 0, textHalign: "center", textValign: "center" } },
-    { selector: "node[nativeKind = 'activation']", style: { shape: "rectangle", backgroundColor: c.activationBackground, borderColor: c.activationBorder } },
-    { selector: "node[nativeKind = 'note-shape']", style: { shape: "rectangle", backgroundColor: c.noteBackground, borderColor: c.noteBorder, color: c.noteText, textOutlineWidth: 0, textHalign: "center", textValign: "center" } },
-    { selector: "node:parent", style: { backgroundColor: c.parentBackground, backgroundOpacity: 0.38, borderColor: c.parentBorder, borderWidth: 1, padding: 24 } },
-    { selector: "edge", style: { label: "data(label)", curveStyle: "bezier", lineColor: c.edgeLine, targetArrowColor: c.edgeLine, sourceArrowColor: c.edgeLine, color: c.edgeText, fontSize: 12, textBackgroundColor: c.edgeTextBackground, textBackgroundOpacity: 0.86, textBackgroundPadding: 2 } },
-    { selector: ".graph-sealed-root", style: { opacity: 0, events: "no" } },
-    { selector: ".graph-endpoint-anchor", style: { width: "data(width)", height: "data(height)", opacity: 0 } },
-    { selector: ".graph-route-endpoint", style: { width: 1, height: 1, opacity: 0 } },
-    { selector: ".graph-native-message", style: { curveStyle: "straight", color: c.messageText, textBackgroundColor: c.messageTextBackground, lineColor: c.messageLine, targetArrowColor: c.messageLine, width: 1, zIndex: 3, zIndexCompare: "manual" } },
-    { selector: ".graph-native-segments", style: { curveStyle: "segments", segmentWeights: "data(segmentWeights)", segmentDistances: "data(segmentDistances)", edgeDistances: "node-position" } },
-    { selector: ".graph-group-frame", style: { zIndex: 0, zIndexCompare: "manual" } },
-    { selector: ".graph-lifeline", style: { zIndex: 1, zIndexCompare: "manual" } },
-    { selector: "edge[direction = 'forward']", style: { targetArrowShape: "triangle" } },
-    { selector: "edge[direction = 'both']", style: { sourceArrowShape: "triangle", targetArrowShape: "triangle" } },
-    { selector: "node.graph-focused", style: { borderColor: c.focusBorder, borderWidth: 3, backgroundColor: c.focusBackground } },
-    { selector: "edge.graph-focused", style: { lineColor: c.focusBorder, targetArrowColor: c.focusBorder, sourceArrowColor: c.focusBorder, width: 3 } },
-    { selector: ".graph-hidden", style: { display: "none" } },
-  ]
-}
-
-function headerViewStyle(theme: GraphTheme, left: number, top: number, width: number, height: number): string {
-  const c = CYTOSCAPE_THEME[theme]
+function headerViewStyle(c: GraphStyle, left: number, top: number, width: number, height: number): string {
   return `position:absolute;box-sizing:border-box;left:${left}px;top:${top}px;width:${width}px;height:${height}px;pointer-events:none;background:${c.headerBackground};border:1px solid ${c.headerBorder};border-radius:3px;color:${c.headerText};font:600 12px/1.2 system-ui,sans-serif;padding:2px 6px;white-space:nowrap`
 }
 
@@ -342,7 +225,7 @@ export type CytoscapeGraphFrameResource = GraphFrameResource & {
   cy: Core
   applySticky: (options: Pick<StickyOptions, "ribbon" | "groups">) => void
   /** Recolor native primitives and headers while retaining the current camera and geometry. */
-  applyTheme: (theme: GraphTheme) => void
+  applyTheme: (theme: GraphStyleInput) => void
   headerViews: ReadonlyMap<string, HTMLElement>
   sealedSvgViews: ReadonlyMap<string, HTMLElement>
 }
@@ -360,7 +243,7 @@ export function createCytoscapeGraphFrameResource(
     styleEnabled: true,
     elements: [],
     layout: { name: "preset" },
-    style: cytoscapeStyle("light") as any,
+    style: graphStylesheet(GRAPH_STYLES.light) as any,
   })
   const headerLayer = host?.ownerDocument.createElement("div")
   const headerViews = new Map<string, HTMLElement>()
@@ -377,7 +260,8 @@ export function createCytoscapeGraphFrameResource(
     host.appendChild(sealedSvgLayer)
   }
   const stickyOverlay = host && sticky ? createStickyOverlay(host, sticky) : undefined
-  let theme: GraphTheme = "light"
+  let theme: GraphStyle = GRAPH_STYLES.light
+  let themed = false
   let applyingFrame = false
   let renderedGeometryRevision: string | undefined
   const primitivesByRevision = new Map<string, readonly SvgGraphPrimitive[]>()
@@ -464,13 +348,15 @@ export function createCytoscapeGraphFrameResource(
     cy,
     applySticky: options => stickyOverlay?.applySticky(options),
     applyTheme: next => {
-      theme = next
-      cy.style(cytoscapeStyle(next) as any)
-      if (host) {
-        if (next === "dark") host.style.background = "#0b1220"
-        else host.style.background = originalBackground
+      theme = graphStyleOf(next)
+      themed = true
+      cy.style(graphStylesheet(theme) as any)
+      if (host) host.style.background = theme.canvasBackground
+      stickyOverlay?.applyTheme(theme)
+      for (const view of sealedSvgViews.values()) {
+        const svg = view.querySelector("svg")
+        if (svg) applySvgStyle(svg, theme)
       }
-      stickyOverlay?.applyTheme(next)
       if (renderedFrame !== undefined) {
         for (const [id, view] of headerViews) {
           const bounds = renderedFrame.geometry.headerBoundsById[id]
@@ -478,7 +364,7 @@ export function createCytoscapeGraphFrameResource(
           const top = renderedFrame.presentation.stickyHeaders.find(placement => placement.id === id)?.top ?? 0
           view.setAttribute(
             "style",
-            headerViewStyle(next, bounds.x * cy.zoom() + cy.pan().x, top, bounds.width * cy.zoom(), bounds.height * cy.zoom()),
+            headerViewStyle(theme, bounds.x * cy.zoom() + cy.pan().x, top, bounds.width * cy.zoom(), bounds.height * cy.zoom()),
           )
         }
       }
@@ -589,6 +475,7 @@ export function createCytoscapeGraphFrameResource(
           view.dataset.graphId = rootId
           view.dataset.revisionId = artifact.revisionId
           const svg = sanitizedSvg(sealedSvgLayer.ownerDocument, artifact.svg)
+          if (themed) applySvgStyle(svg, theme)
           view.appendChild(svg)
           svg.style.position = "absolute"
           svg.style.left = `${artifact.sourceBounds.x}px`

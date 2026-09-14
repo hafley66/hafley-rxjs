@@ -1,3 +1,4 @@
+import { GRAPH_STYLES, graphStyleOf, type GraphStyle, type GraphStyleInput } from "./0_graphStyle.js"
 // Shared screen-space actor and group headers for document and Cytoscape views.
 import { layoutStickyRibbon, type RibbonItem } from "@hafley66/grapht-model"
 import { stackGroupHeaders, type GroupHeader } from "../2_graph/6_stackGroupHeaders.js"
@@ -13,20 +14,7 @@ export type StickyOptions = {
   groups?: boolean
 }
 
-export type GraphTheme = "light" | "dark"
-
-type StickyTokens = { fill: string; stroke: string; text: string }
-
-const STICKY_THEME: Record<GraphTheme, { ribbon: StickyTokens; group: StickyTokens }> = {
-  light: {
-    ribbon: { fill: "#E3E9FD", stroke: "#0D32B2", text: "#0A0F25" },
-    group: { fill: "#EDF0FD", stroke: "#0D32B2", text: "#0A0F25" },
-  },
-  dark: {
-    ribbon: { fill: "#1e293b", stroke: "#93c5fd", text: "#e2e8f0" },
-    group: { fill: "#172554", stroke: "#64748b", text: "#e2e8f0" },
-  },
-}
+export type { GraphTheme } from "./0_graphStyle.js"
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg"
 
@@ -55,7 +43,7 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
 
   let wantsRibbon = sticky.ribbon ?? true
   let wantsGroups = sticky.groups ?? true
-  let theme: GraphTheme = "light"
+  let theme: GraphStyle = GRAPH_STYLES.light
   const inset = sticky.inset ?? 8
   const fullWidth = sticky.fullWidth ?? 60
   const chipWidth = sticky.chipWidth ?? 32
@@ -87,7 +75,7 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
   ) => {
     const existing = store.get(id)
     if (existing !== undefined) return existing
-    const token = STICKY_THEME[theme][role]
+    const token = theme[role]
     const document = host.ownerDocument
     const group = document.createElementNS(SVG_NAMESPACE, "g")
     group.setAttribute("data-sticky-id", id)
@@ -109,7 +97,7 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
     store: Map<string, { group: SVGGElement; rect: SVGRectElement; text: SVGTextElement }>,
     role: "ribbon" | "group",
   ): void => {
-    const token = STICKY_THEME[theme][role]
+    const token = theme[role]
     for (const entry of store.values()) {
       entry.rect.setAttribute("fill", token.fill)
       entry.rect.setAttribute("stroke", token.stroke)
@@ -117,8 +105,8 @@ export function createStickyOverlay(host: HTMLElement, sticky: StickyOptions = {
     }
   }
 
-  const applyTheme = (next: GraphTheme): void => {
-    theme = next
+  const applyTheme = (next: GraphStyleInput): void => {
+    theme = graphStyleOf(next)
     recolor(painted, "ribbon")
     recolor(paintedGroups, "group")
   }

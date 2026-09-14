@@ -26,8 +26,14 @@ A feature moves out of this section when its exported contract, connected caller
 
 ## Current proof integration
 
-Native sequence rendering, shared sticky overlays, wheel pan/pinch momentum, Cytoscape dark mode,
+Native sequence rendering, shared sticky overlays, wheel pan/pinch momentum, shared DOM/Cytoscape themes,
 and the trace-backed widget are implemented. The architecture fixture remains document-only.
 Manual movement is disabled for native sequence shapes. Focus events are emitted but visible hover
 effects are not connected. The plans above still cover the movement journal, optional persistence,
 neighborhood combinations, and hop-opacity gradients.
+
+
+The group-layout policy core and the interactive policy lab now implement automatic layout until a
+manual move, per group, plus a toggle for automatic layout on expansion. Saved manual positions remain
+available when toggling back. Large-sequence group movement/collapse, source reconciliation, routing,
+and undo integration remain open; the lab does not establish those features.

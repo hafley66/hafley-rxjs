@@ -56,6 +56,7 @@ it("rethemes native sequence canvas and sticky overlays without moving the camer
       background: host.style.background,
     })
     const cameraBefore = { pan: native.cy.pan(), zoom: native.cy.zoom() }
+    native.applyTheme("light")
     const light = sample()
     native.applyTheme("dark")
     const dark = sample()
@@ -89,7 +90,51 @@ it("rethemes native sequence canvas and sticky overlays without moving the camer
       }
     `)
     expect(dark.background).not.toBe("")
-    expect(restored.background).toBe("")
+    expect(restored.background).toBe("rgb(253, 253, 251)")
     expect({ pan: native.cy.pan(), zoom: native.cy.zoom() }).toEqual(cameraBefore)
   } finally { native.unsubscribe(); host.remove() }
+})
+
+it("shares presets and caller palettes across DOM and native renderers without changing geometry", async () => {
+  const { GRAPH_STYLES } = await import("../../src/lib/0_graphStyle.js")
+  const frame = await sequenceFrame({ width: 1280, height: 800 })
+  const hosts = [document.createElement("div"), document.createElement("div")]
+  for (const host of hosts) { host.style.cssText = "position:relative;width:1280px;height:800px"; document.body.append(host) }
+  const doc = createDocumentGraphFrameResource(hosts[0], undefined, { inset: 44 })
+  const cy = createCytoscapeGraphFrameResource(hosts[1], undefined, { inset: 44 })
+  try {
+    for (const renderer of [doc, cy]) renderer.render(frame, { enterIds: ["seq"], updateIds: [], exitIds: [] })
+    const svg = hosts[0].querySelector("svg:not(:has([data-sticky-ribbon]))")!
+    const viewBox = svg.getAttribute("viewBox")
+    const positions = cy.cy.nodes().map(node => ({ id: node.id(), ...node.position() }))
+    const samples = []
+    for (const theme of ["dark", "light", { ...GRAPH_STYLES.dark, actorBackground: "#123456", messageLine: "#abcdef" }] as const) {
+      doc.applyTheme(theme); cy.applyTheme(theme)
+      const actor = svg.querySelector("rect.actor")!
+      const message = svg.querySelector(".messageLine0")!
+      const sample = { domActor: getComputedStyle(actor).fill, cyActor: cy.cy.$(".graph-actor-shape").first().style("background-color").replaceAll(",", ", "), domMessage: getComputedStyle(message).stroke, cyMessage: cy.cy.$(".graph-native-message").first().style("line-color").replaceAll(",", ", ") }
+      expect(sample.domActor).toBe(sample.cyActor)
+      expect(sample.domMessage).toBe(sample.cyMessage)
+      samples.push([sample.domActor, sample.domMessage])
+      expect(svg.getAttribute("viewBox")).toBe(viewBox)
+      expect(cy.cy.nodes().map(node => ({ id: node.id(), ...node.position() }))).toEqual(positions)
+    }
+    expect(samples).toMatchInlineSnapshot(`
+      [
+        [
+          "rgb(30, 41, 59)",
+          "rgb(148, 163, 184)",
+        ],
+        [
+          "rgb(219, 234, 254)",
+          "rgb(71, 85, 105)",
+        ],
+        [
+          "rgb(18, 52, 86)",
+          "rgb(171, 205, 239)",
+        ],
+      ]
+    `)
+    expect(hosts[0].querySelectorAll("style[data-grapht-style]").length).toBe(1)
+  } finally { doc.unsubscribe(); cy.unsubscribe(); hosts.forEach(host => host.remove()) }
 })

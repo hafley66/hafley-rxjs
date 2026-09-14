@@ -95,12 +95,14 @@ const perf = performanceReadout(host)
 perf.el.style.cssText += ";position:fixed;right:8px;bottom:8px;z-index:10"
 document.body.appendChild(perf.el)
 
+let layoutLab: ReturnType<typeof import("./1_groupLayoutLab.ts").createGroupLayoutLab> | undefined
+
 const painted$ = merge(
   perf.painted$,
   readout.$.pipe(tap(text => { readoutElement.textContent = text })),
   view.ribbon.$.pipe(tap(on => { ribbonToggle.checked = on })),
   view.groups.$.pipe(tap(on => { groupsToggle.checked = on })),
-  view.dark.$.pipe(tap(on => { darkToggle.checked = on !== false })),
+  view.dark.$.pipe(tap(on => { darkToggle.checked = on !== false; layoutLab?.applyTheme(on === false ? "light" : "dark") })),
   mounted$.pipe(
     switchMap(current =>
       merge(
@@ -138,11 +140,12 @@ async function mount(next: Mode): Promise<void> {
   host.replaceChildren()
   failure.$("")
   ui.mode.$(next)
-  darkToggle.disabled = next !== "cytoscape"
+
   resource =
     next === "document"
       ? createDocumentGraphFrameResource(host, { cameraInput$ }, { ...view.$(), inset: 44, fullWidth: 70, chipWidth: 34, gap: 4 })
       : await importCytoscape(host)
+  resource?.applyTheme?.(view.dark.$() === false ? "light" : "dark")
   const rootId = ui.source.$() === "arch" ? "epic" : "seq"
   resource?.render(frame, { enterIds: [rootId], updateIds: [], exitIds: [] })
   cameraInput$.next(frame.camera)
@@ -177,3 +180,16 @@ document.querySelector("#fit")?.addEventListener("click", () => {
   resource?.render(frame, { enterIds: [rootId], updateIds: [], exitIds: [] })
   cameraInput$.next(frame.camera)
 })
+
+
+let openingLab = false
+document.querySelector("#layout-lab")?.addEventListener("click", async () => {
+  if (openingLab) return
+  if (layoutLab) { layoutLab.el.hidden = false; layoutLab.applyTheme(view.dark.$() === false ? "light" : "dark"); return }
+  openingLab = true
+  try {
+    const { createGroupLayoutLab } = await import("./1_groupLayoutLab.ts")
+    layoutLab = createGroupLayoutLab(document.body, view.dark.$() === false ? "light" : "dark")
+  } finally { openingLab = false }
+})
+window.addEventListener("pagehide", () => { layoutLab?.unsubscribe(); layoutLab = undefined })

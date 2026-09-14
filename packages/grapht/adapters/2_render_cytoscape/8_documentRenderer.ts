@@ -1,3 +1,5 @@
+import { graphStyleOf, type GraphStyle, type GraphStyleInput } from "../../src/lib/0_graphStyle.js"
+import { applySvgStyle } from "../../src/lib/2_svgStyle.js"
 import { WheelMomentum } from "../../src/lib/2_wheelMomentum.js"
 import createDOMPurify from "dompurify"
 import { createStickyOverlay, type StickyOptions } from "../../src/lib/0_stickyOverlay.js"
@@ -13,6 +15,7 @@ export type DocumentRendererInteractions = {
 export type DocumentStickyOptions = StickyOptions
 
 type DocumentGraphFrameResource = GraphFrameResource & {
+  applyTheme: (style: GraphStyleInput) => void
   applyCamera: (camera: GraphCamera) => void
   applySticky: (sticky: Pick<DocumentStickyOptions, "ribbon" | "groups">) => void
   legend: GestureLegendHandle
@@ -60,6 +63,8 @@ export function createDocumentGraphFrameResource(
   interactions?: DocumentRendererInteractions,
   sticky: DocumentStickyOptions = {},
 ): DocumentGraphFrameResource {
+  const originalBackground = host.style.background
+  let theme: GraphStyle | undefined
   let camera: GraphCamera | undefined
   let root: SVGSVGElement | undefined
   let revisionId: string | undefined
@@ -139,6 +144,7 @@ export function createDocumentGraphFrameResource(
       if (revisionId !== artifact.revisionId) {
         root?.remove()
         root = sanitizedSvg(host.ownerDocument, artifact.svg)
+        if (theme) applySvgStyle(root, theme)
         root.setAttribute("width", "100%")
         root.setAttribute("height", "100%")
         root.style.userSelect = "text"
@@ -148,6 +154,12 @@ export function createDocumentGraphFrameResource(
       }
       stickyOverlay.render(frame)
       applyCamera(frame.camera)
+    },
+    applyTheme(next) {
+      theme = graphStyleOf(next)
+      host.style.background = theme.canvasBackground
+      stickyOverlay.applyTheme(theme)
+      if (root) applySvgStyle(root, theme)
     },
     applyCamera(next) { unsubscribeMomentum(); applyCamera(next) },
     applySticky: stickyOverlay.applySticky,
@@ -160,6 +172,7 @@ export function createDocumentGraphFrameResource(
       host.removeEventListener("pointerup", onPointerUp)
       host.removeEventListener("pointercancel", onPointerUp)
       root?.remove()
+      host.style.background = originalBackground
       root = undefined
       legend.remove()
       stickyOverlay.unsubscribe()

@@ -249,3 +249,7 @@ export {
 export { directoryBytes, hashFile, hashFileIfExists, sha256Hex } from "./0_bench/3_hash.js"
 export type { ProcessResult } from "./0_bench/4_process.js"
 export { measureCommand } from "./0_bench/4_process.js"
+
+export { GRAPH_STYLES, graphStyleOf, type GraphStyle, type GraphStyleInput, type GraphStyleResource, type GraphTheme } from "./lib/0_graphStyle.js"
+export { graphStylesheet, type GraphStyleRule } from "./lib/1_graphStylesheet.js"
+export { reduceGroupLayout, groupAllowsAutoLayout, groupPositionsOf, type GroupPositions, type GroupLayoutState, type GroupLayoutEvent } from "./2_graph/15_groupLayout.js"
