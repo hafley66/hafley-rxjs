@@ -1,5 +1,6 @@
 // pkg:options. Data only: everything here crosses vitest:provide (structured clone) into workers,
 // except `serve`, which only the vitest:globalSetup process reads (through process.env).
+import { workerBudget } from "./12_budget.js"
 import type { BrowserContextOptions, LaunchOptions } from "playwright"
 import type { InlineConfig } from "vite"
 
@@ -55,8 +56,9 @@ export interface VitestPlaywrightOptions {
   log?: { api?: boolean; page?: boolean; net?: boolean; failOnPageError?: boolean; failOnConsoleError?: boolean }
   serve?: ServeOptions
   testIdAttribute?: string
-  /** vitest test.maxWorkers when the user config leaves it unset. Default 2: every worker launches a browser, and
-   *  vitest's own default (cores - 1) puts that many chromiums on the host at t=0. A number or a "25%" string. */
+  /** vitest test.maxWorkers when the user config leaves it unset. Unset: `workerBudget().workers`, read at config
+   *  time from available memory and idle cores, floored at 1. Every worker launches a browser, and vitest's own
+   *  default (cores - 1) puts that many chromiums on the host at t=0. A number or a "25%" string pins it. */
   workers?: number | `${number}%`
 }
 
@@ -142,7 +144,7 @@ export function resolveOptions(o: VitestPlaywrightOptions = {}): ResolvedOptions
     },
     serveKind: o.serve?.kind,
     testIdAttribute: o.testIdAttribute ?? "data-testid",
-    workers: o.workers ?? 2,
+    workers: o.workers ?? Math.max(1, workerBudget().workers),
   }
 }
 

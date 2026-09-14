@@ -6,7 +6,7 @@ import { boot, URL } from "./0_bootstrap.js"
 
 describe("barrel", () => {
   it("exports exactly the public surface", () => {
-    vitestExpect(Object.keys(barrel).sort()).toEqual(["baselinePath", "describe", "expect", "it", "playwrightMatchers", "serializeExpectedText", "test", "vitestPlaywright"])
+    vitestExpect(Object.keys(barrel).sort()).toEqual(["BYTES_PER_WORKER", "availableMemoryBytes", "baselinePath", "describe", "expect", "it", "playwrightMatchers", "serializeExpectedText", "test", "vitestPlaywright", "workerBudget"])
     vitestExpect(Object.keys(barrel.playwrightMatchers).length).toBe(30)
   })
   test("test and expect from the barrel drive a page", async ({ page }) => {
@@ -16,7 +16,9 @@ describe("barrel", () => {
   })
   it("the plugin returns the tel:plugin shape", () => {
     const cfg = barrel.vitestPlaywright({ expect: { timeout: 1 } }).config({})
-    vitestExpect(cfg.test?.maxWorkers).toBe(2)
+    // The default is the live budget, floored at 1 and capped at half the cores.
+    vitestExpect(cfg.test?.maxWorkers).toBeGreaterThanOrEqual(1)
+    vitestExpect(cfg.test?.maxWorkers).toBe(Math.max(1, barrel.workerBudget().workers))
     vitestExpect(barrel.vitestPlaywright({ workers: "25%" }).config({}).test?.maxWorkers).toBe("25%")
     vitestExpect(barrel.vitestPlaywright().config({ test: { maxWorkers: 7 } }).test?.maxWorkers).toBe(7)
     vitestExpect(Object.keys(cfg.test ?? {}).sort()).toEqual(["globalSetup", "isolate", "maxWorkers", "provide", "runner", "setupFiles"])
