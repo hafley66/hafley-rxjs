@@ -164,3 +164,18 @@ Timing varies by device. Reproduce with
 `node adapters/2_render_cytoscape/proof/3_hoverProbe.mjs <proof-url>` from the Grapht package.
 The renderer browser suite checks label placement, wrapping, unchanged-hover writes, and unrelated
 actor invalidation independently of timing.
+
+## Ingest and hover coverage
+
+Sequence examples load source-parsed actor/message relations from generated fixture JSON;
+SVG supplies measured geometry and bindings. The D2 architecture example instead recovers
+endpoint IDs from D2-generated SVG classes. Generic SVG needs a graph and bindings sidecar
+for relational hover. Loading arbitrary `.d2` or `.mmd` files is not implemented in this proof.
+Sequence group nesting in the proof currently uses measured rectangle containment.
+
+Document hover paints the children of bound D2 shape groups directly so child-level source
+and theme strokes cannot override the highlight. Debug inspection passes pointer input through
+to the diagram in both editing and viewing modes. The production probe moves a real pointer
+between Alice and Archive in both paired source examples and both renderers, with debug
+inspection enabled, and checks the resulting distance fading. Browser tests additionally check
+computed primitive stroke colors and restoration after hover clears.

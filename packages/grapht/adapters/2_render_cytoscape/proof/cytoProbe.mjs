@@ -1,3 +1,4 @@
+import { verifyHoverInteraction } from "./4_hoverInteractionProbe.mjs"
 import { verifyMovement } from "./2_movementProbe.mjs"
 // Exercise the shipped chunks: a development-server import can hide UMD/global collisions.
 import { chromium, expect } from "@playwright/test"
@@ -239,6 +240,7 @@ try {
   await expect(lab.locator("[data-policy]")).toHaveText("A: manual · B: automatic")
   if (process.env.LAB_SCREENSHOT) await page.screenshot({ path: process.env.LAB_SCREENSHOT })
   await lab.locator("[data-close]").click()
+  await verifyHoverInteraction(page)
   await verifyMovement(page)
   expect(errors).toEqual([])
   console.log("Production proof passed: shared DOM/native themes, wheel momentum, native sequence, hover/debug modes, actor grouping, sequence collapse, and group layout expansion toggle.")

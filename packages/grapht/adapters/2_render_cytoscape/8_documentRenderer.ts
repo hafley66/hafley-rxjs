@@ -78,6 +78,7 @@ export function createDocumentGraphFrameResource(
   let camera: GraphCamera | undefined
   let root: SVGSVGElement | undefined
   const boundElements = new Map<SVGElement, string>()
+  const hoverElements = new Map<SVGElement, string>()
   const movementBase: SvgMovementBase = new Map()
   let moving: { id: string; pointerId: number; start: { x: number; y: number }; dx: number; dy: number } | undefined
   let hovered: string | undefined
@@ -195,7 +196,7 @@ export function createDocumentGraphFrameResource(
     hoverDefs?.remove()
     hoverDefs = undefined
     const palette = theme ?? GRAPH_STYLES.light
-    for (const [element, id] of boundElements) {
+    for (const [element, id] of hoverElements) {
       if (!originalPaint.has(element)) originalPaint.set(element, ["stroke", "fill", "marker-start", "marker-mid", "marker-end"].map(property => ({ property, value: element.style.getPropertyValue(property), priority: element.style.getPropertyPriority(property) })))
       for (const original of originalPaint.get(element)!) {
         if (original.value) element.style.setProperty(original.property, original.value, original.priority)
@@ -263,6 +264,7 @@ export function createDocumentGraphFrameResource(
         root.style.display = "block"
         host.appendChild(root)
         boundElements.clear()
+        hoverElements.clear()
         originalPaint.clear()
         movementBase.clear()
         for (const binding of artifact.bindings ?? []) {
@@ -272,6 +274,19 @@ export function createDocumentGraphFrameResource(
         for (const [elementId, graphId] of Object.entries(artifact.graphIdByElementId ?? {})) {
           const element = root.querySelector<SVGElement>(`[id="${CSS.escape(elementId)}"]`)
           if (element) { boundElements.set(element, graphId); element.dataset.graphId = graphId }
+        }
+        // D2 binds shape groups. Paint their primitives directly because source/theme
+        // declarations on children override inherited group strokes. Keep the original
+        // bindings for movement and hit identity; fading each leaf avoids nested opacity.
+        for (const [element, graphId] of boundElements) {
+          const targets = element.localName === "g"
+            ? element.querySelectorAll<SVGElement>("path, rect, circle, ellipse, polygon, polyline, line, text:not(:has(tspan)), tspan")
+            : [element]
+          for (const target of targets) {
+            let owner: Element | null = target
+            while (owner && !boundElements.has(owner as SVGElement)) owner = owner.parentElement
+            hoverElements.set(target, owner ? boundElements.get(owner as SVGElement)! : graphId)
+          }
         }
         revisionId = artifact.revisionId
       }
@@ -297,6 +312,7 @@ export function createDocumentGraphFrameResource(
       host.removeEventListener("pointerover", onHover)
       host.removeEventListener("pointerleave", onLeave)
       boundElements.clear()
+      hoverElements.clear()
       originalPaint.clear()
       movementBase.clear()
       hoverDefs?.remove()

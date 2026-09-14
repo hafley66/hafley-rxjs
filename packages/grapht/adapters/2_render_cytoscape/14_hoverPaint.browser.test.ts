@@ -8,6 +8,34 @@ import { createCytoscapeGraphFrameResource } from "./6_graphRenderer.ts"
 import { sequenceFrame } from "./proof/0_sequenceFrame.ts"
 import { createStickyOverlay } from "../../src/lib/0_stickyOverlay.js"
 import type { GraphFrame } from "../../src/2_graph/0_frame.js"
+import { graphNeighborhood } from "../../src/2_graph/16_neighborhood.js"
+
+it.each(["paired-d2", "paired-mermaid"] as const)("paints actual source primitives from actor relations and restores them: %s", async example => {
+  const frame = await sequenceFrame({ width: 1000, height: 800 }, example)
+  const host = document.createElement("div")
+  document.body.appendChild(host)
+  const resource = createDocumentGraphFrameResource(host)
+  try {
+    resource.applyTheme("dark")
+    resource.render(frame, { enterIds: [], updateIds: [], exitIds: [] })
+    const actors = Object.values(frame.graph).filter(item => (item.data as { kind?: string })?.kind === "actor").sort((a, b) => (a.data as { ordinal: number }).ordinal - (b.data as { ordinal: number }).ordinal)
+    const alice = actors.find(item => (item.data as { label?: string }).label === "Alice")!
+    const primitives = actors.map(actor => {
+      const binding = host.querySelector<SVGElement>(`[data-graph-role="actor-shape"][data-graph-id="${CSS.escape(actor.id)}"]`)!
+      return binding.localName === "g" ? binding.querySelector<SVGElement>("rect, path, polygon")! : binding
+    })
+    const paint = () => primitives.map(element => ({ stroke: getComputedStyle(element).stroke, opacity: getComputedStyle(element).opacity }))
+    const original = paint()
+    resource.applyHover!(graphNeighborhood(frame.graph, new Set([alice.id]), { mode: "both", depth: 2 }))
+    expect(paint()).toEqual([
+      { stroke: "rgb(251, 191, 36)", opacity: "1" },
+      { stroke: "rgb(251, 191, 36)", opacity: "1" },
+      { stroke: "rgb(251, 191, 36)", opacity: "0.55" },
+    ])
+    resource.applyHover!({})
+    expect(paint()).toEqual(original)
+  } finally { resource.unsubscribe(); host.remove() }
+})
 
 it("interpolates endpoint hue and alpha in both directions, including native Canvas gradient stops", () => {
   const host = document.createElement("div")

@@ -274,7 +274,6 @@ document.querySelector<HTMLInputElement>("#svg-import")!.addEventListener("chang
 
 const painted$ = merge(
   perf.painted$,
-  editing.$.pipe(tap(on => { inspector.style.pointerEvents = on ? "none" : "auto" })),
   moveInput$.pipe(tap(move => {
     if (move.phase === "cancel") { movePreview.$(undefined); return }
     if (move.phase !== "commit") { movePreview.$(move); return }
