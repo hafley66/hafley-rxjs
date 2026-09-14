@@ -73,6 +73,8 @@ const SIDES: readonly Side[] = ["start", "center", "end"]
  * `getBoundingClientRect`, which reports physical coordinates whatever the writing mode. */
 const SG_GUIDE_X = "--sg-guide-x"
 const SG_GUIDE_Y = "--sg-guide-y"
+/** On the grid root: the gesture kind while a deferred drag is open. On `<html>`: the grid id. */
+export const SG_DRAG = "data-sg-drag"
 
 /** Built-ins whose own glyph carries a route under the row. Their cell must not add a `c` segment. */
 const ROW_ROUTED: ReadonlySet<string> = new Set(["check", "radio", "expand", "drag"])
@@ -938,17 +940,28 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
   // One line and one mark, measured off the boxes the pass already placed. A deferred gesture moves
   // nothing, so the elements it points at are the same ones the pointer went down on.
   function paintPreview(current: Frame<TRow>): void {
-    for (const el of marked) el.removeAttribute("data-dragging")
+    for (const el of marked) {
+      el.removeAttribute("data-dragging")
+      el.removeAttribute("data-resizing")
+    }
     marked.length = 0
     const preview = current.drag
     if (preview === null) {
       guide.removeAttribute("data-axis")
+      root.removeAttribute(SG_DRAG)
+      if (document.documentElement.getAttribute(SG_DRAG) === gridId) document.documentElement.removeAttribute(SG_DRAG)
       return
     }
+    // The gesture is a window-wide pointer stream and the pointer leaves the 6px handle on its
+    // first move, so the cursor and the pressed ink cannot come from `:hover` or `:active`. The
+    // root names the gesture for the grid's own sheet; `<html>` names the grid so the cursor holds
+    // outside the box, where the pointer spends most of a drag.
+    root.setAttribute(SG_DRAG, preview.kind)
+    document.documentElement.setAttribute(SG_DRAG, gridId)
     const box = scroll.getBoundingClientRect()
-    const mark = (el: HTMLElement | null): void => {
+    const mark = (el: HTMLElement | null, attribute = "data-dragging"): void => {
       if (el === null) return
-      el.setAttribute("data-dragging", "true")
+      el.setAttribute(attribute, "true")
       marked.push(el)
     }
     const hide = (): void => guide.removeAttribute("data-axis")
@@ -964,6 +977,7 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
       return
     }
     if (preview.kind === "colMove") mark(headCellFor(preview.col))
+    if (preview.kind === "colSize") mark(headCellFor(preview.col), "data-resizing")
     const anchor = headCellFor(preview.kind === "colSize" ? preview.col : preview.over)
     if (anchor === null) return hide()
     const rect = anchor.getBoundingClientRect()

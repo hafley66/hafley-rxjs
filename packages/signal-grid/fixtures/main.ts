@@ -8,9 +8,12 @@ import {
   render,
   gridDom,
   intentOf,
+  moveAttrs,
   type ColumnDef,
   type Grid,
   type GridState,
+  type HeaderCtx,
+  type Renderable,
   type Viewport,
 } from "../src/index.js"
 import "../src/theme.css"
@@ -110,6 +113,15 @@ const label = (text: string): HTMLElement => {
   return el
 }
 
+const headerWithGrip = (ctx: HeaderCtx<FileRow>): Renderable => {
+  const grip = document.createElement("span")
+  grip.className = "grip"
+  grip.textContent = "\u2059"
+  for (const [name, value] of Object.entries(moveAttrs())) grip.setAttribute(name, value)
+  const columns = flexSchema ? FLEX_COLUMNS : COLUMNS
+  return [grip, label(String(columns.find((col) => col.id === ctx.col)?.header ?? ctx.col))]
+}
+
 const mount = document.querySelector("#mount") as HTMLElement
 
 const viewport = Signal<Viewport>({ top: 0, left: 0, width: 900, height: 320 })
@@ -133,7 +145,12 @@ const g = grid<FileRow>({
   // `?drag=preview` switches to the deferred gesture. The e2e suites measure a width while the
   // pointer is still down, which is what the live mode is.
   drag: new URLSearchParams(location.search).get("drag") === "preview" ? "preview" : "live",
-  slots: { cell: (ctx) => label(String(ctx.value ?? "")) },
+  slots: {
+    cell: (ctx) => label(String(ctx.value ?? "")),
+    // `?move=1` adds a grip carrying `moveAttrs()` ahead of each header label, so a real pointer can
+    // pick a column up. Off by default: the header suites count and click header text.
+    ...(new URLSearchParams(location.search).get("move") === "1" ? { header: headerWithGrip } : {}),
+  },
 })
 
 render(g, mount)

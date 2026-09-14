@@ -86,6 +86,7 @@
     "@hafley66/signals": "workspace:*",
     "@hafley66/vitest-playwright": "workspace:*",
     "@hafley66/vitest-telemetry": "workspace:*",
+    "@opentelemetry/api": "1.9.0",
     "@hafley66/xdom": "workspace:*",
     "@logtape/logtape": "2.3.3",
     "@mui/material": "^7.3.11",

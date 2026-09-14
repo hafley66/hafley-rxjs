@@ -306,12 +306,34 @@
   background: var(--sg-line);
 }
 
-/* The press keeps `:active` for as long as the button is held, which is the whole drag: the
-   pointer stream lives on `window`, so the handle never sees the pointer leave. The mark stays
-   inside the header cell, which carries `overflow: hidden` for its own ellipsis. */
-[data-route="g"] .sg-resize:active::before {
+/* `data-resizing` is written on the header cell for the whole deferred drag: the pointer stream
+   lives on `window` and leaves the 6px handle on its first move, so `:active` and `:hover` are both
+   gone by then. The mark stays inside the header cell, which carries `overflow: hidden` for its
+   own ellipsis. */
+[data-route="g"] .sg-resize:active::before,
+[data-route="g"] .sg-head-cell[data-resizing="true"] .sg-resize::before {
   background: var(--sg-accent);
   inline-size: 3px;
+}
+
+/* While a deferred drag is open the root names the gesture, so the cursor is the gesture's wherever
+   the pointer is over the grid, and a header label under a travelling pointer cannot start a text
+   selection. */
+[data-route="g"][data-sg-drag] {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+[data-route="g"][data-sg-drag="colSize"],
+[data-route="g"][data-sg-drag="colSize"] * {
+  cursor: col-resize;
+}
+
+[data-route="g"][data-sg-drag="colMove"],
+[data-route="g"][data-sg-drag="colMove"] *,
+[data-route="g"][data-sg-drag="rowMove"],
+[data-route="g"][data-sg-drag="rowMove"] * {
+  cursor: grabbing;
 }
 
 /* The move handle is the header label itself when no slot replaced it, so the cursor is the only
@@ -330,6 +352,8 @@
 [data-route="g"] .sg-head-cell[data-dragging="true"],
 [data-route="g"] .sg-row[data-dragging="true"] {
   opacity: 0.5;
+  outline: 2px solid var(--sg-accent);
+  outline-offset: -2px;
 }
 
 /* The line at the landing edge. Absolutely positioned inside the scroller, so it spans the whole
@@ -619,4 +643,22 @@
    zero, so any consumer rule wins. */
 :where([popover]) {
   margin: unset;
+}
+
+/* Unscoped on purpose: a drag's pointer leaves the grid box, and a cursor that snaps back to the
+   arrow there reads as a dropped gesture. The renderer writes the grid id on `<html>` while its
+   deferred drag is open and removes it on the lift. `:where()` keeps specificity at zero. */
+:where(html[data-sg-drag]) {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+:where(html[data-sg-drag]:has([data-sg-drag="colSize"])),
+:where(html[data-sg-drag]:has([data-sg-drag="colSize"])) * {
+  cursor: col-resize;
+}
+
+:where(html[data-sg-drag]:has([data-sg-drag="colMove"], [data-sg-drag="rowMove"])),
+:where(html[data-sg-drag]:has([data-sg-drag="colMove"], [data-sg-drag="rowMove"])) * {
+  cursor: grabbing;
 }

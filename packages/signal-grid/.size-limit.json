@@ -3,7 +3,7 @@
     "name": "published javascript, dist/*.js",
     "path": "dist/*.js",
     "gzip": true,
-    "limit": "53.5 kB"
+    "limit": "53.6 kB"
   },
   {
     "name": "the eager half, dist/index.js",
