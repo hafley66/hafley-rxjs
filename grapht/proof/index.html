@@ -33,9 +33,13 @@
         display: flex;
         gap: 8px;
         align-items: center;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        white-space: nowrap;
+        scrollbar-width: thin;
         max-width: calc(100vw - 16px);
       }
+      #bar > * { flex-shrink: 0; }
       #bar label {
         display: flex;
         gap: 4px;
@@ -64,19 +68,21 @@
         color: #7dd3fc;
       }
     </style>
-    <script type="module" crossorigin src="/hafley-rxjs/grapht/proof/assets/index-q9tmkxie.js"></script>
+    <script type="module" crossorigin src="/hafley-rxjs/grapht/proof/assets/index-DQ4JZDGU.js"></script>
     <link rel="modulepreload" crossorigin href="/hafley-rxjs/grapht/proof/assets/rolldown-runtime-CbXtAM7H.js">
-    <link rel="modulepreload" crossorigin href="/hafley-rxjs/grapht/proof/assets/1_graphStylesheet-BOLgMhUK.js">
-    <link rel="modulepreload" crossorigin href="/hafley-rxjs/grapht/proof/assets/13_foreignObjectText-ID1Bs1qh.js">
+    <link rel="modulepreload" crossorigin href="/hafley-rxjs/grapht/proof/assets/1_graphStylesheet-CRqZOQDl.js">
+    <link rel="modulepreload" crossorigin href="/hafley-rxjs/grapht/proof/assets/0_stickyOverlay-CfQggGIX.js">
   </head>
   <body>
     <div id="bar">
       <button id="arch" aria-pressed="true">arch epic</button>
       <button id="sequence" aria-pressed="false">large sequence</button>
-      <button id="document">document renderer</button>
+      <select id="paired-example" aria-label="Paired ingest examples"><option value="">Paired examples</option><option value="paired-d2">D2 sequence</option><option value="paired-mermaid">Mermaid sequence</option></select>
+      <button id="document" aria-pressed="true">document renderer</button>
       <!-- IDs become window properties; "cytoscape" triggers fCoSE global auto-registration. -->
-      <button id="renderer-cytoscape">cytoscape renderer</button>
+      <button id="renderer-cytoscape" aria-pressed="false">cytoscape renderer</button>
       <button id="fit">fit</button>
+      <select id="fit-mode" aria-label="Fit mode"><option value="contain">Fit all</option><option value="width">Fit width</option><option value="height">Fit height</option><option value="readable">Readable text</option></select>
       <label>Open SVG <input id="svg-import" type="file" accept=".svg,.json" multiple style="width:100px" title="SVG plus optional JSON containing graph and bindings"></label>
       <button id="layout-lab">layout policy</button>
       <label><input id="ribbon" type="checkbox" checked />actor ribbon</label>
@@ -93,10 +99,17 @@
         <label style="display:block">Maximum tail <input data-wheel="maxDurationMs" type="range" min="100" max="1500" step="50"><output></output> ms</label>
         <button id="reset-wheel">Reset zoom / momentum</button>
       </details>
+      <label><input id="edit-movement" type="checkbox">Move actors / edges</label>
+      <button id="undo-move" disabled>Undo move</button><button id="redo-move" disabled>Redo move</button>
+      <div>Actors move horizontally; sequence messages move vertically. Positions persist per source.</div>
       <label>Hover <select id="hover-mode"><option>neighbors</option><option>upstream</option><option>downstream</option><option selected>both</option><option>off</option></select></label>
       <label>Relations <select id="hover-relations"><option value="actors">Actor links</option><option value="sequence">Sequence steps</option></select></label>
       <label>Hops <input id="hover-depth" type="number" min="1" max="20" value="2" style="width:44px"></label>
       <label><input id="hover-color-mode" type="checkbox"> Hop colors</label>
+      <label><input id="hop-interpolate" type="checkbox" checked>Interpolate hop colors</label>
+      <label>From <input id="hop-from" type="color" value="#fbbf24"></label>
+      <label>To <input id="hop-to" type="color" value="#38bdf8"></label>
+      <label>Across <input id="hop-distance" type="number" min="1" max="20" value="6" style="width:44px"> hops</label>
       <div id="hop-colors" aria-label="Hop colors"></div>
       <label><input id="hover-debug" type="checkbox">Debug hover</label>
       <details><summary>Group actors</summary><select id="actor-members" multiple size="6" style="width:100%"></select>
