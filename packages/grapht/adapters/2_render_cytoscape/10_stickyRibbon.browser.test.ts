@@ -301,9 +301,9 @@ it("uses the same wheel pan and cursor zoom in both renderers", async () => {
           "y": -100,
         },
         {
-          "scale": 1.162,
-          "x": -123,
-          "y": -165,
+          "scale": 1.197,
+          "x": -139,
+          "y": -179,
         },
         {
           "scale": 1,

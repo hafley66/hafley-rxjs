@@ -1,3 +1,4 @@
+import type { WheelSettings } from "../../src/lib/1_wheelCamera.js"
 import { hoverOpacity } from "../../src/2_graph/16_neighborhood.js"
 import { graphStyleOf, type GraphStyle, type GraphStyleInput } from "../../src/lib/0_graphStyle.js"
 import { applySvgStyle } from "../../src/lib/2_svgStyle.js"
@@ -17,6 +18,7 @@ export type DocumentRendererInteractions = {
 export type DocumentStickyOptions = StickyOptions
 
 type DocumentGraphFrameResource = GraphFrameResource & {
+  applyWheelSettings: (settings: WheelSettings) => void
   applyTheme: (style: GraphStyleInput) => void
   applyCamera: (camera: GraphCamera) => void
   applySticky: (sticky: Pick<DocumentStickyOptions, "ribbon" | "groups">) => void
@@ -160,6 +162,7 @@ export function createDocumentGraphFrameResource(
     }
   }
   return {
+    applyWheelSettings(settings) { unsubscribeMomentum(); momentum.configure(settings) },
     applyHover,
     render(frame) {
       unsubscribeMomentum()

@@ -78,6 +78,14 @@
     </div>
     <details id="interaction-controls" style="position:fixed;left:8px;top:48px;z-index:10;background:#172554;padding:6px;max-width:420px">
       <summary>Interaction / hover</summary>
+      <details id="wheel-settings"><summary>Zoom / momentum settings</summary>
+        <label style="display:block">Zoom sensitivity <input data-wheel="zoomSensitivity" type="range" min="0.2" max="3" step="0.1"><output></output>×</label>
+        <label style="display:block"><input data-wheel="momentum" type="checkbox">Momentum</label>
+        <label style="display:block">Momentum strength <input data-wheel="strength" type="range" min="0" max="2" step="0.1"><output></output>×</label>
+        <label style="display:block">Decay <input data-wheel="decayMs" type="range" min="20" max="300" step="5"><output></output> ms</label>
+        <label style="display:block">Maximum tail <input data-wheel="maxDurationMs" type="range" min="100" max="1500" step="50"><output></output> ms</label>
+        <button id="reset-wheel">Reset zoom / momentum</button>
+      </details>
       <label>Hover <select id="hover-mode"><option>neighbors</option><option>upstream</option><option>downstream</option><option selected>both</option><option>off</option></select></label>
       <label>Relations <select id="hover-relations"><option value="actors">Actor links</option><option value="sequence">Sequence steps</option></select></label>
       <label>Hops <input id="hover-depth" type="number" min="1" max="20" value="2" style="width:44px"></label>

@@ -57,32 +57,50 @@ it("decays pan and cursor-anchored pinch, replaces direction, and ends on teardo
       ],
       [
         [
-          55.72,
-          41.79,
-          0.861,
+          65.89,
+          49.42,
+          0.835,
         ],
         [
-          70.46,
-          52.84,
-          0.824,
+          82.98,
+          62.24,
+          0.793,
         ],
         [
-          82.19,
-          61.64,
-          0.795,
+          96.47,
+          72.36,
+          0.759,
         ],
         [
-          111.38,
-          83.54,
-          0.722,
+          129.62,
+          97.22,
+          0.676,
         ],
         [
-          131.21,
-          98.41,
-          0.672,
+          151.75,
+          113.81,
+          0.621,
         ],
         "finished",
       ],
     ]
   `)
+})
+
+it("configures sensitivity and momentum without changing pan distance or retaining an old tail", () => {
+  const camera = { x: 0, y: 0, scale: 1, viewport: { x: 0, y: 0, width: 800, height: 600 } }
+  const wheel = { deltaX: 0, deltaY: -100, deltaMode: 0, shiftKey: false, ctrlKey: true, metaKey: false }
+  const motion = new WheelMomentum()
+  motion.configure({ zoomSensitivity: 2, momentum: false })
+  const zoom = motion.push(camera, wheel, { x: 400, y: 300 }, 0)
+  expect(zoom.scale).toBeCloseTo(Math.exp(0.3), 10)
+  expect(motion.step(zoom, 16)).toBeUndefined()
+  const pan = motion.push(camera, { ...wheel, ctrlKey: false }, { x: 400, y: 300 }, 20)
+  expect(pan).toEqual({ ...camera, y: 100 })
+  motion.configure({ decayMs: 200, maxDurationMs: 100, strength: 0.5 })
+  motion.push(camera, wheel, { x: 400, y: 300 }, 0)
+  expect(motion.step(camera, 100)).toBeUndefined()
+  motion.configure({ zoomSensitivity: NaN, decayMs: -5, maxDurationMs: Infinity, strength: 99 })
+  expect(motion.settings).toEqual({ zoomSensitivity: 1.2, momentum: true, decayMs: 20, maxDurationMs: 500, strength: 2 })
+  expect(motion.step(camera, 1)).toBeUndefined()
 })

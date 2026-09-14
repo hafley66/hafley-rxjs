@@ -262,3 +262,5 @@ export { collapseSequenceFrame } from "./2_graph/18_sequenceCollapse.js"
 export { sequenceNeighborhood } from "./2_graph/19_sequenceNeighborhood.js"
 
 export { groupSequenceActors } from "./2_graph/20_groupActors.js"
+
+export { DEFAULT_WHEEL_SETTINGS, wheelSettingsOf, type WheelSettings } from "./lib/1_wheelCamera.js"

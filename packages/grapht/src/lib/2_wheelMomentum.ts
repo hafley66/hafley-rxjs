@@ -1,10 +1,17 @@
 // A bounded wheel tail: immediate input stays responsive; residual movement decays over time.
 import type { GraphCamera } from "../2_graph/0_frame.js"
-import { wheelCamera } from "./1_wheelCamera.js"
+import { wheelCamera, wheelSettingsOf, type WheelSettings } from "./1_wheelCamera.js"
 
 export type WheelImpulse = Pick<WheelEvent, "deltaX" | "deltaY" | "deltaMode" | "shiftKey" | "ctrlKey" | "metaKey">
 
 export class WheelMomentum {
+  settings = wheelSettingsOf(undefined)
+
+  configure(settings: Partial<WheelSettings>): void {
+    this.unsubscribe()
+    this.settings = wheelSettingsOf(settings)
+  }
+
   velocityX = 0
   velocityY = 0
   at = { x: 0, y: 0 }
@@ -15,22 +22,22 @@ export class WheelMomentum {
   push(camera: GraphCamera, event: WheelImpulse, at: { x: number; y: number }, now: number): GraphCamera {
     const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? camera.viewport.height : 1
     // Replace velocity on every real event, including reversals and the OS's decaying scroll tail.
-    this.velocityX = Math.max(-2, Math.min(2, event.deltaX * unit / 32))
-    this.velocityY = Math.max(-2, Math.min(2, event.deltaY * unit / 32))
+    this.velocityX = Math.max(-2, Math.min(2, event.deltaX * unit / 32)) * this.settings.strength
+    this.velocityY = Math.max(-2, Math.min(2, event.deltaY * unit / 32)) * this.settings.strength
     this.event = { deltaX: 0, deltaY: 0, deltaMode: 0, shiftKey: event.shiftKey, ctrlKey: event.ctrlKey, metaKey: event.metaKey }
     this.at = at
     this.previous = now
-    this.until = now + 500
-    return wheelCamera(camera, event, at)
+    this.until = this.settings.momentum ? now + this.settings.maxDurationMs : now
+    return wheelCamera(camera, event, at, this.settings.zoomSensitivity)
   }
 
   step(camera: GraphCamera, now: number): GraphCamera | undefined {
     if (now >= this.until || Math.hypot(this.velocityX, this.velocityY) < 0.01) return undefined
     const elapsed = Math.max(0, now - this.previous)
     this.previous = now
-    const decay = Math.exp(-elapsed / 85)
-    const distance = 85 * (1 - decay)
-    const next = wheelCamera(camera, { ...this.event, deltaX: this.velocityX * distance, deltaY: this.velocityY * distance }, this.at)
+    const decay = Math.exp(-elapsed / this.settings.decayMs)
+    const distance = this.settings.decayMs * (1 - decay)
+    const next = wheelCamera(camera, { ...this.event, deltaX: this.velocityX * distance, deltaY: this.velocityY * distance }, this.at, this.settings.zoomSensitivity)
     this.velocityX *= decay
     this.velocityY *= decay
     return next

@@ -1,3 +1,4 @@
+import type { WheelSettings } from "../../src/lib/1_wheelCamera.js"
 import { hoverOpacity } from "../../src/2_graph/16_neighborhood.js"
 import { graphStylesheet } from "../../src/lib/1_graphStylesheet.js"
 import { GRAPH_STYLES, graphStyleOf, type GraphStyle, type GraphStyleInput } from "../../src/lib/0_graphStyle.js"
@@ -223,6 +224,7 @@ function headerViewStyle(c: GraphStyle, left: number, top: number, width: number
 }
 
 export type CytoscapeGraphFrameResource = GraphFrameResource & {
+  applyWheelSettings: (settings: WheelSettings) => void
   cy: Core
   applySticky: (options: Pick<StickyOptions, "ribbon" | "groups">) => void
   /** Recolor native primitives and headers while retaining the current camera and geometry. */
@@ -357,6 +359,7 @@ export function createCytoscapeGraphFrameResource(
     })
   }
   return {
+    applyWheelSettings(settings) { unsubscribeMomentum(); momentum.configure(settings) },
     applyHover,
     cy,
     applySticky: options => stickyOverlay?.applySticky(options),

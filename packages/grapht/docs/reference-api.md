@@ -9,6 +9,7 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 | module | exports | what it is |
 | --- | --- | --- |
 | [src/lib/0_graphStyle.ts](#src-lib-0-graphstyle-ts) | 6 | Shared graph colors for native primitives, document SVG, and screen-space headers. |
+| [src/lib/1_wheelCamera.ts](#src-lib-1-wheelcamera-ts) | 3 | Shared wheel interpretation for graph renderers; coordinates are local to the graph viewport. |
 | [src/lib/1_graphStylesheet.ts](#src-lib-1-graphstylesheet-ts) | 2 | Cytoscape-compatible primitive rules are the shared style floor for canvas and SVG adapters. |
 | [src/2_graph/15_groupLayout.ts](#src-2-graph-15-grouplayout-ts) | 6 | Per-group automatic-layout ownership, with retained manual positions across collapse/expand. |
 | [src/2_graph/16_neighborhood.ts](#src-2-graph-16-neighborhood-ts) | 4 |  |
@@ -133,6 +134,44 @@ Resolve a preset name once at the renderer boundary. Custom palettes are read wi
 
 ```ts
 graphStyleOf: (style: GraphStyleInput) => GraphStyle
+```
+
+## src/lib/1_wheelCamera.ts
+
+Shared wheel interpretation for graph renderers; coordinates are local to the graph viewport.
+
+| export | kind |
+| --- | --- |
+| [`WheelSettings`](#src-lib-1-wheelcamera-ts-wheelsettings) | type |
+| [`DEFAULT_WHEEL_SETTINGS`](#src-lib-1-wheelcamera-ts-default-wheel-settings) | const |
+| [`wheelSettingsOf`](#src-lib-1-wheelcamera-ts-wheelsettingsof) | function |
+
+### `WheelSettings` {#src-lib-1-wheelcamera-ts-wheelsettings}
+
+`WheelSettings` is declared at `src/lib/1_wheelCamera.ts:4`.
+
+```ts
+export type WheelSettings = { zoomSensitivity: number; momentum: boolean; strength: number; decayMs: number; maxDurationMs: number }
+
+export function wheelSettingsOf(input: unknown): WheelSettings
+```
+
+### `DEFAULT_WHEEL_SETTINGS` {#src-lib-1-wheelcamera-ts-default-wheel-settings}
+
+`DEFAULT_WHEEL_SETTINGS` is declared at `src/lib/1_wheelCamera.ts:5`.
+
+```ts
+DEFAULT_WHEEL_SETTINGS: Readonly<WheelSettings>
+```
+
+### `wheelSettingsOf` {#src-lib-1-wheelcamera-ts-wheelsettingsof}
+
+`wheelSettingsOf` is declared at `src/lib/1_wheelCamera.ts:8`.
+
+Validate persisted/URL values before they reach camera arithmetic.
+
+```ts
+wheelSettingsOf: (input: unknown) => WheelSettings
 ```
 
 ## src/lib/1_graphStylesheet.ts

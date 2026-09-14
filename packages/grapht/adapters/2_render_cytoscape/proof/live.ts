@@ -1,3 +1,4 @@
+import { DEFAULT_WHEEL_SETTINGS, wheelSettingsOf, type WheelSettings } from "../../../src/lib/1_wheelCamera.ts"
 import archSource from "../../../0_rendered_artifact_state_epic.d2?raw"
 import { groupSequenceActors } from "../../../src/2_graph/20_groupActors.ts"
 import { sequenceNeighborhood } from "../../../src/2_graph/19_sequenceNeighborhood.ts"
@@ -6,7 +7,7 @@ import { collapseSequenceFrame } from "../../../src/2_graph/18_sequenceCollapse.
 import { graphNeighborhood, type HoverMode } from "../../../src/2_graph/16_neighborhood.ts"
 import { performanceReadout } from "../../../../docs-kit/src/3a_performanceReadout.ts"
 import { BehaviorSubject, EMPTY, merge, Subject, switchMap, tap } from "rxjs"
-import { Signal, StorageSignal } from "@hafley66/signals"
+import { Signal, StorageSignal, storageSignal, urlAdapter, sync } from "@hafley66/signals"
 import { createDocumentGraphFrameResource } from "../8_documentRenderer.ts"
 import { fitGraphCamera } from "../../../src/2_graph/1_fitCamera.ts"
 import type { Observable } from "rxjs"
@@ -78,6 +79,19 @@ const camera = Signal(cameraInput$, artifactFrame.camera)
 /** One store for the view switches, kept across reloads by the signals library's storage backend. */
 const view = StorageSignal("grapht.proof.view", { ribbon: true, groups: true, legend: false, dark: true })
 
+const wheelSettings = StorageSignal("grapht.proof.wheel", { ...DEFAULT_WHEEL_SETTINGS }, { parse: text => wheelSettingsOf(JSON.parse(text)) })
+const wheelRoute = storageSignal(urlAdapter("wheel"), wheelSettings.$(), { parse: text => wheelSettingsOf(JSON.parse(text)) })
+const wheelSync = sync(wheelSettings, wheelRoute, { to: wheelSettingsOf, from: wheelSettingsOf })
+const wheelControls = document.querySelector<HTMLElement>("#wheel-settings")!
+for (const input of wheelControls.querySelectorAll<HTMLInputElement>("input[data-wheel]")) {
+  input.addEventListener("input", () => {
+    const key = input.dataset.wheel as keyof WheelSettings
+    wheelSettings.$(wheelSettingsOf({ ...wheelSettings.$(), [key]: input.type === "checkbox" ? input.checked : Number(input.value) }))
+  })
+}
+document.querySelector("#reset-wheel")!.addEventListener("click", () => wheelSettings.$({ ...DEFAULT_WHEEL_SETTINGS }))
+window.addEventListener("pagehide", () => { wheelSync.unsubscribe(); wheelRoute.close() })
+
 const failure = Signal("")
 
 const readout = Signal(() => {
@@ -87,6 +101,7 @@ const readout = Signal(() => {
   return `${ui.source.$()} | ${ui.mode.$()} | camera x ${current.x.toFixed(0)} y ${current.y.toFixed(0)} scale ${current.scale.toFixed(3)}`
 })
 type StickyResource = {
+  applyWheelSettings?: (settings: WheelSettings) => void
   applyHover?: (hops: Readonly<Record<string, number>>) => void
   render: (frame: GraphFrame, receipt: unknown) => void
   unsubscribe: () => void
@@ -107,6 +122,15 @@ let layoutLab: ReturnType<typeof import("./1_groupLayoutLab.ts").createGroupLayo
 
 const painted$ = merge(
   perf.painted$,
+  wheelSettings.$.pipe(tap(settings => {
+    for (const input of wheelControls.querySelectorAll<HTMLInputElement>("input[data-wheel]")) {
+      const value = settings[input.dataset.wheel as keyof WheelSettings]
+      if (input.type === "checkbox") input.checked = Boolean(value)
+      else input.value = String(value)
+      const output = input.parentElement?.querySelector("output")
+      if (output) output.textContent = String(value)
+    }
+  })),
   focusInput$.pipe(tap(ids => { hoveredIds = ids; paintInteraction() })),
   readout.$.pipe(tap(text => { readoutElement.textContent = text })),
   view.ribbon.$.pipe(tap(on => { ribbonToggle.checked = on })),
@@ -115,6 +139,7 @@ const painted$ = merge(
   mounted$.pipe(
     switchMap(current =>
       merge(
+        wheelSettings.$.pipe(tap(settings => current?.applyWheelSettings?.(settings))),
         view.$.pipe(tap(next => current?.applySticky?.({ ribbon: next.ribbon, groups: next.groups }))),
         view.dark.$.pipe(tap(dark => current?.applyTheme?.(dark === false ? "light" : "dark"))),
         view.legend.$.pipe(tap(open => current?.legend?.setOpen(open))),
@@ -235,6 +260,7 @@ async function mount(next: Mode): Promise<void> {
     next === "document"
       ? createDocumentGraphFrameResource(host, { cameraInput$, focusInput$ }, { ...view.$(), inset: 44, fullWidth: 70, chipWidth: 34, gap: 4 })
       : await importCytoscape(host)
+  resource?.applyWheelSettings?.(wheelSettings.$())
   resource?.applyTheme?.(view.dark.$() === false ? "light" : "dark")
   const rootId = ui.source.$() === "arch" ? "epic" : "seq"
   resource?.render(frame, { enterIds: [rootId], updateIds: [], exitIds: [] })

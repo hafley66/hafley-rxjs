@@ -19,6 +19,7 @@ document-only because it has no native graph bindings.
 | Shift + scroll | Horizontal pan |
 | Ctrl/Cmd + scroll or trackpad pinch | Zoom at cursor |
 | End wheel gesture | Damped pan/zoom momentum |
+| Zoom / momentum settings | Stored sensitivity, momentum on/off, strength, decay, and maximum tail |
 | Fit | Restore fitted camera and cancel momentum |
 | Actor ribbon / group headers | Toggle shared screen-space headers |
 | Dark mode (both renderers) | Change shared SVG/canvas/header colors; preference persists |
@@ -63,3 +64,13 @@ collector for heap breakdowns. The hosted widget cannot read OS RSS directly.
 
 [Benchmark and raw measurements](https://github.com/hafley66/hafley-rxjs/blob/main/packages/grapht/adapters/2_render_cytoscape/bench/4_report.md).
 [Remaining interaction work](./roadmap).
+
+## Stored wheel settings
+
+Open **Interaction / hover → Zoom / momentum settings**. Default zoom sensitivity is 1.2× the
+previous response. Momentum defaults remain strength 1, decay 85 ms, and a maximum 500 ms tail.
+Changes apply immediately to both renderers and cancel an active tail. Reset restores those defaults.
+
+The proof reuses `StorageSignal`, `storageSignal(urlAdapter("wheel"))`, and `sync` from
+`@hafley66/signals`. Local settings survive reloads; the `wheel` URL parameter overrides local settings
+when opening a shared URL. Changes replace the URL entry, preserving unrelated parameters and the hash.

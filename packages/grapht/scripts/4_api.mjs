@@ -11,6 +11,7 @@ const result = generateApi({
   barrel: "src/index.ts",
   modules: [
     "src/lib/0_graphStyle.ts",
+    "src/lib/1_wheelCamera.ts",
     "src/lib/1_graphStylesheet.ts",
     "src/2_graph/15_groupLayout.ts",
     "src/2_graph/16_neighborhood.ts",
