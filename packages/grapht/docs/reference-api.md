@@ -835,6 +835,9 @@ export type SvgGraphPrimitive = {
   role: SvgBindingRole
   ordinal: number
   bounds: Rect
+  /** Source label text and font metrics, retained for native text primitives. */
+  text?: string
+  fontSize?: number
   route?: Float32Array
 }
 
@@ -843,7 +846,7 @@ export function svgGraphPrimitivesOf(document: Document, artifact: SealedSvgArti
 
 ### `svgGraphPrimitivesOf` {#src-2-graph-4-svggeometry-ts-svggraphprimitivesof}
 
-`svgGraphPrimitivesOf` is declared at `src/2_graph/4_svgGeometry.ts:92`.
+`svgGraphPrimitivesOf` is declared at `src/2_graph/4_svgGeometry.ts:95`.
 
 Measures each bound SVG element without collapsing repeated roles onto its graph item.
 
@@ -853,7 +856,7 @@ svgGraphPrimitivesOf: (document: Document, artifact: SealedSvgArtifact) => reado
 
 ### `svgGraphGeometryOf` {#src-2-graph-4-svggeometry-ts-svggraphgeometryof}
 
-`svgGraphGeometryOf` is declared at `src/2_graph/4_svgGeometry.ts:121`.
+`svgGraphGeometryOf` is declared at `src/2_graph/4_svgGeometry.ts:128`.
 
 Measures bound SVG elements into canonical Grapht geometry in SVG viewBox coordinates.
 

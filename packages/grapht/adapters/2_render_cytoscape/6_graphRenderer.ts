@@ -99,6 +99,18 @@ function primitiveDefinitions(frame: GraphFrame, sourcePrimitives: readonly Boun
     const primitive = transformedPrimitive(frame, sourcePrimitive)
     if (primitive === undefined) continue
     const id = primitiveId(sourcePrimitive)
+    const sourceLabels = frame.presentation.sealedSvgArtifactsByRootId[sourcePrimitive.rootId]?.source?.language === "d2" && !frame.geometry.columnBoundsById
+    if (sourceLabels && ["actor-label", "message-label"].includes(primitive.role)) {
+      const label = primitive.text ?? ""
+      const lines = Math.max(1, label.split("\n").length)
+      const fontSize = Math.min(primitive.fontSize ?? 16, primitive.bounds.height / lines)
+      definitions.push({
+        data: { id, graphId: primitive.graphId, kind: "svg-primitive", nativeKind: "source-label", label, width: Math.max(1, primitive.bounds.width), height: Math.max(1, primitive.bounds.height), fontSize: Math.max(1, fontSize) },
+        position: { x: primitive.bounds.x + primitive.bounds.width / 2, y: primitive.bounds.y + primitive.bounds.height / 2 },
+        classes: "graph-source-label", grabbable: false,
+      })
+      continue
+    }
     if (primitive.role === "message-line" && primitive.route !== undefined && primitive.route.length >= 4) {
       const sourceId = routeEndpointId(sourcePrimitive, "source")
       const targetId = routeEndpointId(sourcePrimitive, "target")
@@ -118,12 +130,12 @@ function primitiveDefinitions(frame: GraphFrame, sourcePrimitives: readonly Boun
       definitions.push(
         { data: { id: sourceId, graphId: primitive.graphId, kind: "route-endpoint", label: "" }, position: { x: primitive.route[0], y: primitive.route[1] }, classes: "graph-route-endpoint", grabbable: false },
         { data: { id: targetId, graphId: primitive.graphId, kind: "route-endpoint", label: "" }, position: { x: primitive.route[primitive.route.length - 2], y: primitive.route[primitive.route.length - 1] }, classes: "graph-route-endpoint", grabbable: false },
-        { data: { id, graphId: primitive.graphId, kind: "edge", source: sourceId, target: targetId, segmentWeights, segmentDistances, direction: graphItem?.type === "edge" ? graphItem.direction : "none", label: labelsById[primitive.graphId]?.text ?? "" }, classes: `graph-native-message${segmentWeights.length ? " graph-native-segments" : ""}` },
+        { data: { id, graphId: primitive.graphId, kind: "edge", source: sourceId, target: targetId, segmentWeights, segmentDistances, direction: graphItem?.type === "edge" ? graphItem.direction : "none", label: sourceLabels ? "" : labelsById[primitive.graphId]?.text ?? "" }, classes: `graph-native-message${segmentWeights.length ? " graph-native-segments" : ""}` },
       )
       continue
     }
     if (!["actor-shape", "lifeline", "group-frame", "group-label", "activation", "note-shape"].includes(primitive.role)) continue
-    const label = ["actor-shape", "group-label", "note-shape"].includes(primitive.role)
+    const label = !sourceLabels && ["actor-shape", "group-label", "note-shape"].includes(primitive.role)
       ? labelsById[primitive.graphId]?.text ?? ""
       : ""
     definitions.push({
@@ -324,7 +336,7 @@ export function createCytoscapeGraphFrameResource(
     cy.on("mousedown touchstart", "node, edge", event => {
       if (!renderedFrame?.presentation.editable) return
       const id = String(event.target.data("graphId"))
-      if (renderedFrame.graph[id]?.type !== "edge" && !["actor-shape", "lifeline"].includes(event.target.data("nativeKind"))) return
+      if (renderedFrame.graph[id]?.type !== "edge" && !["actor-shape", "lifeline", "source-label"].includes(event.target.data("nativeKind"))) return
       moving = { id, x: event.position.x, y: event.position.y, dx: 0, dy: 0 }
     })
     cy.on("mousemove touchmove", event => {
@@ -359,31 +371,52 @@ export function createCytoscapeGraphFrameResource(
 
   let currentHops: Readonly<Record<string, number>> = {}
   let committedFocus: ReadonlySet<string> = new Set()
+  const hoverSignatureById = new Map<string, string>()
+  const hoverPaintById = new Map<string, Record<string, string | number>>()
+  // Normalize each palette color once. Reading a Cytoscape style inside every edge update
+  // flushes pending style work even within cy.batch().
+  const rgbByColor = new Map<string, string>()
   const applyHover = (hops: Readonly<Record<string, number>>): void => {
     currentHops = hops
     const active = Object.keys(hops).length > 0
     cy.batch(() => {
       for (const element of cy.elements()) {
+        if (element.hasClass("graph-route-endpoint") || element.hasClass("graph-endpoint-anchor") || element.hasClass("graph-sealed-root")) continue
         const id = String(element.data("graphId") ?? element.id())
-        element.toggleClass("graph-focused", committedFocus.has(id) || hops[id] !== undefined)
-        element.removeStyle("border-color line-color line-fill line-gradient-stop-colors line-gradient-stop-positions target-arrow-color source-arrow-color color")
-        if (element.data("nativeKind") === "lifeline") element.removeStyle("background-color")
+        const item = renderedFrame?.graph[id]
+        const signature = `${active}:${hops[id] ?? -1}:${committedFocus.has(id)}:${item?.type === "edge" ? `${hops[item.fromId] ?? -1}:${hops[item.toId] ?? -1}` : ""}`
+        if (hoverSignatureById.get(element.id()) === signature) continue
+        hoverSignatureById.set(element.id(), signature)
+        const focused = committedFocus.has(id) || hops[id] !== undefined
+        if (element.hasClass("graph-focused") !== focused) element.toggleClass("graph-focused", focused)
+        const paint: Record<string, string | number> = { opacity: hoverOpacity(hops[id], active) }
         if (hops[id] !== undefined) {
           const color = graphHoverColor(theme, hops[id])
-          element.style("color", color)
-          element.style(element.group() === "edges" ? { "line-color": color, "target-arrow-color": color, "source-arrow-color": color } : element.data("nativeKind") === "lifeline" ? { "background-color": color } : { "border-color": color })
+          paint.color = color
+          if (element.group() === "edges") Object.assign(paint, { "line-color": color, "target-arrow-color": color, "source-arrow-color": color })
+          else paint[element.data("nativeKind") === "lifeline" ? "background-color" : "border-color"] = color
         }
-        if (!element.hasClass("graph-route-endpoint") && !element.hasClass("graph-endpoint-anchor") && !element.hasClass("graph-sealed-root")) element.style("opacity", hoverOpacity(hops[id], active))
-        const item = renderedFrame?.graph[id]
         if (active && element.group() === "edges" && item?.type === "edge") {
           const stops = hoverEdgeStops(theme, hops, item.fromId, item.toId)
           const colors = stops.map(stop => {
-            element.style("line-color", stop.color)
-            const rgb = element.style("line-color")
+            let rgb = rgbByColor.get(stop.color)
+            if (rgb === undefined) {
+              const original = element.style("line-color")
+              element.style("line-color", stop.color)
+              rgb = String(element.style("line-color"))
+              element.style("line-color", original)
+              rgbByColor.set(stop.color, rgb)
+            }
             return rgb.replace("rgb(", "rgba(").replace(")", `,${stop.opacity})`)
           })
-          element.style({ "opacity": 1, "line-color": stops[0].color, "line-fill": "linear-gradient", "line-gradient-stop-colors": colors.join(" "), "line-gradient-stop-positions": "0% 100%", "source-arrow-color": colors[0], "target-arrow-color": colors[1], "text-opacity": hoverOpacity(hops[id], active) })
-        } else element.removeStyle("text-opacity")
+          Object.assign(paint, { "opacity": 1, "line-color": stops[0].color, "line-fill": "linear-gradient", "line-gradient-stop-colors": colors.join(" "), "line-gradient-stop-positions": "0% 100%", "source-arrow-color": colors[0], "target-arrow-color": colors[1], "text-opacity": hoverOpacity(hops[id], active) })
+        }
+        const previous = hoverPaintById.get(element.id()) ?? {}
+        const removed = Object.keys(previous).filter(key => !(key in paint))
+        if (removed.length) element.removeStyle(removed.join(" "))
+        const changed = Object.fromEntries(Object.entries(paint).filter(([key, value]) => previous[key] !== value))
+        if (Object.keys(changed).length) element.style(changed as any)
+        hoverPaintById.set(element.id(), paint)
       }
     })
     stickyOverlay?.applyHover(hops)
@@ -397,6 +430,13 @@ export function createCytoscapeGraphFrameResource(
       theme = graphStyleOf(next)
       themed = true
       cy.style(graphStylesheet(theme) as any)
+      hoverSignatureById.clear()
+      for (const element of cy.elements()) {
+        const paint = hoverPaintById.get(element.id())
+        if (paint) element.removeStyle(Object.keys(paint).join(" "))
+      }
+      hoverPaintById.clear()
+      rgbByColor.clear()
       applyHover(currentHops)
       if (host) host.style.background = theme.canvasBackground
       stickyOverlay?.applyTheme(theme)
@@ -421,6 +461,7 @@ export function createCytoscapeGraphFrameResource(
     render(frame, receipt) {
       unsubscribeMomentum()
       renderedFrame = frame
+      hoverSignatureById.clear()
       cy.userPanningEnabled(!frame.presentation.editable)
       const activeRevisions = new Set(Object.values(frame.presentation.sealedSvgArtifactsByRootId).map(artifact => artifact.revisionId))
       for (const revision of primitivesByRevision.keys()) if (!activeRevisions.has(revision)) primitivesByRevision.delete(revision)
@@ -434,6 +475,7 @@ export function createCytoscapeGraphFrameResource(
       })
       const next = definitions(frame, sourcePrimitives)
       const nextById = new Map(next.map(definition => [String(definition.data?.id), definition]))
+      for (const id of hoverPaintById.keys()) if (!nextById.has(id)) hoverPaintById.delete(id)
       const geometryChanged = renderedGeometryRevision !== frame.geometry.revisionId
       applyingFrame = true
       try {

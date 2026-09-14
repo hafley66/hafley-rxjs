@@ -11,7 +11,7 @@ import type { SequenceGraph } from "@hafley66/grapht-model"
 import { collapseSequenceFrame } from "../../../src/2_graph/18_sequenceCollapse.ts"
 import { graphNeighborhood, hoverOpacity, type HoverMode } from "../../../src/2_graph/16_neighborhood.ts"
 import { performanceReadout } from "../../../../docs-kit/src/3a_performanceReadout.ts"
-import { BehaviorSubject, EMPTY, merge, Subject, switchMap, tap } from "rxjs"
+import { animationFrameScheduler, auditTime, distinctUntilChanged, BehaviorSubject, EMPTY, merge, Subject, switchMap, tap } from "rxjs"
 import { Signal, StorageSignal, storageSignal, urlAdapter, sync } from "@hafley66/signals"
 import { createDocumentGraphFrameResource } from "../8_documentRenderer.ts"
 import { fitGraphCamera } from "../../../src/2_graph/1_fitCamera.ts"
@@ -317,7 +317,11 @@ const painted$ = merge(
   collapsedFrame.$.pipe(tap(current => rebuildGroupControls(current))),
   hops.$.pipe(tap(() => paintInspector())),
   hoverColors.$.pipe(tap(on => { hoverColorToggle.checked = on; paintHopLegend() })),
-  focusInput$.pipe(tap(ids => hoveredIds.$(ids))),
+  focusInput$.pipe(
+    auditTime(0, animationFrameScheduler),
+    distinctUntilChanged((left, right) => left.size === right.size && [...left].every(id => right.has(id))),
+    tap(ids => hoveredIds.$(ids)),
+  ),
   readout.$.pipe(tap(text => { readoutElement.textContent = text })),
   view.ribbon.$.pipe(tap(on => { ribbonToggle.checked = on })),
   view.groups.$.pipe(tap(on => { groupsToggle.checked = on })),

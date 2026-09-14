@@ -12,6 +12,9 @@ export type SvgGraphPrimitive = {
   role: SvgBindingRole
   ordinal: number
   bounds: Rect
+  /** Source label text and font metrics, retained for native text primitives. */
+  text?: string
+  fontSize?: number
   route?: Float32Array
 }
 
@@ -109,6 +112,10 @@ export function svgGraphPrimitivesOf(document: Document, artifact: SealedSvgArti
         role: binding.role,
         ordinal: binding.ordinal,
         bounds: rectOf(element, root),
+        ...(["actor-label", "message-label"].includes(binding.role) ? {
+          text: element.querySelector("tspan") ? [...element.querySelectorAll("tspan")].map(span => span.textContent ?? "").join("\n") : element.textContent ?? "",
+          fontSize: parseFloat(getComputedStyle(element).fontSize) || 16,
+        } : {}),
         ...(binding.role === "message-line" ? { route: routeOf(element, root) } : {}),
       }]
     })

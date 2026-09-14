@@ -50,3 +50,47 @@ it("retains scoped D2 object identities and resolves local connection endpoints"
   expect(frame.presentation.sealedSvgArtifactsByRootId.epic.source?.text).toBe("scope: { a -> b }")
   expect([...frame.geometry.routesById[edge.id]].slice(0, 2)).toEqual([50, 30])
 })
+
+it("keeps D2 multiline labels at their measured position with bounded native wrapping", () => {
+  const frame = d2SvgFrame(document, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><g class="${btoa("container")}"><g class="shape"><rect width="400" height="300"/></g><text x="20" y="25" style="font-size:16px"><tspan x="20" dy="0">Source identity</tspan><tspan x="20" dy="24">Revision IDs preserve source states.</tspan></text></g></svg>`, "container: source identity", { width: 800, height: 600 })
+  const host = document.createElement("div")
+  host.style.cssText = "position:relative;width:800px;height:600px"
+  document.body.appendChild(host)
+  const resource = createCytoscapeGraphFrameResource(host)
+  try {
+    resource.render(frame, { enterIds: [], updateIds: [], exitIds: [] })
+    const shape = resource.cy.nodes('[nativeKind="actor-shape"]').first()
+    const label = resource.cy.nodes('[nativeKind="source-label"]').first()
+    expect({ shapeLabel: shape.data("label"), text: label.data("label"), count: resource.cy.nodes('[nativeKind="source-label"]').length, wrap: label.style("text-wrap"), outline: label.style("text-outline-width") }).toEqual({ shapeLabel: "", text: "Source identity\nRevision IDs preserve source states.", count: 1, wrap: "wrap", outline: "0px" })
+    expect((resource.cy.elements() as any).sortByZIndex().last().data("nativeKind")).toBe("source-label")
+    expect(label.position().y).toBeLessThan(60)
+    expect(label.data("width")).toBeLessThan(400)
+    expect(parseFloat(label.style("text-max-width"))).toBeCloseTo(label.data("width"), 2)
+    resource.applyTheme("dark")
+    expect(label.style("color")).toBe("rgb(226,232,240)")
+  } finally { resource.unsubscribe(); host.remove() }
+})
+
+it("does not invalidate native styles for repeated or unrelated hover paint", async () => {
+  const frame = await sequenceFrame({ width: 800, height: 600 }, "paired-mermaid")
+  const actors = Object.keys(frame.geometry.columnBoundsById!)
+  const host = document.createElement("div")
+  host.style.cssText = "position:relative;width:800px;height:600px"
+  document.body.appendChild(host)
+  const resource = createCytoscapeGraphFrameResource(host)
+  try {
+    resource.render(frame, { enterIds: [], updateIds: [], exitIds: [] })
+    const writes = new Set<string>()
+    resource.cy.on("style", event => { if (event.target !== resource.cy) writes.add(String(event.target.data("graphId"))) })
+    const hops = { [actors[0]]: 0, [actors[1]]: 1 }
+    resource.applyHover!(hops)
+    expect(writes.size).toBeGreaterThan(0)
+    writes.clear()
+    resource.applyHover!({ ...hops })
+    expect([...writes]).toEqual([])
+    resource.applyHover!({ ...hops, [actors[1]]: 2 })
+    expect(writes.has(actors[1])).toBe(true)
+    expect(writes.has(actors[2])).toBe(false)
+    expect(writes.has(actors[0])).toBe(false)
+  } finally { resource.unsubscribe(); host.remove() }
+})

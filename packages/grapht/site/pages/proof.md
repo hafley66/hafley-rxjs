@@ -141,3 +141,26 @@ The paired fixture sources are `fixtures/sequence/paired-d2.d2` and
 `fixtures/sequence/paired-mermaid.mmd`. Regenerate their measured SVG and graph bindings with
 `node scripts/3_generate_sequence_fixture.mjs paired-d2 d2` and
 `node scripts/3_generate_sequence_fixture.mjs paired-mermaid mermaid` from the Grapht package.
+
+## Native labels and hover paint
+
+Native D2 architecture labels retain source text positions and line breaks. Their wrapping width
+comes from the measured SVG label bounds; container text is no longer repeated at the container center.
+
+Hover input is coalesced once per animation frame and deduplicated by logical focus IDs. Native paint
+compares hop/endpoint state and changes only differing style properties. Palette RGB conversion is
+cached, avoiding repeated style reads that flush Cytoscape batches. Repeating an unchanged hover
+performs zero native style writes; unrelated actor paint remains unchanged.
+
+Local Chromium headless measurement, 90 alternating logical hover transitions with five warm-up
+frames excluded, using the same fixtures and default camera/depth:
+
+| Fixture | Native elements | Previous p95 frame | Updated p95 frame | Frames over 32 ms, previous → updated |
+| --- | ---: | ---: | ---: | ---: |
+| Architecture | 291 | 70.3 ms | 20.9 ms | 85 → 0 |
+| Large sequence | 444 | 86.3 ms | 26.4 ms | 85 → 0 |
+
+Timing varies by device. Reproduce with
+`node adapters/2_render_cytoscape/proof/3_hoverProbe.mjs <proof-url>` from the Grapht package.
+The renderer browser suite checks label placement, wrapping, unchanged-hover writes, and unrelated
+actor invalidation independently of timing.

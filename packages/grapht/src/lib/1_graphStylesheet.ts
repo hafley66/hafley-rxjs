@@ -26,6 +26,7 @@ export function graphStylesheet(c: GraphStyle): GraphStyleRule[] {
     { selector: "edge[direction = 'both']", style: { sourceArrowShape: "triangle", targetArrowShape: "triangle" } },
     { selector: "node.graph-focused", style: { borderColor: c.focusBorder, borderWidth: 3, backgroundColor: c.focusBackground } },
     { selector: "edge.graph-focused", style: { lineColor: c.focusBorder, targetArrowColor: c.focusBorder, sourceArrowColor: c.focusBorder, width: 3 } },
+    { selector: ".graph-source-label", style: { backgroundOpacity: 0, borderWidth: 0, textOutlineWidth: 0, textWrap: "wrap", textMaxWidth: "data(width)", textOverflowWrap: "anywhere", fontSize: "data(fontSize)", textHalign: "center", textValign: "center", zIndex: 5, zIndexCompare: "auto" } },
     { selector: ".graph-hidden", style: { display: "none" } },
   ]
 }
