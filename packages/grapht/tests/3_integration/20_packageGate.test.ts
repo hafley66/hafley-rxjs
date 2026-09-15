@@ -88,6 +88,7 @@ describe("sequence package gate", () => {
       modelSources: [
         "0_sequenceIdentity.ts",
         "0_sourceSpan.ts",
+        "10_mdAddress.ts",
         "1_sequenceSvgBinding.ts",
         "2_sequenceArtifact.ts",
         "3_sequenceFocus.ts",

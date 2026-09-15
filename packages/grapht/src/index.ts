@@ -278,3 +278,11 @@ export {
   type SvgInferStep,
 } from "./2_graph/24_svgInfer.js"
 export { moveGraphFrame, movementOffsets, type GraphMove, type MoveHistory } from "./2_graph/23_manualMovement.js"
+export {
+  markdownGraph,
+  type MarkdownBlockData,
+  type MarkdownEdgeData,
+  type MarkdownGraph,
+  type MarkdownNodeData,
+  type MarkdownSectionData,
+} from "./2_graph/25_markdownGraph.js"
