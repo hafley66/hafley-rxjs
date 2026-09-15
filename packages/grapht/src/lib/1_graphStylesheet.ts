@@ -13,6 +13,7 @@ export function graphStylesheet(c: GraphStyle): GraphStyleRule[] {
     { selector: "node[nativeKind = 'group-label']", style: { shape: "rectangle", backgroundOpacity: 0, borderWidth: 0, textHalign: "center", textValign: "center" } },
     { selector: "node[nativeKind = 'activation']", style: { shape: "rectangle", backgroundColor: c.activationBackground, borderColor: c.activationBorder } },
     { selector: "node[nativeKind = 'note-shape']", style: { shape: "rectangle", backgroundColor: c.noteBackground, borderColor: c.noteBorder, color: c.noteText, textOutlineWidth: 0, textHalign: "center", textValign: "center" } },
+    { selector: "node[nativeKind = 'shape']", style: { shape: "roundrectangle", backgroundColor: c.nodeBackground, borderColor: c.nodeBorder, color: c.nodeText, textOutlineWidth: 0, textHalign: "center", textValign: "center" } },
     { selector: "node:parent", style: { backgroundColor: c.parentBackground, backgroundOpacity: 0.38, borderColor: c.parentBorder, borderWidth: 1, padding: 24 } },
     { selector: "edge", style: { label: "data(label)", curveStyle: "bezier", lineColor: c.edgeLine, targetArrowColor: c.edgeLine, sourceArrowColor: c.edgeLine, color: c.edgeText, fontSize: 12, textBackgroundColor: c.edgeTextBackground, textBackgroundOpacity: 0.86, textBackgroundPadding: 2 } },
     { selector: ".graph-sealed-root", style: { opacity: 0, events: "no" } },

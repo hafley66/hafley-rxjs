@@ -173,6 +173,21 @@ endpoint IDs from D2-generated SVG classes. Generic SVG needs a graph and bindin
 for relational hover. Loading arbitrary `.d2` or `.mmd` files is not implemented in this proof.
 Sequence group nesting in the proof currently uses measured rectangle containment.
 
+## SVG parse and its score
+
+`svg parse` (the button, or the `paired-d2-svg` / `paired-mermaid-svg` entries) runs
+`svgInferFrame` over the rendered SVG alone: closed primitives become areas, open ones connectors,
+an endpoint anchors to the box whose outline is nearest within 6px of arrowhead clearance, an
+endpoint that lands on a connector continues through it, a thin bar threaded by a line is treated
+as furniture on that line, and direction comes from `marker-end` / `marker-start`. The panel scores
+the result against the fixture's authored relations and element bindings. Current numbers:
+D2 sequence matches 3 of 3 authored edges with no extras; Mermaid matches 3 of 3 with 4 extras;
+the large sequence (18 participants, 41 authored edges) matches 36 with 5 missed and 23 extras,
+16 of them rendered lifelines resolving to their participants and 7 generated-id pairs on
+unlabelled frames. The same inferrer resolves 51 of 51 D2 architecture connections, 48 with both
+endpoints matching D2's declared endpoints and 3 with one end differing. The list under the score
+is the parse scan itself, accumulated in a Signal and readable as `graphtInfer.steps.$()`.
+
 Document hover paints the children of bound D2 shape groups directly so child-level source
 and theme strokes cannot override the highlight. Debug inspection passes pointer input through
 to the diagram in both editing and viewing modes. The production probe moves a real pointer

@@ -18,7 +18,10 @@
         inset: 0;
       }
       /* Mermaid paints dark strokes with no backdrop of its own. */
-      body[data-source="sequence"] #host {
+      body[data-source="sequence"] #host,
+      body[data-source="sequence-svg"] #host,
+      body[data-source="paired-d2-svg"] #host,
+      body[data-source="paired-mermaid-svg"] #host {
         background: #fdfdfb;
       }
       #host svg text {
@@ -73,7 +76,8 @@
     <div id="bar">
       <button id="arch" aria-pressed="true">arch epic</button>
       <button id="sequence" aria-pressed="false">large sequence</button>
-      <select id="paired-example" aria-label="Paired ingest examples"><option value="">Paired examples</option><option value="paired-d2">D2 sequence</option><option value="paired-mermaid">Mermaid sequence</option></select>
+      <button id="svg-parse" aria-pressed="false">svg parse</button>
+      <select id="paired-example" aria-label="Paired ingest examples"><option value="">Paired examples</option><option value="paired-d2">D2 sequence</option><option value="paired-mermaid">Mermaid sequence</option><option value="sequence-svg">Large sequence from SVG</option><option value="paired-d2-svg">D2 from SVG</option><option value="paired-mermaid-svg">Mermaid from SVG</option></select>
       <button id="document" aria-pressed="true">document renderer</button>
       <!-- IDs become window properties; "cytoscape" triggers fCoSE global auto-registration. -->
       <button id="renderer-cytoscape" aria-pressed="false">cytoscape renderer</button>
@@ -115,6 +119,10 @@
       <pre id="source-preview" hidden style="max-height:40vh;overflow:auto;white-space:pre-wrap"></pre>
     </details>
     <pre id="hover-inspector" hidden style="position:fixed;right:8px;top:52px;z-index:11;max-width:540px;max-height:60vh;overflow:auto;pointer-events:none;background:#0f172a;color:#e2e8f0;padding:10px;white-space:pre-wrap"></pre>
+    <details id="infer-panel" hidden style="position:fixed;right:8px;bottom:36px;z-index:11;background:#0f172a;color:#e2e8f0;padding:8px;max-width:560px;max-height:70vh;overflow:auto"><summary id="infer-summary">SVG parse: score against the fixture reference</summary>
+      <pre id="infer-report" style="white-space:pre-wrap"></pre>
+      <pre id="infer-steps" style="white-space:pre-wrap;max-height:40vh;overflow:auto"></pre>
+    </details>
     <div id="host"></div>
     <div id="readout"></div>
     <script type="module" src="./live.ts"></script>

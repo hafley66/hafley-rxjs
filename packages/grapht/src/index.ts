@@ -268,4 +268,13 @@ export { DEFAULT_WHEEL_SETTINGS, wheelSettingsOf, type WheelSettings } from "./l
 export { svgFrame, type SvgFrameInput } from "./2_graph/21_svgFrame.js"
 
 export { d2SvgFrame } from "./2_graph/22_d2SvgFrame.js"
+export {
+  svgInferFrame,
+  type SvgInferEdgeData,
+  type SvgInferInput,
+  type SvgInferNodeData,
+  type SvgInferOptions,
+  type SvgInferResult,
+  type SvgInferStep,
+} from "./2_graph/24_svgInfer.js"
 export { moveGraphFrame, movementOffsets, type GraphMove, type MoveHistory } from "./2_graph/23_manualMovement.js"

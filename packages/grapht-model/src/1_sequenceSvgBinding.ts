@@ -13,6 +13,23 @@ export type SvgBindingRole =
   | "activation"
   | "note-shape"
   | "note-label"
+  | "shape"
+  | "connector"
+
+/** Roles whose primitive is an area with measurable bounds. */
+export const SHAPE_BINDING_ROLES: Partial<Record<SvgBindingRole, true>> = {
+  "actor-shape": true,
+  "group-frame": true,
+  activation: true,
+  "note-shape": true,
+  shape: true,
+}
+
+/** Roles whose primitive is a line with a measurable route. */
+export const ROUTE_BINDING_ROLES: Partial<Record<SvgBindingRole, true>> = {
+  "message-line": true,
+  connector: true,
+}
 
 export type NativeSvgElement = {
   path: number[]

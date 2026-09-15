@@ -11,16 +11,18 @@ import type { SequenceGraph } from "@hafley66/grapht-model"
 import { collapseSequenceFrame } from "../../../src/2_graph/18_sequenceCollapse.ts"
 import { graphNeighborhood, hoverOpacity, type HoverMode } from "../../../src/2_graph/16_neighborhood.ts"
 import { performanceReadout } from "../../../../docs-kit/src/3a_performanceReadout.ts"
-import { animationFrameScheduler, auditTime, distinctUntilChanged, BehaviorSubject, EMPTY, merge, Subject, switchMap, tap } from "rxjs"
+import { animationFrameScheduler, auditTime, distinctUntilChanged, BehaviorSubject, EMPTY, merge, scan, Subject, switchMap, tap } from "rxjs"
 import { Signal, StorageSignal, storageSignal, urlAdapter, sync } from "@hafley66/signals"
 import { createDocumentGraphFrameResource } from "../8_documentRenderer.ts"
 import { fitGraphCamera } from "../../../src/2_graph/1_fitCamera.ts"
 import type { Observable } from "rxjs"
 import type { GraphCamera, GraphFrame } from "../../../src/2_graph/0_frame.ts"
 import { sequenceFrame } from "./0_sequenceFrame.ts"
+import { describeSvgInference, formatSvgInferStep, svgInferSequence, type SvgInferExample } from "./5_svgInfer.ts"
+import { svgInferFrame, type SvgInferStep } from "../../../src/2_graph/24_svgInfer.ts"
 
 type Mode = "document" | "cytoscape"
-type Source = "arch" | "sequence" | "svg" | "paired-d2" | "paired-mermaid"
+type Source = "arch" | "sequence" | "svg" | "paired-d2" | "paired-mermaid" | SvgInferExample
 
 const cameraInput$ = new Subject<GraphCamera>()
 const focusInput$ = new Subject<ReadonlySet<string>>()
@@ -65,6 +67,25 @@ const fitSelect = document.querySelector<HTMLSelectElement>("#fit-mode")!
 fitSelect.value = fitMode.$()
 
 const failure = Signal("")
+
+// Parse scan history: every inference step of every run, oldest first. Read it with .$().
+type InferEntry = { source: Source; step: SvgInferStep }
+const inferStep$ = new Subject<InferEntry>()
+const inferSteps = Signal(
+  inferStep$.pipe(scan((steps: InferEntry[], entry) => [...steps, entry], [] as InferEntry[])),
+  [] as InferEntry[],
+)
+const inferReport = Signal("")
+const inferPanel = document.querySelector<HTMLElement>("#infer-panel")!
+const inferReportElement = document.querySelector<HTMLElement>("#infer-report")!
+const inferStepsElement = document.querySelector<HTMLElement>("#infer-steps")!
+
+declare global {
+  interface Window {
+    graphtInfer?: { steps: typeof inferSteps; report: typeof inferReport; svgInferFrame: typeof svgInferFrame }
+  }
+}
+window.graphtInfer = { steps: inferSteps, report: inferReport, svgInferFrame }
 
 const readout = Signal(() => {
   const current = camera.$()
@@ -212,7 +233,10 @@ document.querySelector("#group-actors")!.addEventListener("click", () => {
 
 let mountGeneration = 0
 async function mount(next: Mode): Promise<void> {
-  if (next === "cytoscape" && !Object.values(frame.$().presentation.sealedSvgArtifactsByRootId).some(artifact => artifact.bindings?.length)) return
+  const interactive = Object.values(frame.$().presentation.sealedSvgArtifactsByRootId).some(
+    artifact => artifact.bindings?.length || Object.keys(artifact.graphIdByElementId ?? {}).length > 0,
+  )
+  if (next === "cytoscape" && !interactive) return
   const generation = ++mountGeneration
   mounted$.next(undefined)
   resource?.unsubscribe()
@@ -232,19 +256,37 @@ async function mount(next: Mode): Promise<void> {
 }
 
 let sourceGeneration = 0
+async function loadSource(next: Exclude<Source, "svg">): Promise<{ frame: GraphFrame; report: string }> {
+  if (next === "arch") return { frame: artifactFrame, report: "" }
+  if (next === "sequence-svg" || next === "paired-d2-svg" || next === "paired-mermaid-svg") {
+    const inferred = await svgInferSequence({ width: window.innerWidth, height: window.innerHeight }, next, step => inferStep$.next({ source: next, step }))
+    return { frame: inferred.frame, report: describeSvgInference(inferred) }
+  }
+  return { frame: await sequenceFrame({ width: window.innerWidth, height: window.innerHeight }, next), report: "" }
+}
+
 async function useSource(next: Exclude<Source, "svg">): Promise<void> {
   const generation = ++sourceGeneration
-  const loaded = next === "arch" ? artifactFrame : await sequenceFrame({ width: window.innerWidth, height: window.innerHeight }, next)
+  let loaded: { frame: GraphFrame; report: string }
+  try {
+    loaded = await loadSource(next)
+  } catch (error) {
+    failure.$(`${next} failed: ${String(error).slice(0, 240)}`)
+    return
+  }
   if (generation !== sourceGeneration) return
   ui.source.$(next)
-  cameraInput$.next(fitGraphCamera(loaded.geometry, { x: 0, y: 0, width: innerWidth, height: innerHeight }, 24, fitMode.$()))
-  documentState.$({ original: loaded, collapsed: new Set<string>() })
+  cameraInput$.next(fitGraphCamera(loaded.frame.geometry, { x: 0, y: 0, width: innerWidth, height: innerHeight }, 24, fitMode.$()))
+  documentState.$({ original: loaded.frame, collapsed: new Set<string>() })
   hoveredIds.$(new Set())
   inspector.hidden = true
   document.body.setAttribute("data-source", next)
   document.querySelector("#arch")?.setAttribute("aria-pressed", String(next === "arch"))
   document.querySelector("#sequence")?.setAttribute("aria-pressed", String(next === "sequence"))
-  document.querySelector<HTMLSelectElement>("#paired-example")!.value = next.startsWith("paired-") ? next : ""
+  document.querySelector("#svg-parse")?.setAttribute("aria-pressed", String(next.endsWith("-svg")))
+  const pairedSelect = document.querySelector<HTMLSelectElement>("#paired-example")!
+  pairedSelect.value = [...pairedSelect.options].some(option => option.value === next) ? next : ""
+  inferReport.$(loaded.report)
   const cytoButton = document.querySelector<HTMLButtonElement>("#renderer-cytoscape")!
   cytoButton.disabled = false
   cytoButton.title = "Native Cytoscape nodes and edges"
@@ -322,6 +364,13 @@ const painted$ = merge(
     tap(ids => hoveredIds.$(ids)),
   ),
   readout.$.pipe(tap(text => { readoutElement.textContent = text })),
+  inferReport.$.pipe(tap(text => {
+    inferReportElement.textContent = text
+    inferPanel.hidden = text === ""
+  })),
+  inferSteps.$.pipe(tap(entries => {
+    inferStepsElement.textContent = entries.map(entry => formatSvgInferStep(entry.source, entry.step)).join("\n")
+  })),
   view.ribbon.$.pipe(tap(on => { ribbonToggle.checked = on })),
   view.groups.$.pipe(tap(on => { groupsToggle.checked = on })),
   view.dark.$.pipe(tap(on => { darkToggle.checked = on !== false; layoutLab?.applyTheme(on === false ? "light" : "dark")
@@ -355,7 +404,20 @@ document.querySelector("#document")?.addEventListener("click", () => void mount(
 document.querySelector("#renderer-cytoscape")?.addEventListener("click", () => void mount("cytoscape"))
 document.querySelector<HTMLSelectElement>("#paired-example")!.addEventListener("change", event => {
   const value = (event.target as HTMLSelectElement).value
-  if (value) void useSource(value as "paired-d2" | "paired-mermaid")
+  if (value) void useSource(value as "paired-d2" | "paired-mermaid" | SvgInferExample)
+})
+// A/B between the source parse and the SVG parse of the same diagram.
+document.querySelector("#svg-parse")?.addEventListener("click", () => {
+  const current = ui.source.$()
+  const next =
+    current === "sequence" ? "sequence-svg"
+    : current === "sequence-svg" ? "sequence"
+    : current === "paired-d2" ? "paired-d2-svg"
+    : current === "paired-d2-svg" ? "paired-d2"
+    : current === "paired-mermaid" ? "paired-mermaid-svg"
+    : current === "paired-mermaid-svg" ? "paired-mermaid"
+    : "paired-d2-svg"
+  void useSource(next)
 })
 document.querySelector("#arch")?.addEventListener("click", () => void useSource("arch"))
 document.querySelector("#sequence")?.addEventListener("click", () => void useSource("sequence"))

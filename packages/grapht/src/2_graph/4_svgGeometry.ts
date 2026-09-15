@@ -1,9 +1,8 @@
-import type { GraphId, SvgBindingRole } from "@hafley66/grapht-model"
+import { ROUTE_BINDING_ROLES, SHAPE_BINDING_ROLES, type GraphId, type SvgBindingRole } from "@hafley66/grapht-model"
 import type { GraphGeometry } from "./0_frame.js"
 import type { Rect } from "../1_sequence/3_geometry.js"
 import type { SealedSvgArtifact } from "./3_sealedSvgArtifact.js"
 
-const NODE_SHAPE_ROLES = new Set<SvgBindingRole>(["actor-shape", "group-frame", "activation", "note-shape"])
 const HEADER_ROLES = new Set<SvgBindingRole>(["group-label"])
 
 export type SvgGraphPrimitive = {
@@ -71,7 +70,7 @@ function union(left: Rect | undefined, right: Rect): Rect {
 }
 
 /** Injects the svg namespace into the root element only; nested roots inherit it and must not be touched. */
-function withSvgNamespace(source: string): string {
+export function withSvgNamespace(source: string): string {
   const root = /<svg\b[^>]*>/i.exec(source)
   if (!root || /\bxmlns\s*=/.test(root[0])) return source
   return `<svg xmlns="http://www.w3.org/2000/svg" ${source.slice(root.index + 4)}`
@@ -116,7 +115,7 @@ export function svgGraphPrimitivesOf(document: Document, artifact: SealedSvgArti
           text: element.querySelector("tspan") ? [...element.querySelectorAll("tspan")].map(span => span.textContent ?? "").join("\n") : element.textContent ?? "",
           fontSize: parseFloat(getComputedStyle(element).fontSize) || 16,
         } : {}),
-        ...(binding.role === "message-line" ? { route: routeOf(element, root) } : {}),
+        ...(ROUTE_BINDING_ROLES[binding.role] ? { route: routeOf(element, root) } : {}),
       }]
     })
   } finally {
@@ -133,7 +132,7 @@ export function svgGraphGeometryOf(document: Document, artifact: SealedSvgArtifa
   const headerBoundsById: Record<GraphId, Rect> = {}
 
   for (const primitive of primitives) {
-    if (NODE_SHAPE_ROLES.has(primitive.role)) boundsById[primitive.graphId] = union(boundsById[primitive.graphId], primitive.bounds)
+    if (SHAPE_BINDING_ROLES[primitive.role]) boundsById[primitive.graphId] = union(boundsById[primitive.graphId], primitive.bounds)
     if (HEADER_ROLES.has(primitive.role)) headerBoundsById[primitive.graphId] = union(headerBoundsById[primitive.graphId], primitive.bounds)
     if (primitive.route !== undefined) routesById[primitive.graphId] = primitive.route
   }

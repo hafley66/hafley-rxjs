@@ -118,7 +118,20 @@ when opening a shared URL. Changes replace the URL entry, preserving unrelated p
 camera. Original source is retained. Duplicate element IDs, missing binding targets, and invalid graph
 references are rejected. A plain SVG opens in document mode. Native Cytoscape requires explicit
 semantic bindings, using the supported primitive roles; arbitrary SVG artwork remains source-rendered.
+An inferred frame supplies `shape` and `connector` bindings, so native rendering draws the recovered
+routes rather than inventing curves.
 The architecture fixture recovers these bindings from D2-generated object and connection identities.
+
+## SVG parse
+
+**svg parse** loads the rendered SVG of the current paired example and recovers a graph from
+geometry alone, then scores it against the fixture's authored relations: matched, missed, and extra
+rows sit under the panel. The button flips between the source parse and the SVG parse of the same
+diagram, so D2, Mermaid, D2-from-SVG, and Mermaid-from-SVG read as one comparison. The scan list
+below the score is every step the inferrer took, oldest first, and is readable from the console as
+`graphtInfer.steps.$()`. Current score: D2 sequence 3 of 3 authored edges with no extras; Mermaid
+3 of 3 with 4 extras; the large sequence 36 of 41 (16 extras are rendered lifelines resolving to
+their participants, 7 are generated-id pairs on unlabelled frames).
 
 DOM sequence lifelines keep a one-pixel stroke at fitted zoom. Hop palettes are shared through
 `GraphStyle.hopColors`, with separate light/dark defaults and the existing distance opacity.

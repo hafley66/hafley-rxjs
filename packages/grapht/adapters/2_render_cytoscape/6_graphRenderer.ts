@@ -10,7 +10,7 @@ import { createStickyOverlay, type StickyOptions } from "../../src/lib/0_stickyO
 import cytoscape, { type Core, type ElementDefinition } from "cytoscape"
 import createDOMPurify from "dompurify"
 import { foreignObjectsToText } from "../../src/2_graph/13_foreignObjectText.js"
-import { graphLayoutScopeOf, type GraphLayoutScope } from "@hafley66/grapht-model"
+import { graphLayoutScopeOf, ROUTE_BINDING_ROLES, SHAPE_BINDING_ROLES, type GraphLayoutScope } from "@hafley66/grapht-model"
 import {
   graphRenderer,
   sealedGeometryTransformOf,
@@ -83,8 +83,8 @@ function transformedPrimitive(frame: GraphFrame, primitive: BoundPrimitive): Svg
     bounds.x += delta.x
     bounds.y += delta.y
   }
-  const sourceRoute = primitive.role === "message-line" ? frame.geometry.routesById[primitive.graphId] ?? primitive.route : primitive.route
-  const route = sourceRoute === undefined ? undefined : primitive.role === "message-line" && frame.geometry.routesById[primitive.graphId] !== undefined
+  const sourceRoute = ROUTE_BINDING_ROLES[primitive.role] ? frame.geometry.routesById[primitive.graphId] ?? primitive.route : primitive.route
+  const route = sourceRoute === undefined ? undefined : ROUTE_BINDING_ROLES[primitive.role] && frame.geometry.routesById[primitive.graphId] !== undefined
     ? sourceRoute
     : new Float32Array(
     [...sourceRoute].map((value, index) => value * (index % 2 === 0 ? transform.scaleX : transform.scaleY) + (index % 2 === 0 ? transform.translateX : transform.translateY)),
@@ -111,7 +111,7 @@ function primitiveDefinitions(frame: GraphFrame, sourcePrimitives: readonly Boun
       })
       continue
     }
-    if (primitive.role === "message-line" && primitive.route !== undefined && primitive.route.length >= 4) {
+    if (ROUTE_BINDING_ROLES[primitive.role] && primitive.route !== undefined && primitive.route.length >= 4) {
       const sourceId = routeEndpointId(sourcePrimitive, "source")
       const targetId = routeEndpointId(sourcePrimitive, "target")
       const graphItem = frame.graph[primitive.graphId]
@@ -134,7 +134,7 @@ function primitiveDefinitions(frame: GraphFrame, sourcePrimitives: readonly Boun
       )
       continue
     }
-    if (!["actor-shape", "lifeline", "group-frame", "group-label", "activation", "note-shape"].includes(primitive.role)) continue
+    if (!(SHAPE_BINDING_ROLES[primitive.role] || ["lifeline", "group-label"].includes(primitive.role))) continue
     const label = !sourceLabels && ["actor-shape", "group-label", "note-shape"].includes(primitive.role)
       ? labelsById[primitive.graphId]?.text ?? ""
       : ""

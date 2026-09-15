@@ -16,7 +16,8 @@ const SVG_ROLES: Record<string, { shape?: string; text?: string; edge?: string; 
   "node[nativeKind = 'activation']": { shape: '[class^="activation"]' },
   "node[nativeKind = 'note-shape']": { shape: 'rect.note, [data-graph-role="note-shape"]', text: ".noteText, .noteText tspan" },
   edge: { edge: ".connection", text: ".connection ~ text", arrow: "marker path, marker polygon" },
-  ".graph-native-message": { edge: '.messageLine0, .messageLine1, [data-graph-role="message-line"]', text: '.messageText, .messageText tspan, [data-graph-role="message-label"]', arrow: "marker path, marker polygon" },
+  ".graph-native-message": { edge: '.messageLine0, .messageLine1, [data-graph-role="message-line"], [data-graph-role="connector"]', text: '.messageText, .messageText tspan, [data-graph-role="message-label"]', arrow: "marker path, marker polygon" },
+  "node[nativeKind = 'shape']": { shape: '[data-graph-role="shape"]' },
   "node.graph-focused": { shape: ".graph-focused:is(rect, polygon, ellipse)" },
   "edge.graph-focused": { edge: ".graph-focused:is(line, path)" },
 }

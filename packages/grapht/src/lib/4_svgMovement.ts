@@ -1,3 +1,4 @@
+import { ROUTE_BINDING_ROLES, type SvgBindingRole } from "@hafley66/grapht-model"
 import type { GraphFrame } from "../2_graph/0_frame.js"
 
 /** Original element attributes belong to one mounted SVG and are restored before each projection. */
@@ -18,9 +19,9 @@ export function applySvgMovement(root: SVGSVGElement, frame: GraphFrame, binding
     const matrix = element.getScreenCTM(), rootMatrix = root.getScreenCTM()
     if (!matrix || !rootMatrix) continue
     const toLocal = matrix.inverse().multiply(rootMatrix)
-    const role = element.dataset.graphRole
+    const role = element.dataset.graphRole as SvgBindingRole | undefined
     const route = frame.geometry.routesById[id]
-    if (item?.type === "edge" && role === "message-line" && route) {
+    if (item?.type === "edge" && role !== undefined && ROUTE_BINDING_ROLES[role] && route) {
       const points = Array.from({ length: route.length / 2 }, (_, i) => new DOMPoint(route[i * 2], route[i * 2 + 1]).matrixTransform(toLocal))
       if (element.tagName === "path") element.setAttribute("d", points.map((p, i) => `${i ? "L" : "M"}${p.x} ${p.y}`).join(" "))
       else if (element.tagName === "line") for (const [name, value] of Object.entries({ x1: points[0].x, y1: points[0].y, x2: points.at(-1)!.x, y2: points.at(-1)!.y })) element.setAttribute(name, String(value))

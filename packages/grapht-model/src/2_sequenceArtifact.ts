@@ -113,6 +113,8 @@ const bindingSchema = z.object({
     "activation",
     "note-shape",
     "note-label",
+    "shape",
+    "connector",
   ]),
   elementId: z.string().min(1),
   ordinal: z.number().int().nonnegative(),
