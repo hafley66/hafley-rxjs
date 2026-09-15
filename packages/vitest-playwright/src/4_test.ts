@@ -47,6 +47,7 @@ function rootOf(task: Test) {
   return r
 }
 
+// pwp:pw-noall: no beforeAll guard on context/page
 export const test = base.extend<{ $worker: PwWorker; $file: PwFile; $test: PwTest }>({
   options: [
     // biome-ignore lint/correctness/noEmptyPattern: vitest requires object destructuring in a fixture's first parameter

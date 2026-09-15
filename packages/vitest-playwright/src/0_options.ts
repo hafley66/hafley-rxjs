@@ -144,6 +144,7 @@ export function resolveOptions(o: VitestPlaywrightOptions = {}): ResolvedOptions
     },
     serveKind: o.serve?.kind,
     testIdAttribute: o.testIdAttribute ?? "data-testid",
+    // pwp:pw-workers pwp:pw-debug1 pwp:pw-connect-env: workers from the host budget; no debug=1 rule, no PW_TEST_CONNECT_WS_ENDPOINT read
     workers: o.workers ?? Math.max(1, workerBudget().workers),
   }
 }

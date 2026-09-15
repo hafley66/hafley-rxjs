@@ -93,6 +93,7 @@ export function acquire<T>(src$: Observable<Resource<T>>): Promise<Handle<T>> {
   })
 }
 
+// pwp:pw-browser pwp:pw-launch0 pwp:pw-launchopts pwp:pw-sema: one browser per worker; resource$ has no timeout; no slot acquired before launch
 export function browser$(o: ResolvedOptions): Observable<Resource<Browser>> {
   const type = playwright[o.browser.name]
   return resource$(
@@ -109,6 +110,7 @@ export interface ContextHooks {
   video?: boolean
 }
 
+// pwp:pw-ctx pwp:pw-timeouts pwp:pw-reuse pwp:pw-video-noreuse: context per test; no reuse mode
 export function context$(
   browser: Browser,
   o: ResolvedOptions,
@@ -146,6 +148,7 @@ export function context$(
   )
 }
 
+// pwp:pw-page: no own teardown, context.close closes the page
 export function page$(context: BrowserContext): Observable<Resource<Page>> {
   return resource$(
     () => context.newPage(),

@@ -29,6 +29,7 @@ function skipConcurrent(t: Task, path: string): void {
 export default class PwRunner extends VitestTestRunner {
   constructor(config: RunnerConfig) {
     super(config)
+// pwp:pw-teardown pwp:pw-failkill: worker-scope release at cleanup; no worker stop after a failed test
     this.onCleanupWorkerContext(() => releaseLazyBrowser())
   }
   onCollected(files: File[]): unknown {

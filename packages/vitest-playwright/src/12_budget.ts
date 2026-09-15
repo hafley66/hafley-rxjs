@@ -42,6 +42,7 @@ export function availableMemoryBytes(): number {
 /** Memory and idle cores each set a ceiling; the lower one is the budget. Two cores per worker:
  *  one for chromium, one for the vitest worker driving it. `max` caps a quiet machine so a run never
  *  opens more browsers than half its cores whatever the memory. */
+// pwp:pw-workers
 export function workerBudget(options: { bytesPerWorker?: number; max?: number } = {}): WorkerBudget {
   const bytesPerWorker = options.bytesPerWorker ?? BYTES_PER_WORKER
   const cores = availableParallelism()
