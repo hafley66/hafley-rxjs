@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { describe, expect, expectTypeOf, it, vi } from "vitest"
 import { Dom, ROUTE_BOUNDARY_ATTR } from "./1_domTemplate.js"
 

@@ -12,8 +12,9 @@ export default defineConfig((env) => {
     ...config,
     test: {
       ...config.test,
-      // DOM primitives (syncScroll, phantomScrollbar) need an element model.
-      environment: "jsdom",
+      // No DOM environment here. The two DOM primitives run in chromium through
+      // vitest.browser.config.ts.
+      exclude: ["src/phantomScrollbar.test.ts", "src/scrollSync.test.ts"],
     },
   }
 })

@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { describe, expect, it } from "vitest"
 import { of } from "rxjs"
 import { layout, type Track } from "./4_layout.js"

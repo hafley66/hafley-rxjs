@@ -1,6 +1,4 @@
 /** @jsxImportSource ./ */
-// @vitest-environment jsdom
-
 import { test, expect } from "vitest"
 import { jsx, Fragment } from "./jsx-runtime.tsx"
 import { Observable, of, BehaviorSubject } from "rxjs"

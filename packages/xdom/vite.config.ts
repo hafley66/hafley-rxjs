@@ -56,6 +56,8 @@ export default defineConfig(({ command }) => ({
     globals: true,
     environment: "node",
     include: ["src/**/*.test.ts"],
+    // No simulated DOM here: the DOM utilities run in chromium through vitest.browser.config.ts.
+    exclude: ["src/**/*.browser.test.*", "node_modules/**", "dist/**"],
     setupFiles: [resolve(__dirname, "../../vitest.setup.ts")],
   },
 }))

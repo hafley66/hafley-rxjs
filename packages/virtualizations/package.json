@@ -19,8 +19,9 @@
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:browser": "node ../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts",
     "test:watch": "vitest",
-    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run test:browser && pnpm run build"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.9"
@@ -36,7 +37,9 @@
   "devDependencies": {
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "jsdom": "^26.0.0",
+    "@vitest/browser": "4.1.10",
+    "@vitest/browser-playwright": "4.1.10",
+    "playwright": "^1.62.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "7.0.2",

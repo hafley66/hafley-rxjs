@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest"
+import { scrollBox } from "./scrollFixture"
 import { syncScroll } from "./scrollSync"
-
-function element() {
-  return document.createElement("div")
-}
 
 function scrollOn(el: HTMLElement, value: number, key: "scrollLeft" | "scrollTop" = "scrollLeft") {
   el[key] = value
@@ -12,9 +9,8 @@ function scrollOn(el: HTMLElement, value: number, key: "scrollLeft" | "scrollTop
 
 describe("syncScroll", () => {
   it("mirrors source scrollLeft onto target on the x axis", () => {
-    const source = element()
-    const target = element()
-    document.body.append(source, target)
+    const source = scrollBox("x")
+    const target = scrollBox("x")
     const dispose = syncScroll(source, target, { axis: "x" })
     scrollOn(source, 120)
     expect(target.scrollLeft).toBe(120)
@@ -22,9 +18,8 @@ describe("syncScroll", () => {
   })
 
   it("value-guards writes so echoes never ping-pong", () => {
-    const source = element()
-    const target = element()
-    document.body.append(source, target)
+    const source = scrollBox("x")
+    const target = scrollBox("x")
     syncScroll(source, target, { axis: "x", bidirectional: true })
     scrollOn(source, 50)
     expect(target.scrollLeft).toBe(50)
@@ -39,18 +34,16 @@ describe("syncScroll", () => {
   })
 
   it("supports the y axis", () => {
-    const source = element()
-    const target = element()
-    document.body.append(source, target)
+    const source = scrollBox("y")
+    const target = scrollBox("y")
     syncScroll(source, target, { axis: "y" })
     scrollOn(source, 77, "scrollTop")
     expect(target.scrollTop).toBe(77)
   })
 
   it("dispose removes listeners", () => {
-    const source = element()
-    const target = element()
-    document.body.append(source, target)
+    const source = scrollBox("x")
+    const target = scrollBox("x")
     const dispose = syncScroll(source, target, { axis: "x" })
     dispose()
     scrollOn(source, 200)

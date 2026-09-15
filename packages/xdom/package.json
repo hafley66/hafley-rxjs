@@ -20,9 +20,9 @@
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:browser": "vitest --config vitest.browser.config.ts",
+    "test:browser": "node ../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts",
     "test:watch": "vitest",
-    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run test:browser && pnpm run build"
   },
   "files": [
     "dist"

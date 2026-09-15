@@ -1,23 +1,11 @@
 import { describe, expect, it } from "vitest"
 import { attachPhantomScrollbar } from "./phantomScrollbar"
-
-function element() {
-  return document.createElement("div")
-}
-
-// jsdom has no layout engine, so scrollWidth/clientWidth read 0. Simulate the
-// scroll extents the primitive reads on the content element.
-function simulateExtent(content: HTMLElement, scrollWidth: number, clientWidth: number) {
-  Object.defineProperty(content, "scrollWidth", { value: scrollWidth, configurable: true })
-  Object.defineProperty(content, "clientWidth", { value: clientWidth, configurable: true })
-}
+import { scrollBox, trackHost } from "./scrollFixture"
 
 describe("phantomScrollbar", () => {
   it("mirrors content scrollWidth into the sizer and reports overflow", () => {
-    const host = element()
-    const content = element()
-    document.body.append(host, content)
-    simulateExtent(content, 1000, 200)
+    const host = trackHost()
+    const content = scrollBox("x", 200, 1000)
     const flips: boolean[] = []
     const { track } = attachPhantomScrollbar({ host, content, onOverflowChange: (o) => flips.push(o) })
     expect(flips).toEqual([true])
@@ -27,10 +15,8 @@ describe("phantomScrollbar", () => {
   })
 
   it("hides itself when content does not overflow", () => {
-    const host = element()
-    const content = element()
-    document.body.append(host, content)
-    simulateExtent(content, 100, 200)
+    const host = trackHost()
+    const content = scrollBox("x", 200, 100)
     const flips: boolean[] = []
     const { track } = attachPhantomScrollbar({ host, content, onOverflowChange: (o) => flips.push(o) })
     expect(flips).toEqual([false])
@@ -38,13 +24,12 @@ describe("phantomScrollbar", () => {
   })
 
   it("updates the sizer and overflow state when content changes size", () => {
-    const host = element()
-    const content = element()
-    document.body.append(host, content)
-    simulateExtent(content, 100, 200)
+    const host = trackHost()
+    const content = scrollBox("x", 200, 100)
     const flips: boolean[] = []
     const { track, update } = attachPhantomScrollbar({ host, content, onOverflowChange: (o) => flips.push(o) })
-    simulateExtent(content, 500, 200)
+    const inner = content.firstElementChild as HTMLElement
+    inner.style.width = "500px"
     update()
     expect(flips).toEqual([false, true])
     const sizer = track.firstElementChild as HTMLElement
@@ -53,10 +38,8 @@ describe("phantomScrollbar", () => {
   })
 
   it("syncs track scroll to content scroll", () => {
-    const host = element()
-    const content = element()
-    document.body.append(host, content)
-    simulateExtent(content, 1000, 200)
+    const host = trackHost()
+    const content = scrollBox("x", 200, 1000)
     const { track } = attachPhantomScrollbar({ host, content })
     track.scrollLeft = 400
     track.dispatchEvent(new Event("scroll"))
@@ -64,11 +47,8 @@ describe("phantomScrollbar", () => {
   })
 
   it("copies the content's resolved scrollbar styles onto the track", () => {
-    const host = element()
-    const content = element()
-    document.body.append(host, content)
-    simulateExtent(content, 1000, 200)
-    // jsdom may drop these properties; assert the mirror either way.
+    const host = trackHost()
+    const content = scrollBox("x", 200, 1000)
     content.style.setProperty("scrollbar-width", "thin")
     content.style.setProperty("scrollbar-color", "rgb(1, 2, 3) rgb(4, 5, 6)")
     const resolved = getComputedStyle(content)
@@ -78,10 +58,8 @@ describe("phantomScrollbar", () => {
   })
 
   it("dispose removes the track", () => {
-    const host = element()
-    const content = element()
-    document.body.append(host, content)
-    simulateExtent(content, 1000, 200)
+    const host = trackHost()
+    const content = scrollBox("x", 200, 1000)
     const { track, dispose } = attachPhantomScrollbar({ host, content })
     expect(host.contains(track)).toBe(true)
     dispose()
