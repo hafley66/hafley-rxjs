@@ -5,7 +5,7 @@
 // sync no matter where they're toggled from.
 import { Signal, type Signal as SignalNode, type Signal$ } from "@hafley66/signals";
 import { getMdviewHost } from "./ports.js";
-import { allSectionIds, parseMdSections, type MdDoc } from "./model.js";
+import { allSectionIds, mdDocument, type MdDoc, type MdDocument } from "./model.js";
 
 const PLUGIN_ID = "md";
 
@@ -66,7 +66,7 @@ export function pathSignalFor(pid: string, initial: string): StrSignal {
 
 export type MdDocState =
   | { status: "loading" }
-  | { status: "ready"; text: string; doc: MdDoc }
+  | { status: "ready"; text: string; doc: MdDoc; document: MdDocument }
   | { status: "error"; error: string };
 
 export const mdDocs: SignalNode<Record<string, MdDocState>> = Signal<Record<string, MdDocState>>({});
@@ -77,7 +77,8 @@ export async function loadMdDoc(path: string): Promise<void> {
   mdDocs.$({ ...mdDocs.$(), [path]: { status: "loading" } });
   try {
     const text = await getMdviewHost().readText(path);
-    mdDocs.$({ ...mdDocs.$(), [path]: { status: "ready", text, doc: parseMdSections(text) } });
+    const document = mdDocument(path, text);
+    mdDocs.$({ ...mdDocs.$(), [path]: { status: "ready", text, doc: document.doc, document } });
   } catch (e) {
     mdDocs.$({ ...mdDocs.$(), [path]: { status: "error", error: String(e) } });
   }
@@ -86,7 +87,8 @@ export async function loadMdDoc(path: string): Promise<void> {
 export async function reloadMdDoc(path: string): Promise<void> {
   try {
     const text = await getMdviewHost().readText(path);
-    mdDocs.$({ ...mdDocs.$(), [path]: { status: "ready", text, doc: parseMdSections(text) } });
+    const document = mdDocument(path, text);
+    mdDocs.$({ ...mdDocs.$(), [path]: { status: "ready", text, doc: document.doc, document } });
   } catch (e) {
     mdDocs.$({ ...mdDocs.$(), [path]: { status: "error", error: String(e) } });
   }

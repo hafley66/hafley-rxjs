@@ -460,10 +460,19 @@ importers:
 
   packages/grapht-model:
     dependencies:
+      remark-parse:
+        specifier: ^11.0.0
+        version: 11.0.0
+      unified:
+        specifier: ^11.0.5
+        version: 11.0.5
       zod:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      '@types/mdast':
+        specifier: ^4.0.4
+        version: 4.0.4
       typescript:
         specifier: 7.0.2
         version: 7.0.2
@@ -926,9 +935,6 @@ importers:
       '@streamdown/code':
         specifier: ^1.1.1
         version: 1.1.1(react@19.2.8)
-      '@types/mdast':
-        specifier: ^4.0.4
-        version: 4.0.4
       '@types/react':
         specifier: ^19.2.2
         version: 19.2.8
@@ -965,18 +971,12 @@ importers:
       react-resizable-panels:
         specifier: ^3.0.6
         version: 3.0.6(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      remark-parse:
-        specifier: ^11.0.0
-        version: 11.0.0
       streamdown:
         specifier: ^2.5.0
         version: 2.6.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       typescript:
         specifier: 7.0.2
         version: 7.0.2
-      unified:
-        specifier: ^11.0.5
-        version: 11.0.5
       vite:
         specifier: ^8.2.1
         version: 8.2.1(@types/node@26.2.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0)

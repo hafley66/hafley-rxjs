@@ -3,14 +3,27 @@ import { graphRenderReceipt } from "@hafley66/grapht/browser";
 import { createCytoscapeGraphFrameResource } from "@hafley66/grapht-render-cytoscape";
 import { DiagramLightbox } from "./0_DiagramLightbox.js";
 import { renderMermaidSvg } from "./0a_mermaid.js";
+import type { FenceOrigin } from "./0b_fenceOrigin.js";
 import type { DiagramLanguage } from "./0b_isSequenceSource.js";
-import { sequenceFrame } from "./0b_sequenceFrame.js";
+import { sequenceFrameWithSource } from "./0b_sequenceFrame.js";
+import { recordSequenceSource, releaseSequenceSource } from "./0b_sequenceSource.js";
 import { renderD2 } from "./d2.js";
 import { getMdviewHost } from "./ports.js";
 
 const FALLBACK_VIEWPORT = { width: 800, height: 420 };
 
-export function SequenceDiagram({ code, language, dark }: { code: string; language: DiagramLanguage; dark: boolean }) {
+export function SequenceDiagram({
+  code,
+  language,
+  dark,
+  sourceStart,
+}: {
+  code: string;
+  language: DiagramLanguage;
+  dark: boolean;
+  /** Where the fence body starts in the file, when the caller knows it. */
+  sourceStart?: FenceOrigin;
+}) {
   const host = getMdviewHost();
   host.useRenderProbe("SequenceDiagram", language, { dark, sourceBytes: code.length });
   host.useLifecycleProbe("SequenceDiagram");
@@ -18,6 +31,8 @@ export function SequenceDiagram({ code, language, dark }: { code: string; langua
   const [svg, setSvg] = useState("");
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
+  const originStart = sourceStart?.start;
+  const originLine = sourceStart?.lineStart;
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -28,10 +43,14 @@ export function SequenceDiagram({ code, language, dark }: { code: string; langua
     void rendering
       .then((rendered) => {
         if (disposed) return;
-        const frame = sequenceFrame(mount.ownerDocument, language, code, rendered, {
+        const origin = originStart !== undefined && originLine !== undefined
+          ? { start: originStart, lineStart: originLine }
+          : undefined;
+        const { frame, source } = sequenceFrameWithSource(mount.ownerDocument, language, code, rendered, {
           width: mount.clientWidth || FALLBACK_VIEWPORT.width,
           height: mount.clientHeight || FALLBACK_VIEWPORT.height,
-        });
+        }, origin);
+        if (source) recordSequenceSource(mount, source);
         resource = createCytoscapeGraphFrameResource(mount, undefined, { ribbon: true });
         resource.applyTheme(dark ? "dark" : "light");
         resource.render(frame, graphRenderReceipt(new Set(), frame));
@@ -43,6 +62,7 @@ export function SequenceDiagram({ code, language, dark }: { code: string; langua
           sourceBytes: code.length,
           svgBytes: rendered.length,
           boundIds: Object.keys(frame.graph).length,
+          sourceStart: originStart ?? -1,
         });
         setError("");
         setSvg(rendered);
@@ -54,9 +74,10 @@ export function SequenceDiagram({ code, language, dark }: { code: string; langua
       });
     return () => {
       disposed = true;
+      releaseSequenceSource(mount);
       resource?.unsubscribe();
     };
-  }, [code, dark, language]);
+  }, [code, dark, language, originStart, originLine]);
 
   if (error) return <pre className="mdview-sequence-error">{error}</pre>;
 

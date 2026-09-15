@@ -207,6 +207,15 @@ getMdviewHost
 registerMdview
 openMarkdownPanel
 parseMdSections
+mdDocument
+blockAt
+withFenceOrigins
+fenceOriginOf
+absoluteSpan
+sourceSpanOfElement
+sequenceSourceIndex
+sequenceFrame
+sequenceFrameWithSource
 preloadD2
 renderD2
 DiagramLightbox
@@ -215,6 +224,10 @@ diagramPalette
 mermaidTheme
 d2ThemeId
 ```
+
+The markdown structural model is owned by `@hafley66/grapht-model`, which reads a document
+into sections and blocks with absolute source offsets. `parseMdSections`, `mdDocument`, and
+`blockAt` are re-exported here, so existing callers keep the same names.
 
 The package exports `MdviewHost` and `DiagramLightboxEntry` as types.
 
@@ -248,6 +261,13 @@ source-preserving sealed frame, so the fence keeps rendering.
 
 Known limitation: `@hafley66/mmd`'s message pattern reads `Bob-->>Alice` as a participant named
 `Bob-`, so dashed-arrow mermaid messages take the unbound sealed path.
+
+A fence's absolute origin rides in its info string as `{md-origin=<codeStart>:<lineStart>}`,
+because Streamdown hands a fenced renderer its code, language, and metastring but not its
+position. The metastring is invisible in the rendered header, the fence body is untouched,
+and two identical fences keep distinct origins. `sourceSpanOfElement` turns a rendered
+element back into the bytes it came from, and `sequenceSourceIndex` exposes the same record
+for a graph id.
 
 The grapht host carries `data-grapht-host="<language>"` and `data-grapht-items="<graph size>"`.
 The corner button opens the rendered SVG in the existing `DiagramLightbox`.

@@ -1,7 +1,10 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it } from "vitest";
+import { mdDocument } from "@hafley66/grapht-model";
 import StreamdownBody from "./0_Streamdown.js";
+import { withFenceOrigins } from "./0b_fenceOrigin.js";
+import { sequenceSourceIndex, sourceSpanOfElement } from "./0b_sequenceSource.js";
 import { installMdviewHost, type MdviewHost } from "./ports.js";
 import "./mdview.css";
 
@@ -93,6 +96,45 @@ it("routes sequence fences through grapht and leaves every other fence on the SV
         "pureMermaidIsFlowchart": true,
       }
     `);
+  } finally {
+    await act(() => root.unmount());
+    container.remove();
+    Reflect.deleteProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT");
+  }
+});
+
+it("resolves a rendered message to the exact bytes in the file", async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  const parsed = mdDocument("docs/example.md", body);
+  const section = parsed.doc.byId.get("diagrams")!;
+  const marked = withFenceOrigins(
+    parsed.text.slice(section.ownStart, section.ownEnd),
+    section.ownStart,
+    parsed.blocks.filter((block) => block.section === "diagrams"),
+  );
+  const container = document.createElement("div");
+  container.style.width = "1200px";
+  document.body.append(container);
+  const root = createRoot(container);
+  try {
+    await act(() => root.render(<StreamdownBody components={{}} dark={false}>{marked}</StreamdownBody>));
+    const hosts = () => [...container.querySelectorAll<HTMLElement>("[data-grapht-host]")];
+    await settle(() => hosts().length === 2 && hosts().every((element) => element.dataset.graphtItems !== undefined));
+
+    // Every SVG element the adapter bound names the bytes it came from: line and text.
+    const placed = (host: HTMLElement) => {
+      const index = sequenceSourceIndex(host)!;
+      const spans = Object.values(index.graphIdByElementId)
+        .map((graphId) => index.spanByGraphId[graphId])
+        .filter((span) => span !== undefined);
+      return [...new Set(spans.map((span) => `${span.lineStart}:${body.slice(span.start, span.end)}`))];
+    };
+
+    expect(Object.fromEntries(hosts().map((host) => [host.dataset.graphtHost, placed(host)]))).toEqual({
+      mermaid: ["5:participant Alice", "6:participant Bob", "7:Alice->>Bob: hello", "8:Bob->>Alice: hi back"],
+      d2: ["18:alice: Alice", "19:bob: Bob", "20:alice -> bob: hello"],
+    });
+    expect(body.split("\n")[6]).toBe("  Alice->>Bob: hello");
   } finally {
     await act(() => root.unmount());
     container.remove();

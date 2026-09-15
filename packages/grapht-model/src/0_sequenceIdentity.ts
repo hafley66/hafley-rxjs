@@ -1,11 +1,8 @@
+import type { SourceSpan } from "./0_sourceSpan.js"
+
 export type SequenceOccurrenceKind = "actor" | "message" | "group" | "activation" | "note"
 
-export type SequenceSourceSpan = {
-  start: number
-  end: number
-  lineStart: number
-  lineEnd: number
-}
+export type SequenceSourceSpan = SourceSpan
 
 export type SequenceOccurrence = {
   id: string

@@ -18,10 +18,15 @@ export type { DiagramLightboxEntry } from "./0_DiagramLightbox.js";
 export { d2ThemeId, diagramPalette, mermaidTheme } from "./0_diagramTheme.js";
 export { SequenceDiagram } from "./0b_SequenceDiagram.js";
 export { isSequenceSource, type DiagramLanguage } from "./0b_isSequenceSource.js";
-export { sequenceFrame, sequenceRenderReceipt } from "./0b_sequenceFrame.js";
+export { sequenceFrame, sequenceFrameWithSource, sequenceRenderReceipt } from "./0b_sequenceFrame.js";
+export type { SequenceFrameBuild, SequenceSourceIndex } from "./0b_sequenceFrame.js";
+export { absoluteSpan, fenceOriginOf, withFenceOrigins } from "./0b_fenceOrigin.js";
+export type { FenceOrigin } from "./0b_fenceOrigin.js";
+export { releaseSequenceSource, sequenceSourceIndex, sourceSpanOfElement } from "./0b_sequenceSource.js";
 export { renderMermaidSvg } from "./0a_mermaid.js";
 export { preloadD2, renderD2 } from "./d2.js";
-export { parseMdSections } from "./model.js";
+export { blockAt, mdDocument, parseMdSections } from "./model.js";
+export type { MdBlock, MdBlockKind, MdDocument, SourceSpan } from "./model.js";
 
 function MdInstance(props: IDockviewPanelProps) {
   const pid = String(props.params.panelId ?? "");

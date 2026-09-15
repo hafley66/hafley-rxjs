@@ -83,10 +83,11 @@ describe("sequence package gate", () => {
         mmd: "workspace:*",
         d2: "workspace:*",
         grapht: "workspace:*",
-        model: { zod: "^4.4.3" },
+        model: { "remark-parse": "^11.0.0", unified: "^11.0.5", zod: "^4.4.3" },
       },
       modelSources: [
         "0_sequenceIdentity.ts",
+        "0_sourceSpan.ts",
         "1_sequenceSvgBinding.ts",
         "2_sequenceArtifact.ts",
         "3_sequenceFocus.ts",
@@ -100,6 +101,7 @@ describe("sequence package gate", () => {
         "6d_graphVisual.ts",
         "7_sequenceGraph.ts",
         "8_sequenceFlow.ts",
+        "9_mdDocument.ts",
       ],
       nonNumericSources: { model: [], mmd: [], d2: [] },
       adapterImports: {

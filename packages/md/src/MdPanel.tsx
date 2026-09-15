@@ -14,8 +14,11 @@ import {
   sectionDisplayTitle,
   sliceOwn,
   type ListFolds,
+  type MdBlock,
+  type MdDocument,
   type MdSection,
 } from "./model.js";
+import { withFenceOrigins } from "./0b_fenceOrigin.js";
 import {
   blockFoldsFor,
   collapsedFor,
@@ -115,10 +118,25 @@ function FoldTwisty({
   );
 }
 
+const NO_BLOCKS: readonly MdBlock[] = [];
+
+// Section id -> its blocks, in document order. Blocks carry absolute offsets, so
+// a section slice can be marked with each fence's origin before rendering.
+function blocksBySectionOf(document: MdDocument): ReadonlyMap<string, readonly MdBlock[]> {
+  const map = new Map<string, MdBlock[]>();
+  for (const block of document.blocks) {
+    const list = map.get(block.section);
+    if (list) list.push(block);
+    else map.set(block.section, [block]);
+  }
+  return map;
+}
+
 interface SectionProps {
   sec: MdSection;
   siblingIndex: number;
   text: string;
+  blocksBySection: ReadonlyMap<string, readonly MdBlock[]>;
   collapsed: Set<string>;
   onToggle: (id: string) => void;
   components: StreamdownProps["components"];
@@ -133,12 +151,15 @@ function MarkdownBody({ children, components, dark }: { children: string; compon
   );
 }
 
-function SectionView({ sec, siblingIndex, text, collapsed, onToggle, components, dark }: SectionProps) {
+function SectionView({ sec, siblingIndex, text, blocksBySection, collapsed, onToggle, components, dark }: SectionProps) {
   const isCollapsed = collapsed.has(sec.id);
   // Untrimmed for rendering (offset alignment, see SliceBaseContext); the trim
-  // is only the emptiness check.
-  const ownRaw = isCollapsed ? "" : sliceOwn(text, sec);
-  const hasOwn = ownRaw.trim().length > 0;
+  // is only the emptiness check. Fence origins ride on the fence info strings so
+  // a rendered diagram can name the bytes it came from.
+  const blocks = blocksBySection.get(sec.id) ?? NO_BLOCKS;
+  const slice = sliceOwn(text, sec);
+  const ownRaw = isCollapsed ? "" : withFenceOrigins(slice, sec.ownStart, blocks);
+  const hasOwn = slice.trim().length > 0;
   return (
     <div className="mdview-sec">
       <div
@@ -175,6 +196,7 @@ function SectionView({ sec, siblingIndex, text, collapsed, onToggle, components,
               sec={c}
               siblingIndex={index}
               text={text}
+              blocksBySection={blocksBySection}
               collapsed={collapsed}
               onToggle={onToggle}
               components={components}
@@ -219,6 +241,11 @@ export const MdPanel = SignalReact(function MdPanel({
   }, [path, state?.status]);
 
   const doc = state?.status === "ready" ? state.doc : null;
+  const document = state?.status === "ready" ? state.document : null;
+  const blocksBySection = useMemo(
+    () => (document ? blocksBySectionOf(document) : new Map<string, readonly MdBlock[]>()),
+    [document],
+  );
   const blockFolds = blockFoldsFor(path).$();
   const folds: ListFolds = useMemo(
     () =>
@@ -366,7 +393,7 @@ export const MdPanel = SignalReact(function MdPanel({
           <div className="md-body">
             <SliceBaseContext.Provider value={0}>
               <MarkdownBody components={components} dark={dark}>
-                {state.doc.preamble}
+                {withFenceOrigins(state.doc.preamble, state.document.contentStart, blocksBySection.get("preamble") ?? NO_BLOCKS)}
               </MarkdownBody>
             </SliceBaseContext.Provider>
           </div>
@@ -377,6 +404,7 @@ export const MdPanel = SignalReact(function MdPanel({
             sec={s}
             siblingIndex={index}
             text={text}
+            blocksBySection={blocksBySection}
             collapsed={collapsed}
             onToggle={onToggle}
             components={components}

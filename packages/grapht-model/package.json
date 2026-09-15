@@ -22,9 +22,12 @@
     "receipts": "pnpm run typecheck && pnpm run test"
   },
   "dependencies": {
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/mdast": "^4.0.4",
     "typescript": "7.0.2",
     "vitest": "^4.1.10"
   },
