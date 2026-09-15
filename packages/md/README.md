@@ -31,6 +31,16 @@ state. A host application supplies those facilities.
 | Split layout | `react-resizable-panels` | Resize the explorer and content panels |
 | Diagram viewing | Package React components | Display SVG with pan, zoom, source data, and diagram history |
 
+## Tests
+
+No jsdom in this package. Three environments, one per kind of test:
+
+| command | environment | what it covers |
+| --- | --- | --- |
+| `pnpm test` | node | pure model and wiring: the section and block model, fence origins, theme palettes, link resolution, the source index |
+| `pnpm test:browser` | chromium (vitest browser mode) | components that need a real DOM and real SVG measurement: the lightbox viewport, the sequence frame, the element-to-bytes resolver |
+| `pnpm test:e2e` | chromium (real page, `@hafley66/vitest-playwright`) | the viewer as a user sees it: `fixtures/` mounts the panel over an in-memory host and `tests/*.e2e.test.ts` drives it with locators |
+
 ## End-to-end sequence
 
 ```text

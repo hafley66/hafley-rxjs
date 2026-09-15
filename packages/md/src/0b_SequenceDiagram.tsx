@@ -56,6 +56,9 @@ export function SequenceDiagram({
         resource.render(frame, graphRenderReceipt(new Set(), frame));
         // One item is the sealed root alone: the language adapter recovered no bindings.
         mount.dataset.graphtItems = String(Object.keys(frame.graph).length);
+        // The file offset this fence body starts at, so a page can name its bytes
+        // without reaching into the frame.
+        if (origin) mount.dataset.graphtSource = String(origin.start);
         host.recordOperation("mdview.renderSequence", {
           language,
           dark,

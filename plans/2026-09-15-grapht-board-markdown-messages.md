@@ -290,6 +290,12 @@ language label, its copy button, and Shiki tokens. The metastring is invisible i
 rendered header, leaves the fence body byte-identical, and gives two identical fences two
 distinct origins, which content matching cannot do.
 
+Test environments: `@hafley66/md` has no jsdom. Pure tests run in node, component tests in
+Chromium through vitest browser mode, and the viewer itself is covered as a real page by
+`@hafley66/vitest-playwright` over `packages/md/fixtures/` (built and previewed by the serve
+slot). The e2e suite asserts the fold, both fence routes, the fence origin on the host
+element (`data-grapht-source`), and the lightbox.
+
 Measured limit: in the panel today the grapht host holds a Cytoscape canvas and overlay
 layers, so no bound SVG element is in the DOM to resolve from. The binding-id to span join
 is proven end to end for mermaid and d2 (`packages/md/src/0b_SequenceDiagram.render.test.tsx`),

@@ -21,8 +21,9 @@
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "receipts": "pnpm run typecheck && pnpm run test && pnpm run test:browser && pnpm run build",
-    "test:browser": "node ../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts"
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run test:browser && pnpm run test:e2e && pnpm run build",
+    "test:browser": "node ../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts"
   },
   "dependencies": {
     "@terrastruct/d2": "^0.1.33"
@@ -49,6 +50,8 @@
     "@hafley66/grapht-render-cytoscape": "workspace:*",
     "@hafley66/mmd": "workspace:*",
     "@hafley66/signals": "workspace:*",
+    "@hafley66/vitest-playwright": "workspace:*",
+    "@hafley66/vitest-telemetry": "workspace:*",
     "@streamdown/code": "^1.1.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.3",
@@ -56,7 +59,6 @@
     "@vitest/browser": "4.1.10",
     "@vitest/browser-playwright": "4.1.10",
     "dockview": "^6.6.1",
-    "jsdom": "26.1.0",
     "mermaid": "^11.16.0",
     "playwright": "^1.62.1",
     "react": "^19.2.7",

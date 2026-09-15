@@ -932,6 +932,12 @@ importers:
       '@hafley66/signals':
         specifier: workspace:*
         version: link:../signals
+      '@hafley66/vitest-playwright':
+        specifier: workspace:*
+        version: link:../vitest-playwright
+      '@hafley66/vitest-telemetry':
+        specifier: workspace:*
+        version: link:../vitest-telemetry
       '@streamdown/code':
         specifier: ^1.1.1
         version: 1.1.1(react@19.2.8)
@@ -953,9 +959,6 @@ importers:
       dockview:
         specifier: ^6.6.1
         version: 6.6.1(react@19.2.8)
-      jsdom:
-        specifier: 26.1.0
-        version: 26.1.0
       mermaid:
         specifier: ^11.16.0
         version: 11.16.0

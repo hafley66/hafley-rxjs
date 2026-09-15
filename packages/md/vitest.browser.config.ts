@@ -14,7 +14,11 @@ export default defineConfig({
       headless: true,
       screenshotFailures: true,
     },
-    include: ["src/0b_SequenceDiagram.render.test.tsx"],
+    include: [
+      "src/0b_SequenceDiagram.render.test.tsx",
+      "src/0b_sequenceSource.test.ts",
+      "src/0_DiagramLightbox.render.test.tsx",
+    ],
     testTimeout: 120_000,
     hookTimeout: 120_000,
   },

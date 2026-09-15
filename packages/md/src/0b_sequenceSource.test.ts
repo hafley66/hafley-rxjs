@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { expect, it } from "vitest";
 import { recordSequenceSource, releaseSequenceSource, sourceSpanOfElement } from "./0b_sequenceSource.js";
 
