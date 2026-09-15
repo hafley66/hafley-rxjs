@@ -230,7 +230,11 @@ export function expandChain(doc: MdDoc, id: string): string[] {
   return chain
 }
 
-function normPath(p: string): string {
+// The one path rule in the repository: drop empty and "." segments, fold "..".
+// `resolveMdLink` resolves through it, and a caller comparing a resolved link
+// against a document's own path (grapht's markdown graph) must use the same
+// rule rather than a private copy of it.
+export function normalizeMdPath(p: string): string {
   const abs = p.startsWith("/")
   const parts: string[] = []
   for (const seg of p.split("/")) {
@@ -257,7 +261,7 @@ export function resolveMdLink(currentPath: string, href: string): { path: string
     const dir = currentPath.replace(/\/[^/]*$/, "")
     path = `${dir}/${raw}`
   }
-  return { path: normPath(path), frag }
+  return { path: normalizeMdPath(path), frag }
 }
 
 // Structural view of an mdast tree: enough for the walks here without the full
