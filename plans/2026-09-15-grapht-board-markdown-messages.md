@@ -263,8 +263,8 @@ type MessageIntent =
 | --- | --- | --- | --- |
 | 0 | landed | markdown lane in grapht-model (`mdDocument`, `MdBlock`, absolute spans); `@hafley66/md` switches to it and its `model.ts` becomes thin re-exports | md's existing model tests pass unchanged against the lane; `parseMdSections` keeps its name, signature, and export path |
 | 1 | landed | fence offset join: occurrence span plus `codeStart` | a mermaid and a d2 token resolve to the exact absolute offset in the file |
-| 2 | | `MdAddress` with `locatorHash` / `contentHash` / `docHash`, plus the WebCrypto twin | edit above a fence: `locatorHash` unchanged, `span` moved, `contentHash` unchanged; edit inside: `contentHash` changes |
-| 3 | | `markdownGraph`: blocks as nodes, heading nesting as groups, links as edges | hover a section highlights its links and backlinks; ids survive an inserted section |
+| 2 | landed | `MdAddress` with `locatorHash` / `contentHash` / `docHash`, plus the WebCrypto twin | an in-place edit above a fence: `locatorHash` unchanged, `span` moved, `contentHash` unchanged; edit inside: `contentHash` changes. An *inserted* block above shifts `${section}/${ordinal}` and with it the locator, so relocation falls through to `contentHash` (see 11a) |
+| 3 | landed | `markdownGraph`: blocks as nodes, heading nesting as groups, links as edges | hover a section highlights its links and backlinks; ids survive an inserted section |
 | 4 | | board document, item renderers, placements, movement journal folded at commit | place a section and a fence on a board, move both, reload, positions persist |
 | 5 | | pin layer and click to address | click a mermaid message and get the absolute file range it came from |
 | 6 | | message log, intent member, staleness and reanchor | a message survives an edit above it, reanchors by structural key, orphans when its own text changes |
@@ -272,7 +272,7 @@ type MessageIntent =
 
 Phases 0 to 3 are read-only and stand alone. Phase 4 is where the board exists.
 
-## 11a. What phases 0 and 1 landed
+## 11a. What phases 0 to 3 landed
 
 | piece | where |
 | --- | --- |
@@ -282,6 +282,33 @@ Phases 0 to 3 are read-only and stand alone. Phase 4 is where the board exists.
 | fence origin channel | `packages/md/src/0b_fenceOrigin.ts` (`withFenceOrigins`, `fenceOriginOf`, `absoluteSpan`) |
 | element to bytes | `packages/md/src/0b_sequenceSource.ts` (`sequenceSourceIndex`, `sourceSpanOfElement`) |
 | frame carries the record | `sequenceFrameWithSource` beside the unchanged `sequenceFrame` |
+| address | `packages/grapht-model/src/10_mdAddress.ts` (`MdAddress`, `mdAddressIndex`, `mdAddressOf`, `relocateAddress`, WebCrypto `sha256Hex`) |
+| markdown projection | `packages/grapht/src/2_graph/25_markdownGraph.ts` (`markdownGraph`: blocks as nodes, headings as groups, in-document links as edges) |
+| one path rule | `normalizeMdPath` is exported from the markdown lane; the projection compares a resolved self-link through it instead of mirroring the rule |
+| package gate | the pinned model source list in `packages/grapht/tests/3_integration/20_packageGate.test.ts` carries the new lane file |
+
+The sha256 twin lives in `grapht-model`, not `grapht`: the model is the leaf the browser lanes
+import, so it uses WebCrypto only and throws rather than falling back when `crypto.subtle` is
+absent. `grapht`'s own `sha256Hex` (`node:crypto`, string or bytes) stays where it is; the two
+names would collide in a single barrel, which is a packaging decision for whoever builds one.
+
+Measured, and the reason phase 6 still has work: `locatorHash` derives from the landed
+`${section}/${ordinal}` block id. An in-place edit above a fence leaves the locator and the
+fence's content hash alone; **inserting** a block above shifts the ordinal and moves the
+locator. Relocation carries that case by content: `relocateAddress` reanchors when exactly one
+block in the new revision carries the previous `contentHash`, and orphans when none does or two
+do. A structural id that survives insertion is phase 6's, and changing it would change every
+persisted address.
+
+The projection follows the model's classification rather than inventing one: a link inside a
+fence or an html block is not an edge, a path-bearing href goes through `resolveMdLink`, and only
+a target that resolves inside this document becomes an edge. Reference-style links and autolinks
+are not followed today.
+
+Known gap, pre-existing and outside these phases: `pnpm api` in `packages/signals` regenerates
+`docs/reference-api.md` in a form that predates its `0_log.ts` re-export of `LogEmit` /
+`LogFields` from `@hafley66/trace` — docs-kit renders those as `re-export` with `any` bodies.
+Regenerating there rewrites the committed doc; the drift is the generator's, not this plan's.
 
 The origin travels in the fence **metastring**, because that is the only field Streamdown
 gives a fenced renderer besides code, language, and incompleteness. Measured alternatives:
