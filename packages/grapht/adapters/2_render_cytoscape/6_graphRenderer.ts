@@ -176,8 +176,15 @@ function definitions(frame: GraphFrame, sourcePrimitives: readonly BoundPrimitiv
     }
   }
   const groups = groupNodeIds(frame, renderIds)
+  // A connector drawn from its measured route must not also be drawn as a generic curved edge.
+  const routeBackedIds = new Set(
+    sourcePrimitives
+      .filter(primitive => ROUTE_BINDING_ROLES[primitive.role] && primitive.route !== undefined && primitive.route.length >= 4)
+      .map(primitive => primitive.graphId),
+  )
   for (const id of Object.keys(frame.graph).sort()) {
     if (!renderIds.has(id)) continue
+    if (routeBackedIds.has(id)) continue
     const item = frame.graph[id]
     if (nativeDescendantIds.has(id)) continue
     if (item.type === "node") {
