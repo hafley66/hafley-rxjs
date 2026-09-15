@@ -79,7 +79,7 @@ describe("Dom.Box relative routing", () => {
     ])
 
     sub.unsubscribe()
-    root.unmount()
+    await act(async () => root.unmount())
     host.remove()
   })
 })
