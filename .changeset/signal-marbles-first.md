@@ -39,6 +39,12 @@ column is document data.
   produced them does, and `seq` is it. `marbleEntries(doc, tick)` reads a column back in the order it
   happened, each entry with the event that caused it: the order subscriptions were lifted in, which is
   not the order the lanes happen to be declared in.
+- **A call is a span, and the bracket draws it.** A lane's call opens where it entered the state and
+  closes where it left it, and one lane can make several calls: the pair counts calls, not lanes. The
+  surface draws `(` on the opening column and `)` on the closing one, on that lane's own row, so an
+  inner's call sits bracketed inside the lane that lifted it — and a call nothing ended, or one the
+  reveal has not reached the end of, is drawn without its closing bracket rather than with a `)` the
+  document does not have.
 - **The reveal replaces the scrubber.** `revealed` is `number | "all"`: hidden, shown, current. `step`
   is one column, `play` walks the turns and restarts at column 0 from the end, `revealAll` puts the
   picture back. Nothing seeks, because a reveal is not a place you drag to.

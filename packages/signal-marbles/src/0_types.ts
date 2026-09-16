@@ -175,6 +175,49 @@ export function marbleEntries(doc: MarbleDoc, tick: number): MarbleEntry[] {
   }))
 }
 
+/**
+ * One call: a lane entered a state on a column and stayed in it until something ended it.
+ *
+ * A call opens at the lane's first event — a `subscribe` where the producer recorded one, and the
+ * lane's first event where it did not, because a hand-written lane may simply start. It closes at
+ * the first `unsubscribe` or terminal. A lane subscribed again after that has two calls, so a pair
+ * counts calls rather than lanes: one lane is one row, and `to: null` is a call still running.
+ */
+export type MarbleCallSpan = {
+  lane: MarbleLane
+  /** The column the call was entered on. */
+  from: number
+  /** The column it ended on, null while it is still running. */
+  to: number | null
+  opened: MarbleNotification
+  closed: MarbleNotification | null
+}
+
+export function marbleCallSpans(doc: MarbleDoc): MarbleCallSpan[] {
+  const spans: MarbleCallSpan[] = []
+  const ends = (kind: MarbleKind): boolean => kind === "unsubscribe" || TERMINAL_KINDS.includes(kind)
+  for (const lane of doc.lanes) {
+    let opened: MarbleNotification | null = null
+    for (const notification of lane.notifications) {
+      if (opened === null) {
+        opened = notification
+        // A lane that ends on its first event never had a call to span: it is one event wide.
+        if (ends(notification.kind)) {
+          spans.push({ lane, from: notification.tick, to: notification.tick, opened: notification, closed: notification })
+          opened = null
+        }
+        continue
+      }
+      if (ends(notification.kind)) {
+        spans.push({ lane, from: opened.tick, to: notification.tick, opened, closed: notification })
+        opened = null
+      }
+    }
+    if (opened !== null) spans.push({ lane, from: opened.tick, to: null, opened, closed: null })
+  }
+  return spans
+}
+
 export function findMarble(doc: MarbleDoc, eventId: string): MarbleLocation | null {
   for (const lane of doc.lanes) {
     const index = lane.notifications.findIndex(notification => notification.id === eventId)

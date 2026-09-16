@@ -337,6 +337,42 @@
 		align-items: center;
 	}
 
+	/* A call: the lane entered a state on this column and left it on that one. Its own band above the
+	   marbles, so the bracket brackets the turns without covering them — and nested calls read as
+	   nested brackets, one indent deeper each time. */
+	.mb-span {
+		grid-row: 1;
+		align-self: start;
+		display: flex;
+		align-items: flex-start;
+		height: 11px;
+		color: var(--mb-faint);
+		pointer-events: none;
+	}
+
+	.mb-span-tip {
+		font-size: 11px;
+		line-height: 1;
+	}
+
+	.mb-span-line {
+		flex: 1 1 auto;
+		border-top: 1px solid currentColor;
+		margin-top: 5px;
+	}
+
+	/* Still running, or not yet reached by the reveal: a call with no end does not get a closing
+	   bracket, because the document does not have one. */
+	.mb-span[data-open="true"] .mb-span-tip:last-child {
+		visibility: hidden;
+	}
+
+	.mb-span-swatch {
+		color: var(--mb-muted);
+		font-size: 11px;
+		line-height: 1;
+	}
+
 	/* What the reveal has not reached is not on the diagram yet, and not in the accessibility tree. */
 	.mb-marble[data-state="hidden"] {
 		display: none;

@@ -238,10 +238,14 @@ What a reader gets:
   Past the cap the axis breaks and the break carries the real milliseconds (`+300ms`); every column
   prints the milliseconds it sits at, so compression is marked rather than hidden.
 - **A key, because a glyph is not a sentence.** The legend under the header names all six kinds —
-  `value`, `error`, `complete`, `subscribed`, `unsubscribed`, `window closed` — the axis break, the
-  edge, and the axis's own units (`t = turn, number = ms`), which are stated once there rather than
-  repeated on every column. Hovering any marble then answers "what is this" in words:
-  `switchMap: unsubscribed at tick 20 (42ms) — switch dropped it before it finished`.
+  `value`, `error`, `complete`, `subscribed`, `unsubscribed`, `window closed` — the call bracket, the
+  axis break, the edge, and the axis's own units (`t = turn, number = ms`), which are stated once
+  there rather than repeated on every column. Hovering any marble then answers "what is this" in
+  words: `switchMap: unsubscribed at tick 20 (42ms) — switch dropped it before it finished`.
+- **A call has a span, and the bracket draws it.** `(` on the column a lane entered a state and `)`
+  on the column it left it, on that lane's own row, so an inner's call sits bracketed inside the
+  lane that lifted it. A call that nothing ended, and one the reveal has not reached the end of, are
+  drawn without their closing bracket rather than with a `)` the document does not have.
 - **Every marble has a name** (`keys#3`), a value, and — when a producer wrote one — the reason it
   happened. The note is drawn under its marble and revealed with it.
 - **Edges are drawn** from the event that caused an event or a subscription to the thing it caused:

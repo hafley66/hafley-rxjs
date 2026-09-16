@@ -22,10 +22,12 @@ import {
   laneDepth,
   type MarbleAxis,
   type MarbleBirth,
+  type MarbleCallSpan,
   type MarbleDoc,
   type MarbleEdge,
   type MarbleNotification,
   marbleAxis,
+  marbleCallSpans,
   marbleColumnCount,
   marbleEdges,
   marbleEntries,
@@ -190,6 +192,7 @@ export function renderMarbles(player: MarblePlayer, host: HTMLElement): MarbleRe
     const glyph = el("span", "mb-legend-glyph")
     if (shape === "edge") glyph.append(el("span", "mb-edge-swatch"))
     else if (shape === "break") glyph.append(el("span", "mb-break-swatch"))
+    else if (shape === "span") glyph.append(el("span", "mb-span-swatch", "( )"))
     else glyph.append(el("span", `mb-${shape}`))
     item.append(glyph, el("span", "mb-legend-label", label))
     legend.append(item)
@@ -200,6 +203,7 @@ export function renderMarbles(player: MarblePlayer, host: HTMLElement): MarbleRe
   legendItem("subscribe", "caret", "subscribed")
   legendItem("unsubscribe", "caret", "unsubscribed")
   legendItem("truncate", "cut", "window closed")
+  legendItem(null, "span", "a call, opened to closed")
   legendItem(null, "break", "time the axis refused to draw")
   legendItem(null, "edge", "the event this came from")
   // The unit is stated once here rather than on every column: repeated, it is what pushed two
@@ -214,6 +218,8 @@ export function renderMarbles(player: MarblePlayer, host: HTMLElement): MarbleRe
   const live: Subscription[] = []
   let placed: Placed[] = []
   let strips: StripEntry[] = []
+  /** Every call bracket drawn, with the span it stands for, so the reveal can cut one short. */
+  let spanEls: Array<{ node: HTMLElement; from: number; to: number | null }> = []
   let geometry: MarbleAxis = marbleAxis({ version: "marbles/2", columns: [0], lanes: [] })
   let byEvent = new Map<string, Placed>()
   let laneNodes = new Map<string, Placed>()
@@ -222,6 +228,8 @@ export function renderMarbles(player: MarblePlayer, host: HTMLElement): MarbleRe
 
   /** The grid line a column sits on: the pad, then one track per gap before it. */
   const columnLine = (tick: number): string => `${tick + 2} / span 1`
+  /** A call's bracket covers whole tracks, from its column through the column that ended it. */
+  const spanColumns = (from: number, to: number): string => `${from + 2} / span ${to - from + 1}`
 
   const revealedTick = (revealed: number | "all"): number =>
     revealed === "all" ? marbleColumnCount(player.doc.$()) - 1 : revealed
@@ -249,6 +257,17 @@ export function renderMarbles(player: MarblePlayer, host: HTMLElement): MarbleRe
       path.dataset.state = stateOf(Math.max(fromTick, toTick), revealed)
     }
     for (const [tick, node] of axisTicks) node.dataset.current = String(tick === current)
+    // A bracket is a fact about the whole call, so it is cut to the reveal like everything else: a
+    // `)` the reveal has not reached is not drawn, and neither is one the document never had. What
+    // is left is a call that was entered and has not ended yet, which reads as exactly that.
+    const reached = revealed === "all" ? columns - 1 : revealed
+    for (const span of spanEls) {
+      const end = span.to === null ? reached : Math.min(span.to, reached)
+      span.node.style.display = end >= span.from ? "" : "none"
+      if (end < span.from) continue
+      span.node.style.gridColumn = spanColumns(span.from, end)
+      span.node.dataset.open = String(end !== span.to)
+    }
     readout.textContent =
       revealed === "all"
         ? `${columns} columns \u00b7 ${frameAtTick(doc, columns - 1)}ms`
@@ -433,10 +452,18 @@ export function renderMarbles(player: MarblePlayer, host: HTMLElement): MarbleRe
     for (const row of lanes.querySelectorAll(".mb-lane")) row.remove()
     placed = []
     strips = []
+    spanEls = []
     byEvent = new Map()
     laneNodes = new Map()
     laneBirthTick = new Map()
+    const spansByLane = new Map<string, MarbleCallSpan[]>()
+    for (const span of marbleCallSpans(doc)) {
+      const group = spansByLane.get(span.lane.id)
+      if (group === undefined) spansByLane.set(span.lane.id, [span])
+      else group.push(span)
+    }
     for (const view of player.laneViews.$()) {
+      const laneSpans = spansByLane.get(view.lane.id) ?? []
       const row = el("div", "mb-lane")
       row.dataset.lane = view.lane.id
       row.style.height = `${laneHeight(view)}px`
@@ -461,6 +488,20 @@ export function renderMarbles(player: MarblePlayer, host: HTMLElement): MarbleRe
       const strip = el("div", "mb-strip")
       strip.setAttribute("role", "img")
       strip.setAttribute("aria-label", describeLane(view.lane, doc))
+      // The calls come first so a marble that ever reaches their band paints over them. A bracket
+      // spans whole columns, which the grid already knows how to do: `span n` is n of the tracks the
+      // axis and every lane strip are laid out over.
+      for (const span of laneSpans) {
+        const node = el("span", "mb-span")
+        node.setAttribute("aria-hidden", "true")
+        node.title = `a call on ${view.lane.label}: ${span.opened.id}${
+          span.closed === null ? ", still running" : ` to ${span.closed.id}`
+        }`
+        node.append(el("span", "mb-span-tip", "("), el("span", "mb-span-line"), el("span", "mb-span-tip", ")"))
+        node.style.gridColumn = spanColumns(span.from, span.to ?? span.from)
+        strip.append(node)
+        spanEls.push({ node, from: span.from, to: span.to })
+      }
       const counts = new Map<number, number>()
       for (const notification of view.lane.notifications) {
         counts.set(notification.tick, (counts.get(notification.tick) ?? 0) + 1)

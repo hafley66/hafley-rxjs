@@ -4,7 +4,7 @@ import { interval } from "rxjs"
 import { describe, expect, it } from "vitest"
 import { page } from "vitest/browser"
 import { marbleDoc } from "./0_document.js"
-import { AXIS_MAX_PITCH, AXIS_PAD, AXIS_PITCH, type MarbleDoc, marbleAxis } from "./0_types.js"
+import { AXIS_MAX_PITCH, AXIS_PAD, AXIS_PITCH, type MarbleDoc, marbleAxis, marbleCallSpans } from "./0_types.js"
 import { runMarbleDemo } from "./2_run.js"
 import { createMarblePlayer, type MarblePlayer } from "./4_player.js"
 import { renderMarbles } from "./5_render.js"
@@ -543,6 +543,40 @@ describe("geometry", () => {
       const marked = [...host.querySelectorAll<HTMLElement>('.mb-marble[data-state="current"]')]
       for (const node of marked) expect(Number(node.dataset.tick)).toBe(tick)
     }
+    unsubscribe()
+  })
+
+  it("brackets each call from the column it opened on to the column it closed on", () => {
+    const { host, player, unsubscribe } = mount("geometry-spans", RUN)
+    const doc = player.doc.$()
+    const axis = marbleAxis(doc)
+    const xOf = (tick: number): number | undefined => axis.columns.find(column => column.tick === tick)?.x
+    let checked = 0
+    for (const lane of doc.lanes) {
+      const strip = host.querySelector<HTMLElement>(`.mb-lane[data-lane="${lane.id}"] .mb-strip`)
+      expect(strip).not.toBeNull()
+      if (strip === null) continue
+      const stripBox = strip.getBoundingClientRect()
+      const drawn = [...strip.querySelectorAll<HTMLElement>(".mb-span")]
+      const spans = marbleCallSpans(doc).filter(span => span.lane.id === lane.id)
+      expect(drawn).toHaveLength(spans.length)
+      spans.forEach((span, index) => {
+        const node = drawn[index]
+        const from = xOf(span.from)
+        expect(from).toBeDefined()
+        const box = node?.getBoundingClientRect()
+        if (box === undefined || from === undefined) return
+        // The opening bracket starts on the column the call was entered on.
+        expect(Math.abs(box.left - (stripBox.left + AXIS_PAD + from))).toBeLessThanOrEqual(1)
+        // And the closing one ends where the column after the call begins, so the bracket covers
+        // every turn the call was live on and no turn it was not.
+        const after = span.to === null ? undefined : xOf(span.to + 1)
+        if (after !== undefined) expect(Math.abs(box.right - (stripBox.left + AXIS_PAD + after))).toBeLessThanOrEqual(1)
+        else expect(box.right).toBeGreaterThanOrEqual(stripBox.left + AXIS_PAD + (xOf(span.to ?? span.from) ?? 0))
+        checked += 1
+      })
+    }
+    expect(checked).toBeGreaterThan(4)
     unsubscribe()
   })
 

@@ -16,6 +16,7 @@ import {
   type MarbleLane,
   type MarbleNotification,
   marbleAxis,
+  marbleCallSpans,
   marbleChain,
   marbleColumnCount,
   marbleEdges,
@@ -290,6 +291,59 @@ describe("the well-order of a column", () => {
       "outer#1<-nobody",
       "inner#1<-outer#1",
       "shared#1<-nobody",
+    ])
+  })
+})
+
+describe("the calls a lane makes", () => {
+  it("spans a call from the event that opened it to the event that ended it", () => {
+    const once = doc(
+      [0, 1, 2, 3],
+      [
+        lane("inner", [
+          event("inner#1", "subscribe", 1),
+          event("inner#2", "next", 2, { value: "a" }),
+          event("inner#3", "complete", 3),
+        ]),
+      ],
+    )
+
+    expect(marbleCallSpans(once).map(span => [span.opened.id, span.closed?.id ?? null, span.from, span.to])).toEqual([
+      ["inner#1", "inner#3", 1, 3],
+    ])
+  })
+
+  it("counts two calls on one lane as two spans, because a lane is one row and not one call", () => {
+    const twice = doc(
+      [0, 1, 2, 3, 4, 5],
+      [
+        lane("keys", [
+          event("keys#1", "subscribe", 1),
+          event("keys#2", "unsubscribe", 2),
+          event("keys#3", "subscribe", 4),
+          event("keys#4", "truncate", 5),
+        ]),
+      ],
+    )
+
+    expect(marbleCallSpans(twice).map(span => [span.from, span.to])).toEqual([
+      [1, 2],
+      [4, 5],
+    ])
+  })
+
+  it("leaves a call open when nothing closed it, and starts one at a lane's first event when it has no marker", () => {
+    const open = doc(
+      [0, 1],
+      [
+        lane("live", [event("live#1", "subscribe", 0), event("live#2", "next", 1, { value: "a" })]),
+        lane("written", [event("written#1", "next", 1, { value: "b" })]),
+      ],
+    )
+
+    expect(marbleCallSpans(open).map(span => [span.lane.id, span.from, span.to])).toEqual([
+      ["live", 0, null],
+      ["written", 1, null],
     ])
   })
 })
