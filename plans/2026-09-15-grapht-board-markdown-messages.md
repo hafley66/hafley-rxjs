@@ -265,7 +265,7 @@ type MessageIntent =
 | 1 | landed | fence offset join: occurrence span plus `codeStart` | a mermaid and a d2 token resolve to the exact absolute offset in the file |
 | 2 | landed | `MdAddress` with `locatorHash` / `contentHash` / `docHash`, plus the WebCrypto twin | an in-place edit above a fence: `locatorHash` unchanged, `span` moved, `contentHash` unchanged; edit inside: `contentHash` changes. An *inserted* block above shifts `${section}/${ordinal}` and with it the locator, so relocation falls through to `contentHash` (see 11a) |
 | 3 | landed | `markdownGraph`: blocks as nodes, heading nesting as groups, links as edges | hover a section highlights its links and backlinks; ids survive an inserted section |
-| 4 | half | board **document** landed (`4_board/0_board.ts`: items, placements, journal fold, relocation, validate, print/parse). Still open: a board surface — item renderers, the gestures that fill the journal, and the file write/read that makes the reload claim | place a section and a fence on a board, move both, reload, positions persist |
+| 4 | near | board document, frame, and file landed (`4_board/{0_board,1_boardFrame,2_boardFile}.ts`: items, placements, journal fold, relocation, validate, print/parse, frame projection, sibling `<document>.board.json`). Still open: a *live* surface — a host that points pointer gestures into the movement journal and reloads the board from its file | place a section and a fence on a board, move both, reload, positions persist |
 | 5 | | pin layer and click to address | click a mermaid message and get the absolute file range it came from |
 | 6 | | message log, intent member, staleness and reanchor | a message survives an edit above it, reanchors by structural key, orphans when its own text changes |
 | 7 | | commit trailer and `grapht-doc-history` | one command prints every message with the revision it was written against and the revision that resolved it |
@@ -316,8 +316,19 @@ block, including fences, and `withFence` promotes one when whoever rendered the 
 frame over, because grapht does not parse mermaid or d2. `foldMoves` replays a `MoveHistory`
 prefix onto placements (cursor included, so an undone gesture un-moves the board), `validateBoard`
 names what is wrong with a board on read, and `parseBoard` refuses a file whose `format` is not
-`grapht-board/0`. What is still missing is the surface: item renderers, the gestures that fill the
-journal, and the file write/read that makes the reload half of the phase's acceptance true.
+`grapht-board/0`. `boardFrame(board, { size, viewport })` is the whole rendering seam and adds no renderer contract:
+nodes are the items themselves, bounds come from placements, labels from the host's measurement, and
+the camera is `fitGraphCamera` over those bounds. An item nobody placed stacks downward in board
+order, so a board that has never been gestured still paints the same way in every run;
+`geometry.revisionId` is a `documentFingerprint` of the placed geometry (the convention
+`geometry:translated:` and `svg:` already use), deliberately excluding the viewport so a resize does
+not invalidate a geometry memo. The board is kept as `<document>.board.json` beside the document
+through a pid-named temp file and a rename — a reader never meets half a board — and `readBoardFile`
+refuses a file that is not a board and a board its own validation rejects, naming the path either
+way.
+
+What is still missing is a *live* surface: a host that points at a board, fills the movement journal
+from real gestures, and reloads from the file, which is what the phase's acceptance asks for.
 
 Known gap, pre-existing and outside these phases: `pnpm api` in `packages/signals` regenerates
 `docs/reference-api.md` in a form that predates its `0_log.ts` re-export of `LogEmit` /
