@@ -1,5 +1,6 @@
 dist/
 out/
+site/.vitepress/cache
 site/pages
 site/dist
 docs/dist
