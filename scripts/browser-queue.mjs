@@ -12,6 +12,13 @@
 // (`packages/vitest-playwright/src/12_budget.ts`), imported as TypeScript: node 24 strips the types.
 //
 //   node scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts
+//
+// A gate that launches Chrome belongs in here too, or it has to not launch Chrome at all. size-limit
+// is the second case: with `@size-limit/time` installed it measures every matched file in parallel
+// (Promise.all, three runs each) through estimo, so `dist/*.js` on a preserved module tree is one
+// Chrome per file — 21 of them for signal-grid on 2026-09-16, which starved the machine and made
+// Chrome refuse new tabs. Every `.size-limit.json` entry therefore sets `"running": false`, which
+// keeps the byte gate and the computed load time and drops the browser measurement.
 import { spawn } from "node:child_process"
 import { closeSync, mkdirSync, openSync } from "node:fs"
 import { homedir } from "node:os"
