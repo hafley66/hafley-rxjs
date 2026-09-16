@@ -29,7 +29,9 @@ because the injected engine runs (measured, see Evidence).
 | `page.clock.install/setFixedTime/runFor` | `clock` | injected `createClock(globalObject)` — Playwright's own, realm-side | ✓ |
 | timezone / locale | `patchIntl` | `Intl` overrides in MAIN world | partial — JS-visible values only, not network headers |
 | `page.route()/route.fulfill()` | `route` | DNR block/redirect/modifyHeaders + MAIN-world `fetch`/XHR patch | partial — no document/subresource/worker coverage, no body synth at network layer |
-| `page.evaluate(fn)` | `evaluate` | `chrome.scripting.executeScript({world:"MAIN"})` | ✓ |
+| `page.evaluate(fn)` | `evaluateInPage` | `chrome.scripting.executeScript({world:"MAIN"})`, awaited, errors as text | ✓ |
+| `localStorage`/`sessionStorage` reads | `readStorage` / `snapshotStorage` | page-realm evaluate over `window[kind]` | ✓ (observation alone only sees writes made while observing) |
+| click recording for guidance | observe source `"click"` | MAIN-world capture listener + engine `generateSelectorSimple` | ✓ — selector, candidates, and ancestry per click |
 | cookies / storage state | `cookies` | `chrome.cookies` + injection | ✓ |
 | downloads | `download` | `chrome.downloads` | ✓ (better than CDP) |
 | worker / MV3 service-worker targets | — | no extension execution context | ✗ |

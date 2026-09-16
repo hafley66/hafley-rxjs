@@ -13,7 +13,7 @@ export type LocatorQuery = {
 export type ImageAsset = { mime: string; base64: string }
 export type PageImage = { src: string; width: number; height: number }
 export type TabInfo = { id: number; url: string; title: string; active: boolean }
-export type ObservationSource = "dom" | "localStorage" | "sessionStorage" | "indexedDB"
+export type ObservationSource = "dom" | "localStorage" | "sessionStorage" | "indexedDB" | "click"
 export type ObservationOptions = {
   sources: ObservationSource[]
   selector?: string
@@ -35,6 +35,12 @@ export type PageObservationEvent = {
   newValue?: string | null
   value?: string | null
   text?: string
+  /** Click events only: a Playwright selector for the clicked element, when the engine is installed. */
+  playwrightSelector?: string
+  /** Click events only: fallback selectors to try in order. */
+  candidates?: string[]
+  /** Click events only: the clicked element's ancestry, innermost first. */
+  path?: { tag: string; role: string | null; name: string | null; id: string | null }[]
 }
 export type ObservationBatch = {
   active: boolean
@@ -110,6 +116,10 @@ export interface PageControls {
   stopObserving(): Promise<ObservationBatch>
   installSelectorEngine(source: string, options?: { frameId?: number }): Promise<EngineInstall>
   resolveSelector(selector: string, options?: { strict?: boolean; frameId?: number }): Promise<EngineResult>
+  /** Runs a function expression in the page's own realm and returns its resolved, serializable value. */
+  evaluate<R = unknown>(source: string, args?: unknown[]): Promise<R>
+  readStorage(kind: "localStorage" | "sessionStorage", key: string): Promise<string | null>
+  snapshotStorage(kind: "localStorage" | "sessionStorage"): Promise<Record<string, string>>
 }
 export interface ExtensionCommands {
   tabs(): Promise<TabInfo[]>
@@ -119,6 +129,7 @@ export interface ExtensionCommands {
   activate(tabId: number): Promise<void>
   installSelectorEngine(tabId: number, source: string, frameId?: number): Promise<EngineInstall>
   resolveWithSelectorEngine(tabId: number, query: EngineQuery): Promise<EngineResult>
+  evaluateInPage(tabId: number, source: string, args?: unknown[]): Promise<unknown>
 }
 /** Playwright selector query handed to the injected engine in the page realm. */
 export type EngineQuery = { selector: string; strict?: boolean; frameId?: number }

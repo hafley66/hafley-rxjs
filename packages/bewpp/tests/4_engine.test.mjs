@@ -83,6 +83,15 @@ test(
 
       await assert.rejects(page.resolveSelector("role=button", { strict: true }), /resolved to 2 elements/)
 
+      // Page-realm evaluation, including storage reads that observation alone cannot provide.
+      assert.equal(await page.evaluate("() => 1 + 1"), 2)
+      assert.equal(await page.evaluate("(a, b) => a + b", [2, 3]), 5)
+      await assert.rejects(page.evaluate("() => { throw new Error('boom') }"), /boom/)
+      await page.evaluate("() => { localStorage.setItem('token', 'abc'); sessionStorage.setItem('once', '1') }")
+      assert.equal(await page.readStorage("localStorage", "token"), "abc")
+      assert.deepEqual({ ...(await page.snapshotStorage("localStorage")) }, { token: "abc" })
+      assert.equal(await page.readStorage("localStorage", "absent"), null)
+
       await page.goto(address + "/fixture?again")
       await until(async () => (await page.resolveSelector("role=button")).count === 2)
       assert.deepEqual(await page.resolveSelector("role=button").then(result => result.count), 2)

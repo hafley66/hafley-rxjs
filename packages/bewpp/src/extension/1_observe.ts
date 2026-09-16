@@ -63,7 +63,7 @@ function startDomObserver() {
 window.addEventListener("message", event => {
   if (event.source !== window || event.data?.channel !== channel || event.data?.direction !== "event") return
   const payload = event.data.payload as Omit<PageObservationEvent, "sequence"> | undefined
-  if (!payload || !["localStorage", "sessionStorage", "indexedDB"].includes(payload.source)) return
+  if (!payload || !["localStorage", "sessionStorage", "indexedDB", "click"].includes(payload.source)) return
   const eventValue = options?.includeValues
     ? payload
     : {

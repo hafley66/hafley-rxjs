@@ -70,4 +70,46 @@ if (state.bewppPageHooksBuild !== __BEWPP_BUILD__) {
       return request
     }
   }
+
+  // Click recording: enough context for a human or a model to name the automation target without
+  // parsing the DOM, using the injected engine's own selector generator when it is installed.
+  const accessibleName = (element: Element) =>
+    (element.getAttribute("aria-label") || element.textContent || element.getAttribute("title") || "")
+      .trim()
+      .slice(0, 120)
+  window.addEventListener(
+    "click",
+    event => {
+      if (!sources.has("click")) return
+      const target = event.target
+      if (!(target instanceof Element)) return
+      const engine = (
+        globalThis as typeof globalThis & { __bewppEngine?: { selectorFor: (element: Element) => string | null } }
+      ).__bewppEngine
+      const candidates = [
+        engine?.selectorFor(target) ?? null,
+        target.id ? `#${target.id}` : null,
+        target.getAttribute("data-testid") ? `[data-testid="${target.getAttribute("data-testid")}"]` : null,
+        target.getAttribute("aria-label") ? `[aria-label="${target.getAttribute("aria-label")}"]` : null,
+        accessibleName(target) ? `${target.tagName.toLowerCase()}:has-text("${accessibleName(target)}")` : null,
+      ].filter((candidate): candidate is string => !!candidate)
+      const path: { tag: string; role: string | null; name: string | null; id: string | null }[] = []
+      for (let element: Element | null = target; element && path.length < 6; element = element.parentElement)
+        path.push({
+          tag: element.tagName.toLowerCase(),
+          role: element.getAttribute("role"),
+          name: accessibleName(element),
+          id: element.id || null,
+        })
+      emit({
+        source: "click",
+        operation: "click",
+        playwrightSelector: engine?.selectorFor(target) ?? undefined,
+        candidates,
+        path,
+        text: accessibleName(target),
+      })
+    },
+    true,
+  )
 }

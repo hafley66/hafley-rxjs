@@ -69,12 +69,22 @@ and image download. Submission-labelled/form buttons require `{ allowSubmit: tru
 Page navigation stays within the extension's granted origins.
 
 `page.observe(...)` starts a bounded per-document event buffer. Sources can include
-debounced DOM text snapshots, `localStorage`, `sessionStorage`, and IndexedDB
-mutations. `readObservations({ afterSequence, limit })` supports cursor-based reads;
+debounced DOM text snapshots, `localStorage`, `sessionStorage`, IndexedDB mutations, and
+`click` (see below). `readObservations({ afterSequence, limit })` supports cursor-based reads;
 `stopObserving()` stops collection and returns the retained buffer. Storage values
 are excluded unless `includeValues` is true. Main-world hooks observe same-tab page
 writes while the isolated content script retains the buffer and extension channel.
 Observations and cursors are discarded by navigation.
+
+`page.evaluate(source, args)` runs a function expression in the page's own realm and returns its
+awaited, serializable result; `readStorage(kind, key)` and `snapshotStorage(kind)` read Web Storage,
+which observation cannot do for values written before it started.
+
+The `click` source records clicks with a Playwright selector when the selector engine is installed,
+plus fallback candidates (`#id`, `[data-testid=…]`, `[aria-label=…]`, `:has-text(…)`) and the clicked
+element's ancestry. `ClickLog({ path })` persists them to SQLite through `node:sqlite` and reads the
+most recent back with `recent(limit)`, so a person can click through a flow and hand the targets over
+for automation without anyone parsing the DOM.
 
 ## Lifetimes and state
 

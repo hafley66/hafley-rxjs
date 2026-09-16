@@ -97,6 +97,17 @@ export class ExtensionPage implements PageControls {
   async resolveSelector(selector: string, options: { strict?: boolean; frameId?: number } = {}) {
     return this.rpc.resolveWithSelectorEngine(this.id, { selector, ...options })
   }
+  async evaluate<R = unknown>(source: string, args: unknown[] = []): Promise<R> {
+    return (await this.rpc.evaluateInPage(this.id, source, args)) as R
+  }
+  async readStorage(kind: "localStorage" | "sessionStorage", key: string) {
+    return this.evaluate<string | null>("(kind, key) => window[kind].getItem(key)", [kind, key])
+  }
+  async snapshotStorage(kind: "localStorage" | "sessionStorage") {
+    return this.evaluate<Record<string, string>>("(kind) => Object.fromEntries(Object.entries({ ...window[kind] }))", [
+      kind,
+    ])
+  }
 }
 
 export class ExtensionLocator implements LocatorControls {

@@ -54,6 +54,7 @@ const ENGINE_INSTALLER = (engineSource: string) => {
     window: Window,
     options: Record<string, unknown>,
   ) => {
+    generateSelectorSimple: (element: Element, options: Record<string, unknown>) => string
     parseSelector: (selector: string) => unknown
     querySelector: (parsed: unknown, root: Node, strict: boolean) => Element
     querySelectorAll: (parsed: unknown, root: Node) => Element[]
@@ -70,6 +71,13 @@ const ENGINE_INSTALLER = (engineSource: string) => {
   })
   let sequence = 0
   state.__bewppEngine = {
+    selectorFor(element: Element) {
+      try {
+        return injected.generateSelectorSimple(element, {})
+      } catch {
+        return null
+      }
+    },
     query(selector: string, strict: boolean) {
       const parsed = injected.parseSelector(selector)
       const elements = strict
@@ -158,6 +166,28 @@ function connect() {
       const result = await injectEngine(tabId, source, frameId)
       engineSources.set(tabId, { source, frameId })
       return result
+    },
+    async evaluateInPage(tabId, source, args = []) {
+      if (!(await tabs()).some(tab => tab.id === tabId))
+        throw new Error("Tab is outside the extension’s permitted sites.")
+      await waitForComplete(tabId)
+      const [result] = await chrome.scripting.executeScript({
+        target: { tabId },
+        world: "MAIN",
+        func: async (functionSource: string, callArgs: unknown[]) => {
+          try {
+            const value = await new Function("args", `return (${functionSource}).apply(undefined, args)`)(callArgs)
+            return { ok: true, value: value === undefined ? null : value }
+          } catch (error) {
+            return { ok: false, error: String((error as Error)?.message ?? error) }
+          }
+        },
+        args: [source, args],
+      })
+      const payload = result?.result as { ok: boolean; value?: unknown; error?: string } | undefined
+      if (!payload) throw new Error("The page realm returned no evaluate result.")
+      if (!payload.ok) throw new Error(payload.error)
+      return payload.value ?? null
     },
     async resolveWithSelectorEngine(tabId, query) {
       if (!(await tabs()).some(tab => tab.id === tabId))
