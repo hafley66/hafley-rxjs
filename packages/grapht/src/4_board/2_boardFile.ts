@@ -4,7 +4,8 @@
 // validation rejects, so the write goes through a sibling temp file and the read ends in
 // `validateBoard`. The path rule is the plan's: the board is a sibling of the document it
 // describes, named after it, so a document and its board travel through git together.
-import { readFileSync, renameSync, rmSync, writeFileSync } from "node:fs"
+import { readFileSync } from "node:fs"
+import { writeArtifactFile } from "../lib/2_artifactFile.js"
 import { type Board, parseBoard, printBoard, validateBoard } from "./0_board.js"
 
 /** The board artefact for a document: `<document>.board.json`, beside it. */
@@ -13,22 +14,9 @@ export function boardPathFor(documentPath: string): string {
   return `${documentPath}.board.json`
 }
 
-/**
- * Writes the board as its document's sibling. The bytes land in a temp file that keeps the pid in
- * its name — two writers cannot share one — and a rename puts them in place, so a reader sees the
- * previous board or the new one and never half of either.
- */
+/** Writes the board as its document's sibling, whole or not at all. */
 export function writeBoardFile(path: string, board: Board): void {
-  const temporary = `${path}.${process.pid}.tmp`
-  try {
-    writeFileSync(temporary, printBoard(board), "utf8")
-    renameSync(temporary, path)
-  } catch (error) {
-    // The board is committed beside its document, so a temp file left behind is litter somebody
-    // has to review; the failure is already on its way out.
-    rmSync(temporary, { force: true })
-    throw error
-  }
+  writeArtifactFile(path, printBoard(board))
 }
 
 /**
