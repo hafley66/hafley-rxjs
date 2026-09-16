@@ -23,8 +23,10 @@ because the injected engine runs (measured, see Evidence).
 | `locator.click()/hover()/fill()/selectOption()/press()/check()` | `query` mutations | Testing Library `user-event` | partial — synthetic, `isTrusted:false` |
 | `locator.waitFor({state,timeout})` | `wait` | `waitFor` poll loop in content script | ✓ |
 | strict mode, `aka getByRole(...)` suggestions | engine errors passed through verbatim | `InjectedScript.querySelector(parsed, root, strict)` | ✓ |
-| `page.screenshot()` | `capture` | `tabs.captureVisibleTab` | partial — viewport, foreground tab, `<all_urls>`, ~2/s |
-| `page.screenshot({fullPage, clip})` | — | needs `Page.captureScreenshot` | ✗ without debugger |
+| `page.screenshot()` (viewport, compositor pixels) | `capture` | `tabs.captureVisibleTab` | partial — foreground tab, `<all_urls>`, ~2/s |
+| `page.screenshot({fullPage, clip})` | `rasterize` | MAIN-world `foreignObject` → canvas → PNG | ✓ as a re-render; canvas/iframe subtrees blank |
+| `page.clock.install/setFixedTime/runFor` | `clock` | injected `createClock(globalObject)` — Playwright's own, realm-side | ✓ |
+| timezone / locale | `patchIntl` | `Intl` overrides in MAIN world | partial — JS-visible values only, not network headers |
 | `page.route()/route.fulfill()` | `route` | DNR block/redirect/modifyHeaders + MAIN-world `fetch`/XHR patch | partial — no document/subresource/worker coverage, no body synth at network layer |
 | `page.evaluate(fn)` | `evaluate` | `chrome.scripting.executeScript({world:"MAIN"})` | ✓ |
 | cookies / storage state | `cookies` | `chrome.cookies` + injection | ✓ |
@@ -83,15 +85,18 @@ because the injected engine runs (measured, see Evidence).
 | subresources, documents, workers reachable by a page hook | no — all reach the network (`main-world-hook.mjs`) |
 | `window.fetch = …` preserves the hook | no — plain reassignment discards it (`main-world-hook.mjs`) |
 | `tabs.captureVisibleTab` | 800×513 against a 4000px document; follows the foregrounded tab; needs `<all_urls>`; 6/6 rapid calls rejected (`screenshot.mjs`) |
+| DOM-realm rasterization | element capture exact (400×200) and full-page capture **800×4400** from a **background** tab, correct pixels at y=4100 (`dom-screenshot.mjs`) |
+| `foreignObject` delivery | `blob:` URL taints the canvas (`SecurityError`); the same SVG as a `data:` URL is clean — plain SVG is clean either way |
+| nested `<canvas>` in a capture | content absent (sample inside the canvas region reads the parent background) |
 | synthetic click `isTrusted` | false (`main-world-hook.mjs`) |
 
 ## Blocked, and what would unblock it
 
 | blocked | unblock |
 | --- | --- |
-| trusted input, full-page/clip screenshots, worker targets | `chrome.debugger` permission + allow-listed proxy (the fork's `relayConnection.ts:41` shape) |
+| trusted input, worker targets, true compositor pixels | `chrome.debugger` permission + allow-listed proxy (the fork's `relayConnection.ts:41` shape) |
 | `route.fulfill` for documents/subresources/workers | `Fetch.enable` (debugger) or a local proxy host |
-| viewport/clock/timezone/locale emulation | no MV3 path found |
+| pixel parity with Playwright screenshots | nothing in MV3 — DOM-realm capture re-renders, so layout-affecting state, animations, and canvas/iframe subtrees differ |
 
 ## Sequencing
 
