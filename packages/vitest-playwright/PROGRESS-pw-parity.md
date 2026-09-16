@@ -33,7 +33,7 @@ child vitest runs pinned to `--maxWorkers=1`). A row is done when its test is gr
 | pw-video-noreuse | video on disables reuse | `PW/index.js:364,423` | absent | `src/5_streams.ts` pwp:pw-reuse | `contextScope:"worker"` + `video:"on"` yields a new context per test |
 | pw-connect-env | `PW_TEST_CONNECT_WS_ENDPOINT` switches every worker to connect | `PW/index.js:197-199,540` | absent | `src/0_options.ts` pwp:pw-connect-env | env set to a `launchServer()` endpoint: child run launches 0 local browsers |
 | pw-groups | fullyParallel / hook-suite chunking | `PW/runner/index.js:2355-2420` | n/a vitest | none | none |
-| pw-sema | machine-wide browser slots: a worker waits for a slot before launch | none (new) | absent | `src/13_semaphore.ts` pwp:pw-sema | two child vitest runs with `slots:1`, each 1 worker: second run's launch timestamp >= first run's browser close timestamp |
+| pw-sema | machine-wide browser slots: a worker waits for a slot before launch | none (new) | present | `src/13_semaphore.ts` pwp:pw-sema, `src/5_streams.ts` pwp:pw-sema | two child vitest runs with `slots:1`, each 1 worker: second run's launch timestamp >= first run's browser close timestamp |
 
 ## 2. Status legend
 
