@@ -4,16 +4,18 @@
 
 1. [Shape of the workspace](#shape-of-the-workspace)
 2. [The four verbs](#the-four-verbs)
-3. [Root scripts](#root-scripts)
-4. [The audit script](#the-audit-script)
-5. [What the audit found before this pass](#what-the-audit-found-before-this-pass)
-6. [Every package changed, and why](#every-package-changed-and-why)
-7. [tsconfig.base.json](#tsconfigbasejson)
-8. [Changesets configuration](#changesets-configuration)
-9. [CI](#ci)
-10. [Task runner decision](#task-runner-decision)
-11. [Packages that are red today](#packages-that-are-red-today)
-12. [Recommendations this lane did not apply](#recommendations-this-lane-did-not-apply)
+3. [The shape, and what asserts it](#the-shape-and-what-asserts-it)
+4. [Root scripts](#root-scripts)
+5. [Scaffolding a package, and a repository](#scaffolding-a-package-and-a-repository)
+6. [The audit script](#the-audit-script)
+7. [What the audit found before this pass](#what-the-audit-found-before-this-pass)
+8. [Every package changed, and why](#every-package-changed-and-why)
+9. [tsconfig.base.json](#tsconfigbasejson)
+10. [Changesets configuration](#changesets-configuration)
+11. [CI](#ci)
+12. [Task runner decision](#task-runner-decision)
+13. [Packages that are red today](#packages-that-are-red-today)
+14. [Recommendations this lane did not apply](#recommendations-this-lane-did-not-apply)
 
 ## Shape of the workspace
 
@@ -21,15 +23,18 @@
 
 | glob | packages | note |
 | --- | --- | --- |
-| `packages/*` | 24 | `packages/claude-status-line` holds only `statusline.md` and is not a workspace project |
+| `packages/*` | 29 | `packages/claude-status-line` holds only `statusline.md` and is not a workspace project |
 | `packages/grapht/adapters/*` | 8 | benchmark adapters for the `grapht-bench/0` protocol |
-| total | 32 | 27 published, 5 private |
+| total | 37 | 30 published, 7 private |
 
-Private packages: `@hafley66/gothic`, `@hafley66/path-router-lab`, `@hafley66/grapht-render-canvaskit`, `@hafley66/grapht-render-sigma`, `@hafley66/grapht-render-vello-chromium`.
+Private packages: `@hafley66/docs-kit`, `@hafley66/gothic`, `@hafley66/grapht-golden`,
+`@hafley66/path-router-lab`, `@hafley66/grapht-render-canvaskit`, `@hafley66/grapht-render-sigma`,
+`@hafley66/grapht-render-vello-chromium`.
 
 ## The four verbs
 
-Every one of the 32 packages answers to the same four script names.
+Every one of the 37 packages answers to the same four script names, and `node scripts/audit-packages.mjs`
+asserts it (section 3).
 
 | verb | contract | root fan-out |
 | --- | --- | --- |
@@ -38,11 +43,45 @@ Every one of the 32 packages answers to the same four script names.
 | `typecheck` | `tsc --noEmit` over the package's own sources | `pnpm typecheck` |
 | `receipts` | the package's own full gate: lint, typecheck, test, build, plus whatever else that package needs to call itself correct | `pnpm receipts` |
 
-`lint` is deliberately not a per-package verb. `biome.json` sits at the repository root and covers every path, so `pnpm lint` at the root is the whole story. Two packages keep a local `lint` because their own gate ran biome before this pass: `@hafley66/vitest-playwright` and `@hafley66/react-dock-and-flow`.
+`lint` is deliberately not a per-package verb. `biome.json` sits at the repository root and covers every
+path, so `pnpm lint` at the root is the whole story, and no manifest carries a `lint` script —
+`@hafley66/bewpp`, `@hafley66/react-dock-and-flow` and `@hafley66/vitest-playwright` were the last three
+and their gates now chain the four verbs only. The two private packages that emit no artifact,
+`@hafley66/docs-kit` and `@hafley66/path-router-lab`, are the only ones with no `build`; both keep a
+`test` (a node-realm suite that may be empty) so their `receipts` chains the same verbs as everyone's.
 
 Watch mode moved to `test:watch` in the seven packages whose `test` was a bare `vitest`: `@hafley66/rxjs-debugger`, `@hafley66/grid`, `@hafley66/rxjs-ext`, `@hafley66/rxjsx`, `@hafley66/signals`, `@hafley66/virtualizations`, `@hafley66/xdom`. A bare `vitest` under `pnpm -r test` on a developer terminal never returns.
 
 `check` survives as a one-line alias for `receipts` in the eight packages that already had it, because `packages/gothic/AGENTS.md`, `packages/json-rx/README.md` and `packages/react-dock-and-flow/README.md` all tell a contributor to run `pnpm check`.
+
+## The shape, and what asserts it
+
+`node scripts/audit-packages.mjs` prints the shape it found and exits 1 when a manifest has drifted off
+it, so CI (which runs the audit before it runs anything else) fails the run that would have shipped the
+drift.
+
+| rule | why |
+| --- | --- |
+| `build`, `test`, `typecheck`, `receipts` present | one name per verb, so `pnpm -r <verb>` is the whole fan-out |
+| `typecheck` starts with `tsc --noEmit` | one spelling; a package with a second project config appends it (`@hafley66/grapht-render-canvaskit` a `tsconfig.node.json`, `@hafley66/signals` an `examples/tsconfig.json`) |
+| `receipts` starts with `pnpm run typecheck` and contains a test step | the chain reads the same at the front in every package |
+| `receipts` never chains `lint` | lint is repository-wide, and a package gate that lints is a second place to keep that fact |
+| every step spelled `pnpm run <name>` | `npm run` also appears in a pnpm workspace and does not always work; `@hafley66/json-rx`'s gate was the one using it |
+| `check`, where it exists, is `pnpm run receipts` | the alias the READMEs already name |
+
+What the shape does not fix is the runner and the builder, because those are the package's own business:
+
+| axis | spread |
+| --- | --- |
+| `test` | `vitest` 33; `node --test` 4 (`@hafley66/bewpp`, `@hafley66/path`, `@hafley66/grapht-layout-grid-worker`, `@hafley66/grapht-layout-grid-wasm`) over `.mjs` files that use `node:test` and `assert` |
+| `build` | `vite build` 20; `tsc -p tsconfig.build.json` 15; none 2 (the artifact-free private pair) |
+| gate extras | `test:browser`, `test:e2e`, `test:site`, `test:visual`, `size`, `docs`, `cargo test`, and the report/receiver pipelines of `@hafley66/boop-adapters` and `@hafley66/vitest-telemetry` |
+
+Step order inside a gate stays the package's own, with one rule: where a package's `test` reads its own
+build output, `build` stays ahead of it — `@hafley66/bewpp`, `@hafley66/boop-adapters`,
+`@hafley66/signal-grid`, `@hafley66/vitest-playwright`, `@hafley66/vitest-telemetry`. `@hafley66/json-rx`
+puts `typespec:check` and `generate:check` after `typecheck` and before its verbs, because a stale
+generated artifact has to fail before the tests that read it.
 
 ## Root scripts
 
@@ -53,6 +92,7 @@ Watch mode moved to `test:watch` in the seven packages whose `test` was a bare `
 | `typecheck` | `pnpm -r typecheck` | fan-out |
 | `receipts` | `pnpm -r receipts` | fan-out |
 | `lint` | `biome check .` | repository-wide, not per package |
+| `scaffold` | `bash scripts/0_scaffold.sh` | a new package, or a new repository (section 5) |
 | `verify` | `pnpm -r typecheck && pnpm -r build && pnpm -r test` | the whole gate, phases in the order that lets a package's tests read a sibling's `dist` |
 | `audit` | `node scripts/audit-packages.mjs` | the tables in this document |
 | `changeset` | `changeset` | write a release note |
@@ -60,6 +100,38 @@ Watch mode moved to `test:watch` in the seven packages whose `test` was a bare `
 | `release:publish` | `pnpm release:check && changeset publish` | structural gate, then publish |
 
 `pnpm -r run` sorts by workspace dependency order by default, so `verify` gets dependency order inside each phase for free.
+
+## Scaffolding a package, and a repository
+
+```
+bash scripts/0_scaffold.sh package NAME [--description TEXT] [--private] [--dry-run]
+bash scripts/0_scaffold.sh repo NAME [--out DIR] [--scope @scope] [--dry-run]
+```
+
+`templates/package` is one package: the four verbs, the `prepack` release gate, a `tsconfig.json` that
+extends `tsconfig.base.json`, a `tsconfig.build.json` that emits `dist`, and a `src/` tree whose test
+asserts the type contract. `templates/repo` plus the root files named by `scaffold.repoFiles` is a whole
+repository, and the copy carries this script and both templates, so it scaffolds its own packages.
+
+Every input is data, read at run time from the manifest that already knows it:
+
+| input | source |
+| --- | --- |
+| scope, license, author, repository, homepage, registry, the repo file list | `scaffold.*` in the root `package.json` |
+| the devDependency versions the templates declare | the root `devDependencies` (`typescript`, `vitest`, `vite`, `@arethetypeswrong/cli`, `@changesets/cli`, `publint`) |
+| what a fresh repository pins | `engines.node`, `packageManager`, and the node major CI needs |
+| biome's version | `biome.json`'s `$schema`, pinned exactly, because biome refuses to run against a `$schema` it does not match |
+
+A template contains no name, only tokens (`__NAME__`, `__SCOPED__`, `__Ident__`, `__NODE_MAJOR__`, …).
+A token with no input fails the run and names itself, so a `__TOKEN__` cannot reach a package. The
+scaffolder writes into a temporary directory and moves it into place, never overwrites an existing
+target, and does not run `pnpm install` — it prints that step. `--dry-run` prints the file list and the
+substituted manifest.
+
+Verified end to end: `repo probe-repo --out /tmp/probe-repo` produced a repository whose
+`pnpm install`, `pnpm lint`, `pnpm verify` and `pnpm --filter <name> receipts` all pass with no
+edits, and `package probe-pkg` produced a package whose four verbs pass with the workspace's own
+toolchain.
 
 ## The audit script
 
@@ -73,6 +145,7 @@ node scripts/audit-packages.mjs --json   # the same data as JSON
 | check | method |
 | --- | --- |
 | script coverage | `scripts` keys against `build`, `test`, `typecheck`, `receipts`, `lint` |
+| script shape | the four verbs, `tsc --noEmit`, the `receipts` chain and its test step, `pnpm run` spelling, no per-package `lint`, and `check` as the alias — asserted, not reported: the audit exits 1 on a finding |
 | entry point agreement | every path in `main`, `module`, `types` and `exports` is resolved on disk, compared against each other, and matched against the `files` allowlist |
 | workspace protocol | a dependency on another workspace package that is a version range rather than `workspace:*` |
 | undeclared imports | bare specifiers in `src/**` that appear in no dependency block; comments are stripped first, and a bare `mdast` resolves through a declared `@types/mdast` |
@@ -97,6 +170,7 @@ Entry point resolution reads `dist`, so run `pnpm build` first or the audit repo
 | published with no CHANGELOG | 22 | 22 | `changeset version` writes these on first release |
 | peer and dependency findings | 34 | 34 | dependency blocks, not touched |
 | `pnpm release:check` | 1 failure | passes | `@hafley66/vitest-playwright` had no `prepack` |
+| script shape findings | 30 manifests | 0 | one pass over every manifest: four verbs, `tsc --noEmit`, the `receipts` chain, `pnpm run` spelling, no per-package `lint` |
 
 `@hafley66/path-router-lab` keeps no `build` on purpose. It is a private type-compatibility lab that pins four major versions of react-router side by side; `tsc --noEmit` is the entire product, and there is no artifact to emit.
 
@@ -265,6 +339,12 @@ Revisit when `pnpm -r build` passes roughly 60 seconds on a laptop, or when CI m
 ## Packages that are red today
 
 Every one of these was already failing before this pass and was left failing.
+
+The whole workspace also fails its root verb today:
+
+| command | result |
+| --- | --- |
+| `pnpm lint` | 964 errors and 355 warnings under `biome check .` across 850 files: 320 `assist/source/organizeImports`, 17 `a11y/useButtonType`, 32 `noUnusedImports` warnings, 15 `noRedeclare`, 9 `noUnreachable`, 306 `noVoidTypeReturn` (4 errors), and the rest. `pnpm exec biome check --write .` fixes most of it and rewrites files in every package, which is why this pass did not: the repository's dominant style (`export { value, type X }`) is what the assist flags, and the fix touches other lanes' packages. `biome.json` now sets `vcs.useIgnoreFile: true`, so the git worktrees under `.boop-worktrees/` no longer abort the run with a nested-root-configuration error before it reports anything. |
 
 | package | command | error |
 | --- | --- | --- |
