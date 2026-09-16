@@ -20,16 +20,16 @@
   ],
   "scripts": {
     "build": "vite build && tsc --noEmit -p tsconfig.json",
-    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "pnpm run build && vitest run",
+    "typecheck": "tsc --noEmit",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run test:browser",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "test:proof": "node proof/cytoProbe.mjs",
     "proof:live": "pnpm run proof:svg && vite --config proof/vite.config.ts",
     "proof:svg": "d2 --watch=false --theme=0 --layout=dagre --pad=100 --scale=1 ../../0_rendered_artifact_state_epic.d2 proof/arch.svg",
     "test:browser": "pnpm run proof:svg && node ../../../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts",
     "lab": "node ../../scripts/0_generate_renderer_fixture.mjs 1000 && playwright test -c playwright.config.ts",
-    "receipt": "node --experimental-strip-types bin/grapht-adapter-render-cytoscape.ts",
-    "receipts": "pnpm run typecheck && pnpm run test && pnpm run test:browser"
+    "receipt": "node --experimental-strip-types bin/grapht-adapter-render-cytoscape.ts"
   },
   "dependencies": {
     "@hafley66/grapht": "workspace:^",

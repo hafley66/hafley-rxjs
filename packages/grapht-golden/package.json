@@ -4,11 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "golden": "vite --host 127.0.0.1 --port 4174",
-    "dev": "pnpm golden",
     "build": "vite build",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build",
+    "golden": "vite --host 127.0.0.1 --port 4174",
+    "dev": "pnpm run golden",
     "test:browser": "playwright test -c playwright.config.ts"
   },
   "dependencies": {

@@ -16,7 +16,9 @@
     "./scripts/api": "./scripts/api.mjs"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit",
+    "receipts": "pnpm run typecheck && pnpm run test"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.5",

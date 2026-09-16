@@ -19,6 +19,34 @@ const SCRIPT_VERBS = ["build", "test", "typecheck", "receipts", "lint"]
 const SOURCE_EXT = /\.(ts|tsx|js|jsx|mjs|cjs)$/
 const SKIP_DIR = new Set(["node_modules", "dist", "target", ".git", "coverage", "out"])
 
+// The shape every manifest answers to (see docs/MONOREPO.md). Two private packages emit no artifact, so
+// they are the only ones allowed to have no `build`.
+const NO_BUILD = new Set(["packages/docs-kit", "packages/path-router-lab"])
+const STEP_SPELLING = /\bnpm run|\bpnpm (?!run|--)/
+
+/** Everything a manifest has to get right for the four verbs to mean the same thing everywhere. */
+function shapeProblems(dir, scripts) {
+  const out = []
+  for (const verb of ["build", "test", "typecheck", "receipts"]) {
+    if (scripts[verb]) continue
+    if (verb === "build" && NO_BUILD.has(dir)) continue
+    out.push(`no \`${verb}\` script`)
+  }
+  if (scripts.typecheck && !scripts.typecheck.startsWith("tsc --noEmit"))
+    out.push(`typecheck is not \`tsc --noEmit\`: ${scripts.typecheck}`)
+  if (scripts.receipts) {
+    if (!scripts.receipts.startsWith("pnpm run typecheck")) out.push("receipts does not start at `pnpm run typecheck`")
+    if (!/pnpm run test/.test(scripts.receipts)) out.push("receipts has no test step")
+    if (/\blint\b/.test(scripts.receipts)) out.push("receipts chains lint; root `biome check .` owns it")
+  }
+  if (scripts.lint) out.push("package-level lint; root `biome check .` owns it")
+  if (scripts.check && scripts.check !== "pnpm run receipts") out.push(`check is not the receipts alias: ${scripts.check}`)
+  for (const [name, body] of Object.entries(scripts)) {
+    if (STEP_SPELLING.test(body)) out.push(`${name} spells a step without \`run\`: ${body}`)
+  }
+  return out
+}
+
 function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"))
 }
@@ -178,6 +206,7 @@ function audit() {
       private: Boolean(pkg.private),
       published: !pkg.private,
       scripts: Object.fromEntries(SCRIPT_VERBS.map(v => [v, Boolean(scripts[v])])),
+      shapeProblems: shapeProblems(dir, scripts),
       entryProblems,
       workspaceDeps,
       undeclared,
@@ -208,6 +237,13 @@ console.log(line(["---", "---", "---", "---", "---", "---", "---", "---"]))
 for (const r of rows) {
   console.log(line([r.name, r.version, r.published ? "published" : "private", yn(r.scripts.build), yn(r.scripts.test), yn(r.scripts.typecheck), yn(r.scripts.receipts), yn(r.scripts.lint)]))
 }
+
+console.log(`\n## Uniform script shape\n`)
+console.log(line(["package", "finding"]))
+console.log(line(["---", "---"]))
+let shapeCount = 0
+for (const r of rows) for (const p of r.shapeProblems) { console.log(line([r.name, p])); shapeCount++ }
+if (shapeCount === 0) console.log(line(["-", "none"]))
 
 console.log(`\n## Entry points: main, types, exports, files\n`)
 console.log(line(["package", "finding"]))
@@ -259,9 +295,14 @@ console.log(line(["missing build", String(rows.filter(r => !r.scripts.build).len
 console.log(line(["missing test", String(rows.filter(r => !r.scripts.test).length)]))
 console.log(line(["missing typecheck", String(rows.filter(r => !r.scripts.typecheck).length)]))
 console.log(line(["missing receipts", String(rows.filter(r => !r.scripts.receipts).length)]))
+console.log(line(["script shape findings", String(shapeCount)]))
 console.log(line(["entry point findings", String(entryCount)]))
 console.log(line(["non workspace-protocol ranges", String(rangeCount)]))
 console.log(line(["undeclared imports", String(undeclaredCount)]))
 console.log(line(["unused runtime dependencies", String(unusedCount)]))
 console.log(line(["published without CHANGELOG", String(clCount)]))
 console.log(line(["peer/dependency findings", String(peerCount)]))
+
+// The shape is the one thing here that is asserted rather than reported: CI runs the audit before it
+// typechecks, so a manifest that drifts from the four verbs fails the run that would have shipped it.
+process.exit(shapeCount === 0 ? 0 : 1)

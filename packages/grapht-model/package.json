@@ -16,10 +16,10 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "pnpm run build && vitest run --passWithNoTests",
-    "receipts": "pnpm run typecheck && pnpm run test"
+    "typecheck": "tsc --noEmit",
+    "receipts": "pnpm run typecheck && pnpm run test",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs"
   },
   "dependencies": {
     "remark-parse": "^11.0.0",

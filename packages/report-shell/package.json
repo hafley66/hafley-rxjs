@@ -32,10 +32,10 @@
   },
   "scripts": {
     "build": "vite build && cp src/style.css src/kit.css src/marbler.css src/style.css.d.ts src/kit.css.d.ts src/marbler.css.d.ts dist/",
-    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
-    "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "receipts": "pnpm typecheck && pnpm test && pnpm build",
+    "typecheck": "tsc --noEmit",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "test:browser": "node ../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts --passWithNoTests"
   },
   "peerDependencies": {

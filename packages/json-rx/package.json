@@ -23,20 +23,20 @@
   },
   "scripts": {
     "build": "vite build && node scripts/0_writeSchema.mjs",
+    "test": "vitest run && node ../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts",
+    "typecheck": "tsc --noEmit",
+    "receipts": "pnpm run typecheck && pnpm run typespec:check && pnpm run generate:check && pnpm run test && pnpm run build",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "check": "pnpm run receipts",
     "cross-language:generate": "tsx examples/0_cross_language_scan/1_generate.ts && tsx examples/1_cross_language_map_filter_scan/2_generate.ts && tsx examples/2_cross_language_switch_map/2_generate.ts && tsx examples/3_cross_language_reactive_state/2_generate.ts && tsx examples/4_cross_process_frame/1_generate.ts",
-    "cross-language:check": "npm run cross-language:generate -- --check && vitest run --config examples/0_cross_language_scan/vitest.config.ts && vitest run --config examples/5_cross_language_logic/2_vitest.config.ts && cargo test --manifest-path examples/0_cross_language_scan/rust/Cargo.toml && cargo test --manifest-path examples/1_cross_language_map_filter_scan/rust/Cargo.toml && cargo test --manifest-path examples/2_cross_language_switch_map/rust/Cargo.toml && cargo test --manifest-path examples/3_cross_language_reactive_state/rust/Cargo.toml && cargo test --manifest-path examples/4_cross_process_frame/rust/Cargo.toml && cargo test --manifest-path examples/5_cross_language_logic/rust/Cargo.toml",
+    "cross-language:check": "pnpm run cross-language:generate -- --check && vitest run --config examples/0_cross_language_scan/vitest.config.ts && vitest run --config examples/5_cross_language_logic/2_vitest.config.ts && cargo test --manifest-path examples/0_cross_language_scan/rust/Cargo.toml && cargo test --manifest-path examples/1_cross_language_map_filter_scan/rust/Cargo.toml && cargo test --manifest-path examples/2_cross_language_switch_map/rust/Cargo.toml && cargo test --manifest-path examples/3_cross_language_reactive_state/rust/Cargo.toml && cargo test --manifest-path examples/4_cross_process_frame/rust/Cargo.toml && cargo test --manifest-path examples/5_cross_language_logic/rust/Cargo.toml",
     "performance:bench": "vitest bench examples/1_cross_language_map_filter_scan/7_pipeline.bench.ts",
     "performance:rust": "cargo bench --manifest-path examples/1_cross_language_map_filter_scan/rust/Cargo.toml",
     "generate": "tsx scripts/1_generateAutomations.ts",
     "generate:check": "tsx scripts/1_generateAutomations.ts --check && node scripts/2_checkGeneratedHeaders.mjs",
     "typespec:check": "tsp compile spec/0_main.tsp --no-emit",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run && node ../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts",
     "test:ui": "vitest --ui",
-    "test:browser": "vitest --config vitest.browser.config.ts",
-    "receipts": "npm run typespec:check && npm run generate:check && npm run typecheck && npm run test && npm run build"
+    "test:browser": "vitest --config vitest.browser.config.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

@@ -6,14 +6,14 @@
   "private": true,
   "scripts": {
     "build": "vite build && tsc -p tsconfig.node.json",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "test": "pnpm run build && vitest run",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
+    "receipts": "pnpm run typecheck && pnpm run test",
     "bench:1k": "node bin/render-canvaskit < geometry/grid-1k.input.json",
     "lab": "vitest run 8_lab.spec.ts",
     "scenario:test": "vitest run 9_scenario.test.ts",
     "scenario:shot": "node 12_scenario_shot.mjs",
-    "receipt": "node --experimental-strip-types bin/render-canvaskit.ts",
-    "receipts": "pnpm run typecheck && pnpm run test"
+    "receipt": "node --experimental-strip-types bin/render-canvaskit.ts"
   },
   "dependencies": {
     "canvaskit-wasm": "0.41.1",

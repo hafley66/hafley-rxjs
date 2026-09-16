@@ -5,19 +5,19 @@
   "description": "Procedural SVG notebooks as one React SPA: spec-derived bars, URL state per section, shuffle, draw-in, algo contract",
   "type": "module",
   "scripts": {
+    "build": "vite build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build:single && pnpm run test:e2e",
     "dev": "vite",
     "scaffold": "bash scripts/0_scaffold.sh",
-    "build": "vite build",
     "build:single": "vite build --mode single",
     "publish:pages": "bash scripts/1_publish-pages.sh",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
     "bench": "vitest bench --run",
     "render:static": "RENDER_STATIC=1 vitest run scripts/2_render-static.test.ts",
     "build:vello": "bash scripts/3_vello-wasm.sh",
     "check": "pnpm run receipts",
-    "test:e2e": "node ../../scripts/browser-queue.mjs vitest run -c vitest.e2e.config.ts",
-    "receipts": "pnpm typecheck && pnpm test && pnpm build:single && pnpm test:e2e"
+    "test:e2e": "node ../../scripts/browser-queue.mjs vitest run -c vitest.e2e.config.ts"
   },
   "dependencies": {
     "@hafley66/path": "workspace:*",

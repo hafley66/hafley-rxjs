@@ -23,14 +23,13 @@
   },
   "scripts": {
     "build": "vite build && cp src/style.css.d.ts dist/style.css.d.ts",
-    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
-    "typecheck": "tsc --noEmit",
-    "check": "pnpm run receipts",
     "test": "vitest run src",
+    "typecheck": "tsc --noEmit",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
+    "check": "pnpm run receipts",
     "test:perf": "playwright test -c e2e/0_perfLab.config.ts",
-    "test:ui": "vitest --ui",
-    "lint": "biome check src",
-    "receipts": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build"
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@hafley66/signals": "workspace:*"

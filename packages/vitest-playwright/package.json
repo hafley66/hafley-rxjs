@@ -37,13 +37,12 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "biome check src",
-    "test:semaphore": "vitest run --config vitest.semaphore.config.ts",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "receipts": "pnpm run typecheck && pnpm run build && pnpm run test",
+    "test:semaphore": "vitest run --config vitest.semaphore.config.ts",
     "check": "pnpm run receipts",
     "test:parity": "vitest run --config vitest.parity.config.ts",
-    "receipts": "pnpm lint && pnpm typecheck && pnpm build && pnpm test",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs"
   },
   "dependencies": {

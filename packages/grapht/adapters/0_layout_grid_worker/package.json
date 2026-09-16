@@ -24,11 +24,11 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "node --test test/*.test.mjs",
-    "receipt": "node scripts/receipt.mjs",
-    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
+    "typecheck": "tsc --noEmit",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
+    "receipt": "node scripts/receipt.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
