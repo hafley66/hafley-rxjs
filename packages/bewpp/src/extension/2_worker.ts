@@ -20,28 +20,95 @@ async function tabs(): Promise<TabInfo[]> {
 async function publishTabs() {
   if (rpc && socket?.readyState === WebSocket.OPEN) await rpc.changed(await tabs()).catch(() => {})
 }
+async function waitForComplete(tabId: number): Promise<void> {
+  if ((await chrome.tabs.get(tabId)).status === "complete") return
+  await new Promise<void>((resolve, reject) => {
+    const finish = (error?: Error) => {
+      clearTimeout(timeout)
+      chrome.tabs.onUpdated.removeListener(updated)
+      error ? reject(error) : resolve()
+    }
+    const updated = (id: number, change: chrome.tabs.OnUpdatedInfo) => {
+      if (id === tabId && change.status === "complete") finish()
+    }
+    const timeout = setTimeout(() => finish(new Error("The browser tab did not finish loading.")), 15_000)
+    chrome.tabs.onUpdated.addListener(updated)
+    void chrome.tabs.get(tabId).then(
+      tab => {
+        if (tab.status === "complete") finish()
+      },
+      error => finish(error),
+    )
+  })
+}
+/** Serialized into the page realm by `chrome.scripting.executeScript`; must stay self-contained. */
+const ENGINE_INSTALLER = (engineSource: string) => {
+  const state = globalThis as typeof globalThis & { __bewppEngine?: unknown; __bewppEngineClass?: unknown }
+  if (state.__bewppEngine) return { installed: false }
+  const module = { exports: {} as Record<string, unknown> }
+  new Function("module", "exports", `${engineSource}\n;globalThis.__bewppEngineClass = InjectedScript;`)(
+    module,
+    module.exports,
+  )
+  const InjectedScript = state.__bewppEngineClass as new (
+    window: Window,
+    options: Record<string, unknown>,
+  ) => {
+    parseSelector: (selector: string) => unknown
+    querySelector: (parsed: unknown, root: Node, strict: boolean) => Element
+    querySelectorAll: (parsed: unknown, root: Node) => Element[]
+  }
+  const injected = new InjectedScript(window, {
+    isUnderTest: false,
+    sdkLanguage: "javascript",
+    frameSeq: 0,
+    testIdAttributeName: "data-testid",
+    stableRafCount: 1,
+    browserName: "chromium",
+    isUtilityWorld: false,
+    customEngines: [],
+  })
+  let sequence = 0
+  state.__bewppEngine = {
+    query(selector: string, strict: boolean) {
+      const parsed = injected.parseSelector(selector)
+      const elements = strict
+        ? [injected.querySelector(parsed, document, true)]
+        : injected.querySelectorAll(parsed, document)
+      const marker = `b${++sequence}`
+      for (const [index, element] of elements.entries()) element.setAttribute("data-bewpp-hit", `${marker}-${index}`)
+      return { count: elements.length, marker }
+    },
+  }
+  return { installed: true }
+}
+/** Serialized into the page realm; keeps the engine's own error text (strict-mode violations included) intact. */
+const ENGINE_QUERY = (selector: string, strict: boolean) => {
+  const state = globalThis as typeof globalThis & {
+    __bewppEngine?: { query: (selector: string, strict: boolean) => unknown }
+  }
+  if (!state.__bewppEngine)
+    return { ok: false, error: "Install the selector engine before resolving Playwright selectors." }
+  try {
+    return { ok: true, value: state.__bewppEngine.query(selector, strict) }
+  } catch (error) {
+    return { ok: false, error: String((error as Error)?.message ?? error) }
+  }
+}
+/** Engine state lives in a document, so a navigation drops it. Remember the source and reinstate it. */
+const engineSources = new Map<number, { source: string; frameId?: number }>()
+async function injectEngine(tabId: number, source: string, frameId?: number): Promise<{ installed: boolean }> {
+  const [result] = await chrome.scripting.executeScript({
+    target: frameId == null ? { tabId } : { tabId, frameIds: [frameId] },
+    world: "MAIN",
+    func: ENGINE_INSTALLER,
+    args: [source],
+  })
+  return (result?.result as { installed: boolean } | undefined) ?? { installed: false }
+}
 async function execute(tabId: number, command: DomCommand): Promise<unknown> {
   if (!(await tabs()).some(tab => tab.id === tabId)) throw new Error("Tab is outside the extension’s permitted sites.")
-  if ((await chrome.tabs.get(tabId)).status !== "complete") {
-    await new Promise<void>((resolve, reject) => {
-      const finish = (error?: Error) => {
-        clearTimeout(timeout)
-        chrome.tabs.onUpdated.removeListener(updated)
-        error ? reject(error) : resolve()
-      }
-      const updated = (id: number, change: chrome.tabs.OnUpdatedInfo) => {
-        if (id === tabId && change.status === "complete") finish()
-      }
-      const timeout = setTimeout(() => finish(new Error("The browser tab did not finish loading.")), 15_000)
-      chrome.tabs.onUpdated.addListener(updated)
-      void chrome.tabs.get(tabId).then(
-        tab => {
-          if (tab.status === "complete") finish()
-        },
-        error => finish(error),
-      )
-    })
-  }
+  await waitForComplete(tabId)
   if (!readyTabs.has(tabId)) {
     await chrome.scripting.executeScript({ target: { tabId }, files: ["page-hooks.js"], world: "MAIN" })
     await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] })
@@ -84,6 +151,31 @@ function connect() {
       if (!tab) throw new Error("Tab is unavailable.")
       await chrome.windows.update(tab.windowId, { focused: true })
     },
+    async installSelectorEngine(tabId, source, frameId) {
+      if (!(await tabs()).some(tab => tab.id === tabId))
+        throw new Error("Tab is outside the extension’s permitted sites.")
+      await waitForComplete(tabId)
+      const result = await injectEngine(tabId, source, frameId)
+      engineSources.set(tabId, { source, frameId })
+      return result
+    },
+    async resolveWithSelectorEngine(tabId, query) {
+      if (!(await tabs()).some(tab => tab.id === tabId))
+        throw new Error("Tab is outside the extension’s permitted sites.")
+      await waitForComplete(tabId)
+      const [result] = await chrome.scripting.executeScript({
+        target: query.frameId == null ? { tabId } : { tabId, frameIds: [query.frameId] },
+        world: "MAIN",
+        func: ENGINE_QUERY,
+        args: [query.selector, query.strict ?? false],
+      })
+      const payload = result?.result as
+        | { ok: boolean; value?: { count: number; marker: string }; error?: string }
+        | undefined
+      if (!payload) throw new Error("The page realm returned no engine result.")
+      if (!payload.ok) throw new Error(payload.error)
+      return payload.value as { count: number; marker: string }
+    },
   }
   const peer = createBirpc<BridgeEvents, ExtensionCommands>(functions, {
     post: data => ws.send(data),
@@ -121,6 +213,10 @@ onMessage("ready", ({ sender }) => {
 })
 chrome.tabs.onUpdated.addListener((tabId, change) => {
   if (change.status === "loading") readyTabs.delete(tabId)
+  if (change.status === "complete") {
+    const remembered = engineSources.get(tabId)
+    if (remembered) void injectEngine(tabId, remembered.source, remembered.frameId).catch(() => {})
+  }
   if (change.url || change.status === "complete") void publishTabs()
 })
 chrome.tabs.onRemoved.addListener(tabId => {

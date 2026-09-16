@@ -71,6 +71,18 @@ because the injected engine runs (measured, see Evidence).
 - The engine's `addBinding` callbacks are replaced by `chrome.runtime.sendMessage` through the
   existing content-script relay; nothing else in the engine is patched.
 
+Implemented in `packages/bewpp`:
+
+- `installSelectorEngine` / `resolveWithSelectorEngine` worker commands run
+  `chrome.scripting.executeScript({ world: "MAIN" })` with self-contained functions; the engine source
+  is a caller-supplied input (`loadEngineSource`, `BEWPP_ENGINE_SOURCE`).
+- Resolution returns `{ count, marker }` and tags matches `data-bewpp-hit="<marker>-<index>"`, so the
+  existing content-script action path can address exactly what the engine resolved.
+- Strict-mode violations cross the boundary as text, unsanitized.
+- Engine state is per document, so the worker remembers the source and reinstates it on
+  `tabs.onUpdated → complete`.
+- Manifest carries `webNavigation`; the control host's body limit moved to 4 MB to carry the bundle.
+
 ## Lifetimes
 
 - One `ExtensionConnection` owns one worker socket and the tab inventory (existing).

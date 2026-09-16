@@ -47,7 +47,7 @@ test("standalone bewpp: authenticates, drives another extension's DOM, follows n
     const extension = await buildExtension({ outDir: join(directory, "bewpp"), token, url: address.replace("http:", "ws:") + "/extension", matches: ["http://127.0.0.1/*"] })
     const manifest = JSON.parse(readFileSync(join(extension, "manifest.json"), "utf8"))
     assert.deepEqual({ name: manifest.name, permissions: manifest.permissions, hosts: manifest.host_permissions }, {
-      name: "bewpp", permissions: ["scripting", "alarms"], hosts: ["http://127.0.0.1/*"],
+      name: "bewpp", permissions: ["scripting", "alarms", "webNavigation"], hosts: ["http://127.0.0.1/*"],
     })
     const other = join(directory, "fixture-extension")
     mkdirSync(other)

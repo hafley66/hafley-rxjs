@@ -91,6 +91,12 @@ export class ExtensionPage implements PageControls {
   async stopObserving() {
     return (await this.rpc.execute(this.id, { op: "observe", action: "stop" })) as ObservationBatch
   }
+  async installSelectorEngine(source: string, options: { frameId?: number } = {}) {
+    return this.rpc.installSelectorEngine(this.id, source, options.frameId)
+  }
+  async resolveSelector(selector: string, options: { strict?: boolean; frameId?: number } = {}) {
+    return this.rpc.resolveWithSelectorEngine(this.id, { selector, ...options })
+  }
 }
 
 export class ExtensionLocator implements LocatorControls {

@@ -69,7 +69,8 @@ export function registerBrowserControl(
   app.post(
     "/bewpp/command",
     {
-      bodyLimit: 128 * 1024,
+      // The selector engine is delivered through this endpoint, so the body limit covers a full bundle.
+      bodyLimit: 4 * 1024 * 1024,
       onRequest: async (request, reply) => {
         const provided = Buffer.from(request.headers.authorization ?? "")
         const hostname = new URL(`http://${request.headers.host}`).hostname

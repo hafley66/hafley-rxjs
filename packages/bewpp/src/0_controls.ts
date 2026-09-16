@@ -108,6 +108,8 @@ export interface PageControls {
   observe(options: ObservationOptions): Promise<ObservationBatch>
   readObservations(options?: { afterSequence?: number; limit?: number }): Promise<ObservationBatch>
   stopObserving(): Promise<ObservationBatch>
+  installSelectorEngine(source: string, options?: { frameId?: number }): Promise<EngineInstall>
+  resolveSelector(selector: string, options?: { strict?: boolean; frameId?: number }): Promise<EngineResult>
 }
 export interface ExtensionCommands {
   tabs(): Promise<TabInfo[]>
@@ -115,7 +117,14 @@ export interface ExtensionCommands {
   open(url: string): Promise<TabInfo>
   navigate(tabId: number, url: string): Promise<void>
   activate(tabId: number): Promise<void>
+  installSelectorEngine(tabId: number, source: string, frameId?: number): Promise<EngineInstall>
+  resolveWithSelectorEngine(tabId: number, query: EngineQuery): Promise<EngineResult>
 }
+/** Playwright selector query handed to the injected engine in the page realm. */
+export type EngineQuery = { selector: string; strict?: boolean; frameId?: number }
+/** Matched elements are tagged `data-bewpp-hit="<marker>-<index>"` so content-script actions can address them. */
+export type EngineResult = { count: number; marker: string }
+export type EngineInstall = { installed: boolean }
 export interface BridgeEvents {
   changed(tabs: TabInfo[]): void
   ping(): void

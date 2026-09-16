@@ -43,7 +43,7 @@ export async function buildExtension({ outDir, token, url, matches, name = "bewp
         version,
         minimum_chrome_version: "120",
         description: "Browser controls over a local extension worker and content-script message bridge.",
-        permissions: ["scripting", "alarms"],
+        permissions: ["scripting", "alarms", "webNavigation"],
         host_permissions: [...new Set([...matches, `http://${endpoint.hostname}/*`])],
         background: { service_worker: "worker.js", type: "module" },
         content_scripts: [
