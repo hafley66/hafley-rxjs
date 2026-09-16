@@ -42,6 +42,7 @@
     "test:semaphore": "vitest run --config vitest.semaphore.config.ts",
     "test": "vitest run",
     "check": "pnpm run receipts",
+    "test:parity": "vitest run --config vitest.parity.config.ts",
     "receipts": "pnpm lint && pnpm typecheck && pnpm build && pnpm test",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs"
   },
