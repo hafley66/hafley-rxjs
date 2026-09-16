@@ -32,7 +32,8 @@
     "receipts": "pnpm lint && pnpm typecheck && pnpm build && pnpm test",
     "probe:injected-script": "node probes/injected-script.mjs",
     "probe:screenshot": "node probes/screenshot.mjs",
-    "probe:dom-screenshot": "node probes/dom-screenshot.mjs"
+    "probe:dom-screenshot": "node probes/dom-screenshot.mjs",
+    "probe:user-scripts": "node probes/user-scripts.mjs"
   },
   "dependencies": {
     "@aklinker1/zero-serialize-error": "1.0.2",
