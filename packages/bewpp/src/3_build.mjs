@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto"
+import { createRequire } from "node:module"
 import { mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -13,7 +14,12 @@ export async function buildExtension({ outDir, token, url, matches, name = "bewp
   mkdirSync(outDir, { recursive: true })
   // The screenshot rasterizer runs in the page realm, so its bundle travels with the worker.
   // CommonJS, not IIFE: an IIFE's `var` binding dies with the `new Function` scope that evaluates it.
-  const shot = await rolldown({ input: "html-to-image", platform: "browser", transform: { target: "chrome120" } })
+  // Resolve from this package, not the caller's directory: buildExtension runs under any cwd.
+  const shot = await rolldown({
+    input: createRequire(import.meta.url).resolve("html-to-image"),
+    platform: "browser",
+    transform: { target: "chrome120" },
+  })
   const shotOutput = await shot.generate({ format: "cjs", codeSplitting: false })
   await shot.close()
   const define = {
