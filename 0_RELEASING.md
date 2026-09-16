@@ -50,6 +50,31 @@ version, build command, and explicit `files` allowlist. `release:audit` builds
 and packs every public package, runs Publint, and checks each tarball with Are
 The Types Wrong under the repository's ESM-only profile.
 
+`release:audit` stops at the first failing package. To see every lane at once,
+pack and check each one independently instead of driving the script.
+
+Are The Types Wrong judges the published declarations against Node's own
+resolution rules, so three conventions decide whether a package passes:
+
+- Relative specifiers in source carry their emitted extension (`./0_types.js`).
+  The declaration emit copies the spelling, and Node resolves a relative
+  specifier literally; bundler resolution is what hides the omission locally.
+- A stylesheet (or other asset) subpath needs a `types` condition beside it:
+
+  ```json
+  "./style.css": { "types": "./dist/style.css.d.ts", "default": "./dist/style.css" }
+  ```
+
+  A `.css` target is not a resolution under any export condition, so the subpath
+  fails for every consumer without the declaration beside it. Declarations that
+  name an asset import must not reach the published `.d.ts` either; a `tsc`
+  emit keeps those imports, and `marbler` strips them after the build.
+- The declaration emitter must target the path the manifest advertises. A `vite`
+  build needs `vite-plugin-dts` with `entryRoot: "src"`; without it the emit adds
+  a `src/` segment and the advertised `types` path stays empty. A bundled entry
+  additionally needs the mirrored JavaScript beside its declarations, because a
+  declaration tree resolves its siblings by name.
+
 ## Publish
 
 ```bash
