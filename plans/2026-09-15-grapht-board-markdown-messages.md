@@ -267,7 +267,7 @@ type MessageIntent =
 | 3 | landed | `markdownGraph`: blocks as nodes, heading nesting as groups, links as edges | hover a section highlights its links and backlinks; ids survive an inserted section |
 | 4 | near | board document, frame, and file landed (`4_board/{0_board,1_boardFrame,2_boardFile}.ts`: items, placements, journal fold, relocation, validate, print/parse, frame projection, sibling `<document>.board.json`). Still open: a *live* surface — a host that points pointer gestures into the movement journal and reloads the board from its file | place a section and a fence on a board, move both, reload, positions persist |
 | 5 | | pin layer and click to address | click a mermaid message and get the absolute file range it came from |
-| 6 | | message log, intent member, staleness and reanchor | a message survives an edit above it, reanchors by structural key, orphans when its own text changes |
+| 6 | half | message log landed (`6_messages/0_messageLog.ts`: derived ids, JSONL under a header line, verify-on-read, `messageAnomalies`, `messageAnchorState` reusing the address relocation). Still open: the intent member — the boop-owned writer a panel or agent emits into, never appends | a message survives an edit above it, reanchors by structural key, orphans when its own text changes |
 | 7 | | commit trailer and `grapht-doc-history` | one command prints every message with the revision it was written against and the revision that resolved it |
 
 Phases 0 to 3 are read-only and stand alone. Phase 4 is where the board exists.
