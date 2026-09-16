@@ -12,7 +12,8 @@
 // while the demo is on screen and drops the subscription when it is not, so a HUD nobody is looking
 // at costs no frames.
 
-import { mountInView, performanceReadout, runWhenInView } from "@hafley66/docs-kit"
+import { mountInView, runWhenInView } from "@hafley66/docs-kit"
+import { performanceReadout } from "@hafley66/trace"
 import { useEffect, useRef, useState } from "react"
 import { createRoot } from "react-dom/client"
 import { asapScheduler, concatMap, from, groupBy, interval, map, observeOn, of, take } from "rxjs"

@@ -301,9 +301,6 @@ importers:
       '@hafley66/signals':
         specifier: workspace:*
         version: link:../signals
-      '@hafley66/trace':
-        specifier: workspace:*
-        version: link:../trace
       '@lezer/highlight':
         specifier: ^1.2.3
         version: 1.2.3
@@ -631,6 +628,9 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      '@hafley66/trace':
+        specifier: workspace:*
+        version: link:../../../trace
       '@playwright/test':
         specifier: ^1.62.1
         version: 1.62.1
@@ -1468,6 +1468,9 @@ importers:
       '@hafley66/signals':
         specifier: workspace:*
         version: link:../signals
+      '@hafley66/trace':
+        specifier: workspace:*
+        version: link:../trace
       '@types/react':
         specifier: ^19.2.3
         version: 19.3.0

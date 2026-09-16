@@ -1,6 +1,6 @@
 export * from "./0_types.ts"
 export * from "./1_in_view.ts"
 export * from "./2_embeds.ts"
+export * from "./3_meters.ts"
 export * from "./4_content.ts"
 export * from "./5_stats.ts"
-export * from "./3a_performanceReadout.ts"

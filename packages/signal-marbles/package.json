@@ -41,6 +41,7 @@
   "devDependencies": {
     "@hafley66/docs-kit": "workspace:*",
     "@hafley66/signals": "workspace:*",
+    "@hafley66/trace": "workspace:*",
     "@types/react": "^19.2.3",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.5",

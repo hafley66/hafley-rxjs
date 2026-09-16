@@ -10,7 +10,7 @@ import { sequenceNeighborhood } from "../../../src/2_graph/19_sequenceNeighborho
 import type { SequenceGraph } from "@hafley66/grapht-model"
 import { collapseSequenceFrame } from "../../../src/2_graph/18_sequenceCollapse.ts"
 import { graphNeighborhood, hoverOpacity, type HoverMode } from "../../../src/2_graph/16_neighborhood.ts"
-import { performanceReadout } from "../../../../docs-kit/src/3a_performanceReadout.ts"
+import { performanceReadout } from "@hafley66/trace"
 import { animationFrameScheduler, auditTime, distinctUntilChanged, BehaviorSubject, EMPTY, merge, scan, Subject, switchMap, tap } from "rxjs"
 import { Signal, StorageSignal, storageSignal, urlAdapter, sync } from "@hafley66/signals"
 import { createDocumentGraphFrameResource } from "../8_documentRenderer.ts"
