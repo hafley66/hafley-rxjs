@@ -12,7 +12,14 @@ export default defineConfig({
   plugins: [
     telemetry({ root: "md", outDir: "out/telemetry" }),
     vitestPlaywright({
-      serve: { kind: "vite", build: { configFile: `${fixtures}vite.config.ts`, root: fixtures }, serve: "preview" },
+      // reuseExisting: rebuild only when a fixture source is newer than fixtures/dist; otherwise
+      // every e2e run pays a full mermaid + d2 build before the first test.
+      serve: {
+        kind: "vite",
+        build: { configFile: `${fixtures}vite.config.ts`, root: fixtures },
+        serve: "preview",
+        reuseExisting: true,
+      },
       contextScope: "file",
       // playwright's defaults are no timeout at all; a hung action should fail fast.
       timeouts: { action: 10_000, navigation: 30_000 },

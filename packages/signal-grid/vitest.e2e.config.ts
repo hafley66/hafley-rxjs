@@ -16,6 +16,7 @@ export default defineConfig({
         kind: "vite",
         build: { configFile: `${fixtures}vite.config.ts`, root: fixtures },
         serve: "preview",
+        reuseExisting: true,
       },
       contextScope: "file",
       context: { viewport: { width: 1200, height: 800 } },

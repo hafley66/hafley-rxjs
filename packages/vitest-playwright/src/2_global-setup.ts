@@ -94,7 +94,12 @@ function serve$(s: ServeOptions | null): Observable<Resource<ServeState>> {
       const vite = await import("vite")
       const root = s.build.root ?? process.cwd()
       const outDir = resolve(root, s.build.build?.outDir ?? "dist")
-      const skip = s.reuseExisting && existsSync(outDir) && newest(outDir) >= newest(resolve(root, "src"))
+      // A fixtures root keeps its sources beside `index.html` (`main.tsx`, `docs.ts`) rather than in
+      // `src/`, and `newest` of a path that does not exist is 0, so the base is `<root>/src` when that
+      // exists and the root itself otherwise: comparing against a missing `src` would reuse a stale
+      // build forever. `newest` skips `dist` and `node_modules`, so neither can make a root look new.
+      const sources = existsSync(resolve(root, "src")) ? resolve(root, "src") : root
+      const skip = s.reuseExisting && existsSync(outDir) && newest(outDir) >= newest(sources)
       if (!skip) await vite.build({ ...s.build, mode: s.mode ?? s.build.mode, logLevel: s.build.logLevel ?? "warn" })
       if (s.serve === "file") return { baseURL: pathToFileURL(resolve(outDir, s.entry ?? "index.html")).href }
       const preview = await vite.preview({

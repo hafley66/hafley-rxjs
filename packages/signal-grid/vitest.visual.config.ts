@@ -16,6 +16,7 @@ export default defineConfig({
         kind: "vite",
         build: { configFile: `${fixtures}vite.config.ts`, root: fixtures },
         serve: "preview",
+        reuseExisting: true,
       },
       // Not "file". 8_around.ts wires recordVideo only on the branch that builds its own context,
       // so a file-scoped page would film every test into one clip, or none.
