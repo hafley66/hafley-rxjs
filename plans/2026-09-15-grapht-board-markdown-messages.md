@@ -268,7 +268,7 @@ type MessageIntent =
 | 4 | near | board document, frame, and file landed (`4_board/{0_board,1_boardFrame,2_boardFile}.ts`: items, placements, journal fold, relocation, validate, print/parse, frame projection, sibling `<document>.board.json`). Still open: a *live* surface — a host that points pointer gestures into the movement journal and reloads the board from its file | place a section and a fence on a board, move both, reload, positions persist |
 | 5 | | pin layer and click to address | click a mermaid message and get the absolute file range it came from |
 | 6 | half | message log landed (`6_messages/0_messageLog.ts`: derived ids, JSONL under a header line, verify-on-read, `messageAnomalies`, `messageAnchorState` reusing the address relocation). Still open: the intent member — the boop-owned writer a panel or agent emits into, never appends | a message survives an edit above it, reanchors by structural key, orphans when its own text changes |
-| 7 | | commit trailer and `grapht-doc-history` | one command prints every message with the revision it was written against and the revision that resolved it |
+| 7 | landed | commit trailer and `grapht-doc-history` (`7_docHistory/{0_trailer,1_gitTrailers,2_cli}.ts` + `bin/grapht-doc-history`) | one command prints every message with the revision it was written against and the revision that resolved it |
 
 Phases 0 to 3 are read-only and stand alone. Phase 4 is where the board exists.
 
@@ -329,6 +329,16 @@ way.
 
 What is still missing is a *live* surface: a host that points at a board, fills the movement journal
 from real gestures, and reloads from the file, which is what the phase's acceptance asks for.
+
+Phase 7 landed as `packages/grapht/src/7_docHistory/` plus `bin/grapht-doc-history`: the trailer is
+read by name wherever it sits in the commit message, the walk keeps only commits naming this artifact
+or its messages, and `messageLifecycles` joins written-against to resolved-by. Exit codes follow
+`grapht-history` (2 usage, 1 anomalies, 0 clean), and a document nobody has written about yet answers
+`0 messages` rather than failing. Two timestamp traps were measured and are now load-bearing
+comments: git writes an author date with the author's offset while a message may be stamped `Z`, so
+the two are not comparable as strings; and git stamps to the second while a message carries
+milliseconds, so a message written 300ms before its own commit otherwise looks resolved before it was
+written. Comparisons are made as instants, to the second.
 
 Known gap, pre-existing and outside these phases: `pnpm api` in `packages/signals` regenerates
 `docs/reference-api.md` in a form that predates its `0_log.ts` re-export of `LogEmit` /
