@@ -35,6 +35,7 @@
     "test": "pnpm run build && vitest run tests",
     "renderer-fixture": "node scripts/0_generate_renderer_fixture.mjs",
     "fixture:sequence": "node scripts/3_generate_sequence_fixture.mjs",
+    "smoke:board": "node scripts/7_boardSmoke.mjs",
     "bench:fixture-memory": "node scripts/2_compare_fixture_memory.mjs",
     "receipts": "pnpm run typecheck && pnpm run test",
     "api": "node scripts/4_api.mjs",
