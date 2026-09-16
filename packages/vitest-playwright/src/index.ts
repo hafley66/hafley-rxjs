@@ -6,4 +6,4 @@ export { describe, expect, it, type PwFile, type PwTest, type PwWorker, test } f
 export type { ApiEvent, AttemptEvent, ConsoleLine, NetEvent, PageError, TestLog, TestLogState } from "./6_roots.js"
 export type { PageGlobals } from "./7_page-global.js"
 export { baselinePath, type ScreenshotName, type ScreenshotOptions } from "./11_screenshot.js"
-export { availableMemoryBytes, BYTES_PER_WORKER, workerBudget, type WorkerBudget } from "./12_budget.js"
+export { availableMemoryBytes, BYTES_PER_WORKER, type WorkerBudget, workerBudget } from "./12_budget.js"

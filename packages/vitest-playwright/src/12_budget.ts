@@ -27,7 +27,10 @@ export function availableMemoryBytes(): number {
       const out = execFileSync("vm_stat", { encoding: "utf8" })
       const pageSize = Number(/page size of (\d+) bytes/.exec(out)?.[1] ?? 16384)
       const pages = (label: string): number => Number(new RegExp(`${label}:\\s+(\\d+)`).exec(out)?.[1] ?? 0)
-      return (pages("Pages free") + pages("Pages inactive") + pages("Pages speculative") + pages("Pages purgeable")) * pageSize
+      return (
+        (pages("Pages free") + pages("Pages inactive") + pages("Pages speculative") + pages("Pages purgeable")) *
+        pageSize
+      )
     }
     if (platform() === "linux") {
       const kb = /MemAvailable:\s+(\d+) kB/.exec(readFileSync("/proc/meminfo", "utf8"))?.[1]
