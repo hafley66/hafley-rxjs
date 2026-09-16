@@ -1,0 +1,10 @@
+default:
+    just --list
+
+# vite dev server, http://127.0.0.1:5391/demo.html
+dev:
+    pnpm dev
+
+# typecheck + node tests + chromium tests
+check:
+    pnpm run receipts && pnpm run test:browser

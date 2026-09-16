@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest"
+import {
+  describeLane,
+  laneDepth,
+  listeningWindows,
+  MARBLES_VERSION,
+  type MarbleDoc,
+  type MarbleLane,
+  normalizeMarbleDoc,
+} from "./0_types.js"
 import { readMarbles } from "./1_notation.js"
-import { describeLane, laneDepth, listeningWindows, MARBLES_VERSION, normalizeMarbleDoc, type MarbleDoc, type MarbleLane } from "./0_types.js"
 
 const lane = (id: string, source: string): MarbleLane => {
-  const found = readMarbles(source).lanes.find((it) => it.id === id)
+  const found = readMarbles(source).lanes.find(it => it.id === id)
   if (found === undefined) throw new Error(`no lane ${id}`)
   return found
 }
@@ -31,7 +39,7 @@ describe("marble document", () => {
         ],
       },
     ])
-    expect(normalizeMarbleDoc(scrambled).lanes[0]?.notifications.map((it) => it.value ?? it.kind)).toEqual([
+    expect(normalizeMarbleDoc(scrambled).lanes[0]?.notifications.map(it => it.value ?? it.kind)).toEqual([
       "x",
       "b",
       "a",

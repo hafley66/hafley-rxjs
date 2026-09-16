@@ -59,7 +59,11 @@ export function createMarblePlayer(doc: MarbleDoc, options: MarblePlayerOptions 
   const duration = Signal<number>(() => doc$.$().frames)
   const laneViews = Signal<MarbleLaneView[]>(() => {
     const current = doc$.$()
-    return current.lanes.map(lane => ({ lane, depth: laneDepth(lane, current.lanes), listened: listeningWindows(lane) }))
+    return current.lanes.map(lane => ({
+      lane,
+      depth: laneDepth(lane, current.lanes),
+      listened: listeningWindows(lane),
+    }))
   })
   const speed = Signal(1)
   const baseRate = Signal<number>(() => Math.max(duration.$(), 1) / PLAY_SECONDS)

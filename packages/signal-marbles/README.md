@@ -162,7 +162,8 @@ moves the strips, the axis, and the playhead together.
 ## Run
 
 ```sh
-pnpm --filter @hafley66/signal-marbles dev     # http://127.0.0.1:5173/demo.html
+just dev                                        # http://127.0.0.1:5391/demo.html
+pnpm --filter @hafley66/signal-marbles dev      # same thing, from the repository root
 pnpm --filter @hafley66/signal-marbles test
 pnpm --filter @hafley66/signal-marbles test:browser
 ```

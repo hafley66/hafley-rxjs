@@ -176,7 +176,8 @@ export function renderMarbles(player: MarblePlayer, host: HTMLElement): MarbleRe
         const node = marbleNode(notification)
         // What a subscription missed, or no longer hears, is on the diagram but dimmed.
         node.dataset.listened = String(
-          listening.length === 0 || listening.some(window => notification.frame >= window.from && notification.frame <= window.to),
+          listening.length === 0 ||
+            listening.some(window => notification.frame >= window.from && notification.frame <= window.to),
         )
         // A frame carrying several marbles stacks them around the baseline instead of over it.
         node.style.top = count === 1 ? "50%" : `calc(50% + ${(index - (count - 1) / 2) * STACK_STEP}px)`

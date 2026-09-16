@@ -21,7 +21,7 @@
     "README.md"
   ],
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
+    "dev": "vite",
     "build": "tsc -p tsconfig.build.json && cp src/marbles.css dist/marbles.css",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "test": "vitest run",
