@@ -1,1 +1,1 @@
-20260914.0.grapht-hover-ingest-checkpoint.md
+20260916.2.signal-marbles-layout-readout-to-trace.md
