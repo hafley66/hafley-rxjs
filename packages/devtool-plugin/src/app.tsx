@@ -18,9 +18,9 @@ import {
   timer,
 } from "rxjs"
 import { filter, scan, take } from "rxjs/operators"
-import { main } from "./0_runtime/0_store"
-import { DebuggerGrid } from "./2_ui/0_DebuggerGrid"
-import { use$ } from "./lib/1_use"
+import { main } from "./0_runtime/0_store.js"
+import { DebuggerGrid } from "./2_ui/0_DebuggerGrid.js"
+import { use$ } from "./lib/1_use.js"
 
 // main.event$.subscribe(n => console.log("EVENT: ", n))
 main.state$.set({ isEnabled: true })

@@ -9,8 +9,8 @@
  */
 import path from "path"
 import type { Plugin, ResolvedConfig } from "vite"
-import { type RxjsDevtoolPatchOptions, rxjsDevtoolPatchPlugin } from "./0_rxjs_devtool_patch_plugin"
-import { shouldTransformUserCode, transformUserCode } from "./2_user_transform"
+import { type RxjsDevtoolPatchOptions, rxjsDevtoolPatchPlugin } from "./0_rxjs_devtool_patch_plugin.js"
+import { shouldTransformUserCode, transformUserCode } from "./2_user_transform.js"
 
 type VitestConfig = ResolvedConfig & {
   test?: {

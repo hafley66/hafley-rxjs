@@ -10,7 +10,7 @@
  */
 
 import { BehaviorSubject, Subject, Subscription } from "rxjs"
-import { __withNoTrack, main, RxJSTracker } from "../0_runtime/0_store"
+import { __withNoTrack, main, RxJSTracker } from "../0_runtime/0_store.js"
 
 /**
  * Create a BehaviorSubject that tracks an hmr_track entry.

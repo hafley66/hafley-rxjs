@@ -6,7 +6,7 @@
  */
 
 import { afterEach, beforeEach } from "vitest"
-import { main } from "./0_store"
+import { main } from "./0_store.js"
 
 type TestSetupOptions = {
   fakeTrack?: boolean

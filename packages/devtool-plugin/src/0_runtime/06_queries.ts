@@ -1,5 +1,5 @@
-import type { State } from "./0.types"
-import { RxJSTracker } from "./0_store"
+import type { State } from "./0.types.js"
+import { RxJSTracker } from "./0_store.js"
 
 type Store = State["store"]
 

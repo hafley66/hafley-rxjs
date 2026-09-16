@@ -10,7 +10,7 @@ import {
   dietShareRefCount,
   dietTake,
   EasierDietBS,
-} from "./2_diet_rxjs"
+} from "./2_diet_rxjs.js"
 
 describe("DietObservable", () => {
   it("emits values and calls teardown", () => {

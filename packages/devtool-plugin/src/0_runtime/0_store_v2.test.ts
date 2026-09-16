@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { Tracer } from "./0_store_v2"
+import { Tracer } from "./0_store_v2.js"
 
 class Hey<T> {
   subscribe(props: { next: (somethin: T) => void }) {

@@ -4,10 +4,10 @@ import { page } from "vitest/browser"
 
 import "../03_scan-accumulator"
 import { filter, from, map, of, repeat, switchMap, tap } from "rxjs"
-import { state$ } from "../0.types"
-import { useTrackingTestSetup } from "../0_test-utils"
-import { setNow } from "../01_helpers"
-import { DebuggerGrid } from "./0_DebuggerGrid"
+import { state$ } from "../0.types.js"
+import { useTrackingTestSetup } from "../0_test-utils.js"
+import { setNow } from "../01_helpers.js"
+import { DebuggerGrid } from "./0_DebuggerGrid.js"
 
 describe("DebuggerGrid", () => {
   useTrackingTestSetup({ fakeTrack: true, cleanup })

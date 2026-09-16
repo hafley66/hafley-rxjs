@@ -8,10 +8,10 @@
 
 import { Subject } from "rxjs"
 import { describe, expect, it } from "vitest"
-import { useTrackingTestSetup } from "../../../0_runtime/0_test-utils"
-import { _eventBuffer, state$ } from "../00.types"
-import { __$ } from "../hmr/0_runtime"
-import { findTrackByKey } from "../hmr/1_queries"
+import { useTrackingTestSetup } from "../../../0_runtime/0_test-utils.js"
+import { _eventBuffer, state$ } from "../00.types.js"
+import { __$ } from "../hmr/0_runtime.js"
+import { findTrackByKey } from "../hmr/1_queries.js"
 
 describe("plumbing detection", () => {
   useTrackingTestSetup()

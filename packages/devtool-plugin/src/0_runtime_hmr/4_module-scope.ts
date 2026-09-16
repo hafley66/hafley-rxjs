@@ -11,8 +11,8 @@
  */
 // noRxjs()
 import type { Subscription } from "rxjs"
-import { decorateCreate, main } from "../0_runtime/0_store"
-import { __$ as baseTrack } from "./0_runtime"
+import { decorateCreate, main } from "../0_runtime/0_store.js"
+import { __$ as baseTrack } from "./0_runtime.js"
 
 export const ___rxjs_hmr_key___ = Symbol("___rxjs_hmr_key___")
 export interface ModuleScope {
@@ -99,4 +99,4 @@ export function _rxjs_debugger_module_start(url: string): ModuleScope {
 }
 
 // Re-export for convenience
-export { __$ } from "./0_runtime"
+export { __$ } from "./0_runtime.js"

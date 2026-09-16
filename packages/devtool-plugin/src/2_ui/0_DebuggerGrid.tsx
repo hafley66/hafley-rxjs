@@ -2,9 +2,9 @@ import { find } from "lodash"
 import { useState } from "react"
 import { ___rxjs_hmr_key___ } from "~/0_runtime_hmr/4_module-scope"
 import { use$ } from "~/lib/1_use"
-import { main } from "../0_runtime/0_store"
-import { getAllSends, getRootObservables, getTopLevelSubscriptions } from "../0_runtime/06_queries"
-import { MarbleDiagram } from "./1_MarbleDiagram"
+import { main } from "../0_runtime/0_store.js"
+import { getAllSends, getRootObservables, getTopLevelSubscriptions } from "../0_runtime/06_queries.js"
+import { MarbleDiagram } from "./1_MarbleDiagram.js"
 
 export function DebuggerGrid() {
   use$(main.state$, main.state$.initialValue)

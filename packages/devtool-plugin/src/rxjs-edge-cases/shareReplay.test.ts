@@ -8,9 +8,9 @@
 import { Subject } from "rxjs"
 import { describe, expect, it } from "vitest"
 import "../03_scan-accumulator"
-import { useTrackingTestSetup } from "../0_test-utils"
-import { proxy } from "../04.operators"
-import { _rxjs_debugger_module_start } from "../hmr/4_module-scope"
+import { useTrackingTestSetup } from "../0_test-utils.js"
+import { proxy } from "../04.operators.js"
+import { _rxjs_debugger_module_start } from "../hmr/4_module-scope.js"
 
 describe("shareReplay", () => {
   useTrackingTestSetup()

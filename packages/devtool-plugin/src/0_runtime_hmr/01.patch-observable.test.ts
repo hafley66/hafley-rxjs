@@ -14,10 +14,10 @@ import {
   tap,
 } from "rxjs"
 import { describe, expect, it } from "vitest"
-import { main } from "../0_runtime/0_store"
-import { renderStaticTree } from "../0_runtime/05_render-tree"
-import { __$ } from "./0_runtime"
-import { useTrackingTestSetup } from "./0_test-utils"
+import { main } from "../0_runtime/0_store.js"
+import { renderStaticTree } from "../0_runtime/05_render-tree.js"
+import { __$ } from "./0_runtime.js"
+import { useTrackingTestSetup } from "./0_test-utils.js"
 import {
   getAllSends,
   getArgCallForObs,
@@ -30,7 +30,7 @@ import {
   getSendsFor,
   getTopLevelSubscriptions,
   isRuntimeObs,
-} from "./06_queries"
+} from "./06_queries.js"
 
 describe("Class proxy events", () => {
   useTrackingTestSetup(true)

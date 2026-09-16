@@ -2,7 +2,7 @@
  * HMR Track Queries
  */
 
-import type { State } from "../0_runtime/0.types"
+import type { State } from "../0_runtime/0.types.js"
 
 /**
  * Find hmr_track by key (location string like "outer" or "outer:inner")

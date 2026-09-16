@@ -1,10 +1,10 @@
 import { map, Subject } from "rxjs"
 import { describe, expect, it } from "vitest"
-import { main } from "../0_store"
-import { useTrackingTestSetup } from "../0_test-utils"
-import { __$ } from "./0_runtime"
-import { findTrackByKey } from "./1_queries"
-import { trackedObservable } from "./2_tracked-observable"
+import { main } from "../0_store.js"
+import { useTrackingTestSetup } from "../0_test-utils.js"
+import { __$ } from "./0_runtime.js"
+import { findTrackByKey } from "./1_queries.js"
+import { trackedObservable } from "./2_tracked-observable.js"
 
 describe("trackedObservable", () => {
   useTrackingTestSetup(true)

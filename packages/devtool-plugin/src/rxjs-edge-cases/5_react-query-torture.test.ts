@@ -4,9 +4,9 @@
 
 import { defer, map, Subject, switchMap } from "rxjs"
 import { describe, expect, it } from "vitest"
-import { __withNoTrack } from "../0_runtime/0_store"
-import { useTrackingTestSetup } from "../0_runtime/0_test-utils"
-import { _rxjs_debugger_module_start } from "../0_runtime_hmr/4_module-scope"
+import { __withNoTrack } from "../0_runtime/0_store.js"
+import { useTrackingTestSetup } from "../0_runtime/0_test-utils.js"
+import { _rxjs_debugger_module_start } from "../0_runtime_hmr/4_module-scope.js"
 
 describe("VERIFY: entity_id change causing reconnection", () => {
   useTrackingTestSetup()

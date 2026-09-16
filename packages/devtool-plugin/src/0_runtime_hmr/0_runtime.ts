@@ -9,10 +9,10 @@
  */
 
 import { BehaviorSubject, isObservable, Subject } from "rxjs"
-import { getObsId, main, RxJSTracker } from "../0_runtime/0_store"
-import { findTrackByKey } from "./1_queries"
-import { trackedObservable } from "./2_tracked-observable"
-import { trackedSubject } from "./3_tracked-subject"
+import { getObsId, main, RxJSTracker } from "../0_runtime/0_store.js"
+import { findTrackByKey } from "./1_queries.js"
+import { trackedObservable } from "./2_tracked-observable.js"
+import { trackedSubject } from "./3_tracked-subject.js"
 
 // Only treat direct Subject/BehaviorSubject instances as Subjects
 // AnonymousSubject (from .pipe()) should be treated as Observable

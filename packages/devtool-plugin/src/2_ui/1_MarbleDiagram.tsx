@@ -1,6 +1,6 @@
 import { main } from "~/0_runtime/0_store"
 import { use$ } from "~/lib/1_use"
-import { type FlatSubRow, flattenSubTree, getArgCallForObs, getSubTree, getTimeRange } from "../0_runtime/06_queries"
+import { type FlatSubRow, flattenSubTree, getArgCallForObs, getSubTree, getTimeRange } from "../0_runtime/06_queries.js"
 
 type Props = {
   subId: string

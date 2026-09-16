@@ -1,10 +1,10 @@
 // import { BehaviorSubject, filter, map, of, of as rxjsOf, Subject, take } from "rxjs"
 // import { describe, expect, it } from "vitest"
-// import { main } from "../0_runtime/0_store"
-// import { __$ } from "./0_runtime"
-// import { useTrackingTestSetup } from "./0_test-utils"
-// import { findTrackByKey } from "./1_queries"
-// import { trackedSubject } from "./3_tracked-subject"
+// import { main } from "../0_runtime/0_store.js"
+// import { __$ } from "./0_runtime.js"
+// import { useTrackingTestSetup } from "./0_test-utils.js"
+// import { findTrackByKey } from "./1_queries.js"
+// import { trackedSubject } from "./3_tracked-subject.js"
 
 // describe("__$ HMR runtime", () => {
 //   useTrackingTestSetup(true)

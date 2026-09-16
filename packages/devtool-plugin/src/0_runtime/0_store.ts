@@ -1,7 +1,7 @@
 import { set } from "lodash"
 import type { Observable } from "rxjs"
-import { DietBehaviorSubject, DietSubject, dietShareRefCount, EasierDietBS } from "../lib/2_diet_rxjs"
-import type { ObservableEvent, State } from "./0.types"
+import { DietBehaviorSubject, DietSubject, dietShareRefCount, EasierDietBS } from "../lib/2_diet_rxjs.js"
+import type { ObservableEvent, State } from "./0.types.js"
 // noRxjs()
 export class RxJSTracker {
   // Marker to identify tracked observable wrappers (for HMR)

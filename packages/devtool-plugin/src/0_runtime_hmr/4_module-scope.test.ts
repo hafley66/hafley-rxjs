@@ -1,9 +1,9 @@
 import { defer, from, of, Subject, startWith, zip } from "rxjs"
 import { describe, expect, it } from "vitest"
-import { main } from "../0_runtime/0_store"
-import { useTrackingTestSetup } from "./0_test-utils"
-import { findTrackByKey } from "./1_queries"
-import { _rxjs_debugger_module_start } from "./4_module-scope"
+import { main } from "../0_runtime/0_store.js"
+import { useTrackingTestSetup } from "./0_test-utils.js"
+import { findTrackByKey } from "./1_queries.js"
+import { _rxjs_debugger_module_start } from "./4_module-scope.js"
 
 describe("ModuleScope", () => {
   useTrackingTestSetup()

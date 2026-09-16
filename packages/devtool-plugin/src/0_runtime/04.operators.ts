@@ -1,6 +1,6 @@
 // import * as rxjs from "rxjs"
 // import * as rx from "rxjs/operators"
-// import { decorateCreate, decorateOperatorFun } from "./01.patch-observable"
+// import { decorateCreate, decorateOperatorFun } from "./01.patch-observable.js"
 
 // // =============================================================================
 // // CREATION OPERATORS (decorateCreate) - from main rxjs

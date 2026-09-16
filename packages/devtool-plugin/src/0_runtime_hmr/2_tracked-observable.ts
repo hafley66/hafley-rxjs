@@ -9,7 +9,7 @@
  */
 
 import { Observable, type Subscription } from "rxjs"
-import { __withNoTrack, main, RxJSTracker } from "../0_runtime/0_store"
+import { __withNoTrack, main, RxJSTracker } from "../0_runtime/0_store.js"
 
 /**
  * Create an observable that tracks an hmr_track entry.

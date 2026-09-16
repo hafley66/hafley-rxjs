@@ -1,6 +1,6 @@
 import path from "path"
 import { defineConfig } from "vite"
-import { rxjsHmrPlugin } from "../../../1_rxjs_hmr_plugin"
+import { rxjsHmrPlugin } from "../../../1_rxjs_hmr_plugin.js"
 
 export default defineConfig({
   root: __dirname,

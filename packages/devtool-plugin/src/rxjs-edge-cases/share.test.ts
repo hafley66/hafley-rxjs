@@ -8,8 +8,8 @@
 import { ReplaySubject, Subject, share, tap } from "rxjs"
 import { describe, expect, it } from "vitest"
 import "../03_scan-accumulator"
-import { _rxjs_debugger_module_start } from "../0_runtime_hmr/4_module-scope"
-import { useTrackingTestSetup } from "../0_test-utils"
+import { _rxjs_debugger_module_start } from "../0_runtime_hmr/4_module-scope.js"
+import { useTrackingTestSetup } from "../0_test-utils.js"
 
 describe("share", () => {
   useTrackingTestSetup()

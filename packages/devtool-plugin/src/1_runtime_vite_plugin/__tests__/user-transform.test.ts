@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from "vitest"
-import { shouldTransformUserCode, transformUserCode } from "../2_user_transform"
+import { shouldTransformUserCode, transformUserCode } from "../2_user_transform.js"
 
 describe("user-transform", () => {
   describe("shouldTransformUserCode", () => {
@@ -962,14 +962,14 @@ const custom$ = new rx.Observable(sub => sub.next(1))`
       it("wraps namespace Observable construction", () => {
         const code = `import { BehaviorSubject, filter, map, of, of as rxjsOf, Subject, take } from "rxjs"
 import { describe, expect, it } from "vitest"
-import { _eventBuffer, state$ } from "../00.types"
-import { __$ } from "./0_runtime"
+import { _eventBuffer, state$ } from "../00.types.js"
+import { __$ } from "./0_runtime.js"
 import "../03_scan-accumulator"
-import { useTrackingTestSetup } from "../0_test-utils"
-import { getDanglingSubscriptions } from "../06_queries"
-import { findTrackByKey } from "./1_queries"
-import { trackedBehaviorSubject, trackedSubject } from "./3_tracked-subject"
-import { ___rxjs_hmr_key___ } from "./4_module-scope"
+import { useTrackingTestSetup } from "../0_test-utils.js"
+import { getDanglingSubscriptions } from "../06_queries.js"
+import { findTrackByKey } from "./1_queries.js"
+import { trackedBehaviorSubject, trackedSubject } from "./3_tracked-subject.js"
+import { ___rxjs_hmr_key___ } from "./4_module-scope.js"
 
 describe("__$ HMR runtime", () => {
   useTrackingTestSetup(true)
