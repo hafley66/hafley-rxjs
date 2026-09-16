@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { createTimeViewport, densityBuckets, eventRange, reduceTimeViewport } from "./0a_TimeViewport"
+import { createTimeViewport, densityBuckets, eventRange, reduceTimeViewport } from "./0a_TimeViewport.js"
 
 describe("time viewport", () => {
   it("reduces cursor zoom, pan, brush, and follow deterministically", () => {

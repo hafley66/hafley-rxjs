@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc -p tsconfig.build.json && cp src/2_marbler.css dist/2_marbler.css",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && cp src/2_marbler.css dist/2_marbler.css && node scripts/0_stripAssetImports.mjs",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "test": "vitest run",
     "test:browser": "node ../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts",

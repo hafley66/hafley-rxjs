@@ -1,9 +1,9 @@
 import { act } from "react"
 import { createRoot } from "react-dom/client"
 import { describe, expect, it } from "vitest"
-import type { MarbleEvent } from "./0_types"
-import { createMarbler } from "./1_model"
-import { MarblerPanel } from "./2_Marbler"
+import type { MarbleEvent } from "./0_types.js"
+import { createMarbler } from "./1_model.js"
+import { MarblerPanel } from "./2_Marbler.js"
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

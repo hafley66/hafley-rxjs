@@ -1,8 +1,8 @@
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
-import { createMarbler } from "./1_model"
-import { MarblerPanel } from "./2_Marbler"
-import type { MarbleEvent } from "./0_types"
+import { createMarbler } from "./1_model.js"
+import { MarblerPanel } from "./2_Marbler.js"
+import type { MarbleEvent } from "./0_types.js"
 
 type EventTuple = [string, string, string, number, string, string, string, number, number, string, string, string, Array<["queue" | "send" | "wait" | "receive" | "work", number, number]>]
 

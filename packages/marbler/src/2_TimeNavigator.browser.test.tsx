@@ -2,8 +2,8 @@ import { act, useState } from "react"
 import { createRoot } from "react-dom/client"
 import { describe, expect, it } from "vitest"
 import { cdp, page } from "vitest/browser"
-import { createTimeViewport, reduceTimeViewport, type TimelineGesture, type TimelineMark, type TimeViewport } from "./0a_TimeViewport"
-import { NAVIGATOR_PLOT_LEFT, plotX, TimeNavigatorPixi } from "./1b_TimeNavigatorPixi"
+import { createTimeViewport, reduceTimeViewport, type TimelineGesture, type TimelineMark, type TimeViewport } from "./0a_TimeViewport.js"
+import { NAVIGATOR_PLOT_LEFT, plotX, TimeNavigatorPixi } from "./1b_TimeNavigatorPixi.js"
 import "./2_marbler.css"
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true

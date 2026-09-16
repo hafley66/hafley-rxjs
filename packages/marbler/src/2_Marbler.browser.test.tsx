@@ -3,8 +3,8 @@ import { createRoot } from "react-dom/client"
 import { describe, expect, it } from "vitest"
 import { page } from "vitest/browser"
 import { createMarbler, MarblerPanel } from "@hafley66/marbler"
-import type { MarbleEvent, MarbleFrame } from "./0_types"
-import { createTimeViewport, eventRange } from "./0a_TimeViewport"
+import type { MarbleEvent, MarbleFrame } from "./0_types.js"
+import { createTimeViewport, eventRange } from "./0a_TimeViewport.js"
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

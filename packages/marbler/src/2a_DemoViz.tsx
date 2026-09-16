@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react"
-import { createTimeViewport, reduceTimeViewport, type TimelineMark, type TimeViewport } from "./0a_TimeViewport"
-import { formatDuration } from "./0b_time"
-import { TimeNavigatorPixi } from "./1b_TimeNavigatorPixi"
+import { createTimeViewport, reduceTimeViewport, type TimelineMark, type TimeViewport } from "./0a_TimeViewport.js"
+import { formatDuration } from "./0b_time.js"
+import { TimeNavigatorPixi } from "./1b_TimeNavigatorPixi.js"
 
 type DemoEntry = {
   id: string

@@ -1,11 +1,11 @@
-import { createTimeViewport, eventRange, reduceTimeViewport } from "./0a_TimeViewport"
-import { formatDuration } from "./0b_time"
-import type { MarbleEvent, MarblePhase } from "./0_types"
-import { createMarbler } from "./1_model"
-import { MarblerPanel } from "./2_Marbler"
+import { createTimeViewport, eventRange, reduceTimeViewport } from "./0a_TimeViewport.js"
+import { formatDuration } from "./0b_time.js"
+import type { MarbleEvent, MarblePhase } from "./0_types.js"
+import { createMarbler } from "./1_model.js"
+import { MarblerPanel } from "./2_Marbler.js"
 import { createRoot } from "react-dom/client"
 import { useState } from "react"
-import { GitMergeDemo, ObservableKindsDemo } from "./2a_DemoViz"
+import { GitMergeDemo, ObservableKindsDemo } from "./2a_DemoViz.js"
 import "./2_marbler.css"
 
 const PHASES: MarblePhase["kind"][] = ["queue", "send", "wait", "receive", "work"]
