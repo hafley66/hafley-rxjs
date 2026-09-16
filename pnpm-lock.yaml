@@ -228,6 +228,9 @@ importers:
       '@codemirror/language':
         specifier: ^6.12.4
         version: 6.12.4
+      '@hafley66/path':
+        specifier: workspace:*
+        version: link:../path
       '@hafley66/signals':
         specifier: workspace:*
         version: link:../signals
