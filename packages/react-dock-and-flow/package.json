@@ -16,10 +16,13 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./style.css": "./dist/style.css"
+    "./style.css": {
+   "types": "./dist/style.css.d.ts",
+   "default": "./dist/style.css"
+  }
   },
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && cp src/style.css.d.ts dist/style.css.d.ts",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
     "check": "pnpm run receipts",
@@ -41,8 +44,8 @@
     "rxjs": ">=7.8.0"
   },
   "devDependencies": {
-    "@hafley66/rxjs-ext": "workspace:*",
     "@biomejs/biome": "^2.3.11",
+    "@hafley66/rxjs-ext": "workspace:*",
     "@playwright/test": "^1.61.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -53,7 +56,7 @@
     "react-dom": "^19.2.7",
     "rxjs": "^7.8.2",
     "vite": "^8.2.1",
-    "vite-plugin-dts": "^4.5.4",
+    "vite-plugin-dts": "^5.0.3",
     "vitest": "^4.1.10"
   },
   "keywords": [

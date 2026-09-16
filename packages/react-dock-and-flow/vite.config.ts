@@ -6,6 +6,9 @@ export default defineConfig({
   plugins: [dts({
     include: ["src/**/*.ts", "src/**/*.tsx"],
     exclude: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    // Declarations must land at dist/index.d.ts: `exports["."].types` names that path, and without an
+    // entry root the emit adds a `src/` segment that nothing points at.
+    entryRoot: "src",
     outDir: resolve(import.meta.dirname, "dist"),
   })],
   build: {
