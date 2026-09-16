@@ -65,6 +65,10 @@ export function renderBoard(host: BoardHost, root: HTMLElement, options?: BoardR
 	const excerpt = options?.excerpt
 	const card = options?.card ?? CARD
 	const cards = new Map<string, HTMLElement>()
+	/** Where each card was drawn, so a press starts a gesture from the position a person sees and not
+	 * from the one a file happens to hold. An item nobody placed is drawn in the stack, and the host
+	 * cannot know that: it is this file's `unplacedStack` that put it there. */
+	const drawn = new Map<string, BoardPoint>()
 
 	root.classList.add(BOARD_CLASS)
 	// Absolute children position against the nearest positioned ancestor, and a point is measured
@@ -89,6 +93,7 @@ export function renderBoard(host: BoardHost, root: HTMLElement, options?: BoardR
 			const x = placement?.x ?? 0
 			const y = placement?.y ?? stack.get(item.itemId) ?? 0
 			const z = placement?.z ?? 0
+			drawn.set(item.itemId, { x, y })
 			setStyleDiffed(cardElement, "transform", `translate(${x}px, ${y}px)`)
 			setStyleDiffed(cardElement, "zIndex", String(z))
 			setDiffed(cardElement, X_ATTR, String(x))
@@ -103,6 +108,7 @@ export function renderBoard(host: BoardHost, root: HTMLElement, options?: BoardR
 			if (seen.has(itemId)) continue
 			card.remove()
 			cards.delete(itemId)
+			drawn.delete(itemId)
 		}
 	}
 
@@ -144,7 +150,9 @@ export function renderBoard(host: BoardHost, root: HTMLElement, options?: BoardR
 		if (itemId === null) return
 		// Text inside a card would otherwise be selected by the first move of a drag.
 		event.preventDefault()
-		gesture = host.begin(itemId, pointAt(event))
+		// The item starts where it is seen. For an item nobody placed that is the stack position, which
+		// is not the position the journal folds it to — the gesture carries the difference.
+		gesture = host.begin(itemId, pointAt(event), drawn.get(itemId) ?? { x: 0, y: 0 })
 		root.setAttribute(DRAG_ATTR, itemId)
 	}
 

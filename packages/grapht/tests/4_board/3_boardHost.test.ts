@@ -3,11 +3,19 @@
 // placements drawn, the events retained, what `boardForFile` would write — not about the fold.
 import { describe, expect, test } from "vitest"
 import { mdDocument } from "@hafley66/grapht-model"
-import { boardForFile, boardFromDocuments, boardHost, type Board, placeItem, validateBoard } from "../../src/index.js"
+import { boardForFile, boardFromDocuments, boardHost, type Board, type BoardGesture, type BoardHost, placeItem, validateBoard } from "../../src/index.js"
 
 const TEXT = ["# Notes", "", "Intro paragraph.", "", "## Usage", "", "```mermaid", "sequenceDiagram", "```", ""].join("\n")
 
 const at = (board: Board, itemId: string) => board.placements.find(placement => placement.itemId === itemId)
+
+/** A gesture on an item that starts where the item is drawn. These fixtures put nothing in the
+ * reading-order stack, so an item's drawn position is the placement it already has; the stack is
+ * the caller's to report and has its own test below. */
+const gestureOn = (host: BoardHost, itemId: string, from: { x: number; y: number }): BoardGesture => {
+	const placed = at(host.placed(), itemId)
+	return host.begin(itemId, from, { x: placed?.x ?? 0, y: placed?.y ?? 0 })
+}
 
 /** A board with two placed items, because a placement is what a gesture moves. */
 async function placedBoard(): Promise<{ board: Board; first: string; second: string }> {
@@ -32,7 +40,7 @@ describe("board host", () => {
 		const host = boardHost(board)
 		const before = at(board, first)
 
-		const gesture = host.begin(first, { x: 100, y: 100 })
+		const gesture = gestureOn(host, first, { x: 100, y: 100 })
 		host.previewTo(gesture, { x: 140, y: 130 })
 
 		expect(at(host.placed(), first)).toEqual({ itemId: first, x: 140, y: 130, z: before?.z ?? 0 })
@@ -49,7 +57,7 @@ describe("board host", () => {
 		const { board, first } = await placedBoard()
 		const host = boardHost(board)
 
-		const gesture = host.begin(first, { x: 100, y: 100 })
+		const gesture = gestureOn(host, first, { x: 100, y: 100 })
 		host.commitTo(gesture, { x: 40, y: 25 })
 
 		expect(host.history().events).toEqual([{ id: first, dx: -60, dy: -75, phase: "commit" }])
@@ -71,9 +79,9 @@ describe("board host", () => {
 		const { board, first } = await placedBoard()
 		const host = boardHost(board)
 
-		host.commitTo(host.begin(first, { x: 100, y: 100 }), { x: 300, y: 100 })
+		host.commitTo(gestureOn(host, first, { x: 100, y: 100 }), { x: 300, y: 100 })
 		host.undo()
-		host.commitTo(host.begin(first, { x: 100, y: 100 }), { x: 100, y: 300 })
+		host.commitTo(gestureOn(host, first, { x: 100, y: 100 }), { x: 100, y: 300 })
 
 		expect(host.history().events).toEqual([{ id: first, dx: 0, dy: 200, phase: "commit" }])
 		expect(host.history().cursor).toBe(1)
@@ -84,8 +92,8 @@ describe("board host", () => {
 		const { board, first } = await placedBoard()
 		const host = boardHost(board)
 
-		host.commitTo(host.begin(first, { x: 100, y: 100 }), { x: 150, y: 100 })
-		host.commitTo(host.begin(first, { x: 150, y: 100 }), { x: 150, y: 170 })
+		host.commitTo(gestureOn(host, first, { x: 100, y: 100 }), { x: 150, y: 100 })
+		host.commitTo(gestureOn(host, first, { x: 150, y: 100 }), { x: 150, y: 170 })
 
 		expect(at(host.placed(), first)).toEqual({ itemId: first, x: 150, y: 170, z: 0 })
 		expect(host.history().events).toHaveLength(2)
@@ -95,18 +103,35 @@ describe("board host", () => {
 		const { board, first, second } = await placedBoard()
 		const host = boardHost(board)
 
-		host.commitTo(host.begin(first, { x: 100, y: 100 }), { x: 120, y: 100 })
-		host.commitTo(host.begin(second, { x: 200, y: 100 }), { x: 200, y: 60 })
+		host.commitTo(gestureOn(host, first, { x: 100, y: 100 }), { x: 120, y: 100 })
+		host.commitTo(gestureOn(host, second, { x: 200, y: 100 }), { x: 200, y: 60 })
 
 		expect(at(host.placed(), first)?.x).toBe(120)
 		expect(at(host.placed(), second)?.y).toBe(60)
 		expect(validateBoard(boardForFile(host))).toEqual([])
 	})
 
+	test("a gesture on an item nobody placed starts from where it is drawn, not from the origin", async () => {
+		const built = await boardFromDocuments("b1", [mdDocument("docs/example.md", TEXT)])
+		const [first, second] = built.items
+		const host = boardHost(built)
+		// The renderer drew the second item at the second slot of the reading-order stack: it has no
+		// placement, so a gesture that measured its delta from the origin would snap it to the first.
+		const gesture = host.begin(second.itemId, { x: 20, y: 130 }, { x: 0, y: 108 })
+		host.previewTo(gesture, { x: 40, y: 150 })
+
+		expect(at(host.placed(), second.itemId)).toEqual({ itemId: second.itemId, x: 20, y: 128, z: 0 })
+		expect(at(host.placed(), first.itemId)).toBeUndefined()
+
+		host.commitTo(gesture, { x: 40, y: 150 })
+		expect(host.history().events).toEqual([{ id: second.itemId, dx: 20, dy: 128, phase: "commit" }])
+		expect(at(boardForFile(host), second.itemId)).toEqual({ itemId: second.itemId, x: 20, y: 128, z: 0 })
+	})
+
 	test("a replaced board clears the journal, because its events name ids the new revision may not have", async () => {
 		const { board, first } = await placedBoard()
 		const host = boardHost(board)
-		host.commitTo(host.begin(first, { x: 100, y: 100 }), { x: 160, y: 100 })
+		host.commitTo(gestureOn(host, first, { x: 100, y: 100 }), { x: 160, y: 100 })
 		expect(host.canUndo()).toBe(true)
 
 		const next = placeItem(board, first, { x: 500, y: 500, z: 0 })

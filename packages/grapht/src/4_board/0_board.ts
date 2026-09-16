@@ -87,7 +87,9 @@ export type BoardReconciliation = {
   orphaned: readonly BoardOrphan[]
 }
 
-const placementOf = (board: Board, itemId: string): BoardPlacement | undefined =>
+/** Where an item was put, or nothing. A board holds placements sparsely: an item nobody has placed
+ * has no entry, which is a young board and not a broken one. */
+export const placementOf = (board: Board, itemId: string): BoardPlacement | undefined =>
   board.placements.find(placement => placement.itemId === itemId)
 
 /** The two item kinds that came from a block, and so can name one. */
@@ -147,7 +149,9 @@ export function placeItem(board: Board, itemId: string, at: { x: number; y: numb
   return { ...board, placements }
 }
 
-/** Nudge placed items. An item with no placement yet is placed at its delta, because a gesture on it moved it from nowhere. */
+/** Nudge placed items. An item with no placement yet lands at its delta, so a caller moving an
+ * unplaced item measures that delta from wherever the item is *drawn* — which is not the origin,
+ * because an item nobody placed draws in the reading-order stack. See `boardHost.begin`. */
 export function moveItems(board: Board, moves: readonly { itemId: string; dx: number; dy: number }[]): Board {
   let next = board
   for (const move of moves) {

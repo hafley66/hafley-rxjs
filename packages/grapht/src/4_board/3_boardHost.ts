@@ -9,13 +9,20 @@
 // a page that is closed mid-drag has no half-gesture to explain.
 import { Signal, type Signal$ } from "@hafley66/signals"
 import type { GraphMove, MoveHistory } from "../2_graph/23_manualMovement.js"
-import { type Board, foldMoves } from "./0_board.js"
+import { type Board, foldMoves, placementOf } from "./0_board.js"
 
-/** A gesture in progress. Deltas are measured from `from`, in board coordinates, exactly as
- * `GraphMove` reads them: one gesture contributes one event whose delta is start-to-finish. */
+/** A gesture in progress. Deltas are the pointer's travel plus `offset`, in board coordinates,
+ * exactly as `GraphMove` reads them: one gesture contributes one event whose delta is
+ * start-to-finish. */
 export type BoardGesture = {
 	readonly itemId: string
-	readonly from: { readonly x: number; readonly y: number }
+	/** Where the pointer went down, in board coordinates. */
+	readonly from: BoardPoint
+	/** How far the item was drawn from the position the journal reads it at, at the moment the
+	 * gesture opened. Zero for an item the board has placed. An item nobody placed draws in the
+	 * reading-order stack while `moveItems` reads its position as the origin, so without this the
+	 * first move of a drag teleports it to the top of the stack. */
+	readonly offset: BoardPoint
 }
 
 /** A point in board coordinates, the space a placement lives in. */
@@ -30,9 +37,10 @@ export type BoardHost = {
 	readonly preview: Signal$<GraphMove | null>
 	/** Placements folded from the retained prefix plus the preview: what a renderer draws. */
 	readonly placed: Signal$<Board>
-	/** Start a gesture on an item. The starting point is the caller's, because only it knows
-	 * whether the pointer began at the card's corner or its centre. */
-	begin(itemId: string, from: BoardPoint): BoardGesture
+	/** Start a gesture on an item. `from` is the caller's, because only it knows whether the pointer
+	 * began at the card's corner or its centre; `drawn` is the position the item was drawn at, which
+	 * only the caller can see — for an item the board has placed it is that placement. */
+	begin(itemId: string, from: BoardPoint, drawn: BoardPoint): BoardGesture
 	/** Move the gesture. Writes the preview and nothing else. */
 	previewTo(gesture: BoardGesture, at: BoardPoint): void
 	/** Finish the gesture: one event, the whole gesture's delta, and the redo tail is dropped
@@ -52,8 +60,8 @@ export type BoardHost = {
 }
 
 const delta = (gesture: BoardGesture, at: BoardPoint): { dx: number; dy: number } => ({
-	dx: Math.trunc(at.x - gesture.from.x),
-	dy: Math.trunc(at.y - gesture.from.y),
+	dx: Math.trunc(gesture.offset.x + at.x - gesture.from.x),
+	dy: Math.trunc(gesture.offset.y + at.y - gesture.from.y),
 })
 
 const moveOf = (gesture: BoardGesture, at: BoardPoint, phase: GraphMove["phase"]): GraphMove => ({
@@ -86,7 +94,16 @@ export function boardHost(initial: Board): BoardHost {
 		history: history.$,
 		preview: preview.$,
 		placed: placed.$,
-		begin: (itemId, from) => ({ itemId, from }),
+		begin: (itemId, from, drawn) => {
+			// The journal, not the board: a delta lands on the folded placement, so the offset is what
+			// turns the pointer's travel into the delta that fold needs.
+			const existing = placementOf(foldMoves(board.$(), history.$()), itemId)
+			return {
+				itemId,
+				from,
+				offset: { x: drawn.x - (existing?.x ?? 0), y: drawn.y - (existing?.y ?? 0) },
+			}
+		},
 		previewTo: (gesture, at) => {
 			preview.$(moveOf(gesture, at, "preview"))
 		},

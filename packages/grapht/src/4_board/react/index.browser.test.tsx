@@ -126,6 +126,38 @@ describe("BoardView", () => {
 		container.remove()
 	})
 
+	it("drags the stacked card the pointer landed on, not the one the journal reads at the origin", async () => {
+		const built = await boardFromDocuments("b1", [mdDocument("docs/example.md", TEXT)])
+		const third = built.items[2]
+		if (third === undefined) throw new Error("the fixture has fewer than three items")
+		const host = boardHost(built)
+		const { container, root } = mount()
+		await act(async () => {
+			root.render(createElement(BoardView, { host, card: { height: 84, gap: 24 } }))
+		})
+
+		const card = cardOf(container, third.itemId)
+		expect(card.dataset.boardY).toBe("216")
+		// A real hit test, in the layout the browser gives the page: the third card is the element at
+		// the third card's centre, which is the whole point of the stack being drawn rather than assumed.
+		const box = card.getBoundingClientRect()
+		expect(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)).toBe(card)
+
+		await act(async () => drag(card, 40, 25))
+		expect(card.dataset.boardX).toBe("40")
+		expect(card.dataset.boardY).toBe("241")
+		// The item above it in the stack stayed where it was drawn, which is what the defect broke.
+		const first = built.items[0]
+		if (first === undefined) throw new Error("the fixture has no first item")
+		expect(cardOf(container, first.itemId).dataset.boardY).toBe("0")
+		expect(host.history().events).toEqual([{ id: third.itemId, dx: 40, dy: 241, phase: "commit" }])
+
+		await act(async () => {
+			root.unmount()
+		})
+		container.remove()
+	})
+
 	it("abandons a gesture on Escape instead of dropping the card where it stopped", async () => {
 		const { board, first } = await placedPair()
 		const host = boardHost(board)
