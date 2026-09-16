@@ -12,8 +12,8 @@
       "import": "./dist/index.js"
     },
     "./hmr": {
-      "types": "./src/tracking/v2/hmr/4_module-scope.ts",
-      "import": "./src/tracking/v2/hmr/4_module-scope.ts"
+      "types": "./src/0_runtime_hmr/4_module-scope.ts",
+      "import": "./src/0_runtime_hmr/4_module-scope.ts"
     }
   },
   "files": [
