@@ -24,7 +24,8 @@ because the injected engine runs (measured, see Evidence).
 | `locator.waitFor({state,timeout})` | `wait` | `waitFor` poll loop in content script | ✓ |
 | strict mode, `aka getByRole(...)` suggestions | engine errors passed through verbatim | `InjectedScript.querySelector(parsed, root, strict)` | ✓ |
 | `page.screenshot()` (viewport, compositor pixels) | `capture` | `tabs.captureVisibleTab` | partial — foreground tab, `<all_urls>`, ~2/s |
-| `page.screenshot({fullPage, clip})` | `rasterize` | MAIN-world `foreignObject` → canvas → PNG | ✓ as a re-render; canvas/iframe subtrees blank |
+| `page.screenshot({fullPage, clip})` | `rasterize` | DOM-realm rasterizer (see below) | ✓ as a re-render; canvas subtrees included, minor color shift on the `foreignObject` path |
+| rasterizer choice | `html-to-image` (28 KB) / `modern-screenshot` (52 KB) / `html2canvas` (338 KB) | all three: element + 4200px full page + background tab + nested `<canvas>` captured; html-to-image fastest and smallest, html2canvas exact colors, `foreignObject` path shifts `#123456` → `#153657` |
 | `page.clock.install/setFixedTime/runFor` | `clock` | injected `createClock(globalObject)` — Playwright's own, realm-side | ✓ |
 | timezone / locale | `patchIntl` | `Intl` overrides in MAIN world | partial — JS-visible values only, not network headers |
 | `page.route()/route.fulfill()` | `route` | DNR block/redirect/modifyHeaders + MAIN-world `fetch`/XHR patch | partial — no document/subresource/worker coverage, no body synth at network layer |

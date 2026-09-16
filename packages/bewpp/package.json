@@ -34,7 +34,8 @@
     "probe:screenshot": "node probes/screenshot.mjs",
     "probe:dom-screenshot": "node probes/dom-screenshot.mjs",
     "probe:user-scripts": "node probes/user-scripts.mjs",
-    "probe:csp-eval": "node probes/csp-eval.mjs"
+    "probe:csp-eval": "node probes/csp-eval.mjs",
+    "probe:screenshot-libs": "node probes/screenshot-libs.mjs"
   },
   "dependencies": {
     "@aklinker1/zero-serialize-error": "1.0.2",
@@ -55,6 +56,9 @@
     "@types/node": "24.13.3",
     "@types/ws": "8.18.1",
     "fastify": "5.12.3",
+    "html-to-image": "^1.11.13",
+    "html2canvas": "^1.4.1",
+    "modern-screenshot": "^4.7.0",
     "playwright": "1.62.1",
     "typescript": "7.0.2"
   },
