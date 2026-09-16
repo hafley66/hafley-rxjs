@@ -315,3 +315,23 @@ export {
 export { boardFrame, type BoardFrameOptions } from "./4_board/1_boardFrame.js"
 
 export { boardPathFor, readBoardFile, writeBoardFile } from "./4_board/2_boardFile.js"
+
+export {
+  MESSAGE_LOG_FORMAT,
+  jsonlToMessages,
+  messageAnchorState,
+  messageAnomalies,
+  messageIdOf,
+  messageLogPathFor,
+  messagesToJsonl,
+  readMessageLog,
+  targetKeyOf,
+  withMessageId,
+  writeMessageLog,
+  type DocMessage,
+  type MessageAnchorState,
+  type MessageAuthor,
+  type MessageKind,
+  type MessageLog,
+  type MessageTarget,
+} from "./6_messages/0_messageLog.js"
