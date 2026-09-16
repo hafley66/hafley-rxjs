@@ -1,0 +1,61 @@
+{
+  "name": "@hafley66/signal-marbles",
+  "version": "0.0.1",
+  "description": "Marble diagrams as a document: parse the notation, run a pure RxJS demo on a virtual clock, or do both — then play the result off one frame signal",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
+    },
+    "./marbles.css": "./dist/marbles.css"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc -p tsconfig.build.json && cp src/marbles.css dist/marbles.css",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
+    "test": "vitest run",
+    "test:browser": "node ../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts",
+    "typecheck": "tsc --noEmit",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "peerDependencies": {
+    "@hafley66/signals": ">=0.1.0",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "rxjs": "^7.8.0"
+  },
+  "devDependencies": {
+    "@hafley66/signals": "workspace:*",
+    "@types/react": "^19.2.3",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.5",
+    "@vitest/browser": "^4.1.10",
+    "@vitest/browser-playwright": "^4.1.10",
+    "playwright": "^1.62.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "rxjs": "^7.8.2",
+    "typescript": "7.0.2",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

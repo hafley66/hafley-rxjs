@@ -1,0 +1,282 @@
+/* Two layers, so a host rule written outside them wins without a specificity fight and without
+   !important. Override `--mb-*` anywhere unlayered; override structure only if you mean it. */
+@layer marbles.theme, marbles.structure;
+
+.mb-root {
+	--mb-surface: #ffffff;
+	--mb-ink: #262b33;
+	--mb-muted: #6d7684;
+	--mb-border: #dfe3e9;
+	--mb-gridline: #e6e9ee;
+	--mb-next: #3f7fd0;
+	--mb-error: #cf4b3f;
+	--mb-complete: #3c4552;
+	--mb-playhead: #d59b47;
+	--mb-accent: #0f7f6a;
+	/* Layout constants in CSS are fallbacks for a stylesheet-only consumer: the renderer writes
+     `--mb-gutter` inline from the same number it measures with, so the two cannot drift. */
+	--mb-gutter: 168px;
+	--mb-radius: 10px;
+	--mb-font: ui-monospace, SFMono-Regular, Menlo, monospace;
+	color: var(--mb-ink);
+	background: var(--mb-surface);
+	border: 1px solid var(--mb-border);
+	border-radius: var(--mb-radius);
+	font-family: var(--mb-font);
+	font-size: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+	.mb-root {
+		--mb-surface: #16191f;
+		--mb-ink: #c9d0da;
+		--mb-muted: #848c98;
+		--mb-border: #2b3038;
+		--mb-gridline: #262b33;
+		--mb-next: #5f9fe6;
+		--mb-error: #e2685b;
+		--mb-complete: #9aa4b2;
+		--mb-playhead: #e0a95c;
+		--mb-accent: #3fbfa4;
+	}
+}
+
+@layer marbles.structure {
+	.mb-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 8px 12px;
+		border-bottom: 1px solid var(--mb-border);
+	}
+
+	.mb-title {
+		font-weight: 600;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.mb-title:empty {
+		display: none;
+	}
+
+	.mb-controls {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		margin-left: auto;
+	}
+
+	.mb-control {
+		min-width: 26px;
+		height: 24px;
+		padding: 0 6px;
+		color: var(--mb-ink);
+		background: transparent;
+		border: 1px solid var(--mb-border);
+		border-radius: 6px;
+		font: inherit;
+		font-size: 11px;
+		cursor: pointer;
+	}
+
+	.mb-control:hover {
+		border-color: var(--mb-accent);
+		color: var(--mb-accent);
+	}
+
+	.mb-control[data-on="true"] {
+		border-color: var(--mb-accent);
+		color: var(--mb-accent);
+	}
+
+	.mb-readout {
+		min-width: 58px;
+		margin-left: 6px;
+		color: var(--mb-muted);
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.mb-lanes {
+		position: relative;
+	}
+
+	.mb-lane {
+		display: grid;
+		grid-template-columns: var(--mb-gutter) 1fr;
+		align-items: stretch;
+	}
+
+	.mb-lane[data-selected="true"] {
+		background: color-mix(in oklab, var(--mb-accent) 10%, transparent);
+	}
+
+	.mb-gutter {
+		display: flex;
+		align-items: center;
+		padding-right: 10px;
+		color: var(--mb-muted);
+		border-right: 1px solid var(--mb-border);
+		cursor: pointer;
+	}
+
+	.mb-gutter[data-depth="1"],
+	.mb-gutter[data-depth="2"],
+	.mb-gutter[data-depth="3"] {
+		border-left: 2px solid var(--mb-border);
+	}
+
+	.mb-label {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* The rail every lane's marbles sit on. */
+	.mb-strip {
+		position: relative;
+		cursor: crosshair;
+	}
+
+	.mb-strip::before {
+		content: "";
+		position: absolute;
+		inset: 50% 0 auto 0;
+		height: 1px;
+		background: var(--mb-gridline);
+	}
+
+	.mb-marble {
+		position: absolute;
+		top: 50%;
+		transform: translate(-50%, -50%);
+	}
+
+	/* Not yet reached by the playhead. */
+	.mb-marble[data-played="false"] {
+		opacity: 0.38;
+	}
+
+	/* Outside the window the lane was listened to: on the diagram, past tense. */
+	.mb-marble[data-listened="false"] {
+		opacity: 0.3;
+	}
+
+	.mb-marble[data-played="false"][data-listened="false"] {
+		opacity: 0.16;
+	}
+
+	.mb-marble[data-hovered="true"] .mb-dot {
+		outline: 2px solid var(--mb-accent);
+		outline-offset: 2px;
+	}
+
+	.mb-dot {
+		display: block;
+		width: 12px;
+		height: 12px;
+		background: var(--mb-next);
+		border-radius: 50%;
+	}
+
+	/* An error is not a third shape to learn: it is the marble, in the colour of a failure. */
+	.mb-marble[data-kind="error"] .mb-dot {
+		background: var(--mb-error);
+		border-radius: 2px;
+	}
+
+	.mb-bar {
+		display: block;
+		width: 2px;
+		height: 16px;
+		background: var(--mb-complete);
+	}
+
+	.mb-caret {
+		display: block;
+		width: 9px;
+		height: 9px;
+		border-top: 2px solid var(--mb-complete);
+		border-left: 2px solid var(--mb-complete);
+		transform: rotate(45deg);
+	}
+
+	.mb-marble[data-kind="unsubscribe"] .mb-caret {
+		transform: rotate(225deg);
+	}
+
+	.mb-value {
+		position: absolute;
+		bottom: calc(100% + 2px);
+		left: 50%;
+		transform: translateX(-50%);
+		color: var(--mb-muted);
+		font-size: 10px;
+		line-height: 1;
+		white-space: nowrap;
+	}
+
+	.mb-marble[data-played="true"] .mb-value {
+		color: var(--mb-ink);
+	}
+
+	.mb-playhead {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		width: 1px;
+		background: var(--mb-playhead);
+		transform: translateX(-50%);
+		pointer-events: none;
+	}
+
+	.mb-playhead::before {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: 50%;
+		width: 7px;
+		height: 7px;
+		background: var(--mb-playhead);
+		border-radius: 50%;
+		transform: translateX(-50%);
+	}
+
+	.mb-axis {
+		position: relative;
+		height: 20px;
+		border-top: 1px solid var(--mb-border);
+	}
+
+	.mb-tick {
+		position: absolute;
+		top: 4px;
+		color: var(--mb-muted);
+		font-size: 10px;
+		transform: translateX(-50%);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.mb-notation {
+		border-top: 1px solid var(--mb-border);
+	}
+
+	.mb-notation-summary {
+		padding: 6px 12px;
+		color: var(--mb-muted);
+		cursor: pointer;
+		font-size: 11px;
+	}
+
+	.mb-notation-text {
+		margin: 0;
+		padding: 0 12px 10px;
+		overflow-x: auto;
+		color: var(--mb-muted);
+		font-size: 11px;
+		line-height: 1.5;
+	}
+}
