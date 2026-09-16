@@ -1,5 +1,6 @@
 // The VitePress config every site in this workspace is a call to. A site hands over its content
 // tree and its title; sidebar, rewrites, hub strip and mermaid wiring are the same in all of them.
+import react from "@vitejs/plugin-react"
 import { defineConfig, type UserConfig } from "vitepress"
 import { withMermaid } from "vitepress-plugin-mermaid"
 import { pagesOf, routeOf, targetOf, type SiteContent } from "./4_content.ts"
@@ -28,6 +29,12 @@ const MERMAID_DEPS = [
   "mermaid > dayjs",
   "mermaid > debug",
 ]
+
+// Vite 8 compiles JSX itself (oxc); this plugin turns that transform on with React's automatic
+// runtime and adds fast refresh in dev, which is the whole of what a React island needs. VitePress
+// is untouched by it: `include` is narrowed to JSX sources, so `plugin-vue` keeps every `.vue` and
+// no `.ts` a site already ships is instrumented.
+const REACT_SOURCES = [/\.[cm]?[jt]sx$/]
 
 export function docsConfig(options: DocsSiteOptions): UserConfig {
   const content = options.content
@@ -75,6 +82,9 @@ export function docsConfig(options: DocsSiteOptions): UserConfig {
         server: { port: options.devPort, strictPort: true },
         preview: { port: options.previewPort, strictPort: true },
         ...options.vite,
+        // Appended to, not replaced by, the site's own list: the React transform is the kit's, a
+        // site's plugins (a file endpoint, a JSX runtime) are its own.
+        plugins: [react({ include: REACT_SOURCES }), ...(options.vite?.plugins ?? [])],
         // Merged rather than replaced: a site adding a plugin must not have to restate these.
         optimizeDeps: {
           ...options.vite?.optimizeDeps,

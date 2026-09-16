@@ -9,10 +9,11 @@ import { useDemos, useReceipts, type DemoHost } from "./0_site.ts"
 import "./docs.css"
 import Demo from "./Demo.vue"
 import FpsMeter from "./FpsMeter.vue"
+import ReactIsland from "./ReactIsland.vue"
 import ReceiptsFooter from "./ReceiptsFooter.vue"
 import ReceiptsSection from "./ReceiptsSection.vue"
 
-export { Demo, FpsMeter, ReceiptsFooter, ReceiptsSection }
+export { Demo, FpsMeter, ReactIsland, ReceiptsFooter, ReceiptsSection }
 export { sinkOf, fps, mountedDemos, retainMeters, type LogSink, type MeterLog, type Timing } from "../src/3_meters.ts"
 export { useDemos, useReceipts, demoHost, receiptsHost, type DemoHost, type ReceiptsHost } from "./0_site.ts"
 
