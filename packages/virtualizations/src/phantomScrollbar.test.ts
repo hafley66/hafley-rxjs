@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { attachPhantomScrollbar } from "./phantomScrollbar"
-import { scrollBox, trackHost } from "./scrollFixture"
+import { attachPhantomScrollbar } from "./phantomScrollbar.js"
+import { scrollBox, trackHost } from "./scrollFixture.js"
 
 describe("phantomScrollbar", () => {
   it("mirrors content scrollWidth into the sizer and reports overflow", () => {

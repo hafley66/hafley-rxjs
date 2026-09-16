@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { scrollBox } from "./scrollFixture"
-import { syncScroll } from "./scrollSync"
+import { scrollBox } from "./scrollFixture.js"
+import { syncScroll } from "./scrollSync.js"
 
 function scrollOn(el: HTMLElement, value: number, key: "scrollLeft" | "scrollTop" = "scrollLeft") {
   el[key] = value

@@ -4,7 +4,7 @@ import {
   findScrollOwner,
   localVirtualOffset,
   visibleVirtualRange,
-} from "./geometry"
+} from "./geometry.js"
 
 export type ScrollMode = "external" | "internal"
 

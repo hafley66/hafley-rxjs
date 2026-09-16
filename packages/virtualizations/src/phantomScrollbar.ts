@@ -1,4 +1,4 @@
-import { syncScroll, type ScrollAxis } from "./scrollSync"
+import { syncScroll, type ScrollAxis } from "./scrollSync.js"
 
 export type PhantomScrollbarOptions = {
   host: HTMLElement

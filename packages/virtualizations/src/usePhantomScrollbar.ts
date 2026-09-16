@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
-import { attachPhantomScrollbar } from "./phantomScrollbar"
-import type { ScrollAxis } from "./scrollSync"
+import { attachPhantomScrollbar } from "./phantomScrollbar.js"
+import type { ScrollAxis } from "./scrollSync.js"
 
 export type UsePhantomScrollbarOptions = {
   axis?: ScrollAxis

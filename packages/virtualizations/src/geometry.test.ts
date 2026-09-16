@@ -3,7 +3,7 @@ import {
   localVirtualOffset,
   visibleVirtualRange,
   viewportCapStyle,
-} from "./geometry"
+} from "./geometry.js"
 
 describe("geometry", () => {
   it("translates parent scroll coordinates into a bounded local extent", () => {
