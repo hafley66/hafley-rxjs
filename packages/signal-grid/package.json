@@ -30,6 +30,7 @@
     "test": "vitest run",
     "test:browser": "node ../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts",
     "test:e2e": "node ../../scripts/browser-queue.mjs vitest run -c vitest.e2e.config.ts",
+    "test:site": "node ../../scripts/browser-queue.mjs vitest run -c vitest.site.config.ts",
     "size": "size-limit",
     "treemap": "SIGNAL_GRID_TREEMAP=1 vite build",
     "receipts": "pnpm typecheck && pnpm test && pnpm test:browser && pnpm build && pnpm size && pnpm docs",
