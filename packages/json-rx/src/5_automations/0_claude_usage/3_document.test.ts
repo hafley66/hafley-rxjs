@@ -2,9 +2,9 @@ import Ajv2020 from 'ajv/dist/2020'
 import { firstValueFrom, of } from 'rxjs'
 import { describe, expect, test } from 'vitest'
 import automationJsonSchema from '../../../automation.schema.json'
-import { AutomationSchema } from '../../1_schema'
-import { compileAutomation } from '../../2_runtime'
-import { claudeUsageAutomation, claudeUsageCatalog } from './1_document.auto'
+import { AutomationSchema } from '../../1_schema.js'
+import { compileAutomation } from '../../2_runtime.js'
+import { claudeUsageAutomation, claudeUsageCatalog } from './1_document.auto.js'
 import documentSnapshot from './2_document.snapshot.json'
 
 describe('TypeSpec-authored Claude usage automation', () => {

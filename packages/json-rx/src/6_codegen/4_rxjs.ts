@@ -1,4 +1,4 @@
-import type { ExpressionIr, PipelineIr } from './0_pipelineIr'
+import type { ExpressionIr, PipelineIr } from './0_pipelineIr.js'
 
 function expressionCode(expression: ExpressionIr, parameter: string): string {
   if (expression.kind === 'parameter') return parameter

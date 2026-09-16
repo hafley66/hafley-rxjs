@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AutomationJsonSchema, AutomationSchema } from './1_schema'
+import { AutomationJsonSchema, AutomationSchema } from './1_schema.js'
 
 const source = 'jsonrx://test/source'
 const base = {

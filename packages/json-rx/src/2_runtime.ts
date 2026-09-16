@@ -2,8 +2,8 @@ import jsonata from 'jsonata'
 import jsonLogic from 'json-logic-js'
 import { combineLatest, concatMap, defer, from, map, merge, type Observable, scan, shareReplay } from 'rxjs'
 import type { RulesLogic } from 'json-logic-js'
-import type { JsonObject, JsonValue, RuntimeEmission, RuntimeSource } from './0_types'
-import { AutomationSchema, type Automation, type NestedExpression, type PipeStep } from './1_schema'
+import type { JsonObject, JsonValue, RuntimeEmission, RuntimeSource } from './0_types.js'
+import { AutomationSchema, type Automation, type NestedExpression, type PipeStep } from './1_schema.js'
 
 type LocatedValue = { value: JsonValue; origin?: { url: string; ts: number } }
 export type AutomationRuntime = { automation: Automation; roots: Record<string, Observable<RuntimeEmission>>; canonicalIr: string }

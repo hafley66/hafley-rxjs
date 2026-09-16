@@ -1,5 +1,5 @@
 import type { RJSFSchema } from '@rjsf/utils'
-import { AutomationJsonSchema } from '../1_schema'
+import { AutomationJsonSchema } from '../1_schema.js'
 
 type ReferenceKind = 'source' | 'reducer' | 'flow'
 

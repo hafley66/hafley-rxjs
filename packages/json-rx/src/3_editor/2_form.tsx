@@ -2,9 +2,9 @@ import type { IChangeEvent } from '@rjsf/core'
 import Form from '@rjsf/mui'
 import type { UiSchema } from '@rjsf/utils'
 import validator from '@rjsf/validator-ajv8'
-import { AutomationSchema, type Automation } from '../1_schema'
-import { automationFormSchema } from './0_formSchema'
-import { JsonRxObjectFieldTemplate } from './1_formRoot'
+import { AutomationSchema, type Automation } from '../1_schema.js'
+import { automationFormSchema } from './0_formSchema.js'
+import { JsonRxObjectFieldTemplate } from './1_formRoot.js'
 
 const AutomationUiSchema: UiSchema = {
   $schema: { 'ui:readonly': true },

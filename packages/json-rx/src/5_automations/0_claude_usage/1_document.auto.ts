@@ -2,7 +2,7 @@
 // Source: src/5_automations/0_claude_usage/0_input.tsp
 // DO NOT EDIT. Run: pnpm generate
 
-import type { Automation } from '../../1_schema'
+import type { Automation } from '../../1_schema.js'
 
 export const claudeUsageAutomation = {
   "$schema": "./node_modules/@hafley66/json-rx/automation.schema.json",

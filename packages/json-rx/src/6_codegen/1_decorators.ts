@@ -1,5 +1,5 @@
 import { setTypeSpecNamespace, type DecoratorContext, type Interface, type Model, type Numeric, type Operation } from '@typespec/compiler'
-import { createStateSymbol } from '../4_typespec/0_library'
+import { createStateSymbol } from '../4_typespec/0_library.js'
 
 export type AlgorithmMetadata = { name: string }
 export type SnapshotPatchMetadata = {

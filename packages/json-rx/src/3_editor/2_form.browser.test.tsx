@@ -2,8 +2,8 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, expect, it, vi } from 'vitest'
 import { page } from 'vitest/browser'
-import { AutomationSchema } from '../1_schema'
-import { JsonRxForm } from './2_form'
+import { AutomationSchema } from '../1_schema.js'
+import { JsonRxForm } from './2_form.js'
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

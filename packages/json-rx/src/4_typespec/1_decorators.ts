@@ -1,5 +1,5 @@
 import { setTypeSpecNamespace, type DecoratorContext, type Interface, type Operation } from '@typespec/compiler'
-import { createStateSymbol } from './0_library'
+import { createStateSymbol } from './0_library.js'
 
 export type AutomationMetadata = { id: string; pageHost: string }
 export type SourceMetadata = { id: string; requestUrl: string; methods: string[] }

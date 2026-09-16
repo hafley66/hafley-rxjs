@@ -1,8 +1,8 @@
 import { combineLatest, map, of, type Observable } from "rxjs";
 import jsonLogic from "json-logic-js";
 import type { RulesLogic } from "json-logic-js";
-import type { LogicExpression, LogicInputs } from "./0_types";
-import { logicReferences } from "./1_references";
+import type { LogicExpression, LogicInputs } from "./0_types.js";
+import { logicReferences } from "./1_references.js";
 
 export function compileLogicExpression<Result>(
   expression: LogicExpression,

@@ -1,4 +1,4 @@
-import type { LogicExpression } from "./0_types";
+import type { LogicExpression } from "./0_types.js";
 
 function visit(value: unknown, roots: Set<string>): void {
   if (Array.isArray(value)) {

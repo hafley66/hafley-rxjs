@@ -1,7 +1,7 @@
 import type { FunctionContext, Program, Statement } from "@typespec/compiler";
 import { SyntaxKind, type AliasStatementNode, type CallExpressionNode, type NamespaceStatementNode } from "@typespec/compiler/ast";
 import { $ } from "@typespec/compiler/typekit";
-import type { AutomationMetadata, FlowMetadata, LogicFlowMetadata, MapFlowMetadata, OutputMetadata, SourceMetadata } from "./1_decorators";
+import type { AutomationMetadata, FlowMetadata, LogicFlowMetadata, MapFlowMetadata, OutputMetadata, SourceMetadata } from "./1_decorators.js";
 
 export type AliasAutomationGraph = {
   automation: AutomationMetadata;

@@ -1,5 +1,5 @@
 import type { Interface, Model, Operation, Program, Type, Union } from '@typespec/compiler'
-import type { ExpressionIr, PipelineIr, ReactiveStateIr, TypeReference } from './0_pipelineIr'
+import type { ExpressionIr, PipelineIr, ReactiveStateIr, TypeReference } from './0_pipelineIr.js'
 import {
   algorithmKey,
   filterKey,
@@ -16,7 +16,7 @@ import {
   type ScanMetadata,
   type SnapshotPatchMetadata,
   type SwitchMapMetadata,
-} from './1_decorators'
+} from './1_decorators.js'
 
 function namedType(type: Type, role: string): TypeReference {
   const name = 'name' in type && typeof type.name === 'string' ? type.name : undefined

@@ -1,8 +1,8 @@
 import { firstValueFrom, of } from "rxjs";
 import { describe, expect, test } from "vitest";
 import timeline from "../../../examples/5_cross_language_logic/0_timeline.json";
-import { compileAutomation } from "../../2_runtime";
-import { logicAutomation, logicCatalog } from "./1_document.auto";
+import { compileAutomation } from "../../2_runtime.js";
+import { logicAutomation, logicCatalog } from "./1_document.auto.js";
 import documentSnapshot from "./2_document.snapshot.json";
 
 describe("TypeSpec-authored JSONLogic flow", () => {

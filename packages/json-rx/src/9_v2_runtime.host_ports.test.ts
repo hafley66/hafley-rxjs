@@ -1,7 +1,7 @@
 import { catchError, EMPTY, firstValueFrom, map, Observable, of, throwError } from "rxjs";
 import * as z from "zod";
 import { describe, expect, it } from "vitest";
-import { compileAutomationV2, type HostRegistry } from "./9_v2_runtime";
+import { compileAutomationV2, type HostRegistry } from "./9_v2_runtime.js";
 
 const valueSchema = z.object({ value: z.number() });
 const outputSchema = z.object({ doubled: z.number() });

@@ -1,7 +1,7 @@
 import { navigateProgram, type Interface, type Operation, type Program } from '@typespec/compiler'
-import type { Automation } from '../1_schema'
-import { automationKey, flowKey, outputKey, sourceKey, type AutomationMetadata, type FlowMetadata, type OutputMetadata, type SourceMetadata } from './1_decorators'
-import { resolveAliasGraph } from './4a_aliasFunctions'
+import type { Automation } from '../1_schema.js'
+import { automationKey, flowKey, outputKey, sourceKey, type AutomationMetadata, type FlowMetadata, type OutputMetadata, type SourceMetadata } from './1_decorators.js'
+import { resolveAliasGraph } from './4a_aliasFunctions.js'
 
 export type JsonRxSymbolKind = 'source' | 'flow' | 'output'
 export type JsonRxSymbol = { kind: JsonRxSymbolKind; address: string; title: string }

@@ -1,4 +1,4 @@
-import type { ExpressionIr, PipelineIr } from './0_pipelineIr'
+import type { ExpressionIr, PipelineIr } from './0_pipelineIr.js'
 
 function snakeCase(value: string) {
   return value.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)

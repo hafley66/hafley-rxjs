@@ -1,7 +1,7 @@
 import jsonata from "jsonata";
 import { concatMap, defer, from, map, merge, Observable, scan, shareReplay } from "rxjs";
-import type { JsonObject, JsonValue, RuntimeSource } from "./0_types";
-import { AutomationV2Schema, type AutomationV2, type ObservableExpression } from "./8_v2_schema";
+import type { JsonObject, JsonValue, RuntimeSource } from "./0_types.js";
+import { AutomationV2Schema, type AutomationV2, type ObservableExpression } from "./8_v2_schema.js";
 
 export type NetworkResponse = {
   method: string;

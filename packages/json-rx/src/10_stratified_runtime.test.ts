@@ -1,6 +1,6 @@
 import { lastValueFrom, of, toArray } from "rxjs"
 import { describe, expect, it } from "vitest"
-import { compile, program, type Transition, tick, transition } from "./10_stratified_runtime"
+import { compile, program, type Transition, tick, transition } from "./10_stratified_runtime.js"
 
 type Route = readonly [path: string, match: number, round: number]
 type State = readonly [route: Route, score: number]

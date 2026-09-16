@@ -1,4 +1,4 @@
-import type { ReactiveStateIr } from './0_pipelineIr'
+import type { ReactiveStateIr } from './0_pipelineIr.js'
 
 export function generateReactiveStateTs(ir: ReactiveStateIr) {
   const { name, next, failure } = ir

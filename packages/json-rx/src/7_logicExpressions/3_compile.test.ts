@@ -1,7 +1,7 @@
 import { BehaviorSubject } from "rxjs";
 import { describe, expect, test } from "vitest";
-import { compileLogicExpression } from "./2_compile";
-import { logicReferences } from "./1_references";
+import { compileLogicExpression } from "./2_compile.js";
+import { logicReferences } from "./1_references.js";
 
 describe("JSONLogic Observable expressions", () => {
   test("infers lexical flow references and combines their latest values", () => {
