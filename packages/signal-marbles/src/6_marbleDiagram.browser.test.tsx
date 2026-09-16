@@ -191,19 +191,28 @@ describe("renderMarbles", () => {
     const { host, player, unsubscribe } = mount("edges", RUN)
     const drawn = [...host.querySelectorAll<SVGPathElement>(".mb-edge")]
     expect(drawn.length).toBeGreaterThan(0)
+    // The value that started it, named by the document: a lane that records an entry of its own
+    // renumbers the values after it, so the id is not a constant.
+    const outerValue = player
+      .doc.$()
+      .lanes.find(lane => lane.id === "outer")
+      ?.notifications.find(notification => notification.kind === "next")
+    expect(outerValue).toBeDefined()
     const birth = drawn.find(path => path.dataset.kind === "born")
-    expect(birth?.dataset.from).toBe("outer#1")
+    expect(birth?.dataset.from).toBe(outerValue?.id)
     expect(birth?.dataset.to).toBe("request1")
     // The column a lane started on says so, with the event that caused it and the value it was handling.
     player.revealAt(1)
     const startRows = [...host.querySelectorAll(".mb-panel-row")].map(row => row.textContent ?? "")
-    expect(startRows.some(row => row.includes("request #1") && row.includes("from outer#1"))).toBe(true)
+    expect(
+      startRows.some(row => row.includes("request #1") && row.includes(`from ${outerValue?.id}`)),
+    ).toBe(true)
     player.revealAll()
     // An edge is drawn only when both of its ends have happened: the birth of the third inner is
     // from a column the reveal has not reached.
     player.revealAt(1)
     expect(birth?.dataset.state).toBe("current")
-    const later = drawn.find(path => path.dataset.from === "outer#3")
+    const later = drawn.find(path => path.dataset.kind === "born" && path.dataset.to === "request3")
     expect(later?.dataset.state).toBe("hidden")
     expect(getComputedStyle(later as Element).display).toBe("none")
     expect(getComputedStyle(birth as Element).display).not.toBe("none")

@@ -18,7 +18,9 @@ column is document data.
   the field.
 - **Real RxJS, one column per turn.** `runMarbleDemo` drains the `TestScheduler` one action per
   column, so a queue turn is a column even when no time passed. `lanes.through` is a lane read in the
-  middle of a pipeline — one subscription, shared — and `lanes.each` builds the real higher-order
+  middle of a pipeline — one subscription, shared, and its window recorded on the column the first
+  reader reached it, because a lane that is read rather than declared has no other moment at which it
+  entered a state — and `lanes.each` builds the real higher-order
   operator (`merge`, `switch`, `concat`, `exhaust`, `expand`) while recording **one lane per inner
   subscription**: its name, its label, the column it was born on, the event that caused it, the
   accumulator it was handed, and its fate. `switchMap` cancelling an inner is an `unsubscribe` with a
@@ -30,9 +32,13 @@ column is document data.
   unambiguous. A lane that produced nothing is reported rather than drawn as if it were true:
   `runMarbleDemo` returns `{ doc, diagnostics }` and `readMarbleDemo` throws them — a `Promise` is not
   on the virtual clock, and that used to be a silent wrong answer.
-- **Events carry a name, an origin, and a reason.** `keys#3` names an event; `from` says which event
-  produced it; `note` says why it happened, written by hand or by the runner for a fate it observed.
-  `marbleEdges` turns those into the edges a surface draws.
+- **Events carry a name, an origin, a reason, and a place in the order.** `keys#3` names an event;
+  `from` says which event produced it; `note` says why it happened, written by hand or by the runner
+  for a fate it observed. `marbleEdges` turns those into the edges a surface draws. Lanes are arrays,
+  so two events on two lanes at one column have no order between them in the document — the run that
+  produced them does, and `seq` is it. `marbleEntries(doc, tick)` reads a column back in the order it
+  happened, each entry with the event that caused it: the order subscriptions were lifted in, which is
+  not the order the lanes happen to be declared in.
 - **The reveal replaces the scrubber.** `revealed` is `number | "all"`: hidden, shown, current. `step`
   is one column, `play` walks the turns and restarts at column 0 from the end, `revealAll` puts the
   picture back. Nothing seeks, because a reveal is not a place you drag to.

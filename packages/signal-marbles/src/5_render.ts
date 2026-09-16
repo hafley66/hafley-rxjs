@@ -28,6 +28,7 @@ import {
   marbleAxis,
   marbleColumnCount,
   marbleEdges,
+  marbleEntries,
   marbleTracks,
 } from "./0_types.js"
 import type { MarbleLaneView, MarblePlayer } from "./4_player.js"
@@ -273,11 +274,10 @@ export function renderMarbles(player: MarblePlayer, host: HTMLElement): MarbleRe
       return
     }
     const clamped = Math.min(Math.max(tick, 0), columns - 1)
-    const events = doc.lanes.flatMap(lane =>
-      lane.notifications
-        .filter(notification => notification.tick === clamped)
-        .map(notification => ({ lane, notification })),
-    )
+    // The column's events in the order the run produced them, not the order the lanes are declared:
+    // "switchMap subscribed, which lifted interval(12), and then mergeMap subscribed" is a fact
+    // about the pipeline, and lane order can only ever approximate it.
+    const events = marbleEntries(doc, clamped)
     panelHead.textContent = `column ${clamped + 1} at ${frameAtTick(doc, clamped)}ms`
     if (events.length === 0 && doc.lanes.every(lane => lane.born?.tick !== clamped)) {
       panelBody.append(el("li", "mb-panel-empty", "nothing happened on this turn"))

@@ -14,7 +14,7 @@ import {
 } from "rxjs"
 import { describe, expect, it } from "vitest"
 import type { MarbleDoc, MarbleLane } from "./0_types.js"
-import { frameAtTick } from "./0_types.js"
+import { frameAtTick, marbleEntries } from "./0_types.js"
 import { readMarbleDemo, runMarbleDemo } from "./2_run.js"
 
 function lane(doc: MarbleDoc, id: string): MarbleLane {
@@ -109,7 +109,10 @@ describe("runMarbleDemo", () => {
     ])
 
     // Each inner is born on the very column of the outer value that started it, and knows its id.
-    expect(lane(doc, "req2").born).toEqual({ tick: outerTicks[1], from: "outer#2", cause: "1" })
+    // Named through the document rather than written down, because a lane that gains an entry
+    // renumbers every value after it.
+    const outerValues = lane(doc, "outer").notifications.filter(it => it.kind === "next")
+    expect(lane(doc, "req2").born).toEqual({ tick: outerTicks[1], from: outerValues[1]?.id, cause: "1" })
     expect(lane(doc, "req2").parent).toBe("outer")
     expect(lane(doc, "req3").born?.tick).toBe(outerTicks[2])
     // A value on the merged lane lands on the same column as the inner value it came from.
@@ -120,6 +123,31 @@ describe("runMarbleDemo", () => {
         .every(it => it.from?.startsWith("inner")),
     ).toBe(true)
     expect(lane(doc, "req1").notifications.at(-1)?.note).toContain("switch dropped it")
+  })
+
+  it("opens a shared lane's window on the column its first reader reached it, and says so", () => {
+    const run = runMarbleDemo(lanes => {
+      const source = lanes.through("source", interval(10).pipe(take(2)), { label: "interval(10)" })
+      lanes.each("left", source, () => of("l"), { op: "merge", name: "in" })
+      lanes.each("right", source, () => of("r"), { op: "merge", name: "in" })
+    })
+    const doc = run.doc
+    const source = lane(doc, "source")
+    // Read, never declared: the only moment this lane entered a state is the one `share` opened for
+    // its first reader, so that is the entry the document carries.
+    expect(source.notifications[0]?.kind).toBe("subscribe")
+    expect(source.notifications[0]?.tick).toBe(0)
+    expect(source.notifications[0]?.note).toContain("first reader")
+    // One subscription between them: `left` opened it, `right` joined it.
+    expect(source.notifications.filter(it => it.kind === "subscribe")).toHaveLength(1)
+    expect(source.notifications.filter(it => it.kind === "next")).toHaveLength(2)
+    // And the well-order is the lift order, which is not the declaration order: subscribing `left`
+    // is what lifted the source, and `right` only joined afterwards.
+    expect(marbleEntries(doc, 0).map(entry => `${entry.lane.id}:${entry.notification.kind}`)).toEqual([
+      "left:subscribe",
+      "source:subscribe",
+      "right:subscribe",
+    ])
   })
 
   it("gives groupBy a lane per key, born on the turn that key first appeared", () => {
@@ -141,15 +169,20 @@ describe("runMarbleDemo", () => {
     expect(run.doc.lanes.map(it => it.id)).toEqual(["keys", "out", "group1", "group2", "group3"])
     expect(lane(run.doc, "group1").label).toBe("key a")
     expect(lane(run.doc, "group3").label).toBe("key c")
-    expect(lane(run.doc, "group1").born).toMatchObject({ tick: 1, from: "keys#1" })
-    expect(lane(run.doc, "group3").born).toMatchObject({ tick: 4, from: "keys#4" })
+    // The source lane's own entry comes first, so every value on it is one past its kind's ordinal:
+    // ask the document for the ids instead of counting them.
+    const keyValues = lane(run.doc, "keys")
+      .notifications.filter(it => it.kind === "next")
+      .map(it => it.id)
+    expect(lane(run.doc, "group1").born).toMatchObject({ tick: 1, from: keyValues[0] })
+    expect(lane(run.doc, "group3").born).toMatchObject({ tick: 4, from: keyValues[3] })
     // Every value a group carries says which source event routed it there.
     expect(emissions(run.doc, "group1").map(([tick]) => tick)).toEqual([1, 3, 6])
     expect(
       lane(run.doc, "group1")
         .notifications.filter(it => it.kind === "next")
         .map(it => it.from),
-    ).toEqual(["keys#1", "keys#3", "keys#6"])
+    ).toEqual([keyValues[0], keyValues[2], keyValues[5]])
     expect(lane(run.doc, "group2").notifications.at(-1)?.kind).toBe("complete")
   })
 

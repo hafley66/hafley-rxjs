@@ -35,6 +35,12 @@ export const MarbleNotificationSchema = z.object({
   note: z.string().optional(),
   /** The event that produced this one — an inner's value on the merged lane, a routed group value. */
   from: z.string().optional(),
+  /**
+   * The whole-document production index. Lanes are arrays, so two notifications on two lanes at one
+   * column have no order between them; the run that produced them does, and this is it. Absent on a
+   * hand-written document, where the lane order stands in for it.
+   */
+  seq: z.number().int().min(0).optional(),
 })
 
 /**
@@ -117,6 +123,57 @@ export function laneExtent(lane: MarbleLane): number {
 
 /** Where an event sits, if the document has it. */
 export type MarbleLocation = { lane: MarbleLane; notification: MarbleNotification; index: number }
+
+/**
+ * One notification as the document orders it, with what is known about who caused it.
+ *
+ * `order` is the call index within its column: 0 is the entry the run made first. That is the
+ * well-order the lanes cannot carry — they are arrays, so a column's events have an order only in
+ * `seq`, and only a run can write `seq`. `cause` is the by-whom: the event a producer pointed `from`
+ * at, or the birth of a lane this entry started.
+ */
+export type MarbleEntry = {
+  lane: MarbleLane
+  notification: MarbleNotification
+  cause: string | null
+  order: number
+}
+
+/**
+ * Everything on one column, in the order it happened rather than the order the lanes are declared.
+ *
+ * A hand-written document has no `seq`, so lane order stands in for it — which is what a document
+ * whose lanes were declared in the order they were subscribed already means.
+ */
+export function marbleEntries(doc: MarbleDoc, tick: number): MarbleEntry[] {
+  const ordered: Array<{ lane: MarbleLane; notification: MarbleNotification; cause: string | null; laneIndex: number; index: number; seq: number }> = []
+  doc.lanes.forEach((lane, laneIndex) => {
+    lane.notifications.forEach((notification, index) => {
+      if (notification.tick !== tick) return
+      // A lane's first notification on its birth column is the lane entering a state, and the birth
+      // says who entered it: the event the operator was handling when it subscribed the inner.
+      const startsLane = index === 0 && lane.born?.tick === tick
+      ordered.push({
+        lane,
+        notification,
+        cause: notification.from ?? (startsLane ? lane.born?.from ?? null : null),
+        laneIndex,
+        index,
+        seq: notification.seq ?? Number.MAX_SAFE_INTEGER,
+      })
+    })
+  })
+  ordered.sort(
+    (left, right) =>
+      left.seq - right.seq || left.laneIndex - right.laneIndex || left.index - right.index,
+  )
+  return ordered.map((row, order) => ({
+    lane: row.lane,
+    notification: row.notification,
+    cause: row.cause,
+    order,
+  }))
+}
 
 export function findMarble(doc: MarbleDoc, eventId: string): MarbleLocation | null {
   for (const lane of doc.lanes) {

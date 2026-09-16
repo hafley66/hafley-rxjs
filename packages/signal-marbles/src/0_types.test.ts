@@ -19,6 +19,7 @@ import {
   marbleChain,
   marbleColumnCount,
   marbleEdges,
+  marbleEntries,
   marbleTracks,
   normalizeMarbleDoc,
 } from "./0_types.js"
@@ -27,7 +28,7 @@ const event = (
   id: string,
   kind: MarbleKind,
   tick: number,
-  extra: { value?: string; note?: string; from?: string } = {},
+  extra: { value?: string; note?: string; from?: string; seq?: number } = {},
 ): MarbleNotification => ({ id, kind, tick, ...extra })
 
 const lane = (
@@ -242,6 +243,54 @@ describe("lane relations", () => {
     ])
 
     expect(listeningWindows(lane("keys", [event("keys#1", "next", 1, { value: "a" })]))).toEqual([])
+  })
+})
+
+describe("the well-order of a column", () => {
+  it("orders a column by the index the run wrote, not by the order the lanes are declared", () => {
+    const written = doc(
+      [0],
+      [
+        lane("second", [event("second#1", "subscribe", 0, { seq: 4 })]),
+        lane("first", [event("first#1", "subscribe", 0, { seq: 3 })]),
+      ],
+    )
+
+    expect(marbleEntries(written, 0).map(entry => entry.notification.id)).toEqual(["first#1", "second#1"])
+    // The call index, which is what a stagger or a numbered row would read.
+    expect(marbleEntries(written, 0).map(entry => entry.order)).toEqual([0, 1])
+  })
+
+  it("stands lane order in for the index when a hand-written document carries none", () => {
+    const byHand = doc(
+      [0],
+      [
+        lane("second", [event("second#1", "subscribe", 0)]),
+        lane("first", [event("first#1", "subscribe", 0)]),
+      ],
+    )
+
+    expect(marbleEntries(byHand, 0).map(entry => entry.notification.id)).toEqual(["second#1", "first#1"])
+  })
+
+  it("says who caused an entry: the event it points at, or the birth of the lane it started", () => {
+    const born = doc(
+      [0, 1],
+      [
+        lane("outer", [event("outer#1", "next", 1, { value: "a" })]),
+        lane("inner", [event("inner#1", "subscribe", 1)], {
+          born: { tick: 1, from: "outer#1", cause: "a" },
+          parent: "outer",
+        }),
+        lane("shared", [event("shared#1", "subscribe", 1)], { born: null }),
+      ],
+    )
+
+    expect(marbleEntries(born, 1).map(entry => `${entry.notification.id}<-${entry.cause ?? "nobody"}`)).toEqual([
+      "outer#1<-nobody",
+      "inner#1<-outer#1",
+      "shared#1<-nobody",
+    ])
   })
 })
 

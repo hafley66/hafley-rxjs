@@ -168,6 +168,8 @@ function createRecorder(format: (value: unknown) => string): Recorder {
   const lanes: LaneState[] = []
   const columns: number[] = [0]
   const diagnostics: MarbleDiagnostic[] = []
+  /** How many notifications this document has produced, which is the order of everything in it. */
+  let produced = 0
 
   const create: Recorder["create"] = (id, options) => {
     const parsed = LaneIdSchema.safeParse(id)
@@ -188,12 +190,17 @@ function createRecorder(format: (value: unknown) => string): Recorder {
 
   const record: Recorder["record"] = (entry, kind, extra = {}) => {
     if (state.stopping || entry.closed) return
+    // The whole-document index, not the lane's: a column's events are ordered by this and by
+    // nothing else, because the lanes are separate arrays.
+    const seq = produced
+    produced += 1
     if (entry.lane.notifications.length >= MAX_LANE_NOTIFICATIONS) {
       entry.closed = true
       entry.lane.notifications.push({
         id: `${entry.lane.id}#${entry.lane.notifications.length + 1}`,
         kind: "truncate",
         tick: state.tick,
+        seq,
         note: `recording stopped after ${MAX_LANE_NOTIFICATIONS} notifications — narrow the window`,
       })
       diagnostics.push({
@@ -208,6 +215,7 @@ function createRecorder(format: (value: unknown) => string): Recorder {
       id,
       kind,
       tick: state.tick,
+      seq,
       ...extra,
     })
     entry.last = id
@@ -281,14 +289,20 @@ export function runMarbleDemo(demoOrBuild: MarbleDemo | MarbleBuild, options: Ru
    * A lane read in the middle of a pipeline. One subscription, recorded once and shared by every
    * lane derived from it, which is what keeps lanes fed by the same source on the same columns.
    * A synchronous source delivers to whichever reader subscribed first, so give it one reader.
+   *
+   * The lane is read, never declared, so nothing would open its window: `share` opens it on the
+   * first reader, and that is the only moment this lane entered a state. Recording it there is what
+   * puts a shared source in the document at all, and it lands on the column the lifting chain
+   * reached it — after the reader that pulled it in, not before.
    */
   const through = (id: string, source: Observable<unknown>, laneOptions: LaneOptions = {}) => {
     const entry = recorder.create(id, {
       label: laneOptions.label ?? options.labels?.[id] ?? id,
       parent: laneOptions.parent ?? options.parents?.[id] ?? null,
     })
-    return new Observable<unknown>(subscriber =>
-      source.subscribe({
+    return new Observable<unknown>(subscriber => {
+      recorder.record(entry, "subscribe", { note: "the first reader opened this shared subscription" })
+      return source.subscribe({
         next: value => recorder.deliver(entry, value, v => subscriber.next(v)),
         error: error => {
           recorder.record(entry, "error", { value: format(error instanceof Error ? error.message : error) })
@@ -300,8 +314,8 @@ export function runMarbleDemo(demoOrBuild: MarbleDemo | MarbleBuild, options: Ru
           entry.terminated = true
           subscriber.complete()
         },
-      }),
-    ).pipe(share())
+      })
+    }).pipe(share())
   }
 
   /**
