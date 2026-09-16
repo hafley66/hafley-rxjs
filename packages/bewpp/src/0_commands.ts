@@ -56,9 +56,9 @@ export const observationStartSchema = z
   .object({
     tabId: tabSchema,
     sources: z
-      .array(z.enum(["dom", "localStorage", "sessionStorage", "indexedDB"]))
+      .array(z.enum(["dom", "localStorage", "sessionStorage", "indexedDB", "click"]))
       .min(1)
-      .max(4),
+      .max(5),
     selector: z.string().min(1).max(1_000).default("body"),
     includeValues: z.boolean().default(false),
     debounceMs: z.number().int().min(0).max(5_000).default(250),
