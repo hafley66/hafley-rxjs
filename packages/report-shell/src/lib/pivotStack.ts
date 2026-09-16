@@ -1,5 +1,5 @@
 import { historyAdapter, storageSignal, type Signal } from '@hafley66/signals'
-import type { PivotEntry } from '../types'
+import type { PivotEntry } from '../types.js'
 
 export function encodePivotStack(stack: PivotEntry[]): string {
   return stack.length ? JSON.stringify(stack) : ''

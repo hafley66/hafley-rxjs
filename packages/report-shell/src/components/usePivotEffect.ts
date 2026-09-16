@@ -3,8 +3,8 @@ import type { RowData } from '@tanstack/react-table'
 import type { Signal as SignalType } from '@hafley66/signals'
 import type { Grid } from '@hafley66/grid'
 import { useGridEffect } from '@hafley66/grid/react'
-import type { PivotEntry } from '../types'
-import { pushPivot } from '../lib/pivotStack'
+import type { PivotEntry } from '../types.js'
+import { pushPivot } from '../lib/pivotStack.js'
 
 // Binds a grid's pivot effect (alt-click on a column with pivotOnAltClick) to a pivot stack.
 export function usePivotEffect<TData extends RowData>(grid: Grid<TData>, stack: SignalType<PivotEntry[]>): void {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { formatBytes } from "./bytes"
+import { formatBytes } from "./bytes.js"
 
 describe("formatBytes", () => {
   it("picks the unit and one decimal under ten of it", () => {

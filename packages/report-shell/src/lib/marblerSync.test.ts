@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { Signal } from '@hafley66/signals'
 import { createMarbler, type MarbleEvent } from '@hafley66/marbler'
-import { syncMarbler } from './marblerSync'
+import { syncMarbler } from './marblerSync.js'
 
 const ev = (id: string, start: number, duration: number): MarbleEvent =>
   ({ id, name: id, method: '', status: 0, type: 'x', initiator: '', size: '', start, duration, from: '', to: '', preview: '', phases: [] })

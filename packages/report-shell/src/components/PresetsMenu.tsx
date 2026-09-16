@@ -3,7 +3,7 @@
 import { useMemo, type FC, type ReactElement } from 'react'
 import { SignalReact } from '@hafley66/signals/react'
 import { storageSignal, type Storage } from '@hafley66/signals'
-import { GearButton, PopoverPanel } from './Popover'
+import { GearButton, PopoverPanel } from './Popover.js'
 
 export type PresetsMenuProps<T> = {
   storage: Storage<string>

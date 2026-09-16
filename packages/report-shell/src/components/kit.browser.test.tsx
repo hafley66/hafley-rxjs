@@ -1,12 +1,12 @@
 import { act } from "react"
 import { createRoot, type Root } from "react-dom/client"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import type { AnySpec } from "../spec/0_spec"
-import type { Mode } from "../spec/1_url"
-import { memoryStorage } from "../spec/2_store"
-import { createSections, type SectionHost, type Sections } from "../spec/3_sections"
-import { type Anchor, NavTabs } from "./NavTabs"
-import { Section } from "./Section"
+import type { AnySpec } from "../spec/0_spec.js"
+import type { Mode } from "../spec/1_url.js"
+import { memoryStorage } from "../spec/2_store.js"
+import { createSections, type SectionHost, type Sections } from "../spec/3_sections.js"
+import { type Anchor, NavTabs } from "./NavTabs.js"
+import { Section } from "./Section.js"
 import "../kit.css"
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true

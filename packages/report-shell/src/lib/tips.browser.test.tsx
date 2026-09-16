@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest"
-import { enableTips } from "./tips"
+import { enableTips } from "./tips.js"
 import "../kit.css"
 
 let disable: (() => void) | null = null

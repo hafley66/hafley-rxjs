@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { Signal } from '@hafley66/signals'
-import type { PivotEntry } from '../types'
-import { decodePivotStack, encodePivotStack, popPivotsTo, pushPivot } from './pivotStack'
+import type { PivotEntry } from '../types.js'
+import { decodePivotStack, encodePivotStack, popPivotsTo, pushPivot } from './pivotStack.js'
 
 const entry = (value: string): PivotEntry => ({ columnId: 'status', value, label: `status=${value}` })
 

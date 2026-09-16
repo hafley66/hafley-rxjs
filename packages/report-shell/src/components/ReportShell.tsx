@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { localStorageAdapter, type Signal as SignalType } from '@hafley66/signals'
 import { gutter, layout, type Track } from '@hafley66/xdom'
-import { NavRail } from './NavRail'
+import { NavRail } from './NavRail.js'
 
 export type ReportTracks = Record<string, SignalType<number>>
 

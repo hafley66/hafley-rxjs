@@ -1,7 +1,7 @@
 // Reusable master/detail sub-grid: any columns|rows pair renders through this one component and
 // its `.subtable` CSS class. Long values go through Truncated instead of forcing the grid wider.
 import type { CSSProperties, ReactNode } from 'react'
-import { Truncated } from './Truncated'
+import { Truncated } from './Truncated.js'
 
 const TRUNCATE_AT = 48
 

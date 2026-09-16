@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { Signal, type Storage } from '@hafley66/signals'
-import { createNavCollapse, NAV_RAIL_PX } from './navCollapse'
+import { createNavCollapse, NAV_RAIL_PX } from './navCollapse.js'
 
 function createMemoryStorage(): Storage<string> {
   let value = ''

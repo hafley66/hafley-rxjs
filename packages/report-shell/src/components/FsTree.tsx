@@ -3,8 +3,8 @@ import { type TreeColumn, TreeTable, treeColumnDefs } from "@hafley66/grid/react
 import type { Signal } from "@hafley66/signals"
 import { useEffect, useMemo, useRef } from "react"
 import { z } from "zod"
-import { formatBytes } from "../lib/bytes"
-import { formatAge } from "../lib/time"
+import { formatBytes } from "../lib/bytes.js"
+import { formatAge } from "../lib/time.js"
 
 export type FsRow = {
   id: string

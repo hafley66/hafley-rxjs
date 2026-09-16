@@ -13,16 +13,25 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./style.css": "./dist/style.css",
+    "./style.css": {
+      "types": "./dist/style.css.d.ts",
+      "default": "./dist/style.css"
+    },
     "./marbler": {
       "types": "./dist/marbler.d.ts",
       "import": "./dist/marbler.js"
     },
-    "./kit.css": "./dist/kit.css",
-    "./marbler.css": "./dist/marbler.css"
+    "./kit.css": {
+      "types": "./dist/kit.css.d.ts",
+      "default": "./dist/kit.css"
+    },
+    "./marbler.css": {
+      "types": "./dist/marbler.css.d.ts",
+      "default": "./dist/marbler.css"
+    }
   },
   "scripts": {
-    "build": "vite build && cp src/style.css src/kit.css src/marbler.css dist/",
+    "build": "vite build && cp src/style.css src/kit.css src/marbler.css src/style.css.d.ts src/kit.css.d.ts src/marbler.css.d.ts dist/",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

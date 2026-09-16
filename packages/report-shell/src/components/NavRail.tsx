@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { SignalReact } from '@hafley66/signals/react'
 import type { Signal as SignalType, Storage } from '@hafley66/signals'
-import { createNavCollapse } from '../lib/navCollapse'
+import { createNavCollapse } from '../lib/navCollapse.js'
 
 export type NavRailProps = {
   track: SignalType<number>

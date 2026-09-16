@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatAge, formatDuration } from './time'
+import { formatAge, formatDuration } from './time.js'
 
 describe('formatDuration', () => {
   it('keeps two decimals for a sub-millisecond duration, exact zero stays 0ms', () => {
