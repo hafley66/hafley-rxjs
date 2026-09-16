@@ -311,3 +311,7 @@ export {
   type BoardStickyItem,
   type BoardSvgItem,
 } from "./4_board/0_board.js"
+
+export { boardFrame, type BoardFrameOptions } from "./4_board/1_boardFrame.js"
+
+export { boardPathFor, readBoardFile, writeBoardFile } from "./4_board/2_boardFile.js"
