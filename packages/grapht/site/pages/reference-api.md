@@ -20,6 +20,7 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 | [src/2_graph/21_svgFrame.ts](#src-2-graph-21-svgframe-ts) | 2 |  |
 | [src/2_graph/22_d2SvgFrame.ts](#src-2-graph-22-d2svgframe-ts) | 1 |  |
 | [src/2_graph/23_manualMovement.ts](#src-2-graph-23-manualmovement-ts) | 4 |  |
+| [src/2_graph/24_svgInfer.ts](#src-2-graph-24-svginfer-ts) | 7 |  |
 | [src/2_graph/0_frame.ts](#src-2-graph-0-frame-ts) | 6 | Render a graph from explicit geometry, camera, and presentation state. |
 | [src/2_graph/1_fitCamera.ts](#src-2-graph-1-fitcamera-ts) | 1 |  |
 | [src/2_graph/2_geometryScope.ts](#src-2-graph-2-geometryscope-ts) | 5 |  |
@@ -561,6 +562,105 @@ shift interior route points while retaining endpoint anchors.
 moveGraphFrame: (frame: GraphFrame, translations: Readonly<Record<string, GraphPoint>>, editable: boolean) => GraphFrame
 ```
 
+## src/2_graph/24_svgInfer.ts
+
+| export | kind |
+| --- | --- |
+| [`SvgInferStep`](#src-2-graph-24-svginfer-ts-svginferstep) | type |
+| [`SvgInferNodeData`](#src-2-graph-24-svginfer-ts-svginfernodedata) | type |
+| [`SvgInferEdgeData`](#src-2-graph-24-svginfer-ts-svginferedgedata) | type |
+| [`SvgInferOptions`](#src-2-graph-24-svginfer-ts-svginferoptions) | type |
+| [`SvgInferResult`](#src-2-graph-24-svginfer-ts-svginferresult) | type |
+| [`SvgInferInput`](#src-2-graph-24-svginfer-ts-svginferinput) | type |
+| [`svgInferFrame`](#src-2-graph-24-svginfer-ts-svginferframe) | function |
+
+### `SvgInferStep` {#src-2-graph-24-svginfer-ts-svginferstep}
+
+`SvgInferStep` is declared at `src/2_graph/24_svgInfer.ts:9`.
+
+One step of the parse scan, in the order the inferrer took it.
+
+```ts
+export type SvgInferStep =
+```
+
+### `SvgInferNodeData` {#src-2-graph-24-svginfer-ts-svginfernodedata}
+
+`SvgInferNodeData` is declared at `src/2_graph/24_svgInfer.ts:16`.
+
+```ts
+export type SvgInferNodeData = { kind: "area"; label?: string }
+```
+
+### `SvgInferEdgeData` {#src-2-graph-24-svginfer-ts-svginferedgedata}
+
+`SvgInferEdgeData` is declared at `src/2_graph/24_svgInfer.ts:17`.
+
+```ts
+export type SvgInferEdgeData = { kind: "connector"; label?: string; dashed?: boolean }
+```
+
+### `SvgInferOptions` {#src-2-graph-24-svginfer-ts-svginferoptions}
+
+`SvgInferOptions` is declared at `src/2_graph/24_svgInfer.ts:19`.
+
+```ts
+export type SvgInferOptions = {
+  /** Rendered connectors stop short of the border; containment needs this much slack. */
+  anchorSlack?: number
+  /** How many connectors an endpoint may follow before giving up. */
+  chainDepth?: number
+  /** How close free text sits to a connector to count as its label. */
+  labelReach?: number
+  /** Distance between samples along a connector; contacts between samples are invisible. */
+  sampleSpacing?: number
+}
+```
+
+### `SvgInferResult` {#src-2-graph-24-svginfer-ts-svginferresult}
+
+`SvgInferResult` is declared at `src/2_graph/24_svgInfer.ts:30`.
+
+```ts
+export type SvgInferResult = {
+  frame: GraphFrame<SvgInferNodeData, SvgInferEdgeData>
+  steps: readonly SvgInferStep[]
+  counts: { primitives: number; areas: number; connectors: number; edges: number; lost: number }
+}
+
+export function svgInferFrame(document: Document, input: SvgInferInput): SvgInferResult
+```
+
+### `SvgInferInput` {#src-2-graph-24-svginfer-ts-svginferinput}
+
+`SvgInferInput` is declared at `src/2_graph/24_svgInfer.ts:36`.
+
+```ts
+export type SvgInferInput = {
+  svg: string
+  locator: string
+  rootId?: string
+  viewport: { width: number; height: number }
+  options?: SvgInferOptions
+  onStep?: (step: SvgInferStep) => void
+}
+
+export function svgInferFrame(document: Document, input: SvgInferInput): SvgInferResult
+```
+
+### `svgInferFrame` {#src-2-graph-24-svginfer-ts-svginferframe}
+
+`svgInferFrame` is declared at `src/2_graph/24_svgInfer.ts:67`.
+
+Recovers a flat graph from any rendered SVG without knowing which tool drew it:
+closed primitives are areas, open ones connectors, endpoints anchor by containment with slack,
+an endpoint that lands on another connector continues through it, direction comes from markers.
+The measured frame renders through the normal renderers; `steps` is the parse scan in order.
+
+```ts
+svgInferFrame: (document: Document, input: SvgInferInput) => SvgInferResult
+```
+
 ## src/2_graph/0_frame.ts
 
 Render a graph from explicit geometry, camera, and presentation state.
@@ -826,7 +926,7 @@ validateSealedSvgArtifacts: (graph: Readonly<Record<string, GraphItem<unknown, u
 
 ### `SvgGraphPrimitive` {#src-2-graph-4-svggeometry-ts-svggraphprimitive}
 
-`SvgGraphPrimitive` is declared at `src/2_graph/4_svgGeometry.ts:9`.
+`SvgGraphPrimitive` is declared at `src/2_graph/4_svgGeometry.ts:8`.
 
 ```ts
 export type SvgGraphPrimitive = {
@@ -846,7 +946,7 @@ export function svgGraphPrimitivesOf(document: Document, artifact: SealedSvgArti
 
 ### `svgGraphPrimitivesOf` {#src-2-graph-4-svggeometry-ts-svggraphprimitivesof}
 
-`svgGraphPrimitivesOf` is declared at `src/2_graph/4_svgGeometry.ts:95`.
+`svgGraphPrimitivesOf` is declared at `src/2_graph/4_svgGeometry.ts:94`.
 
 Measures each bound SVG element without collapsing repeated roles onto its graph item.
 
@@ -856,7 +956,7 @@ svgGraphPrimitivesOf: (document: Document, artifact: SealedSvgArtifact) => reado
 
 ### `svgGraphGeometryOf` {#src-2-graph-4-svggeometry-ts-svggraphgeometryof}
 
-`svgGraphGeometryOf` is declared at `src/2_graph/4_svgGeometry.ts:128`.
+`svgGraphGeometryOf` is declared at `src/2_graph/4_svgGeometry.ts:127`.
 
 Measures bound SVG elements into canonical Grapht geometry in SVG viewBox coordinates.
 

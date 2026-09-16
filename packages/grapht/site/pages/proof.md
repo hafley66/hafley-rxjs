@@ -118,20 +118,7 @@ when opening a shared URL. Changes replace the URL entry, preserving unrelated p
 camera. Original source is retained. Duplicate element IDs, missing binding targets, and invalid graph
 references are rejected. A plain SVG opens in document mode. Native Cytoscape requires explicit
 semantic bindings, using the supported primitive roles; arbitrary SVG artwork remains source-rendered.
-An inferred frame supplies `shape` and `connector` bindings, so native rendering draws the recovered
-routes rather than inventing curves.
 The architecture fixture recovers these bindings from D2-generated object and connection identities.
-
-## SVG parse
-
-**svg parse** loads the rendered SVG of the current paired example and recovers a graph from
-geometry alone, then scores it against the fixture's authored relations: matched, missed, and extra
-rows sit under the panel. The button flips between the source parse and the SVG parse of the same
-diagram, so D2, Mermaid, D2-from-SVG, and Mermaid-from-SVG read as one comparison. The scan list
-below the score is every step the inferrer took, oldest first, and is readable from the console as
-`graphtInfer.steps.$()`. Current score: D2 sequence 3 of 3 authored edges with no extras; Mermaid
-3 of 3 with 4 extras; the large sequence 36 of 41 (16 extras are rendered lifelines resolving to
-their participants, 7 are generated-id pairs on unlabelled frames).
 
 DOM sequence lifelines keep a one-pixel stroke at fitted zoom. Hop palettes are shared through
 `GraphStyle.hopColors`, with separate light/dark defaults and the existing distance opacity.
@@ -185,6 +172,21 @@ SVG supplies measured geometry and bindings. The D2 architecture example instead
 endpoint IDs from D2-generated SVG classes. Generic SVG needs a graph and bindings sidecar
 for relational hover. Loading arbitrary `.d2` or `.mmd` files is not implemented in this proof.
 Sequence group nesting in the proof currently uses measured rectangle containment.
+
+## SVG parse and its score
+
+`svg parse` (the button, or the `paired-d2-svg` / `paired-mermaid-svg` entries) runs
+`svgInferFrame` over the rendered SVG alone: closed primitives become areas, open ones connectors,
+an endpoint anchors to the box whose outline is nearest within 6px of arrowhead clearance, an
+endpoint that lands on a connector continues through it, a thin bar threaded by a line is treated
+as furniture on that line, and direction comes from `marker-end` / `marker-start`. The panel scores
+the result against the fixture's authored relations and element bindings. Current numbers:
+D2 sequence matches 3 of 3 authored edges with no extras; Mermaid matches 3 of 3 with 4 extras;
+the large sequence (18 participants, 41 authored edges) matches 36 with 5 missed and 23 extras,
+16 of them rendered lifelines resolving to their participants and 7 generated-id pairs on
+unlabelled frames. The same inferrer resolves 51 of 51 D2 architecture connections, 48 with both
+endpoints matching D2's declared endpoints and 3 with one end differing. The list under the score
+is the parse scan itself, accumulated in a Signal and readable as `graphtInfer.steps.$()`.
 
 Document hover paints the children of bound D2 shape groups directly so child-level source
 and theme strokes cannot override the highlight. Debug inspection passes pointer input through

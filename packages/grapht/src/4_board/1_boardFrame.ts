@@ -10,12 +10,10 @@ import type { GraphFrame, GraphGeometry, GraphLabel } from "../2_graph/0_frame.j
 import { fitGraphCamera } from "../2_graph/1_fitCamera.js"
 import { EMPTY_SEALED_SVG_ARTIFACTS_BY_ROOT_ID } from "../2_graph/3_sealedSvgArtifact.js"
 import type { Board, BoardItem } from "./0_board.js"
+import { unplacedStack } from "./0_board.js"
 
 /** Screen-space margin the fitted camera leaves, in world units. */
 const VIEWPORT_PADDING = 24
-
-/** Vertical gap between two items nobody placed, in world units. */
-const UNPLACED_GAP = 24
 
 export type BoardFrameOptions = {
   /** Measured size of one item, and the label to paint on it when the host has one. */
@@ -34,21 +32,19 @@ export function boardFrame(board: Board, options: BoardFrameOptions): GraphFrame
   const labelsById: Record<GraphId, GraphLabel> = {}
   const placementByItemId = new Map(board.placements.map(placement => [placement.itemId, placement]))
 
-  // An item nobody placed still draws, stacked downward from the origin in board order: that is
-  // reading order for a board that has never been gestured, and it makes a position a function of
-  // the board alone, so the same board paints the same way in every run. A placed item ignores the
-  // stack, so the rule can only ever fill in a position, never argue with one.
-  let unplacedY = 0
+  // Once per item: a host may measure with a layout pass, and the size is needed for bounds and for
+  // the stack below. The stack itself is `unplacedStack`'s rule, not a second copy of it.
+  const sizes = new Map(board.items.map((item): [string, ReturnType<BoardFrameOptions["size"]>] => [item.itemId, options.size(item)]))
+  const stack = unplacedStack(board, item => sizes.get(item.itemId)?.height ?? 0)
 
   for (const item of board.items) {
-    // Once per item: a host may measure with a layout pass, and the size is needed for bounds and
-    // for the stack below.
-    const size = options.size(item)
+    const size = sizes.get(item.itemId)
+    if (size === undefined) continue
     const placement = placementByItemId.get(item.itemId)
-    const y = placement ? placement.y : unplacedY
-    if (!placement) unplacedY += size.height + UNPLACED_GAP
+    const x = placement ? placement.x : 0
+    const y = placement ? placement.y : (stack.get(item.itemId) ?? 0)
     graph[item.itemId] = { id: item.itemId, type: "node", data: item }
-    boundsById[item.itemId] = { x: placement ? placement.x : 0, y, width: size.width, height: size.height }
+    boundsById[item.itemId] = { x, y, width: size.width, height: size.height }
     if (size.label !== undefined) labelsById[item.itemId] = { text: size.label }
   }
 

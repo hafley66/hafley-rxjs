@@ -146,40 +146,80 @@ describe("the docs site", () => {
   })
 })
 describe("the board page", () => {
+  /** The board the page reads is a file, so a test resets it through the same endpoint the page uses
+   * rather than through browser storage: whatever an earlier run left is cleared before the drag. */
+  const resetBoardFile = async (): Promise<void> => {
+    await $page.evaluate(async () => {
+      // The page's own directory, minus the page: `import.meta.env` is not there to ask.
+      const at = `${location.pathname.replace(/[^/]*$/, "")}__board/demo`
+      const response = await fetch(at)
+      const file = (await response.json()) as { board: { placements: unknown[] } | null }
+      if (file.board === null) return
+      await fetch(at, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...file.board, placements: [] }),
+      })
+    })
+  }
+
   test("moves a card, keeps it through a re-anchor, and reloads it where it was left", async ({ log }) => {
     await $page.goto(url("board"))
-    await $page.evaluate(() => localStorage.removeItem("grapht-board-demo"))
+    await resetBoardFile()
     await $page.reload({ waitUntil: "load" })
 
-    const card = $page.locator(".board-card").nth(2)
-    const moved = card.locator("code")
-    const itemId = (await moved.textContent())?.trim() ?? ""
+    const card = $page.locator(".grapht-board-card").first()
+    await card.waitFor()
     const box = await card.boundingBox()
     if (!box) throw new Error("the board drew no card")
 
     await $page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
     await $page.mouse.down()
-    await $page.mouse.move(box.x + box.width / 2 + 360, box.y + box.height / 2 + 80, { steps: 10 })
+    // Past the bar, so the gesture ends over the board and not over a control.
+    await $page.mouse.move(box.x + box.width / 2 + 360, box.y + box.height / 2 + 220, { steps: 10 })
     await $page.mouse.up()
 
     // The board says how many items a person has placed, and it is not the whole board.
     expect(await $page.locator(".board-readout").textContent()).toContain("1 placed")
-    const placedAt = await card.getAttribute("style")
+    expect(await $page.locator(".board-readout").textContent()).toContain("1/1 gestures")
+    // Every unplaced card draws at the origin, so the placement is what identifies the one that moved —
+    // not an index. The stack is what the pointer actually landed on, which is not always the first.
+    const movedCard = $page.locator('.grapht-board-card:not([data-board-x="0"])')
+    await expect.poll(async () => await movedCard.count(), { timeout: 5000 }).toBe(1)
+    const itemId = (await movedCard.getAttribute("data-board-item")) ?? ""
+    // The placement is the handle below: ids change and this does not.
+    const x = (await movedCard.getAttribute("data-board-x")) ?? ""
+    const y = (await movedCard.getAttribute("data-board-y")) ?? ""
+    const placedAt = $page.locator(`.grapht-board-card[data-board-x="${x}"][data-board-y="${y}"]`)
+    expect(await placedAt.count()).toBe(1)
 
-    // An insertion above the fence re-anchors an item; the card a person moved does not care.
+    // An insertion above the fence re-anchors items: some id changes and the placement does not.
+    const idsBefore = await $page.locator(".grapht-board-card").evaluateAll(cards => cards.map(card => card.getAttribute("data-board-item")))
     await $page.locator("button", { hasText: "Insert a block above the fence" }).click()
     const note = await $page.locator(".board-note").textContent()
-    expect(note).toContain("re-anchored, positions kept")
+    expect(note).toContain("re-anchored onto new ids, positions kept")
     expect(note).toMatch(/[0-9a-f]{6}→[0-9a-f]{6}/)
-    expect(await $page.locator(".board-readout").textContent()).toContain("1 placed")
-    expect(await $page.locator(`[data-item]`, { hasText: itemId }).first().getAttribute("style")).toBe(placedAt)
+    // The gesture journal is gone with the revision it moved against, and the placement is not.
+    expect(await $page.locator(".board-readout").textContent()).toContain("1 placed · 0/0 gestures")
+    await expect.poll(async () => await placedAt.count(), { timeout: 5000 }).toBe(1)
+    const reanchoredId = await placedAt.getAttribute("data-board-item")
+    const idsAfter = await $page.locator(".grapht-board-card").evaluateAll(cards => cards.map(card => card.getAttribute("data-board-item")))
+    expect(idsAfter).not.toEqual(idsBefore)
+    expect(idsAfter.length).toBe(idsBefore.length)
 
-    // Reload: the position is where it was left, and it is still the only one a person placed.
+    // Save, reload: the position is read back out of the board's own file.
+    await $page.locator("button", { hasText: "Save to file" }).click()
+    await expect.poll(async () => await $page.locator(".board-note").textContent(), { timeout: 5000 }).toContain("wrote")
+    expect(await $page.locator(".board-note").textContent()).toContain("notes.md.board.json")
+
     await $page.reload({ waitUntil: "load" })
-    const reloaded = $page.locator(".board-card").nth(2)
-    expect(await reloaded.textContent()).toContain(itemId)
-    expect(await reloaded.getAttribute("style")).toBe(placedAt)
+    await $page.locator(".grapht-board-card").first().waitFor()
+    const afterReload = $page.locator(`.grapht-board-card[data-board-x="${x}"][data-board-y="${y}"]`)
+    await expect.poll(async () => await afterReload.count(), { timeout: 5000 }).toBe(1)
+    expect(await afterReload.getAttribute("data-board-item")).toBe(reanchoredId)
     expect(await $page.locator(".board-readout").textContent()).toContain("1 placed")
+    // Read back out of the board's own file, whichever reconciliation it needed.
+    expect(await $page.locator(".board-note").textContent()).toContain("board.json")
 
     expectOnlyStripMisses(log)
   })

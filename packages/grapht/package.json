@@ -13,6 +13,10 @@
     "./browser": {
       "types": "./dist/browser.d.ts",
       "import": "./dist/browser.js"
+    },
+    "./react": {
+      "types": "./dist/4_board/react/index.d.ts",
+      "import": "./dist/react.js"
     }
   },
   "bin": {
@@ -29,10 +33,11 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && vite build",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "pnpm run build && vitest run tests",
+    "test:browser": "node ../../scripts/browser-queue.mjs vitest run -c vitest.browser.config.ts",
     "renderer-fixture": "node scripts/0_generate_renderer_fixture.mjs",
     "fixture:sequence": "node scripts/3_generate_sequence_fixture.mjs",
     "smoke:board": "node scripts/7_boardSmoke.mjs",
@@ -60,15 +65,35 @@
     "string-argv": "0.3.2",
     "zod": "^4.4.3"
   },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@hafley66/docs-kit": "workspace:*",
     "@hafley66/path": "workspace:*",
     "@hafley66/vitest-playwright": "workspace:*",
     "@hafley66/vitest-telemetry": "workspace:*",
     "@types/node": "^25.0.8",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.5",
+    "@vitest/browser": "^4.1.10",
+    "@vitest/browser-playwright": "^4.1.10",
     "playwright": "^1.62.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "typescript": "7.0.2",
     "vite": "^8.2.1",
+    "vite-plugin-dts": "^5.0.3",
     "vitepress": "2.0.0-alpha.20",
     "vitepress-plugin-mermaid": "^2.0.17",
     "vitest": "^4.1.10"

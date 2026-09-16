@@ -1,5 +1,5 @@
 {
-  "//": "The build emits, and `allowImportingTsExtensions` (set in tsconfig.json for the docs-kit source the site suite pulls in) is only legal where nothing is emitted. This program is `src/**` alone and imports no `.ts` path, so turning the flag off here costs nothing.",
+  "//": "The build emits, and `allowImportingTsExtensions` (set in tsconfig.json for the docs-kit source the site suite pulls in) is only legal where nothing is emitted. This program is `src/**` alone and imports no `.ts` path, so turning the flag off here costs nothing. `src/4_board/react/**` is left out because `vite build` owns that subpath: it writes the bundle `\"./react\"` imports and the declarations beside it, and two emitters for one file would leave whichever ran last.",
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
@@ -11,5 +11,5 @@
     "sourceMap": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests/**/*"]
+  "exclude": ["node_modules", "dist", "tests/**/*", "src/4_board/react/**/*"]
 }

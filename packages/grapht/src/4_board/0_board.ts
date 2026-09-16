@@ -49,6 +49,32 @@ export type Board = {
   placements: readonly BoardPlacement[]
 }
 
+/** Vertical gap between two items nobody placed, in world units. One declaration, two readers: the
+ * frame projects the stack onto a camera, the DOM renderer draws it. */
+export const UNPLACED_GAP = 24
+
+/**
+ * The y an item nobody placed draws at, by item id: stacked downward from the origin in board order.
+ * That is reading order for a board that has never been gestured, and it makes a position a function
+ * of the board alone, so the same board paints the same way in every run. A placed item is absent
+ * from the map and keeps its own position, so this rule can only ever fill a blank, never argue.
+ */
+export function unplacedStack(
+	board: Board,
+	heightOf: (item: BoardItem) => number,
+	gap: number = UNPLACED_GAP,
+): ReadonlyMap<string, number> {
+	const placed = new Set(board.placements.map(placement => placement.itemId))
+	const stack = new Map<string, number>()
+	let next = 0
+	for (const item of board.items) {
+		if (placed.has(item.itemId)) continue
+		stack.set(item.itemId, next)
+		next += heightOf(item) + gap
+	}
+	return stack
+}
+
 export type BoardAnomaly = { kind: string; detail: string }
 
 /** What relocation did to one item, so a caller can show it rather than guess. */

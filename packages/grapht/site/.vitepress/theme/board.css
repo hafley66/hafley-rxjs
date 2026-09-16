@@ -1,0 +1,91 @@
+/* The board's look. It lives beside the page rather than in the package: the renderer draws elements
+ * and stamps each one's kind, and how a board should appear is a page's decision, not a kernel's. */
+.board-demo {
+  margin: 1.5rem 0;
+}
+.board-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.board-bar button {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 6px;
+  background: var(--vp-c-bg-soft);
+  cursor: pointer;
+  font-size: 13px;
+}
+.board-bar button:hover:not(:disabled) {
+  border-color: var(--vp-c-brand-1);
+}
+.board-bar button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.board-readout,
+.board-note {
+  font-size: 13px;
+  color: var(--vp-c-text-2);
+}
+.board-help {
+  font-size: 12px;
+  color: var(--vp-c-text-3);
+}
+
+/* The box the renderer draws into. It owns `position: relative` only when the page did not set
+ * one, so a page that positions it already keeps its own rule. */
+.board-canvas {
+  height: 620px;
+  border: 1px dashed var(--vp-c-divider);
+  border-radius: 8px;
+  background-image: radial-gradient(var(--vp-c-divider) 1px, transparent 1px);
+  background-size: 20px 20px;
+  overflow: auto;
+}
+/* A card is placed by a transform the renderer writes, so the element itself sits at the origin.
+ * The height is fixed and has to stay in step with the `card` the panel hands `renderBoard`: items
+ * nobody placed stack by that number, and a card that grows past it would overlap the next one. */
+.board-canvas .grapht-board-card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 260px;
+  height: 84px;
+  box-sizing: border-box;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background: var(--vp-c-bg);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
+  cursor: grab;
+  user-select: none;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.board-canvas .grapht-board-card::before {
+  content: attr(data-board-kind);
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-3);
+}
+/* The kind is the item's own fact, so the page styles it off the attribute the renderer stamps. */
+.board-canvas .grapht-board-card[data-board-kind="fence"] {
+  border-color: var(--vp-c-brand-1);
+}
+.board-canvas .grapht-board-card[data-board-kind="sticky"] {
+  background: var(--vp-c-bg-soft);
+}
+/* The root carries the item being dragged, so a page can style the drag it is inside of. */
+.board-canvas[data-board-drag] .grapht-board-card {
+  cursor: grabbing;
+}
+.board-canvas[data-board-drag] .grapht-board-card[data-board-item]:hover {
+  box-shadow: 0 8px 20px rgb(0 0 0 / 24%);
+}

@@ -289,6 +289,7 @@ export {
 
 export {
   BOARD_FORMAT,
+  UNPLACED_GAP,
   boardFromDocuments,
   foldMoves,
   moveItems,
@@ -296,6 +297,7 @@ export {
   printBoard,
   parseBoard,
   reconcileBoard,
+  unplacedStack,
   validateBoard,
   withFence,
   type Board,
@@ -311,6 +313,14 @@ export {
   type BoardStickyItem,
   type BoardSvgItem,
 } from "./4_board/0_board.js"
+
+export {
+  boardForFile,
+  boardHost,
+  type BoardGesture,
+  type BoardHost,
+  type BoardPoint,
+} from "./4_board/3_boardHost.js"
 
 export { boardFrame, type BoardFrameOptions } from "./4_board/1_boardFrame.js"
 
