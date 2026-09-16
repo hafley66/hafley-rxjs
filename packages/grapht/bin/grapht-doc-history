@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+import { docHistoryMain } from "../dist/7_docHistory/2_cli.js"
+
+process.exitCode = await docHistoryMain(process.argv.slice(2))

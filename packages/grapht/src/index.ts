@@ -335,3 +335,18 @@ export {
   type MessageLog,
   type MessageTarget,
 } from "./6_messages/0_messageLog.js"
+
+export {
+  ARTIFACTS_TRAILER,
+  MESSAGES_TRAILER,
+  anchorLabelOf,
+  docHistoryAnomalies,
+  docHistoryLines,
+  messageLifecycles,
+  parseCommitTrailers,
+  renderCommitTrailers,
+  trailerCommitsFor,
+  type CommitTrailers,
+  type MessageLifecycle,
+  type TrailerCommit,
+} from "./7_docHistory/0_trailer.js"

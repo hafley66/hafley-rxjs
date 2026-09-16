@@ -19,7 +19,8 @@
     "grapht-bench": "./bin/grapht-bench",
     "grapht-fixtures": "./bin/grapht-fixtures",
     "grapht-adapter-identity": "./bin/grapht-adapter-identity",
-    "grapht-history": "./bin/grapht-history"
+    "grapht-history": "./bin/grapht-history",
+    "grapht-doc-history": "./bin/grapht-doc-history"
   },
   "files": [
     "dist",
