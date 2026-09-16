@@ -286,3 +286,28 @@ export {
   type MarkdownNodeData,
   type MarkdownSectionData,
 } from "./2_graph/25_markdownGraph.js"
+
+export {
+  BOARD_FORMAT,
+  boardFromDocuments,
+  foldMoves,
+  moveItems,
+  placeItem,
+  printBoard,
+  parseBoard,
+  reconcileBoard,
+  validateBoard,
+  withFence,
+  type Board,
+  type BoardAnomaly,
+  type BoardBlockItem,
+  type BoardFenceItem,
+  type BoardItem,
+  type BoardOrphan,
+  type BoardPlacement,
+  type BoardReconciliation,
+  type BoardRelocation,
+  type BoardSource,
+  type BoardStickyItem,
+  type BoardSvgItem,
+} from "./4_board/0_board.js"
