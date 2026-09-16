@@ -12,7 +12,7 @@ import type {
   MermaidNoteStatement,
   MermaidSequenceDocument,
   MermaidStatement,
-} from "./0_types"
+} from "./0_types.js"
 
 function actorStructuralKey(id: string): string {
   return `actor:${id}`

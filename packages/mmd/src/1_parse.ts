@@ -8,7 +8,7 @@ import type {
   MermaidSequenceDocument,
   MermaidSourceSpan,
   MermaidStatement,
-} from "./0_types"
+} from "./0_types.js"
 
 type SourceLine = {
   text: string

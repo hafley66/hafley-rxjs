@@ -1,9 +1,9 @@
 import { fileURLToPath } from "node:url"
 import { documentFingerprint, type NativeSvgElement, type SequenceSourceAdapter } from "@hafley66/grapht-model"
 import { chromium, type Page } from "playwright"
-import { parseMermaidSequence } from "./1_parse"
-import { identifyMermaidOccurrences } from "./2_identity"
-import { bindMermaidSvg } from "./3_bindSvg"
+import { parseMermaidSequence } from "./1_parse.js"
+import { identifyMermaidOccurrences } from "./2_identity.js"
+import { bindMermaidSvg } from "./3_bindSvg.js"
 
 const rendererOptions = {
   deterministicIDSeed: "hafley-sequence-renderer-smoke",

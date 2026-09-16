@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises"
 import mermaid from "mermaid"
 import { describe, expect, test } from "vitest"
 
-import { parseMermaidSequence } from "./1_parse"
+import { parseMermaidSequence } from "./1_parse.js"
 
 const fixtureDirectory = new URL("../../../fixtures/sequence/", import.meta.url)
 
@@ -312,7 +312,7 @@ describe("Mermaid local sequence document", () => {
 })
 
 test("preserves actor boxes and parallel branch membership", async () => {
-  const { identifyMermaidOccurrences } = await import("./2_identity")
+  const { identifyMermaidOccurrences } = await import("./2_identity.js")
   const document = parseMermaidSequence(`sequenceDiagram
 box Services
  participant A
