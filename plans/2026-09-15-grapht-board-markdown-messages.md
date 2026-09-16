@@ -265,7 +265,7 @@ type MessageIntent =
 | 1 | landed | fence offset join: occurrence span plus `codeStart` | a mermaid and a d2 token resolve to the exact absolute offset in the file |
 | 2 | landed | `MdAddress` with `locatorHash` / `contentHash` / `docHash`, plus the WebCrypto twin | an in-place edit above a fence: `locatorHash` unchanged, `span` moved, `contentHash` unchanged; edit inside: `contentHash` changes. An *inserted* block above shifts `${section}/${ordinal}` and with it the locator, so relocation falls through to `contentHash` (see 11a) |
 | 3 | landed | `markdownGraph`: blocks as nodes, heading nesting as groups, links as edges | hover a section highlights its links and backlinks; ids survive an inserted section |
-| 4 | | board document, item renderers, placements, movement journal folded at commit | place a section and a fence on a board, move both, reload, positions persist |
+| 4 | half | board **document** landed (`4_board/0_board.ts`: items, placements, journal fold, relocation, validate, print/parse). Still open: a board surface — item renderers, the gestures that fill the journal, and the file write/read that makes the reload claim | place a section and a fence on a board, move both, reload, positions persist |
 | 5 | | pin layer and click to address | click a mermaid message and get the absolute file range it came from |
 | 6 | | message log, intent member, staleness and reanchor | a message survives an edit above it, reanchors by structural key, orphans when its own text changes |
 | 7 | | commit trailer and `grapht-doc-history` | one command prints every message with the revision it was written against and the revision that resolved it |
@@ -304,6 +304,20 @@ The projection follows the model's classification rather than inventing one: a l
 fence or an html block is not an edge, a path-bearing href goes through `resolveMdLink`, and only
 a target that resolves inside this document becomes an edge. Reference-style links and autolinks
 are not followed today.
+
+Phase 4's document half landed as `packages/grapht/src/4_board/0_board.ts`, and it settles one
+design question the sketch left open: an item's id **is** its address's `locatorHash`
+(`{ kind: "block" | "fence"; itemId; blockId; address }`), so a placement is keyed to the prose
+rather than to a position in a list. Edit above a fence and `reconcileBoard` carries the placement
+onto the relocated item — the case that proves pins survive editing — and reports an item it could
+not place as an orphan instead of moving it silently. A sticky or an svg keeps its own id and
+follows the block it was pinned to. Frames come from the host: `boardFromDocuments` projects every
+block, including fences, and `withFence` promotes one when whoever rendered the diagram hands the
+frame over, because grapht does not parse mermaid or d2. `foldMoves` replays a `MoveHistory`
+prefix onto placements (cursor included, so an undone gesture un-moves the board), `validateBoard`
+names what is wrong with a board on read, and `parseBoard` refuses a file whose `format` is not
+`grapht-board/0`. What is still missing is the surface: item renderers, the gestures that fill the
+journal, and the file write/read that makes the reload half of the phase's acceptance true.
 
 Known gap, pre-existing and outside these phases: `pnpm api` in `packages/signals` regenerates
 `docs/reference-api.md` in a form that predates its `0_log.ts` re-export of `LogEmit` /
