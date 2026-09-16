@@ -390,9 +390,21 @@ importers:
       '@hafley66/docs-kit':
         specifier: workspace:*
         version: link:../docs-kit
+      '@hafley66/path':
+        specifier: workspace:*
+        version: link:../path
+      '@hafley66/vitest-playwright':
+        specifier: workspace:*
+        version: link:../vitest-playwright
+      '@hafley66/vitest-telemetry':
+        specifier: workspace:*
+        version: link:../vitest-telemetry
       '@types/node':
         specifier: ^25.0.8
         version: 25.0.8
+      playwright:
+        specifier: ^1.62.1
+        version: 1.62.1
       typescript:
         specifier: 7.0.2
         version: 7.0.2
@@ -1377,6 +1389,12 @@ importers:
       '@hafley66/docs-kit':
         specifier: workspace:*
         version: link:../docs-kit
+      '@hafley66/vitest-playwright':
+        specifier: workspace:*
+        version: link:../vitest-playwright
+      '@hafley66/vitest-telemetry':
+        specifier: workspace:*
+        version: link:../vitest-telemetry
       '@logtape/logtape':
         specifier: 2.3.3
         version: 2.3.3

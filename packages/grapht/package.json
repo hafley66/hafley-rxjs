@@ -44,7 +44,8 @@
     "site:build": "pnpm site:content && vitepress build site",
     "site:preview": "vitepress preview site",
     "ship": "node scripts/ship.mjs",
-    "plans": "node scripts/6_plans.mjs"
+    "plans": "node scripts/6_plans.mjs",
+    "test:site": "node ../../scripts/browser-queue.mjs vitest run -c vitest.site.config.ts"
   },
   "dependencies": {
     "@hafley66/grapht-model": "workspace:*",
@@ -59,7 +60,11 @@
   },
   "devDependencies": {
     "@hafley66/docs-kit": "workspace:*",
+    "@hafley66/path": "workspace:*",
+    "@hafley66/vitest-playwright": "workspace:*",
+    "@hafley66/vitest-telemetry": "workspace:*",
     "@types/node": "^25.0.8",
+    "playwright": "^1.62.1",
     "typescript": "7.0.2",
     "vite": "^8.2.1",
     "vitepress": "2.0.0-alpha.20",

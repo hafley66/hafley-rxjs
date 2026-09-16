@@ -55,7 +55,8 @@
     "site": "pnpm site:content && vitepress dev site",
     "site:build": "pnpm site:content && vitepress build site",
     "site:preview": "vitepress preview site",
-    "ship": "node scripts/ship.mjs"
+    "ship": "node scripts/ship.mjs",
+    "test:site": "node ../../scripts/browser-queue.mjs vitest run -c vitest.site.config.ts"
   },
   "dependencies": {
     "@hafley66/path": "workspace:*",
@@ -84,6 +85,8 @@
   },
   "devDependencies": {
     "@hafley66/docs-kit": "workspace:*",
+    "@hafley66/vitest-playwright": "workspace:*",
+    "@hafley66/vitest-telemetry": "workspace:*",
     "@logtape/logtape": "2.3.3",
     "@types/lodash": "^4.17.16",
     "@types/react": "^19.0.0",
