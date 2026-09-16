@@ -123,7 +123,10 @@ export function messageAnomalies(log: MessageLog): readonly string[] {
     if (message.replyTo !== undefined && !ids.has(message.replyTo)) {
       anomalies.push(`message ${message.id} replies to ${message.replyTo}, which this log does not hold`)
     }
-    if (message.at < lastAt) anomalies.push(`message ${message.id} is written before its predecessor`)
+    // Instants, not strings: two stamps in different offsets are not comparable character by character.
+    if (lastAt !== "" && Date.parse(message.at) < Date.parse(lastAt)) {
+      anomalies.push(`message ${message.id} is written before its predecessor`)
+    }
     lastAt = message.at
     seen.add(message.id)
   }
