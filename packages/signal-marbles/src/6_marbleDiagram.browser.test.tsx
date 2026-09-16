@@ -536,4 +536,35 @@ describe("geometry", () => {
     }
     unsubscribe()
   })
+
+  /**
+   * The controls are the one thing here a hand is aimed at, so where they sit cannot be a
+   * consequence of the words beside them. Both neighbours that change are changed: the readout's
+   * count and duration, and the toggle's label. A row of buttons that ends in a text box moves
+   * every time the text does, which is what this measures instead of asserting.
+   */
+  it("holds the controls where they were laid out while the readout and the toggle's label change", () => {
+    const { host, player, unsubscribe } = mount("geometry-controls", RUN)
+    const place = () => ({
+      readout: host.querySelector(".mb-readout")?.textContent ?? "",
+      toggle: host.querySelector<HTMLElement>('.mb-control[data-act="toggle"]')?.textContent ?? "",
+      // Where each control was drawn, and how wide: the label it carries is the other half of the
+      // question, and it is meant to change.
+      boxes: [...host.querySelectorAll<HTMLElement>(".mb-control")].map(node => {
+        const box = node.getBoundingClientRect()
+        return `${node.dataset.act}@${box.left.toFixed(1)}w${box.width.toFixed(1)}`
+      }),
+    })
+    const all = place()
+    player.revealAt(0)
+    const stepped = place()
+    player.play()
+    const playing = place()
+    player.pause()
+    // Both states have to actually differ, or this would pass on a surface that never changes.
+    expect(stepped.readout).not.toBe(all.readout)
+    expect(playing.toggle).not.toBe(all.toggle)
+    for (const state of [stepped, playing]) expect(state.boxes).toEqual(all.boxes)
+    unsubscribe()
+  })
 })

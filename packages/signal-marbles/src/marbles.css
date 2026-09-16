@@ -52,13 +52,17 @@
 	.mb-head {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		justify-content: flex-end;
 		gap: 12px;
 		padding: 8px 12px;
 		border-bottom: 1px solid var(--mb-border);
 	}
 
+	/* The title is the only thing in the head that gives ground, so everything to its right keeps
+	   the position it was laid out at however long the words beside it get. */
 	.mb-title {
+		flex: 1 1 auto;
+		min-width: 0;
 		font-weight: 600;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -71,9 +75,9 @@
 
 	.mb-controls {
 		display: flex;
+		flex: 0 0 auto;
 		align-items: center;
 		gap: 4px;
-		margin-left: auto;
 	}
 
 	.mb-control {
@@ -89,16 +93,29 @@
 		cursor: pointer;
 	}
 
+	/* The one control whose label is a word that changes: `play` and `pause` are different widths,
+	   and a button that resizes takes its neighbours with it. Same box either way. */
+	.mb-control[data-act="toggle"] {
+		box-sizing: border-box;
+		inline-size: 52px;
+		padding: 0;
+	}
+
 	.mb-control:hover {
 		border-color: var(--mb-accent);
 		color: var(--mb-accent);
 	}
 
+	/* A box of its own, not a box the text decides: the readout carries a column count and a
+	   duration, so it is at least this wide whatever the numbers are, and it never wraps into a
+	   thin two-line column when the numbers are small. It sits left of the controls, so what it
+	   grows by is taken from the title rather than from the buttons' position. */
 	.mb-readout {
+		flex: 0 0 auto;
 		min-width: 130px;
-		margin-left: 6px;
 		color: var(--mb-muted);
 		text-align: right;
+		white-space: nowrap;
 		font-variant-numeric: tabular-nums;
 	}
 

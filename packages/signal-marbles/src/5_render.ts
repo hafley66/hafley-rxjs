@@ -147,8 +147,12 @@ export function renderMarbles(player: MarblePlayer, host: HTMLElement): MarbleRe
   toggle.dataset.act = "toggle"
   stepForward.dataset.act = "step-forward"
   showAll.dataset.act = "all"
-  controls.append(stepBack, toggle, stepForward, showAll, readout)
-  head.append(title, controls)
+  controls.append(stepBack, toggle, stepForward, showAll)
+  // The readout is a sibling of the controls, not a member of them: a row of buttons that ends in a
+  // text box is a row that moves whenever the text does, and this text is a column count and a
+  // duration — both of which change on every step. To the left of the buttons its growth is spent
+  // on the title's slack instead of on the position of the controls.
+  head.append(title, readout, controls)
 
   const panel = el("div", "mb-panel")
   const panelHead = el("div", "mb-panel-head")
