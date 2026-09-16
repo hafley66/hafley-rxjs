@@ -20,7 +20,7 @@ export function MarbleDiagram({ player, className, style }: MarbleDiagramProps):
   useEffect(() => {
     const element = host.current
     if (element === null) return
-    return renderMarbles(player, element).stop
+    return renderMarbles(player, element).unsubscribe
   }, [player])
   return createElement("div", { ref: host, className, style })
 }

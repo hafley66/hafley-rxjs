@@ -1,28 +1,46 @@
 # @hafley66/signal-marbles
 
-A marble diagram as a document, two ways to make one, and one playhead they both run off.
+A marble diagram as a document: causal columns along `x`, named events, stated edges, and a reveal
+that walks the turns.
 
-> **Authorship attestation:** This README was written by Claude (AI). The examples were run, and the
-> screenshot at the bottom is produced by `src/6_marbleDiagram.browser.test.tsx`, but the prose has
-> not been checked by a human.
+> **Authorship attestation:** This README was written by Claude (AI). Every example below was run
+> against the code in this package, and the screenshot at the bottom is produced by
+> `src/6_marbleDiagram.browser.test.tsx`, but the prose has not been checked by a human.
 
 ## The one idea
 
-A marble diagram is not a picture. It is a table — lanes × frames — and everything else is a view of
-it.
+A diagram has two numbers, and neither is the whole truth.
+
+| | |
+| --- | --- |
+| **tick** | the causal column — one turn of the scheduler, or one column an author wrote |
+| **frame** | the virtual milliseconds that column sits at |
+
+Frames cannot tell two readings apart that a reader must be able to tell apart:
 
 ```
-notation  ─┐
-           ├─→  MarbleDoc  ─→  player (signals)  ─→  renderMarbles / <MarbleDiagram>
-RxJS demo ─┘
+of(1, 2, 3)                       1 column    0ms    three values, one turn
+of(1,2,3).pipe(concatMap(v => of(v).pipe(observeOn(asapScheduler))))
+                                  4 columns   0ms    three turns, still no time
+interval(1000).pipe(take(3))      4 columns   0ms, 1000ms, 2000ms, 3000ms
 ```
 
-- **Two producers.** `readMarbles` reads the notation; `runMarbleDemo` runs real RxJS on a virtual
-  clock. Neither knows the other exists.
-- **One document.** `MarbleDoc` is lanes of notifications on one integer clock. It is JSON, zod
-  validates it at the boundary, and normalization derives the extent from the content.
-- **One playhead.** A player is a handful of signals plus a clock `Observable`. A surface reads the
-  playhead and connects it; nothing else in the package subscribes.
+So the tick is document data. A producer records it or it does not exist, because no amount of
+arithmetic over frames recovers it.
+
+```
+marbleDoc  ─┐
+            ├─→  MarbleDoc  ─→  player (one reveal signal)  ─→  renderMarbles / <MarbleDiagram>
+runMarbleDemo ┘
+```
+
+- **Two producers.** `marbleDoc` writes a document by hand; `runMarbleDemo` runs real RxJS on a
+  virtual clock and records what happened. Neither knows the other exists.
+- **One document.** `MarbleDoc` is columns of milliseconds plus lanes of notifications, each
+  notification named (`keys#3`), each lane able to say what caused its subscription. zod validates
+  the authored form at the boundary.
+- **One reveal.** A player is a handful of signals plus a clock `Observable`. A surface reads the
+  reveal and connects it; nothing else in the package subscribes.
 
 ## Install
 
@@ -31,29 +49,130 @@ pnpm add @hafley66/signal-marbles @hafley66/signals rxjs
 ```
 
 ```ts
-import { createMarblePlayer, readMarbles, renderMarbles } from "@hafley66/signal-marbles"
+import { createMarblePlayer, marbleDoc, renderMarbles } from "@hafley66/signal-marbles"
 import "@hafley66/signal-marbles/marbles.css"
 
-const doc = readMarbles(`
-@title a debounce against a switch
-@legend k=key r=request
-
-keys      : -k-k-k-------|
-  mapped    : -r-r-r-------|
-  debounced : -------r-----|
-`)
+const doc = marbleDoc({
+  title: "a debounce against a switch",
+  lanes: [
+    {
+      id: "keys",
+      label: "keys",
+      events: [
+        { tick: 1, value: "k" },
+        { after: 2, value: "k" },
+        { after: 2, value: "k" },
+        { after: 1, ms: 300, value: "idle", note: "300ms of quiet — nothing in this gap" },
+        { kind: "complete" },
+      ],
+    },
+    {
+      id: "debounced",
+      label: "debounced",
+      parent: "keys",
+      events: [{ tick: 7, value: "request", note: "sent only because the gap was long enough" }],
+    },
+  ],
+})
 
 const host = document.querySelector("#host")
 if (host instanceof HTMLElement) renderMarbles(createMarblePlayer(doc), host)
 ```
 
-## Write it as notation
+## Write it by hand
 
-One lane per line, `label : marbles`. Leading spaces make a lane a child of the nearest earlier lane
-with less indentation, which is the whole of the derivation syntax. `#` starts a comment.
+Nothing is aligned and nothing is counted. An author says which turn an event is on and what time it
+cost; the columns are the document's clock, so an `ms` anywhere advances the time every lane shares.
+
+| field | meaning |
+| --- | --- |
+| `tick` | the absolute column |
+| `after` | columns after the previous event on this lane (default 1) |
+| `ms` | the virtual milliseconds this column costs, as a gap since the previous one |
+| `frame` | an absolute millisecond pin, for importing a runner-shaped document |
+| `kind` | `next` (default) · `error` · `complete` · `subscribe` · `unsubscribe` · `truncate` |
+| `value` | the text a `next` or an `error` carries |
+| `note` | why it happened |
+| `from` | the event that produced this one |
+
+The document above yields ticks `1, 3, 5, 6, 7` and frames `1, 3, 5, 305, 306`: `after: 2` needs no
+arithmetic at the call site, and the 300ms gap is the axis's own business. The first example ends at
+`306` because the completion is one column after the 300ms gap.
+
+Every field is validated and every reference resolved: an unknown kind, a misspelled field, a
+backwards tick, a duplicate lane id, a `parent` or a `from` that names nothing, and a contradictory
+`frame` pin all throw `MarbleDocumentError` naming the field.
+
+## Write it as RxJS
+
+`runMarbleDemo` records the turns a run actually took and, for a higher-order lane, the inner
+subscriptions it started.
+
+```ts
+import { interval, take } from "rxjs"
+import { runMarbleDemo } from "@hafley66/signal-marbles"
+
+const { doc, diagnostics } = runMarbleDemo(
+  lanes => {
+    const outer = lanes.through("outer", interval(12).pipe(take(3)), { label: "interval(12)" })
+    lanes.each("switched", outer, () => interval(6).pipe(take(3)), {
+      op: "switch", name: "request", label: "switchMap", parent: "outer",
+    })
+    lanes.each("merged", outer, () => interval(6).pipe(take(3)), {
+      op: "merge", name: "inner", label: "mergeMap", parent: "outer",
+    })
+  },
+  { windowMs: 60, title: "switchMap drops the inner request, mergeMap keeps it" },
+)
+```
+
+`lanes.through` is a lane read in the middle of a pipeline: **one** subscription, recorded once and
+shared by everything derived from it, which is what keeps lanes fed by the same source on the same
+columns. `lanes.lane` is a lane subscribed outright. `lanes.each` builds the real rxjs operator —
+`op: "merge" | "switch" | "concat" | "exhaust" | "expand"` — and records one lane per inner
+subscription, named (`request1`), labelled (`request #1`), born on the column its subscription began
+on, with the event that caused it (`born.from`) and the value that was being handled.
+
+The object form is sugar over the same thing:
+
+```ts
+runMarbleDemo({ outer, switched: outer.pipe(switchMap(() => inner)) }, { windowMs: 60, labels: { outer: "interval(12)" } })
+```
+
+It records one lane per subscription and cannot see inside a pipe; inner lanes need the build form.
+
+### What the higher-order family looks like
+
+| operator | what the run records |
+| --- | --- |
+| `mergeMap` | one inner lane per outer value, each ending `complete` |
+| `switchMap` | the cancelled inner ends `unsubscribe` with the note *switch dropped it before it finished* |
+| `concatMap` | an inner is born when the previous one finished, and its `born.from` is still the event that queued it |
+| `exhaustMap` | a value that arrived while an inner ran starts no lane at all |
+| `mergeScan` / `switchScan` | `seed` is written on each inner: the accumulator it was handed |
+| `groupBy` | a lane per key, born on the column its key first appeared, every value carrying the `from` of the source event that routed it |
+| `expand` | one lane per depth, `parent` and `born.from` following the event that spawned it |
+
+That is recorded by wrapping the observable a project returns and handing the wrapper to the real
+operator, so cancellation, concurrency, and accumulation stay rxjs's own behaviour.
+
+### Bounds, and what a run could not capture
+
+- `windowMs` (default 10000) and `maxColumns` (default 512) are safety bounds. A lane still running
+  at either edge is cut and marked `truncate` — the harness stopped watching, which is not the same
+  fact as an operator cancelling a subscription. No lane in such a document carries `unsubscribe`.
+- A lane that produced nothing is reported instead of drawn: `runMarbleDemo` returns
+  `{ doc, diagnostics }` and `readMarbleDemo(run)` throws them. The message is the honest one — the
+  source is not on the virtual clock, or the window is too narrow. `TestScheduler` cannot virtualize
+  a `Promise`, so a promise-backed lane is exactly the case that used to be a silent wrong answer.
+
+## Read the notation, if you want it
+
+The ASCII reader still exists and still round-trips; it is no longer the front door, because a format
+whose correctness depends on counting `-` characters is a format that will be wrong and look right.
 
 ```
-@title a key emitted before the subscription, and the frame it stopped listening on
+@title a key emitted before the subscription, and the column it stopped listening on
 @legend k=key r=request
 
 keys : -k-k-k-|
@@ -62,80 +181,48 @@ hot  : -k-^--k--!
 
 | in a lane | means |
 | --- | --- |
-| `-` | one frame |
-| `a` | a value on this frame, then the next frame |
-| `(ab)` | both on this frame; the group costs one frame, not one per symbol |
-| `10ms`, `2s`, `1m` | jump that far, when the digit does not continue a word |
+| `-` | one column |
+| `a` | a value on this column, then the next column |
+| `(ab)` | both on this column; the group costs one column, not one per symbol |
+| `10ms`, `2s`, `1m` | one column that costs that much time, when the digit does not continue a word |
 | `\|` | complete |
 | `#` | error |
 | `^` | subscribed here |
-| `!` | unsubscribed here, without spending a frame |
-
-`^` and `!` are the reason this is not a sequence diagram: a lane is unidirectional, so it can say
-what arrived *before* anyone listened and when listening stopped. A surface dims everything outside
-that window instead of hiding it.
-
-The notation is RxJS's own conventional marble syntax with two deliberate changes: a group costs one
-frame rather than one frame per character inside it, because in a drawing the parens are a shape and
-not a clock, and a jump is spaced (` 250ms `) so a digit can never be mistaken for a value.
+| `!` | unsubscribed here, costing no time |
 
 `printMarbles` is the inverse, and `readMarbles(printMarbles(doc))` equals `doc` for anything the
 notation can hold. `parseMarbles` returns `{ doc, diagnostics }` with the line each problem was on;
 `readMarbles` throws them instead.
 
-## Write it as RxJS
+## The reveal
 
-The second producer takes a plain object of observables and nothing else, so what an author writes is
-what RxJS would run.
-
-```ts
-import { interval, mergeMap, switchMap, take } from "rxjs"
-import { runMarbleDemo } from "@hafley66/signal-marbles"
-
-const outer = interval(12).pipe(take(3))
-const inner = interval(4).pipe(take(3))
-
-const doc = runMarbleDemo(
-  { outer, switched: outer.pipe(switchMap(() => inner)), merged: outer.pipe(mergeMap(() => inner)) },
-  { frames: 60, parents: { switched: "outer", merged: "outer" }, title: "switchMap drops the inner request" },
-)
-```
-
-Inside `TestScheduler.run` the async, interval, timeout, and animation-frame schedulers are all
-delegated to the virtual clock, so `interval(1000)` written at module scope ticks in virtual
-milliseconds and no wall time passes. Ten virtual seconds of `interval(1)` costs about 1 ms of the
-test run.
-
-- `frames` is a safety bound, not a length. A lane still running at the edge is cut and marked
-  `unsubscribe`, so an unbounded source says so on the diagram instead of hanging the process.
-- A completion that the source did not produce is never recorded: the cut is an unsubscribe.
-- `defaultFormat` prints the value; `Error` prints its message rather than `{}`.
-
-## Play it
+There is no scrubber, because a reveal is not a place you drag to. A player hides what has not
+happened yet, shows the rest, and emphasises the column it stands on.
 
 ```ts
 const player = createMarblePlayer(doc)
 
-player.play()            // writes `playing`
-player.pause()           // saves the fractional playhead as the resume point, then stops
-player.seek(12)          // writes `position`; playback restarts from there
-player.step(1)           // the next frame that has anything on it
-player.speed.$(2)        // multiplies the rate the diagram plays at
-player.load(nextDoc)     // swap the document and rewind
+player.step(-1)          // one column back
+player.step(1)           // one column forward
+player.play()            // walk the turnst; at the end it restarts at column 0
+player.revealAll()       // the picture again — what a diagram is until something walks it
+player.revealAt(4)       // stand on one column
+player.load(nextDoc)     // swap the document and show it whole
 ```
 
-`frame`, `playing`, `position`, `rate`, `speed`, `loop`, `duration`, `laneViews`, `selected`, and
-`hovered` are signals; the surface reads them and writes intent back with the same signals. `rate` is
-derived: the base rate plays the whole diagram in `PLAY_SECONDS`, and `speed` multiplies it.
+`revealed` is `number | "all"` and is the signal a surface reads: `"all"` shows everything, a number
+shows through that column. `columns`, `playing`, `speed`, `rate`, `loop`, `laserViews`—`laneViews`,
+`selected` and `hovered` are signals too, and intent is written back through the same signals. `rate`
+is derived: the base rate walks the whole document in `PLAY_SECONDS`.
 
-The clock is `marbleClock`, an `Observable` of frames with `playing`, `rate`, `position`, `duration`,
-and `loop` as its inputs. It is handed to `Signal(observable, 0)`, so the playhead connects when
-something reads it and is released when nothing does — a player nobody mounted does no work.
+The clock is `marbleClock`, an `Observable` of column numbers with `playing`, `rate`, `position`,
+`columns`, and `loop` as its inputs. It is handed to `Signal(observable, 0)`, so the reveal connects
+when something reads it and is released when nothing does — a player nobody mounted does no work.
 
 ## The surface
 
-`renderMarbles(player, host)` returns `{ stop }`: it decorates the element and releases it, which is
-exactly an effect's contract. The React adapter is therefore the effect and nothing else.
+`renderMarbles(player, host)` returns `{ unsubscribe }`: it decorates the element and releases it,
+which is exactly an effect's contract. The React adapter is therefore the effect and nothing else.
 
 ```tsx
 import { MarbleDiagram, useMarblePlayer } from "@hafley66/signal-marbles/react"
@@ -145,19 +232,45 @@ function Diagram({ doc }: { doc: MarbleDoc }) {
 }
 ```
 
-The renderer draws a lane per lane, indents derived lanes, stacks marbles that share a frame, marks
-what the playhead has reached, dims what a subscription missed, and gives every lane an
-`aria-label` — `"mapped: request at 1, request at 3, complete at 7"` — so a diagram is readable
-without seeing it. The notation it read is in a `<details>` at the bottom.
+What a reader gets:
+
+- **Columns are turns**, and the width between two of them is the time between them, up to a cap.
+  Past the cap the axis breaks and the break carries the real milliseconds (`+300ms`); every column
+  prints the milliseconds it sits at, so compression is marked rather than hidden.
+- **A key, because a glyph is not a sentence.** The legend under the header names all six kinds —
+  `value`, `error`, `complete`, `subscribed`, `unsubscribed`, `window closed` — the axis break, and
+  the edge. Hovering any marble then answers "what is this" in words:
+  `switchMap: unsubscribed at tick 20 (42ms) — switch dropped it before it finished`.
+- **Every marble has a name** (`keys#3`), a value, and — when a producer wrote one — the reason it
+  happened. The note is drawn under its marble and revealed with it.
+- **Edges are drawn** from the event that caused an event or a subscription to the thing it caused:
+  a dashed curve for a birth, a solid one for value routing. An edge is hidden until both ends have
+  happened, and emphasised while the reveal stands on it.
+- **A column readout** says in words what the turn contains: `mergeMap value 1 merged#6 from inner2#3`,
+  plus every lane that started on that column, with its cause and its seed.
+- **A hidden marble is absent**, not faint: it is out of the accessibility tree until the reveal
+  reaches it. Each lane also carries a text `aria-label`, and the whole document is in a `<details>`.
+
+Two invariants hold the picture together, and `src/6_marbleDiagram.browser.test.tsx` measures both in
+a real browser rather than trusting the arithmetic:
+
+1. **The gutter box is exactly `--mb-gutter` wide.** Every strip starts where it ends and the axis
+   offsets itself by the same variable, so the box has to include its own padding and border
+   (`box-sizing: border-box`). With the default content-box the axis sat eleven pixels left of the
+   marbles it labels.
+2. **A column is one x.** Marbles are positioned from `marbleAxis`, and the axis labels are positioned
+   from the same table, so a test can ask the document and the DOM the same question: every marble is
+   within a pixel of its own column's label, marbles sharing a column share an x, marbles per column
+   equal the document's events per column, and no pitch is below one column or above the cap.
 
 Subscriptions live in `5_render.ts` and nowhere else in the package: a renderer is a boundary,
-because it owns nodes and has to release them. `stop()` is that release.
+because it owns nodes and has to release them.
 
 ## Theming
 
 `--mb-*` variables, two cascade layers, no `!important`. Every layout number is a variable and the
 renderer writes `--mb-gutter` from the same constant it measures with, so a host that overrides it
-moves the strips, the axis, and the playhead together.
+moves the strips and the axis together.
 
 ## Run
 
@@ -165,11 +278,19 @@ moves the strips, the axis, and the playhead together.
 just dev                                        # http://127.0.0.1:5391/demo.html
 pnpm --filter @hafley66/signal-marbles dev      # same thing, from the repository root
 pnpm --filter @hafley66/signal-marbles test
-pnpm --filter @hafley66/signal-marbles test:browser
+pnpm --filter @hafley66/signal-marbles test:browser   # queued machine-wide by scripts/browser-queue.mjs
 ```
 
-`src/9_demo.tsx` renders the same teaching case twice: once from real RxJS on the virtual clock, once
-from notation nobody ran.
+`src/9_demo.tsx` is the argument: one turn against three, `switchMap` against `mergeMap` with their
+inner lanes, the scan forms with their seeds, `groupBy` with a lane per key, `expand` following its
+recursion, and one document written by hand.
+
+The demo also carries the docs shell's frame meter, pinned to the corner: `performanceReadout` and
+`runWhenInView` from `@hafley66/docs-kit`, which is private and therefore a devDependency here. It
+reports the frames the page actually painted, the worst one, how many ran long, a page-wide heap
+estimate and the element count, sampled while the demo is on screen and dropped when it is not — so
+"what does playing a diagram cost" is a number rather than an opinion. `runWhenInView` owns that
+subscription, which is why this package still contains no `.subscribe(` outside the renderer.
 
 ## Screenshot
 
@@ -179,10 +300,11 @@ Generated and verified by `src/6_marbleDiagram.browser.test.tsx`.
 
 ## Source
 
-- `src/0_types.ts`: the document, its zod schema, and the derivations a surface needs
-- `src/1_notation.ts`: the reader and the printer
-- `src/2_run.ts`: the virtual-clock runner
-- `src/3_clock.ts`: the playhead producer
+- `src/0_types.ts`: the document, its zod schema, the edges it states, and the column geometry
+- `src/0_document.ts`: `marbleDoc`, the authored form and its validation
+- `src/1_notation.ts`: the ASCII reader and printer
+- `src/2_run.ts`: the virtual-clock runner, `drainVirtual`, and the higher-order registrar
+- `src/3_clock.ts`: the reveal's producer
 - `src/4_player.ts`: the signals a surface reads
 - `src/5_render.ts`: the framework-free renderer
 - `src/react.tsx`: `MarbleDiagram` and `useMarblePlayer`
@@ -192,6 +314,7 @@ Generated and verified by `src/6_marbleDiagram.browser.test.tsx`.
 | gap | why |
 | --- | --- |
 | capturing a running application | that is a trace viewer, and `@hafley66/marbler` is one. This package renders what a virtual clock did, or what someone wrote |
-| a markdown fence | the hook is `readMarbles`/`runMarbleDemo` and `@hafley66/md` owns fences; nothing here assumes a host |
+| a markdown fence | the hook is `marbleDoc`/`runMarbleDemo` and `@hafley66/md` owns fences; nothing here assumes a host |
 | editing, folding, zoom | a diagram is a small document; `@hafley66/signal-grid` is the surface for large ones |
 | live values on a marble | the document is JSON by design, so a value is the string it prints as |
+| a lane an inner lane of an inner lane | a derived lane is subscribed once; chaining one higher-order lane into another would subscribe its source twice |

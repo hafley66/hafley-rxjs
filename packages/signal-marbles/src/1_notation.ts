@@ -1,19 +1,27 @@
 // The notation an author (or a model) writes, and the inverse that prints it back.
 //
-// It is RxJS's own conventional marble syntax with two deliberate changes: `(ab)` covers one frame
-// rather than one frame per character inside it, because in a drawing the parens are a shape and
-// not a clock, and indentation carries the derivation instead of a separate declaration.
+// It is RxJS's own conventional marble syntax with two deliberate changes: `(ab)` covers one column
+// rather than one column per element inside it, because in a drawing the parens are a shape and not
+// a clock, and indentation carries the derivation instead of a separate declaration.
+//
+// A column is one element of the notation and one turn of the clock, and the document keeps the
+// virtual milliseconds each column sits at. So an `Nms` token is a jump made on the column it is
+// written on, and it is the document's clock that it jumps: the lanes share one, and all move with it.
 import {
   laneDepth,
   MARBLES_VERSION,
   type MarbleDoc,
   type MarbleLane,
   type MarbleNotification,
+  marbleEventId,
   normalizeMarbleDoc,
 } from "./0_types.js"
 
-export type MarbleDiagnostic = { line: number; message: string }
-export type MarbleParse = { doc: MarbleDoc; diagnostics: MarbleDiagnostic[] }
+export type MarbleParseDiagnostic = { line: number; message: string }
+export type MarbleParse = { doc: MarbleDoc; diagnostics: MarbleParseDiagnostic[] }
+
+/** One lane's scan: the notifications it produced, and the milliseconds each of its columns costs. */
+export type MarbleScan = { notifications: MarbleNotification[]; advances: number[] }
 
 /** Everything the scanner reads as structure, so nothing in here can be a value symbol. */
 const RESERVED = new Set(["-", "(", ")", "|", "#", "^", "!", ":", "@"])
@@ -28,16 +36,17 @@ const MS_PER_UNIT: Record<string, number> = { ms: 1, s: 1000, m: 60000 }
 /** Two spaces per level, so the printed form indents the way it nests. */
 const INDENT = "  "
 
-/** Gaps of up to this many frames print as `-`; longer jumps print as one `Nms` token. */
-const MAX_DASHES = 4
-
+/**
+ * The machine name for a label: a lane id is `[A-Za-z][A-Za-z0-9_-]*` and never carries `#`, so an
+ * event id stays splittable, and two lanes labelled the same way get ids of their own.
+ */
 function laneId(label: string, taken: ReadonlySet<string>): string {
-  const base =
-    label
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "") || "lane"
+  const cleaned = label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+  const base = cleaned === "" ? "lane" : /^[a-z]/.test(cleaned) ? cleaned : `lane-${cleaned}`
   if (!taken.has(base)) return base
   for (let n = 2; ; n += 1) {
     const candidate = `${base}-${n}`
@@ -45,21 +54,30 @@ function laneId(label: string, taken: ReadonlySet<string>): string {
   }
 }
 
-/** Scan one lane's marble string into notifications. Shared by `parseMarbles` and the tests. */
+/**
+ * Scan one lane's marble string into the notifications it produced, and the milliseconds each of its
+ * columns costs. Every element consumed is one column, and a notification sits on the column it was
+ * written on — except inside a group, which holds everything on the column it opens.
+ */
 export function scanMarbles(
+  laneId: string,
   text: string,
   legend: Readonly<Record<string, string>>,
   line: number,
-  diagnostics: MarbleDiagnostic[],
-): MarbleNotification[] {
+  diagnostics: MarbleParseDiagnostic[],
+): MarbleScan {
   const notifications: MarbleNotification[] = []
-  let frame = 0
+  const advances: number[] = []
+  let column = 0
   let group: number | null = null
   const at = (kind: MarbleNotification["kind"], value?: string) => {
-    notifications.push(value === undefined ? { kind, frame: group ?? frame } : { kind, frame: group ?? frame, value })
+    const id = marbleEventId(laneId, notifications.length)
+    const tick = group ?? column
+    notifications.push(value === undefined ? { id, kind, tick } : { id, kind, tick, value })
   }
   const advance = (by: number) => {
-    if (group === null) frame += by
+    // A group holds notifications, not time: nothing written inside it moves the clock.
+    advances[column] = group === null ? by : 0
   }
   let index = 0
   while (index < text.length) {
@@ -71,6 +89,7 @@ export function scanMarbles(
     if (character === "-") {
       if (group !== null) diagnostics.push({ line, message: "a group holds notifications, not time: `-` inside `( )`" })
       advance(1)
+      column += 1
       index += 1
       continue
     }
@@ -86,6 +105,7 @@ export function scanMarbles(
         if (group !== null)
           diagnostics.push({ line, message: `a time jump cannot sit inside a group: \`${match[0]}\`` })
         advance(Math.round(Number(match[1]) * (MS_PER_UNIT[match[2].toLowerCase()] ?? 1)))
+        column += 1
         index += match[0].length
         continue
       }
@@ -93,15 +113,15 @@ export function scanMarbles(
     switch (character) {
       case "(":
         if (group !== null) diagnostics.push({ line, message: "a group was opened inside another group" })
-        group = frame
-        index += 1
-        continue
+        // A nested `(` is a diagnostic; the group already open keeps the column it opened on.
+        group ??= column
+        advance(0)
+        break
       case ")":
         if (group === null) diagnostics.push({ line, message: "`)` closed a group that was never opened" })
         group = null
         advance(1)
-        index += 1
-        continue
+        break
       case "|":
         at("complete")
         advance(1)
@@ -115,28 +135,29 @@ export function scanMarbles(
         advance(1)
         break
       case "!":
-        // The unsubscribe marker closes a lane without spending a frame, matching RxJS.
+        // The unsubscribe marker closes a lane without spending a millisecond, matching RxJS.
         at("unsubscribe")
+        advance(0)
         break
-      default: {
+      default:
         // An undeclared symbol is its own value, which is RxJS's rule too: a diagram reads
         // without a legend, and @legend exists to spell a value out or to make one longer.
         at("next", legend[character] ?? character)
         advance(1)
         break
-      }
     }
     index += 1
+    column += 1
   }
   if (group !== null) diagnostics.push({ line, message: "`(` was never closed" })
-  return notifications
+  return { notifications, advances }
 }
 
 function parseLegend(
   rest: string,
   line: number,
   legend: Record<string, string>,
-  diagnostics: MarbleDiagnostic[],
+  diagnostics: MarbleParseDiagnostic[],
 ): void {
   for (const entry of rest.split(/[\s,]+/).filter(Boolean)) {
     const split = entry.indexOf("=")
@@ -166,12 +187,18 @@ function parseLegend(
  *
  * One lane per line, `label : marbles`. Leading spaces make a lane a child of the nearest earlier
  * lane with less indentation. Lines starting with `#` are comments.
+ *
+ * Every element of a lane is one column, and the document records the virtual milliseconds each
+ * column sits at: a dash costs one, an `Nms` token costs what it says, and a group costs one for
+ * all of it. The clock belongs to the document, so a jump written on one lane moves every lane.
  */
 export function parseMarbles(source: string): MarbleParse {
-  const diagnostics: MarbleDiagnostic[] = []
+  const diagnostics: MarbleParseDiagnostic[] = []
   const legend: Record<string, string> = {}
   const lanes: MarbleLane[] = []
   const taken = new Set<string>()
+  // One advance per column: the largest jump any lane wrote to leave it.
+  const advances: number[] = []
   // (indent, id) of every lane so far, so a child can find the nearest shallower one.
   const spine: Array<{ indent: number; id: string }> = []
   let title: string | undefined
@@ -205,13 +232,26 @@ export function parseMarbles(source: string): MarbleParse {
     }
     const parent = spine[spine.length - 1]?.id ?? null
     spine.push({ indent, id })
-    lanes.push({ id, label, parent, notifications: scanMarbles(trimmed.slice(colon + 1), legend, line, diagnostics) })
+    const scan = scanMarbles(id, trimmed.slice(colon + 1), legend, line, diagnostics)
+    scan.advances.forEach((advance, column) => {
+      advances[column] = Math.max(advances[column] ?? 0, advance)
+    })
+    lanes.push({ id, label, parent, born: null, notifications: scan.notifications })
   })
+
+  // The columns are the clock every lane shares: leaving a column costs the longest jump written on
+  // it, and a lane is free to write nothing longer than a dash. A document holds at least one.
+  const columns: number[] = []
+  let time = 0
+  for (let column = 0; column < Math.max(1, advances.length); column += 1) {
+    columns.push(time)
+    time += advances[column] ?? 0
+  }
 
   const doc: MarbleDoc = normalizeMarbleDoc({
     version: MARBLES_VERSION,
     ...(title === undefined ? {} : { title }),
-    frames: 1,
+    columns,
     lanes,
   })
   return { doc, diagnostics }
@@ -226,49 +266,61 @@ export function readMarbles(source: string): MarbleDoc {
   return doc
 }
 
-function marbleBody(notifications: readonly MarbleNotification[], symbolFor: (value: string) => string): string {
+/** What it costs to leave a column in a document: the gap between it and the column after it. */
+function columnAdvance(doc: MarbleDoc, column: number): number {
+  const from = doc.columns[column] ?? doc.columns[doc.columns.length - 1] ?? 0
+  return Math.max(0, (doc.columns[column + 1] ?? from) - from)
+}
+
+/** One column in the notation: a dash for a millisecond, a jump token for anything else. A jump is
+ * spaced away from its neighbours, because a digit touching a value symbol is a value. */
+function columnToken(advance: number): string {
+  return advance === 1 ? "-" : ` ${advance}ms `
+}
+
+/** The one character the notation writes for a notification. */
+function notationFor(notification: MarbleNotification, symbolFor: (value: string) => string): string {
+  switch (notification.kind) {
+    case "next":
+      return symbolFor(notification.value ?? "")
+    case "error":
+      return "#"
+    case "complete":
+      return "|"
+    case "subscribe":
+      return "^"
+    // `truncate` is a window closing rather than a cancellation, and a closing window is all the
+    // notation can say about one; the runner is the producer that knows the difference.
+    case "unsubscribe":
+    case "truncate":
+      return "!"
+  }
+}
+
+function marbleBody(
+  doc: MarbleDoc,
+  notifications: readonly MarbleNotification[],
+  symbolFor: (value: string) => string,
+): string {
   let out = ""
-  let frame = 0
+  let column = 0
   let index = 0
   while (index < notifications.length) {
     const notification = notifications[index] as MarbleNotification
-    const gap = notification.frame - frame
-    // A jump is spaced away from its neighbours: a digit touching a value symbol is a value.
-    if (gap > 0) out += gap <= MAX_DASHES ? "-".repeat(gap) : ` ${gap}ms `
-    frame = notification.frame
-    if (notification.kind === "next") {
-      // Consecutive values on one frame are one group; the group spends the frame and nothing else.
-      let end = index
-      while (true) {
-        const next = notifications[end + 1]
-        if (next === undefined || next.kind !== "next" || next.frame !== frame) break
-        end += 1
-      }
-      const run = notifications.slice(index, end + 1)
-      const body = run.map(it => symbolFor(it.value ?? "")).join("")
-      out += run.length > 1 ? `(${body})` : body
-      index = end + 1
-      frame += 1
-      continue
+    // Every column before this one is spent on its own: one dash, or one jump when it costs more.
+    while (column < notification.tick) {
+      out += columnToken(columnAdvance(doc, column))
+      column += 1
     }
-    switch (notification.kind) {
-      case "error":
-        out += "#"
-        frame += 1
-        break
-      case "complete":
-        out += "|"
-        frame += 1
-        break
-      case "subscribe":
-        out += "^"
-        frame += 1
-        break
-      case "unsubscribe":
-        out += "!"
-        break
-    }
-    index += 1
+    // Notifications on one column are one group; the group spends the column and nothing else.
+    let end = index
+    while (notifications[end + 1]?.tick === notification.tick) end += 1
+    const run = notifications.slice(index, end + 1)
+    const body = run.map(it => notationFor(it, symbolFor)).join("")
+    out += run.length > 1 ? `(${body})` : body
+    // A group holds its elements on the column it opens, so it is `(`, its elements, and `)` wide.
+    column = notification.tick + (run.length > 1 ? run.length + 2 : 1)
+    index = end + 1
   }
   return out
 }
@@ -292,7 +344,7 @@ export function printMarbles(doc: MarbleDoc, lanes: readonly MarbleLane[] = doc.
     return symbol
   }
 
-  const bodies = lanes.map(lane => marbleBody(lane.notifications, symbolFor))
+  const bodies = lanes.map(lane => marbleBody(doc, lane.notifications, symbolFor))
   const entries = Object.entries(legend)
   const head: string[] = []
   if (doc.title !== undefined) head.push(`@title ${doc.title}`)

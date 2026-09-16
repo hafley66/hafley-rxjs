@@ -1,7 +1,7 @@
 {
   "name": "@hafley66/signal-marbles",
   "version": "0.0.1",
-  "description": "Marble diagrams as a document: parse the notation, run a pure RxJS demo on a virtual clock, or do both — then play the result off one frame signal",
+  "description": "Marble diagrams as a document: parse the notation, run a pure RxJS demo on a virtual clock, or do both \u2014 then play the result off one frame signal",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -39,6 +39,7 @@
     "rxjs": "^7.8.0"
   },
   "devDependencies": {
+    "@hafley66/docs-kit": "workspace:*",
     "@hafley66/signals": "workspace:*",
     "@types/react": "^19.2.3",
     "@types/react-dom": "^19.2.3",

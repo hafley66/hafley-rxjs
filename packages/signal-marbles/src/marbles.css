@@ -6,12 +6,14 @@
 	--mb-surface: #ffffff;
 	--mb-ink: #262b33;
 	--mb-muted: #6d7684;
+	--mb-faint: #969ea9;
 	--mb-border: #dfe3e9;
 	--mb-gridline: #e6e9ee;
 	--mb-next: #3f7fd0;
 	--mb-error: #cf4b3f;
 	--mb-complete: #3c4552;
-	--mb-playhead: #d59b47;
+	--mb-edge: #b9c0cb;
+	--mb-cursor: #d59b47;
 	--mb-accent: #0f7f6a;
 	/* Layout constants in CSS are fallbacks for a stylesheet-only consumer: the renderer writes
      `--mb-gutter` inline from the same number it measures with, so the two cannot drift. */
@@ -31,12 +33,14 @@
 		--mb-surface: #16191f;
 		--mb-ink: #c9d0da;
 		--mb-muted: #848c98;
+		--mb-faint: #6a7280;
 		--mb-border: #2b3038;
 		--mb-gridline: #262b33;
 		--mb-next: #5f9fe6;
 		--mb-error: #e2685b;
 		--mb-complete: #9aa4b2;
-		--mb-playhead: #e0a95c;
+		--mb-edge: #3d4552;
+		--mb-cursor: #e0a95c;
 		--mb-accent: #3fbfa4;
 	}
 }
@@ -87,26 +91,165 @@
 		color: var(--mb-accent);
 	}
 
-	.mb-control[data-on="true"] {
-		border-color: var(--mb-accent);
-		color: var(--mb-accent);
-	}
-
 	.mb-readout {
-		min-width: 58px;
+		min-width: 130px;
 		margin-left: 6px;
 		color: var(--mb-muted);
 		text-align: right;
 		font-variant-numeric: tabular-nums;
 	}
 
+	/* The column readout: what is happening on the turn the reveal stands on, in words. It is the
+	   answer to "how do I read this" and it costs one line per event. */
+	/* The key. A caret is not self-explanatory: a reader should not have to hover seven marbles to
+	   learn that a caret up is a subscription starting and a caret down is it stopping. */
+	.mb-legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 2px 14px;
+		padding: 6px 12px;
+		border-bottom: 1px solid var(--mb-border);
+		color: var(--mb-muted);
+		font-size: 10px;
+	}
+
+	.mb-legend-item {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+	}
+
+	.mb-legend-glyph {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 14px;
+		block-size: 14px;
+	}
+
+	.mb-edge-swatch {
+		display: block;
+		inline-size: 14px;
+		block-size: 1px;
+		background: var(--mb-edge);
+	}
+
+	.mb-break-swatch {
+		display: block;
+		block-size: 12px;
+		border-left: 1px dashed var(--mb-cursor);
+	}
+
+	.mb-panel {
+		padding: 6px 12px;
+		border-bottom: 1px solid var(--mb-border);
+	}
+
+	.mb-panel-head {
+		color: var(--mb-muted);
+		font-size: 10px;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	.mb-panel-body {
+		max-height: 156px;
+		overflow-y: auto;
+		margin: 4px 0 0;
+		padding: 0;
+		list-style: none;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.mb-panel-row {
+		display: flex;
+		align-items: baseline;
+		gap: 8px;
+		white-space: nowrap;
+	}
+
+	.mb-panel-lane {
+		min-width: 96px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.mb-panel-row[data-kind="subscribe"] .mb-panel-kind,
+	.mb-panel-row[data-kind="unsubscribe"] .mb-panel-kind,
+	.mb-panel-row[data-kind="truncate"] .mb-panel-kind {
+		color: var(--mb-muted);
+	}
+
+	.mb-panel-kind {
+		color: var(--mb-accent);
+	}
+
+	.mb-panel-row[data-kind="error"] .mb-panel-kind {
+		color: var(--mb-error);
+	}
+
+	.mb-panel-value {
+		color: var(--mb-ink);
+	}
+
+	.mb-panel-name,
+	.mb-panel-from,
+	.mb-panel-empty {
+		color: var(--mb-faint);
+		font-size: 11px;
+	}
+
+	.mb-panel-note {
+		color: var(--mb-muted);
+		font-style: italic;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	/* Columns are absolute pitch, so a wide document scrolls rather than squashing. */
+	.mb-scroll {
+		overflow-x: auto;
+		overflow-y: hidden;
+	}
+
 	.mb-lanes {
 		position: relative;
+		width: max-content;
+		min-width: 100%;
+	}
+
+	.mb-edges {
+		position: absolute;
+		top: 0;
+		left: 0;
+		pointer-events: none;
+		z-index: 4;
+		overflow: visible;
+	}
+
+	.mb-edge {
+		fill: none;
+		stroke: var(--mb-edge);
+		stroke-width: 1;
+	}
+
+	.mb-edge[data-kind="born"] {
+		stroke-dasharray: 3 3;
+	}
+
+	.mb-edge[data-state="hidden"] {
+		display: none;
+	}
+
+	.mb-edge[data-state="current"] {
+		stroke: var(--mb-accent);
+		stroke-width: 1.5;
 	}
 
 	.mb-lane {
-		display: grid;
-		grid-template-columns: var(--mb-gutter) 1fr;
+		display: flex;
 		align-items: stretch;
 	}
 
@@ -115,18 +258,22 @@
 	}
 
 	.mb-gutter {
+		position: sticky;
+		left: 0;
+		z-index: 5;
 		display: flex;
-		align-items: center;
+		flex-direction: column;
+		justify-content: center;
+		/* Every strip starts where this box ends, so the box has to be exactly `--mb-gutter` wide:
+		   with the default content-box, the padding and the border landed outside it and the axis —
+		   which offsets itself by the same variable — drifted a gutter-width minus eleven pixels. */
+		box-sizing: border-box;
+		flex: 0 0 var(--mb-gutter);
 		padding-right: 10px;
+		background: var(--mb-surface);
 		color: var(--mb-muted);
 		border-right: 1px solid var(--mb-border);
 		cursor: pointer;
-	}
-
-	.mb-gutter[data-depth="1"],
-	.mb-gutter[data-depth="2"],
-	.mb-gutter[data-depth="3"] {
-		border-left: 2px solid var(--mb-border);
 	}
 
 	.mb-label {
@@ -135,29 +282,44 @@
 		white-space: nowrap;
 	}
 
+	.mb-born {
+		color: var(--mb-faint);
+		font-size: 10px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
 	/* The rail every lane's marbles sit on. */
 	.mb-strip {
 		position: relative;
-		cursor: crosshair;
-	}
-
-	.mb-strip::before {
-		content: "";
-		position: absolute;
-		inset: 50% 0 auto 0;
-		height: 1px;
-		background: var(--mb-gridline);
+		flex: 0 0 auto;
+		background-image: linear-gradient(var(--mb-gridline), var(--mb-gridline));
+		background-repeat: no-repeat;
+		background-position: 0 50%;
+		background-size: 100% 1px;
 	}
 
 	.mb-marble {
 		position: absolute;
 		top: 50%;
 		transform: translate(-50%, -50%);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
 	}
 
-	/* Not yet reached by the playhead. */
-	.mb-marble[data-played="false"] {
-		opacity: 0.38;
+	/* What the reveal has not reached is not on the diagram yet, and not in the accessibility tree. */
+	.mb-marble[data-state="hidden"] {
+		display: none;
+	}
+
+	.mb-marble[data-state="shown"] {
+		opacity: 0.55;
+	}
+
+	.mb-root [data-state="shown"] .mb-note {
+		opacity: 0.8;
 	}
 
 	/* Outside the window the lane was listened to: on the diagram, past tense. */
@@ -165,11 +327,9 @@
 		opacity: 0.3;
 	}
 
-	.mb-marble[data-played="false"][data-listened="false"] {
-		opacity: 0.16;
-	}
-
-	.mb-marble[data-hovered="true"] .mb-dot {
+	.mb-marble[data-hovered="true"] .mb-dot,
+	.mb-marble[data-hovered="true"] .mb-bar,
+	.mb-marble[data-hovered="true"] .mb-cut {
 		outline: 2px solid var(--mb-accent);
 		outline-offset: 2px;
 	}
@@ -182,8 +342,12 @@
 		border-radius: 50%;
 	}
 
+	.mb-root [data-state="current"] .mb-dot {
+		box-shadow: 0 0 0 3px color-mix(in oklab, var(--mb-next) 30%, transparent);
+	}
+
 	/* An error is not a third shape to learn: it is the marble, in the colour of a failure. */
-	.mb-marble[data-kind="error"] .mb-dot {
+	.mb-root [data-kind="error"] .mb-dot {
 		background: var(--mb-error);
 		border-radius: 2px;
 	}
@@ -204,77 +368,122 @@
 		transform: rotate(45deg);
 	}
 
-	.mb-marble[data-kind="unsubscribe"] .mb-caret {
+	.mb-root [data-kind="unsubscribe"] .mb-caret {
 		transform: rotate(225deg);
 	}
 
+	/* A window closing is not a cancellation: the rail is cut, so the lane is cut. */
+	.mb-cut {
+		display: block;
+		width: 10px;
+		height: 16px;
+		border-right: 2px dashed var(--mb-complete);
+	}
+
+	.mb-root [data-kind="truncate"] .mb-cut {
+		border-right-color: var(--mb-muted);
+	}
+
 	.mb-value {
-		position: absolute;
-		bottom: calc(100% + 2px);
-		left: 50%;
-		transform: translateX(-50%);
 		color: var(--mb-muted);
 		font-size: 10px;
 		line-height: 1;
 		white-space: nowrap;
+		margin-bottom: 2px;
 	}
 
-	.mb-marble[data-played="true"] .mb-value {
+	.mb-root [data-state="current"] .mb-value {
 		color: var(--mb-ink);
+		font-weight: 600;
 	}
 
-	.mb-playhead {
-		position: absolute;
-		top: 0;
-		bottom: 0;
-		width: 1px;
-		background: var(--mb-playhead);
-		transform: translateX(-50%);
-		pointer-events: none;
+	/* The why. Revealed with the marble it belongs to, emphasised only on the current column. */
+	.mb-note {
+		margin-top: 2px;
+		max-width: 112px;
+		color: var(--mb-faint);
+		font-size: 10px;
+		line-height: 1.15;
+		text-align: center;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
 	}
 
-	.mb-playhead::before {
-		content: "";
-		position: absolute;
-		top: 0;
-		left: 50%;
-		width: 7px;
-		height: 7px;
-		background: var(--mb-playhead);
-		border-radius: 50%;
-		transform: translateX(-50%);
+	.mb-root [data-state="current"] .mb-note {
+		color: var(--mb-accent);
 	}
 
 	.mb-axis {
 		position: relative;
-		height: 20px;
+		height: 26px;
 		border-top: 1px solid var(--mb-border);
+		width: max-content;
+		min-width: 100%;
 	}
 
 	.mb-tick {
 		position: absolute;
-		top: 4px;
-		color: var(--mb-muted);
+		top: 3px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		color: var(--mb-faint);
 		font-size: 10px;
+		line-height: 1.1;
 		transform: translateX(-50%);
 		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
 	}
 
-	.mb-notation {
+	.mb-tick[data-current="true"] {
+		color: var(--mb-cursor);
+	}
+
+	.mb-tick-number {
+		color: var(--mb-muted);
+	}
+
+	.mb-tick[data-current="true"] .mb-tick-number {
+		color: var(--mb-cursor);
+	}
+
+	/* The axis refused to draw this much time: the real milliseconds travel with the break, on their
+	   own line, because the column's own milliseconds are already printed above it. */
+	.mb-break {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		padding-left: 4px;
+		border-left: 1px dashed var(--mb-cursor);
+		color: var(--mb-cursor);
+		font-size: 10px;
+		white-space: nowrap;
+	}
+
+	.mb-break-label {
+		position: absolute;
+		bottom: 1px;
+		left: 3px;
+	}
+
+	.mb-document {
 		border-top: 1px solid var(--mb-border);
 	}
 
-	.mb-notation-summary {
+	.mb-document-summary {
 		padding: 6px 12px;
 		color: var(--mb-muted);
 		cursor: pointer;
 		font-size: 11px;
 	}
 
-	.mb-notation-text {
+	.mb-document-text {
 		margin: 0;
 		padding: 0 12px 10px;
-		overflow-x: auto;
+		max-height: 320px;
+		overflow: auto;
 		color: var(--mb-muted);
 		font-size: 11px;
 		line-height: 1.5;
