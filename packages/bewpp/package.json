@@ -33,7 +33,8 @@
     "probe:injected-script": "node probes/injected-script.mjs",
     "probe:screenshot": "node probes/screenshot.mjs",
     "probe:dom-screenshot": "node probes/dom-screenshot.mjs",
-    "probe:user-scripts": "node probes/user-scripts.mjs"
+    "probe:user-scripts": "node probes/user-scripts.mjs",
+    "probe:csp-eval": "node probes/csp-eval.mjs"
   },
   "dependencies": {
     "@aklinker1/zero-serialize-error": "1.0.2",

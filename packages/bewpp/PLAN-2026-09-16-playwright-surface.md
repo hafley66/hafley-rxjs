@@ -56,9 +56,13 @@ because the injected engine runs (measured, see Evidence).
 
 ## Engine delivery
 
-- `buildExtension` gains an `injectedScript` bundle input; the build emits it as a
-  `world:"MAIN"`, `runAt:"document_start"` content script alongside the existing isolated-world
-  content script.
+- BEWPP already registers a MAIN-world `document_start` content script (`page-hooks.js`, built from
+  `src/extension/2_page_hooks.ts` in `3_build.mjs`). The engine rides that existing slot.
+- Page CSP does **not** constrain MAIN-world injected code: under `script-src 'self'`, `eval`,
+  `new Function`, and an appended inline `<script>` all ran (probe `csp-eval.mjs`). So the ~320 KB
+  engine does not have to be a second registered file — the worker can deliver it on demand with
+  `scripting.executeScript({ world:"MAIN", func: source => eval(source), args:[engineSource] })`
+  and pay the bytes only on documents that resolve selectors.
 - Constructed once per document: `new InjectedScript(window, { sdkLanguage:"javascript",
   testIdAttributeName, stableRafCount:1, browserName:"chromium", isUtilityWorld:false, customEngines:[] })`.
 - Frames are injected explicitly per `frameId` from `webNavigation.onCommitted` →
