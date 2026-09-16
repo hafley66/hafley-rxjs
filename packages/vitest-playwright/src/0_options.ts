@@ -66,7 +66,7 @@ export interface VitestPlaywrightOptions {
   /** Machine-wide browser slots: a worker acquires one `proper-lockfile` lock file under `dir` before launch and
    *  holds it until the browser closes. `slots` defaults to `workerBudget().workers`, floored at 1; `dir` defaults
    *  to `~/.cache/hafley-rxjs/slots`, the directory the run-level queue (`scripts/browser-queue.mjs`) keys on. */
-  semaphore?: { slots?: number; dir?: string; staleMs?: number }
+  semaphore?: { slots?: number; dir?: string; staleMs?: number; timeoutMs?: number }
 }
 
 export interface ResolvedOptions {
@@ -89,7 +89,7 @@ export interface ResolvedOptions {
   testIdAttribute: string
   workers: number | `${number}%`
   /** Machine-wide browser slots, resolved at config time in the controller. */
-  semaphore: { slots: number; dir: string; staleMs: number }
+  semaphore: { slots: number; dir: string; staleMs: number; timeoutMs: number }
 }
 
 /** vitest:provide serializes into workers; a function-valued option would silently vanish there. */
@@ -160,6 +160,8 @@ export function resolveOptions(o: VitestPlaywrightOptions = {}): ResolvedOptions
       slots: Math.max(1, o.semaphore?.slots ?? workerBudget().workers),
       dir: o.semaphore?.dir ?? join(homedir(), ".cache", "hafley-rxjs", "slots"),
       staleMs: o.semaphore?.staleMs ?? 10 * 60 * 1000,
+      // Same scale as `staleMs`: a holder that is alive but stuck has to fail the waiter, not park it.
+      timeoutMs: o.semaphore?.timeoutMs ?? 10 * 60 * 1000,
     },
   }
 }

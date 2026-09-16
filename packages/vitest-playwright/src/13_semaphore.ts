@@ -17,16 +17,22 @@ export interface SlotOptions {
   slots: number
   dir: string
   staleMs: number
+  /** How long a worker waits for a free slot before failing. `staleMs` reclaims a dead holder's lock;
+   *  this bounds the wait behind a live holder that never lets go. */
+  timeoutMs: number
 }
 export interface Slot {
   index: number
   release: () => Promise<void>
 }
 
-/** Wait for one of `slots` lock files in `dir` and hold it. All busy: poll again every 250ms with no overall
- *  timeout (the run-level queue owns the give-up rule). A slot index is held by at most one process at a time. */
+/** Wait for one of `slots` lock files in `dir` and hold it. All busy: poll again every 250ms until
+ *  `timeoutMs`, then fail. A worker parked here holds its whole run open — and with it the machine-wide
+ *  queue lock every other lane is waiting on — so an unbounded wait is how one wedged holder stops the
+ *  machine while nothing looks busy. `stale` only reclaims a lock whose holder stopped refreshing it. */
 export async function acquireSlot(o: SlotOptions): Promise<Slot> {
   mkdirSync(o.dir, { recursive: true })
+  const deadline = Date.now() + o.timeoutMs
   for (;;) {
     for (let i = 0; i < o.slots; i++) {
       const file = join(o.dir, String(i))
@@ -56,6 +62,10 @@ export async function acquireSlot(o: SlotOptions): Promise<Slot> {
         if ((e as NodeJS.ErrnoException)?.code !== "ELOCKED") throw e
       }
     }
+    if (Date.now() >= deadline)
+      throw new Error(
+        `vitest-playwright: no browser slot free in ${o.dir} (${o.slots} slot${o.slots === 1 ? "" : "s"}) after ${o.timeoutMs}ms; another run is holding them`,
+      )
     await sleep(250)
   }
 }

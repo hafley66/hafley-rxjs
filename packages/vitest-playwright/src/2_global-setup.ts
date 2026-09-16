@@ -44,6 +44,26 @@ function newest(dir: string): number {
   return t
 }
 
+/** `spawn(..., { detached: true })` puts the server in its own process group, so the group is the only
+ *  handle that reaches the shell's children; a signal to this process would leave them running. */
+async function killCommand(child: ChildProcess): Promise<void> {
+  if (child.exitCode !== null) return
+  const exit = new Promise<void>(r => child.once("exit", () => r()))
+  const group = child.pid ? -child.pid : undefined
+  try {
+    if (group) process.kill(group, "SIGTERM")
+    else child.kill("SIGTERM")
+  } catch {
+    child.kill("SIGTERM")
+  }
+  await Promise.race([exit, new Promise(r => setTimeout(r, 5000).unref())])
+  if (child.exitCode === null && group) {
+    try {
+      process.kill(group, "SIGKILL")
+    } catch {}
+  }
+}
+
 function serve$(s: ServeOptions | null): Observable<Resource<ServeState>> {
   if (!s) return idle(undefined)
   if (s.kind === "url") return idle(s.url)
@@ -57,26 +77,17 @@ function serve$(s: ServeOptions | null): Observable<Resource<ServeState>> {
           cwd: s.cwd,
           env: { ...process.env, ...s.env },
         })
-        await ready(s.url, s.readyTimeoutMs ?? 30_000, child)
+        // `resource$` reports an `open()` rejection and never reaches the close half, so a server that
+        // never answers has to be killed here or it outlives the run in a group nothing else signals.
+        try {
+          await ready(s.url, s.readyTimeoutMs ?? 30_000, child)
+        } catch (error) {
+          await killCommand(child)
+          throw error
+        }
         return { baseURL: s.url, child }
       },
-      async ({ child }) => {
-        if (child.exitCode !== null) return
-        const exit = new Promise<void>(r => child.once("exit", () => r()))
-        const group = child.pid ? -child.pid : undefined
-        try {
-          if (group) process.kill(group, "SIGTERM")
-          else child.kill("SIGTERM")
-        } catch {
-          child.kill("SIGTERM")
-        }
-        await Promise.race([exit, new Promise(r => setTimeout(r, 5000).unref())])
-        if (child.exitCode === null && group) {
-          try {
-            process.kill(group, "SIGKILL")
-          } catch {}
-        }
-      },
+      async ({ child }) => killCommand(child),
     )
   return resource$<ServeState & { preview?: import("vite").PreviewServer }>(
     async () => {
@@ -91,7 +102,11 @@ function serve$(s: ServeOptions | null): Observable<Resource<ServeState>> {
         preview: { ...(s.build.preview ?? {}), port: s.build.preview?.port ?? 0, strictPort: false },
       })
       const baseURL = preview.resolvedUrls?.local[0]
-      if (!baseURL) throw new Error("vitest-playwright: vite preview resolved no local URL")
+      if (!baseURL) {
+        // Same reason as the command branch: a thrown `open()` never reaches the close half.
+        await preview.close()
+        throw new Error("vitest-playwright: vite preview resolved no local URL")
+      }
       return { baseURL, preview }
     },
     async ({ preview }) => {
