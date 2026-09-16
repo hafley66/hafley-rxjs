@@ -1,10 +1,10 @@
 import type { CSSProperties, Ref } from "react"
 import { flexRender, type ColumnSizingState, type Header, type RowData } from "@tanstack/react-table"
-import type { GridFeatures } from "./0_features"
-import type { GridAction } from "./1_types"
-import { modifiersOf } from "./11_treeTableRow"
-import { noMods } from "./10a_columnEpics"
-import { hasWidthSignal } from "./9_treeSize"
+import type { GridFeatures } from "./0_features.js"
+import type { GridAction } from "./1_types.js"
+import { modifiersOf } from "./11_treeTableRow.js"
+import { noMods } from "./10a_columnEpics.js"
+import { hasWidthSignal } from "./9_treeSize.js"
 
 const C = {
   border: "var(--grid-border, #e5e7eb)",

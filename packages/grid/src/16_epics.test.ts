@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest"
 import { filter, map } from "rxjs"
 import { runEpics, Signal } from "@hafley66/signals"
 import { z } from "zod"
-import { createGrid } from "./2_createGrid"
-import type { TreeColumn } from "./10_treeColumn"
-import { columnEpics, selectOnPlainClick } from "./10a_columnEpics"
-import type { GridAction, GridEpic, Modifiers } from "./1_types"
+import { createGrid } from "./2_createGrid.js"
+import type { TreeColumn } from "./10_treeColumn.js"
+import { columnEpics, selectOnPlainClick } from "./10a_columnEpics.js"
+import type { GridAction, GridEpic, Modifiers } from "./1_types.js"
 
 type Row = { id: string; status: string; n: number; children?: Row[] }
 

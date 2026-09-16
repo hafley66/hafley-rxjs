@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { compactSingleChildChains } from "./7_compactChains"
+import { compactSingleChildChains } from "./7_compactChains.js"
 
 type Node = { id: string; label: string; children?: Node[] }
 

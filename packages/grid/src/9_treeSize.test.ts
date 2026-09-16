@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { hasWidthSignal, anyWidthSignal } from "./9_treeSize"
+import { hasWidthSignal, anyWidthSignal } from "./9_treeSize.js"
 
 describe("hasWidthSignal", () => {
   it("is false when neither a drag nor an authored size exists", () => {

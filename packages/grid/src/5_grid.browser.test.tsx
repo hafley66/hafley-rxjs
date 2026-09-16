@@ -5,10 +5,10 @@ import { page } from "vitest/browser"
 import type { ColumnDef } from "@tanstack/react-table"
 import { Signal } from "@hafley66/signals"
 import { z } from "zod"
-import { createDefaultGridState, createGrid } from "./2_createGrid"
-import type { GridFeatures } from "./0_features"
-import { GridTable } from "./4_grid"
-import { GridTree } from "./6_tree"
+import { createDefaultGridState, createGrid } from "./2_createGrid.js"
+import type { GridFeatures } from "./0_features.js"
+import { GridTable } from "./4_grid.js"
+import { GridTree } from "./6_tree.js"
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

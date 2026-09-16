@@ -2,8 +2,8 @@ import { useEffect } from "react"
 import { filter } from "rxjs"
 import { useSignal } from "@hafley66/signals/react"
 import { useTable, type ColumnDef, type RowData } from "@tanstack/react-table"
-import { gridFeatures, type GridFeatures } from "./0_features"
-import type { Grid, GridEffect } from "./1_types"
+import { gridFeatures, type GridFeatures } from "./0_features.js"
+import type { Grid, GridEffect } from "./1_types.js"
 
 // Subscribe `handler` to one effect type for the component's lifetime.
 export function useGridEffect<TData extends RowData, T extends GridEffect<TData>["type"]>(
@@ -63,12 +63,12 @@ export function useGrid<TData extends RowData>(
   })
 }
 
-export * from "./1_types"
-export * from "./2_createGrid"
-export { GridTable, type RowDensity, type Align, type GridScrollMode, type ScrollMode } from "./4_grid"
-export { GridTree } from "./6_tree"
-export { TreeTable, type TreeTableProps, type TreeTableDensity } from "./12_treeTable"
-export { ColumnVisibilityToolbar } from "./13_columnVisibilityToolbar"
+export * from "./1_types.js"
+export * from "./2_createGrid.js"
+export { GridTable, type RowDensity, type Align, type GridScrollMode, type ScrollMode } from "./4_grid.js"
+export { GridTree } from "./6_tree.js"
+export { TreeTable, type TreeTableProps, type TreeTableDensity } from "./12_treeTable.js"
+export { ColumnVisibilityToolbar } from "./13_columnVisibilityToolbar.js"
 export {
   type TreeColumn,
   type TreeColumnEpic,
@@ -79,6 +79,6 @@ export {
   columnValue,
   visibilityEntries,
   toggleColumnVisibility,
-} from "./10_treeColumn"
-export { columnEpics, treeColumnGridEpics, selectOnPlainClick, pivotOnAltClick, noMods } from "./10a_columnEpics"
-export { hasWidthSignal, anyWidthSignal } from "./9_treeSize"
+} from "./10_treeColumn.js"
+export { columnEpics, treeColumnGridEpics, selectOnPlainClick, pivotOnAltClick, noMods } from "./10a_columnEpics.js"
+export { hasWidthSignal, anyWidthSignal } from "./9_treeSize.js"

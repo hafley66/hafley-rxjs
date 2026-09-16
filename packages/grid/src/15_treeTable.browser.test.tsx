@@ -4,10 +4,10 @@ import { afterEach, describe, expect, it } from "vitest"
 import { page } from "vitest/browser"
 import { Signal } from "@hafley66/signals"
 import { z } from "zod"
-import { createGrid } from "./2_createGrid"
-import { TreeTable } from "./12_treeTable"
-import { ColumnVisibilityToolbar } from "./13_columnVisibilityToolbar"
-import { treeColumnDefs, type TreeColumn } from "./10_treeColumn"
+import { createGrid } from "./2_createGrid.js"
+import { TreeTable } from "./12_treeTable.js"
+import { ColumnVisibilityToolbar } from "./13_columnVisibilityToolbar.js"
+import { treeColumnDefs, type TreeColumn } from "./10_treeColumn.js"
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

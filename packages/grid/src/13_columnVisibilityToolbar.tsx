@@ -1,7 +1,7 @@
 import { useSignal } from "@hafley66/signals/react"
 import type { RowData } from "@tanstack/react-table"
-import type { Grid } from "./1_types"
-import { treeColumnsOf, visibilityEntries, toggleColumnVisibility, type TreeColumn } from "./10_treeColumn"
+import type { Grid } from "./1_types.js"
+import { treeColumnsOf, visibilityEntries, toggleColumnVisibility, type TreeColumn } from "./10_treeColumn.js"
 
 export function ColumnVisibilityToolbar<TData extends RowData>({
   grid,

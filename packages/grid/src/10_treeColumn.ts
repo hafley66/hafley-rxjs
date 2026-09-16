@@ -1,8 +1,8 @@
 import type { ReactNode } from "react"
 import type { ColumnDef, RowData } from "@tanstack/react-table"
 import type { Observable } from "rxjs"
-import type { GridFeatures } from "./0_features"
-import type { GridAction, GridEpicCtx } from "./1_types"
+import type { GridFeatures } from "./0_features.js"
+import type { GridAction, GridEpicCtx } from "./1_types.js"
 
 export type TreeColumnEpicCtx<TData> = Omit<GridEpicCtx<TData>, "column$"> & {
   id: string

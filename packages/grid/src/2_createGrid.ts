@@ -9,7 +9,7 @@ import type {
   OnChangeFn,
   RowData,
 } from "@tanstack/react-table"
-import { gridFeatures, type GridFeatures } from "./0_features"
+import { gridFeatures, type GridFeatures } from "./0_features.js"
 import type {
   ColumnSpec,
   Grid,
@@ -19,10 +19,10 @@ import type {
   GridEpicCtx,
   GridPhase,
   GridState,
-} from "./1_types"
-import { pivotGrid } from "./8_pivot"
-import { treeColumnsOf } from "./10_treeColumn"
-import { treeColumnGridEpics } from "./10a_columnEpics"
+} from "./1_types.js"
+import { pivotGrid } from "./8_pivot.js"
+import { treeColumnsOf } from "./10_treeColumn.js"
+import { treeColumnGridEpics } from "./10a_columnEpics.js"
 
 export const createDefaultGridState = (overrides: Partial<GridState> = {}): GridState => ({
   sorting: [],

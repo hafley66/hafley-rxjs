@@ -1,9 +1,9 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react"
 import type { RowData } from "@tanstack/react-table"
 import { useSignal } from "@hafley66/signals/react"
-import { TreeTable } from "./12_treeTable"
-import type { TreeColumn } from "./10_treeColumn"
-import type { Grid } from "./1_types"
+import { TreeTable } from "./12_treeTable.js"
+import type { TreeColumn } from "./10_treeColumn.js"
+import type { Grid } from "./1_types.js"
 
 const FONT = `-apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`
 

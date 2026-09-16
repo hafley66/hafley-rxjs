@@ -5,7 +5,7 @@ import {
   visibilityEntries,
   toggleColumnVisibility,
   type TreeColumn,
-} from "./10_treeColumn"
+} from "./10_treeColumn.js"
 
 type Node = { id: string; name: string; size: number }
 

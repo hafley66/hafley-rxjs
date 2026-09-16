@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { Signal } from "@hafley66/signals"
 import { z } from "zod"
-import { createGrid } from "./2_createGrid"
+import { createGrid } from "./2_createGrid.js"
 
 const RowSchema = z.object({ id: z.string(), level: z.string(), n: z.number() })
 type Row = z.infer<typeof RowSchema>

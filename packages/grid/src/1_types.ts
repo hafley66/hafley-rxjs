@@ -18,7 +18,7 @@ import type {
 } from "@tanstack/react-table"
 import type { Observable } from "rxjs"
 import type { Epic, Signal } from "@hafley66/signals"
-import type { GridFeatures } from "./0_features"
+import type { GridFeatures } from "./0_features.js"
 
 export type GridMode = "client" | "server"
 

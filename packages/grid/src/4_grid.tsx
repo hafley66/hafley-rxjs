@@ -1,9 +1,9 @@
 import { useCallback } from "react"
 import { flexRender, type CellContext, type RowData } from "@tanstack/react-table"
 import { useSignal } from "@hafley66/signals/react"
-import { useGrid } from "./3_react"
-import type { Grid } from "./1_types"
-import type { GridFeatures } from "./0_features"
+import { useGrid } from "./3_react.js"
+import type { Grid } from "./1_types.js"
+import type { GridFeatures } from "./0_features.js"
 import {
   useExternalVirtualizer,
   usePhantomScrollbar,

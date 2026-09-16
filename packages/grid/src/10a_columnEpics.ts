@@ -1,6 +1,6 @@
 import { filter, map } from "rxjs"
-import type { GridAction, GridEpic, Modifiers } from "./1_types"
-import { columnValue, type TreeColumn, type TreeColumnEpic } from "./10_treeColumn"
+import type { GridAction, GridEpic, Modifiers } from "./1_types.js"
+import { columnValue, type TreeColumn, type TreeColumnEpic } from "./10_treeColumn.js"
 
 export function columnEpics<TData>(columns: readonly TreeColumn<TData>[]): GridEpic<TData>[] {
   return columns

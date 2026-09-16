@@ -3,9 +3,9 @@ import { createRoot } from "react-dom/client"
 import type { ColumnDef } from "@tanstack/react-table"
 import { Signal } from "@hafley66/signals"
 import { z } from "zod"
-import { createDefaultGridState, createGrid } from "./2_createGrid"
-import type { GridFeatures } from "./0_features"
-import { GridTable, type RowDensity } from "./4_grid"
+import { createDefaultGridState, createGrid } from "./2_createGrid.js"
+import type { GridFeatures } from "./0_features.js"
+import { GridTable, type RowDensity } from "./4_grid.js"
 
 type PlaygroundRow = { id: string; label: string; group: string; amount: number }
 type OwnerMode = "document" | "ancestor"
