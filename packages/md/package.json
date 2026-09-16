@@ -14,10 +14,13 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./style.css": "./dist/style.css"
+    "./style.css": {
+   "types": "./dist/style.css.d.ts",
+   "default": "./dist/style.css"
+  }
   },
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && cp src/style.css.d.ts dist/style.css.d.ts",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
