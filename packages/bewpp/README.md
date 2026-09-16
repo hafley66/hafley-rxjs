@@ -62,11 +62,20 @@ await app.close()
 tab; `getPage()` retains its selected tab while available. The optional `acceptsPage`
 predicate limits default selection. `page.bringToFront()` activates its tab/window.
 
-Locators support exact role/name, label, placeholder, test ID, CSS, nested roles,
-`has`/visibility filters, and `nth`. Operations include click, fill, select, navigation
-keys, hover, wait, value/text reads, structured page inspection, image enumeration,
-and image download. Submission-labelled/form buttons require `{ allowSubmit: true }`.
-Page navigation stays within the extension's granted origins.
+Locators support role/name, label, placeholder, test ID, CSS, nested roles, `has`/visibility
+filters, and `nth`. With the selector engine installed (`page.installSelectorEngine(loadEngineSource())`)
+a locator compiles to the Playwright selector its `getBy*` would compile to and resolves through
+Playwright's own engine, so `exact`, strict mode, and error text are Playwright's; without an engine
+each operation falls back to Testing Library resolution, which matches role names exactly and treats
+`exact: false` as a case-sensitive substring. Operations include click, fill, select, navigation keys,
+hover, wait, value/text reads, structured page inspection, image enumeration, and image download.
+Single-element operations resolve strictly, retry until `timeout` expires (default 5000 ms), and fail
+with `Expected one element; found N.`; `count`, `allTextContents`, and `waitFor` resolve loosely, and
+`isVisible` answers `false` rather than failing. Playwright's `delay`/`timeout`/`noWaitAfter`/`force`
+options are accepted, `force` and `noWaitAfter` change nothing because no actionability preflight runs,
+and any option value that would change what the action does (`trial`, `button`, `clickCount`,
+`modifiers`, `position`, `steps`) is refused instead of ignored. Submission-labelled/form buttons
+require `{ allowSubmit: true }`. Page navigation stays within the extension's granted origins.
 
 `page.observe(...)` starts a bounded per-document event buffer. Sources can include
 debounced DOM text snapshots, `localStorage`, `sessionStorage`, IndexedDB mutations, and
@@ -97,8 +106,12 @@ tabs on connection and tab changes. It does not retain or replay DOM commands.
 Locators retain query descriptions. Each operation resolves the current DOM, so a
 React render may replace an element between calls. Content-script registration is
 guarded per bundle build and document. The host receives results through birpc;
-Chrome messages use `@webext-core/messaging`. DOM queries and interaction use Testing
-Library. Rolldown builds both the Node entry and the extension bundles.
+Chrome messages use `@webext-core/messaging`. Query resolution uses Playwright's
+injected engine where it is installed — the engine runs in the main world and the
+content script in the isolated world, so the engine tags its matches with a marker
+attribute and the content script addresses those elements by marker. Interaction and
+the engine-less fallback use Testing Library. Rolldown builds both the Node entry and
+the extension bundles.
 
 Application jobs, retries, receipts, provider wiring, and UI subscriptions belong to
 the host. The package has no host-app imports.

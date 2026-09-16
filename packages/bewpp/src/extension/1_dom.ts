@@ -8,6 +8,7 @@ import {
 } from "@testing-library/dom"
 import userEvent from "@testing-library/user-event"
 import type { DomCommand, ImageAsset, LocatorQuery } from "../0_controls.js"
+import { LOCATOR_TIMEOUT_MS, oneElementMessage } from "../0_controls.js"
 import { executeObservation } from "./1_observe.js"
 
 const visible = (element: Element) =>
@@ -16,12 +17,26 @@ const visible = (element: Element) =>
   !element.closest("[hidden], [inert]")
 const disabled = (element: Element) => element.matches(":disabled") || element.getAttribute("aria-disabled") === "true"
 
+/**
+ * The elements the injected engine tagged for one resolution, in the engine's own order. The engine runs
+ * in the main world and this content script runs in the isolated world, so the marker attribute is the
+ * only handle the two share.
+ */
+function markedElements(marker: string): HTMLElement[] {
+  const hit = (element: Element) => Number((element.getAttribute("data-bewpp-hit") ?? "").split("-").pop() ?? 0)
+  return [...document.querySelectorAll<HTMLElement>(`[data-bewpp-hit^="${marker}-"]`)].sort(
+    (left, right) => hit(left) - hit(right),
+  )
+}
+
 export function resolveLocator(query: LocatorQuery, root: HTMLElement = document.body): HTMLElement[] {
+  if (query.marker) return markedElements(query.marker)
   const roots = query.within ? resolveLocator(query.within, root) : [root]
   let elements = roots.flatMap(container => {
+    const exact = query.exact ?? false
     if (query.role) return queryAllByRole(container, query.role, { name: query.name, hidden: false })
-    if (query.placeholder) return queryAllByPlaceholderText(container, query.placeholder, { exact: true })
-    if (query.label) return queryAllByLabelText(container, query.label, { exact: true })
+    if (query.placeholder) return queryAllByPlaceholderText(container, query.placeholder, { exact })
+    if (query.label) return queryAllByLabelText(container, query.label, { exact })
     if (query.testid) return queryAllByTestId(container, query.testid, { exact: true })
     if (query.selector) return [...container.querySelectorAll<HTMLElement>(query.selector)]
     throw new Error("A locator must specify role, label, placeholder, test ID, or CSS.")
@@ -104,24 +119,26 @@ export async function executeDom(command: DomCommand): Promise<unknown> {
             ? elements.length === 0
             : command.state === "hidden"
               ? !elements.some(visible)
-              : elements.length === 1 && visible(elements[0])
+              : command.state === "attached"
+                ? elements.length === 1
+                : elements.length === 1 && visible(elements[0])
         if (!ready)
           throw new Error(
             `Waiting for locator to become ${command.state}: found ${elements.length}, visible ${elements.filter(visible).length}.`,
           )
       },
-      { timeout: command.timeoutMs ?? 5000, onTimeout: error => error },
+      { timeout: command.timeoutMs ?? LOCATOR_TIMEOUT_MS, onTimeout: error => error },
     )
     return
   }
   const element = await waitFor(
     () => {
       const elements = read()
-      if (elements.length !== 1) throw new Error(`Expected one element; found ${elements.length}.`)
+      if (elements.length !== 1) throw new Error(oneElementMessage(elements.length))
       if (!visible(elements[0])) throw new Error("Element is hidden.")
       return elements[0]
     },
-    { timeout: command.timeoutMs ?? 5000, onTimeout: error => error },
+    { timeout: command.timeoutMs ?? LOCATOR_TIMEOUT_MS, onTimeout: error => error },
   )
   if (command.action === "enabled") return !disabled(element)
   if (command.action === "value") return (element as HTMLInputElement).value
@@ -132,7 +149,7 @@ export async function executeDom(command: DomCommand): Promise<unknown> {
   if (command.action === "text") return element.textContent
   if (command.action === "attribute") return command.value ? element.getAttribute(command.value) : null
   if (disabled(element)) throw new Error("Element is disabled.")
-  const user = userEvent.setup({ document, delay: null })
+  const user = userEvent.setup({ document, delay: command.delayMs ?? null })
   if (command.action === "click") {
     const button = element.closest("button, input, [role=button]") as HTMLButtonElement | null
     const submits =

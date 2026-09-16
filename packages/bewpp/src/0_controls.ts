@@ -1,6 +1,8 @@
 export type LocatorQuery = {
   role?: string
   name?: string
+  /** Case-sensitive matching for `name`/`label`/`placeholder`, mirroring Playwright's `exact`. */
+  exact?: boolean
   placeholder?: string
   label?: string
   testid?: string
@@ -11,7 +13,25 @@ export type LocatorQuery = {
   index?: number
   /** Selects the final match of the filtered set, after `has`/`visible` filters. */
   last?: boolean
+  /**
+   * The elements the injected engine tagged `data-bewpp-hit="<marker>-<index>"` for this operation,
+   * addressed in the engine's own resolve order. The engine resolves selectors and the content script
+   * acts, so the marker is the only handle both worlds share.
+   */
+  marker?: string
 }
+
+/** Default budget for one locator operation, shared by the host façade and the content script. */
+export const LOCATOR_TIMEOUT_MS = 5_000
+
+/** Poll interval for a locator that has to wait for the document to catch up. */
+export const LOCATOR_POLL_MS = 100
+
+/** Text for a strict single-element resolution that matched nothing, from either side of the bridge. */
+export const oneElementMessage = (count: number) => `Expected one element; found ${count}.`
+
+/** `ExtensionPage.resolveSelector` raises this when the page never installed the injected engine. */
+export const MISSING_ENGINE_MESSAGE = "Install the selector engine before resolving Playwright selectors."
 export type ImageAsset = { mime: string; base64: string }
 export type PageImage = { src: string; width: number; height: number }
 export type TabInfo = { id: number; url: string; title: string; active: boolean }
@@ -80,34 +100,71 @@ export type DomCommand =
         | "hover"
         | "wait"
       value?: string
-      state?: "visible" | "hidden" | "detached"
+      state?: "visible" | "hidden" | "attached" | "detached"
       timeoutMs?: number
+      /** Milliseconds between the pointer or key down and up phases, forwarded to user-event. */
+      delayMs?: number
       allowSubmit?: boolean
     }
 
+/** Timeout budget, accepted wherever Playwright accepts `TimeoutOptions`. */
+export type TimeoutOptions = { timeout?: number }
+
+/**
+ * Options Playwright's mutating locator actions accept. `delay` is forwarded to user-event. `force`
+ * and `noWaitAfter` describe checks this package never performs, so they change nothing. The rest
+ * would silently change the action's meaning, so any value is refused at the call.
+ */
+export type ActionOptions = TimeoutOptions & {
+  delay?: number
+  force?: boolean
+  noWaitAfter?: boolean
+  /** Unsupported: a trial action must not perform the action, and no actionability check exists to run. */
+  trial?: boolean
+  /** Unsupported: only the left button is used. */
+  button?: "left" | "right" | "middle"
+  /** Unsupported: one click is dispatched. */
+  clickCount?: number
+  /** Unsupported: no modifier is held. */
+  modifiers?: string[]
+  /** Unsupported: the element center is the click target. */
+  position?: { x: number; y: number }
+  /** Unsupported: pointer movement is a single step. */
+  steps?: number
+}
+export type ClickOptions = ActionOptions & {
+  /** Required for a control whose label or type marks it as a submission. */
+  allowSubmit?: boolean
+}
+
 export interface LocatorControls {
   query: LocatorQuery
-  getByRole(role: string, options?: { name?: string; exact?: true }): LocatorControls
+  getByRole(role: string, options?: { name?: string; exact?: boolean }): LocatorControls
   filter(options: { has?: LocatorControls; visible?: boolean }): LocatorControls
+  first(): LocatorControls
+  last(): LocatorControls
   nth(index: number): LocatorControls
-  count(): Promise<number>
-  isVisible(): Promise<boolean>
-  isEnabled(): Promise<boolean>
-  inputValue(): Promise<string>
+  count(options?: TimeoutOptions): Promise<number>
+  isVisible(options?: TimeoutOptions): Promise<boolean>
+  isEnabled(options?: TimeoutOptions): Promise<boolean>
+  isChecked(options?: TimeoutOptions): Promise<boolean>
+  inputValue(options?: TimeoutOptions): Promise<string>
+  textContent(options?: TimeoutOptions): Promise<string | null>
+  getAttribute(name: string, options?: TimeoutOptions): Promise<string | null>
   allTextContents(): Promise<string[]>
-  click(options?: { timeout?: number; allowSubmit?: boolean }): Promise<void>
-  fill(value: string, options?: { timeout?: number }): Promise<void>
-  selectOption(value: { label: string }, options?: { timeout?: number }): Promise<void>
-  press(value: string): Promise<void>
-  hover(): Promise<void>
-  waitFor(options: { state: "visible" | "hidden" | "detached"; timeout: number }): Promise<void>
+  click(options?: ClickOptions): Promise<void>
+  fill(value: string, options?: ActionOptions): Promise<void>
+  selectOption(value: { label: string }, options?: ActionOptions): Promise<void>
+  press(value: string, options?: ActionOptions): Promise<void>
+  hover(options?: ActionOptions): Promise<void>
+  waitFor(options?: { state?: "attached" | "detached" | "hidden" | "visible"; timeout?: number }): Promise<void>
 }
 export interface PageControls {
   url(): string
   isClosed(): boolean
-  getByRole(role: string, options?: { name?: string; exact?: true }): LocatorControls
-  getByPlaceholder(value: string, options?: { exact?: true }): LocatorControls
-  getByLabel(value: string, options?: { exact?: true }): LocatorControls
+  getByRole(role: string, options?: { name?: string; exact?: boolean }): LocatorControls
+  getByPlaceholder(value: string, options?: { exact?: boolean }): LocatorControls
+  getByLabel(value: string, options?: { exact?: boolean }): LocatorControls
   getByTestId(value: string): LocatorControls
   locator(selector: string): LocatorControls
   goto(url: string): Promise<void>
@@ -142,7 +199,7 @@ export interface ExtensionCommands {
 /** Playwright selector query handed to the injected engine in the page realm. */
 export type EngineQuery = { selector: string; strict?: boolean; frameId?: number }
 /** Matched elements are tagged `data-bewpp-hit="<marker>-<index>"` so content-script actions can address them. */
-export type EngineResult = { count: number; marker: string }
+export type EngineResult = { count: number; marker: string; installed: boolean }
 export type EngineInstall = { installed: boolean }
 export type ScreenshotOptions = { fullPage?: boolean; selector?: string; format?: "png" | "jpeg" }
 export interface BridgeEvents {

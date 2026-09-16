@@ -81,9 +81,11 @@ const ENGINE_INSTALLER = (engineSource: string) => {
     },
     query(selector: string, strict: boolean) {
       const parsed = injected.parseSelector(selector)
-      const elements = strict
+      const found = strict
         ? [injected.querySelector(parsed, document, true)]
         : injected.querySelectorAll(parsed, document)
+      // A strict resolution returns `undefined` when nothing matched; it throws only on a violation.
+      const elements = found.filter((element): element is Element => !!element)
       const marker = `b${++sequence}`
       for (const [index, element] of elements.entries()) element.setAttribute("data-bewpp-hit", `${marker}-${index}`)
       return { count: elements.length, marker }
@@ -96,8 +98,7 @@ const ENGINE_QUERY = (selector: string, strict: boolean) => {
   const state = globalThis as typeof globalThis & {
     __bewppEngine?: { query: (selector: string, strict: boolean) => unknown }
   }
-  if (!state.__bewppEngine)
-    return { ok: false, error: "Install the selector engine before resolving Playwright selectors." }
+  if (!state.__bewppEngine) return { ok: false, missing: true }
   try {
     return { ok: true, value: state.__bewppEngine.query(selector, strict) }
   } catch (error) {
@@ -244,11 +245,13 @@ function connect() {
         args: [query.selector, query.strict ?? false],
       })
       const payload = result?.result as
-        | { ok: boolean; value?: { count: number; marker: string }; error?: string }
+        | { ok: boolean; value?: { count: number; marker: string }; missing?: boolean; error?: string }
         | undefined
       if (!payload) throw new Error("The page realm returned no engine result.")
+      // Reported, not thrown: a locator falls back to Testing Library resolution instead of failing.
+      if (payload.missing) return { count: 0, marker: "", installed: false }
       if (!payload.ok) throw new Error(payload.error)
-      return payload.value as { count: number; marker: string }
+      return { ...(payload.value as { count: number; marker: string }), installed: true }
     },
   }
   const peer = createBirpc<BridgeEvents, ExtensionCommands>(functions, {

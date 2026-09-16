@@ -1,5 +1,5 @@
 import { z } from "zod"
-import type { LocatorQuery } from "./0_controls.js"
+import { LOCATOR_TIMEOUT_MS, type LocatorQuery } from "./0_controls.js"
 
 export const tabSchema = z.number().int().nonnegative().describe("Chrome tab ID returned by tabs_list.")
 export const locatorSchema: z.ZodType<LocatorQuery> = z.lazy(() =>
@@ -7,6 +7,7 @@ export const locatorSchema: z.ZodType<LocatorQuery> = z.lazy(() =>
     .object({
       role: z.string().min(1).optional(),
       name: z.string().optional(),
+      exact: z.boolean().optional().describe("Case-sensitive matching for name, label, and placeholder."),
       placeholder: z.string().optional(),
       label: z.string().optional(),
       testid: z.string().optional(),
@@ -41,8 +42,8 @@ export const locatorActionSchema = z
       "wait",
     ]),
     value: z.string().max(16_000).optional(),
-    state: z.enum(["visible", "hidden", "detached"]).optional(),
-    timeoutMs: z.number().int().min(1).max(30_000).default(5000),
+    state: z.enum(["visible", "hidden", "attached", "detached"]).optional(),
+    timeoutMs: z.number().int().min(1).max(30_000).default(LOCATOR_TIMEOUT_MS),
     allowSubmit: z
       .boolean()
       .default(false)

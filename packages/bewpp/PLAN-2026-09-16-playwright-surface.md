@@ -17,11 +17,11 @@ because the injected engine runs (measured, see Evidence).
 | `page.url()/title()` | `inspect` / `tabs` | `tabs.get`, `document.title` | ✓ |
 | `page.waitForURL(re)` | poll `tabs` + `webNavigation` | `onCommitted` per frame | ✓ |
 | `page.waitForLoadState("networkidle")` | synthesized | count in-flight via `webRequest` | partial — no native event |
-| `page.getByRole/getByLabel/getByTestId/getByPlaceholder/locator` | `query` | injected engine `.parseSelector` | ✓ |
-| `locator.first()/last()/nth()/filter({has,hasText,visible})` | `query` with composed selector | engine `>> nth=`, `:has-text`, `:visible`, `has=` | ✓ |
-| `locator.count()/isVisible()/isEnabled()/textContent()/getAttribute()/inputValue()` | `query` read actions | engine + DOM reads | ✓ |
+| `page.getByRole/getByLabel/getByTestId/getByPlaceholder/locator` | `resolveWithSelectorEngine`, then `query` on the marker | injected engine `.parseSelector` + `InjectedScript.querySelector{,All}` | ✓ |
+| `locator.first()/last()/nth()/filter({has,visible})` | composed selector | `internal:role/label/attr/testid`, `>> nth=`, `internal:has=`, `visible=` | ✓ |
+| `locator.count()/isVisible()/isEnabled()/textContent()/getAttribute()/inputValue()/isChecked()/allTextContents()` | engine resolution, then `query` read actions | engine + DOM reads | ✓ |
 | `locator.click()/hover()/fill()/selectOption()/press()/check()` | `query` mutations | Testing Library `user-event` | partial — synthetic, `isTrusted:false` |
-| `locator.waitFor({state,timeout})` | `wait` | `waitFor` poll loop in content script | ✓ |
+| `locator.waitFor({state,timeout})` | engine resolution per poll | `waitFor` poll loop in the locator, content-script loop when no engine | ✓ |
 | strict mode, `aka getByRole(...)` suggestions | engine errors passed through verbatim | `InjectedScript.querySelector(parsed, root, strict)` | ✓ |
 | `page.screenshot()` (viewport, compositor pixels) | `capture` | `tabs.captureVisibleTab` | partial — foreground tab, `<all_urls>`, ~2/s |
 | `page.screenshot({fullPage, clip})` | `rasterize` | DOM-realm rasterizer (see below) | ✓ as a re-render; canvas subtrees included, minor color shift on the `foreignObject` path |
@@ -39,23 +39,34 @@ because the injected engine runs (measured, see Evidence).
 
 ## Types
 
-- Satisfy structural subsets: `Pick<Page, …>` and `Pick<Locator, …>` for the rows above.
-  Callers can `import type { Locator } from "playwright"` and pass our object where the
-  subset matches; no Playwright runtime object is ever constructed.
-- `playwright` is a **peerDependency + devDependency only** — the repo audit flags runtime
-  singletons held as dependencies, and this package must not ship its own copy.
-- Option bags mirror Playwright's (`{ timeout?, force? }`); `force` is accepted and ignored
-  where MV3 cannot honor it, rather than silently changing meaning.
+- Satisfy structural subsets of Playwright's types for the rows above; no Playwright runtime object is
+  ever constructed. `src/7_playwrightConformance.ts` asserts it and `tsc` is the gate: a member passes
+  when Playwright's call arguments are accepted, the same number of parameters is declared, and the
+  result is usable where Playwright's result is. Members that fail are listed there with the reason and
+  pinned by `@ts-expect-error`, so the file stops compiling if the surface slips or a gap closes:
+  `goto` (no response, no `waitUntil`), `getByRole`/`nth`/`filter` (locators, not Playwright's
+  `Locator`), `selectOption` (label selection only), `evaluate` (function source, not a function),
+  `screenshot` (rasterized asset, not a buffer), `waitForURL` (RegExp only). Calls and reads conform.
+- `playwright` is a **devDependency only** — it is a type source here, and the repo audit flags runtime
+  singletons held as dependencies, so this package must not ship its own copy.
+- Option bags take Playwright's shapes. `delay` is forwarded to user-event, `force`/`noWaitAfter`
+  describe checks this package never performs so they change nothing, and an option value that would
+  change what the action does (`trial`, `button`, `clickCount`, `modifiers`, `position`, `steps`) is
+  refused at the call rather than ignored. `selectOption` remains label-only and says so in the
+  conformance file.
 - Errors are Playwright's own strings — strict-mode violations come out of the engine, so no
   message rewriting layer.
 
 ## Auto-wait and retry
 
-- Default timeout 5 s, poll interval 100 ms, matching the existing `timeoutMs` default in
-  `0_commands.ts`.
-- Strict by default. `locator.first()` sends an explicit `nth=0` rather than relaxing strictness.
-- One retry on `Target closed`/tab detach only; mutations never auto-retry (an interrupted
-  response can follow an already executed click — same rule as `BridgeClient.call`).
+- Default timeout 5 s (`LOCATOR_TIMEOUT_MS`), poll interval 100 ms (`LOCATOR_POLL_MS`), matching the
+  existing `timeoutMs` default in `0_commands.ts`. Every operation accepts `{ timeout }`.
+- Strict by default, with the engine's own violation text. `locator.first()`/`last()`/`nth()` compose
+  `>> nth=0`/`>> nth=-1`/`>> nth=N` rather than relaxing strictness, and `isVisible()` polls on a strict
+  resolution so a violation still surfaces.
+- No automatic retry: a detached tab fails the operation and the caller re-issues it. Mutations must
+  never retry (an interrupted response can follow an already executed click — same rule as
+  `BridgeClient.call`).
 
 ## Engine delivery
 
@@ -124,6 +135,12 @@ Implemented in `packages/bewpp`:
 3. Page surface (navigation, `waitForURL`, `evaluate`, cookies).
 4. `screenshot` with an explicit capability error for `fullPage`/`clip` instead of silent partiality.
 5. `@hafley66/vitest-playwright`: `{ kind: "bewpp", … }` browser source + borrowed-context ownership.
+
+Steps 1-2 are in: engine delivery is `installSelectorEngine`/`resolveWithSelectorEngine` in
+`src/extension/2_worker.ts` (gate: `tests/4_engine.test.mjs`), and the locator path resolves through
+`src/0_selectors.ts` + `locator()`/`getBy*` in `src/1_Page.ts` (gate: `tests/6_locators.test.mjs`, which covers
+the engine path, the engine-less fallback, and re-resolution across a navigation). Type conformance is
+`src/7_playwrightConformance.ts`, gated by `pnpm typecheck`.
 
 Commits per step, explicit paths, never push.
 
