@@ -7,7 +7,8 @@ const root = process.cwd()
 const prepack = "pnpm --workspace-root exec node scripts/0_prepack.mjs"
 
 async function manifests(directory) {
-  const entries = await readdir(directory, { withFileTypes: true })
+  // A repository that has no such directory is a normal repository, not a broken one.
+  const entries = await readdir(directory, { withFileTypes: true }).catch(() => [])
   const output = []
   for (const entry of entries) {
     if (!entry.isDirectory()) continue

@@ -1,0 +1,34 @@
+{
+  "name": "__SCOPED__",
+  "version": "0.0.0",
+  "description": "TODO: one line on what __NAME__ does",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "receipts": "pnpm run typecheck && pnpm run test && pnpm run build",
+    "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs"
+  },
+  "devDependencies": {
+    "typescript": "__TYPESCRIPT__",
+    "vitest": "__VITEST__"
+  },
+  "license": "__LICENSE__",
+  "publishConfig": {
+    "access": "public",
+    "registry": "__REGISTRY__"
+  }
+}

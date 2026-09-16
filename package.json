@@ -37,7 +37,8 @@
     "test:sequence-local-documents": "vitest run packages/mmd/src/1_parse.test.ts packages/d2/src/1_parse.test.ts",
     "test:sequence-receipts": "vitest run scripts/2_sequenceRenderReceipts.test.ts",
     "test:sequence-renderers": "vitest run scripts/0_sequenceRendererSmoke.test.ts",
-    "receipts:ui": "pnpm --filter @hafley66/report-shell receipts && pnpm --filter @hafley66/report-shell test:browser && pnpm --filter @hafley66/gothic receipts && pnpm --filter @hafley66/vitest-telemetry receipts && pnpm --filter @hafley66/boop-adapters receipts"
+    "receipts:ui": "pnpm --filter @hafley66/report-shell receipts && pnpm --filter @hafley66/report-shell test:browser && pnpm --filter @hafley66/gothic receipts && pnpm --filter @hafley66/vitest-telemetry receipts && pnpm --filter @hafley66/boop-adapters receipts",
+    "scaffold": "bash scripts/0_scaffold.sh"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
@@ -63,5 +64,28 @@
   },
   "dependencies": {
     "@biomejs/biome": "^2.3.11"
+  },
+  "scaffold": {
+    "scope": "@hafley66",
+    "dir": "packages",
+    "template": "templates/package",
+    "repoTemplate": "templates/repo",
+    "license": "MIT",
+    "author": "Chris Hafley",
+    "repository": "https://github.com/hafley66/hafley-rxjs",
+    "homepage": "https://github.com/hafley66/hafley-rxjs#readme",
+    "registry": "https://registry.npmjs.org/",
+    "private": false,
+    "repoFiles": [
+      "biome.json",
+      "tsconfig.base.json",
+      ".gitignore",
+      "scripts/0_prepack.mjs",
+      "scripts/1_releaseCheck.mjs",
+      "scripts/audit-packages.mjs",
+      "scripts/browser-queue.mjs",
+      "scripts/0_scaffold.sh",
+      "templates"
+    ]
   }
 }

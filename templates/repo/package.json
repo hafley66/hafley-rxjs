@@ -1,0 +1,56 @@
+{
+  "name": "__NAME__",
+  "private": true,
+  "type": "module",
+  "packageManager": "__PKG_MANAGER__",
+  "engines": {
+    "node": "__NODE__"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "receipts": "pnpm -r receipts",
+    "lint": "biome check .",
+    "verify": "pnpm -r typecheck && pnpm -r build && pnpm -r test",
+    "audit": "node scripts/audit-packages.mjs",
+    "scaffold": "bash scripts/0_scaffold.sh",
+    "changeset": "changeset",
+    "release:version": "changeset version",
+    "release:check": "node scripts/1_releaseCheck.mjs --structure-only",
+    "release:audit": "node scripts/1_releaseCheck.mjs",
+    "release:publish": "pnpm release:check && changeset publish"
+  },
+  "scaffold": {
+    "scope": "__SCOPE__",
+    "dir": "packages",
+    "template": "templates/package",
+    "repoTemplate": "templates/repo",
+    "license": "__LICENSE__",
+    "author": "__AUTHOR__",
+    "repository": "__REPOSITORY__",
+    "homepage": "__HOMEPAGE__",
+    "registry": "__REGISTRY__",
+    "private": false,
+    "repoFiles": [
+      "biome.json",
+      "tsconfig.base.json",
+      ".gitignore",
+      "scripts/0_prepack.mjs",
+      "scripts/1_releaseCheck.mjs",
+      "scripts/audit-packages.mjs",
+      "scripts/browser-queue.mjs",
+      "scripts/0_scaffold.sh",
+      "templates"
+    ]
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "__ATTW__",
+    "@biomejs/biome": "__BIOME__",
+    "@changesets/cli": "__CHANGESETS__",
+    "publint": "__PUBLINT__",
+    "typescript": "__TYPESCRIPT__",
+    "vite": "__VITE__",
+    "vitest": "__VITEST__"
+  }
+}

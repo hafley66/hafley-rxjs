@@ -1,0 +1,102 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Vitest picks run mode over watch mode from this.
+  CI: "1"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: __NODE_MAJOR__
+          # Restores and saves the pnpm store keyed on pnpm-lock.yaml.
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The audit asserts the uniform script shape before anything runs it, so a manifest that drifts
+      # from the four verbs fails here rather than at release time.
+      - name: audit
+        run: node scripts/audit-packages.mjs
+
+      - name: lint
+        run: pnpm lint
+
+      - name: typecheck
+        run: pnpm -r typecheck
+
+      - name: build
+        run: pnpm -r build
+
+      # A package whose own `test` drives a real browser stays out of CI with a --filter, and keeps a
+      # `receipts` script that runs the whole gate on a machine that has one.
+      - name: test
+        run: pnpm -r test
+
+  changeset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: __NODE_MAJOR__
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: pending release
+        run: pnpm exec changeset status
+
+  release:
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: __NODE_MAJOR__
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Opens or refreshes the "Version Packages" pull request that lists every pending release.
+      # Publishing stays manual (`pnpm release:publish`) because npm two-factor lives on a person.
+      - uses: changesets/action@v1
+        with:
+          version: pnpm release:version
+          title: "Version Packages"
+          commit: "Version Packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
