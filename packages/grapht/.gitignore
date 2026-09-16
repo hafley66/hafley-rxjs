@@ -2,6 +2,8 @@ node_modules/
 dist/
 runs/
 .cache/
+# `vitepress dev` (the site suite's server) writes its dependency optimizer here.
+site/.vitepress/cache
 *.tsbuildinfo
 target/
 test-results/

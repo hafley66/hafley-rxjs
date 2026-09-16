@@ -1,7 +1,9 @@
 {
+  "//": "The build emits, and `allowImportingTsExtensions` (set in tsconfig.json for the docs-kit source the site suite pulls in) is only legal where nothing is emitted. This program is `src/**` alone and imports no `.ts` path, so turning the flag off here costs nothing.",
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
+    "allowImportingTsExtensions": false,
     "declaration": true,
     "declarationMap": true,
     "rootDir": "./src",
