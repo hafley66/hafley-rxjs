@@ -9,6 +9,8 @@ export type LocatorQuery = {
   has?: LocatorQuery
   visible?: boolean
   index?: number
+  /** Selects the final match of the filtered set, after `has`/`visible` filters. */
+  last?: boolean
 }
 export type ImageAsset = { mime: string; base64: string }
 export type PageImage = { src: string; width: number; height: number }
@@ -68,6 +70,9 @@ export type DomCommand =
         | "enabled"
         | "value"
         | "texts"
+        | "text"
+        | "attribute"
+        | "checked"
         | "click"
         | "fill"
         | "select"

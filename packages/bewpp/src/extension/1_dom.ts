@@ -28,6 +28,7 @@ export function resolveLocator(query: LocatorQuery, root: HTMLElement = document
   })
   if (query.visible != null) elements = elements.filter(element => visible(element) === query.visible)
   if (query.has) elements = elements.filter(element => resolveLocator(query.has!, element).length > 0)
+  if (query.last) elements = elements.slice(-1)
   if (query.index != null) {
     const element = elements.at(query.index)
     elements = element ? [element] : []
@@ -124,6 +125,12 @@ export async function executeDom(command: DomCommand): Promise<unknown> {
   )
   if (command.action === "enabled") return !disabled(element)
   if (command.action === "value") return (element as HTMLInputElement).value
+  if (command.action === "checked")
+    return element.matches("input[type=checkbox], input[type=radio]")
+      ? (element as HTMLInputElement).checked
+      : element.getAttribute("aria-checked") === "true"
+  if (command.action === "text") return element.textContent
+  if (command.action === "attribute") return command.value ? element.getAttribute(command.value) : null
   if (disabled(element)) throw new Error("Element is disabled.")
   const user = userEvent.setup({ document, delay: null })
   if (command.action === "click") {

@@ -120,6 +120,21 @@ export class ExtensionLocator implements LocatorControls {
   getByRole(role: string, options: { name?: string } = {}) {
     return new ExtensionLocator(this.page, { role, name: options.name, within: this.query })
   }
+  first() {
+    return new ExtensionLocator(this.page, { ...this.query, index: 0 })
+  }
+  last() {
+    return new ExtensionLocator(this.page, { ...this.query, last: true })
+  }
+  async textContent() {
+    return (await this.execute("text")) as string | null
+  }
+  async getAttribute(name: string) {
+    return (await this.execute("attribute", { value: name })) as string | null
+  }
+  async isChecked() {
+    return (await this.execute("checked")) as boolean
+  }
   filter(options: { has?: LocatorControls; visible?: boolean }) {
     return new ExtensionLocator(this.page, {
       ...this.query,
