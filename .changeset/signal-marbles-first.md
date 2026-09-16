@@ -38,7 +38,9 @@ column is document data.
   picture back. Nothing seeks, because a reveal is not a place you drag to.
 - **The axis honours time up to a threshold.** Columns are causal and the width between two of them is
   the time between them, up to a cap; past the cap the axis breaks and the break carries the real
-  milliseconds. Every column prints the milliseconds it sits at.
+  milliseconds. Every column prints the milliseconds it sits at. `marbleTracks` turns that geometry
+  into CSS grid tracks — one list that the axis row and every lane strip are laid out over — so a
+  marble is on its turn because the turn *is* a track, and the surface holds no column position number.
 - **Framework-free surface first.** `renderMarbles(player, host)` returns `{ unsubscribe }` — an
   effect's contract, so `MarbleDiagram` is the effect and nothing else. The surface draws the notes
   with their marbles, the edges between causes and their consequences, and a column readout that says

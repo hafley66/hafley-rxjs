@@ -238,8 +238,9 @@ What a reader gets:
   Past the cap the axis breaks and the break carries the real milliseconds (`+300ms`); every column
   prints the milliseconds it sits at, so compression is marked rather than hidden.
 - **A key, because a glyph is not a sentence.** The legend under the header names all six kinds —
-  `value`, `error`, `complete`, `subscribed`, `unsubscribed`, `window closed` — the axis break, and
-  the edge. Hovering any marble then answers "what is this" in words:
+  `value`, `error`, `complete`, `subscribed`, `unsubscribed`, `window closed` — the axis break, the
+  edge, and the axis's own units (`t = turn, number = ms`), which are stated once there rather than
+  repeated on every column. Hovering any marble then answers "what is this" in words:
   `switchMap: unsubscribed at tick 20 (42ms) — switch dropped it before it finished`.
 - **Every marble has a name** (`keys#3`), a value, and — when a producer wrote one — the reason it
   happened. The note is drawn under its marble and revealed with it.
@@ -251,26 +252,37 @@ What a reader gets:
 - **A hidden marble is absent**, not faint: it is out of the accessibility tree until the reveal
   reaches it. Each lane also carries a text `aria-label`, and the whole document is in a `<details>`.
 
-Two invariants hold the picture together, and `src/6_marbleDiagram.browser.test.tsx` measures both in
-a real browser rather than trusting the arithmetic:
+Three invariants hold the picture together, and `src/6_marbleDiagram.browser.test.tsx` measures all
+three in a real browser rather than trusting the arithmetic:
 
-1. **The gutter box is exactly `--mb-gutter` wide.** Every strip starts where it ends and the axis
-   offsets itself by the same variable, so the box has to include its own padding and border
-   (`box-sizing: border-box`). With the default content-box the axis sat eleven pixels left of the
-   marbles it labels.
-2. **A column is one x.** Marbles are positioned from `marbleAxis`, and the axis labels are positioned
-   from the same table, so a test can ask the document and the DOM the same question: every marble is
-   within a pixel of its own column's label, marbles sharing a column share an x, marbles per column
-   equal the document's events per column, and no pitch is below one column or above the cap.
+1. **The layout abstraction is a track list.** `marbleTracks(axis)` returns the column tracks — the
+   pad, one track per gap between columns, and the room past the last one — and the axis row and every
+   lane strip are CSS grids over that one list (`--mb-tracks`). Column `tick` starts at grid line
+   `tick + 2`, a marble is a grid item on that line, and a `translateX(-50%)` centres its own box on
+   it. So a marble is on its column because the column *is* one, not because two pieces of arithmetic
+   agreed; the surface holds no column position number beyond a stack offset. The axis reaches the
+   same grid through a leading box that shares its width and box model with the lane gutters
+   (`--mb-gutter`, `box-sizing: border-box`) — with the default content-box the axis sat eleven pixels
+   left of the marbles it labels.
+2. **A column is one x.** The tracks are the axis geometry, so a test can ask the document and the DOM
+   the same question: the prefix sum of the tracks is where `marbleAxis` put the column, every strip
+   measures the axis's own template, every marble is within a pixel of its own column's label, marbles
+   sharing a column share an x, marbles per column equal the document's events per column, and no
+   pitch is below one column or above the cap. No axis label overlaps its neighbour either, which is
+   why the unit is stated once in the legend instead of on every label.
+3. **An edge starts on the marble it came from.** The anchor is the drawn glyph's centre, measured
+   against the same container the edge overlay is positioned from, so a value above a marble and a
+   note below it cannot move where its edges attach. Both ends are asserted: an edge that lands a
+   gutter to the right of its own event, or half a note's height above it, points at the wrong turn.
 
 Subscriptions live in `5_render.ts` and nowhere else in the package: a renderer is a boundary,
 because it owns nodes and has to release them.
 
 ## Theming
 
-`--mb-*` variables, two cascade layers, no `!important`. Every layout number is a variable and the
-renderer writes `--mb-gutter` from the same constant it measures with, so a host that overrides it
-moves the strips and the axis together.
+`--mb-*` variables, two cascade layers, no `!important`. Every layout number is a variable: the
+renderer writes `--mb-tracks` from `marbleTracks(axis)` and `--mb-gutter` from the constant it
+measures with, so a host that overrides either moves the strips and the axis together.
 
 ## Run
 

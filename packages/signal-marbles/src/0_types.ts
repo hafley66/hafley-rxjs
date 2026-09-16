@@ -281,6 +281,8 @@ export type MarbleAxis = {
 export const AXIS_PITCH = 26
 /** Six columns of pitch. Past this the axis breaks and carries the real milliseconds instead. */
 export const AXIS_MAX_PITCH = AXIS_PITCH * 6
+/** Room at both ends of a strip, so a marble on the first or last column is not half off it. */
+export const AXIS_PAD = 16
 
 /**
  * The axis honours time up to a threshold: every turn gets its own column, and the width between
@@ -325,4 +327,20 @@ export function marbleAxis(doc: MarbleDoc, options: { pitch?: number; maxPitch?:
   }
 
   return { columns, unitMs, width: x + pitch }
+}
+
+/**
+ * The column tracks, as CSS grid track widths: the pad, one track per gap between columns, and the
+ * room past the last column. Column `tick` therefore starts at grid line `tick + 2`, so a surface
+ * that lays its axis and its lane strips out over this one list cannot put a marble off its column:
+ * the alignment is the track list, not arithmetic done twice.
+ *
+ * The tracks sum to `width + 2 * pad` — the same strip the pixels used to be computed for.
+ */
+export function marbleTracks(axis: MarbleAxis, options: { pad?: number } = {}): number[] {
+  const pad = options.pad ?? AXIS_PAD
+  const last = axis.columns[axis.columns.length - 1]
+  // `width` already reserves one pitch past the last column; that slack is the trailing track.
+  const trailing = axis.width - (last?.x ?? 0)
+  return [pad, ...axis.columns.slice(1).map(column => column.pitch ?? 0), trailing + pad]
 }

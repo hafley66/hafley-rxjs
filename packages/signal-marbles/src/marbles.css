@@ -18,6 +18,9 @@
 	/* Layout constants in CSS are fallbacks for a stylesheet-only consumer: the renderer writes
      `--mb-gutter` inline from the same number it measures with, so the two cannot drift. */
 	--mb-gutter: 168px;
+	/* The column tracks. The renderer replaces this with one track per gap between columns, which
+	   is what puts a marble on its column; without it there is nothing to align to. */
+	--mb-tracks: max-content;
 	--mb-radius: 10px;
 	--mb-font: ui-monospace, SFMono-Regular, Menlo, monospace;
 	color: var(--mb-ink);
@@ -266,9 +269,8 @@
 		justify-content: center;
 		/* Every strip starts where this box ends, so the box has to be exactly `--mb-gutter` wide:
 		   with the default content-box, the padding and the border landed outside it and the axis —
-		   which offsets itself by the same variable — drifted a gutter-width minus eleven pixels. */
-		box-sizing: border-box;
-		flex: 0 0 var(--mb-gutter);
+		   which offsets itself by the same variable — drifted a gutter-width minus eleven pixels.
+		   The width and the box model now live in one shared rule with the axis's own gutter box. */
 		padding-right: 10px;
 		background: var(--mb-surface);
 		color: var(--mb-muted);
@@ -290,8 +292,12 @@
 		white-space: nowrap;
 	}
 
-	/* The rail every lane's marbles sit on. */
+	/* The strip is a grid over the document's column tracks, and the axis below it is the same grid:
+	   a marble sits on its column because the column is a track, not because two numbers agreed. */
 	.mb-strip {
+		display: grid;
+		grid-template-columns: var(--mb-tracks);
+		align-items: center;
 		position: relative;
 		flex: 0 0 auto;
 		background-image: linear-gradient(var(--mb-gridline), var(--mb-gridline));
@@ -301,9 +307,14 @@
 	}
 
 	.mb-marble {
-		position: absolute;
-		top: 50%;
-		transform: translate(-50%, -50%);
+		position: relative;
+		justify-self: start;
+		align-self: center;
+		grid-row: 1;
+		/* The box is its content and never the track (a track is the gap between two columns); the
+		   transform then puts the box's own centre on the line its column starts at. */
+		width: max-content;
+		transform: translateX(-50%);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -415,17 +426,39 @@
 		color: var(--mb-accent);
 	}
 
-	.mb-axis {
-		position: relative;
-		height: 26px;
-		border-top: 1px solid var(--mb-border);
+	.mb-axis-row {
+		display: flex;
+		align-items: stretch;
 		width: max-content;
 		min-width: 100%;
 	}
 
+	/* One rule for both leading boxes. The axis used to offset itself by a margin, which is what let
+	   its columns drift a padding box away from the strips it describes. */
+	.mb-gutter,
+	.mb-axis-gutter {
+		box-sizing: border-box;
+		flex: 0 0 var(--mb-gutter);
+	}
+
+	.mb-axis-gutter {
+		border-right: 1px solid var(--mb-border);
+	}
+
+	.mb-axis {
+		display: grid;
+		grid-template-columns: var(--mb-tracks);
+		height: 26px;
+		border-top: 1px solid var(--mb-border);
+		min-width: 100%;
+	}
+
 	.mb-tick {
-		position: absolute;
-		top: 3px;
+		position: relative;
+		justify-self: start;
+		grid-row: 1;
+		width: max-content;
+		margin-top: 3px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -452,9 +485,12 @@
 	/* The axis refused to draw this much time: the real milliseconds travel with the break, on their
 	   own line, because the column's own milliseconds are already printed above it. */
 	.mb-break {
-		position: absolute;
-		top: 0;
-		bottom: 0;
+		position: relative;
+		justify-self: start;
+		align-self: stretch;
+		grid-row: 1;
+		/* Zero width: the border is the line itself, and the label hangs off it. */
+		width: 0;
 		padding-left: 4px;
 		border-left: 1px dashed var(--mb-cursor);
 		color: var(--mb-cursor);

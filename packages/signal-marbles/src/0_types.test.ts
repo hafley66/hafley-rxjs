@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   AXIS_MAX_PITCH,
+  AXIS_PAD,
   AXIS_PITCH,
   describeLane,
   describeMarbleDoc,
@@ -18,6 +19,7 @@ import {
   marbleChain,
   marbleColumnCount,
   marbleEdges,
+  marbleTracks,
   normalizeMarbleDoc,
 } from "./0_types.js"
 
@@ -109,6 +111,22 @@ describe("the axis", () => {
     expect(last?.frame).toBe(300)
     expect(axis.width).toBeGreaterThan(last?.x ?? 0)
     expect(axis.width).toBeGreaterThanOrEqual((last?.x ?? 0) + AXIS_PITCH)
+  })
+
+  it("lays the columns out as tracks, so line `tick + 2` is the column's own position", () => {
+    const axis = marbleAxis(doc([0, 10, 20, 30]))
+    const tracks = marbleTracks(axis)
+
+    expect(tracks).toEqual([AXIS_PAD, AXIS_PITCH, AXIS_PITCH, AXIS_PITCH, AXIS_PITCH + AXIS_PAD])
+    // Whatever the tracks are, they have to put every column where the axis said it was: the sum of
+    // the tracks before a column, minus the pad, is that column's x. That is the whole contract the
+    // surface relies on, and an off-by-one track list is exactly how it broke last time.
+    let x = 0
+    for (const column of axis.columns) {
+      expect(x).toBe(column.x)
+      x += tracks[column.tick + 1] ?? 0
+    }
+    expect(tracks.reduce((total, width) => total + width, 0)).toBe(axis.width + 2 * AXIS_PAD)
   })
 })
 

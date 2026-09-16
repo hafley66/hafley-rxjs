@@ -4,7 +4,7 @@ import { interval } from "rxjs"
 import { describe, expect, it } from "vitest"
 import { page } from "vitest/browser"
 import { marbleDoc } from "./0_document.js"
-import { AXIS_MAX_PITCH, AXIS_PITCH, type MarbleDoc } from "./0_types.js"
+import { AXIS_MAX_PITCH, AXIS_PAD, AXIS_PITCH, type MarbleDoc, marbleAxis } from "./0_types.js"
 import { runMarbleDemo } from "./2_run.js"
 import { createMarblePlayer, type MarblePlayer } from "./4_player.js"
 import { renderMarbles } from "./5_render.js"
@@ -164,10 +164,12 @@ describe("renderMarbles", () => {
     unsubscribe()
   })
 
-  it("prints the milliseconds every column sits at, and breaks the axis where it refused to draw", () => {
-    const { host, unsubscribe } = mount("axis", AUTHORED)
-    const ms = [...host.querySelectorAll<HTMLElement>(".mb-tick-ms")].map(node => node.textContent)
-    expect(ms.slice(0, 5)).toEqual(["0ms", "1ms", "2ms", "302ms", "303ms"])
+  it("prints the time every column sits at, and breaks the axis where it refused to draw", () => {
+    const { host, player, unsubscribe } = mount("axis", AUTHORED)
+    // The number, not the unit: the unit is stated once in the legend, because `305ms` is wider than
+    // a compressed column and repeating it put two labels on top of each other.
+    const labels = [...host.querySelectorAll<HTMLElement>(".mb-tick-ms")].map(node => Number(node.textContent))
+    expect(labels).toEqual(player.doc.$().columns)
     const breaks = [...host.querySelectorAll<HTMLElement>(".mb-break")].map(node => node.textContent)
     expect(breaks).toEqual(["+300ms"])
     unsubscribe()
@@ -412,6 +414,87 @@ describe("geometry", () => {
     }
     // Consecutive columns in this document differ by 0ms, 6ms or 12ms, so three pitches at most.
     expect(new Set(gaps.map(gap => Math.round(gap))).size).toBeLessThanOrEqual(3)
+    unsubscribe()
+  })
+
+  it("lays the axis and every lane strip out over one track list, and the tracks are the axis geometry", () => {
+    const { host, player, unsubscribe } = mount("geometry-tracks", RUN)
+    const axis = host.querySelector<HTMLElement>(".mb-axis")
+    expect(axis).not.toBeNull()
+    if (axis === null) return
+    const template = getComputedStyle(axis).gridTemplateColumns
+    const tracks = template.split(/\s+/).map(Number.parseFloat)
+    const strips = [...host.querySelectorAll<HTMLElement>(".mb-strip")]
+    expect(strips.length).toBeGreaterThan(2)
+    // A strip with a track list of its own is a strip that can disagree with the axis: this is the
+    // assertion that says the alignment is structural rather than two calculations agreeing.
+    for (const strip of strips) expect(getComputedStyle(strip).gridTemplateColumns).toBe(template)
+    // And the tracks are the document's own geometry — pad, then one track per gap between columns —
+    // so where the grid puts column `tick` is where `marbleAxis` said it was.
+    let offset = 0
+    for (const column of marbleAxis(player.doc.$()).columns) {
+      offset += tracks[column.tick] ?? 0
+      expect(Math.abs(offset - (AXIS_PAD + column.x))).toBeLessThanOrEqual(0.5)
+    }
+    unsubscribe()
+  })
+
+  it("keeps every axis label clear of its neighbour, compressed axis included", () => {
+    for (const [testId, doc] of [
+      ["geometry-labels-dense", AUTHORED],
+      ["geometry-labels-roomy", RUN],
+    ] as const) {
+      const { host, unsubscribe } = mount(testId, doc)
+      const boxes = [...host.querySelectorAll<HTMLElement>(".mb-tick")]
+        .map(node => node.getBoundingClientRect())
+        .sort((left, right) => left.left - right.left)
+      expect(boxes.length).toBeGreaterThan(1)
+      for (let index = 1; index < boxes.length; index += 1) {
+        // `305ms` on a 26px column is how this broke: the unit was on every label.
+        expect((boxes[index]?.left ?? 0) - (boxes[index - 1]?.right ?? 0)).toBeGreaterThan(-1)
+      }
+      unsubscribe()
+    }
+  })
+
+  it("attaches every edge to the glyph of the marble it came from, in that marble's own column", () => {
+    const { host, unsubscribe } = mount("geometry-edges", RUN)
+    const svg = host.querySelector<SVGSVGElement>(".mb-edges")
+    expect(svg).not.toBeNull()
+    if (svg === null) return
+    const svgBox = svg.getBoundingClientRect()
+    const paths = [...host.querySelectorAll<SVGPathElement>("path.mb-edge")]
+    expect(paths.length).toBeGreaterThan(3)
+    for (const path of paths) {
+      const points = (path.getAttribute("d") ?? "").match(/-?[\d.]+/g)?.map(Number) ?? []
+      expect(points.length).toBeGreaterThanOrEqual(8)
+      const start = { x: (points[0] ?? 0) + svgBox.left, y: (points[1] ?? 0) + svgBox.top }
+      const end = {
+        x: (points[points.length - 2] ?? 0) + svgBox.left,
+        y: (points[points.length - 1] ?? 0) + svgBox.top,
+      }
+      // An edge that starts a gutter to the right of its marble, or a note's height above it, is an
+      // edge a reader follows to the wrong turn — which is exactly how this looked on the demo.
+      const drawn = (selector: string): { x: number; y: number } | null => {
+        const marble = host.querySelector<HTMLElement>(selector)
+        if (marble === null) return null
+        return centreOf(marble.querySelector<HTMLElement>(".mb-dot, .mb-bar, .mb-caret, .mb-cut") ?? marble)
+      }
+      const source = drawn(`.mb-marble[data-marble="${path.dataset.from}"]`)
+      expect(source, `no marble drawn for ${path.dataset.from}`).not.toBeNull()
+      if (source !== null) {
+        expect(Math.abs(source.x - start.x)).toBeLessThanOrEqual(1)
+        expect(Math.abs(source.y - start.y)).toBeLessThanOrEqual(1)
+      }
+      const target =
+        drawn(`.mb-marble[data-marble="${path.dataset.to}"]`) ??
+        drawn(`.mb-lane[data-lane="${path.dataset.to}"] .mb-marble[data-kind="subscribe"]`)
+      expect(target, `no marble drawn for ${path.dataset.to}`).not.toBeNull()
+      if (target !== null) {
+        expect(Math.abs(target.x - end.x)).toBeLessThanOrEqual(1)
+        expect(Math.abs(target.y - end.y)).toBeLessThanOrEqual(1)
+      }
+    }
     unsubscribe()
   })
 

@@ -13,6 +13,7 @@
 //   4. a column readout says, in words, what is happening on the column the reveal is standing on
 import { combineLatest, type Subscription, skip } from "rxjs"
 import {
+  AXIS_PAD,
   AXIS_PITCH,
   describeLane,
   describeMarbleDoc,
@@ -27,12 +28,11 @@ import {
   marbleAxis,
   marbleColumnCount,
   marbleEdges,
+  marbleTracks,
 } from "./0_types.js"
 import type { MarbleLaneView, MarblePlayer } from "./4_player.js"
 
 const GUTTER = 168
-/** Room at both ends of a strip, so a marble on the first or last column is not half off it. */
-const PAD = 16
 const BASE_ROW = 34
 const NOTE_ROOM = 30
 const STACK_STEP = 13
@@ -59,19 +59,6 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, te
   node.className = className
   if (text !== undefined) node.textContent = text
   return node
-}
-
-/** Offset of a node inside a container, following offset parents rather than scroll offsets. */
-function positionIn(node: HTMLElement, container: HTMLElement): { x: number; y: number } {
-  let x = 0
-  let y = 0
-  let cursor: HTMLElement | null = node
-  while (cursor !== null && cursor !== container) {
-    x += cursor.offsetLeft
-    y += cursor.offsetTop
-    cursor = cursor.offsetParent as HTMLElement | null
-  }
-  return { x, y }
 }
 
 /** How many marbles share a column anywhere in this lane, which is how tall the lane has to be. */
@@ -174,8 +161,13 @@ export function renderMarbles(player: MarblePlayer, host: HTMLElement): MarbleRe
   edges.setAttribute("class", "mb-edges")
   edges.setAttribute("aria-hidden", "true")
   lanes.append(edges)
+  // The axis starts where every strip starts, because its leading box is the same box the lane
+  // gutters are: one rule, one width, no margin arithmetic to drift by a padding box.
+  const axisRow = el("div", "mb-axis-row")
+  const axisGutter = el("div", "mb-axis-gutter")
   const axis = el("div", "mb-axis")
-  scroll.append(lanes, axis)
+  axisRow.append(axisGutter, axis)
+  scroll.append(lanes, axisRow)
 
   const documentBox = el("details", "mb-document")
   documentBox.append(el("summary", "mb-document-summary", "document"))
@@ -205,6 +197,11 @@ export function renderMarbles(player: MarblePlayer, host: HTMLElement): MarbleRe
   legendItem("truncate", "cut", "window closed")
   legendItem(null, "break", "time the axis refused to draw")
   legendItem(null, "edge", "the event this came from")
+  // The unit is stated once here rather than on every column: repeated, it is what pushed two
+  // compressed labels into each other.
+  const units = el("span", "mb-legend-item")
+  units.append(el("span", "mb-legend-label", "axis: t = turn, number = ms"))
+  legend.append(units)
 
   root.append(head, legend, panel, scroll, documentBox)
   host.replaceChildren(root)
@@ -218,7 +215,8 @@ export function renderMarbles(player: MarblePlayer, host: HTMLElement): MarbleRe
   let laneBirthTick = new Map<string, number>()
   let axisTicks = new Map<number, HTMLElement>()
 
-  const xAt = (tick: number): number => PAD + (geometry.columns[tick]?.x ?? 0)
+  /** The grid line a column sits on: the pad, then one track per gap before it. */
+  const columnLine = (tick: number): string => `${tick + 2} / span 1`
 
   const revealedTick = (revealed: number | "all"): number =>
     revealed === "all" ? marbleColumnCount(player.doc.$()) - 1 : revealed
@@ -341,9 +339,12 @@ export function renderMarbles(player: MarblePlayer, host: HTMLElement): MarbleRe
       if (!source) return
       const target = byEvent.get(edge.to) ?? laneNodes.get(edge.to)
       if (!target) return
-      const x1 = GUTTER + source.x
+      // Marble anchors are measured against the lanes container, so they are in the overlay's own
+      // coordinates. Adding the gutter here — as this did — put every edge a gutter to the right of
+      // the marble it came from, which is what the demo showed as ticks that do not line up.
+      const x1 = source.x
       const y1 = source.y
-      const x2 = GUTTER + target.x
+      const x2 = target.x
       const y2 = target.y
       // A cubic that leaves the source vertically and arrives at the target vertically reads as a
       // dependency whether the two lanes are adjacent or far apart.
@@ -367,54 +368,57 @@ export function renderMarbles(player: MarblePlayer, host: HTMLElement): MarbleRe
   const layout = (): void => {
     const doc = player.doc.$()
     geometry = marbleAxis(doc)
-    const width = geometry.width + 2 * PAD
-    for (const entry of strips) entry.strip.style.width = `${width}px`
+    // One track list, read by the axis and by every strip. A marble is on its column because the
+    // column is a track, not because two pieces of arithmetic agreed.
+    const tracks = marbleTracks(geometry, { pad: AXIS_PAD })
+      .map(width => `${width}px`)
+      .join(" ")
+    scroll.style.setProperty("--mb-tracks", tracks)
 
-    // Axis: one label per column, because the column IS the unit. Dense runs keep the milliseconds.
-    // The labels are absolutely positioned, so the gutter offset has to be a margin (the containing
-    // block an abspos child measures from is the padding box: padding would not move them) and the
-    // axis has to be exactly as wide as a strip, or the two disagree by the gutter.
+    // Axis: one label per column, because the column IS the unit. The numbers are bare and the unit
+    // is stated once in the legend: `305ms` is 31px against a 26px compressed column, so repeating
+    // the unit on every label is what made two neighbours overlap. The column readout above always
+    // says the exact milliseconds of the turn the reveal is standing on.
     axis.replaceChildren()
     axisTicks = new Map()
-    axis.style.marginLeft = `${GUTTER}px`
-    axis.style.width = `${width}px`
-    axis.style.minWidth = `${width}px`
     const dense = geometry.columns.length > 1 && (geometry.columns[1]?.pitch ?? AXIS_PITCH) < 30
     for (const column of geometry.columns) {
       if (column.compressedMs !== null) {
         const mark = el("span", "mb-break")
         mark.append(el("span", "mb-break-label", `+${column.compressedMs}ms`))
-        mark.style.left = `${xAt(column.tick)}px`
+        mark.style.gridColumn = columnLine(column.tick)
         axis.append(mark)
       }
     }
     for (const column of geometry.columns) {
       if (column.events === 0 && column.tick !== 0 && column.compressedMs === null) continue
       const tick = el("span", "mb-tick")
-      tick.style.left = `${xAt(column.tick)}px`
+      tick.style.gridColumn = columnLine(column.tick)
       tick.append(el("span", "mb-tick-number", dense ? "" : `t${column.tick}`))
-      tick.append(el("span", "mb-tick-ms", `${column.frame}ms`))
+      tick.append(el("span", "mb-tick-ms", `${column.frame}`))
       axis.append(tick)
       axisTicks.set(column.tick, tick)
     }
 
-    for (const entry of placed) {
-      entry.node.style.left = `${xAt(entry.notification.tick)}px`
-      const position = positionIn(entry.node, lanes)
-      entry.x = position.x
-      entry.y = position.y
-    }
+    measure()
     drawEdges(doc)
     applyReveal(player.revealed.$())
   }
 
-  /** Marble positions are only valid once the DOM exists, so edges are drawn after every build. */
+  /** Where a marble's edges attach: the centre of the glyph as drawn, not a corner of its box. A value
+   * above a marble and a note below it change the box's size, and a corner anchor would move with the
+   * words instead of with the turn. Read from the drawn box because the marble's own transform is what
+   * centres it, and the lanes container is the origin the edge overlay is positioned from. */
+  const positionOf = (entry: Placed, origin: DOMRect): void => {
+    const glyph = entry.node.querySelector<HTMLElement>(".mb-dot, .mb-bar, .mb-caret, .mb-cut") ?? entry.node
+    const box = glyph.getBoundingClientRect()
+    entry.x = box.left + box.width / 2 - origin.left
+    entry.y = box.top + box.height / 2 - origin.top
+  }
+
   const measure = (): void => {
-    for (const entry of placed) {
-      const position = positionIn(entry.node, lanes)
-      entry.x = position.x
-      entry.y = position.y
-    }
+    const origin = lanes.getBoundingClientRect()
+    for (const entry of placed) positionOf(entry, origin)
   }
 
   const build = (): void => {
@@ -472,8 +476,10 @@ export function renderMarbles(player: MarblePlayer, host: HTMLElement): MarbleRe
           listening.length === 0 ||
             listening.some(window => notification.tick >= window.from && notification.tick <= window.to),
         )
-        // A column carrying several marbles stacks them around the baseline instead of over it.
-        node.style.top = count === 1 ? "50%" : `calc(50% + ${(index - (count - 1) / 2) * STACK_STEP}px)`
+        // The column is a grid line, so the marble cannot be anywhere else; the transform centres
+        // its own box on that line, and one column's stack offset is the only number left.
+        node.style.gridColumn = columnLine(notification.tick)
+        node.style.top = `${(index - (count - 1) / 2) * STACK_STEP}px`
         node.style.zIndex = String(10 - index)
         strip.append(node)
         const entry: Placed = { node, lane: view.lane.id, notification, x: 0, y: 0 }
