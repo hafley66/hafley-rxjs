@@ -145,3 +145,42 @@ describe("the docs site", () => {
     expectOnlyStripMisses(log)
   })
 })
+describe("the board page", () => {
+  test("moves a card, keeps it through a re-anchor, and reloads it where it was left", async ({ log }) => {
+    await $page.goto(url("board"))
+    await $page.evaluate(() => localStorage.removeItem("grapht-board-demo"))
+    await $page.reload({ waitUntil: "load" })
+
+    const card = $page.locator(".board-card").nth(2)
+    const moved = card.locator("code")
+    const itemId = (await moved.textContent())?.trim() ?? ""
+    const box = await card.boundingBox()
+    if (!box) throw new Error("the board drew no card")
+
+    await $page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await $page.mouse.down()
+    await $page.mouse.move(box.x + box.width / 2 + 360, box.y + box.height / 2 + 80, { steps: 10 })
+    await $page.mouse.up()
+
+    // The board says how many items a person has placed, and it is not the whole board.
+    expect(await $page.locator(".board-readout").textContent()).toContain("1 placed")
+    const placedAt = await card.getAttribute("style")
+
+    // An insertion above the fence re-anchors an item; the card a person moved does not care.
+    await $page.locator("button", { hasText: "Insert a block above the fence" }).click()
+    const note = await $page.locator(".board-note").textContent()
+    expect(note).toContain("re-anchored, positions kept")
+    expect(note).toMatch(/[0-9a-f]{6}→[0-9a-f]{6}/)
+    expect(await $page.locator(".board-readout").textContent()).toContain("1 placed")
+    expect(await $page.locator(`[data-item]`, { hasText: itemId }).first().getAttribute("style")).toBe(placedAt)
+
+    // Reload: the position is where it was left, and it is still the only one a person placed.
+    await $page.reload({ waitUntil: "load" })
+    const reloaded = $page.locator(".board-card").nth(2)
+    expect(await reloaded.textContent()).toContain(itemId)
+    expect(await reloaded.getAttribute("style")).toBe(placedAt)
+    expect(await $page.locator(".board-readout").textContent()).toContain("1 placed")
+
+    expectOnlyStripMisses(log)
+  })
+})

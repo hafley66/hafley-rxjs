@@ -24,6 +24,10 @@ export const GROUPS: readonly SiteGroup[] = [
     ],
   },
   {
+    text: "Board",
+    pages: [{ slug: "board", title: "The board", source: "pages/board.md" }],
+  },
+  {
     text: "History",
     pages: [{ slug: "history", title: "The offline journal", source: "pages/history.md" }],
   },
