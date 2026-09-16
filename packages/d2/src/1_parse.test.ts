@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises"
 
 import { describe, expect, test } from "vitest"
 
-import { parseD2Sequence } from "./1_parse"
+import { parseD2Sequence } from "./1_parse.js"
 
 const fixtureDirectory = new URL("../../../fixtures/sequence/", import.meta.url)
 

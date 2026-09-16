@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises"
 import { indexGraph, validateGraph } from "@hafley66/grapht-model"
 import { describe, expect, test } from "vitest"
-import { parseD2Sequence } from "./1_parse"
-import { d2Graph } from "./5_graph"
+import { parseD2Sequence } from "./1_parse.js"
+import { d2Graph } from "./5_graph.js"
 
 const fixtureDirectory = new URL("../../../fixtures/sequence/", import.meta.url)
 

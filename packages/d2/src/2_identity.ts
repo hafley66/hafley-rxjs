@@ -5,7 +5,7 @@ import {
   type SequenceOccurrenceDocument,
   type SequenceRelation,
 } from "@hafley66/grapht-model"
-import type { D2Edge, D2Group, D2Note, D2SequenceDocument, D2Statement } from "./0_types"
+import type { D2Edge, D2Group, D2Note, D2SequenceDocument, D2Statement } from "./0_types.js"
 
 function actorStructuralKey(id: string): string {
   return `actor:${id}`

@@ -5,9 +5,9 @@ import { join } from "node:path"
 import { promisify } from "node:util"
 
 import { documentFingerprint, type NativeSvgElement, type SequenceSourceAdapter } from "@hafley66/grapht-model"
-import { parseD2Sequence } from "./1_parse"
-import { identifyD2Occurrences } from "./2_identity"
-import { bindD2Svg } from "./3_bindSvg"
+import { parseD2Sequence } from "./1_parse.js"
+import { identifyD2Occurrences } from "./2_identity.js"
+import { bindD2Svg } from "./3_bindSvg.js"
 
 const execFileAsync = promisify(execFile)
 const rendererOptions = ["--watch=false", "--theme=0", "--layout=dagre", "--pad=100", "--scale=1"]

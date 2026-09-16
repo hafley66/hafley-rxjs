@@ -6,7 +6,7 @@ import {
   SvgBindingBuilder,
   type SvgBindingReceipt,
 } from "@hafley66/grapht-model"
-import type { D2SequenceDocument } from "./0_types"
+import type { D2SequenceDocument } from "./0_types.js"
 
 function firstDescendant(
   receipt: NativeRenderReceipt,

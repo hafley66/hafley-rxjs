@@ -10,7 +10,7 @@ import type {
   D2SourceSpan,
   D2Span,
   D2Statement,
-} from "./0_types"
+} from "./0_types.js"
 
 type SourceLine = {
   text: string
