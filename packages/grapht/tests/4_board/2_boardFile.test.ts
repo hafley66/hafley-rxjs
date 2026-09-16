@@ -139,15 +139,21 @@ test("refuses a file that is not a board", async () => {
   })
 })
 
-test("refuses a board whose own validation fails", async () => {
+test("reads a board nobody has gestured, and refuses one that is actually wrong", async () => {
   await inTempDirectory(async directory => {
     const documentPath = join(directory, "example.md")
-    const unplaced = await boardFromDocuments("board-1", [read(documentPath, TEXT)])
+    const board = await boardFromDocuments("board-1", [read(documentPath, TEXT)])
     const path = boardPathFor(documentPath)
-    await writeFile(path, printBoard(unplaced), "utf8")
 
+    // An item with no placement is a young board, not a broken one: it still reads back.
+    await writeFile(path, printBoard(board), "utf8")
+    expect(readBoardFile(path)).toEqual(board)
+
+    // A placement for an item the board does not hold is broken, and says so by name.
+    const wrong = { ...board, placements: [{ itemId: "not-an-item", x: 0, y: 0, z: 0 }] }
+    await writeFile(path, printBoard(wrong), "utf8")
     const refusal = refusalOf(path)
     expect(refusal).toContain(path)
-    expect(refusal).toContain("item-without-placement")
+    expect(refusal).toContain("placement-without-item not-an-item")
   })
 })

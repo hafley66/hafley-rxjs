@@ -77,10 +77,9 @@ describe("board", () => {
     expect(board.items).toHaveLength(document.blocks.length)
     expect(blocksOf(board).every(item => item.itemId === item.address.locatorHash)).toBe(true)
     expect(board.sources.map(source => source.path)).toEqual(["docs/example.md"])
-    // Nothing has been placed yet, and the board says so for every item rather than staying quiet.
-    expect(validateBoard(board).map(anomaly => anomaly.kind)).toEqual(
-      document.blocks.map(() => "item-without-placement"),
-    )
+    // A board nobody has gestured is not a broken board: an unplaced item is a normal state, and
+    // `boardFrame` decides where it draws.
+    expect(validateBoard(board)).toEqual([])
   })
 
   test("keeps two documents' blocks apart, because the path is in the locator", async () => {
@@ -189,7 +188,6 @@ describe("board", () => {
           { itemId: "not-an-item", x: 0, y: 0, z: 0 },
         ],
       })
-        .filter(anomaly => anomaly.kind !== "item-without-placement")
         .map(anomaly => anomaly.kind)
         .sort(),
     ).toEqual(["duplicate-placement", "duplicate-source", "placement-without-item"].sort())

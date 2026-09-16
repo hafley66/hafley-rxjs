@@ -209,9 +209,14 @@ export async function reconcileBoard(previous: Board, documents: readonly MdDocu
 }
 
 /**
- * What is wrong with a board, named. A placement for an item that is not there, an item nobody
- * placed, a source listed twice, two items under one id, an item claiming a document the sources do
- * not name. Reading is when a board is checked; drawing it is not the place to discover this.
+ * What is wrong with a board, named. A placement for an item that is not there, a source listed
+ * twice, two items under one id, an item claiming a document the sources do not name. Reading is
+ * when a board is checked; drawing it is not the place to discover this.
+ *
+ * An item nobody has placed is **not** in here. A board is written before it is gestured — the
+ * projection makes an item per block and a person places the few they care about — so an unplaced
+ * item is a young board, not a broken one, and `boardFrame` already decides where such an item
+ * draws. Listing it would make every board written in practice unreadable.
  */
 export function validateBoard(board: Board): BoardAnomaly[] {
   const anomalies: BoardAnomaly[] = []
@@ -229,10 +234,6 @@ export function validateBoard(board: Board): BoardAnomaly[] {
     placed.add(placement.itemId)
     if (!ids.has(placement.itemId)) anomalies.push({ kind: "placement-without-item", detail: placement.itemId })
   }
-  for (const item of board.items) {
-    if (!placed.has(item.itemId)) anomalies.push({ kind: "item-without-placement", detail: item.itemId })
-  }
-
   const paths = new Set<string>()
   for (const source of board.sources) {
     if (paths.has(source.path)) anomalies.push({ kind: "duplicate-source", detail: source.path })
