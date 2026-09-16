@@ -39,6 +39,7 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "biome check src",
+    "test:semaphore": "vitest run --config vitest.semaphore.config.ts",
     "test": "vitest run",
     "check": "pnpm run receipts",
     "receipts": "pnpm lint && pnpm typecheck && pnpm build && pnpm test",
@@ -46,8 +47,10 @@
   },
   "dependencies": {
     "@hafley66/signals": "workspace:*",
+    "@types/proper-lockfile": "^4.1.4",
     "@vitest/runner": "4.1.11",
     "playwright": "1.62.1",
+    "proper-lockfile": "^4.1.2",
     "rxjs": "^7.8.2"
   },
   "peerDependencies": {

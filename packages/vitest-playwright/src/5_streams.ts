@@ -29,6 +29,7 @@ import { vi } from "vitest"
 import type { ResolvedOptions } from "./0_options.js"
 import type { ApiEvent, AttemptEvent, NetEvent, TestRoot } from "./6_roots.js"
 import { als } from "./6_roots.js"
+import { slot$ } from "./13_semaphore.js"
 
 /** node: timers captured before any test can fake them. */
 export const real = {
@@ -93,15 +94,30 @@ export function acquire<T>(src$: Observable<Resource<T>>): Promise<Handle<T>> {
   })
 }
 
-// pwp:pw-browser pwp:pw-launch0 pwp:pw-launchopts pwp:pw-sema: one browser per worker; resource$ has no timeout; no slot acquired before launch
+// pwp:pw-browser pwp:pw-launch0 pwp:pw-launchopts pwp:pw-sema: one browser per worker; a slot is acquired before
+// launch and released after close (slot$ keys the same dir the run-level queue uses, so the two compose)
 export function browser$(o: ResolvedOptions): Observable<Resource<Browser>> {
   const type = playwright[o.browser.name]
-  return resource$(
-    () =>
-      o.browser.connect
-        ? type.connect(o.browser.connect.wsEndpoint, { headers: o.browser.connect.headers })
-        : type.launch({ handleSIGINT: false, ...o.browser.launch }),
-    b => b.close({ reason: "vitest worker end" }),
+  return slot$(o.semaphore).pipe(
+    switchMap(slot =>
+      resource$(
+        async () => {
+          try {
+            return o.browser.connect
+              ? await type.connect(o.browser.connect.wsEndpoint, { headers: o.browser.connect.headers })
+              : await type.launch({ handleSIGINT: false, ...o.browser.launch })
+          } catch (e) {
+            // A launch that never happened still holds the slot, so it is freed before the error leaves.
+            await slot.value.release()
+            throw e
+          }
+        },
+        async b => {
+          await b.close({ reason: "vitest worker end" })
+          await slot.value.release()
+        },
+      ),
+    ),
   )
 }
 

@@ -1,8 +1,11 @@
 // pkg:options. Data only: everything here crosses vitest:provide (structured clone) into workers,
 // except `serve`, which only the vitest:globalSetup process reads (through process.env).
-import { workerBudget } from "./12_budget.js"
+
+import { homedir } from "node:os"
+import { join } from "node:path"
 import type { BrowserContextOptions, LaunchOptions } from "playwright"
 import type { InlineConfig } from "vite"
+import { workerBudget } from "./12_budget.js"
 
 export type BrowserName = "chromium" | "firefox" | "webkit"
 export type ScreenshotMode = "off" | "on" | "only-on-failure"
@@ -60,6 +63,10 @@ export interface VitestPlaywrightOptions {
    *  time from available memory and idle cores, floored at 1. Every worker launches a browser, and vitest's own
    *  default (cores - 1) puts that many chromiums on the host at t=0. A number or a "25%" string pins it. */
   workers?: number | `${number}%`
+  /** Machine-wide browser slots: a worker acquires one `proper-lockfile` lock file under `dir` before launch and
+   *  holds it until the browser closes. `slots` defaults to `workerBudget().workers`, floored at 1; `dir` defaults
+   *  to `~/.cache/hafley-rxjs/slots`, the directory the run-level queue (`scripts/browser-queue.mjs`) keys on. */
+  semaphore?: { slots?: number; dir?: string; staleMs?: number }
 }
 
 export interface ResolvedOptions {
@@ -81,6 +88,8 @@ export interface ResolvedOptions {
   serveKind?: ServeOptions["kind"]
   testIdAttribute: string
   workers: number | `${number}%`
+  /** Machine-wide browser slots, resolved at config time in the controller. */
+  semaphore: { slots: number; dir: string; staleMs: number }
 }
 
 /** vitest:provide serializes into workers; a function-valued option would silently vanish there. */
@@ -146,6 +155,12 @@ export function resolveOptions(o: VitestPlaywrightOptions = {}): ResolvedOptions
     testIdAttribute: o.testIdAttribute ?? "data-testid",
     // pwp:pw-workers pwp:pw-debug1 pwp:pw-connect-env: workers from the host budget; no debug=1 rule, no PW_TEST_CONNECT_WS_ENDPOINT read
     workers: o.workers ?? Math.max(1, workerBudget().workers),
+    // pwp:pw-sema: slots default to the host budget, floored at 1; dir and stale mirror the run-level queue
+    semaphore: {
+      slots: Math.max(1, o.semaphore?.slots ?? workerBudget().workers),
+      dir: o.semaphore?.dir ?? join(homedir(), ".cache", "hafley-rxjs", "slots"),
+      staleMs: o.semaphore?.staleMs ?? 10 * 60 * 1000,
+    },
   }
 }
 
