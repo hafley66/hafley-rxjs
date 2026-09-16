@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
-import { diff } from "./1_diff"
-import { geometryOf } from "./2_geometry"
-import { easeInOutCubic, linear, tween } from "./3_tween"
+import { diff } from "./1_diff.js"
+import { geometryOf } from "./2_geometry.js"
+import { easeInOutCubic, linear, tween } from "./3_tween.js"
 
 const from = geometryOf(
   ["a", "b"],

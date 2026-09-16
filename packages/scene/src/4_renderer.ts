@@ -1,5 +1,5 @@
 import { defer, finalize, tap } from "rxjs"
-import type { Frame, Renderer } from "./0_types"
+import type { Frame, Renderer } from "./0_types.js"
 
 export type RendererResource<T> = {
   render(value: T): void

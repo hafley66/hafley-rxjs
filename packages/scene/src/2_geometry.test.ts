@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { boundsOf, geometryOf, indexOf, pointOf } from "./2_geometry"
+import { boundsOf, geometryOf, indexOf, pointOf } from "./2_geometry.js"
 
 const g = geometryOf(
   ["a", "b", "c"],

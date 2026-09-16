@@ -10,8 +10,8 @@ import {
   switchMap,
   tap,
 } from "rxjs"
-import type { Diff, Frame, Geometry, Layout, Scene, Tween } from "./0_types"
-import { diff, enterAll } from "./1_diff"
+import type { Diff, Frame, Geometry, Layout, Scene, Tween } from "./0_types.js"
+import { diff, enterAll } from "./1_diff.js"
 
 const keepAllCache = new WeakMap<Scene, Diff>()
 const keepAll = (scene: Scene): Diff => {

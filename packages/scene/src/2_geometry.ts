@@ -1,4 +1,4 @@
-import type { Geometry, Id } from "./0_types"
+import type { Geometry, Id } from "./0_types.js"
 
 /** Build a geometry from per-id points. Ids missing from `points` land at the origin. */
 export function geometryOf(ids: readonly Id[], points: ReadonlyMap<Id, readonly [number, number]>): Geometry {

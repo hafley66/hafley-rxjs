@@ -1,9 +1,9 @@
 import { from, lastValueFrom, map, of, Subject, toArray } from "rxjs"
 import { describe, expect, it } from "vitest"
-import type { Frame, Layout, Scene } from "./0_types"
-import { geometryOf } from "./2_geometry"
-import { tween } from "./3_tween"
-import { frames, keyframes } from "./5_frames"
+import type { Frame, Layout, Scene } from "./0_types.js"
+import { geometryOf } from "./2_geometry.js"
+import { tween } from "./3_tween.js"
+import { frames, keyframes } from "./5_frames.js"
 
 const scene = (...ids: string[]): Scene => ({
   ...Object.fromEntries(ids.map(id => [id, { id, type: "node" as const }])),

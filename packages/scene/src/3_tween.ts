@@ -1,5 +1,5 @@
-import type { Diff, Geometry, Tween } from "./0_types"
-import { indexOf } from "./2_geometry"
+import type { Diff, Geometry, Tween } from "./0_types.js"
+import { indexOf } from "./2_geometry.js"
 
 export type Easing = (t: number) => number
 

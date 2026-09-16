@@ -1,9 +1,9 @@
 import { Subject } from "rxjs"
 import { describe, expect, it } from "vitest"
-import type { Frame } from "./0_types"
-import { enterAll } from "./1_diff"
-import { geometryOf } from "./2_geometry"
-import { renderer } from "./4_renderer"
+import type { Frame } from "./0_types.js"
+import { enterAll } from "./1_diff.js"
+import { geometryOf } from "./2_geometry.js"
+import { renderer } from "./4_renderer.js"
 
 const frame = (id: string): Frame => ({
   scene: { [id]: { id, type: "node" } },

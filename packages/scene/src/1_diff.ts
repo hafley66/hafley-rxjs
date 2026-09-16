@@ -1,4 +1,4 @@
-import type { Diff, Id } from "./0_types"
+import type { Diff, Id } from "./0_types.js"
 
 const EMPTY: readonly Id[] = Object.freeze([])
 

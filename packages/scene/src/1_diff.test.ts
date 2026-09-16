@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { diff, enterAll, NO_DIFF } from "./1_diff"
+import { diff, enterAll, NO_DIFF } from "./1_diff.js"
 
 describe("diff", () => {
   it("splits keep, enter, exit", () => {
