@@ -12,8 +12,14 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./build": "./src/3_build.mjs",
-    "./pairing": "./src/0_pairing.mjs",
+    "./build": {
+      "types": "./src/3_build.d.mts",
+      "import": "./src/3_build.mjs"
+    },
+    "./pairing": {
+      "types": "./src/0_pairing.d.mts",
+      "import": "./src/0_pairing.mjs"
+    },
     "./dom": "./src/extension/1_dom.ts"
   },
   "files": [
