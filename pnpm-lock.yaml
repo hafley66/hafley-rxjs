@@ -774,8 +774,8 @@ importers:
         specifier: ^11.14.1
         version: 11.14.1(@emotion/react@11.14.0(@types/react@19.2.8)(react@19.2.3))(@types/react@19.2.8)(react@19.2.3)
       '@hafley66/signals':
-        specifier: ^0.0.2
-        version: 0.0.2(react@19.2.3)
+        specifier: workspace:*
+        version: link:../signals
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.11(@mui/material@7.3.11(@emotion/react@11.14.0(@types/react@19.2.8)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.8)(react@19.2.3))(@types/react@19.2.8)(react@19.2.3))(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@types/react@19.2.8)(react@19.2.3)
@@ -1074,8 +1074,8 @@ importers:
   packages/react-dock-and-flow:
     dependencies:
       '@hafley66/signals':
-        specifier: 0.0.2
-        version: 0.0.2(react@19.2.8)
+        specifier: workspace:*
+        version: link:../signals
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.3.11
@@ -2280,14 +2280,6 @@ packages:
 
   '@hafley66/alloy-rs@0.1.0':
     resolution: {integrity: sha512-F73ibBHA6pol4j4PNGDKuSmL2Eczi0ROec0wJS9prgVaAzr0IrG+mXcRGQGmS7SlZHcRUPm3j5oV/0DHbvXOMg==}
-
-  '@hafley66/signals@0.0.2':
-    resolution: {integrity: sha512-+0Brv5hqXHAFYpqv80pO0kqEyo6Msgwt3yAY/V40041w72qBW6/JZGETCqRT59o9IEmC0YkZRlsC4HS5kXdqCw==}
-    peerDependencies:
-      react: '>=18.0.0'
-    peerDependenciesMeta:
-      react:
-        optional: true
 
   '@iconify-json/simple-icons@1.2.95':
     resolution: {integrity: sha512-QwWgcoiL+eNCD38QM0OStFVFoOgDvzeHrcwMAvATvcFl0VvMEtED92qp3K3juS0H6RZ9BGUlgq9mODPwNWkjJg==}
@@ -8079,22 +8071,6 @@ snapshots:
       - '@types/node'
       - bufferutil
       - utf-8-validate
-
-  '@hafley66/signals@0.0.2(react@19.2.3)':
-    dependencies:
-      immer: 10.2.0
-      lodash: 4.18.1
-      rxjs: 7.8.2
-    optionalDependencies:
-      react: 19.2.3
-
-  '@hafley66/signals@0.0.2(react@19.2.8)':
-    dependencies:
-      immer: 10.2.0
-      lodash: 4.18.1
-      rxjs: 7.8.2
-    optionalDependencies:
-      react: 19.2.8
 
   '@iconify-json/simple-icons@1.2.95':
     dependencies:

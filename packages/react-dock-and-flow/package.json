@@ -30,7 +30,7 @@
     "receipts": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build"
   },
   "dependencies": {
-    "@hafley66/signals": "0.0.2"
+    "@hafley66/signals": "workspace:*"
   },
   "peerDependencies": {
     "@xyflow/react": ">=12.0.0",

@@ -41,7 +41,7 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@hafley66/signals": "^0.0.2",
+    "@hafley66/signals": "workspace:*",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
     "@rjsf/core": "^6.7.0",
