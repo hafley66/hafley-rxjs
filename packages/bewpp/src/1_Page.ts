@@ -10,6 +10,7 @@ import type {
   ObservationOptions,
   PageControls,
   PageImage,
+  ScreenshotOptions,
   TabInfo,
 } from "./0_controls.js"
 
@@ -102,6 +103,9 @@ export class ExtensionPage implements PageControls {
   }
   async readStorage(kind: "localStorage" | "sessionStorage", key: string) {
     return this.evaluate<string | null>("(kind, key) => window[kind].getItem(key)", [kind, key])
+  }
+  async screenshot(options: ScreenshotOptions = {}) {
+    return this.rpc.capturePage(this.id, options)
   }
   async snapshotStorage(kind: "localStorage" | "sessionStorage") {
     return this.evaluate<Record<string, string>>("(kind) => Object.fromEntries(Object.entries({ ...window[kind] }))", [

@@ -6,6 +6,7 @@ import { onMessage, sendMessage } from "./0_messaging.js"
 declare const __BEWPP_TOKEN__: string
 declare const __BEWPP_URL__: string
 declare const __BEWPP_MATCHES__: string[]
+declare const __BEWPP_SCREENSHOT__: string
 
 let socket: WebSocket | null = null
 let rpc: BirpcReturn<BridgeEvents, ExtensionCommands> | null = null
@@ -166,6 +167,49 @@ function connect() {
       const result = await injectEngine(tabId, source, frameId)
       engineSources.set(tabId, { source, frameId })
       return result
+    },
+    async capturePage(tabId, options) {
+      if (!(await tabs()).some(tab => tab.id === tabId))
+        throw new Error("Tab is outside the extension’s permitted sites.")
+      await waitForComplete(tabId)
+      const [result] = await chrome.scripting.executeScript({
+        target: { tabId },
+        world: "MAIN",
+        func: async (librarySource: string, settings: { fullPage?: boolean; selector?: string; format?: string }) => {
+          try {
+            const state = globalThis as typeof globalThis & { __bewppShot?: Record<string, unknown> }
+            if (!state.__bewppShot) {
+              const module = { exports: {} as Record<string, unknown> }
+              new Function(
+                "module",
+                "exports",
+                `${librarySource}\n;globalThis.__bewppShot = module.exports.default ?? module.exports;`,
+              )(module, module.exports)
+            }
+            const library = state.__bewppShot as Record<
+              string,
+              (node: Element, options: Record<string, unknown>) => Promise<string>
+            >
+            const node = settings.selector ? document.querySelector(settings.selector) : document.documentElement
+            if (!node) return { ok: false, error: "Screenshot selector did not match." }
+            const common = { pixelRatio: 1, skipFonts: true, cacheBust: true }
+            const options = settings.fullPage
+              ? { ...common, width: node.scrollWidth, height: node.scrollHeight, backgroundColor: "#ffffff" }
+              : common
+            const dataUrl = await (settings.format === "jpeg" ? library.toJpeg : library.toPng)(node, options)
+            return { ok: true, dataUrl }
+          } catch (error) {
+            return { ok: false, error: String((error as Error)?.message ?? error) }
+          }
+        },
+        args: [__BEWPP_SCREENSHOT__, options ?? {}],
+      })
+      const payload = result?.result as { ok: boolean; dataUrl?: string; error?: string } | undefined
+      if (!payload) throw new Error("The page realm returned no screenshot.")
+      if (!payload.ok) throw new Error(payload.error)
+      const [meta, base64] = String(payload.dataUrl).split(",")
+      const mime = meta.slice(meta.indexOf(":") + 1, meta.indexOf(";"))
+      return { mime, base64 }
     },
     async evaluateInPage(tabId, source, args = []) {
       if (!(await tabs()).some(tab => tab.id === tabId))

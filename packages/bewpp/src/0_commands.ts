@@ -83,6 +83,31 @@ export const browserCommandSchema = z.union([
   z.object({ op: z.literal("download"), tabId: tabSchema, url: z.string().min(1).max(16_000) }).strict(),
   z.object({ op: z.literal("navigate"), tabId: tabSchema, url: z.url().max(16_000) }).strict(),
   z.object({ op: z.literal("activate"), tabId: tabSchema }).strict(),
+  z
+    .object({
+      op: z.literal("evaluate"),
+      tabId: tabSchema,
+      source: z.string().min(1).max(200_000),
+      args: z.array(z.unknown()).max(20).default([]),
+    })
+    .strict(),
+  z
+    .object({
+      op: z.literal("storage"),
+      tabId: tabSchema,
+      kind: z.enum(["localStorage", "sessionStorage"]),
+      key: z.string().max(1_000).optional(),
+    })
+    .strict(),
+  z
+    .object({
+      op: z.literal("screenshot"),
+      tabId: tabSchema,
+      fullPage: z.boolean().default(false),
+      selector: z.string().max(1_000).optional(),
+      format: z.enum(["png", "jpeg"]).default("png"),
+    })
+    .strict(),
   observationStartSchema.extend({ op: z.literal("observe"), action: z.literal("start") }),
   observationReadSchema.extend({ op: z.literal("observe"), action: z.literal("read") }),
   z.object({ op: z.literal("observe"), action: z.literal("stop"), tabId: tabSchema }).strict(),

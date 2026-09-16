@@ -54,6 +54,12 @@ export class BrowserControlHost {
         await page.bringToFront()
         return { activated: true }
       }
+      // Page-level operations are not DOM commands: they run in the page realm, not the content script.
+      if (command.op === "evaluate") return page.evaluate(command.source, command.args)
+      if (command.op === "storage")
+        return command.key == null ? page.snapshotStorage(command.kind) : page.readStorage(command.kind, command.key)
+      if (command.op === "screenshot")
+        return page.screenshot({ fullPage: command.fullPage, selector: command.selector, format: command.format })
       const { tabId, ...dom } = command
       // Use the content-script download path, which verifies the image is on this tab.
       return (await page.rpc.execute(tabId, dom)) ?? null

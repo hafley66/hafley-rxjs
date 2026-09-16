@@ -11,7 +11,13 @@ export async function buildExtension({ outDir, token, url, matches, name = "bewp
     throw new Error("bewpp requires a loopback WebSocket URL.")
   if (!outDir || !token || !matches?.length) throw new Error("outDir, token, and site matches are required.")
   mkdirSync(outDir, { recursive: true })
+  // The screenshot rasterizer runs in the page realm, so its bundle travels with the worker.
+  // CommonJS, not IIFE: an IIFE's `var` binding dies with the `new Function` scope that evaluates it.
+  const shot = await rolldown({ input: "html-to-image", platform: "browser", transform: { target: "chrome120" } })
+  const shotOutput = await shot.generate({ format: "cjs", codeSplitting: false })
+  await shot.close()
   const define = {
+    __BEWPP_SCREENSHOT__: JSON.stringify(shotOutput.output[0].code),
     "process.env.NODE_ENV": '"production"',
     __BEWPP_BUILD__: JSON.stringify(randomUUID()),
     __BEWPP_TOKEN__: JSON.stringify(token),

@@ -125,6 +125,8 @@ export interface PageControls {
   evaluate<R = unknown>(source: string, args?: unknown[]): Promise<R>
   readStorage(kind: "localStorage" | "sessionStorage", key: string): Promise<string | null>
   snapshotStorage(kind: "localStorage" | "sessionStorage"): Promise<Record<string, string>>
+  /** Rasterizes in the page realm: full page and element clips work without a compositor capture. */
+  screenshot(options?: ScreenshotOptions): Promise<ImageAsset>
 }
 export interface ExtensionCommands {
   tabs(): Promise<TabInfo[]>
@@ -135,12 +137,14 @@ export interface ExtensionCommands {
   installSelectorEngine(tabId: number, source: string, frameId?: number): Promise<EngineInstall>
   resolveWithSelectorEngine(tabId: number, query: EngineQuery): Promise<EngineResult>
   evaluateInPage(tabId: number, source: string, args?: unknown[]): Promise<unknown>
+  capturePage(tabId: number, options: ScreenshotOptions): Promise<ImageAsset>
 }
 /** Playwright selector query handed to the injected engine in the page realm. */
 export type EngineQuery = { selector: string; strict?: boolean; frameId?: number }
 /** Matched elements are tagged `data-bewpp-hit="<marker>-<index>"` so content-script actions can address them. */
 export type EngineResult = { count: number; marker: string }
 export type EngineInstall = { installed: boolean }
+export type ScreenshotOptions = { fullPage?: boolean; selector?: string; format?: "png" | "jpeg" }
 export interface BridgeEvents {
   changed(tabs: TabInfo[]): void
   ping(): void
