@@ -69,7 +69,7 @@ export default function StreamdownBody({
   );
 
   return (
-    <div className="mdview-streamdown">
+    <div className="mdview-streamdown" data-md-code-theme={dark ? "dark" : "light"}>
       <Streamdown
         mode="static"
         components={components}
