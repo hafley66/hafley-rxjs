@@ -10,6 +10,7 @@ export default defineConfig({
       "**/dist/**",
       "**/out/**",
       "tests/**",
+      "src/0_Streamdown.render.test.tsx",
       "src/0b_SequenceDiagram.render.test.tsx",
       "src/0b_sequenceSource.test.ts",
       "src/0_DiagramLightbox.render.test.tsx",
