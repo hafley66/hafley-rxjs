@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diagramWheelZoom, fitSvgBox, highestDiagramGroup, transformSvgBox } from "./0_DiagramLightbox.js";
+import { diagramPointerStartsPan, diagramWheelZoom, fitSvgBox, highestDiagramGroup, transformSvgBox } from "./0_DiagramLightbox.js";
 
 type MockElement = {
   id: string;
@@ -39,6 +39,37 @@ describe("diagram lightbox viewport", () => {
       {
         "d2": "d2-object",
         "mermaid": "node",
+      }
+    `);
+  });
+
+  it("starts pan only from the stage or its SVG root", () => {
+    const node = (localName: string, parentElement: Element | null) => ({ localName, parentElement }) as Element;
+    const stage = node("div", null);
+    const svg = node("svg", stage);
+    const group = node("g", svg);
+    const shape = node("rect", group);
+    const link = node("a", svg);
+    const foreignObject = node("foreignObject", svg);
+    const htmlButton = node("button", foreignObject);
+
+    expect({
+      stage: diagramPointerStartsPan(stage, stage),
+      svg: diagramPointerStartsPan(svg, stage),
+      group: diagramPointerStartsPan(group, stage),
+      shape: diagramPointerStartsPan(shape, stage),
+      link: diagramPointerStartsPan(link, stage),
+      foreignObject: diagramPointerStartsPan(foreignObject, stage),
+      htmlButton: diagramPointerStartsPan(htmlButton, stage),
+    }).toMatchInlineSnapshot(`
+      {
+        "foreignObject": false,
+        "group": false,
+        "htmlButton": false,
+        "link": false,
+        "shape": false,
+        "stage": true,
+        "svg": true,
       }
     `);
   });
