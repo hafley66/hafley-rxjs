@@ -29,8 +29,17 @@
   cursor: grab;
 }
 
-.diagram-vector-stage:active {
-  cursor: grabbing;
+.diagram-vector-stage svg * {
+  cursor: default;
+}
+
+.diagram-vector-stage svg :is(a, [href], button, input, select, textarea, [tabindex]:not([tabindex="-1"]), [role="button"], [role="link"]) {
+  cursor: pointer;
+}
+
+.diagram-vector-stage[data-panning],
+.diagram-vector-stage[data-panning] * {
+  cursor: grabbing !important;
 }
 
 .diagram-vector-stage svg {

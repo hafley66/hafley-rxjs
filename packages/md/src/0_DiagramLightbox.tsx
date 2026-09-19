@@ -11,6 +11,10 @@ export const DIAGRAM_WHEEL_ZOOM_RATE = 0.002;
 
 const structuralGroupClasses = ["root", "nodes", "clusters", "edgePaths", "edgeLabels"];
 
+export function diagramPointerStartsPan(target: Element, stage: Element): boolean {
+  return target === stage || (target.localName === "svg" && target.parentElement === stage);
+}
+
 function structuralGroup(group: SVGGElement): boolean {
   if (structuralGroupClasses.some((name) => group.classList.contains(name))) return true;
   return group.parentElement?.localName === "svg"
@@ -142,7 +146,10 @@ function VectorDiagramViewport({ svg, toolbarStart }: { svg: string; toolbarStar
 
   const pointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return;
+    const target = event.target;
+    if (!(target instanceof Element) || !diagramPointerStartsPan(target, event.currentTarget)) return;
     drag.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, box: current.current };
+    event.currentTarget.dataset.panning = "";
     event.currentTarget.setPointerCapture(event.pointerId);
   };
   const pointerMove = (event: PointerEvent<HTMLDivElement>) => {
@@ -158,7 +165,10 @@ function VectorDiagramViewport({ svg, toolbarStart }: { svg: string; toolbarStar
   const pointerEnd = (event: PointerEvent<HTMLDivElement>) => {
     if (drag.current?.pointerId !== event.pointerId) return;
     drag.current = null;
-    event.currentTarget.releasePointerCapture(event.pointerId);
+    delete event.currentTarget.dataset.panning;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
   };
   const doubleClick = (event: MouseEvent<HTMLDivElement>) => {
     const svg = host.current?.querySelector("svg");
