@@ -15,6 +15,7 @@ export async function renderMermaidSvg(code: string, dark: boolean): Promise<str
     flowchart: { htmlLabels: false },
     securityLevel: "strict",
     suppressErrorRendering: true,
+    maxEdges: 2_000,
   });
   const { svg } = await mermaid.render(id, code);
   return svg;

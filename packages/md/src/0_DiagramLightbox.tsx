@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent,
 import { createPortal } from "react-dom";
 import { copyText } from "./0_copyText.js";
 import "./0_diagramLightbox.css";
+import { svgPaintBox, svgNeedsRepaint, svgCssTransform, svgFitBox } from "./lib/0_svgSurface.js";
 
 export type SvgBox = { x: number; y: number; width: number; height: number };
 
@@ -105,10 +106,26 @@ function VectorDiagramViewport({ svg, toolbarStart }: { svg: string; toolbarStar
   const drag = useRef<{ pointerId: number; x: number; y: number; box: SvgBox } | null>(null);
   const zoomLabel = useRef<HTMLSpanElement>(null);
 
+  const surface = useRef<SVGSVGElement | null>(null);
+  const painted = useRef<SvgBox | null>(null);
+  const size = useRef({ width: 1, height: 1 });
+  const frame = useRef<number | null>(null);
+  const paint = () => {
+    frame.current = null;
+    const element = surface.current;
+    if (!element) return;
+    const box = current.current;
+    if (!painted.current || svgNeedsRepaint(painted.current, box)) {
+      painted.current = svgPaintBox(box);
+      const p = painted.current;
+      element.setAttribute("viewBox", `${p.x} ${p.y} ${p.width} ${p.height}`);
+    }
+    element.style.transform = svgCssTransform(painted.current, box, size.current.width, size.current.height);
+    if (zoomLabel.current) zoomLabel.current.textContent = `${Math.round(original.current.width / box.width * 100)}%`;
+  };
   const write = (box: SvgBox) => {
     current.current = box;
-    host.current?.querySelector("svg")?.setAttribute("viewBox", `${box.x} ${box.y} ${box.width} ${box.height}`);
-    if (zoomLabel.current) zoomLabel.current.textContent = `${Math.round(original.current.width / box.width * 100)}%`;
+    if (frame.current === null) frame.current = requestAnimationFrame(paint);
   };
   const setZoom = (next: number) => {
     const value = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next));
@@ -122,11 +139,22 @@ function VectorDiagramViewport({ svg, toolbarStart }: { svg: string; toolbarStar
     const root = host.current;
     const element = root?.querySelector("svg");
     if (!root || !element) return;
-    original.current = sourceBox(element);
-    // An updated rendering of the same diagram keeps its reading position.
-    // The active-entry key remounts this viewport when selecting another one.
-    write(initialized.current ? current.current : original.current);
-    initialized.current = true;
+    const source = sourceBox(element);
+    surface.current = element;
+    const resize = () => {
+      const width = root.clientWidth, height = root.clientHeight;
+      if (!width || !height) return;
+      size.current = { width, height };
+      original.current = svgFitBox(source, width, height);
+      current.current = initialized.current ? svgFitBox(current.current, width, height) : original.current;
+      initialized.current = true;
+      painted.current = null;
+      Object.assign(element.style, { width: `${width * 3}px`, height: `${height * 3}px`, maxWidth: "none", maxHeight: "none", transformOrigin: "0 0", willChange: "transform" });
+      paint();
+    };
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(root);
     const wheel = (event: WheelEvent) => {
       event.preventDefault();
       if (event.ctrlKey || event.metaKey) {
@@ -141,7 +169,15 @@ function VectorDiagramViewport({ svg, toolbarStart }: { svg: string; toolbarStar
       });
     };
     root.addEventListener("wheel", wheel, { passive: false });
-    return () => root.removeEventListener("wheel", wheel);
+    return () => {
+      root.removeEventListener("wheel", wheel);
+      observer.disconnect();
+      if (frame.current !== null) cancelAnimationFrame(frame.current);
+      frame.current = null;
+      painted.current = null;
+      surface.current = null;
+      drag.current = null;
+    };
   }, [svg]);
 
   const pointerDown = (event: PointerEvent<HTMLDivElement>) => {

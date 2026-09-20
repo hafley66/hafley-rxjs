@@ -19,7 +19,8 @@ export default defineConfig({
       cssFileName: "style",
     },
     rollupOptions: {
-      external: (id) => !id.startsWith(".") && !id.startsWith("/"),
+      external: (id) => !id.startsWith(".") && !id.startsWith("/")
+        && !(process.env.LOCAL_MD_BUNDLE === "1" && /^@hafley66\/(?:grapht(?:-model|-render-cytoscape)?|mmd|d2)(?:\/|$)/.test(id)),
       output: {
         preserveModules: true,
         preserveModulesRoot: "src",

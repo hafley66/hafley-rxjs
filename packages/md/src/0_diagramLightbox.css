@@ -42,7 +42,7 @@
   cursor: grabbing !important;
 }
 
-.diagram-vector-stage svg {
+.diagram-vector-stage > svg {
   display: block;
   width: 100%;
   height: 100%;

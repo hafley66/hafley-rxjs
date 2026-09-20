@@ -89,3 +89,5 @@ export function registerMdview() {
   // MdPanel reads the factor from store.panelZoom and styles the content.
   host.registerZoomKind({ prefix: "md:", min: 0.5, max: 2.5, step: 0.1 });
 }
+
+export { svgPaintBox, svgNeedsRepaint, svgCssTransform, svgFitBox } from "./lib/0_svgSurface.js";
