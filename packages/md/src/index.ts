@@ -7,8 +7,10 @@ import type { IDockviewPanelProps } from "dockview";
 import { getMdviewHost } from "./ports.js";
 import { baseName, MD_EXTS } from "./local/core.js";
 import { MdPanel } from "./MdPanel.js";
+import { MdPanelActivation } from "./lib/0_panelActivation.js";
 import { loadPersistedMdUi, mdUi, pathSignalFor, setMdUi } from "./signals.js";
 import { registerMdNav, openMarkdownPanel } from "./open.js";
+import { MdDocumentIdentityProvider } from "./4_documentIdentity.js";
 
 export { openMarkdownPanel } from "./open.js";
 export { installMdviewHost, getMdviewHost } from "./ports.js";
@@ -20,12 +22,43 @@ export { SequenceDiagram } from "./0b_SequenceDiagram.js";
 export { isSequenceSource, type DiagramLanguage } from "./0b_isSequenceSource.js";
 export { sequenceFrame, sequenceFrameWithSource, sequenceRenderReceipt } from "./0b_sequenceFrame.js";
 export type { SequenceFrameBuild, SequenceSourceIndex } from "./0b_sequenceFrame.js";
-export { absoluteSpan, fenceOriginOf, withFenceOrigins } from "./0b_fenceOrigin.js";
+export { absoluteSpan, fenceOriginOf, renderedOffsetsForSourceStarts, withFenceOrigins } from "./0b_fenceOrigin.js";
 export type { FenceOrigin } from "./0b_fenceOrigin.js";
 export { releaseSequenceSource, sequenceSourceIndex, sourceSpanOfElement } from "./0b_sequenceSource.js";
 export { renderMermaidSvg } from "./0a_mermaid.js";
 export { preloadD2, renderD2 } from "./d2.js";
+export { ProseWidthControl, ProseWidthHandle } from "./3_ProseWidthControl.js";
+export { useProseWidth } from "./2_useProseWidth.js";
+export {
+  createMdTablePreferenceStore,
+  createTablePreferenceStore,
+  markdownTableId,
+  markdownTableIdentity,
+  markdownTableStorageKey,
+  tablePreferencesFromState,
+  tableStateFromPreferences,
+} from "./3_tablePersistence.js";
+export type {
+  MarkdownTableAnchor,
+  MarkdownTableIdentity,
+  MarkdownDocumentIdentity,
+  MarkdownTablePluginState,
+  MarkdownTablePreferenceAdapter,
+  MarkdownTablePreferences,
+  MarkdownTablePreferenceStore,
+  MarkdownTableViewState,
+} from "./3_tablePersistence.js";
+export { MdDocumentIdentityProvider, resolveMdGitRoot, useMdDocumentIdentity, useOptionalMdDocumentIdentity } from "./4_documentIdentity.js";
+export type { MdDocumentIdentity } from "./4_documentIdentity.js";
+export { default as PersistedMarkdownTable } from "./5_PersistedMarkdownTable.js";
+export {
+  clampProseWidth,
+  normalizeProseWidthBounds,
+  DEFAULT_PROSE_WIDTH,
+  DEFAULT_PROSE_WIDTH_BOUNDS,
+} from "./lib/1_proseWidth.js";
 export { blockAt, mdDocument, parseMdSections } from "./model.js";
+export { markdownTableStarts } from "./6_tableAnchors.js";
 export type { MdBlock, MdBlockKind, MdDocument, SourceSpan } from "./model.js";
 
 function MdInstance(props: IDockviewPanelProps) {
@@ -45,7 +78,15 @@ function MdInstance(props: IDockviewPanelProps) {
     [pid, props.api, sig],
   );
   useEffect(() => registerMdNav(pid, navigate), [pid, navigate]);
-  return createElement(MdPanel, { pid, pathSig: sig, onNavigate: navigate });
+  return createElement(
+    MdPanelActivation,
+    { api: props.api },
+    createElement(
+      MdDocumentIdentityProvider,
+      { pathSignal: sig },
+      createElement(MdPanel, { pid, pathSig: sig, onNavigate: navigate }),
+    ),
+  );
 }
 
 export function registerMdview() {

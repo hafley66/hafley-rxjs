@@ -35,6 +35,6 @@ export const DOM_TESTS: readonly string[] = [
 export default defineConfig({
   test: {
     include: ["src/**/*.test.ts"],
-    exclude: ["tests/**", "fixtures/**", "node_modules/**", "dist/**", ...DOM_TESTS],
+    exclude: ["tests/**", "fixtures/**", "node_modules/**", "dist/**", "src/**/*.browser.test.{ts,tsx}", ...DOM_TESTS],
   },
 })

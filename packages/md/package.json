@@ -15,9 +15,9 @@
       "import": "./dist/index.js"
     },
     "./style.css": {
-   "types": "./dist/style.css.d.ts",
-   "default": "./dist/style.css"
-  }
+      "types": "./dist/style.css.d.ts",
+      "default": "./dist/style.css"
+    }
   },
   "scripts": {
     "build": "vite build && cp src/style.css.d.ts dist/style.css.d.ts",
@@ -29,7 +29,10 @@
     "test:e2e": "vitest run --config vitest.e2e.config.ts"
   },
   "dependencies": {
-    "@terrastruct/d2": "^0.1.33"
+    "@terrastruct/d2": "^0.1.33",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5"
   },
   "peerDependencies": {
     "@hafley66/d2": ">=0.1.0",
@@ -37,6 +40,7 @@
     "@hafley66/grapht-model": ">=0.1.0",
     "@hafley66/grapht-render-cytoscape": ">=0.1.0",
     "@hafley66/mmd": ">=0.1.0",
+    "@hafley66/signal-grid": ">=0.1.0",
     "@hafley66/signals": ">=0.1.0",
     "@streamdown/code": ">=1.1.1",
     "dockview": ">=6.6.1",
@@ -44,7 +48,8 @@
     "react": ">=19.2.7",
     "react-dom": ">=19.2.7",
     "react-resizable-panels": ">=3.0.6 <4",
-    "streamdown": ">=2.5.0"
+    "streamdown": ">=2.5.0",
+    "@hafley66/xdom": ">=0.1.0"
   },
   "devDependencies": {
     "@hafley66/d2": "workspace:*",
@@ -52,6 +57,7 @@
     "@hafley66/grapht-model": "workspace:*",
     "@hafley66/grapht-render-cytoscape": "workspace:*",
     "@hafley66/mmd": "workspace:*",
+    "@hafley66/signal-grid": "workspace:*",
     "@hafley66/signals": "workspace:*",
     "@hafley66/vitest-playwright": "workspace:*",
     "@hafley66/vitest-telemetry": "workspace:*",
@@ -71,7 +77,8 @@
     "typescript": "7.0.2",
     "vite": "^8.2.1",
     "vite-plugin-dts": "^5.0.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "@hafley66/xdom": "workspace:*"
   },
   "keywords": [
     "markdown",

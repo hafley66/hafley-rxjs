@@ -71,6 +71,7 @@ export function createMeasureStore(opts: MeasureOptions): MeasureStore {
   let sum = 0
 
   const record = (key: string, px: number): boolean => {
+    if (px <= 0) return false
     const prior = extents.get(key)
     if (prior !== undefined && Math.abs(prior - px) < EPSILON) return false
     sum += px - (prior ?? 0)
@@ -78,8 +79,13 @@ export function createMeasureStore(opts: MeasureOptions): MeasureStore {
     return true
   }
 
-  const extentOf = (entry: ResizeObserverEntry): number =>
-    opts.direction === "vertical" ? entry.contentRect.height : entry.contentRect.width
+  const extentOf = (entry: ResizeObserverEntry): number => {
+    const border = Array.isArray(entry.borderBoxSize) ? entry.borderBoxSize[0] : entry.borderBoxSize
+    if (border !== undefined) {
+      return opts.direction === "vertical" ? border.blockSize : border.inlineSize
+    }
+    return opts.direction === "vertical" ? entry.contentRect.height : entry.contentRect.width
+  }
 
   // One observer for the whole store. Thirty rows on screen is thirty `observe` calls against one
   // observer, which is also why a batch of resizes arrives as one callback and one `onChange`.

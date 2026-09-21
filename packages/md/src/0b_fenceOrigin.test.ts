@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { mdDocument, type MdBlock } from "@hafley66/grapht-model";
-import { absoluteSpan, fenceOriginOf, withFenceOrigins } from "./0b_fenceOrigin.js";
+import { absoluteSpan, fenceOriginOf, renderedOffsetsForSourceStarts, withFenceOrigins } from "./0b_fenceOrigin.js";
 
 const fence = "```";
 const DOC = [
@@ -82,4 +82,12 @@ it("places a fence-relative span in the file", () => {
     lineStart: 9,
     lineEnd: 9,
   });
+});
+
+it("maps table positions after inserted fence metadata", () => {
+  const text = [fence + "js", "const x = 1", fence, "", "| A |", "| - |", "| 1 |"].join("\n");
+  const document = mdDocument("docs/example.md", text);
+  const marked = withFenceOrigins(text, 0, document.blocks);
+  const sourceStart = text.indexOf("| A |");
+  expect(renderedOffsetsForSourceStarts(marked, 0, [sourceStart])).toEqual([marked.indexOf("| A |")]);
 });

@@ -6,6 +6,13 @@
 import { Signal, type Signal as SignalNode, type Signal$ } from "@hafley66/signals";
 import { getMdviewHost } from "./ports.js";
 import { allSectionIds, mdDocument, type MdDoc, type MdDocument } from "./model.js";
+import {
+  clampProseWidth,
+  DEFAULT_PROSE_WIDTH,
+  DEFAULT_PROSE_WIDTH_BOUNDS,
+  normalizeProseWidthBounds,
+  type ProseWidthBounds,
+} from "./lib/1_proseWidth.js";
 
 const PLUGIN_ID = "md";
 
@@ -14,9 +21,22 @@ export interface MdUi {
   layout: number[] | null; // global default [explorer, content] percentages
   layouts: Record<string, number[]>; // per-tab split overrides, keyed by panel id
   explorerHidden: boolean; // explorer sidebar collapsed (global)
+  proseWidth: number; // global default prose width in CSS pixels
+  proseWidths: Record<string, number>; // per-panel prose width overrides
+  proseWidthMin: number; // global editable lower bound in CSS pixels
+  proseWidthMax: number; // global editable upper bound in CSS pixels
 }
 
-const DEFAULT_UI: MdUi = { startFolded: true, layout: null, layouts: {}, explorerHidden: false };
+const DEFAULT_UI: MdUi = {
+  startFolded: true,
+  layout: null,
+  layouts: {},
+  explorerHidden: false,
+  proseWidth: DEFAULT_PROSE_WIDTH,
+  proseWidths: {},
+  proseWidthMin: DEFAULT_PROSE_WIDTH_BOUNDS.min,
+  proseWidthMax: DEFAULT_PROSE_WIDTH_BOUNDS.max,
+};
 
 // Seeded with defaults at module load (before a host may exist); the real
 // persisted values are applied by loadPersistedMdUi(), which registerMdview()
@@ -25,7 +45,18 @@ export const mdUi = Signal<MdUi>(DEFAULT_UI);
 
 export function loadPersistedMdUi(): void {
   const saved = getMdviewHost().readPluginState<Partial<MdUi>>(PLUGIN_ID, {});
-  mdUi.$({ ...mdUi.$(), ...saved });
+  const bounds = normalizeProseWidthBounds({ min: saved.proseWidthMin, max: saved.proseWidthMax });
+  const proseWidths = saved.proseWidths ?? {};
+  mdUi.$({
+    ...DEFAULT_UI,
+    ...mdUi.$(),
+    ...saved,
+    layouts: saved.layouts ?? mdUi.$().layouts,
+    proseWidths,
+    proseWidthMin: bounds.min,
+    proseWidthMax: bounds.max,
+    proseWidth: clampProseWidth(saved.proseWidth ?? DEFAULT_UI.proseWidth, bounds),
+  });
 }
 
 export function setMdUi(patch: Partial<MdUi>): void {
@@ -48,6 +79,57 @@ export function layoutFor(pid: string): number[] {
 
 export function toggleExplorer(): void {
   setMdUi({ explorerHidden: !mdUi.$().explorerHidden });
+}
+
+const proseWidthSignals = new Map<string, SignalNode<number>>();
+
+export function proseWidthBounds(): ProseWidthBounds {
+  const ui = mdUi.$();
+  return normalizeProseWidthBounds({ min: ui.proseWidthMin, max: ui.proseWidthMax });
+}
+
+export function proseWidthFor(pid: string): number {
+  const ui = mdUi.$();
+  return clampProseWidth(ui.proseWidths[pid] ?? ui.proseWidth, proseWidthBounds());
+}
+
+// xdom's gutter reads and writes a Signal. The actual persistence write stays
+// in setProseWidthFor so pointer gestures and sliders use the same mdUi path.
+export function proseWidthSignalFor(pid: string): SignalNode<number> {
+  let signal = proseWidthSignals.get(pid);
+  if (!signal) {
+    signal = Signal(proseWidthFor(pid));
+    proseWidthSignals.set(pid, signal);
+  }
+  return signal;
+}
+
+function syncProseWidthSignals(): void {
+  for (const [pid, signal] of proseWidthSignals) {
+    const next = proseWidthFor(pid);
+    if (signal.$() !== next) signal.$(next);
+  }
+}
+
+export function setProseWidthFor(pid: string, value: number): void {
+  const width = clampProseWidth(value, proseWidthBounds());
+  setMdUi({ proseWidth: width, proseWidths: { ...mdUi.$().proseWidths, [pid]: width } });
+  syncProseWidthSignals();
+}
+
+export function setProseWidthBounds(patch: Partial<ProseWidthBounds>): void {
+  const current = proseWidthBounds();
+  const bounds = normalizeProseWidthBounds({ ...current, ...patch });
+  const proseWidths = Object.fromEntries(
+    Object.entries(mdUi.$().proseWidths).map(([pid, value]) => [pid, clampProseWidth(value, bounds)]),
+  );
+  setMdUi({
+    proseWidthMin: bounds.min,
+    proseWidthMax: bounds.max,
+    proseWidth: clampProseWidth(mdUi.$().proseWidth, bounds),
+    proseWidths,
+  });
+  syncProseWidthSignals();
 }
 
 // Per-panel current document path. Keyed by panel id so navigation survives a

@@ -60,7 +60,8 @@ import {
   rowHeightVar,
 } from "./3_paths.js"
 import { type RenderPlan, type Spacers } from "./4_slice.js"
-import type { Grid } from "./8_grid.js"
+import { ROW_HEIGHT, type Grid } from "./8_grid.js"
+import { createMeasureStore } from "./14_measure.js"
 import { SG_ROW_H, SG_ROW_HEIGHT_SELF, SG_SEAT, writeGridVars } from "./9_css.js"
 
 export interface RenderHandle {
@@ -117,6 +118,7 @@ interface RowRecord {
   cells: Map<string, HTMLElement>
   /** Cell-level signal subscriptions. Torn down when the cells are rebuilt or the row leaves. */
   subs: Subscription
+  measureUnsubscribe: (() => void) | undefined
 }
 
 /** Everything a pass reads, collected inside the derived node so every read is tracked. */
@@ -206,6 +208,60 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     el.setAttribute("role", "presentation")
 
   const rows = new Map<RowId, RowRecord>()
+  let rowMeasure: ReturnType<typeof createMeasureStore> | undefined
+  const pendingMeasures = new Set<RowId>()
+  let measureFrame: number | undefined
+  let viewportFrame: number | undefined
+  let pendingViewport: { readonly width: number; readonly height: number } | undefined
+  const flushMeasurements = (): void => {
+    measureFrame = undefined
+    const current = grid.state.rowHeight.$()
+    const next = { ...current }
+    let changed = false
+    for (const key of pendingMeasures) {
+      pendingMeasures.delete(key)
+      const extent = rowMeasure?.extents.get(key)
+      if (extent === undefined || next[key] === extent) continue
+      next[key] = extent
+      changed = true
+    }
+    if (changed) grid.state.rowHeight.$(next)
+  }
+  const scheduleMeasurements = (keys: readonly string[]): void => {
+    for (const key of keys) pendingMeasures.add(key)
+    if (measureFrame !== undefined) return
+    if (typeof requestAnimationFrame === "function") {
+      measureFrame = requestAnimationFrame(flushMeasurements)
+    } else {
+      queueMicrotask(flushMeasurements)
+    }
+  }
+  const flushViewport = (): void => {
+    viewportFrame = undefined
+    const next = pendingViewport
+    pendingViewport = undefined
+    if (next === undefined) return
+    grid.viewport.$({ ...grid.viewport.$(), width: next.width, height: next.height })
+    grid.dispatch({ phase: "intent", type: "viewport.resize", width: next.width, height: next.height })
+  }
+  const scheduleViewport = (width: number, height: number): void => {
+    pendingViewport = { width, height }
+    if (viewportFrame !== undefined) return
+    if (typeof requestAnimationFrame === "function") {
+      viewportFrame = requestAnimationFrame(flushViewport)
+    } else {
+      queueMicrotask(flushViewport)
+    }
+  }
+  if (grid.rowMeasure !== undefined) {
+    rowMeasure = createMeasureStore({
+      initial: grid.rowMeasure.initial ?? ROW_HEIGHT[grid.state.density.$()],
+      direction: "vertical",
+      root: scroll,
+      bufferPx: grid.rowMeasure.bufferPx,
+      onChange: scheduleMeasurements,
+    })
+  }
   let headerSubs = new Subscription()
   // Null until the first pass, so an empty schema still builds its (empty) header once.
   let headKey: string | null = null
@@ -792,8 +848,10 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
         editing: null,
         cells: new Map(),
         subs: new Subscription(),
+        measureUnsubscribe: undefined,
       }
       rows.set(key, record)
+      if (rowMeasure !== undefined) record.measureUnsubscribe = rowMeasure.observe(key, record.el)
     }
     // The rebuild key falls back to the map itself: a vertical entry under the transpose is a
     // column, which owns no row value, and the map is one identity until the data reloads.
@@ -813,7 +871,8 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     record.el.style.setProperty(SG_DEPTH, String(current.rowsVertical ? node.depth : 0))
     // A row's height property is named after its id, which no stylesheet selector can spell, so
     // the generic rule reads this alias. Written here because this is where the element is held.
-    if (current.extent[key] === undefined) record.el.style.removeProperty(SG_ROW_HEIGHT_SELF)
+    if (rowMeasure !== undefined) record.el.style.removeProperty(SG_ROW_HEIGHT_SELF)
+    else if (current.extent[key] === undefined) record.el.style.removeProperty(SG_ROW_HEIGHT_SELF)
     else record.el.style.setProperty(SG_ROW_HEIGHT_SELF, `var(${rowHeightVar(key)}, var(${SG_ROW_H}))`)
     record.el.setAttribute("data-selected", String(current.selection[owner] === true))
     stampSelection(record, key, node, current)
@@ -1023,6 +1082,8 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     for (const [key, record] of rows) {
       if (seen.has(key)) continue
       record.subs.unsubscribe()
+      record.measureUnsubscribe?.()
+      record.measureUnsubscribe = undefined
       record.el.remove()
       rows.delete(key)
     }
@@ -1092,8 +1153,12 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
     const entry = entries[0]
     if (entry === undefined) return
     const { width, height } = entry.contentRect
-    grid.viewport.$({ ...grid.viewport.$(), width, height })
-    grid.dispatch({ phase: "intent", type: "viewport.resize", width, height })
+    if (rowMeasure === undefined) {
+      grid.viewport.$({ ...grid.viewport.$(), width, height })
+      grid.dispatch({ phase: "intent", type: "viewport.resize", width, height })
+    } else {
+      scheduleViewport(width, height)
+    }
   })
   observer.observe(scroll)
   subscription.add(() => observer.disconnect())
@@ -1103,6 +1168,21 @@ export function render<TRow>(grid: Grid<TRow>, root: HTMLElement): RenderHandle 
   subscription.add(writeGridVars(grid, root))
   subscription.add(() => headerSubs.unsubscribe())
   subscription.add(() => root.style.removeProperty(SG_HEAD_ROWS))
+  subscription.add(() => {
+    if (measureFrame !== undefined && typeof cancelAnimationFrame === "function") {
+      cancelAnimationFrame(measureFrame)
+    }
+    measureFrame = undefined
+    pendingMeasures.clear()
+  })
+  subscription.add(() => {
+    if (viewportFrame !== undefined && typeof cancelAnimationFrame === "function") {
+      cancelAnimationFrame(viewportFrame)
+    }
+    viewportFrame = undefined
+    pendingViewport = undefined
+  })
+  subscription.add(() => rowMeasure?.close())
   subscription.add(() => {
     // Gathered under one parent so a throwing cell teardown cannot skip the rows after it.
     const held = new Subscription()

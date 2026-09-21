@@ -82,7 +82,14 @@ export function layout(root: HTMLElement, tracks: Track[], storage: Storage<stri
 }
 
 // `invert`: the track grows when the pointer moves toward the origin (a panel hung off the right or bottom edge).
-export type GutterOptions = { commit?: "frame" | "release"; axis?: "x" | "y"; invert?: boolean }
+// `scale` converts physical pointer movement into CSS pixels for content under a zoom transform.
+export type GutterOptions = {
+  commit?: "frame" | "release"
+  axis?: "x" | "y"
+  invert?: boolean
+  scale?: number
+  multiplier?: number
+}
 
 // Pointer drag with setPointerCapture. 'release' (default): a transform on `el` moves during the
 // drag, the track signal writes once on pointerup; 'frame' writes the signal every frame instead.
@@ -90,15 +97,19 @@ export function gutter(el: HTMLElement, track: SignalType<number>, options: Gutt
   const commit = options.commit ?? "release"
   const axis = options.axis ?? "x"
   const sign = options.invert ? -1 : 1
+  const scale = Number.isFinite(options.scale) && (options.scale ?? 0) > 0 ? options.scale! : 1
+  const multiplier = Number.isFinite(options.multiplier) ? options.multiplier! : 1
   let dragging = false
   let startPoint = 0
   let startValue = 0
+  let pointerId = -1
   const pointOf = (event: PointerEvent) => (axis === "x" ? event.clientX : event.clientY)
 
   const onPointerDown = (event: PointerEvent) => {
     dragging = true
     startPoint = pointOf(event)
     startValue = track.$()
+    pointerId = event.pointerId
     el.setPointerCapture(event.pointerId)
     el.classList.add("dragging")
   }
@@ -107,30 +118,51 @@ export function gutter(el: HTMLElement, track: SignalType<number>, options: Gutt
     const delta = pointOf(event) - startPoint
     if (commit === "frame") {
       markManual(track)
-      track.$(startValue + sign * delta)
+      track.$(startValue + sign * delta / scale * multiplier)
     } else {
-      el.style.transform = axis === "x" ? `translateX(${delta}px)` : `translateY(${delta}px)`
+      const cssDelta = delta / scale
+      el.style.transform = axis === "x" ? `translateX(${cssDelta}px)` : `translateY(${cssDelta}px)`
     }
   }
   const onPointerUp = (event: PointerEvent) => {
     if (!dragging) return
     dragging = false
     el.releasePointerCapture(event.pointerId)
+    pointerId = -1
     el.classList.remove("dragging")
     if (commit === "release") {
       markManual(track)
-      track.$(startValue + sign * (pointOf(event) - startPoint))
+      track.$(startValue + sign * (pointOf(event) - startPoint) / scale * multiplier)
       el.style.transform = ""
     }
+  }
+
+  const onPointerCancel = (event?: Event) => {
+    if (!dragging) return
+    dragging = false
+    const id = event instanceof PointerEvent ? event.pointerId : pointerId
+    try {
+      if (id >= 0 && el.hasPointerCapture(id)) el.releasePointerCapture(id)
+    } catch {
+      // Pointer capture can already be gone when lostpointercapture arrives.
+    }
+    pointerId = -1
+    el.classList.remove("dragging")
+    el.style.transform = ""
   }
 
   el.addEventListener("pointerdown", onPointerDown)
   el.addEventListener("pointermove", onPointerMove)
   el.addEventListener("pointerup", onPointerUp)
+  el.addEventListener("pointercancel", onPointerCancel)
+  el.addEventListener("lostpointercapture", onPointerCancel)
   function unsubscribe(): void {
+    onPointerCancel()
     el.removeEventListener("pointerdown", onPointerDown)
     el.removeEventListener("pointermove", onPointerMove)
     el.removeEventListener("pointerup", onPointerUp)
+    el.removeEventListener("pointercancel", onPointerCancel)
+    el.removeEventListener("lostpointercapture", onPointerCancel)
   }
   return unsubscribe
 }

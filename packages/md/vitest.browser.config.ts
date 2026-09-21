@@ -4,6 +4,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
+  optimizeDeps: { include: ["dockview", "@hafley66/signal-grid", "@hafley66/signal-grid/react", "@hafley66/signals/react", "@hafley66/xdom", "@hafley66/signals"] },
   // streamdown and md resolve react through pnpm isolation; one copy or hooks read null dispatchers
   resolve: { dedupe: ["react", "react-dom"] },
   test: {
@@ -16,6 +17,9 @@ export default defineConfig({
     },
     include: [
       "src/0_Streamdown.render.test.tsx",
+      "src/1_reading.render.test.tsx",
+      "src/**/*.browser.test.tsx",
+      "src/lib/0_panelActivation.render.test.tsx",
       "src/0b_SequenceDiagram.render.test.tsx",
       "src/0b_sequenceSource.test.ts",
       "src/0_DiagramLightbox.render.test.tsx",

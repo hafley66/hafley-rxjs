@@ -1,0 +1,330 @@
+/* Prose has a user-selected reading measure. Block renderers keep the pane's
+   available width and their own sizing controls. */
+.mdview-panel-activation {
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mdview-panel-activation > .mdview-root {
+  flex: 1;
+  min-height: 0;
+}
+
+.mdview-content {
+  --md-prose-width: 900px;
+  padding: 1.5rem clamp(1rem, 3%, 3rem) 4rem;
+  min-width: 0;
+  scrollbar-gutter: stable;
+}
+
+.mdview-content .md-body {
+  font-size: 15px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.mdview-content .mdview-body {
+  margin-left: 0;
+}
+
+.mdview-content .mdview-head,
+.mdview-content .mdview-streamdown > div > :is(p, ul, ol, blockquote, h1, h2, h3, h4, h5, h6, hr) {
+  box-sizing: border-box;
+  width: min(100%, var(--md-prose-width));
+  margin-inline: auto;
+}
+
+.mdview-content .mdview-head {
+  gap: 0.5rem;
+  margin-block: 2rem 0.9rem;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  color: var(--panel-fg, inherit);
+}
+
+.mdview-content > .mdview-sec:first-child > .mdview-head {
+  margin-top: 0.25rem;
+}
+
+.mdview-content .mdview-h1 {
+  font-size: 1.9em;
+  padding-bottom: 0.45em;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.mdview-content .mdview-h2 { font-size: 1.5em; }
+.mdview-content .mdview-h3 { font-size: 1.2em; }
+.mdview-content .mdview-twisty { color: var(--row-active-bg, #618bcb); }
+
+.mdview-content .md-body :is(p, ul, ol, blockquote) {
+  margin-block: 0.9em;
+}
+
+.mdview-content .md-body :is(ul, ol) { padding-inline-start: 1.65em; }
+.mdview-content .md-body li + li { margin-top: 0.45em; }
+.mdview-content .md-body li > :is(p, ul, ol) { margin-block: 0.45em; }
+
+.mdview-content .md-body blockquote {
+  padding: 0.6rem 1.1rem;
+  border-inline-start: 3px solid var(--row-active-bg, #618bcb);
+  border-radius: 0 6px 6px 0;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+
+.mdview-content .md-body a {
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+}
+
+.mdview-content .md-body hr {
+  margin-block: 2rem;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.mdview-table {
+  min-width: 0;
+  max-width: 100%;
+  margin-block: 1.75rem;
+  line-height: 1.55;
+}
+
+.mdview-table-grid[data-route="g"] {
+  --sg-pad: 16px;
+  --sg-bg: var(--panel-bg, var(--md-code-bg, #fff));
+  --sg-fg: var(--panel-fg, var(--md-code-fg, #24292e));
+  --sg-head-bg: color-mix(in srgb, var(--sg-fg) 6%, var(--sg-bg));
+  --sg-hover-bg: color-mix(in srgb, var(--sg-fg) 4%, var(--sg-bg));
+  --sg-line: color-mix(in srgb, var(--sg-fg) 15%, var(--sg-bg));
+  block-size: min(70vh, calc(var(--sg-total-h) + var(--sg-row-h) + 18px));
+  min-block-size: 110px;
+  max-inline-size: 100%;
+  resize: vertical;
+  overflow: hidden;
+  border: 1px solid var(--sg-line);
+  border-radius: 6px;
+}
+.mdview-table-grid .sg-cell {
+  padding-block: 0.85rem;
+  align-items: flex-start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  border-inline-end: 1px solid color-mix(in srgb, var(--sg-fg) 13%, transparent);
+}
+.mdview-table-grid .sg-head-cell {
+  font-weight: 600;
+  white-space: normal;
+  overflow: visible;
+  border-inline-end: 1px solid color-mix(in srgb, var(--sg-fg) 18%, transparent);
+  z-index: 4;
+}
+.mdview-table-grid .sg-head-label { overflow: visible; }
+.mdview-table-grid :is(.sg-head, .sg-head-row, .sg-canvas, .sg-rows) { inline-size: 100%; }
+.mdview-table-cell { min-width: 0; width: 100%; }
+.mdview-table-header-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  inline-size: 100%;
+  min-inline-size: 0;
+  overflow: visible;
+}
+.mdview-table-header-label {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mdview-table-header-actions {
+  position: absolute;
+  box-sizing: border-box;
+  inset-inline-start: 0;
+  inset-block-end: 100%;
+  display: flex;
+  inline-size: 100%;
+  block-size: 2.1rem;
+  min-inline-size: 0;
+  justify-content: flex-end;
+  gap: 2px;
+  padding: 2px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 20;
+  background: var(--sg-head-bg);
+  border: 1px solid var(--sg-line);
+  border-block-end: 0;
+  box-shadow: 0 -4px 10px color-mix(in srgb, var(--sg-fg) 12%, transparent);
+  transition: opacity 100ms ease;
+}
+@supports (position: fixed) {
+  .mdview-table-header-actions {
+    position: fixed;
+    inset-block-start: max(0px, calc(var(--md-table-header-top, 0px) - 2.1rem));
+    inset-inline-start: max(0px, min(var(--md-table-header-left, 0px), calc(100vw - var(--md-table-header-width, 100vw))));
+    inset-inline-end: auto;
+    inline-size: min(var(--md-table-header-width, 100vw), 100vw);
+    block-size: 2.1rem;
+    margin: 0;
+  }
+}
+.mdview-table-grid .sg-head-cell:hover .mdview-table-header-actions,
+.mdview-table-header-actions:focus-within,
+.mdview-table-header-actions:hover {
+  opacity: 1;
+  pointer-events: auto;
+}
+.mdview-table-action,
+.mdview-table-actions-compact > summary {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 1.7rem;
+  block-size: 1.7rem;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: inherit;
+  background: color-mix(in srgb, var(--sg-fg) 8%, transparent);
+  cursor: pointer;
+}
+.mdview-table-action:hover,
+.mdview-table-action:focus-visible,
+.mdview-table-actions-compact > summary:hover,
+.mdview-table-actions-compact > summary:focus-visible {
+  background: color-mix(in srgb, var(--sg-fg) 18%, transparent);
+}
+.mdview-table-action-sort [data-md-table-sort="asc"]::before { content: "↑"; }
+.mdview-table-action-sort [data-md-table-sort="desc"]::before { content: "↓"; }
+.mdview-table-action-sort [data-md-table-sort="none"]::before { content: "↕"; }
+.mdview-table-action-visibility > span::before { content: "◉"; }
+.mdview-table-actions-compact > summary > span::before { content: "⋯"; }
+.mdview-table-column-menu-item [data-md-table-column-label]::before { content: attr(data-md-table-column-label); }
+.mdview-table-column-menu-item [data-md-table-column-state]::before { content: attr(data-md-table-column-state); }
+.mdview-table-actions-wide { display: flex; gap: 2px; }
+.mdview-table-actions-compact { display: none; position: relative; }
+.mdview-table-actions-compact > summary { list-style: none; }
+.mdview-table-actions-compact > summary::-webkit-details-marker { display: none; }
+.mdview-table-actions-compact-menu {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-start: 100%;
+  display: grid;
+  gap: 4px;
+  min-inline-size: 12rem;
+  padding: 0.35rem;
+  background: var(--sg-bg);
+  border: 1px solid var(--sg-line);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--sg-fg) 18%, transparent);
+  z-index: 30;
+}
+.mdview-table-visibility { position: relative; display: inline-flex; }
+.mdview-table-column-menu {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-start: calc(100% + 2px);
+  inset-block-end: auto;
+  display: none;
+  min-inline-size: 14rem;
+  max-block-size: min(18rem, 50vh);
+  overflow: auto;
+  padding: 0.5rem;
+  color: var(--sg-fg);
+  background: var(--sg-bg);
+  border: 1px solid var(--sg-line);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--sg-fg) 18%, transparent);
+  z-index: 40;
+}
+.mdview-table-visibility:hover .mdview-table-column-menu,
+.mdview-table-visibility:focus-within .mdview-table-column-menu,
+.mdview-table-column-menu:hover { display: grid; gap: 2px; }
+.mdview-table-column-menu-section {
+  padding: 0.25rem 0.4rem;
+  color: color-mix(in srgb, var(--sg-fg) 65%, transparent);
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.mdview-table-column-menu-section::before { content: attr(data-md-table-section); }
+.mdview-table-column-menu-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.4rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mdview-table-column-menu-item:hover { background: color-mix(in srgb, var(--sg-fg) 8%, transparent); }
+.mdview-table-column-menu-state { color: color-mix(in srgb, var(--sg-fg) 55%, transparent); font-size: 0.8em; }
+.mdview-table-hidden-affordance {
+  position: absolute;
+  inset-inline-start: 100%;
+  inset-block-start: 0;
+  opacity: 0.55;
+  border: 1px solid var(--sg-line);
+  border-inline-start: 0;
+  border-radius: 0 4px 4px 0;
+  color: var(--sg-fg);
+  background: var(--sg-bg);
+  cursor: pointer;
+}
+.mdview-table-hidden-affordance:hover,
+.mdview-table-hidden-affordance:focus-visible { opacity: 1; }
+.mdview-table-hidden-affordance > span::before { content: "+" attr(data-md-table-hidden-count); }
+
+@media (max-width: 700px) {
+  .mdview-table-actions-wide { display: none; }
+  .mdview-table-actions-compact { display: block; }
+}
+
+.mdview-content [data-streamdown="code-block"] {
+  margin-block: 1.5rem;
+}
+
+.mdview-root .act-bar {
+  flex-wrap: wrap;
+  row-gap: 0.4rem;
+}
+
+.mdview-reading-options { position: relative; }
+.mdview-reading-options > summary { cursor: pointer; padding: 0.3rem 0.5rem; }
+.mdview-width-controls {
+  position: absolute;
+  z-index: 10;
+  right: 0;
+  top: 100%;
+  width: min(19rem, 75vw);
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.7rem;
+  color: var(--panel-fg, #ddd);
+  background: var(--panel-bg, #242424);
+  border: 1px solid var(--frame, #666);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px #0004;
+}
+.mdview-width-controls label { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; }
+.mdview-width-controls input[type="number"] { width: 6rem; }
+.mdview-width-controls input[type="range"] { min-width: 0; flex: 1; }
+.mdview-prose-ruler {
+  width: min(100%, var(--md-prose-width));
+  margin-inline: auto;
+  height: 12px;
+  position: relative;
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+}
+.mdview-prose-handle {
+  position: absolute;
+  right: 0;
+  top: -6px;
+  width: 12px;
+  height: 16px;
+  cursor: ew-resize;
+  touch-action: none;
+  border-inline: 2px solid color-mix(in srgb, currentColor 35%, transparent);
+  border-radius: 2px;
+}
+.mdview-prose-handle:is(:hover, :focus-visible, .dragging) {
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}

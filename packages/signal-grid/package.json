@@ -15,7 +15,7 @@
     },
     "./theme.css": "./dist/theme.css",
     "./react": {
-      "types": "./dist/react.d.ts",
+      "types": "./dist/react/index.d.ts",
       "import": "./dist/react.js"
     }
   },

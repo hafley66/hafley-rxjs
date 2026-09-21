@@ -101,6 +101,10 @@ export interface MdviewHost {
   openHref(href: string, sourcePath: string): Promise<void>;
   openPath(path: string): Promise<void>;
 
+  // Optional repository identity lookup. Hosts that do not have native Git
+  // metadata keep the path-based persistence fallback used by mdview.
+  repoRootFor?(path: string): Promise<string | null>;
+
   // ---- file watching (src/fsWatch.ts's claimFsWatch) ----
   watchFile(path: string, onChange: () => void, recursive?: boolean): Promise<() => void>;
 

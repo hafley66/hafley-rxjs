@@ -130,6 +130,13 @@ export const ROW_HEIGHT: Record<GridState["density"], number> = {
 
 // --- Config -----------------------------------------------------------------
 
+export interface RowMeasureConfig {
+  /** The row height before the first ResizeObserver report. */
+  readonly initial?: number
+  /** Extra pixels around the scroll box to measure before rows enter view. */
+  readonly bufferPx?: number
+}
+
 export interface GridConfig<TRow> {
   readonly id: GridSource<string>
   readonly rows: GridSource<readonly TRow[]>
@@ -152,6 +159,8 @@ export interface GridConfig<TRow> {
   readonly slots?: Slots<TRow>
   readonly viewport?: GridSource<Viewport>
   readonly overscan?: number
+  /** Opt-in DOM row measurement for wrapped or otherwise variable-height cells. */
+  readonly rowMeasure?: RowMeasureConfig
   /** Absent installs `defaultEpics()`. Opt-in epics such as `detailOnCellClick` go here. */
   readonly epics?: readonly GridEpic<TRow>[]
   /** How a resize or a move shows itself while the pointer is down. Read only when `epics` is
@@ -200,6 +209,7 @@ export interface Grid<TRow> {
   readonly columns: Signal<readonly ColumnDef<TRow>[]>
   readonly view: GridView<TRow>
   readonly viewport: Signal<Viewport>
+  readonly rowMeasure: RowMeasureConfig | undefined
   readonly actions$: Observable<GridAction<TRow>>
   readonly intent$: Observable<GridIntent>
   readonly change$: Observable<GridChange>
@@ -567,7 +577,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
     const seat = vertical.$()
     // The direction supplies the fallback, not the axis: a column standing on the y dimension is
     // one row height tall, because that is what the density setting is measuring.
-    const fallback = ROW_HEIGHT[state.density.$()]
+    const fallback = config.rowMeasure?.initial ?? ROW_HEIGHT[state.density.$()]
     const args = pageWindow(state.page.$())
     const input: PlanBaseInput<string> = {
       flat: verticalLeaves.$(),
@@ -748,6 +758,7 @@ export function grid<TRow>(config: GridConfig<TRow>): Grid<TRow> {
     columns,
     view,
     viewport,
+    rowMeasure: config.rowMeasure,
     actions$,
     intent$: byPhase<TRow, "intent">(actions$, "intent"),
     change$: byPhase<TRow, "change">(actions$, "change"),

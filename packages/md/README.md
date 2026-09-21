@@ -24,12 +24,43 @@ state. A host application supplies those facilities.
 | Reactive state | `@hafley66/signals` | Document cache, current path, folding, explorer visibility, and split layouts |
 | Document structure | Unified plus `remark-parse` | Parse headings and list source ranges into the viewer model |
 | Markdown rendering | Streamdown | Render the original Markdown slices as React elements |
+| Markdown tables | `@hafley66/signal-grid` | Sort, hide/show and resize columns while preserving inline Markdown |
+| Reading width | Package state plus `@hafley66/xdom` | Persist bounded prose width and handle pointer resizing under content zoom |
 | Code highlighting | `@streamdown/code` | Render fenced code with Shiki |
 | Mermaid diagrams | `mermaid` | Render `mermaid` fences to SVG |
 | Sequence diagrams | `@hafley66/grapht` plus `@hafley66/grapht-render-cytoscape` | Ingest `sequenceDiagram` and `shape: sequence_diagram` fences as grapht frames |
 | D2 diagrams | `@terrastruct/d2` | Compile and render `d2` fences to SVG |
 | Split layout | `react-resizable-panels` | Resize the explorer and content panels |
 | Diagram viewing | Package React components | Display SVG with pan, zoom, source data, and diagram history |
+
+## Reading controls
+
+The **reading width** toolbar menu contains a slider, pixel width, editable
+minimum/maximum bounds, and reset. The grip above the document resizes the
+centered prose column. It also supports Left/Right arrow keys and Home/End.
+Widths are stored per panel through the existing host plugin-state port; the
+last selected width becomes the default for new panels. A narrow pane can
+shrink the displayed prose below its preferred minimum without overwriting
+the stored width.
+
+Tables, code, and diagram renderers retain the available content width outside
+the prose measure. Markdown tables use `@hafley66/signal-grid`, so inline
+formatting remains in cells while headers support sorting, column resizing, and
+column reordering. Hovering a header reveals its action strip above the header;
+at narrow widths the actions collapse into a dot menu. The visibility action
+opens a flyout listing visible and hidden columns, and a hidden-column affordance
+appears beside the header without reserving another toolbar row. Table height
+can be resized independently.
+
+Column width, order, and visibility preferences are stored per table. The
+storage identity combines the Git root, the file path relative to that root,
+and the table anchor, keeping repeated tables in one document separate. Hosts
+can provide the optional `MdviewHost.repoRootFor(path)` resolver to enable the
+Git-root identity; when it is absent, the normalized file path is used.
+
+The registered Dockview component activates its own panel on pointer or focus
+interaction. The host's existing active-panel zoom resolver can then target
+that panel when multiple groups are visible.
 
 ## Tests
 

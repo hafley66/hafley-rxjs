@@ -19,6 +19,7 @@ import {
   type MdSection,
 } from "./model.js";
 import { withFenceOrigins } from "./0b_fenceOrigin.js";
+import { markdownTableStarts } from "./6_tableAnchors.js";
 import {
   blockFoldsFor,
   collapsedFor,
@@ -40,7 +41,10 @@ import {
 import { setPendingFrag, takePendingFrag } from "./open.js";
 import { MdExplorer } from "./MdExplorer.js";
 import { useFsWatch } from "./0_watch.js";
+import { useProseWidth } from "./2_useProseWidth.js";
+import { ProseWidthControl, ProseWidthHandle } from "./3_ProseWidthControl.js";
 import "./mdview.css";
+import "./1_reading.css";
 
 const StreamdownBody = lazy(() => import("./0_Streamdown.js"));
 
@@ -143,10 +147,19 @@ interface SectionProps {
   dark: boolean;
 }
 
-function MarkdownBody({ children, components, dark }: { children: string; components: SectionProps["components"]; dark: boolean }) {
+const NO_TABLE_STARTS: readonly number[] = [];
+
+function MarkdownBody({ children, components, dark, sectionId, sourceStart, tableStarts }: {
+  children: string;
+  components: SectionProps["components"];
+  dark: boolean;
+  sectionId?: string;
+  sourceStart?: number;
+  tableStarts?: readonly number[];
+}) {
   return (
     <Suspense fallback={<pre><code>{children}</code></pre>}>
-      <StreamdownBody components={components} dark={dark}>{children}</StreamdownBody>
+      <StreamdownBody components={components} dark={dark} sectionId={sectionId} sourceStart={sourceStart} tableStarts={tableStarts}>{children}</StreamdownBody>
     </Suspense>
   );
 }
@@ -158,6 +171,7 @@ function SectionView({ sec, siblingIndex, text, blocksBySection, collapsed, onTo
   // a rendered diagram can name the bytes it came from.
   const blocks = blocksBySection.get(sec.id) ?? NO_BLOCKS;
   const slice = sliceOwn(text, sec);
+  const tableStarts = useMemo(() => markdownTableStarts(slice, sec.ownStart), [slice, sec.ownStart]);
   const ownRaw = isCollapsed ? "" : withFenceOrigins(slice, sec.ownStart, blocks);
   const hasOwn = slice.trim().length > 0;
   return (
@@ -184,7 +198,7 @@ function SectionView({ sec, siblingIndex, text, blocksBySection, collapsed, onTo
           {hasOwn ? (
             <div className="md-body">
               <SliceBaseContext.Provider value={sec.ownStart}>
-                <MarkdownBody components={components} dark={dark}>
+                <MarkdownBody components={components} dark={dark} sectionId={sec.id} sourceStart={sec.ownStart} tableStarts={tableStarts}>
                   {ownRaw}
                 </MarkdownBody>
               </SliceBaseContext.Provider>
@@ -230,6 +244,7 @@ export const MdPanel = SignalReact(function MdPanel({
   // Applied to the reading pane only — the explorer is UI chrome, and a CSS
   // zoom on the PanelGroup would skew its sash pointer math.
   const zoom = appState.panelZoom[pid] ?? 1;
+  const proseWidth = useProseWidth(pid);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -242,6 +257,12 @@ export const MdPanel = SignalReact(function MdPanel({
 
   const doc = state?.status === "ready" ? state.doc : null;
   const document = state?.status === "ready" ? state.document : null;
+  const preambleTableStarts = useMemo(
+    () => doc?.preamble
+      ? markdownTableStarts(doc.preamble, document?.contentStart ?? 0)
+      : NO_TABLE_STARTS,
+    [doc?.preamble, document?.contentStart],
+  );
   const blocksBySection = useMemo(
     () => (document ? blocksBySectionOf(document) : new Map<string, readonly MdBlock[]>()),
     [document],
@@ -388,11 +409,20 @@ export const MdPanel = SignalReact(function MdPanel({
     const text = state.text;
     const onToggle = (id: string) => toggleCollapsed(path, id);
     const content = (
-      <div className="mdview-content" ref={rootRef} style={{ zoom }}>
+      <div className="mdview-content" ref={rootRef} style={{ ...proseWidth.style, zoom }}>
+        <div className="mdview-prose-ruler">
+          <ProseWidthHandle pid={pid} zoom={zoom} className="mdview-prose-handle" />
+        </div>
         {state.doc.preamble ? (
           <div className="md-body">
             <SliceBaseContext.Provider value={0}>
-              <MarkdownBody components={components} dark={dark}>
+                <MarkdownBody
+                  components={components}
+                  dark={dark}
+                  sectionId="preamble"
+                  sourceStart={state.document.contentStart}
+                  tableStarts={preambleTableStarts}
+                >
                 {withFenceOrigins(state.doc.preamble, state.document.contentStart, blocksBySection.get("preamble") ?? NO_BLOCKS)}
               </MarkdownBody>
             </SliceBaseContext.Provider>
@@ -491,6 +521,10 @@ export const MdPanel = SignalReact(function MdPanel({
           </button>
         ) : null}
         <span className="spy-spacer" />
+        <details className="mdview-reading-options">
+          <summary>reading width</summary>
+          <ProseWidthControl pid={pid} className="mdview-width-controls" />
+        </details>
         <button type="button" onClick={() => void host.openPath(path).catch(console.error)} title="open in the OS default app">
           ↗ external
         </button>

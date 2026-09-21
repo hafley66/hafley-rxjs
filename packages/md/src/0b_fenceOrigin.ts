@@ -9,6 +9,7 @@ import type { MdBlock, SourceSpan } from "@hafley66/grapht-model";
 export type FenceOrigin = { start: number; lineStart: number };
 
 const TOKEN = /\{md-origin=(\d+):(\d+)\}/u;
+const TOKEN_GLOBAL = / \{md-origin=(\d+):(\d+)\}/gu;
 
 function tokenOf(block: MdBlock): string {
   return ` {md-origin=${block.codeStart}:${block.span.lineStart + 1}}`;
@@ -31,6 +32,30 @@ export function withFenceOrigins(slice: string, sliceStart: number, blocks: read
     shift += token.length;
   }
   return marked;
+}
+
+/**
+ * Rebase source positions after withFenceOrigins has inserted renderer metadata.
+ * The returned positions are relative to the marked slice that Streamdown sees.
+ */
+export function renderedOffsetsForSourceStarts(
+  markedSlice: string,
+  sliceStart: number,
+  sourceStarts: readonly number[],
+): readonly number[] {
+  const insertions: Array<{ source: number; length: number }> = [];
+  for (const match of markedSlice.matchAll(TOKEN_GLOBAL)) {
+    const origin = Number(match[1]);
+    if (!Number.isFinite(origin) || match.index === undefined) continue;
+    insertions.push({ source: origin - 1, length: match[0].length });
+  }
+  return sourceStarts.map((sourceStart) => {
+    const relative = sourceStart - sliceStart;
+    const inserted = insertions
+      .filter(({ source }) => source <= sourceStart)
+      .reduce((total, { length }) => total + length, 0);
+    return relative + inserted;
+  });
 }
 
 /** The origin a fenced renderer reads back out of its metastring. */
