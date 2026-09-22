@@ -160,11 +160,13 @@ function HeaderActions({ tableGrid, col }: { readonly tableGrid: Grid<MarkdownTa
 
 function MarkdownTableHeader({
   header,
+  label,
   tableGrid,
   col,
   alignment,
 }: {
   readonly header: ReactNode;
+  readonly label: string;
   readonly tableGrid: Grid<MarkdownTableRow> | undefined;
   readonly col: string;
   readonly alignment: "left" | "center" | "right";
@@ -176,7 +178,7 @@ function MarkdownTableHeader({
         textAlign: alignment,
       } as CSSProperties}
     >
-      <span className="mdview-table-header-label">{header}</span>
+      <span className="mdview-table-header-label" title={label}>{header}</span>
       <HeaderActions tableGrid={tableGrid} col={col} />
     </span>
   );
@@ -190,7 +192,7 @@ const columnsOf = (model: MarkdownTableModel): readonly ColumnDef<MarkdownTableR
     id: columnId(index),
     header: model.headerValues[index] ?? `Column ${index + 1}`,
     value: (row) => row.values[index] ?? "",
-    width: compact ? Math.max(96, longest * 8 + 32) : 280,
+    width: compact ? Math.max(96, longest * 8 + 12) : 280,
     minWidth: 96,
     flex: compact ? undefined : Math.min(3, Math.max(1, Math.ceil(longest / 80))),
     sortable: true,
@@ -199,6 +201,7 @@ const columnsOf = (model: MarkdownTableModel): readonly ColumnDef<MarkdownTableR
     headerCell: reactSlot(({ grid: tableGrid, col }) => (
       <MarkdownTableHeader
         header={header}
+        label={model.headerValues[index] ?? `Column ${index + 1}`}
         tableGrid={tableGrid}
         col={col}
         alignment={model.alignments[index] ?? "left"}
@@ -242,14 +245,16 @@ function createTableGrid(
   id: string,
   tableState: Signal<Partial<GridState>> | undefined,
 ): Grid<MarkdownTableRow> {
-  return grid<MarkdownTableRow>({
+  const tableGrid = grid<MarkdownTableRow>({
     id,
     rows: model.rows,
     columns: columnsOf(model),
     rowId: (row) => row.id,
-    rowMeasure: { initial: 48, bufferPx: 360 },
+    rowMeasure: { initial: 28, bufferPx: 360 },
     state: tableState,
   });
+  tableGrid.state.density.$("compact");
+  return tableGrid;
 }
 
 function useTableGrid(

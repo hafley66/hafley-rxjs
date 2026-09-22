@@ -15,7 +15,7 @@
 
 .mdview-content {
   --md-prose-width: 900px;
-  padding: 1.5rem clamp(1rem, 3%, 3rem) 4rem;
+  padding: 4px 8px 12px;
   min-width: 0;
   scrollbar-gutter: stable;
 }
@@ -38,8 +38,8 @@
 }
 
 .mdview-content .mdview-head {
-  gap: 0.5rem;
-  margin-block: 2rem 0.9rem;
+  gap: 4px;
+  margin-block: 0.75rem 0.3rem;
   line-height: 1.35;
   letter-spacing: -0.015em;
   color: var(--panel-fg, inherit);
@@ -51,8 +51,15 @@
 
 .mdview-content .mdview-h1 {
   font-size: 1.9em;
-  padding-bottom: 0.45em;
+  padding-bottom: 0.15em;
   border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.mdview-content .mdview-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mdview-content .mdview-h2 { font-size: 1.5em; }
@@ -60,15 +67,15 @@
 .mdview-content .mdview-twisty { color: var(--row-active-bg, #618bcb); }
 
 .mdview-content .md-body :is(p, ul, ol, blockquote) {
-  margin-block: 0.9em;
+  margin-block: 0.4em;
 }
 
 .mdview-content .md-body :is(ul, ol) { padding-inline-start: 1.65em; }
-.mdview-content .md-body li + li { margin-top: 0.45em; }
-.mdview-content .md-body li > :is(p, ul, ol) { margin-block: 0.45em; }
+.mdview-content .md-body li + li { margin-top: 0.15em; }
+.mdview-content .md-body li > :is(p, ul, ol) { margin-block: 0.2em; }
 
 .mdview-content .md-body blockquote {
-  padding: 0.6rem 1.1rem;
+  padding: 4px 8px;
   border-inline-start: 3px solid var(--row-active-bg, #618bcb);
   border-radius: 0 6px 6px 0;
   background: color-mix(in srgb, currentColor 5%, transparent);
@@ -80,7 +87,7 @@
 }
 
 .mdview-content .md-body hr {
-  margin-block: 2rem;
+  margin-block: 0.75rem;
   border: 0;
   border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
 }
@@ -88,19 +95,19 @@
 .mdview-table {
   min-width: 0;
   max-width: 100%;
-  margin-block: 1.75rem;
+  margin-block: 0.6rem;
   line-height: 1.55;
 }
 
 .mdview-table-grid[data-route="g"] {
-  --sg-pad: 16px;
+  --sg-pad: 4px;
   --sg-bg: var(--panel-bg, var(--md-code-bg, #fff));
   --sg-fg: var(--panel-fg, var(--md-code-fg, #24292e));
   --sg-head-bg: color-mix(in srgb, var(--sg-fg) 6%, var(--sg-bg));
   --sg-hover-bg: color-mix(in srgb, var(--sg-fg) 4%, var(--sg-bg));
   --sg-line: color-mix(in srgb, var(--sg-fg) 15%, var(--sg-bg));
   block-size: min(70vh, calc(var(--sg-total-h) + var(--sg-row-h) + 18px));
-  min-block-size: 110px;
+  min-block-size: 72px;
   max-inline-size: 100%;
   resize: vertical;
   overflow: hidden;
@@ -108,8 +115,8 @@
   border-radius: 6px;
 }
 .mdview-table-grid .sg-cell {
-  padding-block: 0.85rem;
-  align-items: flex-start;
+  padding-block: 1px;
+  align-items: center;
   white-space: normal;
   overflow-wrap: anywhere;
   border-inline-end: 1px solid color-mix(in srgb, var(--sg-fg) 13%, transparent);
@@ -122,6 +129,10 @@
   z-index: 4;
 }
 .mdview-table-grid .sg-head-label { overflow: visible; }
+.mdview-table-grid .sg-head-label > .sg-react {
+  min-inline-size: 0;
+  inline-size: 100%;
+}
 .mdview-table-grid :is(.sg-head, .sg-head-row, .sg-canvas, .sg-rows) { inline-size: 100%; }
 .mdview-table-cell { min-width: 0; width: 100%; }
 .mdview-table-header-cell {
@@ -133,6 +144,8 @@
   overflow: visible;
 }
 .mdview-table-header-label {
+  white-space: nowrap;
+  flex: 1;
   min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -212,7 +225,7 @@
   display: grid;
   gap: 4px;
   min-inline-size: 12rem;
-  padding: 0.35rem;
+  padding: 3px;
   background: var(--sg-bg);
   border: 1px solid var(--sg-line);
   box-shadow: 0 5px 14px color-mix(in srgb, var(--sg-fg) 18%, transparent);
@@ -228,7 +241,7 @@
   min-inline-size: 14rem;
   max-block-size: min(18rem, 50vh);
   overflow: auto;
-  padding: 0.5rem;
+  padding: 4px;
   color: var(--sg-fg);
   background: var(--sg-bg);
   border: 1px solid var(--sg-line);
@@ -239,7 +252,7 @@
 .mdview-table-visibility:focus-within .mdview-table-column-menu,
 .mdview-table-column-menu:hover { display: grid; gap: 2px; }
 .mdview-table-column-menu-section {
-  padding: 0.25rem 0.4rem;
+  padding: 2px 4px;
   color: color-mix(in srgb, var(--sg-fg) 65%, transparent);
   font-size: 0.75em;
   text-transform: uppercase;
@@ -251,7 +264,7 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.3rem 0.4rem;
+  padding: 2px 4px;
   white-space: nowrap;
   cursor: pointer;
 }
@@ -279,25 +292,25 @@
 }
 
 .mdview-content [data-streamdown="code-block"] {
-  margin-block: 1.5rem;
+  margin-block: 0.6rem;
 }
 
 .mdview-root .act-bar {
   flex-wrap: wrap;
-  row-gap: 0.4rem;
+  row-gap: 2px;
 }
 
 .mdview-reading-options { position: relative; }
-.mdview-reading-options > summary { cursor: pointer; padding: 0.3rem 0.5rem; }
+.mdview-reading-options > summary { cursor: pointer; padding: 2px 4px; }
 .mdview-width-controls {
   position: absolute;
   z-index: 10;
   right: 0;
   top: 100%;
   width: min(19rem, 75vw);
-  padding: 0.9rem;
+  padding: 6px;
   display: grid;
-  gap: 0.7rem;
+  gap: 4px;
   color: var(--panel-fg, #ddd);
   background: var(--panel-bg, #242424);
   border: 1px solid var(--frame, #666);

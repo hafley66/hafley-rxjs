@@ -191,7 +191,7 @@ function SectionView({ sec, siblingIndex, text, blocksBySection, collapsed, onTo
         }}
       >
         <span className="mdview-twisty">{isCollapsed ? "▸" : "▾"}</span>
-        <span className="mdview-title">{sectionDisplayTitle(sec.title, siblingIndex)}</span>
+        <span className="mdview-title" title={sectionDisplayTitle(sec.title, siblingIndex)}>{sectionDisplayTitle(sec.title, siblingIndex)}</span>
       </div>
       {!isCollapsed && (
         <div className="mdview-body">
