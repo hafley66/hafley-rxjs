@@ -1,4 +1,4 @@
-import { Observable, Subject, of } from "rxjs"
+import { BehaviorSubject, Observable, Subject, of } from "rxjs"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { trackSubscription } from "../../../vitest.setup"
 import { Signal } from "./2_Signal"
@@ -423,5 +423,32 @@ describe("createQuery refetchInterval", () => {
     vi.advanceTimersByTime(5000)
 
     expect(requests).toHaveLength(1)
+  })
+
+  it("pauses polling and refetches once when resuming after stale time", () => {
+    vi.useFakeTimers()
+    const pauseWhen = new BehaviorSubject(false)
+    const { endpoint, requests } = controlledEndpoint()
+    const query = endpoint.createQuery({ id: "1" }, {
+      refetchInterval: 1000,
+      staleTime: 500,
+      pauseWhen,
+    })
+
+    trackSubscription(query.$.subscribe())
+    requests[0].response.next(response({ id: "1", profile: { name: "A" } }))
+    requests[0].response.complete()
+    pauseWhen.next(true)
+
+    vi.advanceTimersByTime(10_000)
+    expect(requests).toHaveLength(1)
+
+    pauseWhen.next(false)
+    expect(requests).toHaveLength(2)
+    requests[1].response.next(response({ id: "1", profile: { name: "B" } }))
+    requests[1].response.complete()
+
+    vi.advanceTimersByTime(1000)
+    expect(requests).toHaveLength(3)
   })
 })

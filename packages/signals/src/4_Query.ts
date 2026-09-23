@@ -5,15 +5,20 @@ import {
   Subject,
   concat,
   defer,
+  distinctUntilChanged,
+  expand,
   filter,
+  fromEvent,
   map,
   materialize,
   merge,
   of,
+  pairwise,
   scan,
   share,
   startWith,
   switchMap,
+  timer,
   type Notification,
 } from "rxjs"
 import type { Signal as SignalType } from "./0_types.js"
@@ -44,8 +49,13 @@ export type QueryOptions<O = unknown, E = unknown> = {
   cacheTime?: number
   skip?: "clear" | "retain"
   now?: () => number
-  /** Poll while subscribed. A tick that lands mid-flight is dropped, never queued. */
+  /**
+   * Poll while subscribed. A tick that lands mid-flight is dropped, never queued.
+   * Polling pauses while this emits true. When omitted in a DOM, visibilitychange
+   * pauses hidden-document polling.
+   */
   refetchInterval?: RefetchInterval<O, E>
+  pauseWhen?: Observable<boolean>
 }
 
 export type Query<I, O, E = unknown> = SignalType<QueryState<O, E>> & {
@@ -154,26 +164,40 @@ function queryCache(endpoint: object) {
 function pollTicks<O, E>(
   entry: QueryEntry<O, E>,
   interval: RefetchInterval<O, E>,
+  pauseWhen: Observable<boolean>,
+  staleTime: number,
+  now: () => number,
 ): Observable<"refetch"> {
   if (interval === false || interval === undefined) return EMPTY
   const delayFor = (): number | false =>
     typeof interval === "function" ? interval(entry.current) : interval
-  return new Observable<"refetch">((subscriber) => {
-    let handle: ReturnType<typeof setTimeout> | undefined
-    const arm = () => {
-      const ms = delayFor()
-      if (ms === false) return
-      handle = setTimeout(() => {
-        if (delayFor() === false) return
-        if (!entry.current.isLoading) subscriber.next("refetch")
-        arm()
-      }, ms)
-    }
-    arm()
-    return () => {
-      if (handle !== undefined) clearTimeout(handle)
-    }
-  })
+  const stale = () => entry.current.updatedAt === undefined ||
+    now() - entry.current.updatedAt >= staleTime
+  const nextTimer = () => {
+    const ms = delayFor()
+    return ms === false ? EMPTY : timer(ms)
+  }
+  const pauseState$ = pauseWhen.pipe(
+    startWith(false),
+    distinctUntilChanged(),
+    share(),
+  )
+  const activeTicks$ = pauseState$.pipe(
+    switchMap((paused) => paused
+      ? EMPTY
+      : nextTimer().pipe(
+        expand(() => nextTimer()),
+        filter(() => delayFor() !== false && !entry.current.isLoading),
+        map(() => "refetch" as const),
+      )),
+  )
+  const resumedRefetch$ = pauseState$.pipe(
+    pairwise(),
+    filter(([wasPaused, paused]) => wasPaused && !paused),
+    filter(() => !entry.current.isLoading && stale()),
+    map(() => "refetch" as const),
+  )
+  return merge(activeTicks$, resumedRefetch$)
 }
 
 function getQueryEntry<I, O, E>(
@@ -206,7 +230,13 @@ function getQueryEntry<I, O, E>(
     const fetchEvents$ = merge(
       initialFetch$,
       command.pipe(filter((value) => value === "refetch")),
-      pollTicks(entry, options.refetchInterval as RefetchInterval<O, E>),
+      pollTicks(
+        entry,
+        options.refetchInterval as RefetchInterval<O, E>,
+        options.pauseWhen,
+        options.staleTime,
+        options.now,
+      ),
     ).pipe(
       // One query key represents one current request/response cycle. A new
       // refetch cancels the previous cycle; concurrency is deliberately not
@@ -259,6 +289,14 @@ function getQueryEntry<I, O, E>(
   return entry
 }
 
+function defaultPauseWhen(): Observable<boolean> {
+  if (typeof document === "undefined") return of(false)
+  return defer(() => fromEvent(document, "visibilitychange").pipe(
+    map(() => document.visibilityState === "hidden"),
+    startWith(document.visibilityState === "hidden"),
+  ))
+}
+
 export function createQuery<I, O, E = unknown>(
   endpoint: Endpoint<I, O>,
   source: SignalSource<I | undefined>,
@@ -271,6 +309,7 @@ export function createQuery<I, O, E = unknown>(
     cacheTime: config.cacheTime ?? 5 * 60_000,
     skip: config.skip ?? "clear",
     now: config.now ?? Date.now,
+    pauseWhen: config.pauseWhen ?? defaultPauseWhen(),
   }
   let activeEntry: QueryEntry<O, E> | undefined
   let retained = idle<O, E>()

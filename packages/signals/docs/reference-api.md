@@ -844,8 +844,13 @@ export type QueryOptions<O = unknown, E = unknown> = {
   cacheTime?: number
   skip?: "clear" | "retain"
   now?: () => number
-  /** Poll while subscribed. A tick that lands mid-flight is dropped, never queued. */
+  /**
+   * Poll while subscribed. A tick that lands mid-flight is dropped, never queued.
+   * Polling pauses while this emits true. When omitted in a DOM, visibilitychange
+   * pauses hidden-document polling.
+   */
   refetchInterval?: RefetchInterval<O, E>
+  pauseWhen?: Observable<boolean>
 }
 ```
 
@@ -1313,4 +1318,3 @@ SignalPathValue: any
 ```ts
 signalsJsx: () => Plugin<any>
 ```
-

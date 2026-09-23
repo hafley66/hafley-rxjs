@@ -134,6 +134,22 @@ External state enters through producers rather than being mirrored into React.
 | `StorageSignal` | `src/6_Storage.js` | persisted signal |
 | `Route` | `src/5_Route.js` | URL path matcher (being superseded by `@hafley66/path` route) |
 
+### Query polling visibility
+
+`createQuery` polling can be paused with an observable boolean. The default in a
+browser pauses polling while the document is hidden; pass `pauseWhen` when the
+application has another visibility or activity condition.
+
+```ts
+const query = endpoint.createQuery(input, {
+  refetchInterval: 30_000,
+  pauseWhen: appIsIdle$,
+})
+```
+
+`pauseWhen` emits `true` to pause polling. An explicit `query.refetch()` or
+`query.invalidate()` still starts a request while polling is paused.
+
 ---
 
 ## Build / test
