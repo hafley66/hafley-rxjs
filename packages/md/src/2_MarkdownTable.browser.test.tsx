@@ -224,3 +224,108 @@ it("consumes and mirrors caller-owned table state", async () => {
     Reflect.deleteProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT");
   }
 });
+
+it("sizes the grid to header plus rows under the 70vh cap, scrolls inside above it, and resizes within the content", async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  const host = document.createElement("div");
+  host.style.cssText = "width: 900px; margin: 0; padding: 0";
+  document.body.append(host);
+  const root = createRoot(host);
+  const initialViewport = { width: window.innerWidth, height: window.innerHeight };
+  const tableOf = (count: number) => [
+    createElement("thead", null, row("th", "Name", "Value")),
+    createElement("tbody", null, ...Array.from({ length: count }, (_, index) => row("td", `name-${index}`, String(index)))),
+  ];
+  const settle = async () => {
+    for (let frame = 0; frame < 4; frame += 1) {
+      await act(async () => { await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined))); });
+    }
+  };
+  const gridEl = () => host.querySelector<HTMLElement>(".mdview-table-grid")!;
+  const scrollEl = () => host.querySelector<HTMLElement>(".sg-scroll")!;
+  // The element the UA resize handle writes `height` onto, whichever box carries `resize`.
+  const resizer = () => [gridEl(), scrollEl()].find((node) => getComputedStyle(node).resize === "vertical")!;
+  const measure = () => {
+    const scroll = scrollEl();
+    const scrollRect = scroll.getBoundingClientRect();
+    const rows = [...host.querySelectorAll<HTMLElement>(".sg-center .sg-row")];
+    const head = host.querySelector<HTMLElement>(".sg-head")!.getBoundingClientRect();
+    const gridRect = gridEl().getBoundingClientRect();
+    const innerBottom = gridRect.bottom - Number.parseFloat(getComputedStyle(gridEl()).borderBottomWidth);
+    const lastRow = rows.at(-1)!.getBoundingClientRect();
+    return {
+      // Empty strip between the last row and the grid's inner bottom edge. Negative when rows continue below.
+      gap: Math.round(innerBottom - lastRow.bottom),
+      scrollHeight: Math.round(scrollRect.height),
+      content: Math.round(head.height + rows.reduce((sum, node) => sum + node.getBoundingClientRect().height, 0)),
+      renderedRows: rows.length,
+      rowsCoverViewport: lastRow.bottom >= scrollRect.bottom - 1,
+      scrolls: scroll.scrollHeight > scroll.clientHeight,
+    };
+  };
+  try {
+    await page.viewport(1280, 800);
+    const cap = Math.round(window.innerHeight * 0.7);
+    await act(() => root.render(createElement(MarkdownTable, { children: tableOf(3) })));
+    await expect.poll(() => host.querySelectorAll(".sg-center .sg-row").length).toBe(3);
+    await settle();
+    const short = measure();
+    resizer().style.height = `${short.content + 200}px`;
+    await settle();
+    const shortGrown = measure();
+
+    await act(() => root.render(createElement(MarkdownTable, { children: tableOf(200) })));
+    await expect.poll(() => host.querySelectorAll(".sg-center .sg-row").length).toBeGreaterThan(3);
+    resizer().style.removeProperty("height");
+    await settle();
+    const long = measure();
+    resizer().style.height = "200px";
+    await settle();
+    const longShrunk = measure();
+    resizer().style.height = `${cap + 100}px`;
+    await settle();
+    const longGrown = measure();
+
+    expect({
+      cap,
+      short: { gap: short.gap, heightIsContent: short.scrollHeight === short.content, rowsCoverViewport: short.rowsCoverViewport, scrolls: short.scrolls },
+      shortGrown: { gap: shortGrown.gap, heightIsContent: shortGrown.scrollHeight === short.content },
+      long: { scrollHeight: long.scrollHeight, virtualized: long.renderedRows < 200, rowsCoverViewport: long.rowsCoverViewport, scrolls: long.scrolls },
+      longShrunk: { belowCap: longShrunk.scrollHeight < cap, rowsCoverViewport: longShrunk.rowsCoverViewport },
+      longGrown: { scrollHeight: longGrown.scrollHeight, rowsCoverViewport: longGrown.rowsCoverViewport },
+    }).toMatchInlineSnapshot(`
+      {
+        "cap": 560,
+        "long": {
+          "rowsCoverViewport": true,
+          "scrollHeight": 560,
+          "scrolls": true,
+          "virtualized": true,
+        },
+        "longGrown": {
+          "rowsCoverViewport": true,
+          "scrollHeight": 660,
+        },
+        "longShrunk": {
+          "belowCap": true,
+          "rowsCoverViewport": true,
+        },
+        "short": {
+          "gap": 0,
+          "heightIsContent": true,
+          "rowsCoverViewport": true,
+          "scrolls": false,
+        },
+        "shortGrown": {
+          "gap": 0,
+          "heightIsContent": true,
+        },
+      }
+    `);
+  } finally {
+    await page.viewport(initialViewport.width, initialViewport.height);
+    await act(() => root.unmount());
+    host.remove();
+    Reflect.deleteProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT");
+  }
+});

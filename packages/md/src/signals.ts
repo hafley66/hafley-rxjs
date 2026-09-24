@@ -224,9 +224,9 @@ export function expandIds(path: string, ids: string[]): void {
   sig.$(next);
 }
 
-// Per-path list/item fold state (VSCode-style, offsets from MdDoc.folds as
-// keys). Default is empty: lists start unfolded even under startFolded (which
-// collapses sections only); "fold all" folds these too.
+// Per-path list fold state (offsets from MdDoc.folds.lists as keys). Default
+// is empty: lists start unfolded even under startFolded (which collapses
+// sections only); "fold all" folds every list too.
 type NumSetSignal = { $: Signal$<Set<number>> };
 const blockFoldSignals = new Map<string, NumSetSignal>();
 
@@ -250,10 +250,11 @@ export function toggleBlockFold(path: string, offset: number): void {
 export function setAllCollapsed(path: string, collapsed: boolean): void {
   readyInited.add(path); // an explicit user gesture, not the auto-default
   collapsedFor(path).$(collapsed ? defaultCollapsedAll(path) : new Set());
-  // fold all also folds every list / long item; unfold all clears both kinds.
+  // fold all also folds every list; unfold all clears them. Lists are the only
+  // rendered fold unit, so item offsets in folds.all stay out of the set.
   const state = mdDocs.$()[path];
   blockFoldsFor(path).$(
-    collapsed && state?.status === "ready" ? new Set(state.doc.folds.all) : new Set(),
+    collapsed && state?.status === "ready" ? new Set(state.doc.folds.lists.keys()) : new Set(),
   );
 }
 

@@ -2,7 +2,7 @@
 // canonical TreeTable) | rendered sections, split with react-resizable-panels
 // (AGENTS "Split panes"). All state lives in the signals module; signal reads
 // happen here at the top (SignalReact tracks them) and flow down as props.
-import { Children, createContext, lazy, Suspense, useContext, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { createContext, lazy, Suspense, useContext, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import type { StreamdownProps } from "streamdown";
 import { SignalReact } from "@hafley66/signals/react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -119,6 +119,41 @@ function FoldTwisty({
     >
       {folded ? "▸" : "▾"}
     </span>
+  );
+}
+
+// The fold row is an <li> because <ul>/<ol> admit only <li> children. It is
+// `display: block` (mdview.css), so it is no list-item: no marker, and an
+// <ol> still numbers its first real item 1.
+function FoldableList({
+  tag: Tag,
+  count,
+  folded,
+  onFold,
+  className,
+  children,
+  ...rest
+}: {
+  tag: "ul" | "ol";
+  count: number;
+  folded: boolean;
+  onFold: () => void;
+  className?: string;
+  children?: React.ReactNode;
+} & Omit<React.HTMLAttributes<HTMLElement>, "children" | "className">) {
+  return (
+    <Tag {...rest} className={[className, "md-foldable-list", folded ? "md-folded-list" : ""].filter(Boolean).join(" ")}>
+      <li className="md-list-fold">
+        <FoldTwisty folded={folded} title={folded ? "unfold list" : "fold list"} onToggle={onFold} />
+      </li>
+      {folded ? (
+        <li className="md-fold-more" onClick={onFold}>
+          … {count} item{count === 1 ? "" : "s"}
+        </li>
+      ) : (
+        children
+      )}
+    </Tag>
   );
 }
 
@@ -323,72 +358,29 @@ export const MdPanel = SignalReact(function MdPanel({
       img({ src, alt }) {
         return <MdImg src={typeof src === "string" ? src : undefined} alt={alt ?? undefined} base={path} />;
       },
-      // VSCode-style list folding: a list collapses to its first item (plus a
-      // "… N more" row); a multi-block item collapses to its first block. The
-      // list's twisty lives at the start of its first item (folds.firstItemToList
-      // is the lookup); item twisties sit on the item itself. Node positions
-      // come from react-markdown's hast nodes and are re-based per section
-      // (SliceBaseContext).
+      // List folding: one twisty per list, on the list's own top edge, folds
+      // the whole list to a "… N items" row. A nested list is its own list
+      // with its own twisty. Items carry none. Node positions come from
+      // react-markdown's hast nodes and are re-based per section
+      // (SliceBaseContext) onto the absolute offsets the fold model keys on.
       ul({ node, children, ...rest }) {
         const abs = (node?.position?.start.offset ?? -1) + useContext(SliceBaseContext);
         const count = folds.lists.get(abs);
         if (count == null) return <ul {...rest}>{children}</ul>;
-        const folded = blockFolds.has(abs);
-        const kids = Children.toArray(children);
         return (
-          <ul {...rest} className={folded ? "md-folded-list" : undefined}>
-            {folded ? kids.slice(0, 1) : kids}
-            {folded ? (
-              <li className="md-fold-more" onClick={() => toggleBlockFold(path, abs)}>
-                … {count - 1} more item{count - 1 === 1 ? "" : "s"}
-              </li>
-            ) : null}
-          </ul>
+          <FoldableList tag="ul" count={count} folded={blockFolds.has(abs)} onFold={() => toggleBlockFold(path, abs)} {...rest}>
+            {children}
+          </FoldableList>
         );
       },
       ol({ node, children, ...rest }) {
         const abs = (node?.position?.start.offset ?? -1) + useContext(SliceBaseContext);
         const count = folds.lists.get(abs);
         if (count == null) return <ol {...rest}>{children}</ol>;
-        const folded = blockFolds.has(abs);
-        const kids = Children.toArray(children);
         return (
-          <ol {...rest} className={folded ? "md-folded-list" : undefined}>
-            {folded ? kids.slice(0, 1) : kids}
-            {folded ? (
-              <li className="md-fold-more" onClick={() => toggleBlockFold(path, abs)}>
-                … {count - 1} more item{count - 1 === 1 ? "" : "s"}
-              </li>
-            ) : null}
-          </ol>
-        );
-      },
-      li({ node, children, className, ...rest }) {
-        const abs = (node?.position?.start.offset ?? -1) + useContext(SliceBaseContext);
-        const listStart = folds.firstItemToList.get(abs);
-        const itemFoldable = folds.items.has(abs);
-        if (listStart == null && !itemFoldable) return <li {...rest} className={className}>{children}</li>;
-        const listFolded = listStart != null && blockFolds.has(listStart);
-        const itemFolded = itemFoldable && blockFolds.has(abs);
-        const kids = Children.toArray(children);
-        const cls = [className, itemFolded ? "md-folded-item" : ""].filter(Boolean).join(" ");
-        return (
-          <li {...rest} className={cls || undefined}>
-            {listStart != null ? (
-              <FoldTwisty folded={listFolded} title="fold list" onToggle={() => toggleBlockFold(path, listStart)} />
-            ) : null}
-            {itemFoldable ? (
-              <FoldTwisty folded={itemFolded} title="fold item" onToggle={() => toggleBlockFold(path, abs)} />
-            ) : null}
-            {itemFolded ? (
-              <span className="md-item-folded-body">
-                {kids.slice(0, 1)}
-                <span className="md-item-more">…</span>
-              </span>
-            ) : (
-              kids
-            )}
-          </li>
+          <FoldableList tag="ol" count={count} folded={blockFolds.has(abs)} onFold={() => toggleBlockFold(path, abs)} {...rest}>
+            {children}
+          </FoldableList>
         );
       },
     }),

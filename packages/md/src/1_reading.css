@@ -1,5 +1,5 @@
-/* Prose has a user-selected reading measure. Block renderers keep the pane's
-   available width and their own sizing controls. */
+/* Prose has a user-selected reading measure. Block renderers run from their
+   section's indent to the content column's right edge. */
 .mdview-panel-activation {
   height: 100%;
   min-width: 0;
@@ -13,46 +13,86 @@
   min-height: 0;
 }
 
+/* Indent-guide palette, one hue per nesting level. Declared on the root so any
+   ancestor of the viewer can re-theme it. */
+:root {
+  --md-guide-1: oklch(0.66 0.17 25 / 0.6);
+  --md-guide-2: oklch(0.76 0.15 75 / 0.6);
+  --md-guide-3: oklch(0.7 0.17 145 / 0.6);
+  --md-guide-4: oklch(0.72 0.12 210 / 0.6);
+  --md-guide-5: oklch(0.62 0.17 265 / 0.6);
+  --md-guide-6: oklch(0.62 0.19 320 / 0.6);
+}
+
 .mdview-content {
   --md-prose-width: 900px;
+  --md-font-size: 15px;
+  /* One step per section level: a section body starts this far inside its
+     header, so nested content never reaches its header's inline-start edge. */
+  --md-section-indent: 0.85em;
+  --md-guide-width: 1px;
+  /* The guide sits this far into the indent, under the header twisty. */
+  --md-guide-inset: 0.3em;
+  /* Theme hairline (instant's --frame), with a text-derived fallback. */
+  --md-line: var(--frame, color-mix(in srgb, currentColor 18%, transparent));
   padding: 4px 8px 12px;
   min-width: 0;
   scrollbar-gutter: stable;
 }
 
 .mdview-content .md-body {
-  font-size: 15px;
+  font-size: var(--md-font-size);
   line-height: 1.7;
   overflow-wrap: anywhere;
 }
 
-.mdview-content .mdview-body {
-  margin-left: 0;
+/* The document column starts where a centred reading measure would start.
+   Everything inside is laid out from that edge: prose stops at the measure,
+   while tables, code, and diagrams run to the column's right edge. */
+.mdview-content > :is(.md-body, .mdview-sec) {
+  margin-inline-start: max(0px, calc((100% - var(--md-prose-width)) / 2));
 }
 
-.mdview-content .mdview-head,
+.mdview-content .mdview-body {
+  margin-inline-start: var(--md-guide-inset);
+  padding-inline-start: calc(var(--md-section-indent) - var(--md-guide-inset) - var(--md-guide-width));
+  border-inline-start: var(--md-guide-width) solid var(--md-guide, transparent);
+}
+
+.mdview-content .mdview-h1 + .mdview-body { --md-guide: var(--md-guide-1); }
+.mdview-content .mdview-h2 + .mdview-body { --md-guide: var(--md-guide-2); }
+.mdview-content .mdview-h3 + .mdview-body { --md-guide: var(--md-guide-3); }
+.mdview-content .mdview-h4 + .mdview-body { --md-guide: var(--md-guide-4); }
+.mdview-content .mdview-h5 + .mdview-body { --md-guide: var(--md-guide-5); }
+.mdview-content .mdview-h6 + .mdview-body { --md-guide: var(--md-guide-6); }
+
 .mdview-content .mdview-streamdown > div > :is(p, ul, ol, blockquote, h1, h2, h3, h4, h5, h6, hr) {
   box-sizing: border-box;
-  width: min(100%, var(--md-prose-width));
-  margin-inline: auto;
+  max-inline-size: var(--md-prose-width);
+  margin-inline: 0;
 }
 
 .mdview-content .mdview-head {
+  box-sizing: border-box;
   gap: 4px;
-  margin-block: 0.75rem 0.3rem;
+  margin-block: calc(var(--md-font-size) * 1.5) calc(var(--md-font-size) * 0.5);
   line-height: 1.35;
   letter-spacing: -0.015em;
   color: var(--panel-fg, inherit);
 }
 
+.mdview-content .mdview-h2 { margin-block-start: calc(var(--md-font-size) * 1.75); }
+
 .mdview-content > .mdview-sec:first-child > .mdview-head {
   margin-top: 0.25rem;
 }
 
+/* Level-1 headers carry a full-width rule in the theme hairline colour. */
 .mdview-content .mdview-h1 {
   font-size: 1.9em;
+  margin-block: calc(var(--md-font-size) * 2.25) calc(var(--md-font-size) * 0.6);
   padding-bottom: 0.15em;
-  border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-bottom: 1px solid var(--md-line);
 }
 
 .mdview-content .mdview-title {
@@ -67,12 +107,27 @@
 .mdview-content .mdview-twisty { color: var(--row-active-bg, #618bcb); }
 
 .mdview-content .md-body :is(p, ul, ol, blockquote) {
-  margin-block: 0.4em;
+  margin-block: 0.7em;
 }
 
-.mdview-content .md-body :is(ul, ol) { padding-inline-start: 1.65em; }
-.mdview-content .md-body li + li { margin-top: 0.15em; }
-.mdview-content .md-body li > :is(p, ul, ol) { margin-block: 0.2em; }
+.mdview-content .md-body :is(ul, ol) {
+  padding-inline-start: 1.65em;
+  border-inline-start: var(--md-guide-width) solid var(--md-list-guide, transparent);
+}
+.mdview-content .md-body li + li { margin-top: 0.4em; }
+.mdview-content .md-body .md-list-fold + li { margin-top: 0; }
+.mdview-content .md-body li > :is(p, ul, ol) { margin-block: 0.3em; }
+
+/* List guides take the palette by list depth, cycling after six. */
+.mdview-content .md-body :is(ul, ol) { --md-list-guide: var(--md-guide-1); }
+.mdview-content .md-body :is(ul, ol) :is(ul, ol) { --md-list-guide: var(--md-guide-2); }
+.mdview-content .md-body :is(ul, ol) :is(ul, ol) :is(ul, ol) { --md-list-guide: var(--md-guide-3); }
+.mdview-content .md-body :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) { --md-list-guide: var(--md-guide-4); }
+.mdview-content .md-body :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) { --md-list-guide: var(--md-guide-5); }
+.mdview-content .md-body :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) { --md-list-guide: var(--md-guide-6); }
+.mdview-content .md-body :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) { --md-list-guide: var(--md-guide-1); }
+.mdview-content .md-body :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) { --md-list-guide: var(--md-guide-2); }
+.mdview-content .md-body :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) { --md-list-guide: var(--md-guide-3); }
 
 .mdview-content .md-body blockquote {
   padding: 4px 8px;
@@ -87,9 +142,9 @@
 }
 
 .mdview-content .md-body hr {
-  margin-block: 0.75rem;
+  margin-block: 1.25rem;
   border: 0;
-  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-top: 1px solid var(--md-line);
 }
 
 .mdview-table {
@@ -106,8 +161,16 @@
   --sg-head-bg: color-mix(in srgb, var(--sg-fg) 6%, var(--sg-bg));
   --sg-hover-bg: color-mix(in srgb, var(--sg-fg) 4%, var(--sg-bg));
   --sg-line: color-mix(in srgb, var(--sg-fg) 15%, var(--sg-bg));
-  block-size: min(70vh, calc(var(--sg-total-h) + var(--sg-row-h) + 18px));
-  min-block-size: 72px;
+  /* Header band (row-h per head row plus its 1px rule) and the row run, both
+     written onto this element by the grid renderer. */
+  --md-table-content-h: calc(var(--sg-row-h) * var(--sg-head-rows, 1) + 1px + var(--sg-total-h));
+  --md-table-cap: 70vh;
+  /* The stylesheet sets block-size and the resize handle writes an inline
+     height over it, so a drag escapes the cap but never the content: it
+     shrinks toward one row and grows no further than the last row. */
+  block-size: min(var(--md-table-cap), var(--md-table-content-h));
+  max-block-size: var(--md-table-content-h);
+  min-block-size: min(var(--md-table-content-h), calc(var(--sg-row-h) * (var(--sg-head-rows, 1) + 1) + 1px));
   max-inline-size: 100%;
   resize: vertical;
   overflow: hidden;

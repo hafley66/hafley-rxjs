@@ -305,11 +305,26 @@ body .mdview-streamdown [data-streamdown="code-block-body"] pre {
   background: var(--shiki-dark-bg, var(--sdm-tbg, transparent));
 }
 
-/* List/item folding (VSCode-style). The twisty floats into the list gutter so
-   it sits on the first line regardless of tight/loose list rendering. */
+/* List folding: one twisty per list, centred on the list's inline-start edge
+   (where its indent guide runs) at the list's top. The fold row is an <li> for
+   HTML's sake and `display: block` so it is no list-item: no marker, no step
+   of an <ol>'s counter. */
+.md-foldable-list {
+  position: relative;
+}
+
+.md-list-fold {
+  display: block;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  translate: -50% 0;
+  margin: 0;
+  padding: 0;
+}
+
 .md-twisty {
-  float: left;
-  margin-left: -1.15em;
+  display: inline-block;
   width: 1em;
   text-align: center;
   cursor: pointer;
@@ -322,7 +337,7 @@ body .mdview-streamdown [data-streamdown="code-block-body"] pre {
 }
 
 .md-fold-more {
-  list-style: none;
+  display: block;
   opacity: 0.55;
   font-style: italic;
   cursor: pointer;
@@ -330,16 +345,6 @@ body .mdview-streamdown [data-streamdown="code-block-body"] pre {
 
 .md-fold-more:hover {
   opacity: 1;
-}
-
-/* A folded item keeps only its first block; inline it so the trailing … sits
-   on the same line (the span wrapper keeps the rule off the twisties). */
-.md-item-folded-body > :first-child {
-  display: inline;
-}
-
-.md-item-more {
-  opacity: 0.55;
 }
 
 /* Links: --row-active-bg is a *background* token — too dark to read as text in
@@ -356,6 +361,7 @@ body[data-mode="dark"] .mdview-root .md-body a {
 .mdview-mermaid {
   display: block;
   width: 100%;
+  box-sizing: border-box;
   margin: 16px 0;
   padding: 8px;
   border: 1px solid var(--frame, #d4d0c8);
@@ -389,6 +395,7 @@ body[data-mode="dark"] .mdview-root .md-body a {
 .mdview-d2 {
   display: block;
   width: 100%;
+  box-sizing: border-box;
   margin: 16px 0;
   padding: 8px;
   border: 1px solid var(--frame, #d4d0c8);
@@ -435,6 +442,7 @@ body[data-mode="dark"] .mdview-root .md-body a {
   position: relative;
   display: block;
   width: 100%;
+  box-sizing: border-box;
   height: 420px;
   margin: 16px 0;
   border: 1px solid var(--frame, #d4d0c8);

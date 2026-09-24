@@ -6,7 +6,7 @@ import StreamdownBody from "./0_Streamdown.js";
 import "./mdview.css";
 import "./1_reading.css";
 
-it("keeps prose centered at its selected measure while blocks use the available pane", async () => {
+it("keeps prose at its selected measure inside the section indent while blocks reach the column edge", async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   const host = document.createElement("div");
   document.body.append(host);
@@ -15,10 +15,12 @@ it("keeps prose centered at its selected measure while blocks use the available 
   try {
     await act(() => root.render(
       <div className="mdview-content" style={{ width: 1100, height: 650 }}>
-        <div className="mdview-head">Reading width</div>
-        <div className="mdview-body"><div className="md-body">
-          <StreamdownBody components={{}} dark>{markdown}</StreamdownBody>
-        </div></div>
+        <div className="mdview-sec">
+          <div className="mdview-head mdview-h2">Reading width</div>
+          <div className="mdview-body"><div className="md-body">
+            <StreamdownBody components={{}} dark>{markdown}</StreamdownBody>
+          </div></div>
+        </div>
       </div>,
     ));
     const pane = host.querySelector<HTMLElement>(".mdview-content")!;
@@ -35,17 +37,25 @@ it("keeps prose centered at its selected measure while blocks use the available 
       const h = heading.getBoundingClientRect();
       const l = list.getBoundingClientRect();
       const b = code.getBoundingClientRect();
-      const available = pane.clientWidth - parseFloat(getComputedStyle(pane).paddingLeft) - parseFloat(getComputedStyle(pane).paddingRight);
+      const paneStyle = getComputedStyle(pane);
+      const available = pane.clientWidth - parseFloat(paneStyle.paddingLeft) - parseFloat(paneStyle.paddingRight);
+      const paneBox = pane.getBoundingClientRect();
+      const contentLeft = paneBox.left + (pane.clientLeft + parseFloat(paneStyle.paddingLeft)) * zoom;
+      const contentRight = contentLeft + available * zoom;
       receipts.push({
-        proseFits: Math.abs(p.width / zoom - Math.min(proseWidth, available)) < 1,
-        aligned: Math.abs(h.left - p.left) < 1 && Math.abs(l.left - p.left) < 1,
-        centered: Math.abs((p.left + p.right) / 2 - (b.left + b.right) / 2) < 1,
-        blockFits: Math.abs(b.width / zoom - available) < 1,
+        // Prose stops at the measure or at the section body's edge, whichever comes first.
+        proseFits: Math.abs(p.width - Math.min(proseWidth * zoom, b.width)) < 1,
+        // The section column starts where a centred measure would.
+        columnStart: Math.abs((h.left - contentLeft) / zoom - Math.max(0, (available - proseWidth) / 2)) < 1,
+        // Section content sits inside its header; prose, lists, and blocks share that indent.
+        indented: p.left - h.left >= 8 && Math.abs(l.left - p.left) < 1 && Math.abs(b.left - p.left) < 1,
+        // Blocks run to the column's right edge.
+        blockReachesEdge: Math.abs(b.right - contentRight) < 1,
         noOuterOverflow: pane.scrollWidth <= pane.clientWidth,
       });
     }
     expect(receipts).toEqual(Array.from({ length: 4 }, () => ({
-      proseFits: true, aligned: true, centered: true, blockFits: true, noOuterOverflow: true,
+      proseFits: true, columnStart: true, indented: true, blockReachesEdge: true, noOuterOverflow: true,
     })));
     expect(getComputedStyle(paragraph).lineHeight).toBe("25.5px");
   } finally {
@@ -82,8 +92,13 @@ it("lets a wrapped table extend beyond prose margins in the reading theme", asyn
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 100)); });
     const paragraph = host.querySelector("p")!.getBoundingClientRect();
     const table = host.querySelector(".mdview-table")!.getBoundingClientRect();
+    const pane = host.querySelector<HTMLElement>(".mdview-content")!;
+    const paneRight = pane.getBoundingClientRect().left + pane.clientLeft + pane.clientWidth - parseFloat(getComputedStyle(pane).paddingRight);
     expect(table.width).toBeGreaterThan(paragraph.width + 200);
-    expect(table.left).toBeLessThan(paragraph.left);
+    expect({
+      sharesProseIndent: Math.abs(table.left - paragraph.left) < 1,
+      reachesColumnEdge: Math.abs(table.right - paneRight) < 1,
+    }).toEqual({ sharesProseIndent: true, reachesColumnEdge: true });
     const scroll = host.querySelector<HTMLElement>(".sg-scroll")!;
     expect(scroll.scrollWidth).toBeLessThanOrEqual(scroll.clientWidth + 1);
     expect(scroll.scrollHeight).toBeLessThanOrEqual(scroll.clientHeight + 1);
