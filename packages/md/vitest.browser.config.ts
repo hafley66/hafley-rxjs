@@ -8,6 +8,8 @@ export default defineConfig({
   // streamdown and md resolve react through pnpm isolation; one copy or hooks read null dispatchers
   resolve: { dedupe: ["react", "react-dom"] },
   test: {
+    maxWorkers: 1,
+    fileParallelism: false,
     browser: {
       enabled: true,
       // Headless Chromium launches with --hide-scrollbars, which also drops `::-webkit-scrollbar`

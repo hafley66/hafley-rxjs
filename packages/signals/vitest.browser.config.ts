@@ -6,6 +6,8 @@ import { BROWSER_TESTS } from "./vitest.config.js"
 // until they moved here; a simulated document is what this package no longer keeps.
 export default defineConfig({
   test: {
+    maxWorkers: 1,
+    fileParallelism: false,
     browser: {
       enabled: true,
       provider: playwright(),

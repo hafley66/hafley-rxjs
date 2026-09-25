@@ -4,6 +4,8 @@ import { defineConfig } from "vitest/config"
 // no dev server, chromium headless.
 export default defineConfig({
   test: {
+    maxWorkers: 1,
+    fileParallelism: false,
     projects: [
       {
         test: {

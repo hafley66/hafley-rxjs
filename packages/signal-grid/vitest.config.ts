@@ -34,6 +34,8 @@ export const DOM_TESTS: readonly string[] = [
 // with no baseURL and they skip themselves, which reads as a broken suite rather than a scoped one.
 export default defineConfig({
   test: {
+    maxWorkers: 1,
+    fileParallelism: false,
     include: ["src/**/*.test.ts"],
     exclude: ["tests/**", "fixtures/**", "node_modules/**", "dist/**", "src/**/*.browser.test.{ts,tsx}", ...DOM_TESTS],
   },

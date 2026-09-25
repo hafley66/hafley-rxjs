@@ -7,6 +7,8 @@ export default defineConfig({
   // grid resolves its own react through pnpm isolation; one copy or hooks read null dispatchers
   resolve: { dedupe: ["react", "react-dom"] },
   test: {
+    maxWorkers: 1,
+    fileParallelism: false,
     browser: {
       enabled: true,
       provider: playwright(),

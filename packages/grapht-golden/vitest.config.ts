@@ -16,4 +16,5 @@ export default defineConfig({
       "@hafley66/grapht-render-pixijs": resolve(repositoryRoot, "packages/grapht/adapters/6_render_pixijs/src/index.ts"),
     },
   },
+  test: { maxWorkers: 1, fileParallelism: false },
 })

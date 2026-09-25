@@ -5,6 +5,8 @@ import { defineConfig } from "vitest/config";
 // (vitest.browser.config.ts) or as a page against fixtures/ (vitest.e2e.config.ts).
 export default defineConfig({
   test: {
+    maxWorkers: 1,
+    fileParallelism: false,
     exclude: [
       "**/node_modules/**",
       "**/dist/**",

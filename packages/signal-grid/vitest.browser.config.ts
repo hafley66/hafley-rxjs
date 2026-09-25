@@ -11,6 +11,8 @@ export default defineConfig({
   plugins: [react()],
   resolve: { dedupe: ["react", "react-dom"] },
   test: {
+    maxWorkers: 1,
+    fileParallelism: false,
     browser: {
       enabled: true,
       provider: playwright(),

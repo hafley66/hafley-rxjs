@@ -5,6 +5,8 @@ import { defineConfig } from "vitest/config";
 // real scroll geometry, so they run in chromium, not in a simulated DOM.
 export default defineConfig({
   test: {
+    maxWorkers: 1,
+    fileParallelism: false,
     browser: {
       enabled: true,
       provider: playwright(),

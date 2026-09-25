@@ -37,4 +37,5 @@ export default defineConfig({
     }),
   ],
   test: { include: ["tests/5_site.e2e.test.ts"], testTimeout: 120_000, hookTimeout: 180_000 },
+  test: { maxWorkers: 1, fileParallelism: false },
 })

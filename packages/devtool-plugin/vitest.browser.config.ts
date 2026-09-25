@@ -13,6 +13,8 @@ export default defineConfig({
     exclude: ["rxjs", "rxjs/operators"],
   },
   test: {
+    maxWorkers: 1,
+    fileParallelism: false,
     browser: {
       enabled: true,
       provider: playwright(),

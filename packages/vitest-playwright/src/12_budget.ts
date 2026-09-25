@@ -53,7 +53,7 @@ export function workerBudget(options: { bytesPerWorker?: number; max?: number } 
   const availableBytes = availableMemoryBytes()
   const byMemory = Math.floor(availableBytes / bytesPerWorker)
   const byCores = Math.floor(idleCores / 2)
-  const max = options.max ?? Math.max(1, Math.floor(cores / 2))
+  const max = options.max ?? 1
   // Memory is the hard wall: a browser that does not fit swaps. Load is soft: one worker still runs
   // on a busy machine, just slower, so cores floor at 1 once memory allows anything at all.
   const workers = byMemory === 0 ? 0 : Math.min(max, byMemory, Math.max(1, byCores))

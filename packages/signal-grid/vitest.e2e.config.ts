@@ -25,4 +25,5 @@ export default defineConfig({
     }),
   ],
   test: { include: ["tests/*.e2e.test.ts"], exclude: ["tests/2_visual.e2e.test.ts"], testTimeout: 60_000, hookTimeout: 60_000 },
+  test: { maxWorkers: 1, fileParallelism: false },
 })

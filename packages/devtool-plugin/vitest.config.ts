@@ -11,6 +11,8 @@ export default defineConfig({
     exclude: ["rxjs", "rxjs/operators"],
   },
   test: {
+    maxWorkers: 1,
+    fileParallelism: false,
     globals: true,
     exclude: [
       '**/node_modules/**',

@@ -4,6 +4,8 @@ import { defineConfig } from 'vitest/config'
 // fixtures/tests/e2e.harness.ts: no @playwright/test runner, no dev server, chromium headless.
 export default defineConfig({
   test: {
+    maxWorkers: 1,
+    fileParallelism: false,
     projects: [
       {
         test: {

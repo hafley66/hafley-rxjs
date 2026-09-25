@@ -7,6 +7,8 @@ export default defineConfig({
   plugins: [signalsJsx()],
   esbuild: { jsx: "automatic", jsxImportSource: "react" },
   test: {
+    maxWorkers: 1,
+    fileParallelism: false,
     environment: "jsdom",
     include: ["src/*.jsx-e2e.test.tsx"],
   },

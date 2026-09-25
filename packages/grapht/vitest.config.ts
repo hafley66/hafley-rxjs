@@ -6,6 +6,8 @@ import { configDefaults, defineConfig } from "vitest/config"
 // are restated rather than replaced, so this config changes nothing else about the default run.
 export default defineConfig({
   test: {
+    maxWorkers: 1,
+    fileParallelism: false,
     exclude: [...configDefaults.exclude, "tests/*.e2e.test.ts"],
   },
 })

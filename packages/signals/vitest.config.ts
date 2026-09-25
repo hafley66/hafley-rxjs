@@ -15,6 +15,8 @@ const logging = !!process.env.SIGNALS_LOG && process.env.SIGNALS_LOG !== "0"
 
 export default defineConfig({
   test: {
+    maxWorkers: 1,
+    fileParallelism: false,
     include: ["src/**/*.test.ts"],
     exclude: [...BROWSER_TESTS],
     setupFiles: ["./vitest.setup.ts"],
