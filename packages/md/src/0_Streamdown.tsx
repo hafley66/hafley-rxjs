@@ -1,5 +1,5 @@
-import { useCallback, useContext, useMemo } from "react";
-import { Streamdown, type CustomRendererProps, type PluginConfig, type StreamdownProps } from "streamdown";
+import { useCallback, useContext, useMemo, type ComponentProps } from "react";
+import { Streamdown, type CustomRendererProps, type ExtraProps, type PluginConfig, type StreamdownProps } from "streamdown";
 import { Signal } from "@hafley66/signals";
 import { useSignal } from "@hafley66/signals/react";
 import "streamdown/styles.css";
@@ -8,7 +8,7 @@ import { resolveMdPlugins } from "./lib/3_mdPlugins.js";
 import { fenceCommandPass, shiftOffsets, type FencePass } from "./lib/4_fenceCommands.js";
 import type { MdTableProps } from "./plugins/0_types.js";
 import { defaultMdPlugins } from "./plugins/3_defaultMdPlugins.js";
-import { MdPluginContext } from "./plugins/4_MdPluginContext.js";
+import { MdInlineDocContext, MdPluginContext } from "./plugins/4_MdPluginContext.js";
 
 const controls = {
   code: { copy: true, download: false },
@@ -35,6 +35,7 @@ export default function StreamdownBody({
   tableStarts?: readonly number[];
 }) {
   const { plugins, runCommand, columns } = useContext(MdPluginContext);
+  const inlineDoc = useContext(MdInlineDocContext);
   const set = useMemo(() => resolveMdPlugins(plugins ?? defaultMdPlugins), [plugins]);
 
   // The pass signal starts at the text as written; a host answer swaps in the rewrite.
@@ -79,9 +80,19 @@ export default function StreamdownBody({
     },
     [Table, sectionId, renderedTableStarts],
   );
+  // Inline slots need the document they sit in; outside MdPanel Streamdown keeps its own markup.
+  const inlineComponents = useMemo((): StreamdownProps["components"] => {
+    if (!inlineDoc) return {};
+    const { inlineCode: InlineCode, link: Link, image: Image } = set;
+    return {
+      ...(InlineCode ? { inlineCode: (props: ComponentProps<"code"> & ExtraProps) => <InlineCode {...props} doc={inlineDoc} /> } : {}),
+      ...(Link ? { a: (props: ComponentProps<"a"> & ExtraProps) => <Link {...props} doc={inlineDoc} /> } : {}),
+      ...(Image ? { img: (props: ComponentProps<"img"> & ExtraProps) => <Image {...props} doc={inlineDoc} /> } : {}),
+    };
+  }, [set, inlineDoc]);
   const markdownComponents = useMemo(
-    () => (Table ? { ...components, table: TableRenderer } : components),
-    [components, Table, TableRenderer],
+    () => ({ ...components, ...inlineComponents, ...(Table ? { table: TableRenderer } : {}) }),
+    [components, inlineComponents, Table, TableRenderer],
   );
 
   return (

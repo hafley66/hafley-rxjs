@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import type { MdFenceCommandRunner, MdPlugin } from "./0_types.js";
+import type { MdFenceCommandRunner, MdInlineDoc, MdPlugin } from "./0_types.js";
 
 export interface MdPluginScope {
   /** Absent: defaultMdPlugins, resolved inside the lazily loaded body. */
@@ -10,3 +10,6 @@ export interface MdPluginScope {
 }
 
 export const MdPluginContext = createContext<MdPluginScope>({ columns: 80 });
+
+/** The document inline slots render in. Absent (no MdPanel above): Streamdown's own inline markup. */
+export const MdInlineDocContext = createContext<MdInlineDoc | undefined>(undefined);

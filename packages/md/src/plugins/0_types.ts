@@ -34,12 +34,30 @@ export interface MdFenceCommand {
   as: "replace" | "annotate";
 }
 
+/** The document an inline renderer sits in. MdPanel provides it; without it no inline slot renders. */
+export interface MdInlineDoc {
+  /** Absolute path of the rendered document. */
+  path: string;
+  /** Expand the section chain to a heading id and scroll it into view. */
+  jumpTo: (id: string) => void;
+  /** Replace the panel's document in place. */
+  onNavigate: (path: string) => void;
+}
+
+/** Streamdown's per-element props plus the document. `node` is the hast element. */
+export type MdInlineCodeProps = ComponentProps<"code"> & { readonly node?: unknown; readonly doc: MdInlineDoc };
+export type MdLinkProps = ComponentProps<"a"> & { readonly node?: unknown; readonly doc: MdInlineDoc };
+export type MdImageProps = ComponentProps<"img"> & { readonly node?: unknown; readonly doc: MdInlineDoc };
+
 export interface MdPlugin {
   name: string;
   fence?: { languages: readonly string[]; component: ComponentType<MdFenceProps> };
   table?: ComponentType<MdTableProps>;
   highlight?: CodeHighlighterPlugin;
   command?: MdFenceCommand;
+  inlineCode?: ComponentType<MdInlineCodeProps>;
+  link?: ComponentType<MdLinkProps>;
+  image?: ComponentType<MdImageProps>;
 }
 
 export interface MdFenceCommandRequest {

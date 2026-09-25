@@ -96,20 +96,23 @@ host imports the factories and passes an array. Order is precedence. Same shape 
 eslint flat config: no string ids, no lookup table, no second registry.
 
 ```ts
-import { mermaidPlugin, d2Plugin, tablePlugin, codePlugin, commandPlugin } from "@hafley66/md/plugins"
+import {
+  mermaidPlugin, d2Plugin, tablePlugin, codePlugin, codeRefPlugin, linkPlugin, imagePlugin, commandPlugin,
+} from "@hafley66/md/plugins"
 
 installMdviewHost({
   ...host,
   mdPlugins: [
     commandPlugin({ match: "^(ts|tsx|json)$", command: "prettier --print-width $WIDTH ...", as: "replace" }),
-    mermaidPlugin(), d2Plugin(), tablePlugin(), codePlugin(),
+    mermaidPlugin(), d2Plugin(), tablePlugin(), codePlugin(), codeRefPlugin(), linkPlugin(), imagePlugin(),
   ],
   runFenceCommand: (request) => ipc("run_fence_command", request), // cold Observable
 })
 ```
 
 The reference provider (section 1) stays a host port: it supplies data to md's inline renderer and draws
-nothing. Inline slots (`inlineCode`, `a`, `img` in `MdPanel.tsx`) stay outside the plugin array in phase 1.
+nothing. Inline renderers (inline code, links, images) are plugin slots in the same array; `MdPanel` provides
+the document they render in (`MdInlineDoc`) and no longer overrides those elements itself.
 
 ### Type signatures
 
@@ -125,6 +128,17 @@ type MdFenceCommand = {
   as: "replace" | "annotate" // stdout replaces the fence body, or renders as a `text` fence under it
 }
 
+// the document an inline renderer sits in; MdPanel provides it through MdInlineDocContext
+type MdInlineDoc = {
+  path: string                        // absolute path of the rendered document
+  jumpTo: (id: string) => void        // expand the section chain to a heading, scroll it into view
+  onNavigate: (path: string) => void  // replace the panel's document in place
+}
+// streamdown's per-element props (`node` = the hast element) plus the document
+type MdInlineCodeProps = ComponentProps<"code"> & { node?: unknown; doc: MdInlineDoc }
+type MdLinkProps       = ComponentProps<"a">    & { node?: unknown; doc: MdInlineDoc }
+type MdImageProps      = ComponentProps<"img">  & { node?: unknown; doc: MdInlineDoc }
+
 // one object type; each optional slot is a capability. `name` is for diagnostics only.
 type MdPlugin = {
   name: string
@@ -132,6 +146,9 @@ type MdPlugin = {
   table?: ComponentType<MdTableProps>
   highlight?: CodeHighlighterPlugin   // streamdown's `plugins.code` shape
   command?: MdFenceCommand
+  inlineCode?: ComponentType<MdInlineCodeProps>  // streamdown `components.inlineCode`
+  link?: ComponentType<MdLinkProps>              // streamdown `components.a`
+  image?: ComponentType<MdImageProps>            // streamdown `components.img`
 }
 
 // host port (ports.ts, optional member of MdviewHost). Cold; unsubscribe = the host kills the process.
@@ -149,7 +166,16 @@ function d2Plugin(): MdPlugin          // fence ["d2"], lazy component
 function tablePlugin(): MdPlugin       // table
 function codePlugin(): MdPlugin        // highlight (shiki via @streamdown/code, dl6 -> prolog)
 function commandPlugin(command: MdFenceCommand): MdPlugin
-const defaultMdPlugins: readonly MdPlugin[] = [mermaidPlugin(), d2Plugin(), tablePlugin(), codePlugin()]
+function codeRefPlugin(): MdPlugin    // inlineCode: ⌘-click on a file-citing span -> host.openCodeRef(text, doc.path)
+function linkPlugin(): MdPlugin       // link: `#id` -> doc.jumpTo, *.md -> setPendingFrag + doc.onNavigate, else host.openHref
+function imagePlugin(): MdPlugin      // image: remote/data/blob as written, local -> host.readImage (data URL)
+const defaultMdPlugins: readonly MdPlugin[] = [
+  mermaidPlugin(), d2Plugin(), tablePlugin(), codePlugin(), codeRefPlugin(), linkPlugin(), imagePlugin(),
+]
+
+// React contexts (packages/md/src/plugins/4_MdPluginContext.ts)
+const MdPluginContext: Context<{ plugins?: readonly MdPlugin[]; runCommand?: MdFenceCommandRunner; columns: number }>
+const MdInlineDocContext: Context<MdInlineDoc | undefined>   // undefined outside MdPanel
 
 // pure resolution (packages/md/src/lib/3_mdPlugins.ts)
 type MdPluginSet = {
@@ -157,6 +183,9 @@ type MdPluginSet = {
   table: ComponentType<MdTableProps> | undefined
   highlight: CodeHighlighterPlugin | undefined
   commands: readonly MdFenceCommand[]
+  inlineCode?: ComponentType<MdInlineCodeProps>   // keys present only when some plugin claims the slot
+  link?: ComponentType<MdLinkProps>
+  image?: ComponentType<MdImageProps>
 }
 function resolveMdPlugins(plugins: readonly MdPlugin[]): MdPluginSet
 
@@ -177,6 +206,7 @@ resolveMdPlugins(plugins):
   table    = first .table
   highlight = first .highlight
   commands = every .command, in order
+  inlineCode / link / image = first claimant each; key omitted when unclaimed
 
 StreamdownBody (0_Streamdown.tsx):
   { plugins, runCommand, columns } = useContext(MdPluginContext)   // MdPanel provides from the host
@@ -184,7 +214,11 @@ StreamdownBody (0_Streamdown.tsx):
   pass = commands and runner ? useSignal(Signal(fenceCommandPass(children, ...), identity(children)))
                              : identity(children)
   renderers  = set.fences.map(f => ({ language: [...f.languages], component: props => <f.component {...props} dark/> }))
-  components = set.table ? { ...components, table: ordinal-computing wrapper around set.table } : components
+  doc  = useContext(MdInlineDocContext)                             // MdPanel provides { path, jumpTo, onNavigate }
+  inline = doc ? { inlineCode: p => <set.inlineCode {...p} doc/>, a: p => <set.link {...p} doc/>,
+                   img: p => <set.image {...p} doc/> }  (each only when the slot is claimed)
+             : {}                                                  // no doc: streamdown's own inline markup
+  components = { ...components, ...inline, table: ordinal-computing wrapper around set.table (when claimed) }
   <Streamdown plugins={{ code: set.highlight, renderers }} components>{pass.text}</Streamdown>
   // table ordinals: renderedOffsetsForSourceStarts on children, then shiftOffsets(pass.edits)
 
@@ -209,6 +243,9 @@ fenceCommandPass(markdown, commands, run, columns):
 | plugin objects | host module load (factory call) | never; identity stable for the app, so Streamdown keeps renderer identity |
 | `defaultMdPlugins` | `@hafley66/md/plugins` module load | never |
 | `MdPluginSet` | per `StreamdownBody` render, memoized on the array identity | with the array |
+| `MdInlineDoc` | per `MdPanel` render, memoized on (path, onNavigate, parsed doc) | path, navigate handler, or reparse |
+| inline wrapper components | per `StreamdownBody`, memoized on (`MdPluginSet`, `MdInlineDoc`) | either changes: streamdown remounts inline elements |
+| code-ref native listeners | each code-ref `<code>` commit (ref callback) | ref cleanup on next commit or unmount |
 | lazy renderer chunk (mermaid, d2) | first fence of that language renders | page lifetime (module cache) |
 | command pass | per (section text, commands, runner, columns) | section text or columns change, or section unmount: useSignal unsubscribes, the runner's teardown kills the process |
 | one run | pass subscription, per matched fence | first result (`take(1)`) or unsubscribe |
@@ -221,6 +258,8 @@ does not rerun.
 | data | stored in | written by | read by | unique on |
 | --- | --- | --- | --- | --- |
 | plugin array | `MdviewHost.mdPlugins` (host memory) | host at boot | `MdPanel` -> `MdPluginContext` | array identity |
+| inline document | `MdInlineDocContext` value | `MdPanel` render | `StreamdownBody` -> inline slot props (`doc`) | one per panel |
+| pending `#frag` | `open.ts` `pendingFrag` map | `linkPlugin` on a markdown link | target panel once its doc is ready | target path, one-shot |
 | user command list | host settings JSON (instant `settings.fenceCommands`, beside `clickRules`) | settings panel | host maps `commandPlugin` over it | list position (first match wins) |
 | pass result | `Signal` inside `StreamdownBody` | runner output | Streamdown children | section text + columns |
 | run output cache | none in phase 1 | | | (command, language, columns, text) when added |
@@ -243,10 +282,15 @@ render    a--------------a'                Streamdown re-renders once
 | `0_Streamdown.tsx` `table: TableRenderer` -> `5_PersistedMarkdownTable.tsx` | `tablePlugin()` | `table` |
 | `0_Streamdown.tsx` `code` (`@streamdown/code` + dl6 -> prolog) | `codePlugin()` | `highlight` |
 | instant ⌘-click rules shape `{ pattern, command }` applied to fences | `commandPlugin({ match, command, as })` | `command` |
-| `MdPanel.tsx` `inlineCode` / `a` / `img` | none in phase 1 | |
+| `MdPanel.tsx` `inlineCode` (⌘-click refs, native listeners that stop propagation) | `codeRefPlugin()` | `inlineCode` |
+| `MdPanel.tsx` `a` (jump / in-place navigate / openHref) | `linkPlugin()` | `link` |
+| `MdPanel.tsx` `img` -> `MdImg` | `imagePlugin()` | `image` |
 
 Removing a built-in from the array drops it: no `tablePlugin()` means Streamdown's own table, no
-`codePlugin()` means unhighlighted code blocks, no `mermaidPlugin()` means a mermaid fence renders as code.
+`codePlugin()` means unhighlighted code blocks, no `mermaidPlugin()` means a mermaid fence renders as code,
+no `codeRefPlugin()` means streamdown's plain inline code with no ⌘-click, no `linkPlugin()` / `imagePlugin()`
+means streamdown's own `a` / `img`. A plugin with `inlineCode` placed before `codeRefPlugin()` takes inline code.
+The ⌘-held panel mark (`data-md-meta`, which reveals `code[data-md-ref]` as a link) stays in `MdPanel`.
 
 ### Suggested command list (instant settings; binary absent = the host answers code 127, fence unchanged)
 
@@ -279,7 +323,7 @@ magic-move  : animates tokens s(n) -> s(n+1)
 
 ### Phases
 
-1. md: types, `resolveMdPlugins`, the five factories, `defaultMdPlugins`, `StreamdownBody` driven by the
+1. md: types, `resolveMdPlugins`, the eight factories (fence, table, highlight, command, inline slots), `defaultMdPlugins`, `StreamdownBody` driven by the
    array, `fenceCommandPass`, `MdviewHost.mdPlugins` / `runFenceCommand`, `@hafley66/md/plugins` subpath.
 2. instant: `settings.fenceCommands` + panel cloned from the click-rules panel, `run_fence_command` IPC
    (temp file, `$WIDTH` expansion, kill on unsubscribe).
@@ -290,7 +334,6 @@ magic-move  : animates tokens s(n) -> s(n+1)
 - Run cache (LRU, key above) and whether two panes at one width share a run.
 - Column derivation: fixed 7.8 px advance vs measuring `1ch` of the code font.
 - Indented fences (inside list items) are skipped by the pass.
-- Inline slots (`inlineCode`, links, images) as plugin slots.
 - A replace result containing a fence of the same backtick length breaks out of the fence; not escaped.
 
 ## 3. Shared styling

@@ -70,3 +70,36 @@ it("resolves an empty array to no special renderers", () => {
     }
   `);
 });
+
+it("resolves the inline slots to their earliest claimant, and leaves unclaimed ones off the set", () => {
+  const FirstCode = () => null;
+  const SecondCode = () => null;
+  const FirstLink = () => null;
+  const FirstImage = () => null;
+  const set = resolveMdPlugins([
+    { name: "code-a", inlineCode: FirstCode },
+    { name: "table", table: FirstTable },
+    { name: "code-b", inlineCode: SecondCode, link: FirstLink },
+    { name: "image", image: FirstImage },
+  ]);
+  const linkOnly = resolveMdPlugins([{ name: "link", link: FirstLink }]);
+  expect({
+    inlineCode: set.inlineCode?.name,
+    link: set.link?.name,
+    image: set.image?.name,
+    linkOnlyKeys: Object.keys(linkOnly),
+  }).toMatchInlineSnapshot(`
+    {
+      "image": "FirstImage",
+      "inlineCode": "FirstCode",
+      "link": "FirstLink",
+      "linkOnlyKeys": [
+        "fences",
+        "table",
+        "highlight",
+        "commands",
+        "link",
+      ],
+    }
+  `);
+});

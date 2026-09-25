@@ -2,7 +2,7 @@
 // canonical TreeTable) | rendered sections, split with react-resizable-panels
 // (AGENTS "Split panes"). All state lives in the signals module; signal reads
 // happen here at the top (SignalReact tracks them) and flow down as props.
-import { createContext, lazy, Suspense, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { createContext, lazy, Suspense, useContext, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import type { StreamdownProps } from "streamdown";
 import { SignalReact } from "@hafley66/signals/react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -10,7 +10,6 @@ import { getMdviewHost } from "./ports.js";
 import { baseName } from "./local/core.js";
 import {
   expandChain,
-  resolveMdLink,
   sectionDisplayTitle,
   sliceOwn,
   type ListFolds,
@@ -39,52 +38,19 @@ import {
   toggleExplorer,
   type StrSignal,
 } from "./signals.js";
-import { setPendingFrag, takePendingFrag } from "./open.js";
+import { takePendingFrag } from "./open.js";
 import { MdExplorer } from "./MdExplorer.js";
 import { useFsWatch } from "./0_watch.js";
 import { useProseWidth } from "./2_useProseWidth.js";
 import { CAT_COMMIT, CAT_PAINT, LOG, mdNow } from "./0_log.js";
 import { ProseWidthControl, ProseWidthHandle } from "./3_ProseWidthControl.js";
-import { isCodeRef } from "./lib/0_codeRef.js";
 import { fenceColumns } from "./lib/4_fenceCommands.js";
-import { MdPluginContext, type MdPluginScope } from "./plugins/4_MdPluginContext.js";
+import type { MdInlineDoc } from "./plugins/0_types.js";
+import { MdInlineDocContext, MdPluginContext, type MdPluginScope } from "./plugins/4_MdPluginContext.js";
 import "./mdview.css";
 import "./1_reading.css";
 
 const StreamdownBody = lazy(() => import("./0_Streamdown.js"));
-
-// ---- images: local files load via read_image (data URL), like preview.ts ----
-
-function dirOf(p: string): string {
-  const i = p.lastIndexOf("/");
-  return i > 0 ? p.slice(0, i) : "";
-}
-
-function MdImg({ src, alt, base }: { src?: string; alt?: string; base: string }) {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    const s = src ?? "";
-    if (!s) return;
-    if (/^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(s) || s.startsWith("data:") || s.startsWith("blob:")) {
-      setUrl(s);
-      return;
-    }
-    let dead = false;
-    const abs = s.startsWith("/") || s.startsWith("~") ? s : `${dirOf(base)}/${s}`;
-    getMdviewHost().readImage(abs)
-      .then((u) => {
-        if (!dead) setUrl(u);
-      })
-      .catch(() => {
-        if (!dead) setUrl(null);
-      });
-    return () => {
-      dead = true;
-    };
-  }, [src, base]);
-  if (!url) return <span className="mdview-img-alt">{alt || "image"}</span>;
-  return <img src={url} alt={alt ?? ""} />;
-}
 
 // ---- sections ----
 
@@ -381,65 +347,6 @@ export const MdPanel = SignalReact(function MdPanel({
 
   const components = useMemo<StreamdownProps["components"]>(
     () => ({
-      a({ href, children }) {
-        const onClick = (e: MouseEvent) => {
-          if (!href) return;
-          e.preventDefault();
-          if (href.startsWith("#")) {
-            jumpTo(decodeURIComponent(href.slice(1)));
-            return;
-          }
-          const md = resolveMdLink(path, href);
-          if (md) {
-            // In-place navigation (docs-browser style): the explorer follows
-            // the new doc's folder; external opens still get their own tabs.
-            setPendingFrag(md.path, md.frag);
-            onNavigate(md.path);
-            return;
-          }
-          void host.openHref(href, path).catch(console.error);
-        };
-        return (
-          <a href={href} onClick={onClick}>
-            {children}
-          </a>
-        );
-      },
-      // Streamdown's own inline code markup, plus a ⌘-click that hands a
-      // file-citing span to the host with this document's path.
-      inlineCode({ node: _node, className, children, ...rest }) {
-        const text = typeof children === "string" ? children : "";
-        const openCodeRef = host.openCodeRef;
-        const ref = openCodeRef !== undefined && isCodeRef(text);
-        // Native, on the element: a table's grid delegates from its own root, which
-        // a React stopPropagation reaches only after the grid selected the cell.
-        const own = (element: HTMLElement | null) => {
-          if (element === null || !ref) return;
-          const swallow = (e: globalThis.MouseEvent) => {
-            if (!e.metaKey) return;
-            e.preventDefault();
-            e.stopPropagation();
-            if (e.type === "click") void openCodeRef.call(host, text, path).catch(console.error);
-          };
-          const types = ["pointerdown", "mousedown", "pointerup", "mouseup", "click"] as const;
-          types.forEach((type) => element.addEventListener(type, swallow));
-          return () => types.forEach((type) => element.removeEventListener(type, swallow));
-        };
-        return (
-          <code
-            {...rest}
-            ref={own}
-            className={["rounded bg-muted px-1.5 py-0.5 font-mono text-sm", className].filter(Boolean).join(" ")}
-            data-streamdown="inline-code"
-            data-md-ref={ref ? "" : undefined}
-          >
-            {children}
-          </code>
-        );
-      },
-      img({ src, alt }) {
-        return <MdImg src={typeof src === "string" ? src : undefined} alt={alt ?? undefined} base={path} />;
-      },
       // List folding: one twisty per list, on the list's own top edge, folds
       // the whole list to a "… N items" row. A nested list is its own list
       // with its own twisty. Items carry none. Node positions come from
@@ -466,9 +373,11 @@ export const MdPanel = SignalReact(function MdPanel({
         );
       },
     }),
-    // jumpTo is stable enough for the memo's purpose (reads latest via signals).
-    [path, onNavigate, folds, blockFolds],
+    [path, folds, blockFolds],
   );
+  // The document the inline plugin slots (code refs, links, images) render in.
+  // jumpTo is stable enough for the memo's purpose (reads latest via signals).
+  const inlineDoc = useMemo((): MdInlineDoc => ({ path, jumpTo, onNavigate }), [path, onNavigate, doc]);
 
   const layout = layoutFor(pid);
   const latestLayout = useRef(layout);
@@ -605,7 +514,9 @@ export const MdPanel = SignalReact(function MdPanel({
           ↗ external
         </button>
       </div>
-      <MdPluginContext.Provider value={pluginScope}>{body}</MdPluginContext.Provider>
+      <MdPluginContext.Provider value={pluginScope}>
+        <MdInlineDocContext.Provider value={inlineDoc}>{body}</MdInlineDocContext.Provider>
+      </MdPluginContext.Provider>
     </div>
   );
 });
