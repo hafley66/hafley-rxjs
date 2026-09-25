@@ -184,3 +184,28 @@ renderer sees it.
 - `settings.fenceRules` persists like `settings.clickRules`.
 - Cache key unique on (command, lang, width, hash(text)). Two panes at the same width share a run.
 - Temp files live under the app's temp dir, one per run, deleted after the run.
+
+### Built-ins become entries (owner, 2026-09-25)
+
+Everything md renders specially today moves onto the same list, so nothing is hardcoded in
+`0_Streamdown.tsx`. A rule gains an optional `render` naming a plugin export; `command` stays optional.
+
+```ts
+export interface FenceRule {
+  pattern: string;                        // over the fence language, or `^table$` for GFM tables
+  command?: string;                       // shell pre-pass (format / lint), as above
+  as?: "replace" | "annotate";
+  render?: string;                        // plugin id from @hafley66/md/plugins/<id>; absent = plain code block
+}
+```
+
+| pattern | render | today's code |
+| --- | --- | --- |
+| `^table$` | `table` | `2_MarkdownTable.tsx` + `5_PersistedMarkdownTable.tsx`, wired as `table: TableRenderer` (`0_Streamdown.tsx`) |
+| `^mermaid$` | `mermaid` | `0a_MermaidDiagram.tsx` (`renderers` list, `0_Streamdown.tsx:95-103`) |
+| `^d2$` | `d2` | `0a_D2Diagram.tsx` (same list) |
+| `.*` (last) | `code` | Streamdown's code block with shiki, as rendered today |
+
+The defaults list is these four rows plus the formatter rows above; a user list replaces it whole, like
+click rules. Each built-in's CSS stays customizable through its custom properties (`--sg-*` and
+`--md-select-*` for tables, `--md-code-*` for code).
