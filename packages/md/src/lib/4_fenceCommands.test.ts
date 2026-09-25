@@ -39,6 +39,7 @@ it("finds closed column-one fences with their body ranges", () => {
         "bodyEnd": 29,
         "bodyStart": 15,
         "end": 32,
+        "indent": "",
         "language": "ts",
       },
       {
@@ -47,6 +48,7 @@ it("finds closed column-one fences with their body ranges", () => {
         "bodyEnd": 67,
         "bodyStart": 59,
         "end": 70,
+        "indent": "",
         "language": "sh",
       },
       {
@@ -55,6 +57,7 @@ it("finds closed column-one fences with their body ranges", () => {
         "bodyEnd": 92,
         "bodyStart": 80,
         "end": 95,
+        "indent": "",
         "language": "rust",
       },
     ]
@@ -191,4 +194,32 @@ it("derives formatter columns from the prose width", () => {
       20,
     ]
   `);
+});
+
+it("formats fences indented inside list items, dedenting for the command", async () => {
+  const indented = [
+    "1. Step",
+    "",
+    "   ```sh",
+    "   echo $x",
+    "   ```",
+    "",
+  ].join("\n");
+  const seen: MdFenceCommandRequest[] = [];
+  const run: MdFenceCommandRunner = (request) => {
+    seen.push(request);
+    return of({ stdout: "echo \"$x\"\n", stderr: "", code: 0 });
+  };
+  const listCommands: MdFenceCommand[] = [{ match: "^sh$", command: "shellcheck", as: "replace" }];
+  const pass = await lastValueFrom(fenceCommandPass(indented, listCommands, run, 72));
+  expect(pass.text).toBe([
+    "1. Step",
+    "",
+    "   ```sh",
+    "   echo \"$x\"",
+    "   ```",
+    "",
+  ].join("\n"));
+  // 72 prose columns minus the 3-space list indent: the formatter wraps inside it.
+  expect(seen).toEqual([{ command: "shellcheck", language: "sh", text: "echo $x\n", columns: 69 }]);
 });

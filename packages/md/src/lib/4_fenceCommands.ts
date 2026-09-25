@@ -8,6 +8,8 @@ import type { MdFenceCommand, MdFenceCommandResult, MdFenceCommandRunner } from 
 
 export interface FenceSpan {
   language: string;
+  /** Leading whitespace of the fence block, from list nesting. Empty at column one. */
+  indent: string;
   /** Body offsets: past the opening fence line, up to the closing fence line. */
   bodyStart: number;
   bodyEnd: number;
@@ -41,23 +43,45 @@ function* codeNodes(node: Nodes): Generator<Extract<Nodes, { type: "code" }>> {
   if (node.type === "code") yield node;
   if ("children" in node) for (const child of node.children) yield* codeNodes(child);
 }
+/** Removes up to one `indent` of leading whitespace from every line. */
+function dedent(block: string, indent: string): string {
+  if (!indent) return block;
+  return block.split("\n").map((line) => {
+    let cut = 0;
+    while (cut < indent.length && (line[cut] === " " || line[cut] === "\t")) cut += 1;
+    return line.slice(cut);
+  }).join("\n");
+}
 
-/** Closed fences that start at column one and carry a language. Indented fences are skipped. */
+/** Restores the fence block's indentation on every non-empty line of an answer. */
+function reindent(text: string, indent: string): string {
+  if (!indent) return text;
+  return text.split("\n").map((line) => (line ? indent + line : line)).join("\n");
+}
+
+/**
+ * Closed fenced code blocks that carry a language. Fences nested in list items
+ * come with their indent; block-quote-prefixed fences are still skipped.
+ */
 export function fenceSpans(markdown: string): FenceSpan[] {
   const tree = unified().use(remarkParse).parse(markdown);
   const spans: FenceSpan[] = [];
   for (const node of codeNodes(tree)) {
     const start = node.position?.start;
     const end = node.position?.end.offset;
-    if (!node.lang || start?.column !== 1 || start.offset === undefined || end === undefined) continue;
+    if (!node.lang || start?.offset === undefined || end === undefined) continue;
+    // The opening fence marker sits after the block's indent; anything else
+    // prefixing the line (a block quote mark) is not a supported nesting.
+    const indent = markdown.slice(markdown.lastIndexOf("\n", start.offset - 1) + 1, start.offset);
+    if (!/^[ \t]*$/u.test(indent)) continue;
     const raw = markdown.slice(start.offset, end);
     const firstBreak = raw.indexOf("\n");
     const lastBreak = raw.lastIndexOf("\n");
-    if (firstBreak < 0 || !CLOSING_FENCE.test(raw.slice(lastBreak + 1))) continue;
+    if (firstBreak < 0 || !CLOSING_FENCE.test(dedent(raw.slice(lastBreak + 1), indent))) continue;
     const bodyStart = start.offset + firstBreak + 1;
     const bodyEnd = Math.max(bodyStart, start.offset + lastBreak + 1);
-    if (markdown.slice(bodyStart, bodyEnd).replace(/\n$/u, "") !== node.value) continue;
-    spans.push({ language: node.lang, bodyStart, bodyEnd, end });
+    if (dedent(markdown.slice(bodyStart, bodyEnd), indent).replace(/\n$/u, "") !== node.value) continue;
+    spans.push({ language: node.lang, indent, bodyStart, bodyEnd, end });
   }
   return spans;
 }
@@ -67,13 +91,14 @@ function annotation(span: FenceSpan, output: string): FenceEdit[] {
   if (!body) return [];
   const longest = Math.max(0, ...[...body.matchAll(/`+/gu)].map((run) => run[0].length));
   const fence = "`".repeat(Math.max(3, longest + 1));
-  return [{ at: span.end, remove: 0, insert: `\n\n${fence}text\n${body}\n${fence}` }];
+  return [{ at: span.end, remove: 0, insert: `\n\n${reindent(`${fence}text\n${body}\n${fence}`, span.indent)}` }];
 }
 
 export function fenceEdits(markdown: string, span: FenceSpan, command: MdFenceCommand, result: MdFenceCommandResult): FenceEdit[] {
   if (command.as === "annotate") return annotation(span, result.stdout);
   if (result.code !== 0) return annotation(span, result.stderr);
-  const insert = result.stdout.endsWith("\n") || !result.stdout ? result.stdout : `${result.stdout}\n`;
+  const answered = result.stdout.endsWith("\n") || !result.stdout ? result.stdout : `${result.stdout}\n`;
+  const insert = reindent(answered, span.indent);
   const remove = span.bodyEnd - span.bodyStart;
   return insert === markdown.slice(span.bodyStart, span.bodyEnd) ? [] : [{ at: span.bodyStart, remove, insert }];
 }
@@ -116,8 +141,11 @@ export function fenceCommandPass(
   const jobs = fenceSpans(markdown).flatMap((span) => {
     const hit = matchers.find(({ pattern }) => pattern.test(span.language));
     if (!hit) return [];
-    const text = markdown.slice(span.bodyStart, span.bodyEnd);
-    return [run({ command: hit.command.command, language: span.language, text, columns }).pipe(
+    const text = dedent(markdown.slice(span.bodyStart, span.bodyEnd), span.indent);
+    // The answer is re-indented to the fence's indent, so the formatter should
+    // wrap inside it: pass the prose width minus the indent.
+    const width = Math.max(MIN_COLUMNS, columns - span.indent.length);
+    return [run({ command: hit.command.command, language: span.language, text, columns: width }).pipe(
       take(1),
       map((result): FenceEdit[] | null => fenceEdits(markdown, span, hit.command, result)),
       catchError(() => of([])),
