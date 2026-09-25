@@ -6,6 +6,7 @@ import "streamdown/styles.css";
 import { renderedOffsetsForSourceStarts } from "./0b_fenceOrigin.js";
 import { resolveMdPlugins } from "./lib/3_mdPlugins.js";
 import { fenceCommandPass, shiftOffsets, type FencePass } from "./lib/4_fenceCommands.js";
+import { cachedFenceCommandRunner } from "./lib/5_commandCache.js";
 import type { MdTableProps } from "./plugins/0_types.js";
 import { defaultMdPlugins } from "./plugins/3_defaultMdPlugins.js";
 import { MdInlineDocContext, MdPluginContext } from "./plugins/4_MdPluginContext.js";
@@ -37,12 +38,13 @@ export default function StreamdownBody({
   const { plugins, runCommand, columns } = useContext(MdPluginContext);
   const inlineDoc = useContext(MdInlineDocContext);
   const set = useMemo(() => resolveMdPlugins(plugins ?? defaultMdPlugins), [plugins]);
+  const cachedRunCommand = useMemo(() => (runCommand ? cachedFenceCommandRunner(runCommand) : undefined), [runCommand]);
 
   // The pass signal starts at the text as written; a host answer swaps in the rewrite.
   const written = useMemo((): FencePass => ({ source: children, text: children, edits: [] }), [children]);
   const passSignal = useMemo(
-    () => Signal(fenceCommandPass(children, set.commands, runCommand, columns), written),
-    [children, set.commands, runCommand, columns, written],
+    () => Signal(fenceCommandPass(children, set.commands, cachedRunCommand, columns), written),
+    [children, set.commands, cachedRunCommand, columns, written],
   );
   const latest = useSignal(passSignal.$);
   const pass = latest.source === children ? latest : written;
