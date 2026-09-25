@@ -459,6 +459,40 @@ const contrast = (fg: string, bg: string): number => {
   return Math.round(((light! + 0.05) / (dark! + 0.05)) * 100) / 100;
 };
 
+it("keeps inline code in a cell on one line and no column narrower than its longest code token", async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  const host = document.createElement("div");
+  host.style.cssText = "width: 320px; margin: 0; padding: 0; font-size: 15px";
+  document.body.append(host);
+  const root = createRoot(host);
+  const code = (text: string) => createElement("code", { "data-streamdown": "inline-code" }, text);
+  const prose = "whether the panel lists references or definitions, and which of the two the reader toggled last";
+  const children = [
+    createElement("thead", null, row("th", "Key", "Meaning", "Source")),
+    createElement("tbody", null,
+      row("td", code("referencesModel"), prose, code("packages/md/src/1_reading.css")),
+      row("td", code("l"), "the lane", code("x")),
+    ),
+  ];
+  try {
+    await act(() => root.render(createElement(MarkdownTable, { children })));
+    await expect.poll(() => host.querySelectorAll(".sg-center .sg-cell code").length).toBe(4);
+    await act(async () => { await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined))); });
+    const codes = [...host.querySelectorAll<HTMLElement>(".sg-center .sg-cell code")];
+    const lines = codes.map((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return new Set([...range.getClientRects()].map((rect) => Math.round(rect.top))).size;
+    });
+    const tooNarrow = codes.filter((element) => element.closest<HTMLElement>(".sg-cell")!.clientWidth < element.scrollWidth).map((element) => element.textContent);
+    expect({ lines, tooNarrow, scrolls: host.querySelector<HTMLElement>(".sg-scroll")!.scrollWidth > 320 }).toEqual({ lines: [1, 1, 1, 1], tooNarrow: [], scrolls: true });
+  } finally {
+    await act(() => root.unmount());
+    host.remove();
+    Reflect.deleteProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT");
+  }
+});
+
 it("keeps a selected cell's text readable on dark and light panels under a light color-scheme", async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   const host = document.createElement("div");
@@ -495,11 +529,56 @@ it("keeps a selected cell's text readable on dark and light panels under a light
         "darkReadable": true,
         "lightReadable": true,
         "readings": {
-          "dark": 9.5,
-          "light": 11.4,
+          "dark": 9.86,
+          "light": 13.16,
         },
       }
     `);
+  } finally {
+    await act(() => root.unmount());
+    host.remove();
+    Reflect.deleteProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT");
+  }
+});
+
+it("tints a selection faintly and edges it without moving or recolouring the cell's text", async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  const host = document.createElement("div");
+  document.body.append(host);
+  const root = createRoot(host);
+  const children = [
+    createElement("thead", null, row("th", "Name", "Value")),
+    createElement("tbody", null, row("td", "alpha", "1"), row("td", "beta", "2")),
+  ];
+  // instant's skins: xp light, xp dark, p5, ac3.
+  const panels = {
+    xpLight: "--panel-bg: #fff; --panel-fg: #222; --row-active-bg: #316ac5",
+    xpDark: "--panel-bg: #252526; --panel-fg: #d4d4d4; --row-active-bg: #094771",
+    p5: "--panel-bg: #000; --panel-fg: #fff; --row-active-bg: #ff1133",
+    ac3: "--panel-bg: #0a0f0a; --panel-fg: #aed47e; --row-active-bg: #ff8c1a",
+  };
+  const look = (cell: HTMLElement) => {
+    const style = getComputedStyle(cell);
+    const text = cell.querySelector<HTMLElement>(".mdview-table-cell")!.getBoundingClientRect();
+    return { color: style.color, weight: style.fontWeight, left: text.left, top: text.top, width: text.width };
+  };
+  try {
+    await act(() => root.render(createElement(MarkdownTable, { children })));
+    await expect.poll(() => host.querySelectorAll(".sg-center .sg-cell").length).toBe(4);
+    const readings: Record<string, unknown> = {};
+    for (const [name, vars] of Object.entries(panels)) {
+      host.style.cssText = `width: 700px; margin: 0; padding: 0; color-scheme: light; ${vars}`;
+      const cell = host.querySelector<HTMLElement>(".sg-center .sg-cell")!;
+      await act(async () => { await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined))); });
+      const before = look(cell);
+      await page.elementLocator(cell).click();
+      await expect.poll(() => cell.hasAttribute("data-selected")).toBe(true);
+      const after = look(cell);
+      const bg = getComputedStyle(cell).backgroundColor;
+      readings[name] = { unchanged: JSON.stringify(before) === JSON.stringify(after), readable: contrast(after.color, bg) >= 7 };
+      await userEvent.keyboard("{Escape}");
+    }
+    expect(readings).toEqual(Object.fromEntries(Object.keys(panels).map((name) => [name, { unchanged: true, readable: true }])));
   } finally {
     await act(() => root.unmount());
     host.remove();

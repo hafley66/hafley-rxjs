@@ -113,7 +113,7 @@ it("fits short wrapping tables with no vertical overflow under instant's stylesh
   const widths = [520, 760, 1100];
   const overflowing: string[] = [];
   let measured = 0;
-  const session = cdp();
+  const session = cdp() as unknown as { send(method: string, params: object): Promise<unknown> };
   try {
     for (const chrome of chromeZooms) {
       await session.send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 800, deviceScaleFactor: 2 * chrome, mobile: false });

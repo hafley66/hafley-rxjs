@@ -4,7 +4,7 @@ import { grid, type ColumnDef, type Grid, type GridState } from "@hafley66/signa
 import type { Signal } from "@hafley66/signals";
 import { GridView, reactSlot } from "@hafley66/signal-grid/react";
 import "@hafley66/signal-grid/theme.css";
-import { markdownTableModel, type MarkdownTableModel, type MarkdownTableRow } from "./lib/1_tableModel.js";
+import { longestCodeTokens, markdownTableModel, type MarkdownTableModel, type MarkdownTableRow } from "./lib/1_tableModel.js";
 import { markdownTableCopyText } from "./lib/2_tableCopy.js";
 
 const columnId = (index: number): string => `column-${index}`;
@@ -198,7 +198,7 @@ function MarkdownTableHeader({
   );
 }
 
-const columnsOf = (model: MarkdownTableModel): readonly ColumnDef<MarkdownTableRow>[] =>
+const columnsOf = (model: MarkdownTableModel, codeMins: readonly number[] = []): readonly ColumnDef<MarkdownTableRow>[] =>
   model.headers.map((header, index) => {
     const longest = model.rows.reduce((length, row) => Math.max(length, row.values[index]?.length ?? 0), model.headerValues[index]?.length ?? 0);
     const compact = longest <= 24;
@@ -207,7 +207,7 @@ const columnsOf = (model: MarkdownTableModel): readonly ColumnDef<MarkdownTableR
     header: model.headerValues[index] ?? `Column ${index + 1}`,
     value: (row) => row.values[index] ?? "",
     width: compact ? Math.max(96, longest * 8 + 12) : 280,
-    minWidth: 96,
+    minWidth: Math.max(96, codeMins[index] ?? 0),
     flex: compact ? undefined : Math.min(3, Math.max(1, Math.ceil(longest / 80))),
     sortable: true,
     resizable: true,
@@ -306,12 +306,45 @@ function useTableGrid(
   return current.grid;
 }
 
+/** Each column's longest code token laid out in a hidden cell of this grid, so the minimum
+ * carries the skin's font, the code padding, and the cell's own padding and rule. */
+function measureCodeMins(model: MarkdownTableModel, gridRoot: HTMLElement): readonly number[] {
+  return longestCodeTokens(model).map((token) => {
+    if (token === undefined) return 0;
+    const cell = document.createElement("div");
+    cell.className = "sg-cell";
+    cell.style.cssText = "position: absolute; visibility: hidden; inline-size: max-content; white-space: nowrap";
+    const code = cell.appendChild(document.createElement("code"));
+    if (token.className !== undefined) code.className = token.className;
+    code.dataset.streamdown = "inline-code";
+    code.textContent = token.text;
+    gridRoot.append(cell);
+    const width = Math.ceil(cell.offsetWidth);
+    cell.remove();
+    return width;
+  });
+}
+
 export default function MarkdownTable({ children, model: suppliedModel, tableState, tableName }: MarkdownTableProps): ReactNode {
   const model = useMemo(() => suppliedModel ?? markdownTableModel(children), [children, suppliedModel]);
   const tableId = useId().replaceAll(":", "");
   const tableGrid = useTableGrid(model, `markdown-table-${tableId}`, tableState);
+  const sectionRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const gridRoot = sectionRef.current?.querySelector<HTMLElement>(".mdview-table-grid");
+    if (gridRoot === null || gridRoot === undefined) return;
+    let live = true;
+    const apply = (): void => {
+      const mins = measureCodeMins(model, gridRoot);
+      if (live && mins.some((width) => width > 0)) tableGrid.columns.$(columnsOf(model, mins));
+    };
+    apply();
+    void document.fonts.ready.then(apply);
+    return () => { live = false; };
+  }, [tableGrid, model]);
   return (
     <section
+      ref={sectionRef}
       className="mdview-table"
       aria-label="Markdown table"
       onCopy={(event) => {

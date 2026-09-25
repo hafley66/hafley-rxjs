@@ -203,10 +203,12 @@
      defaults follow color-scheme, which a host may pin to light under a dark
      panel, and a light range fill under the panel's light text left a selected
      cell unreadable. */
-  --sg-focus: var(--row-active-bg, #618bcb);
-  --sg-range-edge: var(--sg-focus);
-  --sg-range-bg: color-mix(in srgb, var(--sg-focus) 24%, var(--sg-bg));
-  --sg-selected-bg: var(--sg-range-bg);
+  --md-select-edge: var(--row-active-bg, #618bcb);
+  --md-select-tint: color-mix(in srgb, var(--md-select-edge) 14%, var(--sg-bg));
+  --sg-focus: var(--md-select-edge);
+  --sg-range-edge: var(--md-select-edge);
+  --sg-range-bg: var(--md-select-tint);
+  --sg-selected-bg: var(--md-select-tint);
   /* Header band (row-h per head row plus its 1px rule) and the row run, both
      written onto this element by the grid renderer. Only the shrink floor reads
      it: the ceiling is the laid-out content, which also counts a classic
@@ -238,6 +240,24 @@
   overflow-wrap: anywhere;
   border-inline-end: 1px solid color-mix(in srgb, var(--sg-fg) 13%, transparent);
 }
+/* A range edge is an inset shadow: the theme's edge borders take the cell's
+   content box and shift its text by a pixel. */
+.mdview-table-grid[data-route="g"] .sg-cell[data-edge] {
+  border-block: 0;
+  border-inline-start: 0;
+  border-inline-end: 1px solid color-mix(in srgb, var(--sg-fg) 13%, transparent);
+  box-shadow:
+    inset 0 var(--md-edge-top, 0) 0 0 var(--md-select-edge),
+    inset 0 calc(-1 * var(--md-edge-bottom, 0px)) 0 0 var(--md-select-edge),
+    inset var(--md-edge-start, 0) 0 0 0 var(--md-select-edge),
+    inset calc(-1 * var(--md-edge-end, 0px)) 0 0 0 var(--md-select-edge);
+}
+.mdview-table-grid .sg-cell[data-edge~="top"] { --md-edge-top: 1px; }
+.mdview-table-grid .sg-cell[data-edge~="bottom"] { --md-edge-bottom: 1px; }
+.mdview-table-grid .sg-cell[data-edge~="start"] { --md-edge-start: 1px; }
+.mdview-table-grid .sg-cell[data-edge~="end"] { --md-edge-end: 1px; }
+/* Code breaks only at its own spaces; the column minimum holds its longest run. */
+.mdview-table-grid .sg-cell code { overflow-wrap: normal; word-break: normal; }
 .mdview-table-grid .sg-head-cell {
   font-weight: 600;
   white-space: normal;

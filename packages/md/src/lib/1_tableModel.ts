@@ -106,4 +106,24 @@ export function markdownTableModel(children: ReactNode): MarkdownTableModel {
   };
 }
 
+export interface CodeToken {
+  readonly text: string;
+  readonly className: string | undefined;
+}
+
+const codeRunsOf = (value: ReactNode): readonly CodeToken[] => {
+  if (Array.isArray(value)) return value.flatMap(codeRunsOf);
+  if (!isValidElement(value)) return [];
+  const element = value as ElementWithChildren & ReactElement<{ readonly className?: string }>;
+  if (htmlTagOf(element) !== "code") return codeRunsOf(element.props.children);
+  return textOf(element.props.children).split(/\s+/).map((text) => ({ text, className: element.props.className }));
+};
+
+/** Per column, the longest whitespace-free run of inline code in its body cells. */
+export function longestCodeTokens(model: MarkdownTableModel): readonly (CodeToken | undefined)[] {
+  return model.headers.map((_, index) => model.rows
+    .flatMap((row) => codeRunsOf(row.cells[index]))
+    .reduce<CodeToken | undefined>((longest, token) => token.text.length > (longest?.text.length ?? 0) ? token : longest, undefined));
+}
+
 export { textOf as markdownTableText };
