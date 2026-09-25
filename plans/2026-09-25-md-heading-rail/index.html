@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="rail-v3-diffuse.css">
 <link rel="stylesheet" href="rail-lab.css">
 <link rel="stylesheet" href="rail-v4.css">
+<link rel="stylesheet" href="rail-v5.css">
 <style>
 /* Page chrome only; the md DOM is styled entirely by base.css + rail-*.css.
    Variant switching is radio inputs + :has() — no script anywhere. */
@@ -113,6 +114,31 @@ body:has(#v4-grad-edge-tint:checked) .props-v4 .opt-grad-edge-tint,
 body:has(#v4-grad-underline-sweep:checked) .props-v4 .opt-grad-underline-sweep,
 body:has(#v4-grad-level-blend:checked) .props-v4 .opt-grad-level-blend,
 body:has(#v4-grad-smooth-wash:checked) .props-v4 .opt-grad-smooth-wash { display: inline; }
+body:has(#v5-on:checked) .props-v5 { display: block; }
+.props-v5 .v5-opt { display: none; font-weight: 600; }
+body:has(#v5-shape-curve:checked) .props-v5 .opt-curve,
+body:has(#v5-shape-oblique:checked) .props-v5 .opt-oblique,
+body:has(#v5-shape-straight:checked) .props-v5 .opt-straight,
+body:has(#v5-pal-baseline:checked) .props-v5 .opt-pal-baseline,
+body:has(#v5-pal-cool:checked) .props-v5 .opt-pal-cool,
+body:has(#v5-pal-earth:checked) .props-v5 .opt-pal-earth,
+body:has(#v5-pal-mono:checked) .props-v5 .opt-pal-mono,
+body:has(#v5-pal-pastel:checked) .props-v5 .opt-pal-pastel,
+body:has(#v5-pal-dark:checked) .props-v5 .opt-pal-dark,
+body:has(#v5-grad-none:checked) .props-v5 .opt-grad-none,
+body:has(#v5-grad-rail-fade:checked) .props-v5 .opt-grad-rail-fade,
+body:has(#v5-grad-edge-tint:checked) .props-v5 .opt-grad-edge-tint,
+body:has(#v5-grad-underline-sweep:checked) .props-v5 .opt-grad-underline-sweep,
+body:has(#v5-grad-level-blend:checked) .props-v5 .opt-grad-level-blend,
+body:has(#v5-grad-smooth-wash:checked) .props-v5 .opt-grad-smooth-wash { display: inline; }
+.props-v5 .fixes {
+  margin: 0.4rem 0 0.9rem;
+  padding-left: 1.2rem;
+  font-size: 0.8rem;
+  color: color-mix(in srgb, var(--panel-fg) 70%, transparent);
+}
+.props-v5 .fixes li + li { margin-top: 0.3rem; }
+.props-v5 .fixes b { font-weight: 600; }
 .props h2 { margin: 0 0 0.2rem; font-size: 0.95rem; }
 .props .qa {
   margin: 0 0 0.9rem;
@@ -179,6 +205,10 @@ body:has(#v4-grad-smooth-wash:checked) .props-v4 .opt-grad-smooth-wash { display
       <span class="picker-tag">v4</span>
       <label><input type="radio" name="variant" id="v4-on" checked>v4</label>
     </div>
+    <div class="picker-group">
+      <span class="picker-tag">v5</span>
+      <label><input type="radio" name="variant" id="v5-on">v5</label>
+    </div>
   </fieldset>
   <fieldset class="picker">
     <legend>v4 groups</legend>
@@ -205,6 +235,33 @@ body:has(#v4-grad-smooth-wash:checked) .props-v4 .opt-grad-smooth-wash { display
       <label><input type="radio" name="v4-grad" id="v4-grad-underline-sweep">underline-sweep</label>
       <label><input type="radio" name="v4-grad" id="v4-grad-level-blend">level-blend</label>
       <label><input type="radio" name="v4-grad" id="v4-grad-smooth-wash">smooth-wash</label>
+    </div>
+  </fieldset>
+  <fieldset class="picker">
+    <legend>v5 groups</legend>
+    <div class="picker-group">
+      <span class="picker-tag">shape</span>
+      <label><input type="radio" name="v5-shape" id="v5-shape-curve" checked>curve</label>
+      <label><input type="radio" name="v5-shape" id="v5-shape-oblique">oblique</label>
+      <label><input type="radio" name="v5-shape" id="v5-shape-straight">straight</label>
+    </div>
+    <div class="picker-group">
+      <span class="picker-tag">palette</span>
+      <label><input type="radio" name="v5-pal" id="v5-pal-baseline" checked><span class="pal-dots"><i style="background:#233b63"></i><i style="background:#2f6fb8"></i><i style="background:#2b8a7e"></i><i style="background:#8f5fb8"></i><i style="background:#c2569b"></i><i style="background:#c25b3f"></i></span>baseline</label>
+      <label><input type="radio" name="v5-pal" id="v5-pal-cool"><span class="pal-dots"><i style="background:oklch(0.42 0.08 250)"></i><i style="background:oklch(0.52 0.1 240)"></i><i style="background:oklch(0.6 0.09 225)"></i><i style="background:oklch(0.65 0.08 205)"></i><i style="background:oklch(0.58 0.07 185)"></i><i style="background:oklch(0.5 0.06 165)"></i></span>cool</label>
+      <label><input type="radio" name="v5-pal" id="v5-pal-earth"><span class="pal-dots"><i style="background:oklch(0.4 0.07 50)"></i><i style="background:oklch(0.5 0.09 55)"></i><i style="background:oklch(0.58 0.09 70)"></i><i style="background:oklch(0.62 0.08 95)"></i><i style="background:oklch(0.56 0.07 125)"></i><i style="background:oklch(0.48 0.06 150)"></i></span>earth</label>
+      <label><input type="radio" name="v5-pal" id="v5-pal-mono"><span class="pal-dots"><i style="background:oklch(0.35 0.07 258)"></i><i style="background:oklch(0.44 0.08 258)"></i><i style="background:oklch(0.52 0.08 258)"></i><i style="background:oklch(0.6 0.07 258)"></i><i style="background:oklch(0.67 0.06 258)"></i><i style="background:oklch(0.73 0.05 258)"></i></span>mono</label>
+      <label><input type="radio" name="v5-pal" id="v5-pal-pastel"><span class="pal-dots"><i style="background:oklch(0.62 0.08 285)"></i><i style="background:oklch(0.68 0.08 245)"></i><i style="background:oklch(0.7 0.07 185)"></i><i style="background:oklch(0.72 0.07 130)"></i><i style="background:oklch(0.71 0.08 70)"></i><i style="background:oklch(0.66 0.07 25)"></i></span>pastel</label>
+      <label><input type="radio" name="v5-pal" id="v5-pal-dark"><span class="pal-dots"><i style="background:oklch(0.74 0.13 255)"></i><i style="background:oklch(0.78 0.12 230)"></i><i style="background:oklch(0.8 0.11 195)"></i><i style="background:oklch(0.82 0.11 160)"></i><i style="background:oklch(0.78 0.12 305)"></i><i style="background:oklch(0.74 0.13 20)"></i></span>dark</label>
+    </div>
+    <div class="picker-group">
+      <span class="picker-tag">gradient</span>
+      <label><input type="radio" name="v5-grad" id="v5-grad-none">none</label>
+      <label><input type="radio" name="v5-grad" id="v5-grad-rail-fade" checked>rail-fade</label>
+      <label><input type="radio" name="v5-grad" id="v5-grad-edge-tint">edge-tint</label>
+      <label><input type="radio" name="v5-grad" id="v5-grad-underline-sweep">underline-sweep</label>
+      <label><input type="radio" name="v5-grad" id="v5-grad-level-blend">level-blend</label>
+      <label><input type="radio" name="v5-grad" id="v5-grad-smooth-wash">smooth-wash</label>
     </div>
   </fieldset>
 </header>
@@ -605,6 +662,45 @@ body:has(#v4-grad-smooth-wash:checked) .props-v4 .opt-grad-smooth-wash { display
         <dt>--h-pad-x / --h-pad-y</dt><dd>0.9em / 0.3em</dd>
         <dt>--body-inset</dt><dd>0.9em</dd>
       </dl>
+    </section>
+    <section class="props props-v5">
+      <h2>v5</h2>
+      <p class="qa">final pass on v4 · branches <b>end exactly on the box top, clipped</b> · lines behind boxes <b>show as a diffusion into the fill</b> · fill <b>mixes the level hue with the palette paper</b> · <b>no radial gradients</b></p>
+      <dl class="vars">
+        <dt>shape</dt>
+        <dd><span class="v5-opt opt-curve">curve — one quarter bend off the parent rail onto the box top</span><span class="v5-opt opt-oblique">oblique — clipped diagonal landing on the box top</span><span class="v5-opt opt-straight">straight — v3 control, no branch</span></dd>
+        <dt>palette</dt>
+        <dd><span class="v5-opt opt-pal-baseline">baseline — v3's set</span><span class="v5-opt opt-pal-cool">cool — calm cool ramp</span><span class="v5-opt opt-pal-earth">earth — warm earth ramp</span><span class="v5-opt opt-pal-mono">mono — single-hue lightness ramp</span><span class="v5-opt opt-pal-pastel">pastel — muted pastels</span><span class="v5-opt opt-pal-dark">dark — high-contrast dark paper</span></dd>
+        <dt>gradient</dt>
+        <dd><span class="v5-opt opt-grad-none">none — flat</span><span class="v5-opt opt-grad-rail-fade">rail-fade — parent to child along the branch (default)</span><span class="v5-opt opt-grad-edge-tint">edge-tint — soft tint inside the left border</span><span class="v5-opt opt-grad-underline-sweep">underline-sweep — rail hue sweeps into box hue</span><span class="v5-opt opt-grad-level-blend">level-blend — oklch 50/50 mixes at junctions</span><span class="v5-opt opt-grad-smooth-wash">smooth-wash — faint eased wash across the box</span></dd>
+        <dt>levels --h-1…6</dt>
+        <dd class="sw-row"><i style="background: var(--h-1)"></i><i style="background: var(--h-2)"></i><i style="background: var(--h-3)"></i><i style="background: var(--h-4)"></i><i style="background: var(--h-5)"></i><i style="background: var(--h-6)"></i></dd>
+        <dt>--h-paper / --h-ink</dt>
+        <dd class="sw-row"><i style="background: var(--h-paper)"></i><i style="background: var(--h-ink)"></i>paper / ink</dd>
+        <dt>box fill</dt>
+        <dd><i style="background: color-mix(in oklch, var(--h-2) var(--fill-pct), var(--h-paper))"></i>color-mix(in oklch, var(--h-N) var(--fill-pct), var(--h-paper)), per level</dd>
+        <dt>lines behind boxes</dt>
+        <dd><i style="background: linear-gradient(90deg, var(--h-2), transparent)"></i>line hue at each crossing x, diffusing into the fill</dd>
+        <dt>--behind-fade</dt><dd>1.4rem (diffusion reach per line)</dd>
+        <dt>--stroke</dt><dd>2px (rail, border, underline, branch)</dd>
+        <dt>--indent</dt><dd>26px</dd>
+        <dt>--taper</dt><dd>20px (rail ends fade out)</dd>
+        <dt>branch drop</dt><dd>--sec-gap (curve and oblique span the full drop)</dd>
+        <dt>--sec-gap</dt><dd>1.75em (inside the section)</dd>
+        <dt>--rail-blend</dt><dd>10px · 0px when gradient = none</dd>
+        <dt>--tint-reach</dt><dd>2.2rem (edge-tint reach)</dd>
+        <dt>--toggle-size</dt><dd>18px</dd>
+        <dt>--h-step</dt><dd>0.12em</dd>
+        <dt>--h-pad-x / --h-pad-y</dt><dd>0.9em / 0.3em</dd>
+        <dt>--body-inset</dt><dd>0.9em</dd>
+      </dl>
+      <ul class="fixes">
+        <li><b>1 gradients</b> — all six v4 options kept; each rides as --box-grad above the diffusion and the fill.</li>
+        <li><b>2 oblique clipping</b> — the diagonal is one background clipped by a polygon that runs rail column to rail column and stops at y = --sec-gap, so its foot lands exactly on the box top border; nothing paints past the junction.</li>
+        <li><b>3 lines behind headers</b> — rails and branches keep their z-order behind the box (head z-index: 1); the fill carries --behind-grad: a stripe of each crossing line's hue at its own x — ancestor rails behind the flush box and the heading's own rail/branch alike — easing into the fill over --behind-fade.</li>
+        <li><b>4 palette fill</b> — every level declares its own color-mix(in oklch, var(--h-N) var(--fill-pct), var(--h-paper)), so the fill follows the active palette with no inherited state in the chain.</li>
+        <li><b>5 curve elbow</b> — one quarter-ellipse arc (border-bottom-left-radius 100% 100%, stroke-wide left/bottom edges) spans the full --sec-gap drop: it leaves the parent rail at the section top and arrives at the child box top, the corner blend carrying --branch-from to --branch-to; same clipping rule as 2.</li>
+      </ul>
     </section>
   </aside>
 </main>
