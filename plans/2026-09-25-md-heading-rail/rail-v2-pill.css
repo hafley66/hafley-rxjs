@@ -1,0 +1,215 @@
+/* rail-v2-pill.css — v2: the owner's fixes on the pill geometry. One hue
+   per level: box border, underline and rail are all --h-N (the box keeps
+   only a faint fill mixed from that hue). One rail per level, kept at
+   that level's indent like md's original stacked guides. Heading boxes
+   stay flush at the column edge — each is pulled left across the
+   ancestor rails by its level's indent, and its border is a horizontal
+   gradient that blends into each ancestor rail's colour within
+   --rail-blend of that rail's x (k * --indent) and holds --h-N between
+   rails. The fold toggle is centred on the box, sitting on its own rail.
+   List guides take the enclosing section's hue, faint. Layered over
+   base.css while #v2-pill is checked. */
+
+body:has(#v2-pill:checked) {
+  --h-ink: var(--panel-fg);
+  --h-paper: var(--panel-bg);
+  --h-1: #233b63;
+  --h-2: #2f6fb8;
+  --h-3: #2b8a7e;
+  --h-4: #8f5fb8;
+  --h-5: #c2569b;
+  --h-6: #c25b3f;
+  --h-border-width: 1px;
+  --h-radius: 0.9em;
+  --h-step: 0.12em;
+  --h-pad-x: 0.9em;
+  --h-pad-y: 0.3em;
+  --indent: 26px;
+  --rail-width: 4px;
+  --rail-blend: 10px;
+  --toggle-size: 18px;
+  --body-inset: 0.9em;
+}
+
+/* Section colour state (v1 mechanism): --cur is this section's level
+   hue; every rail, border, underline and toggle below reads it. */
+body:has(#v2-pill:checked) .mdview-content { --cur: var(--h-1); }
+body:has(#v2-pill:checked) .mdview-sec:has(> .mdview-h1) { --cur: var(--h-1); }
+body:has(#v2-pill:checked) .mdview-sec:has(> .mdview-h2) { --cur: var(--h-2); }
+body:has(#v2-pill:checked) .mdview-sec:has(> .mdview-h3) { --cur: var(--h-3); }
+body:has(#v2-pill:checked) .mdview-sec:has(> .mdview-h4) { --cur: var(--h-4); }
+body:has(#v2-pill:checked) .mdview-sec:has(> .mdview-h5) { --cur: var(--h-5); }
+body:has(#v2-pill:checked) .mdview-sec:has(> .mdview-h6) { --cur: var(--h-6); }
+
+/* Bodies lose base's guide border; the step itself moves onto nested
+   sections, so each level's rail and content sits one --indent further
+   in — the stacked-guide geometry. */
+body:has(#v2-pill:checked) .mdview-content .mdview-body {
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+  border-inline-start: 0;
+}
+body:has(#v2-pill:checked) .mdview-content .mdview-body > .mdview-sec {
+  margin-inline-start: var(--indent);
+}
+
+/* One rail per level: each section draws its own segment at its own
+   (indented) origin, in its own hue, spanning head and body. A folded
+   section therefore stops its rail at the box. */
+body:has(#v2-pill:checked) .mdview-sec {
+  position: relative;
+  transition: --cur 0.4s ease;
+}
+body:has(#v2-pill:checked) .mdview-sec::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: var(--rail-width);
+  background: var(--cur);
+}
+
+/* Flattened level ladder (v1). */
+body:has(#v2-pill:checked) .mdview-h1 { font-size: calc(1em + 5 * var(--h-step)); }
+body:has(#v2-pill:checked) .mdview-h2 { font-size: calc(1em + 4 * var(--h-step)); }
+body:has(#v2-pill:checked) .mdview-h3 { font-size: calc(1em + 3 * var(--h-step)); }
+body:has(#v2-pill:checked) .mdview-h4 { font-size: calc(1em + 2 * var(--h-step)); }
+body:has(#v2-pill:checked) .mdview-h5 { font-size: calc(1em + 1 * var(--h-step)); }
+body:has(#v2-pill:checked) .mdview-h6 { font-size: calc(1em + 0 * var(--h-step)); }
+
+/* Per-level border gradient: solid --h-N away from rails; at each
+   ancestor rail's x (k * --indent) it blends to that rail's hue within
+   --rail-blend either side. The level's own rail needs no stop — it is
+   already --h-N. */
+body:has(#v2-pill:checked) .mdview-content .mdview-h1 {
+  --lvl: 1;
+  --border-grad: linear-gradient(90deg, var(--h-1), var(--h-1));
+}
+body:has(#v2-pill:checked) .mdview-content .mdview-h2 {
+  --lvl: 2;
+  --border-grad: linear-gradient(90deg,
+    var(--h-1) 0,
+    var(--h-2) var(--rail-blend),
+    var(--h-2) 100%);
+}
+body:has(#v2-pill:checked) .mdview-content .mdview-h3 {
+  --lvl: 3;
+  --border-grad: linear-gradient(90deg,
+    var(--h-1) 0,
+    var(--h-3) var(--rail-blend),
+    var(--h-3) calc(var(--indent) - var(--rail-blend)),
+    var(--h-2) var(--indent),
+    var(--h-3) calc(var(--indent) + var(--rail-blend)),
+    var(--h-3) 100%);
+}
+body:has(#v2-pill:checked) .mdview-content .mdview-h4 {
+  --lvl: 4;
+  --border-grad: linear-gradient(90deg,
+    var(--h-1) 0,
+    var(--h-4) var(--rail-blend),
+    var(--h-4) calc(var(--indent) - var(--rail-blend)),
+    var(--h-2) var(--indent),
+    var(--h-4) calc(var(--indent) + var(--rail-blend)),
+    var(--h-4) calc(var(--indent) * 2 - var(--rail-blend)),
+    var(--h-3) calc(var(--indent) * 2),
+    var(--h-4) calc(var(--indent) * 2 + var(--rail-blend)),
+    var(--h-4) 100%);
+}
+body:has(#v2-pill:checked) .mdview-content .mdview-h5 {
+  --lvl: 5;
+  --border-grad: linear-gradient(90deg,
+    var(--h-1) 0,
+    var(--h-5) var(--rail-blend),
+    var(--h-5) calc(var(--indent) - var(--rail-blend)),
+    var(--h-2) var(--indent),
+    var(--h-5) calc(var(--indent) + var(--rail-blend)),
+    var(--h-5) calc(var(--indent) * 2 - var(--rail-blend)),
+    var(--h-3) calc(var(--indent) * 2),
+    var(--h-5) calc(var(--indent) * 2 + var(--rail-blend)),
+    var(--h-5) calc(var(--indent) * 3 - var(--rail-blend)),
+    var(--h-4) calc(var(--indent) * 3),
+    var(--h-5) calc(var(--indent) * 3 + var(--rail-blend)),
+    var(--h-5) 100%);
+}
+body:has(#v2-pill:checked) .mdview-content .mdview-h6 {
+  --lvl: 6;
+  --border-grad: linear-gradient(90deg,
+    var(--h-1) 0,
+    var(--h-6) var(--rail-blend),
+    var(--h-6) calc(var(--indent) - var(--rail-blend)),
+    var(--h-2) var(--indent),
+    var(--h-6) calc(var(--indent) + var(--rail-blend)),
+    var(--h-6) calc(var(--indent) * 2 - var(--rail-blend)),
+    var(--h-3) calc(var(--indent) * 2),
+    var(--h-6) calc(var(--indent) * 2 + var(--rail-blend)),
+    var(--h-6) calc(var(--indent) * 3 - var(--rail-blend)),
+    var(--h-4) calc(var(--indent) * 3),
+    var(--h-6) calc(var(--indent) * 3 + var(--rail-blend)),
+    var(--h-6) calc(var(--indent) * 4 - var(--rail-blend)),
+    var(--h-5) calc(var(--indent) * 4),
+    var(--h-6) calc(var(--indent) * 4 + var(--rail-blend)),
+    var(--h-6) 100%);
+}
+
+/* Heading box: flush at the column edge — pulled left across the
+   ancestor rails by its level's indent; width:auto re-extends it to the
+   section's right edge. Faint own-hue fill on padding-box; the
+   transparent border shows the gradient on border-box, so border and
+   underline are the same blended --h-N. Text starts right of its own
+   toggle and rail. */
+body:has(#v2-pill:checked) .mdview-content .mdview-head {
+  position: relative;
+  margin-inline-start: calc(-1 * var(--indent) * (var(--lvl) - 1));
+  margin-inline-end: var(--h-radius);
+  padding-block: var(--h-pad-y);
+  padding-inline:
+    calc(var(--indent) * (var(--lvl) - 1) + var(--toggle-size) / 2 + var(--h-pad-x))
+    var(--h-pad-x);
+  border: var(--h-border-width) solid transparent;
+  border-bottom-width: calc(var(--h-border-width) + 1px);
+  border-radius: 0 var(--h-radius) var(--h-radius) 0;
+  /* Opaque faint fill (same hue over paper) masks the border gradient
+     outside the border; the blended gradient shows only in the border
+     itself, border and underline alike. */
+  background:
+    linear-gradient(
+        color-mix(in oklab, var(--cur) 11%, var(--h-paper)),
+        color-mix(in oklab, var(--cur) 11%, var(--h-paper))) padding-box,
+    var(--border-grad) border-box;
+}
+body:has(#v2-pill:checked) .mdview-content .mdview-title {
+  color: color-mix(in oklab, var(--cur) 72%, var(--h-ink));
+}
+
+/* Fold toggle: a circle centred on the box, on its own rail. */
+body:has(#v2-pill:checked) .mdview-content .mdview-twisty {
+  position: absolute;
+  left: calc(var(--indent) * (var(--lvl) - 1));
+  top: 50%;
+  translate: -50% -50%;
+  box-sizing: border-box;
+  inline-size: var(--toggle-size);
+  block-size: var(--toggle-size);
+  display: grid;
+  place-content: center;
+  font-size: calc(var(--toggle-size) * 0.5);
+  line-height: 1;
+  opacity: 1;
+  color: var(--h-paper);
+  background: var(--cur);
+  border: 1.5px solid var(--h-paper);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+/* Prose clears its own rail; nested rails step right with their
+   sections. */
+body:has(#v2-pill:checked) .mdview-content .mdview-body > .md-body {
+  padding-inline-start: calc(var(--rail-width) + var(--body-inset));
+}
+
+/* List guides stop competing with the rails: they take the enclosing
+   section's hue, faint. */
+body:has(#v2-pill:checked) .mdview-content .md-body :is(ul, ol) {
+  --md-list-guide: color-mix(in oklab, var(--cur) 30%, transparent);
+}

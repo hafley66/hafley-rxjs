@@ -9,6 +9,9 @@
 <link rel="stylesheet" href="rail-pill-soft-blend.css">
 <link rel="stylesheet" href="rail-underline-only.css">
 <link rel="stylesheet" href="rail-notch.css">
+<link rel="stylesheet" href="rail-v2-pill.css">
+<link rel="stylesheet" href="rail-v2-underline.css">
+<link rel="stylesheet" href="rail-v2-notch.css">
 <style>
 /* Page chrome only; the md DOM is styled entirely by base.css + rail-*.css.
    Variant switching is radio inputs + :has() — no script anywhere. */
@@ -61,6 +64,13 @@ body {
   border-color: var(--row-active-bg);
   background: color-mix(in srgb, var(--row-active-bg) 14%, transparent);
 }
+.picker-group { display: inline-flex; align-items: center; gap: 0.4rem; }
+.picker-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--panel-fg) 55%, transparent);
+}
 .proto-main {
   flex: 1;
   min-height: 0;
@@ -77,6 +87,9 @@ body:has(#v-pill:checked) .props-pill,
 body:has(#v-pill-soft-blend:checked) .props-soft,
 body:has(#v-underline-only:checked) .props-underline,
 body:has(#v-notch:checked) .props-notch { display: block; }
+body:has(#v2-pill:checked) .props-v2-pill,
+body:has(#v2-underline:checked) .props-v2-underline,
+body:has(#v2-notch:checked) .props-v2-notch { display: block; }
 .props h2 { margin: 0 0 0.2rem; font-size: 0.95rem; }
 .props .qa {
   margin: 0 0 0.9rem;
@@ -114,10 +127,19 @@ body:has(#v-notch:checked) .props-notch { display: block; }
   <h1>md heading rail — prototype</h1>
   <fieldset class="picker">
     <legend>Variant</legend>
-    <label><input type="radio" name="variant" id="v-pill" checked>pill</label>
-    <label><input type="radio" name="variant" id="v-pill-soft-blend">pill-soft-blend</label>
-    <label><input type="radio" name="variant" id="v-underline-only">underline-only</label>
-    <label><input type="radio" name="variant" id="v-notch">notch</label>
+    <div class="picker-group">
+      <span class="picker-tag">v1</span>
+      <label><input type="radio" name="variant" id="v-pill" checked>pill</label>
+      <label><input type="radio" name="variant" id="v-pill-soft-blend">pill-soft-blend</label>
+      <label><input type="radio" name="variant" id="v-underline-only">underline-only</label>
+      <label><input type="radio" name="variant" id="v-notch">notch</label>
+    </div>
+    <div class="picker-group">
+      <span class="picker-tag">v2</span>
+      <label><input type="radio" name="variant" id="v2-pill">v2-pill</label>
+      <label><input type="radio" name="variant" id="v2-underline">v2-underline</label>
+      <label><input type="radio" name="variant" id="v2-notch">v2-notch</label>
+    </div>
   </fieldset>
 </header>
 <main class="proto-main">
@@ -258,6 +280,54 @@ body:has(#v-notch:checked) .props-notch { display: block; }
         <dt>--body-inset</dt><dd>0px</dd>
         <dt>--h-border</dt><dd><i style="background: var(--h-border)"></i>ink 18% (toggle ring)</dd>
         <dt>--h-underline</dt><dd>divider = cur 55% fade</dd>
+      </dl>
+    </section>
+    <section class="props props-v2-pill">
+      <h2>v2-pill</h2>
+      <p class="qa">rails <b>one per level, at that level's indent</b> · boxes <b>flush left, border blends to each ancestor rail's hue</b> · colour <b>one hue per level — border = underline = rail</b> · toggle <b>on its own rail, centred on the box</b> · list guides <b>enclosing section hue @ 30%</b></p>
+      <dl class="vars">
+        <dt>levels --h-1…6</dt>
+        <dd class="sw-row"><i style="background: var(--h-1)"></i><i style="background: var(--h-2)"></i><i style="background: var(--h-3)"></i><i style="background: var(--h-4)"></i><i style="background: var(--h-5)"></i><i style="background: var(--h-6)"></i></dd>
+        <dt>--indent</dt><dd>26px</dd>
+        <dt>--rail-width</dt><dd>4px</dd>
+        <dt>--rail-blend</dt><dd>10px</dd>
+        <dt>--toggle-size</dt><dd>18px</dd>
+        <dt>box fill</dt><dd>cur 11% into paper (opaque)</dd>
+        <dt>--h-step</dt><dd>0.12em</dd>
+        <dt>--h-pad-x / --h-pad-y</dt><dd>0.9em / 0.3em</dd>
+        <dt>--body-inset</dt><dd>0.9em</dd>
+      </dl>
+    </section>
+    <section class="props props-v2-underline">
+      <h2>v2-underline</h2>
+      <p class="qa">rails <b>one per level, at that level's indent</b> · no box — <b>flush underline, blended at ancestor rails</b> · colour <b>one hue per level — underline = rail</b> · toggle <b>on its own rail, centred on the heading band</b> · list guides <b>enclosing section hue @ 30%</b></p>
+      <dl class="vars">
+        <dt>levels --h-1…6</dt>
+        <dd class="sw-row"><i style="background: var(--h-1)"></i><i style="background: var(--h-2)"></i><i style="background: var(--h-3)"></i><i style="background: var(--h-4)"></i><i style="background: var(--h-5)"></i><i style="background: var(--h-6)"></i></dd>
+        <dt>--indent</dt><dd>26px</dd>
+        <dt>--rail-width</dt><dd>4px</dd>
+        <dt>--rail-blend</dt><dd>10px</dd>
+        <dt>--toggle-size</dt><dd>18px</dd>
+        <dt>--h-border-width</dt><dd>1px (underline is +1px)</dd>
+        <dt>--h-step</dt><dd>0.11em</dd>
+        <dt>--h-pad-x / --h-pad-y</dt><dd>0.9em / 0.3em</dd>
+        <dt>--body-inset</dt><dd>1.2em</dd>
+      </dl>
+    </section>
+    <section class="props props-v2-notch">
+      <h2>v2-notch</h2>
+      <p class="qa">divider <b>flush left, notched at its own rail, blended at ancestor rails</b> · rails <b>one per level, at that level's indent</b> · toggle <b>on its own rail, centred on the box</b> · list guides <b>enclosing section hue @ 30%</b></p>
+      <dl class="vars">
+        <dt>levels --h-1…6</dt>
+        <dd class="sw-row"><i style="background: var(--h-1)"></i><i style="background: var(--h-2)"></i><i style="background: var(--h-3)"></i><i style="background: var(--h-4)"></i><i style="background: var(--h-5)"></i><i style="background: var(--h-6)"></i></dd>
+        <dt>--indent</dt><dd>26px</dd>
+        <dt>--rail-width</dt><dd>4px</dd>
+        <dt>--rail-blend</dt><dd>10px</dd>
+        <dt>--notch-gap</dt><dd>0.85 × toggle</dd>
+        <dt>--toggle-size</dt><dd>16px</dd>
+        <dt>--h-step</dt><dd>0.1em</dd>
+        <dt>--h-pad-x / --h-pad-y</dt><dd>0.9em / 0.4em</dd>
+        <dt>--body-inset</dt><dd>0.9em</dd>
       </dl>
     </section>
   </aside>

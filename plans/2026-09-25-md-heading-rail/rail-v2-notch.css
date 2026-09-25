@@ -1,0 +1,255 @@
+/* rail-v2-notch.css — v2: the per-heading divider, now flush left. One
+   hue per level: the divider and the rail are both --h-N (the title
+   keeps a per-level gradient fill as this variant's flair). One rail
+   per level, kept at that level's indent like md's original stacked
+   guides. The divider runs flush from the column edge and is painted by
+   a horizontal gradient that blends into each ancestor rail's colour
+   within --rail-blend of that rail's x (k * --indent), holds --h-N
+   between rails, and notches open around its own rail's x — where the
+   fold toggle sits, centred on the box. List guides take the enclosing
+   section's hue, faint. Layered over base.css while #v2-notch is
+   checked. */
+
+body:has(#v2-notch:checked) {
+  --h-ink: var(--panel-fg);
+  --h-paper: var(--panel-bg);
+  --h-1: #3d4c94;
+  --h-2: #6d4fa6;
+  --h-3: #a34f9e;
+  --h-4: #c25a76;
+  --h-5: #cf7443;
+  --h-6: #b8912e;
+  --h-border-width: 1px;
+  --h-step: 0.1em;
+  --h-pad-x: 0.9em;
+  --h-pad-y: 0.4em;
+  --indent: 26px;
+  --rail-width: 4px;
+  --rail-blend: 10px;
+  --notch-gap: calc(var(--toggle-size) * 0.85);
+  --toggle-size: 16px;
+  --body-inset: 0.9em;
+}
+
+/* Section colour state (v1 mechanism): --cur is this section's level
+   hue; every rail, divider and toggle below reads it. */
+body:has(#v2-notch:checked) .mdview-content { --cur: var(--h-1); }
+body:has(#v2-notch:checked) .mdview-sec:has(> .mdview-h1) { --cur: var(--h-1); }
+body:has(#v2-notch:checked) .mdview-sec:has(> .mdview-h2) { --cur: var(--h-2); }
+body:has(#v2-notch:checked) .mdview-sec:has(> .mdview-h3) { --cur: var(--h-3); }
+body:has(#v2-notch:checked) .mdview-sec:has(> .mdview-h4) { --cur: var(--h-4); }
+body:has(#v2-notch:checked) .mdview-sec:has(> .mdview-h5) { --cur: var(--h-5); }
+body:has(#v2-notch:checked) .mdview-sec:has(> .mdview-h6) { --cur: var(--h-6); }
+
+/* Bodies lose base's guide border; the step itself moves onto nested
+   sections, so each level's rail and content sits one --indent further
+   in — the stacked-guide geometry. */
+body:has(#v2-notch:checked) .mdview-content .mdview-body {
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+  border-inline-start: 0;
+}
+body:has(#v2-notch:checked) .mdview-content .mdview-body > .mdview-sec {
+  margin-inline-start: var(--indent);
+}
+
+/* One rail per level: each section draws its own segment at its own
+   (indented) origin, in its own hue, spanning head and body. A folded
+   section therefore stops its rail at the box. */
+body:has(#v2-notch:checked) .mdview-sec {
+  position: relative;
+  transition: --cur 0.4s ease;
+}
+body:has(#v2-notch:checked) .mdview-sec::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: var(--rail-width);
+  background: var(--cur);
+}
+
+/* Flattened level ladder (v1). */
+body:has(#v2-notch:checked) .mdview-h1 { font-size: calc(1em + 5 * var(--h-step)); }
+body:has(#v2-notch:checked) .mdview-h2 { font-size: calc(1em + 4 * var(--h-step)); }
+body:has(#v2-notch:checked) .mdview-h3 { font-size: calc(1em + 3 * var(--h-step)); }
+body:has(#v2-notch:checked) .mdview-h4 { font-size: calc(1em + 2 * var(--h-step)); }
+body:has(#v2-notch:checked) .mdview-h5 { font-size: calc(1em + 1 * var(--h-step)); }
+body:has(#v2-notch:checked) .mdview-h6 { font-size: calc(1em + 0 * var(--h-step)); }
+
+/* Per-level divider gradient: solid --h-N away from rails; at each
+   ancestor rail's x (k * --indent) it blends to that rail's hue within
+   --rail-blend either side; around its own rail's x it notches open for
+   the toggle. */
+body:has(#v2-notch:checked) .mdview-content .mdview-h1 {
+  --lvl: 1;
+  --divider-grad: linear-gradient(90deg,
+    transparent 0,
+    transparent var(--notch-gap),
+    var(--h-1) var(--notch-gap),
+    var(--h-1) 100%);
+}
+body:has(#v2-notch:checked) .mdview-content .mdview-h2 {
+  --lvl: 2;
+  --divider-grad: linear-gradient(90deg,
+    var(--h-1) 0,
+    var(--h-2) var(--rail-blend),
+    var(--h-2) calc(var(--indent) - var(--notch-gap)),
+    transparent calc(var(--indent) - var(--notch-gap)),
+    transparent calc(var(--indent) + var(--notch-gap)),
+    var(--h-2) calc(var(--indent) + var(--notch-gap)),
+    var(--h-2) 100%);
+}
+body:has(#v2-notch:checked) .mdview-content .mdview-h3 {
+  --lvl: 3;
+  --divider-grad: linear-gradient(90deg,
+    var(--h-1) 0,
+    var(--h-3) var(--rail-blend),
+    var(--h-3) calc(var(--indent) - var(--rail-blend)),
+    var(--h-2) var(--indent),
+    var(--h-3) calc(var(--indent) + var(--rail-blend)),
+    var(--h-3) calc(var(--indent) * 2 - var(--notch-gap)),
+    transparent calc(var(--indent) * 2 - var(--notch-gap)),
+    transparent calc(var(--indent) * 2 + var(--notch-gap)),
+    var(--h-3) calc(var(--indent) * 2 + var(--notch-gap)),
+    var(--h-3) 100%);
+}
+body:has(#v2-notch:checked) .mdview-content .mdview-h4 {
+  --lvl: 4;
+  --divider-grad: linear-gradient(90deg,
+    var(--h-1) 0,
+    var(--h-4) var(--rail-blend),
+    var(--h-4) calc(var(--indent) - var(--rail-blend)),
+    var(--h-2) var(--indent),
+    var(--h-4) calc(var(--indent) + var(--rail-blend)),
+    var(--h-4) calc(var(--indent) * 2 - var(--rail-blend)),
+    var(--h-3) calc(var(--indent) * 2),
+    var(--h-4) calc(var(--indent) * 2 + var(--rail-blend)),
+    var(--h-4) calc(var(--indent) * 3 - var(--notch-gap)),
+    transparent calc(var(--indent) * 3 - var(--notch-gap)),
+    transparent calc(var(--indent) * 3 + var(--notch-gap)),
+    var(--h-4) calc(var(--indent) * 3 + var(--notch-gap)),
+    var(--h-4) 100%);
+}
+body:has(#v2-notch:checked) .mdview-content .mdview-h5 {
+  --lvl: 5;
+  --divider-grad: linear-gradient(90deg,
+    var(--h-1) 0,
+    var(--h-5) var(--rail-blend),
+    var(--h-5) calc(var(--indent) - var(--rail-blend)),
+    var(--h-2) var(--indent),
+    var(--h-5) calc(var(--indent) + var(--rail-blend)),
+    var(--h-5) calc(var(--indent) * 2 - var(--rail-blend)),
+    var(--h-3) calc(var(--indent) * 2),
+    var(--h-5) calc(var(--indent) * 2 + var(--rail-blend)),
+    var(--h-5) calc(var(--indent) * 3 - var(--rail-blend)),
+    var(--h-4) calc(var(--indent) * 3),
+    var(--h-5) calc(var(--indent) * 3 + var(--rail-blend)),
+    var(--h-5) calc(var(--indent) * 4 - var(--notch-gap)),
+    transparent calc(var(--indent) * 4 - var(--notch-gap)),
+    transparent calc(var(--indent) * 4 + var(--notch-gap)),
+    var(--h-5) calc(var(--indent) * 4 + var(--notch-gap)),
+    var(--h-5) 100%);
+}
+body:has(#v2-notch:checked) .mdview-content .mdview-h6 {
+  --lvl: 6;
+  --divider-grad: linear-gradient(90deg,
+    var(--h-1) 0,
+    var(--h-6) var(--rail-blend),
+    var(--h-6) calc(var(--indent) - var(--rail-blend)),
+    var(--h-2) var(--indent),
+    var(--h-6) calc(var(--indent) + var(--rail-blend)),
+    var(--h-6) calc(var(--indent) * 2 - var(--rail-blend)),
+    var(--h-3) calc(var(--indent) * 2),
+    var(--h-6) calc(var(--indent) * 2 + var(--rail-blend)),
+    var(--h-6) calc(var(--indent) * 3 - var(--rail-blend)),
+    var(--h-4) calc(var(--indent) * 3),
+    var(--h-6) calc(var(--indent) * 3 + var(--rail-blend)),
+    var(--h-6) calc(var(--indent) * 4 - var(--rail-blend)),
+    var(--h-5) calc(var(--indent) * 4),
+    var(--h-6) calc(var(--indent) * 4 + var(--rail-blend)),
+    var(--h-6) calc(var(--indent) * 5 - var(--notch-gap)),
+    transparent calc(var(--indent) * 5 - var(--notch-gap)),
+    transparent calc(var(--indent) * 5 + var(--notch-gap)),
+    var(--h-6) calc(var(--indent) * 5 + var(--notch-gap)),
+    var(--h-6) 100%);
+}
+
+/* Heading band: no box — flush at the column edge (pulled left across
+   the ancestor rails by its level's indent; width:auto keeps the right
+   edge). Text starts right of its own toggle and rail. */
+body:has(#v2-notch:checked) .mdview-content .mdview-head {
+  position: relative;
+  margin-inline-start: calc(-1 * var(--indent) * (var(--lvl) - 1));
+  padding-block: var(--h-pad-y);
+  padding-inline:
+    calc(var(--indent) * (var(--lvl) - 1) + var(--toggle-size) / 2 + var(--h-pad-x))
+    var(--h-pad-x);
+  border: 0;
+}
+
+/* Per-level gradient text (v1 flair). */
+body:has(#v2-notch:checked) .mdview-content .mdview-title {
+  background: linear-gradient(
+    105deg,
+    var(--cur),
+    color-mix(in oklab, var(--cur) 35%, var(--h-ink))
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* The divider: flush from the column edge, just below the box, painted
+   by the per-level blended gradient with the notch at its own rail. */
+body:has(#v2-notch:checked) .mdview-content .mdview-head::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + var(--h-pad-y));
+  height: calc(var(--toggle-size) / 8);
+  background: var(--divider-grad);
+}
+
+/* Fold toggle: centred on the box, sitting on its own rail above the
+   notch. */
+body:has(#v2-notch:checked) .mdview-content .mdview-twisty {
+  position: absolute;
+  left: calc(var(--indent) * (var(--lvl) - 1));
+  top: 50%;
+  translate: -50% -50%;
+  box-sizing: border-box;
+  inline-size: var(--toggle-size);
+  block-size: var(--toggle-size);
+  display: grid;
+  place-content: center;
+  font-size: calc(var(--toggle-size) * 0.5);
+  line-height: 1;
+  opacity: 1;
+  color: var(--h-paper);
+  background: var(--cur);
+  border: 1.5px solid var(--h-paper);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+/* Folded section: divider and toggle remain, dimmed; rail stops at the
+   box. */
+body:has(#v2-notch:checked) .mdview-sec:not(:has(> .mdview-body)) .mdview-title {
+  opacity: 0.55;
+}
+body:has(#v2-notch:checked) .mdview-sec:not(:has(> .mdview-body)) .mdview-head::after {
+  opacity: 0.4;
+}
+
+/* Prose clears its own rail; nested rails step right with their
+   sections. */
+body:has(#v2-notch:checked) .mdview-content .mdview-body > .md-body {
+  padding-inline-start: calc(var(--rail-width) + var(--body-inset));
+}
+
+/* List guides stop competing with the rails: they take the enclosing
+   section's hue, faint. */
+body:has(#v2-notch:checked) .mdview-content .md-body :is(ul, ol) {
+  --md-list-guide: color-mix(in oklab, var(--cur) 30%, transparent);
+}
