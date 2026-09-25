@@ -13,9 +13,12 @@ export default defineConfig({
   })],
   build: {
     lib: {
-      entry: resolve(import.meta.dirname, "src/index.ts"),
+      entry: {
+        index: resolve(import.meta.dirname, "src/index.ts"),
+        "plugins/index": resolve(import.meta.dirname, "src/plugins/index.ts"),
+      },
       formats: ["es"],
-      fileName: () => "index.js",
+      fileName: (_format, name) => `${name}.js`,
       cssFileName: "style",
     },
     rollupOptions: {

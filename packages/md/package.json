@@ -14,6 +14,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./plugins": {
+      "types": "./dist/plugins/index.d.ts",
+      "import": "./dist/plugins/index.js"
+    },
     "./style.css": {
       "types": "./dist/style.css.d.ts",
       "default": "./dist/style.css"
@@ -50,7 +54,8 @@
     "react-dom": ">=19.2.7",
     "react-resizable-panels": ">=3.0.6 <4",
     "streamdown": ">=2.5.0",
-    "@hafley66/xdom": ">=0.1.0"
+    "@hafley66/xdom": ">=0.1.0",
+    "rxjs": ">=7.8.0"
   },
   "devDependencies": {
     "@hafley66/d2": "workspace:*",
@@ -80,7 +85,8 @@
     "vite": "^8.2.1",
     "vite-plugin-dts": "^5.0.3",
     "vitest": "^4.1.10",
-    "@hafley66/xdom": "workspace:*"
+    "@hafley66/xdom": "workspace:*",
+    "rxjs": "^7.8.2"
   },
   "keywords": [
     "markdown",

@@ -46,6 +46,8 @@ import { useProseWidth } from "./2_useProseWidth.js";
 import { CAT_COMMIT, CAT_PAINT, LOG, mdNow } from "./0_log.js";
 import { ProseWidthControl, ProseWidthHandle } from "./3_ProseWidthControl.js";
 import { isCodeRef } from "./lib/0_codeRef.js";
+import { fenceColumns } from "./lib/4_fenceCommands.js";
+import { MdPluginContext, type MdPluginScope } from "./plugins/4_MdPluginContext.js";
 import "./mdview.css";
 import "./1_reading.css";
 
@@ -283,6 +285,12 @@ export const MdPanel = SignalReact(function MdPanel({
   // zoom on the PanelGroup would skew its sash pointer math.
   const zoom = appState.panelZoom[pid] ?? 1;
   const proseWidth = useProseWidth(pid);
+  const columns = fenceColumns(proseWidth.width);
+  const pluginScope = useMemo((): MdPluginScope => ({
+    plugins: host.mdPlugins,
+    runCommand: host.runFenceCommand ? (request) => host.runFenceCommand!(request) : undefined,
+    columns,
+  }), [host, columns]);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -597,7 +605,7 @@ export const MdPanel = SignalReact(function MdPanel({
           ↗ external
         </button>
       </div>
-      {body}
+      <MdPluginContext.Provider value={pluginScope}>{body}</MdPluginContext.Provider>
     </div>
   );
 });

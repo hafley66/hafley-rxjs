@@ -1,19 +1,14 @@
-import { useCallback, useMemo, type ComponentProps } from "react";
-import { Streamdown, type CustomRendererProps, type StreamdownProps } from "streamdown";
-import { code as shikiCode } from "@streamdown/code";
+import { useCallback, useContext, useMemo } from "react";
+import { Streamdown, type CustomRendererProps, type PluginConfig, type StreamdownProps } from "streamdown";
+import { Signal } from "@hafley66/signals";
+import { useSignal } from "@hafley66/signals/react";
 import "streamdown/styles.css";
-import { MermaidDiagram } from "./0a_MermaidDiagram.js";
-import { D2Diagram } from "./0a_D2Diagram.js";
-import { fenceOriginOf, renderedOffsetsForSourceStarts } from "./0b_fenceOrigin.js";
-import { SequenceDiagram } from "./0b_SequenceDiagram.js";
-import { isSequenceSource } from "./0b_isSequenceSource.js";
-import PersistedMarkdownTable from "./5_PersistedMarkdownTable.js";
-
-interface TableNode {
-  readonly position?: {
-    readonly start?: { readonly offset?: number };
-  };
-}
+import { renderedOffsetsForSourceStarts } from "./0b_fenceOrigin.js";
+import { resolveMdPlugins } from "./lib/3_mdPlugins.js";
+import { fenceCommandPass, shiftOffsets, type FencePass } from "./lib/4_fenceCommands.js";
+import type { MdTableProps } from "./plugins/0_types.js";
+import { defaultMdPlugins } from "./plugins/3_defaultMdPlugins.js";
+import { MdPluginContext } from "./plugins/4_MdPluginContext.js";
 
 const controls = {
   code: { copy: true, download: false },
@@ -22,25 +17,6 @@ const controls = {
 } as const;
 
 const NO_TABLE_STARTS: readonly number[] = [];
-
-// dl6 is Prolog-shaped and has no bundled Shiki grammar. Preserve the fence's
-// displayed language while routing its tokens through the bundled Prolog
-// grammar. All other languages retain @streamdown/code's normal dispatch.
-const code = {
-  ...shikiCode,
-  supportsLanguage(language: Parameters<typeof shikiCode.supportsLanguage>[0]) {
-    return String(language).toLowerCase() === "dl6" || shikiCode.supportsLanguage(language);
-  },
-  highlight(
-    options: Parameters<typeof shikiCode.highlight>[0],
-    callback?: Parameters<typeof shikiCode.highlight>[1],
-  ) {
-    const language = String(options.language).toLowerCase() === "dl6"
-      ? "prolog" as typeof options.language
-      : options.language;
-    return shikiCode.highlight({ ...options, language }, callback);
-  },
-};
 
 export default function StreamdownBody({
   children,
@@ -58,31 +34,42 @@ export default function StreamdownBody({
   /** Absolute source offsets of this section's tables, in source order. */
   tableStarts?: readonly number[];
 }) {
-  // Streamdown uses renderer identity as part of its tree reconciliation. Keep
-  // both values stable across Markdown signal re-renders, otherwise an open
-  // MermaidDiagram remounts and its lightbox state returns to false.
-  const MermaidRenderer = useCallback(
-    ({ code, meta }: CustomRendererProps) => isSequenceSource("mermaid", code)
-      ? <SequenceDiagram code={code} language="mermaid" dark={dark} sourceStart={fenceOriginOf(meta)} />
-      : <MermaidDiagram code={code} dark={dark} />,
-    [dark],
+  const { plugins, runCommand, columns } = useContext(MdPluginContext);
+  const set = useMemo(() => resolveMdPlugins(plugins ?? defaultMdPlugins), [plugins]);
+
+  // The pass signal starts at the text as written; a host answer swaps in the rewrite.
+  const written = useMemo((): FencePass => ({ source: children, text: children, edits: [] }), [children]);
+  const passSignal = useMemo(
+    () => Signal(fenceCommandPass(children, set.commands, runCommand, columns), written),
+    [children, set.commands, runCommand, columns, written],
   );
-  const D2Renderer = useCallback(
-    ({ code, meta }: CustomRendererProps) => isSequenceSource("d2", code)
-      ? <SequenceDiagram code={code} language="d2" dark={dark} sourceStart={fenceOriginOf(meta)} />
-      : <D2Diagram code={code} dark={dark} />,
-    [dark],
-  );
+  const latest = useSignal(passSignal.$);
+  const pass = latest.source === children ? latest : written;
+
   const renderedTableStarts = useMemo(
-    () => renderedOffsetsForSourceStarts(children, sourceStart, tableStarts),
-    [children, sourceStart, tableStarts],
+    () => shiftOffsets(renderedOffsetsForSourceStarts(children, sourceStart, tableStarts), pass.edits),
+    [children, sourceStart, tableStarts, pass.edits],
   );
+
+  // Streamdown uses renderer identity as part of its tree reconciliation. Keep
+  // renderers stable across Markdown signal re-renders, otherwise an open
+  // MermaidDiagram remounts and its lightbox state returns to false.
+  const plugin = useMemo((): PluginConfig => ({
+    ...(set.highlight ? { code: set.highlight } : {}),
+    renderers: set.fences.map(({ languages, component: Fence }) => ({
+      language: [...languages],
+      component: (props: CustomRendererProps) => <Fence {...props} dark={dark} />,
+    })),
+  }), [set, dark]);
+
+  const Table = set.table;
   const TableRenderer = useCallback(
-    (props: ComponentProps<"table"> & { readonly node?: TableNode }) => {
+    (props: MdTableProps) => {
+      if (!Table) return null;
       const relativeStart = props.node?.position?.start?.offset;
       const ordinal = relativeStart === undefined ? undefined : renderedTableStarts.indexOf(relativeStart);
       return (
-        <PersistedMarkdownTable
+        <Table
           {...props}
           node={props.node}
           tableSectionId={sectionId}
@@ -90,21 +77,11 @@ export default function StreamdownBody({
         />
       );
     },
-    [sectionId, renderedTableStarts],
-  );
-  const plugins = useMemo(
-    () => ({
-      code,
-      renderers: [
-        { language: "mermaid", component: MermaidRenderer },
-        { language: "d2", component: D2Renderer },
-      ],
-    }),
-    [MermaidRenderer, D2Renderer],
+    [Table, sectionId, renderedTableStarts],
   );
   const markdownComponents = useMemo(
-    () => ({ ...components, table: TableRenderer }),
-    [components, TableRenderer],
+    () => (Table ? { ...components, table: TableRenderer } : components),
+    [components, Table, TableRenderer],
   );
 
   return (
@@ -112,11 +89,11 @@ export default function StreamdownBody({
       <Streamdown
         mode="static"
         components={markdownComponents}
-        plugins={plugins}
+        plugins={plugin}
         controls={controls}
         shikiTheme={["github-light", "github-dark"]}
       >
-        {children}
+        {pass.text}
       </Streamdown>
     </div>
   );

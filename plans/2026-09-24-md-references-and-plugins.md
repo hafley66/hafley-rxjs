@@ -196,9 +196,10 @@ fenceCommandPass(markdown, commands, run, columns):
     take(1),
     map(result => edits for as / code),   // replace+0 -> body; replace+!0 -> stderr fence; annotate -> stdout fence
     catchError(() => of([])),
-    startWith([]),                         // render as written until the host answers
+    startWith(null),                       // unanswered
   )
-  combineLatest(jobs) -> apply edits right-to-left -> { source: markdown, text, edits }
+  combineLatest(jobs) -> drop while every job is null -> apply edits right-to-left -> { source, text, edits }
+  // emits nothing until the first answer; the consumer's Signal seed is the text as written
 ```
 
 ### Instance timelines

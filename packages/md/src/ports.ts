@@ -6,6 +6,8 @@
 // install one gets a clear throw instead of a silent undefined.
 import type { ComponentType, ReactNode } from "react";
 import type { IDockviewPanelProps } from "dockview";
+import type { Observable } from "rxjs";
+import type { MdFenceCommandRequest, MdFenceCommandResult, MdPlugin } from "./plugins/0_types.js";
 
 // Mirrors src/state.ts's FsEntry (a Rust fs::Entry) structurally, so a real
 // FsEntry value satisfies this without a cast at the call site.
@@ -140,6 +142,13 @@ export interface MdviewHost {
   // ---- dock panel open/retitle (src/reactdock.tsx) ----
   openMdPanel(path: string, title: string): void;
   mdPanelId(path: string): string;
+
+  // ---- md renderer plugins (src/plugins) ----
+  // Array order is precedence; absent means defaultMdPlugins.
+  mdPlugins?: readonly MdPlugin[];
+  // Runs a commandPlugin's command on one fence. Cold; unsubscribe stops the
+  // process. Absent: fences render as written.
+  runFenceCommand?(request: MdFenceCommandRequest): Observable<MdFenceCommandResult>;
 
   // ---- plugin registration (src/plugin.tsx) ----
   registerPlugin(plugin: MdviewPluginRegistration): void;

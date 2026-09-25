@@ -16,6 +16,15 @@ export { openMarkdownPanel } from "./open.js";
 export { installMdviewHost, getMdviewHost } from "./ports.js";
 export { setMdLogEmit, type LogEmit as MdLogEmit } from "./0_log.js";
 export type { MdviewHost } from "./ports.js";
+export type {
+  MdFenceCommand,
+  MdFenceCommandRequest,
+  MdFenceCommandResult,
+  MdFenceCommandRunner,
+  MdFenceProps,
+  MdPlugin,
+  MdTableProps,
+} from "./plugins/0_types.js";
 export { DiagramLightbox, diagramSvgMarkup } from "./0_DiagramLightbox.js";
 export type { DiagramLightboxEntry } from "./0_DiagramLightbox.js";
 export { d2ThemeId, diagramPalette, mermaidTheme } from "./0_diagramTheme.js";
