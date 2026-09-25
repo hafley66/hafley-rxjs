@@ -386,19 +386,27 @@ export const MdPanel = SignalReact(function MdPanel({
         const text = typeof children === "string" ? children : "";
         const openCodeRef = host.openCodeRef;
         const ref = openCodeRef !== undefined && isCodeRef(text);
-        const onClick = (e: MouseEvent) => {
-          if (!ref || !e.metaKey) return;
-          e.preventDefault();
-          e.stopPropagation();
-          void openCodeRef.call(host, text, path).catch(console.error);
+        // Native, on the element: a table's grid delegates from its own root, which
+        // a React stopPropagation reaches only after the grid selected the cell.
+        const own = (element: HTMLElement | null) => {
+          if (element === null || !ref) return;
+          const swallow = (e: globalThis.MouseEvent) => {
+            if (!e.metaKey) return;
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.type === "click") void openCodeRef.call(host, text, path).catch(console.error);
+          };
+          const types = ["pointerdown", "mousedown", "pointerup", "mouseup", "click"] as const;
+          types.forEach((type) => element.addEventListener(type, swallow));
+          return () => types.forEach((type) => element.removeEventListener(type, swallow));
         };
         return (
           <code
             {...rest}
+            ref={own}
             className={["rounded bg-muted px-1.5 py-0.5 font-mono text-sm", className].filter(Boolean).join(" ")}
             data-streamdown="inline-code"
             data-md-ref={ref ? "" : undefined}
-            onClick={ref ? onClick : undefined}
           >
             {children}
           </code>

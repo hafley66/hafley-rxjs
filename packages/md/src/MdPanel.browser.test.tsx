@@ -487,6 +487,47 @@ it("⌘-click on inline code that names a file emits the token and the document 
   });
 });
 
+it("a handled ⌘-click on a code ref opens it once and reaches no other handler, in a table cell or a paragraph", async () => {
+  const path = "/repo/docs/table-refs.md";
+  OPENED_REFS.length = 0;
+  await mount(path, [
+    "# Refs",
+    "",
+    "| Key | Source |",
+    "| --- | --- |",
+    "| grid | `src/lang/rust/2_call.rs:790-801` |",
+    "",
+    "- see `2_call.rs:561,583` here",
+  ].join("\n"));
+  await expect.poll(() => host.querySelectorAll(".mdview-table code[data-md-ref]").length, { timeout: 10_000 }).toBe(1);
+  const escaped: string[] = [];
+  const record = (event: Event) => {
+    if ((event as MouseEvent).metaKey) escaped.push(event.type);
+  };
+  const types = ["pointerdown", "mousedown", "pointerup", "mouseup", "click"] as const;
+  types.forEach((type) => window.addEventListener(type, record));
+  try {
+    await userEvent.keyboard("{Meta>}");
+    await userEvent.click(host.querySelector<HTMLElement>(".mdview-table code[data-md-ref]")!);
+    await userEvent.click(host.querySelector<HTMLElement>(".md-body li code[data-md-ref]")!);
+    await userEvent.keyboard("{/Meta}");
+  } finally {
+    types.forEach((type) => window.removeEventListener(type, record));
+  }
+  expect({
+    opened: OPENED_REFS,
+    escaped,
+    selected: host.querySelectorAll('.mdview-table [data-selected="true"]').length,
+  }).toEqual({
+    opened: [
+      { token: "src/lang/rust/2_call.rs:790-801", docPath: path },
+      { token: "2_call.rs:561,583", docPath: path },
+    ],
+    escaped: [],
+    selected: 0,
+  });
+});
+
 const STICKY_DOC = (() => {
   const prose = (label: string) => Array.from({ length: 14 }, (_, index) => `${label} paragraph ${index}.\n`).join("\n");
   return [
