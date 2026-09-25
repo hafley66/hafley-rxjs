@@ -333,9 +333,10 @@ it("sizes the grid to header plus rows under the 70vh cap, scrolls inside above 
 it("fits short wrapping tables without a vertical scrollbar when scrollbars take layout width", async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   // Classic scrollbars, the way a host that styles `::-webkit-scrollbar` gets them: each bar
-  // takes 15px out of the scroller's layout box instead of floating over the content.
+  // takes 15px out of the scroller's layout box instead of floating over the content. Border-box
+  // everywhere, as instant sets it.
   const classic = document.createElement("style");
-  classic.textContent = "::-webkit-scrollbar { width: 15px; height: 15px } ::-webkit-scrollbar-thumb { background: #888 }";
+  classic.textContent = "* { box-sizing: border-box } ::-webkit-scrollbar { width: 15px; height: 15px } ::-webkit-scrollbar-thumb { background: #888 }";
   document.head.append(classic);
   const host = document.createElement("div");
   host.style.cssText = "width: 720px; margin: 0; padding: 0";
@@ -401,7 +402,7 @@ it("fits short wrapping tables without a vertical scrollbar when scrollbars take
     await expect.poll(() => host.querySelectorAll(".sg-center .sg-row").length).toBeGreaterThan(4);
     await settle();
     const longTable = measure();
-    const longHeight = Math.round(host.querySelector<HTMLElement>(".sg-scroll")!.getBoundingClientRect().height);
+    const longHeight = Math.round(host.querySelector<HTMLElement>(".mdview-table-grid")!.getBoundingClientRect().height);
 
     expect({
       short: { scrolls: short.scrolls, overflowY: short.overflowY, verticalBar: short.verticalBar },
