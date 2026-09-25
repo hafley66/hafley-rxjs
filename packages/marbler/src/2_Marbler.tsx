@@ -50,11 +50,13 @@ function durationCell(event: MarbleEvent, extent?: AggregateExtent) {
   return <>{durationLabel(event, extent)}{event.duration !== null && event.duration !== shown && <small>{formatDuration(event.duration)}</small>}</>
 }
 
-function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
+function MarblerView({ model, embedded = false, summary, navigatorHeight, navigatorMaxHeight }: {
 	model: Marbler
 	embedded?: EmbeddedOption
 	summary?: string[]
 	navigatorHeight?: number
+	/** Bound the navigator to this px height in a scroll container; its lanes keep their own height. */
+	navigatorMaxHeight?: number
 }) {
   const table = useGrid<MarbleEvent>(model.grid)
   const scrollerRef = useRef<HTMLDivElement>(null)
@@ -124,15 +126,20 @@ function MarblerView({ model, embedded = false, summary, navigatorHeight }: {
         <span className="toolbar-spacer" />{hovered && <span className="hovered-event" data-testid="hovered-event">{hovered.name} · {durationLabel(hovered, extents.get(hovered.id))}</span>}<span className="summary">{rows.length} events</span>
         {!embedded && <span className="legend">{legendEntries.map(([kind, style]) => <span key={kind}><i style={{ background: style.color }} />{style.label} </span>)}</span>}
       </div>
-      <TimeNavigatorPixi
-        marks={marks}
-        viewport={viewport}
-        laneLabels={timelineEvents.map((event) => event.name)}
-        highlightedId={model.hoveredId.$()}
-        onMarkHover={(id) => model.hoveredId.$(id)}
-        onGesture={(gesture) => model.viewport.$(reduceTimeViewport(model.viewport.$(), gesture))}
-        height={navigatorHeight}
-      />
+      {(() => {
+        const navigator = <TimeNavigatorPixi
+          marks={marks}
+          viewport={viewport}
+          laneLabels={timelineEvents.map((event) => event.name)}
+          highlightedId={model.hoveredId.$()}
+          onMarkHover={(id) => model.hoveredId.$(id)}
+          onGesture={(gesture) => model.viewport.$(reduceTimeViewport(model.viewport.$(), gesture))}
+          height={navigatorHeight}
+        />
+        return navigatorMaxHeight === undefined
+          ? navigator
+          : <div className="marbler-navigator-scroll" data-testid="navigator-scroll" style={{ maxHeight: navigatorMaxHeight, overflowY: "auto", flex: "none" }}>{navigator}</div>
+      })()}
       {model.view.$() === "flame" ? <div className="flame-scroller" data-testid="flame-scroller">
         <FlameChart
           nodes={flame}

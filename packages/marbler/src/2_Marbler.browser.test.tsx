@@ -184,4 +184,20 @@ describe("Marbler receipts", () => {
     await act(async () => root.unmount())
     host.remove()
   })
+  it("bounds the navigator to navigatorMaxHeight and scrolls its naturally sized lanes", async () => {
+    const model = createMarbler(events)
+    const host = document.createElement("div")
+    document.body.append(host)
+    const root = createRoot(host)
+    await act(async () => root.render(<MarblerPanel model={model} embedded navigatorMaxHeight={60} />))
+    await expect.poll(() => document.querySelectorAll("canvas[data-testid='time-navigator']").length).toBe(1)
+    const scroll = host.querySelector<HTMLElement>("[data-testid='navigator-scroll']")
+    const lanes = host.querySelector<HTMLElement>(".time-navigator")!
+    expect({
+      scroll: scroll === null ? null : { maxHeight: getComputedStyle(scroll).maxHeight, overflowY: getComputedStyle(scroll).overflowY, scrolls: scroll.scrollHeight > scroll.clientHeight },
+      lanesKeepNaturalHeight: lanes.getBoundingClientRect().height > 60,
+    }).toEqual({ scroll: { maxHeight: "60px", overflowY: "auto", scrolls: true }, lanesKeepNaturalHeight: true })
+    await act(async () => root.unmount())
+    host.remove()
+  })
 })
