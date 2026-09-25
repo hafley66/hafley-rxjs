@@ -22,6 +22,10 @@
       "types": "./dist/plugins/marbles.d.ts",
       "import": "./dist/plugins/marbles.js"
     },
+    "./plugins/steps": {
+      "types": "./dist/plugins/steps.d.ts",
+      "import": "./dist/plugins/steps.js"
+    },
     "./style.css": {
       "types": "./dist/style.css.d.ts",
       "default": "./dist/style.css"
@@ -60,10 +64,18 @@
     "streamdown": ">=2.5.0",
     "@hafley66/xdom": ">=0.1.0",
     "rxjs": ">=7.8.0",
-    "@hafley66/signal-marbles": ">=0.0.1"
+    "@hafley66/signal-marbles": ">=0.0.1",
+    "codehike": ">=1.1.0",
+    "diff": ">=9.0.0"
   },
   "peerDependenciesMeta": {
     "@hafley66/signal-marbles": {
+      "optional": true
+    },
+    "codehike": {
+      "optional": true
+    },
+    "diff": {
       "optional": true
     }
   },
@@ -97,7 +109,12 @@
     "vitest": "^4.1.10",
     "@hafley66/xdom": "workspace:*",
     "rxjs": "^7.8.2",
-    "@hafley66/signal-marbles": "workspace:*"
+    "@hafley66/signal-marbles": "workspace:*",
+    "@mdx-js/mdx": "^3.1.1",
+    "@shikijs/magic-move": "^4.4.3",
+    "codehike": "^1.1.0",
+    "diff": "^9.0.0",
+    "shiki": "^4.4.3"
   },
   "keywords": [
     "markdown",
