@@ -171,6 +171,8 @@ function linkPlugin(): MdPlugin       // link: `#id` -> doc.jumpTo, *.md -> setP
 function imagePlugin(): MdPlugin      // image: remote/data/blob as written, local -> host.readImage (data URL)
 // subpath "@hafley66/md/plugins/marbles", optional peer @hafley66/signal-marbles, not in the defaults
 function marblesPlugin(): MdPlugin     // fence ["marbles"], lazy component
+// subpath "@hafley66/md/plugins/fs-tree", optional peer @hafley66/grid, not in the defaults
+function fsTreePlugin(): MdPlugin      // fence ["tree", "ls", "fs"], lazy component
 const defaultMdPlugins: readonly MdPlugin[] = [
   mermaidPlugin(), d2Plugin(), tablePlugin(), codePlugin(), codeRefPlugin(), linkPlugin(), imagePlugin(),
 ]
@@ -294,6 +296,44 @@ no `codeRefPlugin()` means streamdown's plain inline code with no ⌘-click, no 
 means streamdown's own `a` / `img`. A plugin with `inlineCode` placed before `codeRefPlugin()` takes inline code.
 The ⌘-held panel mark (`data-md-meta`, which reveals `code[data-md-ref]` as a link) stays in `MdPanel`.
 
+### `fsTreePlugin()` (file tree fence)
+
+| factory | slot | renderer | parser |
+| --- | --- | --- | --- |
+| `fsTreePlugin()` | fence `tree`, `ls`, `fs` | `@hafley66/signal-grid` tree mode (`subRows`), lazy `1_FsTreeFence.tsx` | `src/lib/0_fsTree.ts` `parseFsTree` |
+
+```ts
+type FsTreeFormat = "tree" | "ls" | "find" | "indent"          // detected from the body, not the fence language
+type FsTreeNode = { name: string; path: string; kind: "dir" | "file"; note?: string; children: readonly FsTreeNode[] }
+type FsTree = { format: FsTreeFormat; roots: readonly FsTreeNode[] }
+function parseFsTree(text: string): FsTree
+```
+
+- `path` is the grid row id; a repeated path merges into one node. `ls -R` and `find` drop `.` segments; a
+  `tree` root line (`.`) stays a node.
+- `kind: "dir"` = has children or written with a trailing `/`. `note` = text after `  #` (`tree`, indented).
+- Folders start collapsed; the expander glyph and a click on a folder's label flip one.
+- Icon by extension: `data-ext` on the entry; colours, sizes, clip-path icon shapes and row height are CSS
+  custom properties (`--md-fs-*`, `src/plugins/1_fsTree.css`). Row height is measured (`rowMeasure`), so
+  `--md-fs-row-h` is the height the grid sums.
+- Not in `defaultMdPlugins`: `tree`/`ls` fences in existing docs keep rendering as code until a host opts in,
+  and an `ls` fence can hold a command line instead of its output.
+
+Renderer candidates:
+
+| candidate | where | tree + expand | colours | in md deps | picked |
+| --- | --- | --- | --- | --- | --- |
+| `@hafley66/signal-grid` (`subRows`, `expanded`, expander slot) | in-repo | yes | `--sg-*` custom properties | peer dep already (tables) | yes |
+| `@hafley66/grid` `GridTree` | in-repo | yes | hex literals inline (`EXT_COLOR`, box-shadow) | no; adds TanStack table + virtual | no |
+| host `FileTree` port (`ports.ts`, instant) | host | yes | host CSS | port | no: lists a real directory (`listCommand`) |
+| `react-arborist` | npm | yes | inline styles + props | no | no |
+| `@headless-tree/react` | npm | yes (headless) | caller CSS | no | no |
+| `react-complex-tree` | npm | yes | CSS vars | no | no |
+
+Out of scope here: Code Hike style animated steps between successive trees in one fence. That shares the
+step model of `stepsPlugin()` (owned elsewhere); a steps fence can hold successive `tree` bodies and animate
+the diff of their `FsTreeNode.path` sets (enter / exit / move).
+
 ### Suggested command list (instant settings; binary absent = the host answers code 127, fence unchanged)
 
 | match | command | as |
@@ -309,6 +349,7 @@ The ⌘-held panel mark (`data-md-meta`, which reveals `code[data-md-ref]` as a 
 | factory | slot | library |
 | --- | --- | --- |
 | `stepsPlugin()` (shipped, section 2a, subpath `@hafley66/md/plugins/steps`) | fence `steps` | `codehike` `Pre` + token-transitions, `diff` (`applyPatch` turns patches into states) |
+| `fsTreePlugin()` steps | fence `tree` with successive states | `stepsPlugin()` step model; diff over `FsTreeNode.path` |
 | `xstatePlugin()` | fence `xstate` | `xstate` + `@xstate/graph`, drawn by grapht |
 | `mdxPlugin()` | new slot: document transform | `@mdx-js/mdx` `evaluate` |
 | Code Hike scrollycoding | needs MDX slot (lab demo 3) | `codehike`, `@mdx-js/mdx` |

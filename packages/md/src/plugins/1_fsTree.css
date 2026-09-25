@@ -1,0 +1,123 @@
+/* File tree fence. Every colour and size is a custom property: constants on :root, and
+   panel-derived ones resolved on the fence, where --panel-bg and --panel-fg are in scope. */
+:root {
+  --md-fs-max-h: 60vh;
+  --md-fs-row-h: 24px;
+  --md-fs-indent: 14px;
+  --md-fs-hit: 16px;
+  --md-fs-glyph: 9px;
+  --md-fs-gap: 6px;
+  --md-fs-radius: 6px;
+  --md-fs-icon-w: 12px;
+  --md-fs-icon-h: 14px;
+  --md-fs-folder-w: 15px;
+  --md-fs-folder-h: 12px;
+  --md-fs-file-shape: polygon(0 0, 62% 0, 100% 30%, 100% 100%, 0 100%);
+  --md-fs-folder-shape: polygon(0 0, 40% 0, 52% 18%, 100% 18%, 100% 100%, 0 100%);
+
+  --md-fs-folder: oklch(0.72 0.11 245);
+  --md-fs-folder-open: oklch(0.62 0.16 250);
+  --md-fs-ext-ts: oklch(0.55 0.14 250);
+  --md-fs-ext-js: oklch(0.8 0.16 95);
+  --md-fs-ext-json: oklch(0.72 0.13 110);
+  --md-fs-ext-md: oklch(0.6 0.03 260);
+  --md-fs-ext-css: oklch(0.5 0.17 300);
+  --md-fs-ext-html: oklch(0.62 0.19 35);
+  --md-fs-ext-rs: oklch(0.6 0.13 45);
+  --md-fs-ext-py: oklch(0.6 0.12 235);
+  --md-fs-ext-go: oklch(0.7 0.11 210);
+  --md-fs-ext-sh: oklch(0.62 0.14 145);
+  --md-fs-ext-yaml: oklch(0.6 0.15 15);
+  --md-fs-ext-image: oklch(0.6 0.2 330);
+  --md-fs-ext-lock: oklch(0.55 0.02 260);
+}
+
+.mdview-fs-tree {
+  --md-fs-surface: var(--md-fs-bg, var(--panel-bg, var(--md-code-bg, Canvas)));
+  --md-fs-ink: var(--md-fs-fg, var(--panel-fg, var(--md-code-fg, CanvasText)));
+  --md-fs-rule: var(--md-fs-line, color-mix(in srgb, var(--md-fs-ink) 15%, var(--md-fs-surface)));
+  --md-fs-hover-bg: var(--md-fs-hover, color-mix(in srgb, var(--md-fs-ink) 5%, var(--md-fs-surface)));
+  --md-fs-note-fg: var(--md-fs-note, color-mix(in srgb, var(--md-fs-ink) 55%, var(--md-fs-surface)));
+  --md-fs-file-fg: var(--md-fs-file, color-mix(in srgb, var(--md-fs-ink) 45%, var(--md-fs-surface)));
+  min-width: 0;
+  max-width: 100%;
+  margin-block: 0.6rem;
+}
+
+.mdview-fs-tree-grid[data-route="g"] {
+  --sg-indent: var(--md-fs-indent);
+  --sg-hit: var(--md-fs-hit);
+  --sg-glyph: var(--md-fs-glyph);
+  --sg-pad: 2px;
+  --sg-bg: var(--md-fs-surface);
+  --sg-fg: var(--md-fs-ink);
+  --sg-line: var(--md-fs-rule);
+  --sg-hover-bg: var(--md-fs-hover-bg);
+  --sg-selected-bg: var(--md-fs-hover-bg);
+  display: flex;
+  flex-direction: column;
+  block-size: min(var(--md-fs-max-h), calc(var(--sg-total-h) + 2px));
+  border: 1px solid var(--md-fs-rule);
+  border-radius: var(--md-fs-radius);
+  overflow: hidden;
+}
+
+.mdview-fs-tree-grid .sg-head { display: none; }
+.mdview-fs-tree-grid :is(.sg-canvas, .sg-rows) { inline-size: 100%; }
+.mdview-fs-tree-grid .sg-scroll {
+  flex: 1 1 auto;
+  block-size: auto;
+  min-block-size: 0;
+}
+/* Rows are measured (rowMeasure in 1_FsTreeFence.tsx), so this height is the one the grid sums. */
+.mdview-fs-tree-grid[data-route="g"] .sg-row {
+  min-block-size: var(--md-fs-row-h);
+  border-block-end: 0;
+}
+.mdview-fs-tree-grid .sg-cell { border: 0; cursor: default; }
+.mdview-fs-tree-grid .sg-row:has([data-kind="dir"]) .sg-cell { cursor: pointer; }
+
+.mdview-fs-entry {
+  --md-fs-icon-color: var(--md-fs-file-fg);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--md-fs-gap);
+  min-inline-size: 0;
+  white-space: nowrap;
+}
+
+.mdview-fs-icon {
+  flex: none;
+  inline-size: var(--md-fs-icon-w);
+  block-size: var(--md-fs-icon-h);
+  background: var(--md-fs-icon-color);
+  clip-path: var(--md-fs-file-shape);
+}
+
+.mdview-fs-entry[data-kind="dir"] {
+  --md-fs-icon-color: var(--md-fs-folder);
+  --md-fs-icon-w: var(--md-fs-folder-w);
+  --md-fs-icon-h: var(--md-fs-folder-h);
+}
+.mdview-fs-entry[data-kind="dir"] .mdview-fs-icon { clip-path: var(--md-fs-folder-shape); }
+.sg-row[data-open="true"] .mdview-fs-entry[data-kind="dir"] { --md-fs-icon-color: var(--md-fs-folder-open); }
+.mdview-fs-entry[data-kind="dir"] .mdview-fs-name { font-weight: 600; }
+
+.mdview-fs-note {
+  color: var(--md-fs-note-fg);
+  font-style: italic;
+}
+
+.mdview-fs-entry:is([data-ext="ts"], [data-ext="tsx"], [data-ext="mts"], [data-ext="cts"]) { --md-fs-icon-color: var(--md-fs-ext-ts); }
+.mdview-fs-entry:is([data-ext="js"], [data-ext="jsx"], [data-ext="mjs"], [data-ext="cjs"]) { --md-fs-icon-color: var(--md-fs-ext-js); }
+.mdview-fs-entry:is([data-ext="json"], [data-ext="jsonc"], [data-ext="toml"]) { --md-fs-icon-color: var(--md-fs-ext-json); }
+.mdview-fs-entry:is([data-ext="md"], [data-ext="mdx"], [data-ext="txt"]) { --md-fs-icon-color: var(--md-fs-ext-md); }
+.mdview-fs-entry:is([data-ext="css"], [data-ext="scss"], [data-ext="less"]) { --md-fs-icon-color: var(--md-fs-ext-css); }
+.mdview-fs-entry:is([data-ext="html"], [data-ext="htm"], [data-ext="xml"]) { --md-fs-icon-color: var(--md-fs-ext-html); }
+.mdview-fs-entry[data-ext="rs"] { --md-fs-icon-color: var(--md-fs-ext-rs); }
+.mdview-fs-entry[data-ext="py"] { --md-fs-icon-color: var(--md-fs-ext-py); }
+.mdview-fs-entry[data-ext="go"] { --md-fs-icon-color: var(--md-fs-ext-go); }
+.mdview-fs-entry:is([data-ext="sh"], [data-ext="bash"], [data-ext="zsh"]) { --md-fs-icon-color: var(--md-fs-ext-sh); }
+.mdview-fs-entry:is([data-ext="yaml"], [data-ext="yml"]) { --md-fs-icon-color: var(--md-fs-ext-yaml); }
+.mdview-fs-entry:is([data-ext="png"], [data-ext="jpg"], [data-ext="jpeg"], [data-ext="gif"], [data-ext="svg"], [data-ext="webp"]) { --md-fs-icon-color: var(--md-fs-ext-image); }
+.mdview-fs-entry[data-ext="lock"] { --md-fs-icon-color: var(--md-fs-ext-lock); }
