@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="rail-v3-stain.css">
 <link rel="stylesheet" href="rail-v3-diffuse.css">
 <link rel="stylesheet" href="rail-lab.css">
+<link rel="stylesheet" href="rail-v4.css">
 <style>
 /* Page chrome only; the md DOM is styled entirely by base.css + rail-*.css.
    Variant switching is radio inputs + :has() — no script anywhere. */
@@ -45,7 +46,7 @@ body {
   border-bottom: 1px solid var(--frame);
 }
 .proto-bar h1 { margin: 0; font-size: 0.95rem; font-weight: 600; }
-.picker { display: flex; gap: 0.4rem; margin: 0; border: 0; padding: 0; }
+.picker { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin: 0; border: 0; padding: 0; }
 .picker legend {
   position: absolute;
   inline-size: 1px;
@@ -95,6 +96,23 @@ body:has(#v2-underline:checked) .props-v2-underline,
 body:has(#v2-notch:checked) .props-v2-notch { display: block; }
 body:has(#v3-stain:checked) .props-v3-stain,
 body:has(#v3-diffuse:checked) .props-v3-diffuse { display: block; }
+body:has(#v4-on:checked) .props-v4 { display: block; }
+.props-v4 .v4-opt { display: none; font-weight: 600; }
+body:has(#v4-shape-curve:checked) .props-v4 .opt-curve,
+body:has(#v4-shape-oblique:checked) .props-v4 .opt-oblique,
+body:has(#v4-shape-straight:checked) .props-v4 .opt-straight,
+body:has(#v4-pal-baseline:checked) .props-v4 .opt-pal-baseline,
+body:has(#v4-pal-cool:checked) .props-v4 .opt-pal-cool,
+body:has(#v4-pal-earth:checked) .props-v4 .opt-pal-earth,
+body:has(#v4-pal-mono:checked) .props-v4 .opt-pal-mono,
+body:has(#v4-pal-pastel:checked) .props-v4 .opt-pal-pastel,
+body:has(#v4-pal-dark:checked) .props-v4 .opt-pal-dark,
+body:has(#v4-grad-none:checked) .props-v4 .opt-grad-none,
+body:has(#v4-grad-rail-fade:checked) .props-v4 .opt-grad-rail-fade,
+body:has(#v4-grad-edge-tint:checked) .props-v4 .opt-grad-edge-tint,
+body:has(#v4-grad-underline-sweep:checked) .props-v4 .opt-grad-underline-sweep,
+body:has(#v4-grad-level-blend:checked) .props-v4 .opt-grad-level-blend,
+body:has(#v4-grad-smooth-wash:checked) .props-v4 .opt-grad-smooth-wash { display: inline; }
 .props h2 { margin: 0 0 0.2rem; font-size: 0.95rem; }
 .props .qa {
   margin: 0 0 0.9rem;
@@ -121,6 +139,13 @@ body:has(#v3-diffuse:checked) .props-v3-diffuse { display: block; }
   margin-inline-end: 0.35em;
 }
 .sw-row i { inline-size: 1.5em; }
+.pal-dots { display: inline-flex; gap: 2px; }
+.pal-dots i {
+  inline-size: 0.62em;
+  block-size: 0.62em;
+  border-radius: 2px;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+}
 .md-body code {
   font-family: ui-monospace, "SF Mono", monospace;
   font-size: 0.92em;
@@ -134,7 +159,7 @@ body:has(#v3-diffuse:checked) .props-v3-diffuse { display: block; }
     <legend>Variant</legend>
     <div class="picker-group">
       <span class="picker-tag">v1</span>
-      <label><input type="radio" name="variant" id="v-pill" checked>pill</label>
+      <label><input type="radio" name="variant" id="v-pill">pill</label>
       <label><input type="radio" name="variant" id="v-pill-soft-blend">pill-soft-blend</label>
       <label><input type="radio" name="variant" id="v-underline-only">underline-only</label>
       <label><input type="radio" name="variant" id="v-notch">notch</label>
@@ -149,6 +174,37 @@ body:has(#v3-diffuse:checked) .props-v3-diffuse { display: block; }
       <span class="picker-tag">v3</span>
       <label><input type="radio" name="variant" id="v3-stain">v3-stain</label>
       <label><input type="radio" name="variant" id="v3-diffuse">v3-diffuse</label>
+    </div>
+    <div class="picker-group">
+      <span class="picker-tag">v4</span>
+      <label><input type="radio" name="variant" id="v4-on" checked>v4</label>
+    </div>
+  </fieldset>
+  <fieldset class="picker">
+    <legend>v4 groups</legend>
+    <div class="picker-group">
+      <span class="picker-tag">shape</span>
+      <label><input type="radio" name="v4-shape" id="v4-shape-curve" checked>curve</label>
+      <label><input type="radio" name="v4-shape" id="v4-shape-oblique">oblique</label>
+      <label><input type="radio" name="v4-shape" id="v4-shape-straight">straight</label>
+    </div>
+    <div class="picker-group">
+      <span class="picker-tag">palette</span>
+      <label><input type="radio" name="v4-pal" id="v4-pal-baseline" checked><span class="pal-dots"><i style="background:#233b63"></i><i style="background:#2f6fb8"></i><i style="background:#2b8a7e"></i><i style="background:#8f5fb8"></i><i style="background:#c2569b"></i><i style="background:#c25b3f"></i></span>baseline</label>
+      <label><input type="radio" name="v4-pal" id="v4-pal-cool"><span class="pal-dots"><i style="background:oklch(0.42 0.08 250)"></i><i style="background:oklch(0.52 0.1 240)"></i><i style="background:oklch(0.6 0.09 225)"></i><i style="background:oklch(0.65 0.08 205)"></i><i style="background:oklch(0.58 0.07 185)"></i><i style="background:oklch(0.5 0.06 165)"></i></span>cool</label>
+      <label><input type="radio" name="v4-pal" id="v4-pal-earth"><span class="pal-dots"><i style="background:oklch(0.4 0.07 50)"></i><i style="background:oklch(0.5 0.09 55)"></i><i style="background:oklch(0.58 0.09 70)"></i><i style="background:oklch(0.62 0.08 95)"></i><i style="background:oklch(0.56 0.07 125)"></i><i style="background:oklch(0.48 0.06 150)"></i></span>earth</label>
+      <label><input type="radio" name="v4-pal" id="v4-pal-mono"><span class="pal-dots"><i style="background:oklch(0.35 0.07 258)"></i><i style="background:oklch(0.44 0.08 258)"></i><i style="background:oklch(0.52 0.08 258)"></i><i style="background:oklch(0.6 0.07 258)"></i><i style="background:oklch(0.67 0.06 258)"></i><i style="background:oklch(0.73 0.05 258)"></i></span>mono</label>
+      <label><input type="radio" name="v4-pal" id="v4-pal-pastel"><span class="pal-dots"><i style="background:oklch(0.62 0.08 285)"></i><i style="background:oklch(0.68 0.08 245)"></i><i style="background:oklch(0.7 0.07 185)"></i><i style="background:oklch(0.72 0.07 130)"></i><i style="background:oklch(0.71 0.08 70)"></i><i style="background:oklch(0.66 0.07 25)"></i></span>pastel</label>
+      <label><input type="radio" name="v4-pal" id="v4-pal-dark"><span class="pal-dots"><i style="background:oklch(0.74 0.13 255)"></i><i style="background:oklch(0.78 0.12 230)"></i><i style="background:oklch(0.8 0.11 195)"></i><i style="background:oklch(0.82 0.11 160)"></i><i style="background:oklch(0.78 0.12 305)"></i><i style="background:oklch(0.74 0.13 20)"></i></span>dark</label>
+    </div>
+    <div class="picker-group">
+      <span class="picker-tag">gradient</span>
+      <label><input type="radio" name="v4-grad" id="v4-grad-none" checked>none</label>
+      <label><input type="radio" name="v4-grad" id="v4-grad-rail-fade">rail-fade</label>
+      <label><input type="radio" name="v4-grad" id="v4-grad-edge-tint">edge-tint</label>
+      <label><input type="radio" name="v4-grad" id="v4-grad-underline-sweep">underline-sweep</label>
+      <label><input type="radio" name="v4-grad" id="v4-grad-level-blend">level-blend</label>
+      <label><input type="radio" name="v4-grad" id="v4-grad-smooth-wash">smooth-wash</label>
     </div>
   </fieldset>
 </header>
@@ -515,6 +571,36 @@ body:has(#v3-diffuse:checked) .props-v3-diffuse { display: block; }
         <dt>--sec-gap</dt><dd>1.5em (inside the section)</dd>
         <dt>--toggle-size</dt><dd>18px</dd>
         <dt>box fill</dt><dd>cur 11% into paper (opaque)</dd>
+        <dt>--h-step</dt><dd>0.12em</dd>
+        <dt>--h-pad-x / --h-pad-y</dt><dd>0.9em / 0.3em</dd>
+        <dt>--body-inset</dt><dd>0.9em</dd>
+      </dl>
+    </section>
+    <section class="props props-v4">
+      <h2>v4</h2>
+      <p class="qa">three independent groups, combined freely · child rails <b>branch off the parent rail</b> — rounded elbow or oblique segment, never mid-air · ends <b>taper out over --taper</b> · <b>no radial gradients</b></p>
+      <dl class="vars">
+        <dt>shape</dt>
+        <dd><span class="v4-opt opt-curve">curve — rounded elbow off the parent rail</span><span class="v4-opt opt-oblique">oblique — steep segment landing on the box top</span><span class="v4-opt opt-straight">straight — v3 control, no elbow</span></dd>
+        <dt>palette</dt>
+        <dd><span class="v4-opt opt-pal-baseline">baseline — v3's set</span><span class="v4-opt opt-pal-cool">cool — calm cool ramp</span><span class="v4-opt opt-pal-earth">earth — warm earth ramp</span><span class="v4-opt opt-pal-mono">mono — single-hue lightness ramp</span><span class="v4-opt opt-pal-pastel">pastel — muted pastels</span><span class="v4-opt opt-pal-dark">dark — high-contrast dark paper</span></dd>
+        <dt>gradient</dt>
+        <dd><span class="v4-opt opt-grad-none">none — flat</span><span class="v4-opt opt-grad-rail-fade">rail-fade — parent to child along the elbow</span><span class="v4-opt opt-grad-edge-tint">edge-tint — soft tint inside the left border</span><span class="v4-opt opt-grad-underline-sweep">underline-sweep — rail hue sweeps into box hue</span><span class="v4-opt opt-grad-level-blend">level-blend — oklch 50/50 mixes at junctions</span><span class="v4-opt opt-grad-smooth-wash">smooth-wash — faint eased wash across the box</span></dd>
+        <dt>levels --h-1…6</dt>
+        <dd class="sw-row"><i style="background: var(--h-1)"></i><i style="background: var(--h-2)"></i><i style="background: var(--h-3)"></i><i style="background: var(--h-4)"></i><i style="background: var(--h-5)"></i><i style="background: var(--h-6)"></i></dd>
+        <dt>--h-paper / --h-ink</dt>
+        <dd class="sw-row"><i style="background: var(--h-paper)"></i><i style="background: var(--h-ink)"></i>paper / ink</dd>
+        <dt>box fill</dt>
+        <dd><i style="background: color-mix(in oklch, var(--cur) var(--fill-pct), var(--h-paper))"></i>cur var(--fill-pct) into paper (opaque)</dd>
+        <dt>--stroke</dt><dd>2px (rail, border, underline, branch)</dd>
+        <dt>--indent</dt><dd>26px</dd>
+        <dt>--taper</dt><dd>20px (rail ends fade out)</dd>
+        <dt>--elbow</dt><dd>12px (curve branch radius)</dd>
+        <dt>branch drop</dt><dd>--sec-gap (oblique landing)</dd>
+        <dt>--sec-gap</dt><dd>1.75em (inside the section)</dd>
+        <dt>--rail-blend</dt><dd>10px · 0px when gradient = none</dd>
+        <dt>--tint-reach</dt><dd>2.2rem (edge-tint reach)</dd>
+        <dt>--toggle-size</dt><dd>18px</dd>
         <dt>--h-step</dt><dd>0.12em</dd>
         <dt>--h-pad-x / --h-pad-y</dt><dd>0.9em / 0.3em</dd>
         <dt>--body-inset</dt><dd>0.9em</dd>

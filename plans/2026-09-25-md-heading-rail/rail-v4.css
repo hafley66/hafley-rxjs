@@ -1,0 +1,492 @@
+/* rail-v4.css — v4: flowing lines, three independent pickers. The
+   owner's notes on v3: the radial gradients read "too circular,
+   explody"; the colour scheme is rough and should cycle through
+   palettes; rails start and stop abruptly — a child rail begins in
+   mid-air above its heading, and a rail just stops. v4 answers with
+   three radio groups that combine freely (shape × palette × gradient),
+   every rule under body:has(#v4-on:checked) so a v1-v3 radio silences
+   v4 completely. No radial-gradient anywhere, no script, no
+   !important.
+
+   v4 shape — the line geometry. v3's uniform --stroke is kept: rail,
+   box border, underline and toggle ring are one width.
+     curve    a child rail LEAVES THE PARENT RAIL through a rounded
+              elbow (an ::after L whose border-bottom-left-radius
+              curves the branch off the parent rail), then runs down
+              to its heading box. No rail starts in mid-air.
+     oblique  the branch is a single steep oblique segment that leaves
+              the parent rail at the section top and lands exactly on
+              the rail crossing at its box top (drop = --sec-gap over
+              --indent), then runs down. Ends taper as in curve.
+     straight the v3 geometry as a control: no elbow — the mid-air
+              start is preserved on purpose — tapered ends only.
+   Every rail end tapers out over --taper (eased fade) instead of a
+   hard cut; the folded section's rail ends by ARRIVING at its box.
+   A top-level rail has no parent to branch from, so it fades in over
+   --taper at the document top.
+
+   v4 palette — each sets only --h-1..6, --h-paper, --h-ink and the
+   box fill mix --fill-pct. baseline is v3's set; cool / earth / mono /
+   pastel are refined light sets; dark is a high-contrast dark paper.
+
+   v4 gradient — how colour moves where lines meet or change level,
+   blended in oklch so ramps stay clean:
+     none            flat control: hard hue steps at the crossings,
+                     flat elbow.
+     rail-fade       the elbow ramps parent hue -> child hue.
+     edge-tint       a soft tint just inside the box's left border,
+                     eased stops, reaching --tint-reach.
+     underline-sweep the underline carries --h-1 into --cur left to
+                     right along the bottom border strip.
+     level-blend     every junction shows the oklch 50/50 mix of the
+                     adjacent levels: the elbow and each border
+                     crossing stop take the mixed colour.
+     smooth-wash     a very low-strength wash across the whole box
+                     from the rail side, eased over multiple stops.
+
+   Geometry inherits v2/v3: one rail per level at that level's indent,
+   heading boxes flush left across the ancestor rails, toggle on its
+   own rail, rhythm inside the sections so every line touches. Layered
+   over base.css while #v4-on is checked. */
+
+/* -- v4 scope ------------------------------------------------------- */
+body:has(#v4-on:checked) {
+  --h-ink: #1c1c1a;
+  --h-paper: #fbfbfa;
+  --h-1: #233b63;
+  --h-2: #2f6fb8;
+  --h-3: #2b8a7e;
+  --h-4: #8f5fb8;
+  --h-5: #c2569b;
+  --h-6: #c25b3f;
+  --fill-pct: 11%;
+  --stroke: 2px;
+  --h-radius: 0.9em;
+  --h-step: 0.12em;
+  --h-pad-x: 0.9em;
+  --h-pad-y: 0.3em;
+  --indent: 26px;
+  --rail-blend: 10px;
+  /* One indent step of air above a heading box: the branch's landing
+     drop (oblique) and the curve's run-in both live in here. */
+  --sec-gap: 1.75em;
+  --toggle-size: 18px;
+  --body-inset: 0.9em;
+  --taper: 20px;
+  --elbow: 12px;
+  --tint-reach: 2.2rem;
+  /* Where the vertical rail starts: at the elbow's landing (curve),
+     the diagonal's landing (oblique), or the v3 mid-air top (straight). */
+  --rail-top: var(--elbow);
+  /* The parent level's hue, defaulting to the outermost rail. */
+  --h-parent: var(--h-1);
+  /* Branch colours: the elbow ramps --branch-from -> --branch-to.
+     rail-fade IS this default; none flattens it; level-blend pins
+     both to the oklch mix. DECLARED ON THE SECTIONS, not here: they
+     derive from --cur and --h-parent, which only carry their real
+     values on a section (--cur is registered with initial-value
+     transparent, so a body-level var(--cur) computes transparent and
+     every descendant would inherit the dead value). */
+  /* Border colour at each ancestor rail's crossing; level-blend swaps
+     these for the oklch mixes, none steps hard via --rail-blend: 0. */
+  --xc-1: var(--h-1);
+  --xc-2: var(--h-2);
+  --xc-3: var(--h-3);
+  --xc-4: var(--h-4);
+  --xc-5: var(--h-5);
+  --xc-6: var(--h-6);
+  /* Extra background layer on the heading box (gradient options). */
+  --box-grad: linear-gradient(transparent, transparent) padding-box;
+}
+
+/* -- v4 shape: geometry switches ------------------------------------ */
+body:has(#v4-on:checked):has(#v4-shape-oblique:checked) {
+  --rail-top: var(--sec-gap);
+}
+body:has(#v4-on:checked):has(#v4-shape-straight:checked) {
+  --rail-top: 0px;
+}
+
+/* -- v4 gradient: branch and crossing switches ----------------------- */
+/* none: flat elbow, hard hue steps at every crossing. */
+body:has(#v4-on:checked):has(#v4-grad-none:checked) {
+  --rail-blend: 0px;
+}
+body:has(#v4-on:checked):has(#v4-grad-none:checked) .mdview-content .mdview-sec {
+  --branch-from: var(--cur);
+  --branch-to: var(--cur);
+}
+/* rail-fade is the scope default branch (--branch-from -> --branch-to). */
+/* level-blend: junctions show the oklch 50/50 mix of adjacent levels;
+   --cur on each section/box is that box's own hue, so one definition
+   per crossing serves every level. Scoped to the sections/heads for
+   the same reason as the branch defaults above. */
+body:has(#v4-on:checked):has(#v4-grad-level-blend:checked) .mdview-content .mdview-sec {
+  --branch-from: color-mix(in oklch, var(--h-parent) 50%, var(--cur));
+  --branch-to: color-mix(in oklch, var(--h-parent) 50%, var(--cur));
+}
+body:has(#v4-on:checked):has(#v4-grad-level-blend:checked) .mdview-content .mdview-head {
+  --xc-1: color-mix(in oklch, var(--h-1) 50%, var(--cur));
+  --xc-2: color-mix(in oklch, var(--h-2) 50%, var(--cur));
+  --xc-3: color-mix(in oklch, var(--h-3) 50%, var(--cur));
+  --xc-4: color-mix(in oklch, var(--h-4) 50%, var(--cur));
+  --xc-5: color-mix(in oklch, var(--h-5) 50%, var(--cur));
+  --xc-6: color-mix(in oklch, var(--h-6) 50%, var(--cur));
+}
+/* edge-tint: soft tint just inside the left border, eased stops. */
+body:has(#v4-on:checked):has(#v4-grad-edge-tint:checked) {
+  --box-grad: linear-gradient(90deg,
+    color-mix(in oklch, var(--h-1) 24%, transparent) 0,
+    color-mix(in oklch, var(--h-1) 12%, transparent) 40%,
+    transparent var(--tint-reach)) padding-box;
+}
+/* underline-sweep: the underline carries --h-1 into --cur. Scoped to
+   the heads: the sweep consumes --cur, which is only real there. */
+body:has(#v4-on:checked):has(#v4-grad-underline-sweep:checked) .mdview-content .mdview-head {
+  --box-grad: linear-gradient(90deg in oklch, var(--h-1), var(--cur))
+    left bottom / 100% var(--stroke) no-repeat border-box;
+}
+/* smooth-wash: very low strength across the whole box, eased. */
+body:has(#v4-on:checked):has(#v4-grad-smooth-wash:checked) {
+  --box-grad: linear-gradient(90deg,
+    color-mix(in oklch, var(--h-1) 10%, transparent) 0,
+    color-mix(in oklch, var(--h-1) 7%, transparent) 30%,
+    color-mix(in oklch, var(--h-1) 3%, transparent) 60%,
+    transparent 100%) padding-box;
+}
+
+/* -- v4 palette: hues, paper, ink, fill mix — nothing else ----------- */
+body:has(#v4-on:checked):has(#v4-pal-baseline:checked) {
+  --h-paper: #fbfbfa;
+  --h-ink: #1c1c1a;
+  --h-1: #233b63;
+  --h-2: #2f6fb8;
+  --h-3: #2b8a7e;
+  --h-4: #8f5fb8;
+  --h-5: #c2569b;
+  --h-6: #c25b3f;
+  --fill-pct: 11%;
+}
+body:has(#v4-on:checked):has(#v4-pal-cool:checked) {
+  --h-paper: #f6f9fb;
+  --h-ink: #16222b;
+  --h-1: oklch(0.42 0.08 250);
+  --h-2: oklch(0.52 0.1 240);
+  --h-3: oklch(0.6 0.09 225);
+  --h-4: oklch(0.65 0.08 205);
+  --h-5: oklch(0.58 0.07 185);
+  --h-6: oklch(0.5 0.06 165);
+  --fill-pct: 11%;
+}
+body:has(#v4-on:checked):has(#v4-pal-earth:checked) {
+  --h-paper: #faf6f0;
+  --h-ink: #2b241a;
+  --h-1: oklch(0.4 0.07 50);
+  --h-2: oklch(0.5 0.09 55);
+  --h-3: oklch(0.58 0.09 70);
+  --h-4: oklch(0.62 0.08 95);
+  --h-5: oklch(0.56 0.07 125);
+  --h-6: oklch(0.48 0.06 150);
+  --fill-pct: 12%;
+}
+body:has(#v4-on:checked):has(#v4-pal-mono:checked) {
+  --h-paper: #f7f8fa;
+  --h-ink: #15171d;
+  --h-1: oklch(0.35 0.07 258);
+  --h-2: oklch(0.44 0.08 258);
+  --h-3: oklch(0.52 0.08 258);
+  --h-4: oklch(0.6 0.07 258);
+  --h-5: oklch(0.67 0.06 258);
+  --h-6: oklch(0.73 0.05 258);
+  --fill-pct: 12%;
+}
+body:has(#v4-on:checked):has(#v4-pal-pastel:checked) {
+  --h-paper: #fbfaf7;
+  --h-ink: #45403a;
+  --h-1: oklch(0.62 0.08 285);
+  --h-2: oklch(0.68 0.08 245);
+  --h-3: oklch(0.7 0.07 185);
+  --h-4: oklch(0.72 0.07 130);
+  --h-5: oklch(0.71 0.08 70);
+  --h-6: oklch(0.66 0.07 25);
+  --fill-pct: 14%;
+}
+body:has(#v4-on:checked):has(#v4-pal-dark:checked) {
+  --h-paper: #14161d;
+  --h-ink: #eceef4;
+  --h-1: oklch(0.74 0.13 255);
+  --h-2: oklch(0.78 0.12 230);
+  --h-3: oklch(0.8 0.11 195);
+  --h-4: oklch(0.82 0.11 160);
+  --h-5: oklch(0.78 0.12 305);
+  --h-6: oklch(0.74 0.13 20);
+  --fill-pct: 20%;
+}
+
+/* The document column takes the palette's paper and ink; theme
+   hairlines and blockquotes follow the palette too. */
+body:has(#v4-on:checked) .mdview-content {
+  background: var(--h-paper);
+  color: var(--h-ink);
+  --md-line: color-mix(in oklch, var(--h-ink) 15%, transparent);
+  --row-active-bg: var(--h-2);
+}
+
+/* Section colour state (v1 mechanism): --cur is this section's level
+   hue; every rail, border, underline, elbow and toggle below reads it. */
+body:has(#v4-on:checked) .mdview-content { --cur: var(--h-1); }
+body:has(#v4-on:checked) .mdview-sec:has(> .mdview-h1) { --cur: var(--h-1); }
+body:has(#v4-on:checked) .mdview-sec:has(> .mdview-h2) { --cur: var(--h-2); }
+body:has(#v4-on:checked) .mdview-sec:has(> .mdview-h3) { --cur: var(--h-3); }
+body:has(#v4-on:checked) .mdview-sec:has(> .mdview-h4) { --cur: var(--h-4); }
+body:has(#v4-on:checked) .mdview-sec:has(> .mdview-h5) { --cur: var(--h-5); }
+body:has(#v4-on:checked) .mdview-sec:has(> .mdview-h6) { --cur: var(--h-6); }
+
+/* The parent level's hue, for the branch off the parent rail. */
+body:has(#v4-on:checked) .mdview-content .mdview-body > .mdview-sec:has(> .mdview-h2) { --h-parent: var(--h-1); }
+body:has(#v4-on:checked) .mdview-content .mdview-body > .mdview-sec:has(> .mdview-h3) { --h-parent: var(--h-2); }
+body:has(#v4-on:checked) .mdview-content .mdview-body > .mdview-sec:has(> .mdview-h4) { --h-parent: var(--h-3); }
+body:has(#v4-on:checked) .mdview-content .mdview-body > .mdview-sec:has(> .mdview-h5) { --h-parent: var(--h-4); }
+body:has(#v4-on:checked) .mdview-content .mdview-body > .mdview-sec:has(> .mdview-h6) { --h-parent: var(--h-5); }
+
+/* Bodies lose base's guide border; the step itself moves onto nested
+   sections, so each level's rail and content sits one --indent further
+   in — the stacked-guide geometry. */
+body:has(#v4-on:checked) .mdview-content .mdview-body {
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+  border-inline-start: 0;
+}
+body:has(#v4-on:checked) .mdview-content .mdview-body > .mdview-sec {
+  margin-inline-start: var(--indent);
+}
+
+/* One rail per level, v3 rule 2: each section owns its rhythm — the
+   gap before a heading is padding INSIDE the section, and flow-root
+   keeps every inner margin contained. The rail spans from --rail-top
+   (the branch's landing; the v3 mid-air top for straight) down to the
+   section's bottom edge, where it TAPERS OUT over --taper instead of
+   stopping hard. */
+body:has(#v4-on:checked) .mdview-content .mdview-sec {
+  /* Branch colours (see the scope block): resolved HERE, where --cur
+     and --h-parent hold this section's real values. */
+  --branch-from: var(--h-parent);
+  --branch-to: var(--cur);
+  position: relative;
+  display: flow-root;
+  padding-block-start: var(--sec-gap);
+  transition: --cur 0.4s ease;
+}
+body:has(#v4-on:checked) .mdview-content > .mdview-sec:first-child {
+  padding-block-start: 0.25rem;
+}
+body:has(#v4-on:checked) .mdview-content .mdview-sec::before {
+  content: "";
+  position: absolute;
+  top: var(--rail-top);
+  bottom: 0;
+  left: 0;
+  width: var(--stroke);
+  background: linear-gradient(
+    to bottom,
+    var(--cur) calc(100% - var(--taper)),
+    color-mix(in oklch, var(--cur) 45%, transparent) calc(100% - var(--taper) * 0.4),
+    transparent);
+}
+/* A top-level rail has no parent to branch from: it fades IN over
+   --taper at the document top and tapers out at the document end. */
+body:has(#v4-on:checked) .mdview-content > .mdview-sec::before {
+  top: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in oklch, var(--cur) 45%, transparent) calc(var(--taper) * 0.4),
+    var(--cur) var(--taper),
+    var(--cur) calc(100% - var(--taper)),
+    color-mix(in oklch, var(--cur) 45%, transparent) calc(100% - var(--taper) * 0.6),
+    transparent);
+}
+
+/* THE BRANCH — the fix for the mid-air rail start. Sections nested in
+   a body have a parent rail one --indent out; the ::after spans from
+   that rail to this level's rail and draws the L with two background
+   strips: a vertical strip re-painting the parent rail hue, and the
+   branch ramp --branch-from -> --branch-to running to this rail.
+   border-bottom-left-radius curves the corner off the parent rail, and
+   the radius clip shapes both strips, so the stroke follows the curve. */
+body:has(#v4-on:checked) .mdview-content .mdview-body > .mdview-sec::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: calc(-1 * var(--indent));
+  width: calc(var(--indent) + var(--stroke));
+  height: var(--elbow);
+  border-bottom-left-radius: var(--elbow);
+  background:
+    linear-gradient(90deg in oklch, var(--branch-from), var(--branch-to))
+      left bottom / 100% var(--stroke) no-repeat,
+    linear-gradient(var(--branch-from), var(--branch-from))
+      left top / var(--stroke) 100% no-repeat;
+}
+/* oblique: one steep segment leaving the parent rail at the section
+   top and landing exactly on the rail crossing at the box top (drop =
+   --sec-gap, run = --indent). */
+body:has(#v4-on:checked):has(#v4-shape-oblique:checked) .mdview-content .mdview-body > .mdview-sec::after {
+  height: var(--sec-gap);
+  border-bottom-left-radius: 0;
+  clip-path: polygon(
+    0 0,
+    calc(var(--stroke) * 1.5) 0,
+    100% 100%,
+    calc(100% - var(--stroke) * 1.5) 100%);
+  background: linear-gradient(90deg in oklch, var(--branch-from), var(--branch-to));
+}
+/* straight: the v3 control — no branch, the mid-air start stays. */
+body:has(#v4-on:checked):has(#v4-shape-straight:checked) .mdview-content .mdview-body > .mdview-sec::after {
+  content: none;
+}
+
+/* Flattened level ladder (v1). */
+body:has(#v4-on:checked) .mdview-h1 { font-size: calc(1em + 5 * var(--h-step)); }
+body:has(#v4-on:checked) .mdview-h2 { font-size: calc(1em + 4 * var(--h-step)); }
+body:has(#v4-on:checked) .mdview-h3 { font-size: calc(1em + 3 * var(--h-step)); }
+body:has(#v4-on:checked) .mdview-h4 { font-size: calc(1em + 2 * var(--h-step)); }
+body:has(#v4-on:checked) .mdview-h5 { font-size: calc(1em + 1 * var(--h-step)); }
+body:has(#v4-on:checked) .mdview-h6 { font-size: calc(1em + 0 * var(--h-step)); }
+
+/* Per-level border gradient (v3): solid --h-N away from rails; at each
+   ancestor rail's x (k * --indent) the crossing stop --xc-k blends to
+   this level's hue within --rail-blend either side. none sets
+   --rail-blend: 0px (hard steps); level-blend mixes the stops. */
+body:has(#v4-on:checked) .mdview-content .mdview-h1 {
+  --lvl: 1;
+  --border-grad: linear-gradient(var(--h-1), var(--h-1));
+}
+body:has(#v4-on:checked) .mdview-content .mdview-h2 {
+  --lvl: 2;
+  --border-grad: linear-gradient(90deg in oklch,
+    var(--xc-1) 0,
+    var(--h-2) var(--rail-blend),
+    var(--h-2) 100%);
+}
+body:has(#v4-on:checked) .mdview-content .mdview-h3 {
+  --lvl: 3;
+  --border-grad: linear-gradient(90deg in oklch,
+    var(--xc-1) 0,
+    var(--h-3) var(--rail-blend),
+    var(--h-3) calc(var(--indent) - var(--rail-blend)),
+    var(--xc-2) var(--indent),
+    var(--h-3) calc(var(--indent) + var(--rail-blend)),
+    var(--h-3) 100%);
+}
+body:has(#v4-on:checked) .mdview-content .mdview-h4 {
+  --lvl: 4;
+  --border-grad: linear-gradient(90deg in oklch,
+    var(--xc-1) 0,
+    var(--h-4) var(--rail-blend),
+    var(--h-4) calc(var(--indent) - var(--rail-blend)),
+    var(--xc-2) var(--indent),
+    var(--h-4) calc(var(--indent) + var(--rail-blend)),
+    var(--h-4) calc(var(--indent) * 2 - var(--rail-blend)),
+    var(--xc-3) calc(var(--indent) * 2),
+    var(--h-4) calc(var(--indent) * 2 + var(--rail-blend)),
+    var(--h-4) 100%);
+}
+body:has(#v4-on:checked) .mdview-content .mdview-h5 {
+  --lvl: 5;
+  --border-grad: linear-gradient(90deg in oklch,
+    var(--xc-1) 0,
+    var(--h-5) var(--rail-blend),
+    var(--h-5) calc(var(--indent) - var(--rail-blend)),
+    var(--xc-2) var(--indent),
+    var(--h-5) calc(var(--indent) + var(--rail-blend)),
+    var(--h-5) calc(var(--indent) * 2 - var(--rail-blend)),
+    var(--xc-3) calc(var(--indent) * 2),
+    var(--h-5) calc(var(--indent) * 2 + var(--rail-blend)),
+    var(--h-5) calc(var(--indent) * 3 - var(--rail-blend)),
+    var(--xc-4) calc(var(--indent) * 3),
+    var(--h-5) calc(var(--indent) * 3 + var(--rail-blend)),
+    var(--h-5) 100%);
+}
+body:has(#v4-on:checked) .mdview-content .mdview-h6 {
+  --lvl: 6;
+  --border-grad: linear-gradient(90deg in oklch,
+    var(--xc-1) 0,
+    var(--h-6) var(--rail-blend),
+    var(--h-6) calc(var(--indent) - var(--rail-blend)),
+    var(--xc-2) var(--indent),
+    var(--h-6) calc(var(--indent) + var(--rail-blend)),
+    var(--h-6) calc(var(--indent) * 2 - var(--rail-blend)),
+    var(--xc-3) calc(var(--indent) * 2),
+    var(--h-6) calc(var(--indent) * 2 + var(--rail-blend)),
+    var(--h-6) calc(var(--indent) * 3 - var(--rail-blend)),
+    var(--xc-4) calc(var(--indent) * 3),
+    var(--h-6) calc(var(--indent) * 3 + var(--rail-blend)),
+    var(--h-6) calc(var(--indent) * 4 - var(--rail-blend)),
+    var(--xc-5) calc(var(--indent) * 4),
+    var(--h-6) calc(var(--indent) * 4 + var(--rail-blend)),
+    var(--h-6) 100%);
+}
+
+/* Heading box: flush at the column edge — pulled left across the
+   ancestor rails by its level's indent (v2 rule). Border and underline
+   are one --stroke; the transparent border shows --border-grad, so the
+   line reads straight through the box. z-index lifts the box over the
+   branch pseudo, so an oblique tail never crosses the border. The
+   gradient option rides as --box-grad above the fill. */
+body:has(#v4-on:checked) .mdview-content .mdview-head {
+  position: relative;
+  z-index: 1;
+  margin-block: 0;
+  margin-inline: calc(-1 * var(--indent) * (var(--lvl) - 1)) var(--h-radius);
+  padding-block: var(--h-pad-y);
+  padding-inline:
+    calc(var(--indent) * (var(--lvl) - 1) + var(--toggle-size) / 2 + var(--h-pad-x))
+    var(--h-pad-x);
+  border: var(--stroke) solid transparent;
+  border-radius: 0 var(--h-radius) var(--h-radius) 0;
+  color: var(--h-ink);
+  background:
+    var(--box-grad),
+    linear-gradient(
+      color-mix(in oklch, var(--cur) var(--fill-pct), var(--h-paper)),
+      color-mix(in oklch, var(--cur) var(--fill-pct), var(--h-paper))) padding-box,
+    var(--border-grad) border-box;
+}
+body:has(#v4-on:checked) .mdview-content .mdview-title {
+  color: color-mix(in oklch, var(--cur) 72%, var(--h-ink));
+}
+
+/* Fold toggle: a circle centred on the box, on its own rail — ring at
+   the same --stroke as every other line. */
+body:has(#v4-on:checked) .mdview-content .mdview-twisty {
+  position: absolute;
+  left: calc(var(--indent) * (var(--lvl) - 1));
+  top: 50%;
+  translate: -50% -50%;
+  box-sizing: border-box;
+  inline-size: var(--toggle-size);
+  block-size: var(--toggle-size);
+  display: grid;
+  place-content: center;
+  font-size: calc(var(--toggle-size) * 0.5);
+  line-height: 1;
+  opacity: 1;
+  color: var(--h-paper);
+  background: var(--cur);
+  border: var(--stroke) solid var(--h-paper);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+/* Prose clears its own rail; nested rails step right with their
+   sections. */
+body:has(#v4-on:checked) .mdview-content .mdview-body > .md-body {
+  padding-inline-start: calc(var(--stroke) + var(--body-inset));
+}
+
+/* List guides stop competing with the rails: they take the enclosing
+   section's hue, faint. */
+body:has(#v4-on:checked) .mdview-content .md-body :is(ul, ol) {
+  --md-list-guide: color-mix(in oklch, var(--cur) 30%, transparent);
+}
