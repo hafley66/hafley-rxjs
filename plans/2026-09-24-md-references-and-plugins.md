@@ -119,3 +119,68 @@ grapht renderers, marbles and state-machine views read one semantic custom-prope
 (`--grapht-node-bg`, `--grapht-edge-stroke`, `--grapht-focus`, `--grapht-dim`, ...) with `light-dark()`
 defaults. JS writes data attributes and classes only. md's `--md-guide-*`, `--md-line`, `--md-section-indent`
 follow the same rule.
+
+Owner rule (2026-09-25): every bespoke visual ask (heading rail, pill boxes, selection tint, ...) lands as
+a customization of md's existing classes through custom properties, never as one-off markup or hardcoded
+colours. Colours and as much geometry as possible are variables a theme or plugin stylesheet overrides.
+
+## 4. Fence rules (the click rules, duplicated for code fences)
+
+instant's ⌘-click config is an ordered JSON list, first match wins
+(`instant/src/state.ts:235` `ClickRule { pattern, command }`, defaults at `state.ts:239`, editor panel
+`instant/src/clickrules.ts:429`). Code fences get the same shape and the same editor, keyed on the fence
+language instead of the clicked token.
+
+### Type signatures
+
+```ts
+// md (packages/md/src/ports.ts): md names the rule; the host runs it.
+export interface FenceRule {
+  pattern: string;             // JS regex over the fence info string's language (`ts`, `rust`, `json`, ...)
+  command: string;             // shell; $1 = temp file holding the fence text, $WIDTH = pane columns
+  as: "replace" | "annotate";  // stdout replaces the fence text, or renders under the fence (lint output)
+}
+
+// host port, optional: no runner means fences render as written
+runFenceRule?(rule: FenceRule, lang: string, text: string, width: number): Promise<{ stdout: string; code: number }>;
+
+// instant settings, beside clickRules
+settings.fenceRules: Signal<FenceRule[] | null>   // null = DEFAULT_FENCE_RULES
+```
+
+### Defaults (formatters found on PATH; absent binary = rule skipped)
+
+| pattern | command | as |
+| --- | --- | --- |
+| `^(ts\|tsx\|js\|jsx\|json\|css\|scss\|md\|yaml\|yml)$` | `prettier --print-width $WIDTH --stdin-filepath x.$LANG < $1` | replace |
+| `^(rust\|rs)$` | `rustfmt --edition 2021 --config max_width=$WIDTH < $1` | replace |
+| `^(py\|python)$` | `ruff format --line-length $WIDTH - < $1` | replace |
+| `^go$` | `golines -m $WIDTH $1` | replace |
+| `^(sh\|bash\|zsh)$` | `shellcheck -f gcc $1` | annotate |
+
+mermaid and d2 stay renderers (`0_Streamdown.tsx:95-103`); a fence rule runs on the text before the
+renderer sees it.
+
+### Body (pseudo)
+
+```ts
+// per fence, inside the code renderer
+// rule = first fenceRules entry whose pattern matches lang
+// no rule or no runFenceRule -> render text as written
+// key = hash(rule.command, lang, width, text); cached result -> render it
+// else render text as written now, run runFenceRule, cache, swap in stdout (replace) or append it (annotate)
+// non-zero exit on a replace rule -> keep the original text, annotate with stderr
+```
+
+### Instance timelines
+
+- Rules: app lifetime, one settings signal, edited in a panel cloned from the click-rules panel.
+- A run: one per (rule, lang, width, text hash). Width changes re-key by column count, not pixels, so
+  resizing within a column does not rerun.
+- Cache: in-memory LRU per app; persistence not planned.
+
+### Storage, reads, writes, uniqueness
+
+- `settings.fenceRules` persists like `settings.clickRules`.
+- Cache key unique on (command, lang, width, hash(text)). Two panes at the same width share a run.
+- Temp files live under the app's temp dir, one per run, deleted after the run.
