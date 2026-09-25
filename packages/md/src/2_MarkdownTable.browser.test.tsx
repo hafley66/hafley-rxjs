@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import { Signal } from "@hafley66/signals";
 import type { GridState } from "@hafley66/signal-grid";
 import { expect, it } from "vitest";
-import { page } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 import MarkdownTable from "./2_MarkdownTable.js";
 import StreamdownBody from "./0_Streamdown.js";
 import { MdDocumentIdentityProvider } from "./4_documentIdentity.js";
@@ -439,6 +439,120 @@ it("fits short wrapping tables without a vertical scrollbar when scrollbars take
     await act(() => root.unmount());
     host.remove();
     classic.remove();
+    Reflect.deleteProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT");
+  }
+});
+
+const channels = (color: string): readonly number[] => {
+  const srgb = /^color\(srgb ([\d.e-]+) ([\d.e-]+) ([\d.e-]+)/.exec(color);
+  if (srgb !== null) return srgb.slice(1, 4).map(Number);
+  const rgb = /^rgba?\((\d+(?:\.\d+)?),? (\d+(?:\.\d+)?),? (\d+(?:\.\d+)?)/.exec(color);
+  if (rgb !== null) return rgb.slice(1, 4).map((value) => Number(value) / 255);
+  throw new Error(`unparsed color ${color}`);
+};
+const luminance = (color: string): number => {
+  const [r, g, b] = channels(color).map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+};
+const contrast = (fg: string, bg: string): number => {
+  const [light, dark] = [luminance(fg), luminance(bg)].sort((a, b) => b - a);
+  return Math.round(((light! + 0.05) / (dark! + 0.05)) * 100) / 100;
+};
+
+it("keeps a selected cell's text readable on dark and light panels under a light color-scheme", async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  const host = document.createElement("div");
+  // A host that pins color-scheme to light and paints the panel through its own variables.
+  host.style.cssText = "width: 700px; margin: 0; padding: 0; color-scheme: light";
+  document.body.append(host);
+  const root = createRoot(host);
+  const children = [
+    createElement("thead", null, row("th", "Name", "Value")),
+    createElement("tbody", null, row("td", "alpha", "1"), row("td", "beta", "2")),
+  ];
+  const panels = {
+    dark: "--panel-bg: #252526; --panel-fg: #d4d4d4; --row-active-bg: #094771",
+    light: "--panel-bg: #fff; --panel-fg: #222; --row-active-bg: #316ac5",
+  };
+  try {
+    await act(() => root.render(createElement(MarkdownTable, { children })));
+    await expect.poll(() => host.querySelectorAll(".sg-center .sg-cell").length).toBe(4);
+    await page.elementLocator(host.querySelector<HTMLElement>(".sg-center .sg-cell")!).click();
+    await expect.poll(() => host.querySelectorAll(".sg-cell[data-selected]").length).toBe(1);
+    const readings: Record<string, number> = {};
+    for (const [name, vars] of Object.entries(panels)) {
+      host.style.cssText = `width: 700px; margin: 0; padding: 0; color-scheme: light; ${vars}`;
+      const selected = host.querySelector<HTMLElement>(".sg-cell[data-selected]")!;
+      const style = getComputedStyle(selected);
+      readings[name] = contrast(style.color, style.backgroundColor);
+    }
+    expect({
+      darkReadable: readings.dark! >= 4.5,
+      lightReadable: readings.light! >= 4.5,
+      readings,
+    }).toMatchInlineSnapshot(`
+      {
+        "darkReadable": true,
+        "lightReadable": true,
+        "readings": {
+          "dark": 9.5,
+          "light": 11.4,
+        },
+      }
+    `);
+  } finally {
+    await act(() => root.unmount());
+    host.remove();
+    Reflect.deleteProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT");
+  }
+});
+
+it("copies selected cells as JSON naming the table, row, column and value", async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  const host = document.createElement("div");
+  host.style.cssText = "width: 900px; margin: 0; padding: 0";
+  document.body.append(host);
+  const root = createRoot(host);
+  installMdviewHost({
+    readPluginState: (_pluginId: string, fallback: unknown): unknown => fallback,
+    savePluginState: () => undefined,
+  } as unknown as MdviewHost);
+  const pathSignal = pathSignalFor("markdown-table-copy", "/repo/guide.md");
+  const markdown = [
+    "| Name | Details |",
+    "| --- | --- |",
+    "| **alpha** | `one` two |",
+    "| beta | *three* |",
+  ].join("\n");
+  // The page's own listener runs after the table's, so it reads what the table wrote.
+  const copied: string[] = [];
+  const capture = (event: ClipboardEvent) => { copied.push(event.clipboardData?.getData("text/plain") ?? ""); };
+  document.addEventListener("copy", capture);
+  const cellAt = (rowIndex: number, colIndex: number) =>
+    host.querySelectorAll<HTMLElement>(".sg-center .sg-row")[rowIndex]!.querySelectorAll<HTMLElement>(".sg-cell")[colIndex]!;
+  try {
+    await act(() => root.render(
+      createElement(MdDocumentIdentityProvider, { pathSignal },
+        createElement(StreamdownBody, { components: {}, dark: false, sectionId: "overview", sourceStart: 0, tableStarts: [0], children: markdown }),
+      ),
+    ));
+    await expect.poll(() => host.querySelectorAll(".sg-center .sg-cell").length).toBe(4);
+    await page.elementLocator(cellAt(0, 1)).click();
+    await expect.poll(() => host.querySelectorAll(".sg-cell[data-selected]").length).toBe(1);
+    await userEvent.copy();
+    await page.elementLocator(cellAt(1, 0)).click({ modifiers: ["Shift"] });
+    await expect.poll(() => host.querySelectorAll(".sg-cell[data-selected]").length).toBe(4);
+    await userEvent.copy();
+    expect(copied).toMatchInlineSnapshot(`
+      [
+        "{"table":"/repo/guide.md#overview:0","row_id":"row-0","col":"Details","value":"one two"}",
+        "[{"table":"/repo/guide.md#overview:0","row_id":"row-0","col":"Name","value":"alpha"},{"table":"/repo/guide.md#overview:0","row_id":"row-0","col":"Details","value":"one two"},{"table":"/repo/guide.md#overview:0","row_id":"row-1","col":"Name","value":"beta"},{"table":"/repo/guide.md#overview:0","row_id":"row-1","col":"Details","value":"three"}]",
+      ]
+    `);
+  } finally {
+    document.removeEventListener("copy", capture);
+    await act(() => root.unmount());
+    host.remove();
     Reflect.deleteProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT");
   }
 });

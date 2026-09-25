@@ -161,6 +161,14 @@
   --sg-head-bg: color-mix(in srgb, var(--sg-fg) 6%, var(--sg-bg));
   --sg-hover-bg: color-mix(in srgb, var(--sg-fg) 4%, var(--sg-bg));
   --sg-line: color-mix(in srgb, var(--sg-fg) 15%, var(--sg-bg));
+  /* Selection derives from the panel colours too. The theme's light-dark()
+     defaults follow color-scheme, which a host may pin to light under a dark
+     panel, and a light range fill under the panel's light text left a selected
+     cell unreadable. */
+  --sg-focus: var(--row-active-bg, #618bcb);
+  --sg-range-edge: var(--sg-focus);
+  --sg-range-bg: color-mix(in srgb, var(--sg-focus) 24%, var(--sg-bg));
+  --sg-selected-bg: var(--sg-range-bg);
   /* Header band (row-h per head row plus its 1px rule) and the row run, both
      written onto this element by the grid renderer. Only the shrink floor reads
      it: the ceiling is the laid-out content, which also counts a classic

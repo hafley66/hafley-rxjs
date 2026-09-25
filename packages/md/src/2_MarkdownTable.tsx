@@ -5,6 +5,7 @@ import type { Signal } from "@hafley66/signals";
 import { GridView, reactSlot } from "@hafley66/signal-grid/react";
 import "@hafley66/signal-grid/theme.css";
 import { markdownTableModel, type MarkdownTableModel, type MarkdownTableRow } from "./lib/1_tableModel.js";
+import { markdownTableCopyText } from "./lib/2_tableCopy.js";
 
 const columnId = (index: number): string => `column-${index}`;
 
@@ -14,6 +15,8 @@ export interface MarkdownTableProps {
   readonly model?: MarkdownTableModel;
   /** Caller-owned state signal for Git-root/file/table persistence. */
   readonly tableState?: Signal<Partial<GridState>>;
+  /** `<docPath>#<section slug>:<table ordinal>`, carried by every copied cell. */
+  readonly tableName?: string;
 }
 
 const plainModifiers = { alt: false, ctrl: false, meta: false, shift: false, button: 0 } as const;
@@ -292,12 +295,21 @@ function useTableGrid(
   return current.grid;
 }
 
-export default function MarkdownTable({ children, model: suppliedModel, tableState }: MarkdownTableProps): ReactNode {
+export default function MarkdownTable({ children, model: suppliedModel, tableState, tableName }: MarkdownTableProps): ReactNode {
   const model = useMemo(() => suppliedModel ?? markdownTableModel(children), [children, suppliedModel]);
   const tableId = useId().replaceAll(":", "");
   const tableGrid = useTableGrid(model, `markdown-table-${tableId}`, tableState);
   return (
-    <section className="mdview-table" aria-label="Markdown table">
+    <section
+      className="mdview-table"
+      aria-label="Markdown table"
+      onCopy={(event) => {
+        const text = markdownTableCopyText(tableGrid, model, tableName ?? null);
+        if (text === undefined) return;
+        event.preventDefault();
+        event.clipboardData.setData("text/plain", text);
+      }}
+    >
       <GridView grid={tableGrid} className="mdview-table-grid" />
     </section>
   );

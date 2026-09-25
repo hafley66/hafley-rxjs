@@ -13,6 +13,7 @@ import {
   type MarkdownTableViewState,
 } from "./3_tablePersistence.js";
 import { useOptionalMdDocumentIdentity, type MdDocumentIdentity } from "./4_documentIdentity.js";
+import { markdownTableName } from "./lib/2_tableCopy.js";
 
 interface MarkdownTableNode {
   readonly position?: {
@@ -32,11 +33,12 @@ export interface PersistedMarkdownTableProps extends MarkdownTableProps {
  */
 export default function PersistedMarkdownTable({ children, model, node, tableSectionId, tableOrdinal }: PersistedMarkdownTableProps): ReactNode {
   const document = useOptionalMdDocumentIdentity();
-  if (!document) return createElement(MarkdownTable, { children, model });
-  return createElement(PersistedTable, { children, model, node, document, tableSectionId, tableOrdinal });
+  const tableName = markdownTableName(document?.filePath, tableSectionId, tableOrdinal);
+  if (!document) return createElement(MarkdownTable, { children, model, tableName });
+  return createElement(PersistedTable, { children, model, node, document, tableSectionId, tableOrdinal, tableName });
 }
 
-function PersistedTable({ children, model: suppliedModel, node, document, tableSectionId, tableOrdinal }: PersistedMarkdownTableProps & { readonly document: MdDocumentIdentity }): ReactNode {
+function PersistedTable({ children, model: suppliedModel, node, document, tableSectionId, tableOrdinal, tableName }: PersistedMarkdownTableProps & { readonly document: MdDocumentIdentity }): ReactNode {
   const model = useMemo(() => suppliedModel ?? markdownTableModel(children), [children, suppliedModel]);
   const columnIds = useMemo(() => model.headers.map((_, index) => `column-${index}`), [model.headers.length]);
   const sourceStart = node?.position?.start?.offset;
@@ -70,5 +72,5 @@ function PersistedTable({ children, model: suppliedModel, node, document, tableS
   }, [document.gitRootPending, identity, colWidth, colOrder, colHidden, store]);
 
   const renderKey = `${storageKey}:${document.gitRootPending ? "pending" : "ready"}`;
-  return createElement(MarkdownTable, { key: renderKey, children, model, tableState });
+  return createElement(MarkdownTable, { key: renderKey, children, model, tableState, tableName });
 }
