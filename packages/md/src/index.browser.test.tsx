@@ -155,12 +155,11 @@ it("keeps an inactive markdown panel's DOM and scroll offset when a right-click 
   }
 });
 
-it("places a table header's action strip inside its header and opens its column menu unclipped in a kept-alive dock panel", async () => {
+it("a table header carries no action controls and a click on it sorts, inside a kept-alive dock panel", async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   if (!registered.length) registerMdview();
   const instance = registered.flatMap((plugin) => plugin.instances ?? []).find((entry) => entry.prefix === "md:")!;
   const host = document.createElement("div");
-  // Offset from the viewport origin, the way instant's rail and toolbar offset the dock.
   host.style.cssText = "width: 900px; height: 500px; margin: 90px 0 0 160px";
   document.body.append(host);
   const root = createRoot(host);
@@ -186,29 +185,25 @@ it("places a table header's action strip inside its header and opens its column 
     });
     await expect.poll(() => host.querySelectorAll(".sg-head-cell").length).toBe(2);
     await frame();
-    const header = host.querySelector<HTMLElement>(".sg-head-cell")!;
-    await userEvent.hover(header);
+    const header = () => host.querySelector<HTMLElement>(".sg-head-cell")!;
+    await userEvent.hover(header());
+    const firstColumn = () => [...host.querySelectorAll<HTMLElement>(".sg-center .sg-row")].map((row) => row.querySelector(".sg-cell")?.textContent);
+    await userEvent.click(header().querySelector<HTMLElement>(".sg-head-label")!);
     await frame();
-    const strip = header.querySelector<HTMLElement>(".mdview-table-header-actions")!;
-    await expect.poll(() => getComputedStyle(strip).opacity).toBe("1");
-    const headerBox = header.getBoundingClientRect();
-    const stripBox = strip.getBoundingClientRect();
-    // Painted, not clipped: the topmost element at a box's centre belongs to that box.
-    const paints = (element: HTMLElement) => {
-      const box = element.getBoundingClientRect();
-      return element.contains(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2));
-    };
-    const visibility = strip.querySelector<HTMLButtonElement>(".mdview-table-action-visibility")!;
-    await userEvent.click(visibility);
-    const menu = host.querySelector<HTMLElement>(".mdview-table-column-menu:popover-open");
+    const ascending = { sort: header().getAttribute("data-sort"), rows: firstColumn() };
+    await userEvent.click(header().querySelector<HTMLElement>(".sg-head-label")!);
+    await frame();
     expect({
-      renderer: api!.getPanel("md:/table.md")!.api.renderer,
-      stripInsideHeader: stripBox.top >= headerBox.top - 0.5 && stripBox.bottom <= headerBox.bottom + 0.5 && stripBox.left >= headerBox.left - 0.5 && Math.abs(stripBox.right - headerBox.right) <= 1,
-      stripPaints: paints(visibility),
-      menuOpen: menu !== null,
-      menuPaints: menu !== null && paints(menu),
-      menuBelowButton: menu !== null && Math.abs(menu.getBoundingClientRect().top - visibility.getBoundingClientRect().bottom) <= 4,
-    }).toEqual({ renderer: "always", stripInsideHeader: true, stripPaints: true, menuOpen: true, menuPaints: true, menuBelowButton: true });
+      controls: host.querySelectorAll(".mdview-table button, .mdview-table [popover], .mdview-table details").length,
+      moveHandle: header().querySelectorAll('[data-route="move"]').length,
+      ascending,
+      descending: { sort: header().getAttribute("data-sort"), rows: firstColumn() },
+    }).toEqual({
+      controls: 0,
+      moveHandle: 0,
+      ascending: { sort: "asc", rows: ["alpha", "beta"] },
+      descending: { sort: "desc", rows: ["beta", "alpha"] },
+    });
   } finally {
     await act(() => root.unmount());
     host.remove();

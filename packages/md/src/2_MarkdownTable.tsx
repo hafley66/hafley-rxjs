@@ -19,184 +19,18 @@ export interface MarkdownTableProps {
   readonly tableName?: string;
 }
 
-const plainModifiers = { alt: false, ctrl: false, meta: false, shift: false, button: 0 } as const;
-
-const stopHeaderGesture = (event: { readonly stopPropagation: () => void }): void => {
-  event.stopPropagation();
-};
-
-/** Opens a top-layer popover under the right edge of its button, so neither the
- * grid's scroller nor a table's rounded clip cuts it. Lengths go through the
- * popover's own scale, which a zoomed reading pane multiplies in. */
-function placeUnder(button: HTMLElement, popover: HTMLElement): void {
-  popover.style.left = "0px";
-  popover.style.top = "0px";
-  const origin = popover.getBoundingClientRect();
-  const scale = origin.width / popover.offsetWidth || 1;
-  const anchor = button.getBoundingClientRect();
-  const left = Math.max(0, Math.min(anchor.right - origin.width, window.innerWidth - origin.width));
-  popover.style.left = `${(left - origin.left) / scale}px`;
-  popover.style.top = `${(anchor.bottom + 2 - origin.top) / scale}px`;
-}
-
-function usePopoverUnder(): {
-  readonly id: string;
-  readonly buttonRef: (element: HTMLButtonElement | null) => void;
-  readonly popoverRef: (element: HTMLDivElement | null) => (() => void) | undefined;
-} {
-  const id = `md-table-pop-${useId().replaceAll(":", "")}`;
-  const button = useRef<HTMLButtonElement | null>(null);
-  return {
-    id,
-    buttonRef: (element) => { button.current = element; },
-    popoverRef: (element) => {
-      if (element === null) return undefined;
-      const onToggle = (event: Event) => {
-        if ((event as ToggleEvent).newState === "open" && button.current !== null) placeUnder(button.current, element);
-      };
-      element.addEventListener("toggle", onToggle);
-      return () => element.removeEventListener("toggle", onToggle);
-    },
-  };
-}
-
-function toggleColumn(tableGrid: Grid<MarkdownTableRow>, id: string, hidden: boolean): void {
-  const current = tableGrid.state.colHidden.$();
-  const visible = tableGrid.columns.$().filter((column) => current[column.id] !== true).length;
-  if (!hidden && visible <= 1) return;
-  tableGrid.state.colHidden.$({ ...current, [id]: !hidden });
-}
-
-function ColumnVisibilityMenu({ tableGrid }: { readonly tableGrid: Grid<MarkdownTableRow> }): ReactNode {
-  const state = useSignal(tableGrid.state.$);
-  const columns = tableGrid.columns.$();
-  const visible = columns.filter((column) => state.colHidden[column.id] !== true);
-  const hidden = columns.filter((column) => state.colHidden[column.id] === true);
-  const item = (column: ColumnDef<MarkdownTableRow>): ReactNode => {
-    const isHidden = state.colHidden[column.id] === true;
-    return (
-      <label key={column.id} className="mdview-table-column-menu-item" data-md-table-column={column.id} onPointerDown={stopHeaderGesture}>
-        <input
-          type="checkbox"
-          aria-label={`${column.header ?? column.id} ${isHidden ? "hidden" : "visible"}`}
-          checked={!isHidden}
-          disabled={!isHidden && visible.length <= 1}
-          onClick={stopHeaderGesture}
-          onChange={() => toggleColumn(tableGrid, column.id, isHidden)}
-        />
-        <span aria-hidden="true" data-md-table-column-label={column.header ?? column.id} />
-        <span aria-hidden="true" className="mdview-table-column-menu-state" data-md-table-column-state={isHidden ? "hidden" : "visible"} />
-      </label>
-    );
-  };
-  const popover = usePopoverUnder();
-  return (
-    <div className="mdview-table-visibility">
-      <button
-        ref={popover.buttonRef}
-        type="button"
-        className="mdview-table-action mdview-table-action-visibility"
-        aria-label="Show or hide columns"
-        aria-haspopup="menu"
-        popoverTarget={popover.id}
-        onClick={stopHeaderGesture}
-        onPointerDown={stopHeaderGesture}
-      >
-        <span aria-hidden="true" />
-      </button>
-      <div ref={popover.popoverRef} id={popover.id} popover="auto" className="mdview-table-column-menu" role="menu" onPointerDown={stopHeaderGesture}>
-        <div className="mdview-table-column-menu-section" aria-label="Visible columns" data-md-table-section="Visible columns" />
-        {visible.map(item)}
-        {hidden.length === 0 ? null : <div className="mdview-table-column-menu-section" aria-label="Hidden columns" data-md-table-section="Hidden columns" />}
-        {hidden.map(item)}
-      </div>
-      {hidden.length === 0 ? null : (
-        <button
-          type="button"
-          className="mdview-table-hidden-affordance"
-          aria-label={`${hidden.length} hidden columns`}
-          onClick={stopHeaderGesture}
-          onPointerDown={stopHeaderGesture}
-        >
-          <span aria-hidden="true" data-md-table-hidden-count={hidden.length} />
-        </button>
-      )}
-    </div>
-  );
-}
-
-function SortButton({ tableGrid, col }: { readonly tableGrid: Grid<MarkdownTableRow>; readonly col: string }): ReactNode {
-  const state = useSignal(tableGrid.state.$);
-  const sort = state.sort.find((entry) => entry.field === col)?.sort;
-  return (
-    <button
-      type="button"
-      className="mdview-table-action mdview-table-action-sort"
-      aria-label={`Sort column ${sort === "asc" ? "descending" : "ascending"}`}
-      aria-pressed={sort !== undefined}
-      onClick={(event) => {
-        event.stopPropagation();
-        tableGrid.dispatch({ phase: "intent", type: "header.click", col, mods: plainModifiers });
-      }}
-      onPointerDown={stopHeaderGesture}
-    >
-      <span aria-hidden="true" data-md-table-sort={sort ?? "none"} />
-    </button>
-  );
-}
-
-function HeaderActions({ tableGrid, col }: { readonly tableGrid: Grid<MarkdownTableRow> | undefined; readonly col: string }): ReactNode {
-  const compact = usePopoverUnder();
-  if (tableGrid === undefined) return null;
-  return (
-    <span className="mdview-table-header-actions" role="group" aria-label="Column actions" onPointerDown={stopHeaderGesture}>
-      <span className="mdview-table-actions-wide">
-        <SortButton tableGrid={tableGrid} col={col} />
-        <ColumnVisibilityMenu tableGrid={tableGrid} />
-      </span>
-      <span className="mdview-table-actions-compact">
-        <button
-          ref={compact.buttonRef}
-          type="button"
-          className="mdview-table-action mdview-table-actions-compact-toggle"
-          aria-label="More column actions"
-          popoverTarget={compact.id}
-          onClick={stopHeaderGesture}
-          onPointerDown={stopHeaderGesture}
-        >
-          <span aria-hidden="true" />
-        </button>
-        <div ref={compact.popoverRef} id={compact.id} popover="auto" className="mdview-table-actions-compact-menu" onPointerDown={stopHeaderGesture}>
-          <SortButton tableGrid={tableGrid} col={col} />
-          <ColumnVisibilityMenu tableGrid={tableGrid} />
-        </div>
-      </span>
-    </span>
-  );
-}
-
 function MarkdownTableHeader({
   header,
   label,
-  tableGrid,
-  col,
   alignment,
 }: {
   readonly header: ReactNode;
   readonly label: string;
-  readonly tableGrid: Grid<MarkdownTableRow> | undefined;
-  readonly col: string;
   readonly alignment: "left" | "center" | "right";
 }): ReactNode {
   return (
-    <span
-      className="mdview-table-header-cell"
-      style={{
-        textAlign: alignment,
-      } as CSSProperties}
-    >
+    <span className="mdview-table-header-cell" style={{ textAlign: alignment } as CSSProperties}>
       <span className="mdview-table-header-label" title={label}>{header}</span>
-      <HeaderActions tableGrid={tableGrid} col={col} />
     </span>
   );
 }
@@ -214,13 +48,11 @@ const columnsOf = (model: MarkdownTableModel, codeMins: readonly number[] = []):
     flex: compact ? undefined : Math.min(3, Math.max(1, Math.ceil(longest / 80))),
     sortable: true,
     resizable: true,
-    movable: true,
-    headerCell: reactSlot(({ grid: tableGrid, col }) => (
+    movable: false,
+    headerCell: reactSlot(() => (
       <MarkdownTableHeader
         header={header}
         label={model.headerValues[index] ?? `Column ${index + 1}`}
-        tableGrid={tableGrid}
-        col={col}
         alignment={model.alignments[index] ?? "left"}
       />
     ), { sync: false }),
