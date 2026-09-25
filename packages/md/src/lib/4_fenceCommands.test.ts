@@ -38,27 +38,36 @@ it("finds closed column-one fences with their body ranges", () => {
     ",
         "bodyEnd": 29,
         "bodyStart": 15,
+        "closingMarkerStart": 29,
         "end": 32,
         "indent": "",
         "language": "ts",
+        "marker": "\`\`\`",
+        "markerStart": 9,
       },
       {
         "body": "echo $x
     ",
         "bodyEnd": 67,
         "bodyStart": 59,
+        "closingMarkerStart": 67,
         "end": 70,
         "indent": "",
         "language": "sh",
+        "marker": "\`\`\`",
+        "markerStart": 53,
       },
       {
         "body": "fn main(){}
     ",
         "bodyEnd": 92,
         "bodyStart": 80,
+        "closingMarkerStart": 92,
         "end": 95,
         "indent": "",
         "language": "rust",
+        "marker": "\`\`\`",
+        "markerStart": 72,
       },
     ]
   `);
@@ -222,4 +231,31 @@ it("formats fences indented inside list items, dedenting for the command", async
   ].join("\n"));
   // 72 prose columns minus the 3-space list indent: the formatter wraps inside it.
   expect(seen).toEqual([{ command: "shellcheck", language: "sh", text: "echo $x\n", columns: 69 }]);
+});
+
+it("lengthens the fence marker when the answer itself contains a fence marker", async () => {
+  const collision = [
+    "# Title",
+    "",
+    "```ts",
+    "const a={b:1}",
+    "```",
+    "",
+  ].join("\n");
+  const run: MdFenceCommandRunner = () => of({
+    stdout: "const s = `x`;\n// ```ts\nconst done = true;\n",
+    stderr: "",
+    code: 0,
+  });
+  const pass = await lastValueFrom(fenceCommandPass(collision, [commands[0]], run, 72));
+  expect(pass.text).toBe([
+    "# Title",
+    "",
+    "````ts",
+    "const s = `x`;",
+    "// ```ts",
+    "const done = true;",
+    "````",
+    "",
+  ].join("\n"));
 });

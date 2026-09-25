@@ -10,6 +10,10 @@ export interface FenceSpan {
   language: string;
   /** Leading whitespace of the fence block, from list nesting. Empty at column one. */
   indent: string;
+  /** The opening fence's marker run, e.g. ``` or ~~~, and where it sits. */
+  marker: string;
+  markerStart: number;
+  closingMarkerStart: number;
   /** Body offsets: past the opening fence line, up to the closing fence line. */
   bodyStart: number;
   bodyEnd: number;
@@ -70,18 +74,31 @@ export function fenceSpans(markdown: string): FenceSpan[] {
     const start = node.position?.start;
     const end = node.position?.end.offset;
     if (!node.lang || start?.offset === undefined || end === undefined) continue;
-    // The opening fence marker sits after the block's indent; anything else
-    // prefixing the line (a block quote mark) is not a supported nesting.
+    // The opening fence marker sits after the block's indent; any other line
+    // prefix (a block quote mark) is not a supported nesting.
     const indent = markdown.slice(markdown.lastIndexOf("\n", start.offset - 1) + 1, start.offset);
     if (!/^[ \t]*$/u.test(indent)) continue;
     const raw = markdown.slice(start.offset, end);
     const firstBreak = raw.indexOf("\n");
     const lastBreak = raw.lastIndexOf("\n");
-    if (firstBreak < 0 || !CLOSING_FENCE.test(dedent(raw.slice(lastBreak + 1), indent))) continue;
+    if (firstBreak < 0) continue;
+    const marker = /^(?:`{3,}|~{3,})/u.exec(raw)?.[0];
+    if (!marker) continue;
+    const closingLine = raw.slice(lastBreak + 1);
+    if (!CLOSING_FENCE.test(dedent(closingLine, indent))) continue;
     const bodyStart = start.offset + firstBreak + 1;
     const bodyEnd = Math.max(bodyStart, start.offset + lastBreak + 1);
     if (dedent(markdown.slice(bodyStart, bodyEnd), indent).replace(/\n$/u, "") !== node.value) continue;
-    spans.push({ language: node.lang, indent, bodyStart, bodyEnd, end });
+    spans.push({
+      language: node.lang,
+      indent,
+      marker,
+      markerStart: start.offset,
+      closingMarkerStart: start.offset + lastBreak + 1 + closingLine.length - dedent(closingLine, indent).length,
+      bodyStart,
+      bodyEnd,
+      end,
+    });
   }
   return spans;
 }
@@ -100,7 +117,17 @@ export function fenceEdits(markdown: string, span: FenceSpan, command: MdFenceCo
   const answered = result.stdout.endsWith("\n") || !result.stdout ? result.stdout : `${result.stdout}\n`;
   const insert = reindent(answered, span.indent);
   const remove = span.bodyEnd - span.bodyStart;
-  return insert === markdown.slice(span.bodyStart, span.bodyEnd) ? [] : [{ at: span.bodyStart, remove, insert }];
+  const edits: FenceEdit[] = [];
+  // A marker run in the answer of the fence's own length or longer would close
+  // the block early: rewrite the fence with a strictly longer marker.
+  const longest = Math.max(0, ...[...answered.matchAll(span.marker[0] === "~" ? /~+/gu : /`+/gu)].map((run) => run[0].length));
+  const marker = longest + 1 > span.marker.length ? span.marker[0].repeat(longest + 1) : span.marker;
+  if (marker !== span.marker) {
+    edits.push({ at: span.markerStart, remove: span.marker.length, insert: marker });
+    edits.push({ at: span.closingMarkerStart, remove: span.marker.length, insert: marker });
+  }
+  if (insert !== markdown.slice(span.bodyStart, span.bodyEnd)) edits.push({ at: span.bodyStart, remove, insert });
+  return edits;
 }
 
 export function applyFenceEdits(markdown: string, edits: readonly FenceEdit[]): string {
