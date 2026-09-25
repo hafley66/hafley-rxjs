@@ -113,6 +113,9 @@ export function registerMdview() {
       // an open markdown tab comes back after a reload. A path that has since
       // moved renders the load error in the tab (no wedged restore).
       restorable: true,
+      // A hidden tab keeps its DOM: re-rendering a long document on every tab
+      // switch reset its scroll to the top.
+      keepAlive: true,
     }],
     routes: [
       {

@@ -58,6 +58,9 @@ export interface MdviewPluginRegistration {
     // The host keeps a tab of this kind across a reload when set: the panel
     // rebuilds itself from its params, which for mdview is the document path.
     restorable?: boolean;
+    // The host keeps the panel's DOM mounted while its tab is hidden, so a tab
+    // switch keeps the rendered document and its scroll offset.
+    keepAlive?: boolean;
   }[];
   routes?: { id: string; open: (path: string) => boolean }[];
 }
