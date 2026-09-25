@@ -115,10 +115,21 @@ function HeaderActions({ tableGrid, col }: { readonly tableGrid: Grid<MarkdownTa
     const anchor = anchorRef.current?.closest<HTMLElement>(".sg-head-cell");
     if (anchor === null || anchor === undefined) return;
     const update = (): void => {
+      const strip = anchorRef.current;
+      if (strip === null) return;
       const box = anchor.getBoundingClientRect();
-      setRect((current) => current?.left === box.left && current.top === box.top && current.width === box.width
+      // The strip is position: fixed. Its containing block is the viewport unless an ancestor
+      // takes that role (a dock's always-rendered overlay has transform and contain: paint), and
+      // a zoomed ancestor scales its lengths. Its own box against its resolved insets gives both.
+      const own = strip.getBoundingClientRect();
+      const style = getComputedStyle(strip);
+      const scale = own.width / Number.parseFloat(style.width) || 1;
+      const originLeft = own.left - Number.parseFloat(style.left) * scale;
+      const originTop = own.top - Number.parseFloat(style.top) * scale;
+      const next = { left: (box.left - originLeft) / scale, top: (box.top - originTop) / scale, width: box.width / scale };
+      setRect((current) => current?.left === next.left && current.top === next.top && current.width === next.width
         ? current
-        : { left: box.left, top: box.top, width: box.width });
+        : next);
     };
     update();
     if (typeof ResizeObserver === "undefined") return;

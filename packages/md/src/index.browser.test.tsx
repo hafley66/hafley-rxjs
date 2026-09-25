@@ -8,10 +8,11 @@ import { registerMdview } from "./index.js";
 import { installMdviewHost, type MdviewHost, type MdviewPluginRegistration } from "./ports.js";
 
 const DOC = ["# Long", "", ...Array.from({ length: 120 }, (_, index) => `Paragraph ${index} of a document long enough to scroll.\n`)].join("\n");
+const TABLE_DOC = ["# Table", "", "| Name | Value |", "| --- | --- |", "| alpha | 1 |", "| beta | 2 |", ""].join("\n");
 const registered: MdviewPluginRegistration[] = [];
 
 installMdviewHost({
-  readText: async () => DOC,
+  readText: async (path: string) => path === "/table.md" ? TABLE_DOC : DOC,
   readImage: async () => "",
   listDir: async () => ({ entries: [] }),
   openHref: async () => undefined,
@@ -147,6 +148,57 @@ it("keeps an inactive markdown panel's DOM and scroll offset when a right-click 
       sameNode: after === content,
       scrollTop: after?.scrollTop,
     }).toEqual({ activated: "md:/doc.md", scrolled: true, sameNode: true, scrollTop: pressedAt });
+  } finally {
+    await act(() => root.unmount());
+    host.remove();
+    Reflect.deleteProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT");
+  }
+});
+
+it("places a table header's action strip on its header inside a kept-alive dock panel", async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  if (!registered.length) registerMdview();
+  const instance = registered.flatMap((plugin) => plugin.instances ?? []).find((entry) => entry.prefix === "md:")!;
+  const host = document.createElement("div");
+  // Offset from the viewport origin, the way instant's rail and toolbar offset the dock.
+  host.style.cssText = "width: 900px; height: 500px; margin: 90px 0 0 160px";
+  document.body.append(host);
+  const root = createRoot(host);
+  let api: DockviewApi | undefined;
+  try {
+    await act(() => root.render(createElement(DockviewReact, {
+      components: {
+        [instance.componentName]: instance.component as (props: IDockviewPanelProps) => ReturnType<typeof createElement>,
+        other: (_props: IDockviewPanelProps) => createElement("div", null, "other"),
+      },
+      onReady: (event) => { api = event.api; },
+    })));
+    await act(() => {
+      api!.addPanel({ id: "other", component: "other", title: "other" });
+      api!.addPanel({
+        id: "md:/table.md",
+        component: instance.componentName,
+        params: { panelId: "md:/table.md", path: "/table.md" },
+        title: "table.md",
+        position: { referencePanel: "other", direction: "right" },
+        ...(instance.keepAlive ? { renderer: "always" as const } : {}),
+      });
+    });
+    await expect.poll(() => host.querySelectorAll(".sg-head-cell").length).toBe(2);
+    await frame();
+    const header = host.querySelector<HTMLElement>(".sg-head-cell")!;
+    await userEvent.hover(header);
+    await frame();
+    const strip = header.querySelector<HTMLElement>(".mdview-table-header-actions")!;
+    await expect.poll(() => getComputedStyle(strip).opacity).toBe("1");
+    const headerBox = header.getBoundingClientRect();
+    const stripBox = strip.getBoundingClientRect();
+    expect({
+      renderer: api!.getPanel("md:/table.md")!.api.renderer,
+      left: Math.round(stripBox.left - headerBox.left),
+      width: Math.round(stripBox.width - headerBox.width),
+      bottomToHeaderTop: Math.round(headerBox.top - stripBox.bottom),
+    }).toEqual({ renderer: "always", left: 0, width: 0, bottomToHeaderTop: 0 });
   } finally {
     await act(() => root.unmount());
     host.remove();
