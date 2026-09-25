@@ -347,6 +347,16 @@ body:has(#v5-on:checked):has(#v5-shape-oblique:checked) .mdview-content .mdview-
     calc(100% - var(--stroke)) 100%);
   background: linear-gradient(90deg in oklch, var(--branch-from), var(--branch-to));
 }
+/* THE LAST TURN: the parent rail ends in its last child's curve. The last
+   child section casts a paper-coloured copy of itself one --indent to the
+   left, over the parent rail column, from its own top down. It paints after
+   the parent's ::before (later positioned box in tree order), so the parent
+   rail stops exactly where the arc leaves it; the arc (this section's
+   ::after) and the heading box paint above the cover. Earlier children keep
+   the through-rail, since the parent still has siblings to reach. */
+body:has(#v5-on:checked):not(:has(#v5-shape-straight:checked)) .mdview-content .mdview-body > .mdview-sec:not(:has(~ .mdview-sec)) {
+  box-shadow: calc(-1 * var(--indent)) 0 0 0 var(--h-paper);
+}
 /* straight: the v3 control — no branch, the mid-air start stays. */
 body:has(#v5-on:checked):has(#v5-shape-straight:checked) .mdview-content .mdview-body > .mdview-sec::after {
   content: none;
