@@ -79,6 +79,8 @@ export interface MdviewZoomKind {
 export interface MdviewAppState {
   dark: boolean;
   panelZoom: Record<string, number>;
+  // Section headers stick while their section is in view, stacked by level.
+  mdStickyHeaders?: boolean;
 }
 
 export interface MdviewPanZoomApi {

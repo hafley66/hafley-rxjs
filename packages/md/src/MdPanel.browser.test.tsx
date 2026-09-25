@@ -9,6 +9,7 @@ import { blockFoldsFor, loadPersistedMdUi, pathSignalFor } from "./signals.js";
 const HOST_STATE = { startFolded: false, explorerHidden: true, layout: null, layouts: {} };
 const DOCS: Record<string, string> = {};
 const OPENED_REFS: { token: string; docPath: string }[] = [];
+const APP_STATE: ReturnType<MdviewHost["useAppState"]> = { dark: false, panelZoom: {} };
 
 installMdviewHost({
   readText: async (path: string) => {
@@ -33,7 +34,7 @@ installMdviewHost({
   resetPanelZoom: () => undefined,
   readPluginState: (<State,>(_pluginId: string, _fallback: State) => HOST_STATE as State) as MdviewHost["readPluginState"],
   savePluginState: () => undefined,
-  useAppState: () => ({ dark: false, panelZoom: {} }),
+  useAppState: () => APP_STATE,
   openMdPanel: () => undefined,
   mdPanelId: (path: string) => `md:${path}`,
   registerPlugin: () => undefined,
@@ -484,4 +485,104 @@ it("⌘-click on inline code that names a file emits the token and the document 
     plainCodeWithMeta: "auto",
     cursorAfterRelease: "auto",
   });
+});
+
+const STICKY_DOC = (() => {
+  const prose = (label: string) => Array.from({ length: 14 }, (_, index) => `${label} paragraph ${index}.\n`).join("\n");
+  return [
+    "# Alpha", "", prose("alpha"),
+    "## Alpha one", "", prose("alpha-one"),
+    "### Alpha one deep", "", prose("deep"),
+    "## Alpha two", "", prose("alpha-two"),
+    "# Bravo", "", prose("bravo"),
+  ].join("\n");
+})();
+
+it("stacks section headers by level while their section is in view when the host turns sticky headers on", async () => {
+  const path = "/docs/sticky.md";
+  DOCS[path] = STICKY_DOC;
+  const sized = document.createElement("style");
+  sized.textContent = ".mdview-content { height: 420px }";
+  document.head.append(sized);
+  const settle = async () => {
+    for (let frame = 0; frame < 3; frame += 1) {
+      await act(async () => { await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined))); });
+    }
+  };
+  // Top of each header relative to the scroller's top edge, at a scroll offset that puts the
+  // paragraph with `text` at the top of the viewport.
+  const tops = async (text: string) => {
+    const content = host.querySelector<HTMLElement>(".mdview-content")!;
+    const target = [...content.querySelectorAll<HTMLElement>("p")].find((p) => p.textContent === text)!;
+    content.scrollTop += target.getBoundingClientRect().top - content.getBoundingClientRect().top;
+    await settle();
+    const top = content.getBoundingClientRect().top;
+    return Object.fromEntries(["Alpha", "Alpha one", "Alpha one deep", "Alpha two", "Bravo"].map((title) => {
+      const head = section(title).querySelector<HTMLElement>(":scope > .mdview-head")!;
+      return [title, Math.round(head.getBoundingClientRect().top - top)];
+    }));
+  };
+  const heights = () => Object.fromEntries([1, 2, 3].map((level) => [`h${level}`, Math.round(host.querySelector<HTMLElement>(`.mdview-h${level}`)!.getBoundingClientRect().height)]));
+  try {
+    APP_STATE.mdStickyHeaders = true;
+    await act(() => root.render(<MdPanel pid={path} pathSig={pathSignalFor(path, path)} onNavigate={() => undefined} />));
+    await expect.poll(() => host.querySelectorAll(".mdview-head").length, { timeout: 10_000 }).toBe(5);
+    await expect.poll(() => [...host.querySelectorAll("p")].some((p) => p.textContent === "bravo paragraph 13."), { timeout: 10_000 }).toBe(true);
+    await settle();
+    const h = heights();
+    const attribute = host.querySelector(".mdview-root")!.hasAttribute("data-md-sticky-headers");
+    const deep = await tops("deep paragraph 6.");
+    const alphaTwo = await tops("alpha-two paragraph 6.");
+    const bravo = await tops("bravo paragraph 6.");
+    APP_STATE.mdStickyHeaders = false;
+    await act(() => root.render(<MdPanel pid={path} pathSig={pathSignalFor(path, path)} onNavigate={() => undefined} />));
+    await settle();
+    const off = await tops("deep paragraph 6.");
+    const stuck = (row: Record<string, number>) => Object.fromEntries(Object.entries(row).map(([title, top]) => [
+      title,
+      top === 0 ? "top" : top === h.h1 ? "below h1" : top === h.h1! + h.h2! ? "below h1+h2" : top < 0 ? "scrolled away" : "further down",
+    ]));
+    expect({
+      attribute,
+      deep: stuck(deep),
+      alphaTwo: stuck(alphaTwo),
+      bravo: stuck(bravo),
+      off: stuck(off),
+    }).toMatchInlineSnapshot(`
+      {
+        "alphaTwo": {
+          "Alpha": "top",
+          "Alpha one": "scrolled away",
+          "Alpha one deep": "scrolled away",
+          "Alpha two": "below h1",
+          "Bravo": "further down",
+        },
+        "attribute": true,
+        "bravo": {
+          "Alpha": "scrolled away",
+          "Alpha one": "scrolled away",
+          "Alpha one deep": "scrolled away",
+          "Alpha two": "scrolled away",
+          "Bravo": "top",
+        },
+        "deep": {
+          "Alpha": "top",
+          "Alpha one": "below h1",
+          "Alpha one deep": "below h1+h2",
+          "Alpha two": "further down",
+          "Bravo": "further down",
+        },
+        "off": {
+          "Alpha": "scrolled away",
+          "Alpha one": "scrolled away",
+          "Alpha one deep": "scrolled away",
+          "Alpha two": "further down",
+          "Bravo": "further down",
+        },
+      }
+    `);
+  } finally {
+    Reflect.deleteProperty(APP_STATE, "mdStickyHeaders");
+    sized.remove();
+  }
 });

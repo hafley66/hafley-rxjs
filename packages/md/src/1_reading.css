@@ -87,6 +87,44 @@
   margin-top: 0.25rem;
 }
 
+/* Sticky section headers (host opt-in via data-md-sticky-headers on the root). A header sticks
+   inside its own section, so it unsticks when the section scrolls out, and each level sits under
+   the levels above it. Every header gets a fixed block size so the stack offsets are exact; the
+   sizes are registered lengths, computed once on the scroller from its font size (a header's em
+   is its parent's, which is the scroller's). */
+@property --md-sticky-h1 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --md-sticky-h2 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --md-sticky-h3 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --md-sticky-h4 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --md-sticky-h5 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+.mdview-root[data-md-sticky-headers] .mdview-content {
+  /* Sticky insets count from the scroller's padding edge; no top padding puts the stack flush. */
+  padding-block-start: 0;
+  /* font-size x line-height, plus h1's 0.15em padding and 1px rule */
+  --md-sticky-h1: calc(1.9em * 1.5 + 1px);
+  --md-sticky-h2: calc(1.5em * 1.35);
+  --md-sticky-h3: calc(1.2em * 1.35);
+  --md-sticky-h4: 1.35em;
+  --md-sticky-h5: 1.35em;
+  --md-sticky-h6: 1.35em;
+}
+.mdview-root[data-md-sticky-headers] .mdview-content .mdview-head {
+  position: sticky;
+  box-sizing: border-box;
+  background: var(--panel-bg, Canvas);
+}
+.mdview-root[data-md-sticky-headers] .mdview-content .mdview-h1 { --md-sticky-top: 0px; block-size: var(--md-sticky-h1); z-index: 6; }
+.mdview-root[data-md-sticky-headers] .mdview-content .mdview-h2 { --md-sticky-top: var(--md-sticky-h1); block-size: var(--md-sticky-h2); z-index: 5; }
+.mdview-root[data-md-sticky-headers] .mdview-content .mdview-h3 { --md-sticky-top: calc(var(--md-sticky-h1) + var(--md-sticky-h2)); block-size: var(--md-sticky-h3); z-index: 4; }
+.mdview-root[data-md-sticky-headers] .mdview-content .mdview-h4 { --md-sticky-top: calc(var(--md-sticky-h1) + var(--md-sticky-h2) + var(--md-sticky-h3)); block-size: var(--md-sticky-h4); z-index: 3; }
+.mdview-root[data-md-sticky-headers] .mdview-content .mdview-h5 { --md-sticky-top: calc(var(--md-sticky-h1) + var(--md-sticky-h2) + var(--md-sticky-h3) + var(--md-sticky-h4)); block-size: var(--md-sticky-h5); z-index: 2; }
+.mdview-root[data-md-sticky-headers] .mdview-content .mdview-h6 { --md-sticky-top: calc(var(--md-sticky-h1) + var(--md-sticky-h2) + var(--md-sticky-h3) + var(--md-sticky-h4) + var(--md-sticky-h5)); block-size: var(--md-sticky-h6); z-index: 1; }
+.mdview-root[data-md-sticky-headers] .mdview-content .mdview-head {
+  inset-block-start: var(--md-sticky-top);
+  /* a jump to a header lands it below the headers stacked over it */
+  scroll-margin-block-start: var(--md-sticky-top);
+}
+
 /* Level-1 headers carry a full-width rule in the theme hairline colour. */
 .mdview-content .mdview-h1 {
   font-size: 1.9em;

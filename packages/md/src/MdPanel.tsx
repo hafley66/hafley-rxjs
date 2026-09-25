@@ -517,6 +517,7 @@ export const MdPanel = SignalReact(function MdPanel({
     <div
       ref={panelRef}
       className="v2-panel mdview-root"
+      data-md-sticky-headers={appState.mdStickyHeaders ? "" : undefined}
       onKeyDown={(e) => {
         // Plain `b` toggles the explorer when the keystroke isn't headed for
         // an editable target (the tree's filter box, buttons, …).
