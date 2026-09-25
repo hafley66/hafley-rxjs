@@ -29,6 +29,7 @@
     "test:e2e": "vitest run --config vitest.e2e.config.ts"
   },
   "dependencies": {
+    "@hafley66/trace": "workspace:*",
     "@terrastruct/d2": "^0.1.33",
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",

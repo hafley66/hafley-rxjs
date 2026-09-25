@@ -2,7 +2,7 @@
 // canonical TreeTable) | rendered sections, split with react-resizable-panels
 // (AGENTS "Split panes"). All state lives in the signals module; signal reads
 // happen here at the top (SignalReact tracks them) and flow down as props.
-import { createContext, lazy, Suspense, useContext, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { createContext, lazy, Suspense, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import type { StreamdownProps } from "streamdown";
 import { SignalReact } from "@hafley66/signals/react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -29,6 +29,7 @@ import {
   loadMdDoc,
   reloadMdDoc,
   mdDocs,
+  mdOpenedAt,
   mdUi,
   setAllCollapsed,
   setLayoutFor,
@@ -42,6 +43,7 @@ import { setPendingFrag, takePendingFrag } from "./open.js";
 import { MdExplorer } from "./MdExplorer.js";
 import { useFsWatch } from "./0_watch.js";
 import { useProseWidth } from "./2_useProseWidth.js";
+import { CAT_COMMIT, CAT_PAINT, LOG, mdNow } from "./0_log.js";
 import { ProseWidthControl, ProseWidthHandle } from "./3_ProseWidthControl.js";
 import { isCodeRef } from "./lib/0_codeRef.js";
 import "./mdview.css";
@@ -310,6 +312,21 @@ export const MdPanel = SignalReact(function MdPanel({
   useEffect(() => {
     void loadMdDoc(path);
   }, [path]);
+  // One record per parsed document: open → first commit holding it, and → the frame after it
+  // (rAF then a task lands after that frame's paint).
+  const timedDoc = useRef<unknown>(null);
+  useLayoutEffect(() => {
+    if (!LOG.on || state?.status !== "ready" || timedDoc.current === state.document) return;
+    timedDoc.current = state.document;
+    const opened = mdOpenedAt.get(path);
+    if (opened === undefined) return;
+    const nodes = rootRef.current?.querySelectorAll("*").length ?? 0;
+    const sections = rootRef.current?.querySelectorAll(".mdview-sec").length ?? 0;
+    LOG.emit(CAT_COMMIT, "commit {path} {durationMs}ms", { path, durationMs: Math.round(mdNow() - opened), nodes, sections, bytes: state.text.length });
+    requestAnimationFrame(() => setTimeout(() => {
+      LOG.emit(CAT_PAINT, "paint {path} {durationMs}ms", { path, durationMs: Math.round(mdNow() - opened) });
+    }, 0));
+  }, [path, state]);
   useFsWatch(path, () => void reloadMdDoc(path));
   useEffect(() => {
     if (state?.status === "ready") initCollapsedForReadyDoc(path);

@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { MdPanel } from "./MdPanel.js";
 import { installMdviewHost, type MdviewHost } from "./ports.js";
+import { setMdLogEmit } from "./0_log.js";
 import { blockFoldsFor, loadPersistedMdUi, pathSignalFor } from "./signals.js";
 
 const HOST_STATE = { startFolded: false, explorerHidden: true, layout: null, layouts: {} };
@@ -573,6 +574,18 @@ it("a handled ⌘-click on a code ref opens it once and reaches no other handler
     escaped: [],
     selected: 0,
   });
+});
+
+it("logs read, parse, first commit and first paint of an opened document with durations", async () => {
+  const records: { category: string; path: unknown; ms: unknown }[] = [];
+  setMdLogEmit((category, _message, fields) => records.push({ category: category.join("."), path: fields.path, ms: typeof fields.durationMs }));
+  try {
+    await mount("/repo/docs/timed.md", LIST_DOC);
+    await expect.poll(() => records.some((record) => record.category === "md.paint")).toBe(true);
+  } finally {
+    setMdLogEmit(null);
+  }
+  expect(records).toEqual(["md.read", "md.parse", "md.commit", "md.paint"].map((category) => ({ category, path: "/repo/docs/timed.md", ms: "number" })));
 });
 
 const STICKY_DOC = (() => {

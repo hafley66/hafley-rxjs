@@ -14,6 +14,7 @@ import { MdDocumentIdentityProvider } from "./4_documentIdentity.js";
 
 export { openMarkdownPanel } from "./open.js";
 export { installMdviewHost, getMdviewHost } from "./ports.js";
+export { setMdLogEmit, type LogEmit as MdLogEmit } from "./0_log.js";
 export type { MdviewHost } from "./ports.js";
 export { DiagramLightbox, diagramSvgMarkup } from "./0_DiagramLightbox.js";
 export type { DiagramLightboxEntry } from "./0_DiagramLightbox.js";

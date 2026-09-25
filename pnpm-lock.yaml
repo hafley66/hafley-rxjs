@@ -1016,6 +1016,9 @@ importers:
 
   packages/md:
     dependencies:
+      '@hafley66/trace':
+        specifier: workspace:*
+        version: link:../trace
       '@terrastruct/d2':
         specifier: ^0.1.33
         version: 0.1.33

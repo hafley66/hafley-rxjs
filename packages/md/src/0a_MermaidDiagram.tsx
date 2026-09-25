@@ -2,6 +2,7 @@ import { useEffect, useState, type KeyboardEvent } from "react";
 import { DiagramLightbox, diagramSvgMarkup } from "./0_DiagramLightbox.js";
 import { renderMermaidSvg } from "./0a_mermaid.js";
 import { getMdviewHost } from "./ports.js";
+import { CAT_DIAGRAM, LOG, mdNow } from "./0_log.js";
 
 export function MermaidDiagram({ code, dark }: { code: string; dark: boolean }) {
   const host = getMdviewHost();
@@ -13,8 +14,10 @@ export function MermaidDiagram({ code, dark }: { code: string; dark: boolean }) 
 
   useEffect(() => {
     let disposed = false;
+    const started = mdNow();
     void renderMermaidSvg(code, dark)
       .then((rendered) => {
+        if (LOG.on) LOG.emit(CAT_DIAGRAM, "mermaid {durationMs}ms", { kind: "mermaid", durationMs: Math.round(mdNow() - started), sourceBytes: code.length, svgBytes: rendered.length });
         host.recordOperation("mdview.renderMermaid", { dark, sourceBytes: code.length, svgBytes: rendered.length });
         if (!disposed) {
           setError("");

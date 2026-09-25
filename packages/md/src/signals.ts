@@ -4,6 +4,7 @@
 // reads it; mutations go through the helpers so signal + pluginState stay in
 // sync no matter where they're toggled from.
 import { Signal, type Signal as SignalNode, type Signal$ } from "@hafley66/signals";
+import { CAT_PARSE, CAT_READ, LOG, mdNow } from "./0_log.js";
 import { getMdviewHost } from "./ports.js";
 import { allSectionIds, mdDocument, type MdDoc, type MdDocument } from "./model.js";
 import {
@@ -153,13 +154,26 @@ export type MdDocState =
 
 export const mdDocs: SignalNode<Record<string, MdDocState>> = Signal<Record<string, MdDocState>>({});
 
+/** When each path's current load began, so the panel can time open → commit → paint. */
+export const mdOpenedAt = new Map<string, number>();
+
+async function readAndParse(path: string): Promise<{ text: string; document: MdDocument }> {
+  const started = mdNow();
+  mdOpenedAt.set(path, started);
+  const text = await getMdviewHost().readText(path);
+  const read = mdNow();
+  if (LOG.on) LOG.emit(CAT_READ, "read {path} {durationMs}ms {bytes}B", { path, durationMs: Math.round(read - started), bytes: text.length });
+  const document = mdDocument(path, text);
+  if (LOG.on) LOG.emit(CAT_PARSE, "parse {path} {durationMs}ms", { path, durationMs: Math.round(mdNow() - read), bytes: text.length });
+  return { text, document };
+}
+
 export async function loadMdDoc(path: string): Promise<void> {
   const cur = mdDocs.$()[path];
   if (cur && cur.status !== "error") return;
   mdDocs.$({ ...mdDocs.$(), [path]: { status: "loading" } });
   try {
-    const text = await getMdviewHost().readText(path);
-    const document = mdDocument(path, text);
+    const { text, document } = await readAndParse(path);
     mdDocs.$({ ...mdDocs.$(), [path]: { status: "ready", text, doc: document.doc, document } });
   } catch (e) {
     mdDocs.$({ ...mdDocs.$(), [path]: { status: "error", error: String(e) } });
@@ -168,8 +182,7 @@ export async function loadMdDoc(path: string): Promise<void> {
 
 export async function reloadMdDoc(path: string): Promise<void> {
   try {
-    const text = await getMdviewHost().readText(path);
-    const document = mdDocument(path, text);
+    const { text, document } = await readAndParse(path);
     mdDocs.$({ ...mdDocs.$(), [path]: { status: "ready", text, doc: document.doc, document } });
   } catch (e) {
     mdDocs.$({ ...mdDocs.$(), [path]: { status: "error", error: String(e) } });

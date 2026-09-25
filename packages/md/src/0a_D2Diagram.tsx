@@ -2,6 +2,7 @@ import { useEffect, useState, type KeyboardEvent } from "react";
 import { DiagramLightbox, diagramSvgMarkup } from "./0_DiagramLightbox.js";
 import { renderD2 } from "./d2.js";
 import { getMdviewHost } from "./ports.js";
+import { CAT_DIAGRAM, LOG, mdNow } from "./0_log.js";
 
 export function D2Diagram({ code, dark }: { code: string; dark: boolean }) {
   const host = getMdviewHost();
@@ -13,10 +14,11 @@ export function D2Diagram({ code, dark }: { code: string; dark: boolean }) {
 
   useEffect(() => {
     let disposed = false;
-    const started = typeof performance === "undefined" ? Date.now() : performance.now();
+    const started = mdNow();
     void renderD2(code, dark)
       .then((rendered) => {
-        host.recordOperation("mdview.renderD2", { dark, sourceBytes: code.length, svgBytes: rendered.length, elapsedMs: Math.round((typeof performance === "undefined" ? Date.now() : performance.now()) - started) });
+        if (LOG.on) LOG.emit(CAT_DIAGRAM, "d2 {durationMs}ms", { kind: "d2", durationMs: Math.round(mdNow() - started), sourceBytes: code.length, svgBytes: rendered.length });
+        host.recordOperation("mdview.renderD2", { dark, sourceBytes: code.length, svgBytes: rendered.length, elapsedMs: Math.round(mdNow() - started) });
         if (!disposed) {
           setError("");
           setSvg(rendered);
