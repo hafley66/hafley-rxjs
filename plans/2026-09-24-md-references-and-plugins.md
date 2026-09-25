@@ -171,7 +171,7 @@ function linkPlugin(): MdPlugin       // link: `#id` -> doc.jumpTo, *.md -> setP
 function imagePlugin(): MdPlugin      // image: remote/data/blob as written, local -> host.readImage (data URL)
 // subpath "@hafley66/md/plugins/marbles", optional peer @hafley66/signal-marbles, not in the defaults
 function marblesPlugin(): MdPlugin     // fence ["marbles"], lazy component
-// subpath "@hafley66/md/plugins/fs-tree", optional peer @hafley66/grid, not in the defaults
+// subpath "@hafley66/md/plugins/fs-tree" (signal-grid FsTreeView, file-paths-to-tree), not in the defaults
 function fsTreePlugin(): MdPlugin      // fence ["tree", "ls", "fs"], lazy component
 const defaultMdPlugins: readonly MdPlugin[] = [
   mermaidPlugin(), d2Plugin(), tablePlugin(), codePlugin(), codeRefPlugin(), linkPlugin(), imagePlugin(),
@@ -298,37 +298,114 @@ The ⌘-held panel mark (`data-md-meta`, which reveals `code[data-md-ref]` as a 
 
 ### `fsTreePlugin()` (file tree fence)
 
-| factory | slot | renderer | parser |
-| --- | --- | --- | --- |
-| `fsTreePlugin()` | fence `tree`, `ls`, `fs` | `@hafley66/signal-grid` tree mode (`subRows`), lazy `1_FsTreeFence.tsx` | `src/lib/0_fsTree.ts` `parseFsTree` |
+| factory | slot | entry | renderer | parser |
+| --- | --- | --- | --- | --- |
+| `fsTreePlugin()` | fence `tree`, `ls`, `fs` | subpath `@hafley66/md/plugins/fs-tree` only (`src/plugins/fs-tree.ts`), absent from `plugins/index.ts` and `defaultMdPlugins` | `FsTreeView` from `@hafley66/signal-grid/react`, lazy `1_FsTreeFence.tsx` | `src/lib/0_fsTree.ts` `parseFsTree` |
 
 ```ts
+// md: packages/md/src/lib/0_fsTree.ts
 type FsTreeFormat = "tree" | "ls" | "find" | "indent"          // detected from the body, not the fence language
 type FsTreeNode = { name: string; path: string; kind: "dir" | "file"; note?: string; children: readonly FsTreeNode[] }
 type FsTree = { format: FsTreeFormat; roots: readonly FsTreeNode[] }
-function parseFsTree(text: string): FsTree
+function parseFsTree(text: string): FsTree                     // FsTreeNode is structurally FsTreeRow
+
+// signal-grid: packages/signal-grid/src/22_tree.ts (exported from "@hafley66/signal-grid")
+interface TreeEntry { label: string; kind?: string; ext?: string; note?: string }   // kind/ext -> data-kind/data-ext
+interface TreeSpec<TRow> { id(row): RowId; children(row): readonly TRow[] | undefined; entry(row): TreeEntry }
+function treeEntryNode(entry: TreeEntry): HTMLElement          // span.sg-tree-entry > .sg-tree-icon .sg-tree-label .sg-tree-note
+function expandOnBranchClick<TRow>(): GridEpic<TRow>           // plain click on a branch cell flips expanded
+function treeGrid<TRow>(id: string, rows: readonly TRow[], spec: TreeSpec<TRow>): Grid<TRow>
+                                                               // one headerless column, rowMeasure, defaultEpics + expandOnBranchClick
+interface FsTreeRow { name: string; path: string; kind: "dir" | "file"; note?: string; children: readonly FsTreeRow[] }
+const fsTreeSpec: TreeSpec<FsTreeRow>                          // the file preset: id = path, ext from name
+
+// signal-grid: packages/signal-grid/src/react/1_TreeView.tsx (exported from "@hafley66/signal-grid/react")
+function TreeView<TRow>(props: { rows: readonly TRow[]; spec: TreeSpec<TRow>; className?: string }): ReactElement
+function FsTreeView(props: { rows: readonly FsTreeRow[]; className?: string }): ReactElement   // TreeView + fsTreeSpec
 ```
 
-- `path` is the grid row id; a repeated path merges into one node. `ls -R` and `find` drop `.` segments; a
-  `tree` root line (`.`) stays a node.
-- `kind: "dir"` = has children or written with a trailing `/`. `note` = text after `  #` (`tree`, indented).
-- Folders start collapsed; the expander glyph and a click on a folder's label flip one.
-- Icon by extension: `data-ext` on the entry; colours, sizes, clip-path icon shapes and row height are CSS
-  custom properties (`--md-fs-*`, `src/plugins/1_fsTree.css`). Row height is measured (`rowMeasure`), so
-  `--md-fs-row-h` is the height the grid sums.
-- Not in `defaultMdPlugins`: `tree`/`ls` fences in existing docs keep rendering as code until a host opts in,
-  and an `ls` fence can hold a command line instead of its output.
+- Timeline: `TreeView` builds one grid per mount (spec read once); a new `rows` array is written into
+  `grid.rows`, so open folders stay open while a fence streams. Grid closes one microtask after unmount unless
+  StrictMode remounts it.
+- `path` is the row id; a repeated path merges into one node. `ls -R` and `find` drop `.` segments; a `tree`
+  root line (`.`) stays a node. `kind: "dir"` = has children or written with a trailing `/` (or an `ls -R`
+  header). `note` = text after `  #` (`tree`, indented).
+- Styling: `@hafley66/signal-grid/tree.css`, layer `signal-grid.tree` after `signal-grid.theme`. Sizes, icon
+  clip-path shapes, branch colours: `--sg-tree-*`; extension colours: `--sg-fs-ext-*`; surface: the theme's
+  `--sg-bg`/`--sg-fg`/`--sg-line`/`--sg-hover-bg`. md's `src/plugins/1_fsTree.css` only maps the panel
+  colours (`--md-fs-bg`/`--md-fs-fg` override, else `--panel-bg`/`--panel-fg`) onto `--sg-*`.
+- `--sg-tree-row-h` (24px) = `TREE_ROW_H`: rows are measured, and the tree's block size is
+  `min(--sg-tree-max-h, --sg-total-h + 2px)`.
+- Bundle reach (`dist/`, walked over static and dynamic relative imports after `pnpm build`):
 
-Renderer candidates:
+| entry | files reached | fs-tree files | `signal-grid/tree.css` | `file-paths-to-tree` | `@hafley66/grid` | `@tanstack/*` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `dist/index.js` | 52 | 0 | 0 | 0 | 0 | 0 |
+| `dist/plugins/index.js` | 40 | 0 | 0 | 0 | 0 | 0 |
+| `dist/plugins/fs-tree.js` | 4 | 4 | 1 | 1 | 0 | 0 |
 
-| candidate | where | tree + expand | colours | in md deps | picked |
-| --- | --- | --- | --- | --- | --- |
-| `@hafley66/signal-grid` (`subRows`, `expanded`, expander slot) | in-repo | yes | `--sg-*` custom properties | peer dep already (tables) | yes |
-| `@hafley66/grid` `GridTree` | in-repo | yes | hex literals inline (`EXT_COLOR`, box-shadow) | no; adds TanStack table + virtual | no |
-| host `FileTree` port (`ports.ts`, instant) | host | yes | host CSS | port | no: lists a real directory (`listCommand`) |
-| `react-arborist` | npm | yes | inline styles + props | no | no |
-| `@headless-tree/react` | npm | yes (headless) | caller CSS | no | no |
-| `react-complex-tree` | npm | yes | CSS vars | no | no |
+Parser candidates (npm, each run against the unicode `tree`, ASCII `tree`, indented, `find`, and a real
+`ls -R` sample; "last publish" = publish date of the current version):
+
+| package | version | last publish | license | formats nested correctly (run) | runtime deps | picked |
+| --- | --- | --- | --- | --- | --- | --- |
+| `file-paths-to-tree` | 4.0.0 | 2024-08-08 | MIT | find | none | yes: `find`, and `ls -R` after its sections become paths |
+| `path-list-to-tree` | 1.1.1 | 2018-04-25 | MIT | find | none | no |
+| `treeify-paths` | 2.0.1 | 2023-08-08 | MIT | find (dir nodes have `name: ""`) | none | no |
+| `paths-tree-unist` | 1.0.2 | 2021-06-30 | MIT | find | immer, unist-util-* (4) | no |
+| `tree-parse` | 0.0.7 | 2021-05-12 | Apache-2.0 | tree-unicode only without a 4+ space run (a `# note` column breaks depth); no ASCII | none | no |
+| `ascii-tree-parser` | 1.1.0 | 2026-07-16 | MIT | indent, 4-space multiples only (2-space input throws) | none | no |
+| `text-to-tree` | 0.1.2 | 2018-03-16 | UNLICENSED | indent (markers and notes stay in labels) | none | no |
+| `path-builder` | 1.0.3 | 2015-07-10 | MIT | indent (ancestor-index keys) | none | no |
+| `indent-tree` | 1.0.2 | 2018-07-04 | MIT | none (misplaces siblings) | none | no |
+| `md-list-tree-parser` | 1.3.3 | 2016-11-10 | MIT | none (`- [title](link)` lists only) | fs-extra | no |
+| `tree-to-json` | 0.1.0 | 2018-01-27 | ISC | none (`npm ls` format; crashed) | none | no |
+| `tree-parser`, `lsr`, `ls-r` | - | - | - | n/a: read the real filesystem | - | no |
+| `treeify`, `ascii-tree`, `paths-to-tree` | - | - | - | n/a: renderers | - | no |
+
+Not on the registry: as-tree, text-tree-parser, directory-tree-parser, parse-tree-output, treeparse,
+file-tree-parser, string-to-file-tree, tree-text-parser, indented-text-parser, outline-parser.
+No package parsed `ls -R` text or ASCII `tree` output. Own code (`0_fsTree.ts`) covers: format detection,
+`tree` connectors (unicode and ASCII, `# note`, summary line: `parseTree`), indented lists (any width, list
+markers, notes: `parseIndent`), `ls -R` sections to paths (`parseLs`), and dir marking. Nesting of path lists
+is `file-paths-to-tree` (`byPath`).
+
+Tree renderer inventory (2026-09-25; `packages/` = hafley-rxjs, `instant/src/` = ~/projects/instant):
+
+| file:line | component | row type | renderer | data source |
+| --- | --- | --- | --- | --- |
+| packages/signal-grid/src/react/1_TreeView.tsx:19 | `TreeView` / `FsTreeView` (:54) | `TRow` via `TreeSpec` / `FsTreeRow` | signal-grid tree mode (`treeGrid`, 22_tree.ts:64) | props `rows` |
+| packages/signal-grid/src/10_render.ts:183 | `render` / `GridView` (react/index.tsx) | `TRow`, tree mode = `GridConfig.subRows` (8_grid.ts:147) | signal-grid DOM renderer | `grid({ rows, subRows })` |
+| packages/md/src/plugins/1_FsTreeFence.tsx | `FsTreeFence` | `FsTreeNode` | signal-grid `FsTreeView` | fence text via `parseFsTree` |
+| packages/grid/src/12_treeTable.tsx:52 | `TreeTable` | `TData extends RowData` | @hafley66/grid `useGrid` (TanStack) + `useExternalVirtualizer` | `createGrid` rows signal + `getSubRows` |
+| packages/grid/src/6_tree.tsx:51 | `GridTree` | `TData & TreeLike` | @hafley66/grid TreeTable | `Grid<TData>` prop |
+| packages/report-shell/src/components/FsTree.tsx:101 | `FsTree` (`fsColumns` :26) | `FsRow` (:9) | @hafley66/grid TreeTable | `rows: Signal<FsRow[]>`, lazy `getChildren` |
+| packages/report-shell/src/components/PivotStack.tsx:48 | `PivotStack` | `NavRow` | @hafley66/grid TreeTable per pivot level | `baseGrid.pivot(...)` chain |
+| packages/vitest-telemetry/src/report-app/components/Nav.tsx:53 | `Nav` | `NavNode` | @hafley66/grid TreeTable | telemetry events, `buildProcessNav` |
+| packages/boop-adapters/src/report-app/components/App.tsx:55 | `App` nav | `NetworkNavRow` | @hafley66/grid TreeTable | `projectAgentNetwork` -> `toNavRow` |
+| packages/marbler/src/2_Marbler.tsx:53 | `MarblerView` | `MarbleEvent` | @hafley66/grid `useGrid` + hand-written rows | `createMarbler` model |
+| packages/md/src/MdExplorer.tsx:66 | `MdExplorer` | `MdviewFsEntry` | host port `FileTree` (ports.ts:123) | `host.listDir` (list_dir) |
+| packages/md/src/MdPanel.tsx:173 | `SectionView` | `MdSection` | hand-written recursive JSX | parsed markdown `doc.tree` |
+| packages/md/src/MdPanel.tsx:99 | `FoldableList` | hast `ul`/`ol` | hand-written JSX (Streamdown overrides) | parsed markdown `folds.lists` |
+| instant/src/plugins/files/1_FileTree.tsx:94 | `FileTree` | `GridRow` (:14) | @hafley66/grid `GridTree` | `rootEntries` + IPC `list_dir`, `read_text` headings |
+| instant/src/plugins/files/2_FileExplorer.tsx:23 | `FileExplorer` | `FsEntry` | instant FileTree | IPC list_dir |
+| instant/src/plugins/files/4_FileSearchTree.tsx:30 | `FileSearchTree` | `FsEntry` | instant FileTree / instant TreeTable | IPC list_dir + search |
+| instant/src/treetable.tsx:124 | `TreeTable` (instant) | `T` | TanStack react-table + react-virtual | props `data` + `getSubRows` |
+| instant/src/tablepanels.tsx:1090 | `WorktreesPanelV2` | `WtTreeRow` (:292) | instant TreeTable | `wtTreeRows()` (worktrees.ts:814) |
+| instant/src/worktrees.ts:1183 | `renderTree` (v1) | `WorktreeRow` -> `OrgNode`/`CloneNode` | hand-written imperative DOM | `store.worktrees` |
+| instant/src/tablepanels.tsx:1026 | `FavoritesPanelV2` | `FavTreeRow` (:870) | instant TreeTable | `favTreeRows()` (favorites.ts:396) |
+| instant/src/boopPanel.tsx:153 | `BoopPanelV2` | `BoopRow` (:27) | instant TreeTable | IPC `boop_session_graph` |
+| instant/src/1_boopSearch.tsx:152 | `BoopSearchPanel` | `SearchRow` | instant TreeTable | IPC `boop_search` |
+| instant/src/refChoicesPanel.tsx:111 | `RefChoicesPanel` | `ChoiceRow` (:9) | instant TreeTable | props paths + IPC `list_dir` |
+| instant/src/0_NavMenuView.tsx:103 | `NavLevel` | `NavRowView` | hand-written React flyout submenus | `openNavMenu` entries |
+
+Follow-ups (not in this change): move onto `TreeView` / `FsTreeView`:
+
+| site | today |
+| --- | --- |
+| packages/report-shell/src/components/FsTree.tsx:101 (`FsTree`; size/age columns :26, lazy `getChildren`) | @hafley66/grid TreeTable |
+| packages/md/src/MdExplorer.tsx:66 (`host.FileTree`; port type packages/md/src/ports.ts:28, :123) | host port |
+| instant/src/plugins/files/1_FileTree.tsx:94 (`FileTree`; installed into the md host at instant/src/main.ts:316) | @hafley66/grid `GridTree` |
 
 Out of scope here: Code Hike style animated steps between successive trees in one fence. That shares the
 step model of `stepsPlugin()` (owned elsewhere); a steps fence can hold successive `tree` bodies and animate

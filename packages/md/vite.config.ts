@@ -18,6 +18,7 @@ export default defineConfig({
         "plugins/index": resolve(import.meta.dirname, "src/plugins/index.ts"),
         "plugins/marbles": resolve(import.meta.dirname, "src/plugins/marbles.ts"),
         "plugins/steps": resolve(import.meta.dirname, "src/plugins/steps.ts"),
+        "plugins/fs-tree": resolve(import.meta.dirname, "src/plugins/fs-tree.ts"),
       },
       formats: ["es"],
       fileName: (_format, name) => `${name}.js`,

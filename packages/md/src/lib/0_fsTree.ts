@@ -1,5 +1,6 @@
 // `tree` output, `ls -R` sections, `find` paths, and indented path lists -> one model.
 // The tree need not exist on disk: the model is only what the text says.
+import { filePathsToTree, type Node as PathNode } from "file-paths-to-tree";
 
 export type FsTreeFormat = "tree" | "ls" | "find" | "indent";
 
@@ -73,19 +74,17 @@ function byColumn(entries: readonly { col: number; text: string }[]): Draft[] {
   return roots;
 }
 
-/** Path-positioned entries: each segment list is walked from the roots. */
+/** Path-positioned entries, nested and merged by `file-paths-to-tree`. A path is a dir when a
+ * later path runs through it or the listing marked it (`name/`, an `ls -R` header). */
 function byPath(paths: readonly { segments: readonly string[]; dir: boolean }[]): Draft[] {
-  const roots: Draft[] = [];
-  for (const { segments, dir } of paths) {
-    let siblings = roots;
-    let parentPath: string | undefined;
-    segments.forEach((segment, index) => {
-      const node = childOf(siblings, parentPath, segment, dir || index < segments.length - 1);
-      siblings = node.children;
-      parentPath = node.path;
-    });
-  }
-  return roots;
+  const dirs = new Set(paths.filter((it) => it.dir).map((it) => it.segments.join("/")));
+  const draft = (node: PathNode): Draft => ({
+    name: node.name,
+    path: node.path,
+    dir: dirs.has(node.path),
+    children: node.children.map(draft),
+  });
+  return filePathsToTree(paths.map((it) => it.segments.join("/"))).map(draft);
 }
 
 /** `./src/lib/` -> `["src", "lib"]`. `.` and empty segments are structure, not names. */

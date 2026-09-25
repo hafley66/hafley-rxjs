@@ -1022,6 +1022,9 @@ importers:
       '@terrastruct/d2':
         specifier: ^0.1.33
         version: 0.1.33
+      file-paths-to-tree:
+        specifier: ^4.0.0
+        version: 4.0.0
       remark-gfm:
         specifier: ^4.0.1
         version: 4.0.1
@@ -5621,6 +5624,10 @@ packages:
 
   fflate@0.8.3:
     resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
+
+  file-paths-to-tree@4.0.0:
+    resolution: {integrity: sha512-a2yjlekFrJPgH/J08ZzAjl7MRkcVQUiZdPBNPVty1Wxwyxx9c4GTgNHUej8lncfdYtNiMSQUI8zjobng7q6PsA==}
+    engines: {node: '>=20'}
 
   fill-range@7.1.1:
     resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
@@ -12082,6 +12089,8 @@ snapshots:
       picomatch: 4.0.5
 
   fflate@0.8.3: {}
+
+  file-paths-to-tree@4.0.0: {}
 
   fill-range@7.1.1:
     dependencies:

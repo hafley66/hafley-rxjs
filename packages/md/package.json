@@ -26,6 +26,10 @@
       "types": "./dist/plugins/steps.d.ts",
       "import": "./dist/plugins/steps.js"
     },
+    "./plugins/fs-tree": {
+      "types": "./dist/plugins/fs-tree.d.ts",
+      "import": "./dist/plugins/fs-tree.js"
+    },
     "./style.css": {
       "types": "./dist/style.css.d.ts",
       "default": "./dist/style.css"
@@ -43,6 +47,7 @@
   "dependencies": {
     "@hafley66/trace": "workspace:*",
     "@terrastruct/d2": "^0.1.33",
+    "file-paths-to-tree": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",
     "unified": "^11.0.5"
@@ -54,19 +59,19 @@
     "@hafley66/grapht-render-cytoscape": ">=0.1.0",
     "@hafley66/mmd": ">=0.1.0",
     "@hafley66/signal-grid": ">=0.1.0",
+    "@hafley66/signal-marbles": ">=0.0.1",
     "@hafley66/signals": ">=0.1.0",
+    "@hafley66/xdom": ">=0.1.0",
     "@streamdown/code": ">=1.1.1",
+    "codehike": ">=1.1.0",
+    "diff": ">=9.0.0",
     "dockview": ">=6.6.1",
     "mermaid": ">=11.16.0",
     "react": ">=19.2.7",
     "react-dom": ">=19.2.7",
     "react-resizable-panels": ">=3.0.6 <4",
-    "streamdown": ">=2.5.0",
-    "@hafley66/xdom": ">=0.1.0",
     "rxjs": ">=7.8.0",
-    "@hafley66/signal-marbles": ">=0.0.1",
-    "codehike": ">=1.1.0",
-    "diff": ">=9.0.0"
+    "streamdown": ">=2.5.0"
   },
   "peerDependenciesMeta": {
     "@hafley66/signal-marbles": {
@@ -86,9 +91,13 @@
     "@hafley66/grapht-render-cytoscape": "workspace:*",
     "@hafley66/mmd": "workspace:*",
     "@hafley66/signal-grid": "workspace:*",
+    "@hafley66/signal-marbles": "workspace:*",
     "@hafley66/signals": "workspace:*",
     "@hafley66/vitest-playwright": "workspace:*",
     "@hafley66/vitest-telemetry": "workspace:*",
+    "@hafley66/xdom": "workspace:*",
+    "@mdx-js/mdx": "^3.1.1",
+    "@shikijs/magic-move": "^4.4.3",
     "@streamdown/code": "^1.1.1",
     "@types/mdast": "^4.0.4",
     "@types/react": "^19.2.2",
@@ -96,25 +105,21 @@
     "@vitejs/plugin-react": "^6.0.5",
     "@vitest/browser": "4.1.10",
     "@vitest/browser-playwright": "4.1.10",
+    "codehike": "^1.1.0",
+    "diff": "^9.0.0",
     "dockview": "^6.6.1",
     "mermaid": "^11.16.0",
     "playwright": "^1.62.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-resizable-panels": "^3.0.6",
+    "rxjs": "^7.8.2",
+    "shiki": "^4.4.3",
     "streamdown": "^2.5.0",
     "typescript": "7.0.2",
     "vite": "^8.2.1",
     "vite-plugin-dts": "^5.0.3",
-    "vitest": "^4.1.10",
-    "@hafley66/xdom": "workspace:*",
-    "rxjs": "^7.8.2",
-    "@hafley66/signal-marbles": "workspace:*",
-    "@mdx-js/mdx": "^3.1.1",
-    "@shikijs/magic-move": "^4.4.3",
-    "codehike": "^1.1.0",
-    "diff": "^9.0.0",
-    "shiki": "^4.4.3"
+    "vitest": "^4.1.10"
   },
   "keywords": [
     "markdown",

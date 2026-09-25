@@ -2,7 +2,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import StreamdownBody from "../0_Streamdown.js";
-import { fsTreePlugin } from "./index.js";
+import { fsTreePlugin } from "./fs-tree.js";
 import { MdPluginContext } from "./4_MdPluginContext.js";
 import { installMdviewHost, type MdviewHost } from "../ports.js";
 import "../mdview.css";
@@ -59,14 +59,14 @@ const scroller = (): HTMLElement => host.querySelector<HTMLElement>(".mdview-fs-
 
 /** One line per rendered row: depth, open state, kind, extension, label, note. */
 const rows = () => [...host.querySelectorAll<HTMLElement>(".mdview-fs-tree .sg-row")].map((row) => {
-  const entry = row.querySelector<HTMLElement>(".mdview-fs-entry");
+  const entry = row.querySelector<HTMLElement>(".sg-tree-entry");
   return [
     row.style.getPropertyValue("--sg-depth") || "0",
     row.getAttribute("aria-expanded") ?? "-",
     entry?.dataset.kind,
     entry?.dataset.ext || "-",
-    entry?.querySelector(".mdview-fs-name")?.textContent,
-    entry?.querySelector(".mdview-fs-note")?.textContent ?? "",
+    entry?.querySelector(".sg-tree-label")?.textContent,
+    entry?.querySelector(".sg-tree-note")?.textContent ?? "",
   ].join(" ").trim();
 });
 
@@ -76,10 +76,10 @@ it("renders a ```tree fence as a collapsed tree whose folders open from the glyp
   await act(async () => rowOf(".").querySelector<HTMLElement>(".sg-expander")!.click());
   await vi.waitFor(() => expect(rows()).toHaveLength(4));
   const rootOpen = rows();
-  await act(async () => rowOf("./src").querySelector<HTMLElement>(".mdview-fs-name")!.click());
+  await act(async () => rowOf("./src").querySelector<HTMLElement>(".sg-tree-label")!.click());
   await vi.waitFor(() => expect(rows()).toHaveLength(6));
   const srcOpen = rows();
-  await act(async () => rowOf("./src").querySelector<HTMLElement>(".mdview-fs-name")!.click());
+  await act(async () => rowOf("./src").querySelector<HTMLElement>(".sg-tree-label")!.click());
   await vi.waitFor(() => expect(rows()).toHaveLength(4));
   expect({
     codeBlocks: host.querySelectorAll('[data-streamdown="code-block"]').length,
@@ -87,7 +87,7 @@ it("renders a ```tree fence as a collapsed tree whose folders open from the glyp
     rootOpen,
     srcOpen,
     srcClosed: rows(),
-    gridHeight: host.querySelector(".mdview-fs-tree-grid")!.getBoundingClientRect().height,
+    gridHeight: host.querySelector(".mdview-fs-tree .sg-tree")!.getBoundingClientRect().height,
     rowHeights: [...host.querySelectorAll<HTMLElement>(".mdview-fs-tree .sg-row")].map((row) => row.getBoundingClientRect().height),
     overflows: scroller().scrollHeight > scroller().clientHeight,
     headerShown: host.querySelector<HTMLElement>(".mdview-fs-tree .sg-head")?.offsetHeight ?? 0,
@@ -97,7 +97,7 @@ it("renders a ```tree fence as a collapsed tree whose folders open from the glyp
       "collapsed": [
         "0 false dir - .",
       ],
-      "gridHeight": 100,
+      "gridHeight": 98,
       "headerShown": 0,
       "overflows": false,
       "rootOpen": [
