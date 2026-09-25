@@ -28,9 +28,9 @@ by `--md-section-indent`, so guides stack.
 
 | # | item | where |
 | --- | --- | --- |
-| 1 | explorer folders have no expand arrows | instant `plugins/files/1_FileTree.tsx` (grid tree) |
-| 2 | "fold on open" is bare text; make a real toggle or move it | md `MdPanel.tsx` act-bar |
-| 3 | file name shown twice (tab + toolbar); show once | md act-bar `.spy-title` |
+| 1 | explorer folders have no expand arrows | `instant/src/plugins/files/1_FileTree.tsx` (grid tree) |
+| 2 | "fold on open" is bare text; make a real toggle or move it | `packages/md/src/MdPanel.tsx` act-bar |
+| 3 | file name shown twice (tab + toolbar); show once | `packages/md/src/MdPanel.tsx` act-bar `.spy-title` |
 | 4 | tab title hover popover; right-click menu: copy path, copy relative path, reveal, open external | instant dock tab |
 | 5 | heading = box, square left, pill right | md CSS |
 | 6 | one rail; headings sit flush on it (no stacked guides, no indent) | md CSS + section markup |
