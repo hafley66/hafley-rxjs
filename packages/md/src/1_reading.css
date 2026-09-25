@@ -35,7 +35,9 @@
   --md-guide-inset: 0.3em;
   /* Theme hairline (instant's --frame), with a text-derived fallback. */
   --md-line: var(--frame, color-mix(in srgb, currentColor 18%, transparent));
-  padding: 4px 8px 12px;
+  --md-pad-end: 12px;
+  padding: 4px 8px var(--md-pad-end);
+  container-type: size;
   min-width: 0;
   scrollbar-gutter: stable;
 }
@@ -468,24 +470,35 @@
 .mdview-width-controls label { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; }
 .mdview-width-controls input[type="number"] { width: 6rem; }
 .mdview-width-controls input[type="range"] { min-width: 0; flex: 1; }
+/* The reading column's left edge, as a zero-height strip pinned to the top of
+   the scroller; the handle hangs from it through the visible height. */
 .mdview-prose-ruler {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 3;
   width: min(100%, var(--md-prose-width));
   margin-inline: auto;
-  height: 12px;
-  position: relative;
-  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  height: 0;
 }
 .mdview-prose-handle {
   position: absolute;
-  right: 0;
-  top: -6px;
-  width: 12px;
-  height: 16px;
+  inset-inline-start: -12px;
+  inset-block-start: 0;
+  width: 10px;
+  height: calc(100cqb + var(--md-pad-end));
   cursor: ew-resize;
   touch-action: none;
-  border-inline: 2px solid color-mix(in srgb, currentColor 35%, transparent);
   border-radius: 2px;
 }
 .mdview-prose-handle:is(:hover, :focus-visible, .dragging) {
-  background: color-mix(in srgb, currentColor 18%, transparent);
+  background: color-mix(in srgb, currentColor 12%, transparent);
 }
+/* The margin the drag will leave, while dragging. */
+.mdview-prose-handle.dragging::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(100% + 1px);
+  border-inline-start: 1px dotted color-mix(in srgb, currentColor 60%, transparent);
+}
+.mdview-prose-ruler + .mdview-sec > .mdview-head { margin-block-start: 0; }

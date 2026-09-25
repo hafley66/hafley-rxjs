@@ -487,6 +487,53 @@ it("⌘-click on inline code that names a file emits the token and the document 
   });
 });
 
+it("starts the first heading at the content's top padding, draws no rule across the top, and resizes the reading column from its left edge", async () => {
+  host.style.height = "600px";
+  host.style.display = "flex";
+  host.style.flexDirection = "column";
+  const path = "/repo/docs/top.md";
+  await mount(path, LAYOUT_DOC);
+  const content = host.querySelector<HTMLElement>(".mdview-content")!;
+  const firstHead = host.querySelector<HTMLElement>(".mdview-head")!;
+  const column = host.querySelector<HTMLElement>(".mdview-content > .mdview-sec")!;
+  const handle = host.querySelector<HTMLElement>(".mdview-prose-handle")!;
+  const ruledAcrossTop = [...content.querySelectorAll<HTMLElement>("*")].filter((element) => {
+    const box = element.getBoundingClientRect();
+    return box.top < firstHead.getBoundingClientRect().top && box.width > 100 && getComputedStyle(element).borderTopStyle !== "none";
+  }).map((element) => element.className);
+  const handleBox = handle.getBoundingClientRect();
+  const columnLeft = column.getBoundingClientRect().left;
+  const widthBefore = content.style.getPropertyValue("--md-prose-width");
+  const x = handleBox.left + handleBox.width / 2;
+  const y = handleBox.top + 200;
+  // A synthetic pointer has no active pointer id to capture.
+  Object.assign(handle, { setPointerCapture: () => undefined, releasePointerCapture: () => undefined });
+  handle.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, clientX: x, clientY: y, pointerId: 7 }));
+  handle.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: x - 50, clientY: y, pointerId: 7 }));
+  const guide = getComputedStyle(handle, "::after");
+  const guideWhileDragging = { style: guide.borderInlineStartStyle, reachesBottom: handle.getBoundingClientRect().bottom >= content.getBoundingClientRect().bottom - 1 };
+  await act(async () => {
+    handle.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, clientX: x - 50, clientY: y, pointerId: 7 }));
+  });
+  expect({
+    headGap: Math.round(firstHead.getBoundingClientRect().top - content.getBoundingClientRect().top),
+    ruledAcrossTop,
+    handleOnColumnEdge: Math.abs(x - columnLeft) <= 8,
+    handleBottomGap: Math.round(content.getBoundingClientRect().bottom - handleBox.bottom),
+    guideWhileDragging,
+    guideAfter: getComputedStyle(handle, "::after").borderInlineStartStyle,
+    width: [widthBefore, content.style.getPropertyValue("--md-prose-width")],
+  }).toEqual({
+    headGap: 4,
+    ruledAcrossTop: [],
+    handleOnColumnEdge: true,
+    handleBottomGap: 0,
+    guideWhileDragging: { style: "dotted", reachesBottom: true },
+    guideAfter: "none",
+    width: ["900px", "1000px"],
+  });
+});
+
 it("a handled ⌘-click on a code ref opens it once and reaches no other handler, in a table cell or a paragraph", async () => {
   const path = "/repo/docs/table-refs.md";
   OPENED_REFS.length = 0;

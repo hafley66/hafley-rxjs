@@ -130,10 +130,11 @@ export function ProseWidthHandle({ pid, zoom = 1, className }: ProseWidthControl
     return gutter(element, proseWidthSignalFor(pid), {
       axis: "x",
       commit: "release",
-      // The ruler is centered: moving its right edge by one CSS pixel changes
-      // both the left and right margins, so the stored width changes by two.
+      // The column is centered and the handle is its left edge: one CSS pixel
+      // leftward moves both margins, so the width grows by two.
       scale: zoom,
       multiplier: 2,
+      invert: true,
     })
   }, [model.setWidth, pid, zoom])
 
