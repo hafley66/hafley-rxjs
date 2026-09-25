@@ -1,4 +1,4 @@
-# md: batched references and optional viz plugins
+# md: batched references and plugins
 
 Issues: `md-reference-provider`, `md-optional-viz-plugins`, `grapht-semantic-css-theming` (hafley-rxjs),
 `turn-hover-highlights-square` (instant).
@@ -89,20 +89,183 @@ document root per `docPath` (its dir, git toplevel, worktrees). Turn refs (`#202
 boop-store. md stays free of all of it; another host (VS Code webview, docs site) passes its own resolver
 or none. No resolver means every span renders plain.
 
-## 2. Optional viz plugins
+## 2. Plugins
 
-Each plugin is an export of `@hafley66/md/plugins/<name>`, backed by an optional peer dependency and a
-dynamic `import()` that runs only when a fence or component of its kind renders. A missing peer renders
-the fence as plain code.
+One format for everything md renders specially. A plugin is a value: a factory call returns an object, the
+host imports the factories and passes an array. Order is precedence. Same shape as vite/rollup plugins and
+eslint flat config: no string ids, no lookup table, no second registry.
 
-| plugin | fence / trigger | library | status |
-| --- | --- | --- | --- |
-| marbles | ```` ```marbles ```` | `@hafley66/marbler`, `@hafley66/signal-marbles` | in-repo |
-| code over time | ```` ```steps ```` or a fence of stacked `diff` patches | `shiki-magic-move` (animates token moves between code states), `diff` (jsdiff `applyPatch` turns patches into states) | npm |
-| scrollycoding | MDX `<Scrollycoding>` | Code Hike (`codehike`) | npm |
-| highlighting | every code fence | `shiki` (Streamdown's `@streamdown/code` already carries it) | present |
-| MDX | `.mdx` documents | `@mdx-js/mdx` `evaluate` | npm |
-| state machines | ```` ```xstate ```` | `xstate` + `@xstate/graph` for the graph, drawn and animated by grapht | npm + in-repo |
+```ts
+import { mermaidPlugin, d2Plugin, tablePlugin, codePlugin, commandPlugin } from "@hafley66/md/plugins"
+
+installMdviewHost({
+  ...host,
+  mdPlugins: [
+    commandPlugin({ match: "^(ts|tsx|json)$", command: "prettier --print-width $WIDTH ...", as: "replace" }),
+    mermaidPlugin(), d2Plugin(), tablePlugin(), codePlugin(),
+  ],
+  runFenceCommand: (request) => ipc("run_fence_command", request), // cold Observable
+})
+```
+
+The reference provider (section 1) stays a host port: it supplies data to md's inline renderer and draws
+nothing. Inline slots (`inlineCode`, `a`, `img` in `MdPanel.tsx`) stay outside the plugin array in phase 1.
+
+### Type signatures
+
+```ts
+// packages/md/src/plugins/0_types.ts
+type MdFenceProps = { code: string; language: string; meta?: string; isIncomplete: boolean; dark: boolean }
+type MdTableProps = ComponentProps<"table"> & { node?: MdTableNode; tableSectionId?: string; tableOrdinal?: number }
+
+// JSON-serializable: a settings file holds a list of these
+type MdFenceCommand = {
+  match: string              // RegExp source over the fence language (`ts`, `rust`, ...)
+  command: string            // opaque to md; the host expands $WIDTH / $LANG / $1
+  as: "replace" | "annotate" // stdout replaces the fence body, or renders as a `text` fence under it
+}
+
+// one object type; each optional slot is a capability. `name` is for diagnostics only.
+type MdPlugin = {
+  name: string
+  fence?: { languages: readonly string[]; component: ComponentType<MdFenceProps> }
+  table?: ComponentType<MdTableProps>
+  highlight?: CodeHighlighterPlugin   // streamdown's `plugins.code` shape
+  command?: MdFenceCommand
+}
+
+// host port (ports.ts, optional member of MdviewHost). Cold; unsubscribe = the host kills the process.
+type MdFenceCommandRequest = { command: string; language: string; text: string; columns: number }
+type MdFenceCommandResult = { stdout: string; stderr: string; code: number }
+type MdFenceCommandRunner = (request: MdFenceCommandRequest) => Observable<MdFenceCommandResult>
+interface MdviewHost {
+  mdPlugins?: readonly MdPlugin[]          // absent = defaultMdPlugins
+  runFenceCommand?: MdFenceCommandRunner   // absent = fences render as written
+}
+
+// factories (packages/md/src/plugins/*), exported from "@hafley66/md/plugins"
+function mermaidPlugin(): MdPlugin     // fence ["mermaid"], lazy component
+function d2Plugin(): MdPlugin          // fence ["d2"], lazy component
+function tablePlugin(): MdPlugin       // table
+function codePlugin(): MdPlugin        // highlight (shiki via @streamdown/code, dl6 -> prolog)
+function commandPlugin(command: MdFenceCommand): MdPlugin
+const defaultMdPlugins: readonly MdPlugin[] = [mermaidPlugin(), d2Plugin(), tablePlugin(), codePlugin()]
+
+// pure resolution (packages/md/src/lib/3_mdPlugins.ts)
+type MdPluginSet = {
+  fences: readonly { name: string; languages: readonly string[]; component: ComponentType<MdFenceProps> }[]
+  table: ComponentType<MdTableProps> | undefined
+  highlight: CodeHighlighterPlugin | undefined
+  commands: readonly MdFenceCommand[]
+}
+function resolveMdPlugins(plugins: readonly MdPlugin[]): MdPluginSet
+
+// command pre-pass (packages/md/src/lib/4_fenceCommands.ts)
+type FenceEdit = { at: number; remove: number; insert: string }
+type FencePass = { source: string; text: string; edits: readonly FenceEdit[] }
+function fenceCommandPass(markdown: string, commands: readonly MdFenceCommand[],
+  run: MdFenceCommandRunner | undefined, columns: number): Observable<FencePass>
+function shiftOffsets(offsets: readonly number[], edits: readonly FenceEdit[]): readonly number[]
+```
+
+### Body (pseudo)
+
+```ts
+resolveMdPlugins(plugins):
+  // walk in array order; first plugin holding a slot wins it
+  fences   = plugins with .fence, each language kept only by its first claimant
+  table    = first .table
+  highlight = first .highlight
+  commands = every .command, in order
+
+StreamdownBody (0_Streamdown.tsx):
+  { plugins, runCommand, columns } = useContext(MdPluginContext)   // MdPanel provides from the host
+  set  = resolveMdPlugins(plugins)
+  pass = commands and runner ? useSignal(Signal(fenceCommandPass(children, ...), identity(children)))
+                             : identity(children)
+  renderers  = set.fences.map(f => ({ language: [...f.languages], component: props => <f.component {...props} dark/> }))
+  components = set.table ? { ...components, table: ordinal-computing wrapper around set.table } : components
+  <Streamdown plugins={{ code: set.highlight, renderers }} components>{pass.text}</Streamdown>
+  // table ordinals: renderedOffsetsForSourceStarts on children, then shiftOffsets(pass.edits)
+
+fenceCommandPass(markdown, commands, run, columns):
+  no commands or no run -> of(identity)
+  fences = mdast `code` nodes at column 1 whose body equals node.value
+  jobs   = fences.map(f => first command whose RegExp(match) tests f.lang)  // first match wins
+  each job: run({ command, language, text, columns }).pipe(
+    take(1),
+    map(result => edits for as / code),   // replace+0 -> body; replace+!0 -> stderr fence; annotate -> stdout fence
+    catchError(() => of([])),
+    startWith([]),                         // render as written until the host answers
+  )
+  combineLatest(jobs) -> apply edits right-to-left -> { source: markdown, text, edits }
+```
+
+### Instance timelines
+
+| instance | born | dies |
+| --- | --- | --- |
+| plugin objects | host module load (factory call) | never; identity stable for the app, so Streamdown keeps renderer identity |
+| `defaultMdPlugins` | `@hafley66/md/plugins` module load | never |
+| `MdPluginSet` | per `StreamdownBody` render, memoized on the array identity | with the array |
+| lazy renderer chunk (mermaid, d2) | first fence of that language renders | page lifetime (module cache) |
+| command pass | per (section text, commands, runner, columns) | section text or columns change, or section unmount: useSignal unsubscribes, the runner's teardown kills the process |
+| one run | pass subscription, per matched fence | first result (`take(1)`) or unsubscribe |
+
+Columns derive from the prose width (px / 7.8, the 13px code font advance), so resizing within one column
+does not rerun.
+
+### Storage, reads, writes, uniqueness
+
+| data | stored in | written by | read by | unique on |
+| --- | --- | --- | --- | --- |
+| plugin array | `MdviewHost.mdPlugins` (host memory) | host at boot | `MdPanel` -> `MdPluginContext` | array identity |
+| user command list | host settings JSON (instant `settings.fenceCommands`, beside `clickRules`) | settings panel | host maps `commandPlugin` over it | list position (first match wins) |
+| pass result | `Signal` inside `StreamdownBody` | runner output | Streamdown children | section text + columns |
+| run output cache | none in phase 1 | | | (command, language, columns, text) when added |
+
+Sequence, one `ts` fence, prettier command, runner present:
+
+```text
+children  a--------------------|          section text
+pass      a(as written)---a'---|           startWith identity, then the formatted body
+run            R(ts,80)--r|                host process, take(1)
+render    a--------------a'                Streamdown re-renders once
+```
+
+### Current hardcoded sites -> plugins
+
+| site today | plugin | slot |
+| --- | --- | --- |
+| `0_Streamdown.tsx` `renderers: [{ language: "mermaid", component: MermaidRenderer }]` (+ sequence branch) | `mermaidPlugin()` | `fence` |
+| `0_Streamdown.tsx` `{ language: "d2", component: D2Renderer }` (+ sequence branch) | `d2Plugin()` | `fence` |
+| `0_Streamdown.tsx` `table: TableRenderer` -> `5_PersistedMarkdownTable.tsx` | `tablePlugin()` | `table` |
+| `0_Streamdown.tsx` `code` (`@streamdown/code` + dl6 -> prolog) | `codePlugin()` | `highlight` |
+| instant ⌘-click rules shape `{ pattern, command }` applied to fences | `commandPlugin({ match, command, as })` | `command` |
+| `MdPanel.tsx` `inlineCode` / `a` / `img` | none in phase 1 | |
+
+Removing a built-in from the array drops it: no `tablePlugin()` means Streamdown's own table, no
+`codePlugin()` means unhighlighted code blocks, no `mermaidPlugin()` means a mermaid fence renders as code.
+
+### Suggested command list (instant settings; binary absent = the host answers code 127, fence unchanged)
+
+| match | command | as |
+| --- | --- | --- |
+| `^(ts\|tsx\|js\|jsx\|json\|css\|scss\|md\|yaml\|yml)$` | `prettier --print-width $WIDTH --stdin-filepath x.$LANG < $1` | replace |
+| `^(rust\|rs)$` | `rustfmt --edition 2021 --config max_width=$WIDTH < $1` | replace |
+| `^(py\|python)$` | `ruff format --line-length $WIDTH - < $1` | replace |
+| `^go$` | `golines -m $WIDTH $1` | replace |
+| `^(sh\|bash\|zsh)$` | `shellcheck -f gcc $1` | annotate |
+
+### Future plugins (same format, each its own subpath and optional peer, lazy `import()`)
+
+| factory | slot | library |
+| --- | --- | --- |
+| `marblesPlugin()` | fence `marbles` | `@hafley66/marbler`, `@hafley66/signal-marbles` |
+| `stepsPlugin()` | fence `steps` / stacked `diff` | `shiki-magic-move`, `diff` (`applyPatch` turns patches into states) |
+| `xstatePlugin()` | fence `xstate` | `xstate` + `@xstate/graph`, drawn by grapht |
+| `mdxPlugin()` | new slot: document transform | `@mdx-js/mdx` `evaluate` |
+| Code Hike scrollycoding | needs MDX slot | `codehike` |
 
 Diff fence to animation:
 
@@ -112,6 +275,22 @@ applyPatch  : s0 -> s1 -> s2 -> s3         (jsdiff; s0 = the fence's base block 
 steps$      : s0 --s1 --s2 --s3            (interval or scroll position, a Signal index)
 magic-move  : animates tokens s(n) -> s(n+1)
 ```
+
+### Phases
+
+1. md: types, `resolveMdPlugins`, the five factories, `defaultMdPlugins`, `StreamdownBody` driven by the
+   array, `fenceCommandPass`, `MdviewHost.mdPlugins` / `runFenceCommand`, `@hafley66/md/plugins` subpath.
+2. instant: `settings.fenceCommands` + panel cloned from the click-rules panel, `run_fence_command` IPC
+   (temp file, `$WIDTH` expansion, kill on unsubscribe).
+3. Run cache, future plugins.
+
+### Open
+
+- Run cache (LRU, key above) and whether two panes at one width share a run.
+- Column derivation: fixed 7.8 px advance vs measuring `1ch` of the code font.
+- Indented fences (inside list items) are skipped by the pass.
+- Inline slots (`inlineCode`, links, images) as plugin slots.
+- A replace result containing a fence of the same backtick length breaks out of the fence; not escaped.
 
 ## 3. Shared styling
 
@@ -124,88 +303,3 @@ Owner rule (2026-09-25): every bespoke visual ask (heading rail, pill boxes, sel
 a customization of md's existing classes through custom properties, never as one-off markup or hardcoded
 colours. Colours and as much geometry as possible are variables a theme or plugin stylesheet overrides.
 
-## 4. Fence rules (the click rules, duplicated for code fences)
-
-instant's ⌘-click config is an ordered JSON list, first match wins
-(`instant/src/state.ts:235` `ClickRule { pattern, command }`, defaults at `state.ts:239`, editor panel
-`instant/src/clickrules.ts:429`). Code fences get the same shape and the same editor, keyed on the fence
-language instead of the clicked token.
-
-### Type signatures
-
-```ts
-// md (packages/md/src/ports.ts): md names the rule; the host runs it.
-export interface FenceRule {
-  pattern: string;             // JS regex over the fence info string's language (`ts`, `rust`, `json`, ...)
-  command: string;             // shell; $1 = temp file holding the fence text, $WIDTH = pane columns
-  as: "replace" | "annotate";  // stdout replaces the fence text, or renders under the fence (lint output)
-}
-
-// host port, optional: no runner means fences render as written
-runFenceRule?(rule: FenceRule, lang: string, text: string, width: number): Promise<{ stdout: string; code: number }>;
-
-// instant settings, beside clickRules
-settings.fenceRules: Signal<FenceRule[] | null>   // null = DEFAULT_FENCE_RULES
-```
-
-### Defaults (formatters found on PATH; absent binary = rule skipped)
-
-| pattern | command | as |
-| --- | --- | --- |
-| `^(ts\|tsx\|js\|jsx\|json\|css\|scss\|md\|yaml\|yml)$` | `prettier --print-width $WIDTH --stdin-filepath x.$LANG < $1` | replace |
-| `^(rust\|rs)$` | `rustfmt --edition 2021 --config max_width=$WIDTH < $1` | replace |
-| `^(py\|python)$` | `ruff format --line-length $WIDTH - < $1` | replace |
-| `^go$` | `golines -m $WIDTH $1` | replace |
-| `^(sh\|bash\|zsh)$` | `shellcheck -f gcc $1` | annotate |
-
-mermaid and d2 stay renderers (`0_Streamdown.tsx:95-103`); a fence rule runs on the text before the
-renderer sees it.
-
-### Body (pseudo)
-
-```ts
-// per fence, inside the code renderer
-// rule = first fenceRules entry whose pattern matches lang
-// no rule or no runFenceRule -> render text as written
-// key = hash(rule.command, lang, width, text); cached result -> render it
-// else render text as written now, run runFenceRule, cache, swap in stdout (replace) or append it (annotate)
-// non-zero exit on a replace rule -> keep the original text, annotate with stderr
-```
-
-### Instance timelines
-
-- Rules: app lifetime, one settings signal, edited in a panel cloned from the click-rules panel.
-- A run: one per (rule, lang, width, text hash). Width changes re-key by column count, not pixels, so
-  resizing within a column does not rerun.
-- Cache: in-memory LRU per app; persistence not planned.
-
-### Storage, reads, writes, uniqueness
-
-- `settings.fenceRules` persists like `settings.clickRules`.
-- Cache key unique on (command, lang, width, hash(text)). Two panes at the same width share a run.
-- Temp files live under the app's temp dir, one per run, deleted after the run.
-
-### Built-ins become entries (owner, 2026-09-25)
-
-Everything md renders specially today moves onto the same list, so nothing is hardcoded in
-`0_Streamdown.tsx`. A rule gains an optional `render` naming a plugin export; `command` stays optional.
-
-```ts
-export interface FenceRule {
-  pattern: string;                        // over the fence language, or `^table$` for GFM tables
-  command?: string;                       // shell pre-pass (format / lint), as above
-  as?: "replace" | "annotate";
-  render?: string;                        // plugin id from @hafley66/md/plugins/<id>; absent = plain code block
-}
-```
-
-| pattern | render | today's code |
-| --- | --- | --- |
-| `^table$` | `table` | `2_MarkdownTable.tsx` + `5_PersistedMarkdownTable.tsx`, wired as `table: TableRenderer` (`0_Streamdown.tsx`) |
-| `^mermaid$` | `mermaid` | `0a_MermaidDiagram.tsx` (`renderers` list, `0_Streamdown.tsx:95-103`) |
-| `^d2$` | `d2` | `0a_D2Diagram.tsx` (same list) |
-| `.*` (last) | `code` | Streamdown's code block with shiki, as rendered today |
-
-The defaults list is these four rows plus the formatter rows above; a user list replaces it whole, like
-click rules. Each built-in's CSS stays customizable through its custom properties (`--sg-*` and
-`--md-select-*` for tables, `--md-code-*` for code).
