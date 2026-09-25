@@ -322,6 +322,18 @@ export const intentOf = Object.freeze({
     width: headerBoxOf(event.delegateElement),
     mods: modifiersOf(event),
   }),
+  // Measured here because an epic touches no DOM, and the rendered cells are what the reader sees.
+  "header.dblclick": (
+    event: Delegated<HeaderValues, MouseEvent>,
+    part: "resize",
+  ): Intent<"header.dblclick"> => ({
+    phase: "intent",
+    type: "header.dblclick",
+    col: event.params.colId,
+    part,
+    fit: contentWidthOf(event.delegateElement, event.params.colId),
+    mods: modifiersOf(event),
+  }),
   "row.contextmenu": (event: Delegated<RowValues, MouseEvent>): Intent<"row.contextmenu"> => ({
     phase: "intent",
     type: "row.contextmenu",
@@ -390,6 +402,35 @@ const headerBoxOf = (el: HTMLElement | undefined): number => {
   const header = el?.closest<HTMLElement>(`[data-route="${HEADER_SEGMENT}"]`) ?? el
   return header?.getBoundingClientRect().width ?? 0
 }
+
+const GRID_SEGMENT = skeletonOf(LOCAL.grid)
+const CELL_SEGMENT = skeletonOf(LOCAL.cell)
+
+/** The widest max-content box among a column's header and rendered cells. A virtualized column
+ * reads only its rendered window, so a wider row outside it is not seen. @feature col.autosize */
+export const contentWidthOf = (el: HTMLElement | undefined, colId: ColId): number => {
+  const header = el?.closest<HTMLElement>(`[data-route="${HEADER_SEGMENT}"]`)
+  const root = header?.closest<HTMLElement>(`[data-route="${GRID_SEGMENT}"]`)
+  if (header === undefined || header === null || root === undefined || root === null) return 0
+  const col = quote(colId)
+  // A cell that spans several tracks is wider than any one of them, and a nested grid's cells
+  // belong to that grid, so both are left out.
+  const cells = [...root.querySelectorAll<HTMLElement>(`[data-route="${CELL_SEGMENT}"][data-col-id="${col}"]`)]
+    .filter((it) => it.closest(`[${ROUTE_BOUNDARY_ATTR}]`) === root)
+    .filter((it) => Number(it.style.getPropertyValue("--sg-span-horizontal") || 1) <= 1)
+  const boxes = [header, ...cells]
+  // All writes, one read pass, all restores: one forced layout for the whole column.
+  const held = boxes.map((it) => it.style.getPropertyValue("inline-size"))
+  for (const it of boxes) it.style.setProperty("inline-size", "max-content")
+  const widths = boxes.map((it) => it.getBoundingClientRect().width)
+  boxes.forEach((it, index) => {
+    const previous = held[index]
+    if (previous === undefined || previous === "") it.style.removeProperty("inline-size")
+    else it.style.setProperty("inline-size", previous)
+  })
+  return Math.ceil(Math.max(0, ...widths))
+}
+
 const ROW_SEGMENT = skeletonOf(LOCAL.row)
 
 const SAFE_IDENT_CHAR = /^[A-Za-z0-9-]$/

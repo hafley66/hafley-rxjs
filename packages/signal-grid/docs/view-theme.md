@@ -25,7 +25,7 @@ Two grids on a page are therefore two independent property scopes, and no id app
 | --- | --- |
 | `--sg-row-h` | you, or the property writer from density |
 | `--sg-total-h`, `--sg-offset-y`, `--sg-inline-tracks` | the property writer, per frame |
-| `--sg-indent`, `--sg-hit`, `--sg-glyph`, `--sg-sort-glyph`, `--sg-col-w`, `--sg-pad` | you |
+| `--sg-indent`, `--sg-hit`, `--sg-resize-hit`, `--sg-glyph`, `--sg-sort-glyph`, `--sg-col-w`, `--sg-pad` | you |
 | `--sg-line`, `--sg-bg`, `--sg-fg`, `--sg-head-bg` | you |
 | `--sg-hover-bg`, `--sg-selected-bg`, `--sg-focus` | you |
 | `--sg-range-bg`, `--sg-range-edge`, `--sg-accent` | you |
@@ -57,6 +57,13 @@ target in a 48px row.
 
 Every mark rule sets `line-height: 1`, which keeps the mark's line box off the row's height. The row
 then only has to clear the 24px box.
+
+## The resize target
+
+`--sg-resize-hit` (10px) is the width of a resizable column's handle. The handle is centred on the
+column's end edge, so half of it lies over the next column, and it sits above that column's label
+and header slot. A 2px line on the edge marks it on hover. A double click on it fits the column to
+its widest rendered header or cell, clamped by `minWidth` and `maxWidth`.
 
 A glyph's ink is a fraction of its em, and the fraction differs per codepoint, so one 16px mark
 draws a different number of pixels per glyph. Measured in the same font the grid renders in:

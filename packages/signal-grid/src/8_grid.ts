@@ -843,6 +843,7 @@ function bindRoot<TRow>(
   on(dom.cell.route.dblclick, intentOf["cell.dblclick"])
   on(dom.header.route.click, intentOf["header.click"])
   on(dom.headerResize.route.pointerdown, (it) => intentOf["header.pointerdown"](it, "resize"))
+  on(dom.headerResize.route.dblclick, (it) => intentOf["header.dblclick"](it, "resize"))
   on(dom.headerMove.route.pointerdown, (it) => intentOf["header.pointerdown"](it, "move"))
   // The header body, which is every part of it the move label and the resize handle do not cover.
   on(dom.header.route.pointerdown, (it) => intentOf["header.pointerdown"](it, "select"))

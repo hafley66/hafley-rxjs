@@ -34,6 +34,7 @@ their union.
 | `cell.contextmenu` | `row`, `col`, `x`, `y`, `mods` |
 | `header.click` | `col`, `mods` |
 | `header.pointerdown` | `col`, `part`, `x`, `width`, `mods` |
+| `header.dblclick` | `col`, `part`, `fit`, `mods` |
 | `header.contextmenu` | `col`, `x`, `y`, `mods` |
 | `row.pointerdown` | `row`, `part`, `y` |
 | `row.contextmenu` | `row`, `x`, `y`, `mods` |

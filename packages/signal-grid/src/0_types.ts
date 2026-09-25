@@ -518,6 +518,8 @@ export type GridIntent =
   | { phase: "intent"; type: "cell.contextmenu"; row: RowId; col: ColId; x: number; y: number; mods: Modifiers }
   | { phase: "intent"; type: "header.click"; col: ColId; mods: Modifiers }
   | { phase: "intent"; type: "header.pointerdown"; col: ColId; part: "move" | "resize" | "select"; x: number; width: number; mods: Modifiers }
+  /** `fit` is the widest max-content box among the column's header and rendered cells, in pixels. */
+  | { phase: "intent"; type: "header.dblclick"; col: ColId; part: "resize"; fit: number; mods: Modifiers }
   | { phase: "intent"; type: "header.contextmenu"; col: ColId; x: number; y: number; mods: Modifiers }
   | { phase: "intent"; type: "row.pointerdown"; row: RowId; part: "handle"; y: number }
   | { phase: "intent"; type: "row.contextmenu"; row: RowId; x: number; y: number; mods: Modifiers }

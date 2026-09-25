@@ -14,7 +14,7 @@ type GridEpic<TRow> = (
 Declared in `src/7_epics.ts`. An epic reads the state signal and the derived view through its ctx,
 touches no DOM, and is never asynchronous.
 
-## The fourteen installed by default
+## The fifteen installed by default
 
 | epic | reads | writes |
 | --- | --- | --- |
@@ -25,6 +25,7 @@ touches no DOM, and is never asynchronous.
 | `toggleExpandAllOnHeaderClick` | `header.click` on the expand column | `expanded`, over `expandableRows` |
 | `activateOnCellClick` | `cell.click` with no modifier | the `activate` effect, plus `focus` |
 | `resizeOnHeaderDrag` | `header.pointerdown` on the resize part | `drag` per move, `colWidth` on the lift |
+| `autosizeOnResizeDoubleClick` | `header.dblclick` on the resize part | `colWidth`, the measured `fit` clamped to `minWidth` and `maxWidth` |
 | `moveColumnOnHeaderDrag` | `header.pointerdown` on the move part | `drag` per move, `colOrder` on the lift |
 | `moveRowOnRowDrag` | `row.pointerdown` | `drag` per move, the `reorderRow` effect on the lift |
 | `keyboardNav` | `key` | `focus`, `expanded`, `rowSelection`, and the `activate` effect |

@@ -359,6 +359,22 @@ export function resizeOnHeaderDrag<TRow>(
   }
 }
 
+/** The same `colWidth` write a drag lifts with, so persistence cannot tell the two apart. The
+ * width is measured into the intent, since an epic touches no DOM. @feature col.autosize */
+export function autosizeOnResizeDoubleClick<TRow>(): GridEpic<TRow> {
+  return (actions$, state, ctx) =>
+    intents<TRow, "header.dblclick">(actions$, "header.dblclick").pipe(
+      filter((it) => it.part === "resize" && it.mods.button === 0 && it.fit > 0),
+      map((it): GridAction<TRow> | null => {
+        const def = defOf(ctx, it.col)
+        if (def?.resizable === false) return null
+        const width = clamp(it.fit, def?.minWidth ?? 0, def?.maxWidth ?? Infinity)
+        return { phase: "change", type: "colWidth", colWidth: { ...state.colWidth.$(), [it.col]: width } }
+      }),
+      emitted<TRow>(),
+    )
+}
+
 // --- Column move ------------------------------------------------------------
 
 interface ColMoveStart {
@@ -757,6 +773,7 @@ export function defaultEpics<TRow>(
     toggleExpandAllOnHeaderClick<TRow>(),
     activateOnCellClick<TRow>(),
     resizeOnHeaderDrag<TRow>(streams, mode),
+    autosizeOnResizeDoubleClick<TRow>(),
     moveColumnOnHeaderDrag<TRow>(streams, mode),
     moveRowOnRowDrag<TRow>(streams),
     keyboardNav<TRow>(),

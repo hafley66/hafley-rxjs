@@ -78,6 +78,8 @@
   --sg-depth: 0;
   --sg-indent: 16px;
   --sg-hit: 24px;
+  /* The resize target's width. It straddles the column's end edge, half over the next column. */
+  --sg-resize-hit: 10px;
   --sg-glyph: 16px;
   --sg-sort-glyph: 11px;
   --sg-col-w: 100px;
@@ -246,7 +248,10 @@
   background: inherit;
 }
 
+/* Visible so the resize target can reach past the cell's end edge. The label inside clips and
+   ellipsizes its own text. */
 [data-route="g"] .sg-head-cell {
+  overflow: visible;
   font-weight: 600;
   user-select: none;
 }
@@ -281,35 +286,35 @@
   content: "\2193";
 }
 
+/* Centred on the end edge, so half the target lies over the next column. The z-index lifts it over
+   that column's label and any slot in it; a header cell sets none, so no stacking context caps it. */
 [data-route="g"] .sg-resize {
   position: absolute;
+  z-index: 2;
   inset-block: 0;
-  inset-inline-end: 0;
-  inline-size: 6px;
+  inset-inline-end: calc(var(--sg-resize-hit) / -2);
+  inline-size: var(--sg-resize-hit);
   cursor: col-resize;
   touch-action: none;
 }
 
-/* 6px of hit around 2px of ink: the strip stays a pointer target at any density and the mark
-   stays a line. Drawn on a pseudo-element so the target keeps its width while the ink changes. */
+/* The ink is 2px on the edge itself; drawn on a pseudo-element so the target keeps its width. */
 [data-route="g"] .sg-resize::before {
   content: "";
   position: absolute;
   inset-block-start: 0;
-  inset-inline-end: 2px;
+  inset-inline-start: calc(50% - 1px);
   inline-size: 2px;
   block-size: 100%;
   background: transparent;
 }
 
 [data-route="g"] .sg-resize:hover::before {
-  background: var(--sg-line);
+  background: var(--sg-accent);
 }
 
 /* `data-resizing` is written on the header cell for the whole deferred drag: the pointer stream
-   lives on `window` and leaves the 6px handle on its first move, so `:active` and `:hover` are both
-   gone by then. The mark stays inside the header cell, which carries `overflow: hidden` for its
-   own ellipsis. */
+   lives on `window` and leaves the handle on its first move, so `:active` and `:hover` are gone. */
 [data-route="g"] .sg-resize:active::before,
 [data-route="g"] .sg-head-cell[data-resizing="true"] .sg-resize::before {
   background: var(--sg-accent);
