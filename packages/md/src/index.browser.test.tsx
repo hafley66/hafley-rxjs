@@ -155,7 +155,7 @@ it("keeps an inactive markdown panel's DOM and scroll offset when a right-click 
   }
 });
 
-it("places a table header's action strip on its header inside a kept-alive dock panel", async () => {
+it("places a table header's action strip inside its header and opens its column menu unclipped in a kept-alive dock panel", async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   if (!registered.length) registerMdview();
   const instance = registered.flatMap((plugin) => plugin.instances ?? []).find((entry) => entry.prefix === "md:")!;
@@ -193,12 +193,22 @@ it("places a table header's action strip on its header inside a kept-alive dock 
     await expect.poll(() => getComputedStyle(strip).opacity).toBe("1");
     const headerBox = header.getBoundingClientRect();
     const stripBox = strip.getBoundingClientRect();
+    // Painted, not clipped: the topmost element at a box's centre belongs to that box.
+    const paints = (element: HTMLElement) => {
+      const box = element.getBoundingClientRect();
+      return element.contains(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2));
+    };
+    const visibility = strip.querySelector<HTMLButtonElement>(".mdview-table-action-visibility")!;
+    await userEvent.click(visibility);
+    const menu = host.querySelector<HTMLElement>(".mdview-table-column-menu:popover-open");
     expect({
       renderer: api!.getPanel("md:/table.md")!.api.renderer,
-      left: Math.round(stripBox.left - headerBox.left),
-      width: Math.round(stripBox.width - headerBox.width),
-      bottomToHeaderTop: Math.round(headerBox.top - stripBox.bottom),
-    }).toEqual({ renderer: "always", left: 0, width: 0, bottomToHeaderTop: 0 });
+      stripInsideHeader: stripBox.top >= headerBox.top - 0.5 && stripBox.bottom <= headerBox.bottom + 0.5 && stripBox.left >= headerBox.left - 0.5 && Math.abs(stripBox.right - headerBox.right) <= 1,
+      stripPaints: paints(visibility),
+      menuOpen: menu !== null,
+      menuPaints: menu !== null && paints(menu),
+      menuBelowButton: menu !== null && Math.abs(menu.getBoundingClientRect().top - visibility.getBoundingClientRect().bottom) <= 4,
+    }).toEqual({ renderer: "always", stripInsideHeader: true, stripPaints: true, menuOpen: true, menuPaints: true, menuBelowButton: true });
   } finally {
     await act(() => root.unmount());
     host.remove();

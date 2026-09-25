@@ -286,7 +286,6 @@
 }
 .mdview-table-cell { min-width: 0; width: 100%; }
 .mdview-table-header-cell {
-  position: relative;
   display: flex;
   align-items: center;
   inline-size: 100%;
@@ -300,46 +299,30 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Inside its own header cell, over the label's right end. Menus open in the
+   top layer, so no scroller or rounded table clip reaches them. */
 .mdview-table-header-actions {
   position: absolute;
-  box-sizing: border-box;
-  inset-inline-start: 0;
-  inset-block-end: 100%;
+  inset-block: 0;
+  inset-inline-end: 0;
   display: flex;
-  inline-size: 100%;
-  block-size: 2.1rem;
-  min-inline-size: 0;
-  justify-content: flex-end;
+  align-items: center;
   gap: 2px;
-  padding: 2px;
+  padding-inline: 14px 2px;
   opacity: 0;
   pointer-events: none;
-  z-index: 20;
-  background: var(--sg-head-bg);
-  border: 1px solid var(--sg-line);
-  border-block-end: 0;
-  box-shadow: 0 -4px 10px color-mix(in srgb, var(--sg-fg) 12%, transparent);
+  z-index: 5;
+  background: linear-gradient(to right, transparent, var(--sg-head-bg) 12px);
   transition: opacity 100ms ease;
-}
-@supports (position: fixed) {
-  .mdview-table-header-actions {
-    position: fixed;
-    inset-block-start: max(0px, calc(var(--md-table-header-top, 0px) - 2.1rem));
-    inset-inline-start: max(0px, min(var(--md-table-header-left, 0px), calc(100vw - var(--md-table-header-width, 100vw))));
-    inset-inline-end: auto;
-    inline-size: min(var(--md-table-header-width, 100vw), 100vw);
-    block-size: 2.1rem;
-    margin: 0;
-  }
 }
 .mdview-table-grid .sg-head-cell:hover .mdview-table-header-actions,
 .mdview-table-header-actions:focus-within,
-.mdview-table-header-actions:hover {
+.mdview-table-header-actions:hover,
+.mdview-table-header-actions:has(:popover-open) {
   opacity: 1;
   pointer-events: auto;
 }
-.mdview-table-action,
-.mdview-table-actions-compact > summary {
+.mdview-table-action {
   display: inline-grid;
   place-items: center;
   min-inline-size: 1.7rem;
@@ -352,42 +335,38 @@
   cursor: pointer;
 }
 .mdview-table-action:hover,
-.mdview-table-action:focus-visible,
-.mdview-table-actions-compact > summary:hover,
-.mdview-table-actions-compact > summary:focus-visible {
+.mdview-table-action:focus-visible {
   background: color-mix(in srgb, var(--sg-fg) 18%, transparent);
 }
 .mdview-table-action-sort [data-md-table-sort="asc"]::before { content: "↑"; }
 .mdview-table-action-sort [data-md-table-sort="desc"]::before { content: "↓"; }
 .mdview-table-action-sort [data-md-table-sort="none"]::before { content: "↕"; }
 .mdview-table-action-visibility > span::before { content: "◉"; }
-.mdview-table-actions-compact > summary > span::before { content: "⋯"; }
+.mdview-table-actions-compact-toggle > span::before { content: "⋯"; }
 .mdview-table-column-menu-item [data-md-table-column-label]::before { content: attr(data-md-table-column-label); }
 .mdview-table-column-menu-item [data-md-table-column-state]::before { content: attr(data-md-table-column-state); }
 .mdview-table-actions-wide { display: flex; gap: 2px; }
-.mdview-table-actions-compact { display: none; position: relative; }
-.mdview-table-actions-compact > summary { list-style: none; }
-.mdview-table-actions-compact > summary::-webkit-details-marker { display: none; }
-.mdview-table-actions-compact-menu {
-  position: absolute;
-  inset-inline-end: 0;
-  inset-block-start: 100%;
+.mdview-table-actions-compact { display: none; }
+.mdview-table-actions-compact-menu:popover-open {
+  position: fixed;
+  inset: auto;
+  margin: 0;
   display: grid;
   gap: 4px;
   min-inline-size: 12rem;
   padding: 3px;
+  color: var(--sg-fg);
   background: var(--sg-bg);
   border: 1px solid var(--sg-line);
   box-shadow: 0 5px 14px color-mix(in srgb, var(--sg-fg) 18%, transparent);
-  z-index: 30;
 }
-.mdview-table-visibility { position: relative; display: inline-flex; }
-.mdview-table-column-menu {
-  position: absolute;
-  inset-inline-end: 0;
-  inset-block-start: calc(100% + 2px);
-  inset-block-end: auto;
-  display: none;
+.mdview-table-visibility { display: inline-flex; }
+.mdview-table-column-menu:popover-open {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  display: grid;
+  gap: 2px;
   min-inline-size: 14rem;
   max-block-size: min(18rem, 50vh);
   overflow: auto;
@@ -396,11 +375,7 @@
   background: var(--sg-bg);
   border: 1px solid var(--sg-line);
   box-shadow: 0 5px 14px color-mix(in srgb, var(--sg-fg) 18%, transparent);
-  z-index: 40;
 }
-.mdview-table-visibility:hover .mdview-table-column-menu,
-.mdview-table-visibility:focus-within .mdview-table-column-menu,
-.mdview-table-column-menu:hover { display: grid; gap: 2px; }
 .mdview-table-column-menu-section {
   padding: 2px 4px;
   color: color-mix(in srgb, var(--sg-fg) 65%, transparent);
@@ -438,7 +413,7 @@
 
 @media (max-width: 700px) {
   .mdview-table-actions-wide { display: none; }
-  .mdview-table-actions-compact { display: block; }
+  .mdview-table-actions-compact { display: inline-flex; }
 }
 
 .mdview-content [data-streamdown="code-block"] {

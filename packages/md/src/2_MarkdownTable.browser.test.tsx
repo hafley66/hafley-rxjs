@@ -100,16 +100,18 @@ it("adapts an actual Streamdown GFM table and keeps inline cell markup", async (
     expect(strip).not.toBeNull();
     const headerRect = header!.getBoundingClientRect();
     const stripRect = strip!.getBoundingClientRect();
-    expect(Math.abs(stripRect.left - headerRect.left)).toBeLessThanOrEqual(1);
+    expect(stripRect.left).toBeGreaterThanOrEqual(headerRect.left - 1);
     expect(Math.abs(stripRect.right - headerRect.right)).toBeLessThanOrEqual(1);
-    expect(stripRect.bottom).toBeLessThanOrEqual(headerRect.top + 1);
+    expect(stripRect.top).toBeGreaterThanOrEqual(headerRect.top - 1);
+    expect(stripRect.bottom).toBeLessThanOrEqual(headerRect.bottom + 1);
     expect(host.querySelector(".mdview-table-toolbar")).toBeNull();
     await page.screenshot({ path: "./out/md-table-controls.png" });
     const visibility = host.querySelector<HTMLButtonElement>(".mdview-table-action-visibility");
     expect(visibility).not.toBeNull();
-    visibility!.focus();
-    await expect.poll(() => getComputedStyle(host.querySelector<HTMLElement>(".mdview-table-column-menu")!).display).toBe("grid");
+    await userEvent.click(visibility!);
+    await expect.poll(() => host.querySelector(".mdview-table-column-menu:popover-open")).not.toBeNull();
     await page.screenshot({ path: "./out/md-table-controls-menu.png" });
+    await userEvent.keyboard("{Escape}");
     const initialViewport = { width: window.innerWidth, height: window.innerHeight };
     await page.viewport(600, 700);
     host.style.width = "560px";
@@ -118,12 +120,12 @@ it("adapts an actual Streamdown GFM table and keeps inline cell markup", async (
     const wide = host.querySelector<HTMLElement>(".mdview-table-actions-wide");
     expect(compact).not.toBeNull();
     expect(wide).not.toBeNull();
-    expect(getComputedStyle(compact!).display).toBe("block");
+    expect(getComputedStyle(compact!).display).toBe("flex");
     expect(getComputedStyle(wide!).display).toBe("none");
-    const summary = compact!.querySelector<HTMLElement>("summary");
-    expect(summary).not.toBeNull();
-    await page.elementLocator(summary!).click();
-    expect(compact!.querySelector(".mdview-table-actions-compact-menu")).not.toBeNull();
+    const toggle = compact!.querySelector<HTMLElement>(".mdview-table-actions-compact-toggle");
+    expect(toggle).not.toBeNull();
+    await page.elementLocator(toggle!).click();
+    await expect.poll(() => compact!.querySelector(".mdview-table-actions-compact-menu:popover-open")).not.toBeNull();
     await page.viewport(initialViewport.width, initialViewport.height);
   } finally {
     await act(() => root.unmount());
@@ -156,7 +158,7 @@ it("rebinds the grid when the caller replaces its state signal", async () => {
   }
 });
 
-it("keeps the action strip and visibility menu inside viewport edges", async () => {
+it("keeps the action strip inside its header and the visibility menu inside viewport edges", async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   const host = document.createElement("div");
   host.style.cssText = "width: 900px; height: 420px; margin: 0; padding: 0; box-sizing: border-box";
@@ -174,16 +176,15 @@ it("keeps the action strip and visibility menu inside viewport edges", async () 
     const actions = host.querySelectorAll<HTMLElement>(".mdview-table-header-actions");
     const strip = actions.item(2);
     const stripRect = strip.getBoundingClientRect();
-    expect(stripRect.top).toBeGreaterThanOrEqual(-1);
-    expect(stripRect.left).toBeGreaterThanOrEqual(-1);
-    expect(stripRect.right).toBeLessThanOrEqual(window.innerWidth + 1);
+    const headerRect = strip.closest<HTMLElement>(".sg-head-cell")!.getBoundingClientRect();
+    expect(stripRect.top).toBeGreaterThanOrEqual(headerRect.top - 1);
+    expect(stripRect.right).toBeLessThanOrEqual(headerRect.right + 1);
     const visibility = strip.querySelector<HTMLButtonElement>(".mdview-table-action-visibility");
     expect(visibility).not.toBeNull();
-    visibility!.focus();
+    await userEvent.click(visibility!);
     await expect.poll(() => getComputedStyle(strip).opacity).toBe("1");
-    const menu = strip.querySelector<HTMLElement>(".mdview-table-column-menu");
+    const menu = strip.querySelector<HTMLElement>(".mdview-table-column-menu:popover-open");
     expect(menu).not.toBeNull();
-    await expect.poll(() => getComputedStyle(menu!).display).toBe("grid");
     const menuRect = menu!.getBoundingClientRect();
     expect(menuRect.top).toBeGreaterThanOrEqual(-1);
     expect(menuRect.right).toBeLessThanOrEqual(window.innerWidth + 1);

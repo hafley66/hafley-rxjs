@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, type CSSProperties, type ReactNode } from "react";
 import { useSignal } from "@hafley66/signals/react";
 import { grid, type ColumnDef, type Grid, type GridState } from "@hafley66/signal-grid";
 import type { Signal } from "@hafley66/signals";
@@ -24,6 +24,41 @@ const plainModifiers = { alt: false, ctrl: false, meta: false, shift: false, but
 const stopHeaderGesture = (event: { readonly stopPropagation: () => void }): void => {
   event.stopPropagation();
 };
+
+/** Opens a top-layer popover under the right edge of its button, so neither the
+ * grid's scroller nor a table's rounded clip cuts it. Lengths go through the
+ * popover's own scale, which a zoomed reading pane multiplies in. */
+function placeUnder(button: HTMLElement, popover: HTMLElement): void {
+  popover.style.left = "0px";
+  popover.style.top = "0px";
+  const origin = popover.getBoundingClientRect();
+  const scale = origin.width / popover.offsetWidth || 1;
+  const anchor = button.getBoundingClientRect();
+  const left = Math.max(0, Math.min(anchor.right - origin.width, window.innerWidth - origin.width));
+  popover.style.left = `${(left - origin.left) / scale}px`;
+  popover.style.top = `${(anchor.bottom + 2 - origin.top) / scale}px`;
+}
+
+function usePopoverUnder(): {
+  readonly id: string;
+  readonly buttonRef: (element: HTMLButtonElement | null) => void;
+  readonly popoverRef: (element: HTMLDivElement | null) => (() => void) | undefined;
+} {
+  const id = `md-table-pop-${useId().replaceAll(":", "")}`;
+  const button = useRef<HTMLButtonElement | null>(null);
+  return {
+    id,
+    buttonRef: (element) => { button.current = element; },
+    popoverRef: (element) => {
+      if (element === null) return undefined;
+      const onToggle = (event: Event) => {
+        if ((event as ToggleEvent).newState === "open" && button.current !== null) placeUnder(button.current, element);
+      };
+      element.addEventListener("toggle", onToggle);
+      return () => element.removeEventListener("toggle", onToggle);
+    },
+  };
+}
 
 function toggleColumn(tableGrid: Grid<MarkdownTableRow>, id: string, hidden: boolean): void {
   const current = tableGrid.state.colHidden.$();
@@ -54,19 +89,22 @@ function ColumnVisibilityMenu({ tableGrid }: { readonly tableGrid: Grid<Markdown
       </label>
     );
   };
+  const popover = usePopoverUnder();
   return (
     <div className="mdview-table-visibility">
       <button
+        ref={popover.buttonRef}
         type="button"
         className="mdview-table-action mdview-table-action-visibility"
         aria-label="Show or hide columns"
         aria-haspopup="menu"
+        popoverTarget={popover.id}
         onClick={stopHeaderGesture}
         onPointerDown={stopHeaderGesture}
       >
         <span aria-hidden="true" />
       </button>
-      <div className="mdview-table-column-menu" role="menu">
+      <div ref={popover.popoverRef} id={popover.id} popover="auto" className="mdview-table-column-menu" role="menu" onPointerDown={stopHeaderGesture}>
         <div className="mdview-table-column-menu-section" aria-label="Visible columns" data-md-table-section="Visible columns" />
         {visible.map(item)}
         {hidden.length === 0 ? null : <div className="mdview-table-column-menu-section" aria-label="Hidden columns" data-md-table-section="Hidden columns" />}
@@ -108,66 +146,31 @@ function SortButton({ tableGrid, col }: { readonly tableGrid: Grid<MarkdownTable
 }
 
 function HeaderActions({ tableGrid, col }: { readonly tableGrid: Grid<MarkdownTableRow> | undefined; readonly col: string }): ReactNode {
+  const compact = usePopoverUnder();
   if (tableGrid === undefined) return null;
-  const anchorRef = useRef<HTMLSpanElement>(null);
-  const [rect, setRect] = useState<{ readonly left: number; readonly top: number; readonly width: number }>();
-  useLayoutEffect(() => {
-    const anchor = anchorRef.current?.closest<HTMLElement>(".sg-head-cell");
-    if (anchor === null || anchor === undefined) return;
-    const update = (): void => {
-      const strip = anchorRef.current;
-      if (strip === null) return;
-      const box = anchor.getBoundingClientRect();
-      // The strip is position: fixed. Its containing block is the viewport unless an ancestor
-      // takes that role (a dock's always-rendered overlay has transform and contain: paint), and
-      // a zoomed ancestor scales its lengths. Its own box against its resolved insets gives both.
-      const own = strip.getBoundingClientRect();
-      const style = getComputedStyle(strip);
-      const scale = own.width / Number.parseFloat(style.width) || 1;
-      const originLeft = own.left - Number.parseFloat(style.left) * scale;
-      const originTop = own.top - Number.parseFloat(style.top) * scale;
-      const next = { left: (box.left - originLeft) / scale, top: (box.top - originTop) / scale, width: box.width / scale };
-      setRect((current) => current?.left === next.left && current.top === next.top && current.width === next.width
-        ? current
-        : next);
-    };
-    update();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(update);
-    observer.observe(anchor);
-    const scrollParent = anchor.closest<HTMLElement>(".sg-scroll");
-    scrollParent?.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("scroll", update, { passive: true });
-    return () => {
-      observer.disconnect();
-      scrollParent?.removeEventListener("scroll", update);
-      window.removeEventListener("scroll", update);
-    };
-  }, [col]);
   return (
-    <span
-      ref={anchorRef}
-      className="mdview-table-header-actions"
-      role="group"
-      aria-label="Column actions"
-      onPointerDown={stopHeaderGesture}
-      style={{
-        "--md-table-header-left": rect === undefined ? undefined : `${rect.left}px`,
-        "--md-table-header-top": rect === undefined ? undefined : `${rect.top}px`,
-        "--md-table-header-width": rect === undefined ? undefined : `${rect.width}px`,
-      } as CSSProperties}
-    >
+    <span className="mdview-table-header-actions" role="group" aria-label="Column actions" onPointerDown={stopHeaderGesture}>
       <span className="mdview-table-actions-wide">
         <SortButton tableGrid={tableGrid} col={col} />
         <ColumnVisibilityMenu tableGrid={tableGrid} />
       </span>
-      <details className="mdview-table-actions-compact">
-        <summary aria-label="More column actions" onClick={stopHeaderGesture} onPointerDown={stopHeaderGesture}><span aria-hidden="true" /></summary>
-        <div className="mdview-table-actions-compact-menu">
+      <span className="mdview-table-actions-compact">
+        <button
+          ref={compact.buttonRef}
+          type="button"
+          className="mdview-table-action mdview-table-actions-compact-toggle"
+          aria-label="More column actions"
+          popoverTarget={compact.id}
+          onClick={stopHeaderGesture}
+          onPointerDown={stopHeaderGesture}
+        >
+          <span aria-hidden="true" />
+        </button>
+        <div ref={compact.popoverRef} id={compact.id} popover="auto" className="mdview-table-actions-compact-menu" onPointerDown={stopHeaderGesture}>
           <SortButton tableGrid={tableGrid} col={col} />
           <ColumnVisibilityMenu tableGrid={tableGrid} />
         </div>
-      </details>
+      </span>
     </span>
   );
 }
