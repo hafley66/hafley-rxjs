@@ -27,12 +27,12 @@ export interface FencePass {
   edits: readonly FenceEdit[];
 }
 
-/** Advance of the 13px code font, in px. */
-const CODE_ADVANCE_PX = 7.8;
+/** Advance of the 13px code font, in px. Fallback when no DOM can be measured. */
+export const CODE_ADVANCE_PX = 7.8;
 const MIN_COLUMNS = 20;
 
-export function fenceColumns(widthPx: number): number {
-  return Math.max(MIN_COLUMNS, Math.floor(widthPx / CODE_ADVANCE_PX));
+export function fenceColumns(widthPx: number, advancePx: number = CODE_ADVANCE_PX): number {
+  return Math.max(MIN_COLUMNS, Math.floor(widthPx / advancePx));
 }
 
 const CLOSING_FENCE = /^ {0,3}(?:`{3,}|~{3,})[ \t]*$/u;

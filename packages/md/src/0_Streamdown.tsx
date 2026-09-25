@@ -6,6 +6,7 @@ import "streamdown/styles.css";
 import { renderedOffsetsForSourceStarts } from "./0b_fenceOrigin.js";
 import { resolveMdPlugins } from "./lib/3_mdPlugins.js";
 import { fenceCommandPass, shiftOffsets, type FencePass } from "./lib/4_fenceCommands.js";
+import { codeAdvancePx } from "./lib/5_codeAdvance.js";
 import { cachedFenceCommandRunner } from "./lib/5_commandCache.js";
 import type { MdTableProps } from "./plugins/0_types.js";
 import { defaultMdPlugins } from "./plugins/3_defaultMdPlugins.js";
@@ -35,11 +36,20 @@ export default function StreamdownBody({
   /** Absolute source offsets of this section's tables, in source order. */
   tableStarts?: readonly number[];
 }) {
-  const { plugins, runCommand, columns } = useContext(MdPluginContext);
+  const { plugins, runCommand, columns, reportAdvance } = useContext(MdPluginContext);
   const inlineDoc = useContext(MdInlineDocContext);
   const set = useMemo(() => resolveMdPlugins(plugins ?? defaultMdPlugins), [plugins]);
   const cachedRunCommand = useMemo(() => (runCommand ? cachedFenceCommandRunner(runCommand) : undefined), [runCommand]);
-
+  // Measures the code font the stylesheet applies, on attach and again once
+  // web fonts settle; the host folds the advance into the columns it provides.
+  const measureRef = useCallback((node: HTMLDivElement | null): void => {
+    if (!node || !reportAdvance) return;
+    const measure = (): void => {
+      if (node.isConnected) reportAdvance(codeAdvancePx(node));
+    };
+    measure();
+    void node.ownerDocument.fonts?.ready.then(measure);
+  }, [reportAdvance]);
   // The pass signal starts at the text as written; a host answer swaps in the rewrite.
   const written = useMemo((): FencePass => ({ source: children, text: children, edits: [] }), [children]);
   const passSignal = useMemo(
@@ -98,7 +108,7 @@ export default function StreamdownBody({
   );
 
   return (
-    <div className="mdview-streamdown" data-md-code-theme={dark ? "dark" : "light"}>
+    <div ref={measureRef} className="mdview-streamdown" data-md-code-theme={dark ? "dark" : "light"}>
       <Streamdown
         mode="static"
         components={markdownComponents}

@@ -7,6 +7,9 @@ export interface MdPluginScope {
   runCommand?: MdFenceCommandRunner;
   /** Formatter width for command plugins, in code-font columns. */
   columns: number;
+  /** Receives the code font's measured advance so the host can recompute
+   *  columns; absent when the host owns the width outright. */
+  reportAdvance?: (advancePx: number) => void;
 }
 
 export const MdPluginContext = createContext<MdPluginScope>({ columns: 80 });

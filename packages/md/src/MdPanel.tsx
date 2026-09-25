@@ -2,7 +2,7 @@
 // canonical TreeTable) | rendered sections, split with react-resizable-panels
 // (AGENTS "Split panes"). All state lives in the signals module; signal reads
 // happen here at the top (SignalReact tracks them) and flow down as props.
-import { createContext, lazy, Suspense, useContext, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { createContext, lazy, Suspense, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { StreamdownProps } from "streamdown";
 import { SignalReact } from "@hafley66/signals/react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -44,7 +44,7 @@ import { useFsWatch } from "./0_watch.js";
 import { useProseWidth } from "./2_useProseWidth.js";
 import { CAT_COMMIT, CAT_PAINT, LOG, mdNow } from "./0_log.js";
 import { ProseWidthControl, ProseWidthHandle } from "./3_ProseWidthControl.js";
-import { fenceColumns } from "./lib/4_fenceCommands.js";
+import { CODE_ADVANCE_PX, fenceColumns } from "./lib/4_fenceCommands.js";
 import type { MdInlineDoc } from "./plugins/0_types.js";
 import { MdInlineDocContext, MdPluginContext, type MdPluginScope } from "./plugins/4_MdPluginContext.js";
 import "./mdview.css";
@@ -251,14 +251,17 @@ export const MdPanel = SignalReact(function MdPanel({
   // zoom on the PanelGroup would skew its sash pointer math.
   const zoom = appState.panelZoom[pid] ?? 1;
   const proseWidth = useProseWidth(pid);
-  const columns = fenceColumns(proseWidth.width);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [advance, setAdvance] = useState(CODE_ADVANCE_PX);
+  const columns = fenceColumns(proseWidth.width, advance);
   const pluginScope = useMemo((): MdPluginScope => ({
     plugins: host.mdPlugins,
     runCommand: host.runFenceCommand ? (request) => host.runFenceCommand!(request) : undefined,
     columns,
+    // setAdvance keeps its identity, so the scope only moves when columns do.
+    reportAdvance: setAdvance,
   }), [host, columns]);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
 
   // ⌘ held marks the panel, so file-citing inline code shows as a link only
   // while a ⌘-click would open it.
