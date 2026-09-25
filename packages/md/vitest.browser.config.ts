@@ -10,7 +10,9 @@ export default defineConfig({
   test: {
     browser: {
       enabled: true,
-      provider: playwright(),
+      // Headless Chromium launches with --hide-scrollbars, which also drops `::-webkit-scrollbar`
+      // styling; the classic-scrollbar table test needs bars that take layout width.
+      provider: playwright({ launchOptions: { ignoreDefaultArgs: ["--hide-scrollbars"] } }),
       instances: [{ browser: "chromium", viewport: { width: 1280, height: 800 } }],
       headless: true,
       screenshotFailures: true,

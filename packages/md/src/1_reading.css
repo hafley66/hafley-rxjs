@@ -162,14 +162,22 @@
   --sg-hover-bg: color-mix(in srgb, var(--sg-fg) 4%, var(--sg-bg));
   --sg-line: color-mix(in srgb, var(--sg-fg) 15%, var(--sg-bg));
   /* Header band (row-h per head row plus its 1px rule) and the row run, both
-     written onto this element by the grid renderer. */
+     written onto this element by the grid renderer. Only the shrink floor reads
+     it: the ceiling is the laid-out content, which also counts a classic
+     horizontal scrollbar and the subpixel rows a zoomed page rounds out of
+     --sg-total-h. A ceiling computed from these numbers came out short by
+     either, and the scroller then grew a vertical scrollbar over rows that all fit. */
   --md-table-content-h: calc(var(--sg-row-h) * var(--sg-head-rows, 1) + 1px + var(--sg-total-h));
   --md-table-cap: 70vh;
   /* The stylesheet sets block-size and the resize handle writes an inline
      height over it, so a drag escapes the cap but never the content: it
-     shrinks toward one row and grows no further than the last row. */
-  block-size: min(var(--md-table-cap), var(--md-table-content-h));
-  max-block-size: var(--md-table-content-h);
+     shrinks toward one row and grows no further than the last row. The column
+     flex lets max-content measure the scroller's content instead of the 100%
+     block-size the theme gives it. */
+  display: flex;
+  flex-direction: column;
+  block-size: var(--md-table-cap);
+  max-block-size: max-content;
   min-block-size: min(var(--md-table-content-h), calc(var(--sg-row-h) * (var(--sg-head-rows, 1) + 1) + 1px));
   max-inline-size: 100%;
   resize: vertical;
@@ -197,6 +205,17 @@
   inline-size: 100%;
 }
 .mdview-table-grid :is(.sg-head, .sg-head-row, .sg-canvas, .sg-rows) { inline-size: 100%; }
+.mdview-table-grid .sg-scroll {
+  flex: 1 1 auto;
+  block-size: auto;
+  min-block-size: 0;
+}
+/* Every row of a table under the cap renders, so the rows' own layout height
+   is the floor; --sg-total-h stays the extent of a virtualized run. */
+.mdview-table-grid .sg-canvas {
+  block-size: auto;
+  min-block-size: var(--sg-total-h);
+}
 .mdview-table-cell { min-width: 0; width: 100%; }
 .mdview-table-header-cell {
   position: relative;

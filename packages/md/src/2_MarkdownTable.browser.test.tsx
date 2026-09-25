@@ -329,3 +329,115 @@ it("sizes the grid to header plus rows under the 70vh cap, scrolls inside above 
     Reflect.deleteProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT");
   }
 });
+
+it("fits short wrapping tables without a vertical scrollbar when scrollbars take layout width", async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  // Classic scrollbars, the way a host that styles `::-webkit-scrollbar` gets them: each bar
+  // takes 15px out of the scroller's layout box instead of floating over the content.
+  const classic = document.createElement("style");
+  classic.textContent = "::-webkit-scrollbar { width: 15px; height: 15px } ::-webkit-scrollbar-thumb { background: #888 }";
+  document.head.append(classic);
+  const host = document.createElement("div");
+  host.style.cssText = "width: 720px; margin: 0; padding: 0";
+  document.body.append(host);
+  const root = createRoot(host);
+  const initialViewport = { width: window.innerWidth, height: window.innerHeight };
+  const code = (text: string) => createElement("code", null, text);
+  const prose = (text: string, ...refs: string[]) => createElement("span", null, text, ...refs.flatMap((ref) => [" ", code(ref)]));
+  const wrapping = [
+    createElement("thead", null, row("th", "Surface", "Behaviour", "Source")),
+    createElement("tbody", null,
+      row("td", "reading column", prose("sizes the table to header plus rows under the viewport cap and scrolls inside above it", "--md-table-cap", "--sg-total-h"), code("packages/md/src/1_reading.css")),
+      row("td", "grid renderer", prose("writes the row run height and the header band count onto the grid root on every pass", "--sg-head-rows"), code("packages/signal-grid/src/10_render.ts")),
+      row("td", "row measure", prose("reports each measured row height back into the axis so wrapped cells grow their row"), code("packages/signal-grid/src/14_measure.ts")),
+      row("td", "persistence", prose("stores column order, widths and visibility per document and per table anchor", "tableState"), code("packages/md/src/3_tablePersistence.ts")),
+    ),
+  ];
+  const wide = [
+    createElement("thead", null, row("th", ...Array.from({ length: 14 }, (_, index) => `column-heading-${index}`))),
+    createElement("tbody", null, ...Array.from({ length: 3 }, (_, rowIndex) => row("td", ...Array.from({ length: 14 }, (_, index) => `value-${rowIndex}-${index}`)))),
+  ];
+  const long = [
+    createElement("thead", null, row("th", "Name", "Details")),
+    createElement("tbody", null, ...Array.from({ length: 200 }, (_, index) => row("td", `name-${index}`, prose(`row ${index} carries enough prose to wrap inside a narrow column of the reading layout`, "code-ref")))),
+  ];
+  const settle = async () => {
+    for (let frame = 0; frame < 6; frame += 1) {
+      await act(async () => { await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined))); });
+    }
+  };
+  const measure = () => {
+    const scroll = host.querySelector<HTMLElement>(".sg-scroll")!;
+    return {
+      scrolls: scroll.scrollHeight > scroll.clientHeight,
+      overflowY: scroll.scrollHeight - scroll.clientHeight,
+      verticalBar: scroll.offsetWidth - scroll.clientWidth,
+      scrollsInline: scroll.scrollWidth > scroll.clientWidth,
+      horizontalBar: scroll.offsetHeight - scroll.clientHeight,
+    };
+  };
+  try {
+    await page.viewport(1280, 800);
+    const cap = Math.round(window.innerHeight * 0.7);
+    await act(() => root.render(createElement(MarkdownTable, { children: wrapping })));
+    await expect.poll(() => host.querySelectorAll(".sg-center .sg-row").length).toBe(4);
+    await settle();
+    const short = measure();
+    await page.screenshot({ path: "./out/md-table-classic-scrollbar.png" });
+
+    // A zoomed page (instant's zoom setting) lays rows out in fractions of a pixel that the
+    // measured --sg-total-h rounds away.
+    host.style.zoom = "0.9";
+    await settle();
+    const zoomed = measure();
+    host.style.removeProperty("zoom");
+
+    await act(() => root.render(createElement(MarkdownTable, { children: wide })));
+    await expect.poll(() => host.querySelectorAll(".sg-head-cell").length).toBe(14);
+    await settle();
+    const wideTable = measure();
+
+    await act(() => root.render(createElement(MarkdownTable, { children: long })));
+    await expect.poll(() => host.querySelectorAll(".sg-center .sg-row").length).toBeGreaterThan(4);
+    await settle();
+    const longTable = measure();
+    const longHeight = Math.round(host.querySelector<HTMLElement>(".sg-scroll")!.getBoundingClientRect().height);
+
+    expect({
+      short: { scrolls: short.scrolls, overflowY: short.overflowY, verticalBar: short.verticalBar },
+      zoomed: { scrolls: zoomed.scrolls, overflowY: zoomed.overflowY },
+      wide: { scrolls: wideTable.scrolls, overflowY: wideTable.overflowY, verticalBar: wideTable.verticalBar, scrollsInline: wideTable.scrollsInline, horizontalBar: wideTable.horizontalBar },
+      long: { scrolls: longTable.scrolls, verticalBar: longTable.verticalBar, atCap: longHeight === cap },
+    }).toMatchInlineSnapshot(`
+      {
+        "long": {
+          "atCap": true,
+          "scrolls": true,
+          "verticalBar": 15,
+        },
+        "short": {
+          "overflowY": 0,
+          "scrolls": false,
+          "verticalBar": 0,
+        },
+        "wide": {
+          "horizontalBar": 15,
+          "overflowY": 0,
+          "scrolls": false,
+          "scrollsInline": true,
+          "verticalBar": 0,
+        },
+        "zoomed": {
+          "overflowY": 0,
+          "scrolls": false,
+        },
+      }
+    `);
+  } finally {
+    await page.viewport(initialViewport.width, initialViewport.height);
+    await act(() => root.unmount());
+    host.remove();
+    classic.remove();
+    Reflect.deleteProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT");
+  }
+});
