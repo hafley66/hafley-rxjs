@@ -1,0 +1,305 @@
+/* rail-lab.css — the v3 collision-blend lab. A grid of small swatches,
+   each one heading box plus the rail(s) meeting it, showing one reading
+   of rule 3: where a vertical rail line and a horizontal heading line
+   meet, the stroke colour spills into the box's BACKGROUND, as if the
+   collision stained it. The lab reads no :has() — it renders below the
+   document, visible whichever variant radio is checked, and keeps its
+   own light/dark papers per swatch. Every swatch is driven by the same
+   knobs on .rail-lab so the owner can compare them by editing one
+   place: --stroke, --h-1…6, --spill-size, --spill-strength.
+
+   Canonical scene (shared markup, restyled per interpretation): a
+   level-3 box — the outermost ancestor rail (hue --h-1) runs under the
+   box's left border, the box's own rail (hue --h-3) crosses behind it
+   two indents in; the sw-cross swatch adds the middle rail (hue --h-2)
+   for the every-crossing-stains reading. Junctions sit at x = 0 and
+   x = 2 * --indent. */
+
+@property --stroke {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 2px;
+}
+@property --spill-size {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 2rem;
+}
+@property --spill-strength {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.45;
+}
+
+.rail-lab {
+  --stroke: 2px;
+  --indent: 26px;
+  --rail-blend: 10px;
+  --toggle-size: 18px;
+  --h-radius: 0.6em;
+  --spill-size: 2rem;
+  --spill-strength: 0.45;
+  --h-1: #233b63;
+  --h-2: #2f6fb8;
+  --h-3: #2b8a7e;
+  --h-4: #8f5fb8;
+  --h-5: #c2569b;
+  --h-6: #c25b3f;
+
+  margin-block-start: 3rem;
+  margin-inline-start: max(0px, calc((100% - var(--md-prose-width)) / 2));
+  max-width: var(--md-prose-width);
+  font-size: var(--md-font-size, 15px);
+}
+.rail-lab > h2 {
+  margin: 0 0 0.2rem;
+  font-size: 1.2em;
+}
+.rail-lab .lab-note {
+  margin: 0 0 1rem;
+  max-width: 72ch;
+  font-size: 0.85em;
+  line-height: 1.55;
+  color: color-mix(in srgb, currentColor 72%, transparent);
+}
+.rail-lab code {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 0.9em;
+  padding: 0.05em 0.3em;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+.lab-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.1rem;
+  margin: 0;
+}
+.sw {
+  margin: 0;
+  padding: 0.55rem 0.6rem 0.5rem;
+  border: 1px solid var(--frame, color-mix(in srgb, currentColor 14%, transparent));
+  border-radius: 10px;
+}
+.sw-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+}
+.sw-stage {
+  position: relative;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--h-ink) 10%, transparent);
+  border-radius: 7px;
+  background: var(--h-paper);
+  color: var(--h-ink);
+  --h-paper: #fbfbfa;
+  --h-ink: #1c1c1a;
+}
+.sw-stage[data-paper="dark"] {
+  --h-paper: #20222a;
+  --h-ink: #e8e8ea;
+}
+.sw-stage::after {
+  content: attr(data-paper);
+  position: absolute;
+  top: 4px;
+  right: 7px;
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.45;
+}
+.sw figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.sw figcaption b {
+  font-weight: 650;
+}
+.sw figcaption span {
+  color: color-mix(in srgb, currentColor 72%, transparent);
+}
+.sw figcaption code {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 0.92em;
+}
+
+/* The scene: paper, rails, box — the same geometry the v3 variants use. */
+.sw-scene {
+  position: relative;
+  height: 96px;
+  overflow: hidden;
+  border-radius: 5px;
+  --hp: var(--h-1);  /* outermost ancestor rail, under the left border */
+  --hm: var(--h-2);  /* middle rail (sw-cross only) */
+  --hs: var(--h-3);  /* the box's own rail, crossing behind it */
+  --fill: color-mix(in oklab, var(--hs) 11%, var(--h-paper));
+  --stain-p: color-mix(in oklab, var(--hp) calc(var(--spill-strength) * 100%), var(--h-paper));
+  --stain-m: color-mix(in oklab, var(--hm) calc(var(--spill-strength) * 100%), var(--h-paper));
+  --stain-s: color-mix(in oklab, var(--hs) calc(var(--spill-strength) * 100%), var(--h-paper));
+  --border-grad: linear-gradient(90deg, var(--hp) 0, var(--hs) var(--rail-blend), var(--hs) 100%);
+}
+.sw-rail {
+  position: absolute;
+  inset-block: 0;
+  width: var(--stroke);
+}
+.sw-rail-a { left: 0; background: var(--hp); }
+.sw-rail-m { left: var(--indent); background: var(--hm); display: none; }
+.sw-rail-o { left: calc(var(--indent) * 2); background: var(--hs); }
+.sw-cross .sw-rail-m { display: block; }
+.sw-box {
+  position: absolute;
+  inset-block: 26px;
+  inset-inline: 0;
+  display: flex;
+  align-items: center;
+  padding-inline: calc(var(--indent) * 2 + var(--toggle-size) / 2 + 0.9em) 0.9em;
+  border: var(--stroke) solid transparent;
+  border-radius: 0 var(--h-radius) var(--h-radius) 0;
+  /* Base look: faint own-hue fill on padding-box; the border gradient
+     carries the ancestor hue into the border at each crossing. */
+  background:
+    linear-gradient(var(--fill), var(--fill)) padding-box,
+    var(--border-grad) border-box;
+}
+.sw-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82em;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: color-mix(in oklab, var(--hs) 72%, var(--h-ink));
+}
+
+/* 1 — radial stain: the collision radiates into the fill from every
+   junction (top and bottom border at each rail crossing). */
+.sw-r .sw-box {
+  background:
+    radial-gradient(circle var(--spill-size) at 0 0, var(--stain-p), transparent 72%) padding-box,
+    radial-gradient(circle var(--spill-size) at 0 100%, var(--stain-p), transparent 72%) padding-box,
+    radial-gradient(circle var(--spill-size) at calc(var(--indent) * 2) 0, var(--stain-s), transparent 72%) padding-box,
+    radial-gradient(circle var(--spill-size) at calc(var(--indent) * 2) 100%, var(--stain-s), transparent 72%) padding-box,
+    linear-gradient(var(--fill), var(--fill)) padding-box,
+    var(--border-grad) border-box;
+}
+
+/* 2 — border bleed: the stroke bleeds inward from the border, one wash
+   from the left border, one band around the own-rail crossing. */
+.sw-lin .sw-box {
+  background:
+    linear-gradient(90deg, var(--stain-p), transparent var(--spill-size)) padding-box,
+    linear-gradient(90deg,
+      transparent calc(var(--indent) * 2 - var(--spill-size)),
+      var(--stain-s) calc(var(--indent) * 2),
+      transparent calc(var(--indent) * 2 + var(--spill-size))) padding-box,
+    linear-gradient(var(--fill), var(--fill)) padding-box,
+    var(--border-grad) border-box;
+}
+
+/* 3 — corner sweep: colour sweeps around each junction corner, quarter
+   turn into the fill. */
+.sw-conic .sw-box {
+  background:
+    conic-gradient(from 90deg at 0 0, var(--stain-p) 0deg, transparent 90deg) padding-box,
+    conic-gradient(from 270deg at 0 100%, var(--stain-p) 0deg, transparent 90deg) padding-box,
+    conic-gradient(from 90deg at calc(var(--indent) * 2) 0, var(--stain-s) 0deg, transparent 90deg) padding-box,
+    conic-gradient(from 270deg at calc(var(--indent) * 2) 100%, var(--stain-s) 0deg, transparent 90deg) padding-box,
+    linear-gradient(var(--fill), var(--fill)) padding-box,
+    var(--border-grad) border-box;
+}
+
+/* 4 — two-hue mix: parent rail hue and box hue meet mid-span, mixed
+   with color-mix(), then fade out into the plain fill. */
+.sw-mix .sw-box {
+  background:
+    linear-gradient(90deg,
+      var(--stain-p) 0,
+      color-mix(in oklab, var(--stain-p) 50%, var(--stain-s)) var(--indent),
+      var(--stain-s) calc(var(--indent) * 2),
+      transparent calc(var(--indent) * 2 + var(--spill-size))) padding-box,
+    linear-gradient(var(--fill), var(--fill)) padding-box,
+    var(--border-grad) border-box;
+}
+
+/* 5 — diffuse glow: the raw rail hue glows under the stroke; blur does
+   the diffusion, clip-path keeps it inside the box. */
+.sw-blur .sw-box::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(circle var(--spill-size) at 0 0, var(--hp), transparent 72%),
+    radial-gradient(circle var(--spill-size) at 0 100%, var(--hp), transparent 72%),
+    radial-gradient(circle var(--spill-size) at calc(var(--indent) * 2) 0, var(--hs), transparent 72%),
+    radial-gradient(circle var(--spill-size) at calc(var(--indent) * 2) 100%, var(--hs), transparent 72%);
+  filter: blur(calc(var(--stroke) * 3));
+  clip-path: inset(0);
+  opacity: var(--spill-strength);
+}
+.sw-blur .sw-title {
+  position: relative;
+  z-index: 1;
+}
+
+/* 6 — blend overlay: the raw rail colour composites over the fill —
+   multiply on light paper, screen on dark. */
+.sw-blend .sw-box {
+  isolation: isolate;
+}
+.sw-blend .sw-box::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(circle var(--spill-size) at 0 0, var(--hp), transparent 72%),
+    radial-gradient(circle var(--spill-size) at 0 100%, var(--hp), transparent 72%),
+    radial-gradient(circle var(--spill-size) at calc(var(--indent) * 2) 0, var(--hs), transparent 72%),
+    radial-gradient(circle var(--spill-size) at calc(var(--indent) * 2) 100%, var(--hs), transparent 72%);
+  mix-blend-mode: multiply;
+  opacity: var(--spill-strength);
+}
+.sw-blend .sw-stage[data-paper="dark"] .sw-box::before {
+  mix-blend-mode: screen;
+}
+.sw-blend .sw-title {
+  position: relative;
+  z-index: 1;
+}
+
+/* 7 — ancestor wash: a middle rail joins, and every crossing stains the
+   fill with its own hue (plus the full-height wash under the left
+   border, where the outermost rail runs the whole box edge). */
+.sw-cross .sw-scene {
+  --border-grad: linear-gradient(90deg,
+    var(--hp) 0,
+    var(--hs) var(--rail-blend),
+    var(--hs) calc(var(--indent) - var(--rail-blend)),
+    var(--hm) var(--indent),
+    var(--hs) calc(var(--indent) + var(--rail-blend)),
+    var(--hs) 100%);
+}
+.sw-cross .sw-box {
+  background:
+    linear-gradient(90deg, var(--stain-p), transparent var(--spill-size)) padding-box,
+    radial-gradient(circle var(--spill-size) at 0 0, var(--stain-p), transparent 72%) padding-box,
+    radial-gradient(circle var(--spill-size) at 0 100%, var(--stain-p), transparent 72%) padding-box,
+    radial-gradient(circle var(--spill-size) at var(--indent) 0, var(--stain-m), transparent 72%) padding-box,
+    radial-gradient(circle var(--spill-size) at var(--indent) 100%, var(--stain-m), transparent 72%) padding-box,
+    radial-gradient(circle var(--spill-size) at calc(var(--indent) * 2) 0, var(--stain-s), transparent 72%) padding-box,
+    radial-gradient(circle var(--spill-size) at calc(var(--indent) * 2) 100%, var(--stain-s), transparent 72%) padding-box,
+    linear-gradient(var(--fill), var(--fill)) padding-box,
+    var(--border-grad) border-box;
+}
+
+/* 8 — rim wash: the stroke casts the collision around the inside of the
+   fill as a soft inset shadow. */
+.sw-shadow .sw-box {
+  box-shadow: inset var(--spill-size) 0 var(--spill-size) calc(-1 * var(--stroke)) var(--stain-p);
+}

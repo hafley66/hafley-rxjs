@@ -12,6 +12,9 @@
 <link rel="stylesheet" href="rail-v2-pill.css">
 <link rel="stylesheet" href="rail-v2-underline.css">
 <link rel="stylesheet" href="rail-v2-notch.css">
+<link rel="stylesheet" href="rail-v3-stain.css">
+<link rel="stylesheet" href="rail-v3-diffuse.css">
+<link rel="stylesheet" href="rail-lab.css">
 <style>
 /* Page chrome only; the md DOM is styled entirely by base.css + rail-*.css.
    Variant switching is radio inputs + :has() — no script anywhere. */
@@ -90,6 +93,8 @@ body:has(#v-notch:checked) .props-notch { display: block; }
 body:has(#v2-pill:checked) .props-v2-pill,
 body:has(#v2-underline:checked) .props-v2-underline,
 body:has(#v2-notch:checked) .props-v2-notch { display: block; }
+body:has(#v3-stain:checked) .props-v3-stain,
+body:has(#v3-diffuse:checked) .props-v3-diffuse { display: block; }
 .props h2 { margin: 0 0 0.2rem; font-size: 0.95rem; }
 .props .qa {
   margin: 0 0 0.9rem;
@@ -139,6 +144,11 @@ body:has(#v2-notch:checked) .props-v2-notch { display: block; }
       <label><input type="radio" name="variant" id="v2-pill">v2-pill</label>
       <label><input type="radio" name="variant" id="v2-underline">v2-underline</label>
       <label><input type="radio" name="variant" id="v2-notch">v2-notch</label>
+    </div>
+    <div class="picker-group">
+      <span class="picker-tag">v3</span>
+      <label><input type="radio" name="variant" id="v3-stain">v3-stain</label>
+      <label><input type="radio" name="variant" id="v3-diffuse">v3-diffuse</label>
     </div>
   </fieldset>
 </header>
@@ -211,6 +221,148 @@ body:has(#v2-notch:checked) .props-v2-notch { display: block; }
         </div>
       </div>
     </div>
+    <section class="rail-lab">
+      <h2>v3 lab — collision blend</h2>
+      <p class="lab-note">Rule 3 readings: where a rail meets a heading, the stroke stains the box's fill. Every swatch is the same scene — a level-3 heading box with the outermost rail under its left border and its own rail crossing two indents in — driven by the same knobs on <code>.rail-lab</code> in <code>rail-lab.css</code>: <code>--stroke</code>, <code>--h-1…6</code>, <code>--spill-size</code>, <code>--spill-strength</code>. Each shows light and dark paper. The variants take two of these readings: <b>v3-stain</b> → radial stain (+ ancestor wash), <b>v3-diffuse</b> → diffuse glow.</p>
+      <div class="lab-grid">
+        <figure class="sw sw-r">
+          <div class="sw-pair">
+            <div class="sw-stage" data-paper="light">
+              <div class="sw-scene">
+                <i class="sw-rail sw-rail-a"></i><i class="sw-rail sw-rail-m"></i><i class="sw-rail sw-rail-o"></i>
+                <div class="sw-box"><span class="sw-title">1.1.1 blend mechanics</span></div>
+              </div>
+            </div>
+            <div class="sw-stage" data-paper="dark">
+              <div class="sw-scene">
+                <i class="sw-rail sw-rail-a"></i><i class="sw-rail sw-rail-m"></i><i class="sw-rail sw-rail-o"></i>
+                <div class="sw-box"><span class="sw-title">1.1.1 blend mechanics</span></div>
+              </div>
+            </div>
+          </div>
+          <figcaption><b>radial stain</b> — <span>the collision radiates into the fill from every junction</span> <code>radial-gradient()</code></figcaption>
+        </figure>
+        <figure class="sw sw-lin">
+          <div class="sw-pair">
+            <div class="sw-stage" data-paper="light">
+              <div class="sw-scene">
+                <i class="sw-rail sw-rail-a"></i><i class="sw-rail sw-rail-m"></i><i class="sw-rail sw-rail-o"></i>
+                <div class="sw-box"><span class="sw-title">1.1.1 blend mechanics</span></div>
+              </div>
+            </div>
+            <div class="sw-stage" data-paper="dark">
+              <div class="sw-scene">
+                <i class="sw-rail sw-rail-a"></i><i class="sw-rail sw-rail-m"></i><i class="sw-rail sw-rail-o"></i>
+                <div class="sw-box"><span class="sw-title">1.1.1 blend mechanics</span></div>
+              </div>
+            </div>
+          </div>
+          <figcaption><b>border bleed</b> — <span>the stroke bleeds inward from the border</span> <code>linear-gradient()</code></figcaption>
+        </figure>
+        <figure class="sw sw-conic">
+          <div class="sw-pair">
+            <div class="sw-stage" data-paper="light">
+              <div class="sw-scene">
+                <i class="sw-rail sw-rail-a"></i><i class="sw-rail sw-rail-m"></i><i class="sw-rail sw-rail-o"></i>
+                <div class="sw-box"><span class="sw-title">1.1.1 blend mechanics</span></div>
+              </div>
+            </div>
+            <div class="sw-stage" data-paper="dark">
+              <div class="sw-scene">
+                <i class="sw-rail sw-rail-a"></i><i class="sw-rail sw-rail-m"></i><i class="sw-rail sw-rail-o"></i>
+                <div class="sw-box"><span class="sw-title">1.1.1 blend mechanics</span></div>
+              </div>
+            </div>
+          </div>
+          <figcaption><b>corner sweep</b> — <span>colour sweeps a quarter turn around each junction corner</span> <code>conic-gradient()</code></figcaption>
+        </figure>
+        <figure class="sw sw-mix">
+          <div class="sw-pair">
+            <div class="sw-stage" data-paper="light">
+              <div class="sw-scene">
+                <i class="sw-rail sw-rail-a"></i><i class="sw-rail sw-rail-m"></i><i class="sw-rail sw-rail-o"></i>
+                <div class="sw-box"><span class="sw-title">1.1.1 blend mechanics</span></div>
+              </div>
+            </div>
+            <div class="sw-stage" data-paper="dark">
+              <div class="sw-scene">
+                <i class="sw-rail sw-rail-a"></i><i class="sw-rail sw-rail-m"></i><i class="sw-rail sw-rail-o"></i>
+                <div class="sw-box"><span class="sw-title">1.1.1 blend mechanics</span></div>
+              </div>
+            </div>
+          </div>
+          <figcaption><b>two-hue mix</b> — <span>parent rail hue and box hue meet, mixed with <code>color-mix()</code>, fading into the fill</span> <code>color-mix()</code> stops</figcaption>
+        </figure>
+        <figure class="sw sw-blur">
+          <div class="sw-pair">
+            <div class="sw-stage" data-paper="light">
+              <div class="sw-scene">
+                <i class="sw-rail sw-rail-a"></i><i class="sw-rail sw-rail-m"></i><i class="sw-rail sw-rail-o"></i>
+                <div class="sw-box"><span class="sw-title">1.1.1 blend mechanics</span></div>
+              </div>
+            </div>
+            <div class="sw-stage" data-paper="dark">
+              <div class="sw-scene">
+                <i class="sw-rail sw-rail-a"></i><i class="sw-rail sw-rail-m"></i><i class="sw-rail sw-rail-o"></i>
+                <div class="sw-box"><span class="sw-title">1.1.1 blend mechanics</span></div>
+              </div>
+            </div>
+          </div>
+          <figcaption><b>diffuse glow</b> — <span>raw rail hue diffuses under the stroke, clipped to the box</span> <code>filter: blur()</code></figcaption>
+        </figure>
+        <figure class="sw sw-blend">
+          <div class="sw-pair">
+            <div class="sw-stage" data-paper="light">
+              <div class="sw-scene">
+                <i class="sw-rail sw-rail-a"></i><i class="sw-rail sw-rail-m"></i><i class="sw-rail sw-rail-o"></i>
+                <div class="sw-box"><span class="sw-title">1.1.1 blend mechanics</span></div>
+              </div>
+            </div>
+            <div class="sw-stage" data-paper="dark">
+              <div class="sw-scene">
+                <i class="sw-rail sw-rail-a"></i><i class="sw-rail sw-rail-m"></i><i class="sw-rail sw-rail-o"></i>
+                <div class="sw-box"><span class="sw-title">1.1.1 blend mechanics</span></div>
+              </div>
+            </div>
+          </div>
+          <figcaption><b>blend overlay</b> — <span>rail colour composites over the fill — multiply on light, screen on dark</span> <code>mix-blend-mode</code></figcaption>
+        </figure>
+        <figure class="sw sw-cross">
+          <div class="sw-pair">
+            <div class="sw-stage" data-paper="light">
+              <div class="sw-scene">
+                <i class="sw-rail sw-rail-a"></i><i class="sw-rail sw-rail-m"></i><i class="sw-rail sw-rail-o"></i>
+                <div class="sw-box"><span class="sw-title">1.1.1 blend mechanics</span></div>
+              </div>
+            </div>
+            <div class="sw-stage" data-paper="dark">
+              <div class="sw-scene">
+                <i class="sw-rail sw-rail-a"></i><i class="sw-rail sw-rail-m"></i><i class="sw-rail sw-rail-o"></i>
+                <div class="sw-box"><span class="sw-title">1.1.1 blend mechanics</span></div>
+              </div>
+            </div>
+          </div>
+          <figcaption><b>ancestor wash</b> — <span>the middle rail joins: every crossing rail stains the fill with its own hue</span> stacked per-rail gradients</figcaption>
+        </figure>
+        <figure class="sw sw-shadow">
+          <div class="sw-pair">
+            <div class="sw-stage" data-paper="light">
+              <div class="sw-scene">
+                <i class="sw-rail sw-rail-a"></i><i class="sw-rail sw-rail-m"></i><i class="sw-rail sw-rail-o"></i>
+                <div class="sw-box"><span class="sw-title">1.1.1 blend mechanics</span></div>
+              </div>
+            </div>
+            <div class="sw-stage" data-paper="dark">
+              <div class="sw-scene">
+                <i class="sw-rail sw-rail-a"></i><i class="sw-rail sw-rail-m"></i><i class="sw-rail sw-rail-o"></i>
+                <div class="sw-box"><span class="sw-title">1.1.1 blend mechanics</span></div>
+              </div>
+            </div>
+          </div>
+          <figcaption><b>rim wash</b> — <span>the stroke casts a soft wash around the inside of the fill</span> <code>inset box-shadow</code></figcaption>
+        </figure>
+      </div>
+    </section>
   </div>
   <aside class="proto-panel">
     <section class="props props-pill">
@@ -327,6 +479,44 @@ body:has(#v2-notch:checked) .props-v2-notch { display: block; }
         <dt>--toggle-size</dt><dd>16px</dd>
         <dt>--h-step</dt><dd>0.1em</dd>
         <dt>--h-pad-x / --h-pad-y</dt><dd>0.9em / 0.4em</dd>
+        <dt>--body-inset</dt><dd>0.9em</dd>
+      </dl>
+    </section>
+    <section class="props props-v3-stain">
+      <h2>v3-stain</h2>
+      <p class="qa">strokes <b>one --stroke: rail = box border = underline = toggle ring</b> · lines <b>touch everywhere — rhythm lives inside sections, rails run box → next sibling heading, unbroken</b> · spill <b>radial stain at every junction, each in its rail's hue</b> · lab <b>radial stain + ancestor wash</b></p>
+      <dl class="vars">
+        <dt>levels --h-1…6</dt>
+        <dd class="sw-row"><i style="background: var(--h-1)"></i><i style="background: var(--h-2)"></i><i style="background: var(--h-3)"></i><i style="background: var(--h-4)"></i><i style="background: var(--h-5)"></i><i style="background: var(--h-6)"></i></dd>
+        <dt>--stroke</dt><dd>2px (rail, border, underline)</dd>
+        <dt>--indent</dt><dd>26px</dd>
+        <dt>--rail-blend</dt><dd>10px</dd>
+        <dt>--spill-size</dt><dd>1.9rem</dd>
+        <dt>--spill-strength</dt><dd>0.45</dd>
+        <dt>--sec-gap</dt><dd>1.5em (inside the section)</dd>
+        <dt>--toggle-size</dt><dd>18px</dd>
+        <dt>box fill</dt><dd>cur 11% into paper (opaque)</dd>
+        <dt>--h-step</dt><dd>0.12em</dd>
+        <dt>--h-pad-x / --h-pad-y</dt><dd>0.9em / 0.3em</dd>
+        <dt>--body-inset</dt><dd>0.9em</dd>
+      </dl>
+    </section>
+    <section class="props props-v3-diffuse">
+      <h2>v3-diffuse</h2>
+      <p class="qa">strokes <b>one --stroke: rail = box border = underline = toggle ring</b> · lines <b>touch everywhere — rhythm lives inside sections, rails run box → next sibling heading, unbroken</b> · spill <b>raw rail hue blurred under the stroke, clipped to the box</b> · lab <b>diffuse glow</b></p>
+      <dl class="vars">
+        <dt>levels --h-1…6</dt>
+        <dd class="sw-row"><i style="background: var(--h-1)"></i><i style="background: var(--h-2)"></i><i style="background: var(--h-3)"></i><i style="background: var(--h-4)"></i><i style="background: var(--h-5)"></i><i style="background: var(--h-6)"></i></dd>
+        <dt>--stroke</dt><dd>2px (rail, border, underline)</dd>
+        <dt>--indent</dt><dd>26px</dd>
+        <dt>--rail-blend</dt><dd>10px</dd>
+        <dt>--spill-size</dt><dd>1.9rem</dd>
+        <dt>--spill-strength</dt><dd>0.4 (glow opacity)</dd>
+        <dt>--sec-gap</dt><dd>1.5em (inside the section)</dd>
+        <dt>--toggle-size</dt><dd>18px</dd>
+        <dt>box fill</dt><dd>cur 11% into paper (opaque)</dd>
+        <dt>--h-step</dt><dd>0.12em</dd>
+        <dt>--h-pad-x / --h-pad-y</dt><dd>0.9em / 0.3em</dd>
         <dt>--body-inset</dt><dd>0.9em</dd>
       </dl>
     </section>
