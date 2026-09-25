@@ -308,10 +308,10 @@ The ⌘-held panel mark (`data-md-meta`, which reveals `code[data-md-ref]` as a 
 
 | factory | slot | library |
 | --- | --- | --- |
-| `stepsPlugin()` | fence `steps` / stacked `diff` | `shiki-magic-move`, `diff` (`applyPatch` turns patches into states) |
+| `stepsPlugin()` (shipped, section 2a, subpath `@hafley66/md/plugins/steps`) | fence `steps` | `codehike` `Pre` + token-transitions, `diff` (`applyPatch` turns patches into states) |
 | `xstatePlugin()` | fence `xstate` | `xstate` + `@xstate/graph`, drawn by grapht |
 | `mdxPlugin()` | new slot: document transform | `@mdx-js/mdx` `evaluate` |
-| Code Hike scrollycoding | needs MDX slot | `codehike` |
+| Code Hike scrollycoding | needs MDX slot (lab demo 3) | `codehike`, `@mdx-js/mdx` |
 
 Diff fence to animation:
 
@@ -319,7 +319,7 @@ Diff fence to animation:
 fence text  : patch1 --- patch2 --- patch3
 applyPatch  : s0 -> s1 -> s2 -> s3         (jsdiff; s0 = the fence's base block or empty)
 steps$      : s0 --s1 --s2 --s3            (interval or scroll position, a Signal index)
-magic-move  : animates tokens s(n) -> s(n+1)
+token FLIP  : animates tokens s(n) -> s(n+1)   (codehike/utils/token-transitions)
 ```
 
 ### `marblesPlugin()` (built)
@@ -425,6 +425,151 @@ Receipts: `packages/md/src/plugins/2_marblesPlugin.test.ts` (plugin shape + `par
 - Marbles operator rows between lanes (`> op`): needs a `MarbleDoc` field + parser directive in signal-marbles.
 - Marbles fence: signal-marbles' header controls (play, step) and legend render inside every fence; no
   static-only mode exists in `renderMarbles`.
+
+## 2a. Code Hike lab and `stepsPlugin()` (2026-09-25)
+
+### Lab
+
+`packages/md/lab/code-hike/`, one page, six demos. Receipts: `lab/code-hike/7_lab.browser.test.tsx`
+(inline snapshots, screenshots to `packages/md/out/lab/screens/`).
+
+```sh
+cd packages/md
+npx vite lab/code-hike            # dev server, open the printed URL
+npx vite build lab/code-hike      # -> out/lab/code-hike
+LAB_ENTRY=<entry> npx vite build --config lab/code-hike/measure/vite.config.ts lab/code-hike/measure
+node ../../scripts/browser-queue.mjs vitest run --config vitest.browser.config.ts lab/code-hike/7_lab.browser.test.tsx
+```
+
+| # | demo | Code Hike surface | MDX |
+| --- | --- | --- | --- |
+| 1 | `// !mark`, `// !focus(1:5)`, `// !callout[/take/] text` | `highlight` + `Pre` + handlers (`codehike/code`) | no |
+| 2 | three states, prev/next on a Signal index | `codehike/utils/token-transitions` (SmoothPre recipe) | no |
+| 3 | scrollycoding, prose beside a sticky code panel | `remarkCodeHike` + `recmaCodeHike` + `parse`, `SelectionProvider`/`Selectable`/`Selection` | yes, `@mdx-js/mdx` `evaluate` at runtime |
+| 4 | a ```` ```hike rust ```` fence inside `StreamdownBody` through an `MdPlugin` | `highlight` + `Pre` | no |
+| 5 | demo 2's states through `@shikijs/magic-move` | comparison | no |
+| 6 | the shipped `stepsPlugin()` inside `StreamdownBody` | `Pre` + token transitions, tokens from md's shiki | no |
+
+What runs without MDX:
+
+| module | without MDX | note |
+| --- | --- | --- |
+| `codehike/code` (`highlight`, `Pre`, `InnerPre/Line/Token`, handlers) | yes | `highlight(RawCode, theme)` is async; comment annotations are extracted there |
+| `codehike/utils/token-transitions` | yes | `getStartingSnapshot` / `calculateTransitions` over any element; FLIP via WAAPI |
+| `codehike/utils/selection`, `static-fallback` | yes | selection state is React `useState` inside `SelectionProvider` |
+| `codehike/mdx` (`remarkCodeHike`, `recmaCodeHike`) | no | remark stage walks plain mdast (`## !!steps`, ```` ```lang ! ````), then emits `mdxJsxFlowElement` nodes with estree attributes; recma makes the compiled component return the block tree |
+| `codehike` `parse` | no | `parse(Content)` = `Content({ _returnBlocks: true })`; needs the recma output |
+| `codehike/blocks` (`parseRoot`, `Block`, `HighlightedCodeBlock`) | no | imports `zod`, which `codehike@1.1.0` does not declare as a dependency |
+
+Observations:
+
+- `@code-hike/lighter` export conditions: `browser` (the one Vite picks) fetches every grammar and theme
+  from `https://lighter.codehike.org/<name>.json` at runtime; `default` holds them as 240 local
+  `import()` chunks. The lab aliases lighter to the default build (`lab/code-hike/0_lighterAlias.ts`, also
+  wired into `vitest.browser.config.ts`).
+- lighter's eager chunk inlines `onig.wasm` (466,610 B) as base64; that is most of `codehike/code`'s cost.
+- `Pre` + token transitions do not import lighter: `HighlightedCode` is a public type, so tokens from any
+  highlighter render through `Pre`. Comment annotations (`// !mark`) need `highlight()`.
+- The SmoothPre recipe sets inline `position: relative` on `<pre>`; a sticky panel needs a wrapper element.
+- Token transitions: moved tokens translate + recolour, added tokens fade in after the moves, removed
+  tokens leave at t=0 (`removeDuration = 0`), container height jumps. Magic-move animates leave, enter,
+  move and container size.
+- Demo 4 callout: inside Streamdown's code styles the callout box renders at column 0, not under the range.
+- `shiki-magic-move` is deprecated on npm ("now @shikijs/magic-move"); `@shikijs/magic-move@4.4.3`.
+
+### Bundle cost (Vite 8 / rolldown, minified, react external; gzip = `gzip -c` level 6)
+
+| entry | eager bytes | eager gzip | lazy per language (ts) |
+| --- | --- | --- | --- |
+| `codehike/code` `highlight` + `Pre`, lighter `default` build | 784,586 | 273,838 | 192,065 (18,677 gz) + theme 15,834 |
+| same, lighter `browser` build | 770,107 | 269,685 | fetched from lighter.codehike.org |
+| + token-transitions + selection | 796,978 | 277,924 | same |
+| + `@mdx-js/mdx` `evaluate` + remark/recma + `parse` | 1,361,866 | 418,518 | same |
+| `@shikijs/magic-move/react` `ShikiMagicMove` + `shiki/core` 4 + JS regex engine + lang/theme maps + `diff` | 295,045 | 82,793 | 190,897 (16,824 gz) + theme 12,859 |
+| `codehike/code` `Pre` + token-transitions, no lighter | 18,648 | 5,845 | 0 (tokens supplied) |
+| same + `diff` (`applyPatch`) | 39,887 | 11,279 | 0 |
+| `@shikijs/magic-move` renderer + core + `diff`, no shiki | 52,001 | 15,781 | 0 (tokens supplied) |
+
+md already ships shiki 3 through `@streamdown/code` (the `codePlugin()` highlight slot);
+`ShikiMagicMove` requires a shiki 4 highlighter, a second instance.
+
+### Engine for `stepsPlugin()`: Code Hike
+
+| option | packages | gzip added | tokens from | leave animation | container resize | annotation handlers |
+| --- | --- | --- | --- | --- | --- | --- |
+| **Code Hike `Pre` + token-transitions** (chosen) | `codehike`, `diff` | 11,279 | md's highlight slot | no | no | yes, same `Pre` (mark/focus/callout from the lab) |
+| magic-move renderer | `@shikijs/magic-move`, `diff` | 15,781 | md's highlight slot (`toKeyedTokens`) | yes | yes | no |
+| `ShikiMagicMove` | `@shikijs/magic-move`, `shiki@4`, `diff` | 82,793 + grammar | own shiki 4 | yes | yes | no |
+| Code Hike `highlight()` + `Pre` | `codehike` (+ lighter) | 277,924 + grammar | lighter | no | no | yes, from comments |
+
+One engine: Code Hike `Pre` + `codehike/utils/token-transitions`, tokens from the md highlight slot
+(the plugin array's first `highlight`, shiki 3 today). The annotation handlers from the lab plug into the
+same `Pre` when steps gain annotations. Cost: no leave animation, no height animation.
+
+### `stepsPlugin()`
+
+Fence syntax:
+
+````md
+```steps ts
+--- step start
+const total = items.length
+--- step count done items
+@@ -1 +1,3 @@
+-const total = items.length
++const total = items
++  .filter((item) => item.done)
++  .length
+```
+````
+
+Types:
+
+```ts
+// src/lib/5_stepsFence.ts
+type CodeStep = { title: string; code: string; from: "literal" | "patch"; error?: string }
+type StepsFence = { lang: string; steps: readonly CodeStep[] }
+function parseStepsFence(body: string, meta: string | undefined): StepsFence
+  // lang = meta's first word; split on /^--- ?step(?::|\s|$)\s*(.*)$/
+  // empty leading segment dropped; segment opening with @@ / --- / diff / Index: = applyPatch(previous)
+  // failed patch: previous code kept, error set
+
+// src/lib/6_hikeTokens.ts
+function toHighlightedCode(result: HighlightResult, code: string, lang: string, dark: boolean): HighlightedCode
+  // shiki lines -> flat Code Hike tokens; whitespace split out as bare strings; dark reads --shiki-dark
+function highlight$(highlighter: CodeHighlighterPlugin | undefined, code: string, lang: string, dark: boolean): Observable<HighlightedCode>
+  // cold; sync or callback answer; absent / unsupported language -> uncoloured tokens
+
+// src/plugins/2_stepsPlugin.tsx, entry src/plugins/steps.ts = subpath @hafley66/md/plugins/steps
+// (absent from the plugins index and defaultMdPlugins, so hosts without codehike/diff never resolve them)
+function stepsPlugin(): MdPlugin   // fence ["steps"], lazy 1_StepsFence chunk
+```
+
+Instance timelines:
+
+| instance | born | dies |
+| --- | --- | --- |
+| lazy chunk (`1_StepsFence`, `codehike/code`, token-transitions, `diff`) | first steps fence renders | page lifetime |
+| parsed fence | per (code, meta) | fence text change |
+| highlighted steps Signal | per (fence, highlight slot, dark); `combineLatest` over `highlight$` per step | inputs change or unmount (useSignal unsubscribes) |
+| step index Signal | fence mount | fence unmount (resets to 0 on remount) |
+| WAAPI animations | each index change, in `componentDidUpdate` | after `--md-steps-duration` (900 ms default, 0 under reduced motion) |
+
+Visuals: `src/plugins/steps.css`, custom properties only (`--md-steps-bg`, `-fg`, `-border`, `-radius`,
+`-pad-block`, `-pad-inline`, `-font`, `-bar-gap`, `-button-*`, `-muted`, `-error`, `-duration`).
+`data-theme` on `.md-steps` sets `color-scheme` from the `dark` fence prop.
+
+Package: `codehike` and `diff` are optional peers of `@hafley66/md` (and devDependencies);
+`@shikijs/magic-move`, `shiki@4`, `@mdx-js/mdx` are devDependencies for the lab only.
+
+### Open
+
+- Scroll-driven step index (the plan's "scroll position" source); buttons only today.
+- Annotations inside steps: comment syntax needs lighter's `highlight()` (274 KB gz eager) or annotation
+  data from the fence parser.
+- Scrollycoding in md: needs the `mdxPlugin()` document-transform slot (`@mdx-js/mdx`, +141 KB gz over
+  `codehike/code`), since `parse` needs recma output.
+- Callout column placement under Streamdown code styles.
 
 ## 3. Shared styling
 

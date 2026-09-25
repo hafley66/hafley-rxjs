@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import { searchForWorkspaceRoot } from "vite";
 import { defineConfig } from "vitest/config";
+import { lighterLocalAlias } from "./lab/code-hike/0_lighterAlias.js";
 
 // instant checks out beside hafley-rxjs (`~/projects/instant`, or the sibling in a paired
 // worktree). The host-cascade table test links its real stylesheets from there.
@@ -13,7 +14,7 @@ export default defineConfig({
   plugins: [react()],
   optimizeDeps: { include: ["dockview", "@hafley66/signal-grid", "@hafley66/signal-grid/react", "@hafley66/signals/react", "@hafley66/xdom", "@hafley66/signals"] },
   // streamdown and md resolve react through pnpm isolation; one copy or hooks read null dispatchers
-  resolve: { dedupe: ["react", "react-dom"] },
+  resolve: { dedupe: ["react", "react-dom"], alias: lighterLocalAlias },
   server: { fs: { allow: [searchForWorkspaceRoot(process.cwd()), instantRoot] } },
   test: {
     maxWorkers: 1,
@@ -35,6 +36,7 @@ export default defineConfig({
       "src/0b_SequenceDiagram.render.test.tsx",
       "src/0b_sequenceSource.test.ts",
       "src/0_DiagramLightbox.render.test.tsx",
+      "lab/**/*.browser.test.tsx",
     ],
     testTimeout: 120_000,
     hookTimeout: 120_000,

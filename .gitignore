@@ -27,3 +27,4 @@ issues/mui-external-virtualization/
 **/out/static/
 out/pages/
 packages/gothic/wasm/vello_demo/target/
+**/out/lab/

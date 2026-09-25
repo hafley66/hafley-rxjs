@@ -6,7 +6,8 @@
   "include": [
     "src/**/*",
     "fixtures/**/*",
-    "tests/**/*"
+    "tests/**/*",
+    "lab/**/*"
   ],
   "exclude": [
     "node_modules",

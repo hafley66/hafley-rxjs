@@ -12,6 +12,7 @@ export default defineConfig({
       "**/dist/**",
       "**/out/**",
       "tests/**",
+      "lab/**",
       "src/0_Streamdown.render.test.tsx",
       "src/1_reading.render.test.tsx",
       "src/**/*.browser.test.tsx",
