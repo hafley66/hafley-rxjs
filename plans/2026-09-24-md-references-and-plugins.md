@@ -169,6 +169,8 @@ function commandPlugin(command: MdFenceCommand): MdPlugin
 function codeRefPlugin(): MdPlugin    // inlineCode: ⌘-click on a file-citing span -> host.openCodeRef(text, doc.path)
 function linkPlugin(): MdPlugin       // link: `#id` -> doc.jumpTo, *.md -> setPendingFrag + doc.onNavigate, else host.openHref
 function imagePlugin(): MdPlugin      // image: remote/data/blob as written, local -> host.readImage (data URL)
+// subpath "@hafley66/md/plugins/marbles", optional peer @hafley66/signal-marbles, not in the defaults
+function marblesPlugin(): MdPlugin     // fence ["marbles"], lazy component
 const defaultMdPlugins: readonly MdPlugin[] = [
   mermaidPlugin(), d2Plugin(), tablePlugin(), codePlugin(), codeRefPlugin(), linkPlugin(), imagePlugin(),
 ]
@@ -306,7 +308,6 @@ The ⌘-held panel mark (`data-md-meta`, which reveals `code[data-md-ref]` as a 
 
 | factory | slot | library |
 | --- | --- | --- |
-| `marblesPlugin()` | fence `marbles` | `@hafley66/marbler`, `@hafley66/signal-marbles` |
 | `stepsPlugin()` | fence `steps` / stacked `diff` | `shiki-magic-move`, `diff` (`applyPatch` turns patches into states) |
 | `xstatePlugin()` | fence `xstate` | `xstate` + `@xstate/graph`, drawn by grapht |
 | `mdxPlugin()` | new slot: document transform | `@mdx-js/mdx` `evaluate` |
@@ -320,6 +321,92 @@ applyPatch  : s0 -> s1 -> s2 -> s3         (jsdiff; s0 = the fence's base block 
 steps$      : s0 --s1 --s2 --s3            (interval or scroll position, a Signal index)
 magic-move  : animates tokens s(n) -> s(n+1)
 ```
+
+### `marblesPlugin()` (built)
+
+A ```` ```marbles ```` fence renders a `@hafley66/signal-marbles` diagram. md writes no parser and no
+renderer: the fence body goes to `parseMarbles`, the document to `useMarblePlayer`, the player to
+`MarbleDiagram`.
+
+````md
+```marbles
+@title map(v => v * 10) throws on d
+@legend A=10 B=20 C=30
+
+source : -a-(bc)-d-|
+  map(v => v * 10) : ^A-(BC)-#
+```
+````
+
+Which in-repo package:
+
+| | `@hafley66/signal-marbles` | `@hafley66/marbler` |
+| --- | --- | --- |
+| input | `MarbleDoc`; `parseMarbles(text)` reads the ASCII notation | `MarbleEvent[]` (method, status, phases, frames): a network/agent trace |
+| text notation | yes, `src/1_notation.ts`, round-trips through `printMarbles` | none |
+| surface | DOM + CSS grid, `renderMarbles(player, host)`, React `MarbleDiagram` | PixiJS waterfall + time navigator, grid table |
+| theming | `--mb-*` custom properties, two cascade layers | `phaseStyles` option (JS colors) |
+| its own README on a fence | lists "a markdown fence" as a gap owned by `@hafley66/md` | describes itself as the live trace viewer |
+
+Chosen: signal-marbles. The fence is a static text document, which is signal-marbles' notation; marbler
+has no notation and draws a live timeline.
+
+Notation (all of it signal-marbles' parser, unchanged):
+
+| in a lane | means |
+| --- | --- |
+| `label : marbles` | one named stream per line; leading spaces make it a child of the nearest shallower line |
+| `-` | one column |
+| any other character | a value on that column (`@legend a=alpha` spells it out) |
+| `(ab)` | a group: every element on the column the group opens |
+| `\|` | complete |
+| `#` | error (carries no value) |
+| `^` | subscribed here (a marker on its column, spends one column) |
+| `!` | unsubscribed here, spends no time |
+| `10ms`, `2s`, `1m` | a column that costs that much time, at a token boundary |
+| `@title`, `@legend`, `# comment` | directives and comment lines |
+
+Deviations from RxJS `TestScheduler` marbles, all signal-marbles' documented choices: a group spends
+one column's time rather than one frame per character; `^` is a marker on the column written rather
+than the frame-0 origin of a hot observable.
+
+Operator lines: written as the derived lane's label (`  map(v => v * 10) : ...`). A separate operator
+row between lanes (swirly's `> concatAll`) needs a `MarbleDoc` field and a parser directive in
+signal-marbles; not built (open).
+
+Build vs buy (candidates read 2026-09-25):
+
+| candidate | parser | renderer | styling | status |
+| --- | --- | --- | --- | --- |
+| `@hafley66/signal-marbles` (in repo) | `parseMarbles`, diagnostics with line numbers | DOM, React adapter, reveal player | `--mb-*` custom properties | used |
+| `@hafley66/marbler` (in repo) | none | PixiJS trace timeline | JS `phaseStyles` | trace input, not notation |
+| `@swirly/parser` + `@swirly/renderer` 0.21.0, MIT | RxJS marble syntax + `> operator` lines + `[styles]` INI | SVG | INI `[styles]`, theme packages | last npm publish 2022-07-03 |
+| `rxjs` `TestScheduler` marble parsing | internal to testing, frames only | none | none | no renderer |
+
+Default array: `marblesPlugin()` is not in `defaultMdPlugins`. `defaultMdPlugins` lives in the
+`@hafley66/md/plugins` index; referencing the marbles chunk from there makes every host's bundler
+resolve `@hafley66/signal-marbles` (and its `zod` dependency) at build time, lazy `import()` or not. It
+ships as its own subpath with `peerDependenciesMeta` optional, per the future-plugins rule above; a
+host opts in with `import { marblesPlugin } from "@hafley66/md/plugins/marbles"`.
+
+Theme: `MarblesFence` writes `data-diagram-theme="dark|light"` from md's `dark` prop on
+`.mdview-marbles`; `mdview.css` pins every `--mb-*` color for both values on `.mdview-marbles[...]
+.mb-root` (specificity 0,2,0 over signal-marbles' `.mb-root` inside `prefers-color-scheme`). Surface and
+ink match the mermaid/d2 frames (`#f8fafc`/`#111827`, `#0f172a`/`#f8fafc`). No inline style, no JS color.
+
+| instance | born | dies |
+| --- | --- | --- |
+| `marblesPlugin()` object | host module load | never |
+| `1_MarblesFence` chunk + signal-marbles | first marbles fence renders | page lifetime (module cache) |
+| parsed `MarbleDoc` | `useMemo` per fence body | body text changes or fence unmounts |
+| player | `useMarblePlayer` ref, per fence component | fence unmount; `load(doc)` on a new body |
+| `renderMarbles` subscriptions | `MarbleDiagram` effect | effect teardown (`unsubscribe`) |
+
+Parse diagnostics render as `.mdview-marbles-error` above whatever the parser could still draw.
+
+Receipts: `packages/md/src/plugins/2_marblesPlugin.test.ts` (plugin shape + `parseMarbles` snapshot),
+`packages/md/src/plugins/2_marblesPlugin.browser.test.tsx` (marbles per lane, labels, dark and light
+`--mb-surface`, diagnostics).
 
 ### Phases
 
@@ -335,6 +422,9 @@ magic-move  : animates tokens s(n) -> s(n+1)
 - Column derivation: fixed 7.8 px advance vs measuring `1ch` of the code font.
 - Indented fences (inside list items) are skipped by the pass.
 - A replace result containing a fence of the same backtick length breaks out of the fence; not escaped.
+- Marbles operator rows between lanes (`> op`): needs a `MarbleDoc` field + parser directive in signal-marbles.
+- Marbles fence: signal-marbles' header controls (play, step) and legend render inside every fence; no
+  static-only mode exists in `renderMarbles`.
 
 ## 3. Shared styling
 

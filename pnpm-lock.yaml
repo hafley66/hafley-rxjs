@@ -1050,6 +1050,9 @@ importers:
       '@hafley66/signal-grid':
         specifier: workspace:*
         version: link:../signal-grid
+      '@hafley66/signal-marbles':
+        specifier: workspace:*
+        version: link:../signal-marbles
       '@hafley66/signals':
         specifier: workspace:*
         version: link:../signals

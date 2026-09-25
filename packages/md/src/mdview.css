@@ -417,6 +417,51 @@ body[data-mode="dark"] .mdview-root .md-body a {
   color: #f8fafc;
 }
 
+/* signal-marbles picks its palette from prefers-color-scheme; md's `dark` prop wins here.
+   Surface and ink follow the mermaid/d2 frame, the rest are signal-marbles' own values. */
+.mdview-marbles {
+  margin: 16px 0;
+}
+
+.mdview-marbles[data-diagram-theme="light"] .mb-root {
+  --mb-surface: #f8fafc;
+  --mb-ink: #111827;
+  --mb-muted: #6d7684;
+  --mb-faint: #969ea9;
+  --mb-border: #dfe3e9;
+  --mb-gridline: #e6e9ee;
+  --mb-next: #3f7fd0;
+  --mb-error: #cf4b3f;
+  --mb-complete: #3c4552;
+  --mb-edge: #b9c0cb;
+  --mb-cursor: #d59b47;
+  --mb-accent: #0f7f6a;
+}
+
+.mdview-marbles[data-diagram-theme="dark"] .mb-root {
+  --mb-surface: #0f172a;
+  --mb-ink: #f8fafc;
+  --mb-muted: #848c98;
+  --mb-faint: #6a7280;
+  --mb-border: #2b3038;
+  --mb-gridline: #262b33;
+  --mb-next: #5f9fe6;
+  --mb-error: #e2685b;
+  --mb-complete: #9aa4b2;
+  --mb-edge: #3d4552;
+  --mb-cursor: #e0a95c;
+  --mb-accent: #3fbfa4;
+}
+
+.mdview-marbles-error {
+  overflow: auto;
+  margin: 0 0 8px;
+  padding: 8px;
+  border: 1px solid #a44;
+  background: color-mix(in srgb, #a44 15%, var(--panel-bg, #fff));
+  color: var(--panel-fg, #222);
+}
+
 .mdview-d2 svg {
   display: block;
   max-width: 100%;

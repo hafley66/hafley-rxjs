@@ -18,6 +18,10 @@
       "types": "./dist/plugins/index.d.ts",
       "import": "./dist/plugins/index.js"
     },
+    "./plugins/marbles": {
+      "types": "./dist/plugins/marbles.d.ts",
+      "import": "./dist/plugins/marbles.js"
+    },
     "./style.css": {
       "types": "./dist/style.css.d.ts",
       "default": "./dist/style.css"
@@ -55,7 +59,13 @@
     "react-resizable-panels": ">=3.0.6 <4",
     "streamdown": ">=2.5.0",
     "@hafley66/xdom": ">=0.1.0",
-    "rxjs": ">=7.8.0"
+    "rxjs": ">=7.8.0",
+    "@hafley66/signal-marbles": ">=0.0.1"
+  },
+  "peerDependenciesMeta": {
+    "@hafley66/signal-marbles": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@hafley66/d2": "workspace:*",
@@ -86,7 +96,8 @@
     "vite-plugin-dts": "^5.0.3",
     "vitest": "^4.1.10",
     "@hafley66/xdom": "workspace:*",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "@hafley66/signal-marbles": "workspace:*"
   },
   "keywords": [
     "markdown",
