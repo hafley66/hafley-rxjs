@@ -43,6 +43,7 @@ import { MdExplorer } from "./MdExplorer.js";
 import { useFsWatch } from "./0_watch.js";
 import { useProseWidth } from "./2_useProseWidth.js";
 import { ProseWidthControl, ProseWidthHandle } from "./3_ProseWidthControl.js";
+import { isCodeRef } from "./lib/0_codeRef.js";
 import "./mdview.css";
 import "./1_reading.css";
 
@@ -281,6 +282,30 @@ export const MdPanel = SignalReact(function MdPanel({
   const zoom = appState.panelZoom[pid] ?? 1;
   const proseWidth = useProseWidth(pid);
   const rootRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // ⌘ held marks the panel, so file-citing inline code shows as a link only
+  // while a ⌘-click would open it.
+  useEffect(() => {
+    const panel = panelRef.current;
+    const view = panel?.ownerDocument.defaultView;
+    if (!panel || !view) return;
+    const mark = (e: KeyboardEvent | globalThis.MouseEvent) => {
+      if (e.metaKey) panel.dataset.mdMeta = "";
+      else delete panel.dataset.mdMeta;
+    };
+    const unmark = () => delete panel.dataset.mdMeta;
+    view.addEventListener("keydown", mark);
+    view.addEventListener("keyup", mark);
+    view.addEventListener("blur", unmark);
+    panel.addEventListener("mousemove", mark);
+    return () => {
+      view.removeEventListener("keydown", mark);
+      view.removeEventListener("keyup", mark);
+      view.removeEventListener("blur", unmark);
+      panel.removeEventListener("mousemove", mark);
+    };
+  }, []);
 
   useEffect(() => {
     void loadMdDoc(path);
@@ -353,6 +378,30 @@ export const MdPanel = SignalReact(function MdPanel({
           <a href={href} onClick={onClick}>
             {children}
           </a>
+        );
+      },
+      // Streamdown's own inline code markup, plus a ⌘-click that hands a
+      // file-citing span to the host with this document's path.
+      inlineCode({ node: _node, className, children, ...rest }) {
+        const text = typeof children === "string" ? children : "";
+        const openCodeRef = host.openCodeRef;
+        const ref = openCodeRef !== undefined && isCodeRef(text);
+        const onClick = (e: MouseEvent) => {
+          if (!ref || !e.metaKey) return;
+          e.preventDefault();
+          e.stopPropagation();
+          void openCodeRef.call(host, text, path).catch(console.error);
+        };
+        return (
+          <code
+            {...rest}
+            className={["rounded bg-muted px-1.5 py-0.5 font-mono text-sm", className].filter(Boolean).join(" ")}
+            data-streamdown="inline-code"
+            data-md-ref={ref ? "" : undefined}
+            onClick={ref ? onClick : undefined}
+          >
+            {children}
+          </code>
         );
       },
       img({ src, alt }) {
@@ -466,6 +515,7 @@ export const MdPanel = SignalReact(function MdPanel({
 
   return (
     <div
+      ref={panelRef}
       className="v2-panel mdview-root"
       onKeyDown={(e) => {
         // Plain `b` toggles the explorer when the keystroke isn't headed for

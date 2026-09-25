@@ -1,4 +1,5 @@
 import { act } from "react";
+import { userEvent } from "vitest/browser";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { MdPanel } from "./MdPanel.js";
@@ -7,6 +8,7 @@ import { blockFoldsFor, loadPersistedMdUi, pathSignalFor } from "./signals.js";
 
 const HOST_STATE = { startFolded: false, explorerHidden: true, layout: null, layouts: {} };
 const DOCS: Record<string, string> = {};
+const OPENED_REFS: { token: string; docPath: string }[] = [];
 
 installMdviewHost({
   readText: async (path: string) => {
@@ -18,6 +20,9 @@ installMdviewHost({
   listDir: async () => ({ entries: [] }),
   openHref: async () => undefined,
   openPath: async () => undefined,
+  openCodeRef: async (token: string, docPath: string) => {
+    OPENED_REFS.push({ token, docPath });
+  },
   watchFile: async () => () => undefined,
   FileTree: () => null,
   PanZoomViewport: () => null,
@@ -425,4 +430,58 @@ it("spaces sections, blocks, and list items; rules h1; indents section content w
       "themedGuide": "rgb(10, 20, 30)",
     }
   `);
+});
+
+const REF_DOC = [
+  "# Refs",
+  "",
+  "- see `src/lang/rust/2_call.rs:790-801` and `2_call.rs:561,583`",
+  "- the hook `useState` is not a file",
+].join("\n");
+
+it("⌘-click on inline code that names a file emits the token and the document path; a plain click does not", async () => {
+  const path = "/repo/docs/refs.md";
+  OPENED_REFS.length = 0;
+  await mount(path, REF_DOC);
+  const code = (text: string) =>
+    [...host.querySelectorAll<HTMLElement>(".md-body code")].find((element) => element.textContent === text)!;
+  const click = (text: string, metaKey: boolean) =>
+    act(() => {
+      code(text).dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, metaKey }));
+    });
+
+  await click("src/lang/rust/2_call.rs:790-801", false);
+  const afterPlain = [...OPENED_REFS];
+  await click("src/lang/rust/2_call.rs:790-801", true);
+  await click("2_call.rs:561,583", true);
+  await click("useState", true);
+
+  await userEvent.hover(code("2_call.rs:561,583"));
+  const cursorWithoutMeta = getComputedStyle(code("2_call.rs:561,583")).cursor;
+  await userEvent.keyboard("{Meta>}");
+  const cursorWithMeta = getComputedStyle(code("2_call.rs:561,583")).cursor;
+  const plainCodeWithMeta = getComputedStyle(code("useState")).cursor;
+  await userEvent.keyboard("{/Meta}");
+  const cursorAfterRelease = getComputedStyle(code("2_call.rs:561,583")).cursor;
+
+  expect({
+    afterPlain,
+    opened: OPENED_REFS,
+    marked: [...host.querySelectorAll(".md-body code[data-md-ref]")].map((element) => element.textContent),
+    cursorWithoutMeta,
+    cursorWithMeta,
+    plainCodeWithMeta,
+    cursorAfterRelease,
+  }).toEqual({
+    afterPlain: [],
+    opened: [
+      { token: "src/lang/rust/2_call.rs:790-801", docPath: path },
+      { token: "2_call.rs:561,583", docPath: path },
+    ],
+    marked: ["src/lang/rust/2_call.rs:790-801", "2_call.rs:561,583"],
+    cursorWithoutMeta: "auto",
+    cursorWithMeta: "pointer",
+    plainCodeWithMeta: "auto",
+    cursorAfterRelease: "auto",
+  });
 });

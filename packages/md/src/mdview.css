@@ -491,3 +491,10 @@ body[data-mode="dark"] .mdview-root .md-body a {
   background: color-mix(in srgb, #a44 15%, var(--panel-bg, #fff));
   color: var(--panel-fg, #222);
 }
+
+/* Inline code that cites a file reads as a link while ⌘ is held: the panel
+   carries data-md-meta, and a ⌘-click hands the span to the host. */
+.mdview-root[data-md-meta] code[data-md-ref]:hover {
+  cursor: pointer;
+  text-decoration: underline;
+}

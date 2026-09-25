@@ -100,6 +100,10 @@ export interface MdviewHost {
   listDir(path: string): Promise<{ entries: MdviewFsEntry[] }>;
   openHref(href: string, sourcePath: string): Promise<void>;
   openPath(path: string): Promise<void>;
+  // ⌘-click on inline code that cites a file (`src/a.rs:790-801`): the code's
+  // text and the document it sits in. The host resolves and opens it. Without
+  // this member inline code stays plain text.
+  openCodeRef?(token: string, sourcePath: string): Promise<void>;
 
   // Optional repository identity lookup. Hosts that do not have native Git
   // metadata keep the path-based persistence fallback used by mdview.
