@@ -14,13 +14,14 @@
       "import": "./dist/index.js"
     },
     "./theme.css": "./dist/theme.css",
+    "./tree.css": "./dist/tree.css",
     "./react": {
       "types": "./dist/react/index.d.ts",
       "import": "./dist/react.js"
     }
   },
   "scripts": {
-    "build": "vite build && cp src/theme.css dist/",
+    "build": "vite build && cp src/theme.css src/tree.css dist/",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "receipts": "pnpm run typecheck && pnpm run test && pnpm run test:browser && pnpm run build && pnpm run size && pnpm run docs",

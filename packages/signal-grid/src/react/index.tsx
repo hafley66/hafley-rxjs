@@ -90,3 +90,5 @@ export function reactSlot<Ctx>(view: (ctx: Ctx) => ReactNode, options?: ReactSlo
 }
 
 export type { Root }
+
+export { TreeView, FsTreeView, type TreeViewProps, type FsTreeViewProps } from "./1_TreeView.js"

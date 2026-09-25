@@ -1,0 +1,106 @@
+/* Tree view (22_tree.ts, react/1_TreeView.tsx). Load after theme.css. Every size, colour and icon
+   shape is a custom property; a consumer overrides --sg-tree-* / --sg-fs-* or the theme's --sg-bg/--sg-fg. */
+@layer signal-grid.theme, signal-grid.structure, signal-grid.tree;
+
+@layer signal-grid.tree {
+.sg-tree[data-route="g"] {
+  --sg-tree-max-h: 60vh;
+  /* Equals TREE_ROW_H in 22_tree.ts: the measured rows start from that guess. */
+  --sg-tree-row-h: 24px;
+  --sg-tree-gap: 6px;
+  --sg-tree-radius: 6px;
+  --sg-tree-icon-w: 12px;
+  --sg-tree-icon-h: 14px;
+  --sg-tree-branch-w: 15px;
+  --sg-tree-branch-h: 12px;
+  --sg-tree-leaf-shape: polygon(0 0, 62% 0, 100% 30%, 100% 100%, 0 100%);
+  --sg-tree-branch-shape: polygon(0 0, 40% 0, 52% 18%, 100% 18%, 100% 100%, 0 100%);
+  --sg-tree-branch: oklch(0.72 0.11 245);
+  --sg-tree-branch-open: oklch(0.62 0.16 250);
+  --sg-tree-leaf: color-mix(in srgb, var(--sg-fg) 45%, var(--sg-bg));
+  --sg-tree-note: color-mix(in srgb, var(--sg-fg) 55%, var(--sg-bg));
+  --sg-fs-ext-ts: oklch(0.55 0.14 250);
+  --sg-fs-ext-js: oklch(0.8 0.16 95);
+  --sg-fs-ext-json: oklch(0.72 0.13 110);
+  --sg-fs-ext-md: oklch(0.6 0.03 260);
+  --sg-fs-ext-css: oklch(0.5 0.17 300);
+  --sg-fs-ext-html: oklch(0.62 0.19 35);
+  --sg-fs-ext-rs: oklch(0.6 0.13 45);
+  --sg-fs-ext-py: oklch(0.6 0.12 235);
+  --sg-fs-ext-go: oklch(0.7 0.11 210);
+  --sg-fs-ext-sh: oklch(0.62 0.14 145);
+  --sg-fs-ext-yaml: oklch(0.6 0.15 15);
+  --sg-fs-ext-image: oklch(0.6 0.2 330);
+  --sg-fs-ext-lock: oklch(0.55 0.02 260);
+
+  --sg-indent: 14px;
+  --sg-hit: 16px;
+  --sg-glyph: 9px;
+  --sg-pad: 2px;
+  --sg-selected-bg: var(--sg-hover-bg);
+  display: flex;
+  flex-direction: column;
+  block-size: min(var(--sg-tree-max-h), calc(var(--sg-total-h) + 2px));
+  border: 1px solid var(--sg-line);
+  box-sizing: border-box;
+  border-radius: var(--sg-tree-radius);
+  overflow: hidden;
+}
+
+.sg-tree .sg-head { display: none; }
+.sg-tree :is(.sg-canvas, .sg-rows) { inline-size: 100%; }
+.sg-tree .sg-scroll {
+  flex: 1 1 auto;
+  block-size: auto;
+  min-block-size: 0;
+}
+.sg-tree[data-route="g"] .sg-row {
+  min-block-size: var(--sg-tree-row-h);
+  border-block-end: 0;
+}
+.sg-tree .sg-cell { border: 0; cursor: default; }
+.sg-tree .sg-row:has(.sg-expander[data-leaf="false"]) .sg-cell { cursor: pointer; }
+
+.sg-tree-entry {
+  --sg-tree-icon: var(--sg-tree-leaf);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sg-tree-gap);
+  min-inline-size: 0;
+  white-space: nowrap;
+}
+.sg-tree-icon {
+  flex: none;
+  inline-size: var(--sg-tree-icon-w);
+  block-size: var(--sg-tree-icon-h);
+  background: var(--sg-tree-icon);
+  clip-path: var(--sg-tree-leaf-shape);
+}
+.sg-tree-note {
+  color: var(--sg-tree-note);
+  font-style: italic;
+}
+
+.sg-tree-entry[data-kind="dir"] {
+  --sg-tree-icon: var(--sg-tree-branch);
+  --sg-tree-icon-w: var(--sg-tree-branch-w);
+  --sg-tree-icon-h: var(--sg-tree-branch-h);
+}
+.sg-tree-entry[data-kind="dir"] .sg-tree-icon { clip-path: var(--sg-tree-branch-shape); }
+.sg-tree-entry[data-kind="dir"] .sg-tree-label { font-weight: 600; }
+.sg-row[data-open="true"] .sg-tree-entry[data-kind="dir"] { --sg-tree-icon: var(--sg-tree-branch-open); }
+
+.sg-tree-entry:is([data-ext="ts"], [data-ext="tsx"], [data-ext="mts"], [data-ext="cts"]) { --sg-tree-icon: var(--sg-fs-ext-ts); }
+.sg-tree-entry:is([data-ext="js"], [data-ext="jsx"], [data-ext="mjs"], [data-ext="cjs"]) { --sg-tree-icon: var(--sg-fs-ext-js); }
+.sg-tree-entry:is([data-ext="json"], [data-ext="jsonc"], [data-ext="toml"]) { --sg-tree-icon: var(--sg-fs-ext-json); }
+.sg-tree-entry:is([data-ext="md"], [data-ext="mdx"], [data-ext="txt"]) { --sg-tree-icon: var(--sg-fs-ext-md); }
+.sg-tree-entry:is([data-ext="css"], [data-ext="scss"], [data-ext="less"]) { --sg-tree-icon: var(--sg-fs-ext-css); }
+.sg-tree-entry:is([data-ext="html"], [data-ext="htm"], [data-ext="xml"]) { --sg-tree-icon: var(--sg-fs-ext-html); }
+.sg-tree-entry[data-ext="rs"] { --sg-tree-icon: var(--sg-fs-ext-rs); }
+.sg-tree-entry[data-ext="py"] { --sg-tree-icon: var(--sg-fs-ext-py); }
+.sg-tree-entry[data-ext="go"] { --sg-tree-icon: var(--sg-fs-ext-go); }
+.sg-tree-entry:is([data-ext="sh"], [data-ext="bash"], [data-ext="zsh"]) { --sg-tree-icon: var(--sg-fs-ext-sh); }
+.sg-tree-entry:is([data-ext="yaml"], [data-ext="yml"]) { --sg-tree-icon: var(--sg-fs-ext-yaml); }
+.sg-tree-entry:is([data-ext="png"], [data-ext="jpg"], [data-ext="jpeg"], [data-ext="gif"], [data-ext="svg"], [data-ext="webp"]) { --sg-tree-icon: var(--sg-fs-ext-image); }
+.sg-tree-entry[data-ext="lock"] { --sg-tree-icon: var(--sg-fs-ext-lock); }
+}
