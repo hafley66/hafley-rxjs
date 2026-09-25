@@ -1,0 +1,146 @@
+/* base.css — the md panel's reading styles, trimmed to what the rail
+   prototype renders: section tree, headings, twisty, prose, lists.
+   Sources: packages/md/src/1_reading.css, packages/md/src/mdview.css.
+   rail-*.css layer customizations on these class names only. */
+
+/* Shared by the rail variants: registering --cur as a color lets a
+   body:has(...) variant switch morph rail and heading colors. */
+@property --cur {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+/* Indent-guide palette, one hue per nesting level. Declared on the root
+   so any ancestor of the viewer can re-theme it. */
+:root {
+  --md-guide-1: oklch(0.66 0.17 25 / 0.6);
+  --md-guide-2: oklch(0.76 0.15 75 / 0.6);
+  --md-guide-3: oklch(0.7 0.17 145 / 0.6);
+  --md-guide-4: oklch(0.72 0.12 210 / 0.6);
+  --md-guide-5: oklch(0.62 0.17 265 / 0.6);
+  --md-guide-6: oklch(0.62 0.19 320 / 0.6);
+}
+
+.mdview-content {
+  --md-prose-width: 900px;
+  --md-font-size: 15px;
+  /* One step per section level: a section body starts this far inside
+     its header. Variants cancel it so the rail stays unindented. */
+  --md-section-indent: 0.85em;
+  --md-guide-width: 1px;
+  --md-guide-inset: 0.3em;
+  /* Theme hairline, with a text-derived fallback. */
+  --md-line: var(--frame, color-mix(in srgb, currentColor 18%, transparent));
+  --md-pad-end: 12px;
+  overflow: auto;
+  height: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 4px 8px var(--md-pad-end);
+}
+
+.mdview-content .md-body {
+  font-size: var(--md-font-size);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+/* The document column starts where a centred reading measure starts;
+   everything inside lays out from that edge. */
+.mdview-content > :is(.md-body, .mdview-sec) {
+  margin-inline-start: max(0px, calc((100% - var(--md-prose-width)) / 2));
+}
+
+/* Per-level fold guides: the baseline the rail variants replace with
+   one unindented rail. */
+.mdview-content .mdview-body {
+  margin-inline-start: var(--md-guide-inset);
+  padding-inline-start: calc(var(--md-section-indent) - var(--md-guide-inset) - var(--md-guide-width));
+  border-inline-start: var(--md-guide-width) solid var(--md-guide, transparent);
+}
+
+.mdview-content .mdview-h1 + .mdview-body { --md-guide: var(--md-guide-1); }
+.mdview-content .mdview-h2 + .mdview-body { --md-guide: var(--md-guide-2); }
+.mdview-content .mdview-h3 + .mdview-body { --md-guide: var(--md-guide-3); }
+.mdview-content .mdview-h4 + .mdview-body { --md-guide: var(--md-guide-4); }
+.mdview-content .mdview-h5 + .mdview-body { --md-guide: var(--md-guide-5); }
+.mdview-content .mdview-h6 + .mdview-body { --md-guide: var(--md-guide-6); }
+
+.mdview-content .mdview-head {
+  box-sizing: border-box;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  margin-block: calc(var(--md-font-size) * 1.5) calc(var(--md-font-size) * 0.5);
+  color: var(--panel-fg, inherit);
+}
+.mdview-content .mdview-head:hover .mdview-title {
+  text-decoration: underline;
+}
+.mdview-content > .mdview-sec:first-child > .mdview-head {
+  margin-top: 0.25rem;
+}
+
+/* Level-1 headers carry a full-width rule in the theme hairline colour. */
+.mdview-content .mdview-h1 {
+  font-size: 1.9em;
+  margin-block: calc(var(--md-font-size) * 2.25) calc(var(--md-font-size) * 0.6);
+  padding-bottom: 0.15em;
+  border-bottom: 1px solid var(--md-line);
+}
+.mdview-content .mdview-h2 {
+  font-size: 1.5em;
+  margin-block-start: calc(var(--md-font-size) * 1.75);
+}
+.mdview-content .mdview-h3 { font-size: 1.2em; }
+.mdview-content :is(.mdview-h4, .mdview-h5, .mdview-h6) { font-size: 1em; }
+
+.mdview-content .mdview-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.mdview-twisty {
+  flex: none;
+  width: 1em;
+  opacity: 0.55;
+  font-size: 0.8em;
+  color: var(--row-active-bg, #618bcb);
+}
+
+.mdview-content .md-body :is(p, ul, ol, blockquote) {
+  margin-block: 0.7em;
+}
+
+/* List guides take the palette by list depth (chain trimmed to two). */
+.mdview-content .md-body :is(ul, ol) { --md-list-guide: var(--md-guide-1); }
+.mdview-content .md-body :is(ul, ol) :is(ul, ol) { --md-list-guide: var(--md-guide-2); }
+.mdview-content .md-body :is(ul, ol) {
+  padding-inline-start: 1.65em;
+  border-inline-start: var(--md-guide-width) solid var(--md-list-guide, transparent);
+}
+.mdview-content .md-body li + li { margin-top: 0.4em; }
+
+.mdview-content .md-body blockquote {
+  padding: 4px 8px;
+  border-inline-start: 3px solid var(--row-active-bg, #618bcb);
+  border-radius: 0 6px 6px 0;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+.mdview-content .md-body a {
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+}
+.mdview-content .md-body hr {
+  margin-block: 1.25rem;
+  border: 0;
+  border-top: 1px solid var(--md-line);
+}

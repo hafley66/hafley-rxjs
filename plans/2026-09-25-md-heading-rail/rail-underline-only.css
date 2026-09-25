@@ -1,0 +1,112 @@
+/* rail-underline-only.css — no heading box: the rail and a per-level
+   underline carry the structure. The rail steps over a fixed length at
+   each heading and fades back toward the parent level near each section
+   end, so transitions read continuously through the transparent
+   headings. Folded sections stop the rail at their underline. Layered
+   over base.css while #v-underline-only is checked. */
+
+body:has(#v-underline-only:checked) {
+  --h-ink: var(--panel-fg);
+  --h-paper: var(--panel-bg);
+  --h-1: #14213d;
+  --h-2: #22304f;
+  --h-3: #314061;
+  --h-4: #415073;
+  --h-5: #536186;
+  --h-6: #67739a;
+  --h-border: color-mix(in oklab, var(--h-ink) 18%, var(--h-paper));
+  --h-underline: var(--h-ink);
+  --h-border-width: 1px;
+  --h-radius: 0px;
+  --h-step: 0.11em;
+  --h-pad-x: 0.9em;
+  --h-pad-y: 0.3em;
+  --rail-width: 10px;
+  --rail-blend: 2rem;
+  --rail-tail: 3rem;
+  --toggle-size: 18px;
+  --body-inset: 1.2em;
+}
+
+body:has(#v-underline-only:checked) .mdview-content {
+  --cur: var(--h-1);
+  --prev: transparent;
+}
+body:has(#v-underline-only:checked) .mdview-content .mdview-body {
+  --prev: var(--cur);
+}
+body:has(#v-underline-only:checked) .mdview-sec:has(> .mdview-h1) { --cur: var(--h-1); }
+body:has(#v-underline-only:checked) .mdview-sec:has(> .mdview-h2) { --cur: var(--h-2); }
+body:has(#v-underline-only:checked) .mdview-sec:has(> .mdview-h3) { --cur: var(--h-3); }
+body:has(#v-underline-only:checked) .mdview-sec:has(> .mdview-h4) { --cur: var(--h-4); }
+body:has(#v-underline-only:checked) .mdview-sec:has(> .mdview-h5) { --cur: var(--h-5); }
+body:has(#v-underline-only:checked) .mdview-sec:has(> .mdview-h6) { --cur: var(--h-6); }
+
+body:has(#v-underline-only:checked) .mdview-content .mdview-body {
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+  border-inline-start: 0;
+}
+
+body:has(#v-underline-only:checked) .mdview-sec {
+  position: relative;
+  transition: --cur 0.4s ease;
+}
+body:has(#v-underline-only:checked) .mdview-sec::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: var(--rail-width);
+  background: linear-gradient(
+    to bottom,
+    var(--prev) 0,
+    var(--cur) var(--rail-blend),
+    var(--cur) calc(100% - var(--rail-tail)),
+    var(--prev) 100%
+  );
+}
+
+body:has(#v-underline-only:checked) .mdview-h1 { font-size: calc(1em + 5 * var(--h-step)); }
+body:has(#v-underline-only:checked) .mdview-h2 { font-size: calc(1em + 4 * var(--h-step)); }
+body:has(#v-underline-only:checked) .mdview-h3 { font-size: calc(1em + 3 * var(--h-step)); }
+body:has(#v-underline-only:checked) .mdview-h4 { font-size: calc(1em + 2 * var(--h-step)); }
+body:has(#v-underline-only:checked) .mdview-h5 { font-size: calc(1em + 1 * var(--h-step)); }
+body:has(#v-underline-only:checked) .mdview-h6 { font-size: calc(1em + 0 * var(--h-step)); }
+
+/* No box: no background, no side borders, no radius — just the underline,
+   one step heavier than --h-border-width. */
+body:has(#v-underline-only:checked) .mdview-content .mdview-head {
+  position: relative;
+  padding-block: var(--h-pad-y);
+  padding-inline: calc(var(--rail-width) + var(--h-pad-x)) 0;
+  border-bottom: calc(var(--h-border-width) + 1px) solid
+    color-mix(in oklab, var(--cur) 45%, var(--h-underline));
+}
+body:has(#v-underline-only:checked) .mdview-content .mdview-title {
+  color: color-mix(in oklab, var(--cur) 85%, var(--h-ink));
+}
+
+body:has(#v-underline-only:checked) .mdview-content .mdview-twisty {
+  position: absolute;
+  left: calc(var(--rail-width) / 2);
+  top: 50%;
+  translate: -50% -50%;
+  box-sizing: border-box;
+  inline-size: var(--toggle-size);
+  block-size: var(--toggle-size);
+  display: grid;
+  place-content: center;
+  font-size: calc(var(--toggle-size) * 0.5);
+  line-height: 1;
+  opacity: 1;
+  color: var(--h-paper);
+  background: var(--cur);
+  border: var(--h-border-width) solid var(--h-border);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+body:has(#v-underline-only:checked) .mdview-content .mdview-body > .md-body {
+  padding-inline-start: calc(var(--rail-width) + var(--body-inset));
+}

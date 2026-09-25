@@ -1,0 +1,125 @@
+/* rail-pill.css — the full ask. Heading boxes: square at the rail, pill
+   rounds away from it. One unindented rail for the whole column; a
+   circular fold toggle centred on the rail at each box's midline; rail
+   colour blends from the parent level over a fixed length per heading.
+   Layered over base.css while #v-pill is checked. */
+
+body:has(#v-pill:checked) {
+  --h-ink: var(--panel-fg);
+  --h-paper: var(--panel-bg);
+  --h-1: #233b63;
+  --h-2: #2f6fb8;
+  --h-3: #2b8a7e;
+  --h-4: #8f5fb8;
+  --h-5: #c2569b;
+  --h-6: #c25b3f;
+  --h-border: color-mix(in oklab, var(--h-ink) 22%, var(--h-paper));
+  --h-underline: var(--h-ink);
+  --h-border-width: 1px;
+  --h-radius: 0.9em;
+  --h-step: 0.12em;
+  --h-pad-x: 0.9em;
+  --h-pad-y: 0.3em;
+  --rail-width: 10px;
+  --rail-blend: 2.5rem;
+  --rail-tail: 0px;
+  --toggle-size: 18px;
+  --body-inset: 1.6em;
+}
+
+/* Section colour state: --cur is this section's level colour, --prev the
+   parent's. --prev is computed on the body so it stays the parent's value
+   even after a nested section overrides --cur for itself. */
+body:has(#v-pill:checked) .mdview-content {
+  --cur: var(--h-1);
+  --prev: transparent;
+}
+body:has(#v-pill:checked) .mdview-content .mdview-body {
+  --prev: var(--cur);
+}
+body:has(#v-pill:checked) .mdview-sec:has(> .mdview-h1) { --cur: var(--h-1); }
+body:has(#v-pill:checked) .mdview-sec:has(> .mdview-h2) { --cur: var(--h-2); }
+body:has(#v-pill:checked) .mdview-sec:has(> .mdview-h3) { --cur: var(--h-3); }
+body:has(#v-pill:checked) .mdview-sec:has(> .mdview-h4) { --cur: var(--h-4); }
+body:has(#v-pill:checked) .mdview-sec:has(> .mdview-h5) { --cur: var(--h-5); }
+body:has(#v-pill:checked) .mdview-sec:has(> .mdview-h6) { --cur: var(--h-6); }
+
+/* Cancel the per-level indent so nested sections share the column edge
+   and every rail segment lines up. */
+body:has(#v-pill:checked) .mdview-content .mdview-body {
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+  border-inline-start: 0;
+}
+
+body:has(#v-pill:checked) .mdview-sec {
+  position: relative;
+  transition: --cur 0.4s ease;
+}
+body:has(#v-pill:checked) .mdview-sec::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: var(--rail-width);
+  /* Blend in from the parent level over --rail-blend; --rail-tail fades
+     back out at the section end (0px: hold this level to the end). */
+  background: linear-gradient(
+    to bottom,
+    var(--prev) 0,
+    var(--cur) var(--rail-blend),
+    var(--cur) calc(100% - var(--rail-tail)),
+    var(--prev) 100%
+  );
+}
+
+/* Flattened level ladder: size steps, not jumps (level 6 sits at 1em). */
+body:has(#v-pill:checked) .mdview-h1 { font-size: calc(1em + 5 * var(--h-step)); }
+body:has(#v-pill:checked) .mdview-h2 { font-size: calc(1em + 4 * var(--h-step)); }
+body:has(#v-pill:checked) .mdview-h3 { font-size: calc(1em + 3 * var(--h-step)); }
+body:has(#v-pill:checked) .mdview-h4 { font-size: calc(1em + 2 * var(--h-step)); }
+body:has(#v-pill:checked) .mdview-h5 { font-size: calc(1em + 1 * var(--h-step)); }
+body:has(#v-pill:checked) .mdview-h6 { font-size: calc(1em + 0 * var(--h-step)); }
+
+/* Heading box: underline one step heavier than the box border. */
+body:has(#v-pill:checked) .mdview-content .mdview-head {
+  position: relative;
+  margin-inline-end: var(--h-radius);
+  padding-block: var(--h-pad-y);
+  padding-inline: calc(var(--rail-width) + var(--h-pad-x)) var(--h-pad-x);
+  background: color-mix(in oklab, var(--cur) 13%, var(--h-paper));
+  border: var(--h-border-width) solid var(--h-border);
+  border-bottom: calc(var(--h-border-width) + 1px) solid
+    color-mix(in oklab, var(--cur) 60%, var(--h-underline));
+  border-radius: 0 var(--h-radius) var(--h-radius) 0;
+}
+body:has(#v-pill:checked) .mdview-content .mdview-title {
+  color: color-mix(in oklab, var(--cur) 72%, var(--h-ink));
+}
+
+/* Fold toggle: a circle centred on the rail, mid-height of the box. */
+body:has(#v-pill:checked) .mdview-content .mdview-twisty {
+  position: absolute;
+  left: calc(var(--rail-width) / 2);
+  top: 50%;
+  translate: -50% -50%;
+  box-sizing: border-box;
+  inline-size: var(--toggle-size);
+  block-size: var(--toggle-size);
+  display: grid;
+  place-content: center;
+  font-size: calc(var(--toggle-size) * 0.5);
+  line-height: 1;
+  opacity: 1;
+  color: var(--h-paper);
+  background: var(--cur);
+  border: var(--h-border-width) solid var(--h-border);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+/* Prose inset rides on .md-body, not the section body, so nested section
+   edges (and their rail segments) stay on the column edge. */
+body:has(#v-pill:checked) .mdview-content .mdview-body > .md-body {
+  padding-inline-start: calc(var(--rail-width) + var(--body-inset));
+}

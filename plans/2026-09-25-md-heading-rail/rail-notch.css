@@ -1,0 +1,131 @@
+/* rail-notch.css — free idea: no left rail at all. Headings sit centred
+   over a per-level divider that notches open at its centre, and the fold
+   toggle sits in the notch. Heading text takes a per-level gradient
+   fill. Layered over base.css while #v-notch is checked. */
+
+body:has(#v-notch:checked) {
+  --h-ink: var(--panel-fg);
+  --h-paper: var(--panel-bg);
+  --h-1: #0f766e;
+  --h-2: #1d6fd8;
+  --h-3: #7048d6;
+  --h-4: #b832c0;
+  --h-5: #d6407f;
+  --h-6: #d97a1f;
+  --h-border: color-mix(in oklab, var(--h-ink) 18%, var(--h-paper));
+  --h-underline: var(--h-ink);
+  --h-border-width: 1px;
+  --h-radius: 0px;
+  --h-step: 0.1em;
+  --h-pad-x: 0.9em;
+  --h-pad-y: 0.4em;
+  --rail-width: 0px;
+  --rail-blend: 0px;
+  --rail-tail: 0px;
+  --toggle-size: 16px;
+  --body-inset: 0px;
+}
+
+body:has(#v-notch:checked) .mdview-content {
+  --cur: var(--h-1);
+}
+body:has(#v-notch:checked) .mdview-sec:has(> .mdview-h1) { --cur: var(--h-1); }
+body:has(#v-notch:checked) .mdview-sec:has(> .mdview-h2) { --cur: var(--h-2); }
+body:has(#v-notch:checked) .mdview-sec:has(> .mdview-h3) { --cur: var(--h-3); }
+body:has(#v-notch:checked) .mdview-sec:has(> .mdview-h4) { --cur: var(--h-4); }
+body:has(#v-notch:checked) .mdview-sec:has(> .mdview-h5) { --cur: var(--h-5); }
+body:has(#v-notch:checked) .mdview-sec:has(> .mdview-h6) { --cur: var(--h-6); }
+
+body:has(#v-notch:checked) .mdview-content .mdview-body {
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+  border-inline-start: 0;
+}
+
+body:has(#v-notch:checked) .mdview-sec {
+  transition: --cur 0.4s ease;
+}
+
+body:has(#v-notch:checked) .mdview-h1 { font-size: calc(1em + 5 * var(--h-step)); }
+body:has(#v-notch:checked) .mdview-h2 { font-size: calc(1em + 4 * var(--h-step)); }
+body:has(#v-notch:checked) .mdview-h3 { font-size: calc(1em + 3 * var(--h-step)); }
+body:has(#v-notch:checked) .mdview-h4 { font-size: calc(1em + 2 * var(--h-step)); }
+body:has(#v-notch:checked) .mdview-h5 { font-size: calc(1em + 1 * var(--h-step)); }
+body:has(#v-notch:checked) .mdview-h6 { font-size: calc(1em + 0 * var(--h-step)); }
+
+body:has(#v-notch:checked) .mdview-content .mdview-head {
+  position: relative;
+  justify-content: center;
+  text-align: center;
+  padding-block: var(--h-pad-y);
+  padding-inline: var(--toggle-size);
+  border: 0;
+}
+
+/* Per-level gradient text. */
+body:has(#v-notch:checked) .mdview-content .mdview-title {
+  background: linear-gradient(
+    105deg,
+    var(--cur),
+    color-mix(in oklab, var(--cur) 35%, var(--h-ink))
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* The centred divider with a notch: colour runs in from both ends and
+   stops short of centre, where the toggle sits. */
+body:has(#v-notch:checked) .mdview-content .mdview-head::after {
+  content: "";
+  position: absolute;
+  inset-inline: 10%;
+  top: calc(100% + var(--h-pad-y));
+  height: calc(var(--toggle-size) / 8);
+  background: linear-gradient(
+    90deg,
+    transparent 0,
+    color-mix(in oklab, var(--cur) 55%, transparent) 15%,
+    color-mix(in oklab, var(--cur) 55%, transparent) calc(50% - var(--toggle-size) * 0.85),
+    transparent calc(50% - var(--toggle-size) * 0.85),
+    transparent calc(50% + var(--toggle-size) * 0.85),
+    color-mix(in oklab, var(--cur) 55%, transparent) calc(50% + var(--toggle-size) * 0.85),
+    color-mix(in oklab, var(--cur) 55%, transparent) 85%,
+    transparent 100%
+  );
+}
+
+/* Fold toggle: centred on the divider, inside the notch. */
+body:has(#v-notch:checked) .mdview-content .mdview-twisty {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + var(--h-pad-y));
+  translate: -50% -50%;
+  box-sizing: border-box;
+  inline-size: var(--toggle-size);
+  block-size: var(--toggle-size);
+  display: grid;
+  place-content: center;
+  font-size: calc(var(--toggle-size) * 0.5);
+  line-height: 1;
+  opacity: 1;
+  color: var(--h-paper);
+  background: var(--cur);
+  border: var(--h-border-width) solid var(--h-border);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+/* Folded section: divider and toggle remain, dimmed; no stub. */
+body:has(#v-notch:checked) .mdview-sec:not(:has(> .mdview-body)) .mdview-title {
+  opacity: 0.55;
+}
+body:has(#v-notch:checked) .mdview-sec:not(:has(> .mdview-body)) .mdview-head::after {
+  opacity: 0.4;
+}
+
+/* Body content reads as a centred column. */
+body:has(#v-notch:checked) .mdview-content .mdview-body > .md-body {
+  max-width: 62ch;
+  margin-inline: auto;
+}

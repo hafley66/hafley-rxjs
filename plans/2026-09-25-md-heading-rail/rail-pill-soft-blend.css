@@ -1,0 +1,122 @@
+/* rail-pill-soft-blend.css — same boxes and rail as pill, but each
+   section's rail ramps across its whole span (level colour at one
+   heading dissolves into the next level by the following heading), a
+   folded section leaves a short stub below its box, and body prose sits
+   flush with its heading text. Layered over base.css while
+   #v-pill-soft-blend is checked. */
+
+body:has(#v-pill-soft-blend:checked) {
+  --h-ink: var(--panel-fg);
+  --h-paper: var(--panel-bg);
+  --h-1: #3d4c94;
+  --h-2: #6d4fa6;
+  --h-3: #a34f9e;
+  --h-4: #c25a76;
+  --h-5: #cf7443;
+  --h-6: #b8912e;
+  --h-border: color-mix(in oklab, var(--h-ink) 18%, var(--h-paper));
+  --h-underline: var(--h-ink);
+  --h-border-width: 1px;
+  --h-radius: 0.9em;
+  --h-step: 0.13em;
+  --h-pad-x: 0.9em;
+  --h-pad-y: 0.3em;
+  --rail-width: 10px;
+  --rail-blend: 100%;
+  --rail-tail: 0px;
+  --rail-stub: 1.6rem;
+  --toggle-size: 18px;
+  --body-inset: 0.9em;
+}
+
+body:has(#v-pill-soft-blend:checked) .mdview-content {
+  --cur: var(--h-1);
+  --prev: transparent;
+}
+body:has(#v-pill-soft-blend:checked) .mdview-content .mdview-body {
+  --prev: var(--cur);
+}
+body:has(#v-pill-soft-blend:checked) .mdview-sec:has(> .mdview-h1) { --cur: var(--h-1); }
+body:has(#v-pill-soft-blend:checked) .mdview-sec:has(> .mdview-h2) { --cur: var(--h-2); }
+body:has(#v-pill-soft-blend:checked) .mdview-sec:has(> .mdview-h3) { --cur: var(--h-3); }
+body:has(#v-pill-soft-blend:checked) .mdview-sec:has(> .mdview-h4) { --cur: var(--h-4); }
+body:has(#v-pill-soft-blend:checked) .mdview-sec:has(> .mdview-h5) { --cur: var(--h-5); }
+body:has(#v-pill-soft-blend:checked) .mdview-sec:has(> .mdview-h6) { --cur: var(--h-6); }
+
+body:has(#v-pill-soft-blend:checked) .mdview-content .mdview-body {
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+  border-inline-start: 0;
+}
+
+body:has(#v-pill-soft-blend:checked) .mdview-sec {
+  position: relative;
+  transition: --cur 0.4s ease;
+}
+body:has(#v-pill-soft-blend:checked) .mdview-sec::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: var(--rail-width);
+  background: linear-gradient(
+    to bottom,
+    var(--prev) 0,
+    var(--cur) var(--rail-blend),
+    var(--cur) calc(100% - var(--rail-tail)),
+    var(--prev) 100%
+  );
+}
+/* Folded section: no body, so its segment is the box; a stub lingers to
+   mark the fold. z-index keeps it visible over the next section's own
+   blend-in. */
+body:has(#v-pill-soft-blend:checked) .mdview-sec:not(:has(> .mdview-body))::before {
+  bottom: calc(-1 * var(--rail-stub));
+  z-index: 1;
+}
+
+body:has(#v-pill-soft-blend:checked) .mdview-h1 { font-size: calc(1em + 5 * var(--h-step)); }
+body:has(#v-pill-soft-blend:checked) .mdview-h2 { font-size: calc(1em + 4 * var(--h-step)); }
+body:has(#v-pill-soft-blend:checked) .mdview-h3 { font-size: calc(1em + 3 * var(--h-step)); }
+body:has(#v-pill-soft-blend:checked) .mdview-h4 { font-size: calc(1em + 2 * var(--h-step)); }
+body:has(#v-pill-soft-blend:checked) .mdview-h5 { font-size: calc(1em + 1 * var(--h-step)); }
+body:has(#v-pill-soft-blend:checked) .mdview-h6 { font-size: calc(1em + 0 * var(--h-step)); }
+
+body:has(#v-pill-soft-blend:checked) .mdview-content .mdview-head {
+  position: relative;
+  margin-inline-end: var(--h-radius);
+  padding-block: var(--h-pad-y);
+  padding-inline: calc(var(--rail-width) + var(--h-pad-x)) var(--h-pad-x);
+  background: color-mix(in oklab, var(--cur) 13%, var(--h-paper));
+  border: var(--h-border-width) solid var(--h-border);
+  border-bottom: calc(var(--h-border-width) + 1px) solid
+    color-mix(in oklab, var(--cur) 45%, var(--h-underline));
+  border-radius: 0 var(--h-radius) var(--h-radius) 0;
+}
+body:has(#v-pill-soft-blend:checked) .mdview-content .mdview-title {
+  color: color-mix(in oklab, var(--cur) 72%, var(--h-ink));
+}
+
+body:has(#v-pill-soft-blend:checked) .mdview-content .mdview-twisty {
+  position: absolute;
+  left: calc(var(--rail-width) / 2);
+  top: 50%;
+  translate: -50% -50%;
+  box-sizing: border-box;
+  inline-size: var(--toggle-size);
+  block-size: var(--toggle-size);
+  display: grid;
+  place-content: center;
+  font-size: calc(var(--toggle-size) * 0.5);
+  line-height: 1;
+  opacity: 1;
+  color: var(--h-paper);
+  background: var(--cur);
+  border: var(--h-border-width) solid var(--h-border);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+body:has(#v-pill-soft-blend:checked) .mdview-content .mdview-body > .md-body {
+  padding-inline-start: calc(var(--rail-width) + var(--body-inset));
+}

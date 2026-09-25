@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>md heading rail — prototype</title>
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="rail-pill.css">
+<link rel="stylesheet" href="rail-pill-soft-blend.css">
+<link rel="stylesheet" href="rail-underline-only.css">
+<link rel="stylesheet" href="rail-notch.css">
+<style>
+/* Page chrome only; the md DOM is styled entirely by base.css + rail-*.css.
+   Variant switching is radio inputs + :has() — no script anywhere. */
+:root {
+  /* Host-shell stand-in: the real panel inherits these from .v2-panel. */
+  --panel-bg: #fbfbfa;
+  --panel-fg: #1c1c1a;
+  --frame: color-mix(in srgb, currentColor 14%, transparent);
+  --row-active-bg: #618bcb;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg);
+  color: var(--panel-fg);
+  font: 15px/1.5 ui-sans-serif, system-ui, sans-serif;
+}
+.proto-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.65rem 1.1rem;
+  border-bottom: 1px solid var(--frame);
+}
+.proto-bar h1 { margin: 0; font-size: 0.95rem; font-weight: 600; }
+.picker { display: flex; gap: 0.4rem; margin: 0; border: 0; padding: 0; }
+.picker legend {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.picker label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.1em 0.7em;
+  border: 1px solid var(--frame);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.picker label:has(input:checked) {
+  border-color: var(--row-active-bg);
+  background: color-mix(in srgb, var(--row-active-bg) 14%, transparent);
+}
+.proto-main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+}
+.proto-panel {
+  overflow: auto;
+  border-left: 1px solid var(--frame);
+  padding: 1rem 1.1rem 2rem;
+}
+.props { display: none; }
+body:has(#v-pill:checked) .props-pill,
+body:has(#v-pill-soft-blend:checked) .props-soft,
+body:has(#v-underline-only:checked) .props-underline,
+body:has(#v-notch:checked) .props-notch { display: block; }
+.props h2 { margin: 0 0 0.2rem; font-size: 0.95rem; }
+.props .qa {
+  margin: 0 0 0.9rem;
+  font-size: 0.8rem;
+  color: color-mix(in srgb, var(--panel-fg) 70%, transparent);
+}
+.props .qa b { font-weight: 600; }
+.vars {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.3rem 0.8rem;
+  font-size: 0.78rem;
+}
+.vars dt { color: color-mix(in srgb, var(--panel-fg) 62%, transparent); }
+.vars dd { margin: 0; font-family: ui-monospace, "SF Mono", monospace; }
+.vars i {
+  display: inline-block;
+  inline-size: 0.9em;
+  block-size: 0.9em;
+  border-radius: 3px;
+  border: 1px solid var(--frame);
+  vertical-align: -0.08em;
+  margin-inline-end: 0.35em;
+}
+.sw-row i { inline-size: 1.5em; }
+.md-body code {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 0.92em;
+}
+</style>
+</head>
+<body>
+<header class="proto-bar">
+  <h1>md heading rail — prototype</h1>
+  <fieldset class="picker">
+    <legend>Variant</legend>
+    <label><input type="radio" name="variant" id="v-pill" checked>pill</label>
+    <label><input type="radio" name="variant" id="v-pill-soft-blend">pill-soft-blend</label>
+    <label><input type="radio" name="variant" id="v-underline-only">underline-only</label>
+    <label><input type="radio" name="variant" id="v-notch">notch</label>
+  </fieldset>
+</header>
+<main class="proto-main">
+  <div class="mdview-content">
+    <div class="mdview-sec">
+      <div class="mdview-head mdview-h1" role="button" tabindex="0">
+        <span class="mdview-twisty">▾</span>
+        <span class="mdview-title">1. Heading rail prototype</span>
+      </div>
+      <div class="mdview-body">
+        <div class="md-body">
+          <p>One document column, one left rail. This page mirrors the md panel's real DOM shape — <code>.mdview-content › .mdview-sec › .mdview-head + .mdview-body</code> — and every variant is a pure CSS customization of those class names. Switching variants and reading the variable sheet works with radio inputs and <code>:has()</code> alone; the page carries no script.</p>
+          <ul>
+            <li>Watch the rail change colour as each heading arrives.</li>
+            <li>Section 1.3 is folded: its rail answers the folded-section question.</li>
+            <li>Section 1.2 holds a numbered list, the case where list guides crowd the rail.</li>
+          </ul>
+        </div>
+        <div class="mdview-sec">
+          <div class="mdview-head mdview-h2" role="button" tabindex="0">
+            <span class="mdview-twisty">▾</span>
+            <span class="mdview-title">1.1 One rail, many levels</span>
+          </div>
+          <div class="mdview-body">
+            <div class="md-body">
+              <p>Headings of every level sit flush on the same rail edge — no stacked per-level guides, no per-level indent of the rail.</p>
+              <ul>
+                <li>The heading box keeps square corners at the rail and rounds away from it.</li>
+                <li>The fold toggle is a small circle centred on the rail, mid-height of the box.</li>
+              </ul>
+            </div>
+            <div class="mdview-sec">
+              <div class="mdview-head mdview-h3" role="button" tabindex="0">
+                <span class="mdview-twisty">▾</span>
+                <span class="mdview-title">1.1.1 Blend mechanics</span>
+              </div>
+              <div class="mdview-body">
+                <div class="md-body">
+                  <p>Each section paints its own rail segment. <code>--prev</code> is the parent level's colour, <code>--cur</code> this level's; the segment ramps between the two.</p>
+                  <ul>
+                    <li>Inter-section gaps belong to the parent, so sibling boundaries never tear.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mdview-sec">
+          <div class="mdview-head mdview-h2" role="button" tabindex="0">
+            <span class="mdview-twisty">▾</span>
+            <span class="mdview-title">1.2 Numbered steps</span>
+          </div>
+          <div class="mdview-body">
+            <div class="md-body">
+              <p>A numbered list — the shape the list guides and the rail have to share space with.</p>
+              <ol>
+                <li>Pick a variant above; the sheet on the right lists its variables.</li>
+                <li>Read the rail's colour ramp against the list's own guide.</li>
+                <li>Check that markers and guides never cross the rail.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+        <div class="mdview-sec">
+          <div class="mdview-head mdview-h2" role="button" tabindex="0">
+            <span class="mdview-twisty">▸</span>
+            <span class="mdview-title">1.3 Folded reference</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside class="proto-panel">
+    <section class="props props-pill">
+      <h2>pill</h2>
+      <p class="qa">blend <b>fixed 2.5rem</b> · folded <b>rail stops at the box</b> · body <b>inset 1.6em from the rail</b></p>
+      <dl class="vars">
+        <dt>levels --h-1…6</dt>
+        <dd class="sw-row"><i style="background: var(--h-1)"></i><i style="background: var(--h-2)"></i><i style="background: var(--h-3)"></i><i style="background: var(--h-4)"></i><i style="background: var(--h-5)"></i><i style="background: var(--h-6)"></i></dd>
+        <dt>--rail-width</dt><dd>10px</dd>
+        <dt>--rail-blend</dt><dd>2.5rem</dd>
+        <dt>--rail-tail</dt><dd>0px</dd>
+        <dt>--toggle-size</dt><dd>18px</dd>
+        <dt>--h-radius</dt><dd>0.9em</dd>
+        <dt>--h-step</dt><dd>0.12em</dd>
+        <dt>--body-inset</dt><dd>1.6em</dd>
+        <dt>--h-border</dt><dd><i style="background: var(--h-border)"></i>ink 22%</dd>
+        <dt>--h-underline</dt><dd><i style="background: var(--h-underline)"></i>cur 60% + ink</dd>
+      </dl>
+    </section>
+    <section class="props props-soft">
+      <h2>pill-soft-blend</h2>
+      <p class="qa">blend <b>the whole span between headings</b> · folded <b>1.6rem stub past the box</b> · body <b>flush with heading text</b></p>
+      <dl class="vars">
+        <dt>levels --h-1…6</dt>
+        <dd class="sw-row"><i style="background: var(--h-1)"></i><i style="background: var(--h-2)"></i><i style="background: var(--h-3)"></i><i style="background: var(--h-4)"></i><i style="background: var(--h-5)"></i><i style="background: var(--h-6)"></i></dd>
+        <dt>--rail-width</dt><dd>10px</dd>
+        <dt>--rail-blend</dt><dd>100%</dd>
+        <dt>--rail-tail</dt><dd>0px</dd>
+        <dt>--rail-stub</dt><dd>1.6rem</dd>
+        <dt>--toggle-size</dt><dd>18px</dd>
+        <dt>--h-radius</dt><dd>0.9em</dd>
+        <dt>--h-step</dt><dd>0.13em</dd>
+        <dt>--body-inset</dt><dd>0.9em</dd>
+        <dt>--h-border</dt><dd><i style="background: var(--h-border)"></i>ink 18%</dd>
+        <dt>--h-underline</dt><dd><i style="background: var(--h-underline)"></i>cur 45% + ink</dd>
+      </dl>
+    </section>
+    <section class="props props-underline">
+      <h2>underline-only</h2>
+      <p class="qa">blend <b>2rem step + 3rem fade-out</b> · folded <b>rail stops at the underline</b> · body <b>inset 1.2em from the rail</b></p>
+      <dl class="vars">
+        <dt>levels --h-1…6</dt>
+        <dd class="sw-row"><i style="background: var(--h-1)"></i><i style="background: var(--h-2)"></i><i style="background: var(--h-3)"></i><i style="background: var(--h-4)"></i><i style="background: var(--h-5)"></i><i style="background: var(--h-6)"></i></dd>
+        <dt>--rail-width</dt><dd>10px</dd>
+        <dt>--rail-blend</dt><dd>2rem</dd>
+        <dt>--rail-tail</dt><dd>3rem</dd>
+        <dt>--toggle-size</dt><dd>18px</dd>
+        <dt>--h-radius</dt><dd>0px</dd>
+        <dt>--h-step</dt><dd>0.11em</dd>
+        <dt>--body-inset</dt><dd>1.2em</dd>
+        <dt>--h-border</dt><dd><i style="background: var(--h-border)"></i>ink 18%</dd>
+        <dt>--h-underline</dt><dd><i style="background: var(--h-underline)"></i>cur 45% + ink</dd>
+      </dl>
+    </section>
+    <section class="props props-notch">
+      <h2>notch</h2>
+      <p class="qa">blend <b>level colour steps at each divider</b> · folded <b>divider + toggle remain, dimmed</b> · body <b>centred column</b></p>
+      <dl class="vars">
+        <dt>levels --h-1…6</dt>
+        <dd class="sw-row"><i style="background: var(--h-1)"></i><i style="background: var(--h-2)"></i><i style="background: var(--h-3)"></i><i style="background: var(--h-4)"></i><i style="background: var(--h-5)"></i><i style="background: var(--h-6)"></i></dd>
+        <dt>--rail-width</dt><dd>0px (no rail)</dd>
+        <dt>--rail-blend</dt><dd>0px</dd>
+        <dt>--rail-tail</dt><dd>0px</dd>
+        <dt>--toggle-size</dt><dd>16px</dd>
+        <dt>--h-radius</dt><dd>0px</dd>
+        <dt>--h-step</dt><dd>0.1em</dd>
+        <dt>--body-inset</dt><dd>0px</dd>
+        <dt>--h-border</dt><dd><i style="background: var(--h-border)"></i>ink 18% (toggle ring)</dd>
+        <dt>--h-underline</dt><dd>divider = cur 55% fade</dd>
+      </dl>
+    </section>
+  </aside>
+</main>
+</body>
+</html>
