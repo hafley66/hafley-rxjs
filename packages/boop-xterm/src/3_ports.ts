@@ -17,7 +17,8 @@ export type ViewportChange = {
   viewportY: number;
   bufferLength: number;
 };
-export type ViewportSnapshot = { change: ViewportChange; lines: LogicalLine[]; visible: boolean };
+export type ViewportGeometry = { top: number; cellHeight: number; viewportY: number; rows: number };
+export type ViewportSnapshot = { change: ViewportChange; lines: LogicalLine[]; visible: boolean; geometry: ViewportGeometry };
 export type SelectionState = {
   selection: PinnedSelection | null;
   captured: string[];
