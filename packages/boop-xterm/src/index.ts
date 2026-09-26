@@ -20,3 +20,4 @@ export * from "./5_wheel.js";
 export * from "./5_pinnedSelection.js";
 export * from "./6_turnVisibility.js";
 export * from "./7_pane.js";
+export * from "./0_turnHue";

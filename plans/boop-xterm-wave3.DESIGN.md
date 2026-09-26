@@ -492,3 +492,34 @@ export function openRealTerminal(): { term: Terminal; host: HTMLElement; unsubsc
 | `1a_terminalContextQueue.ts:78-79`; `terminal.ts:817-830` | Should bracketed paste formatting be a pure package helper or host input stream? | Preserve host-owned PTY convention while keeping package send mutation typed. |
 | `graphics.ts:51-77`; `terminal.ts:766` | Do partial Kitty graphics frames occur for current Awrit path? | Keep `putImageData(x,y)` behavior and only coalesce full-frame replacements. |
 | `styles.css:1028-1380` | Which inherited app tokens become standalone defaults? | Copy each resolved default into `theme.css` while allowing consumer overrides; test without instant stylesheet. |
+
+## 12. Planner rulings (override sections 1-11 where they conflict)
+
+1. **Queue send path.** `write_pty` and `boop_mux_exit_copy_mode` stay as ports.
+   - Instant `promptQuote.ts:12-18` `bracketedPaste` moves unchanged as pure `0_bracketedPaste.ts`.
+   - Send runs: exit copy mode, ignoring its error; then `write_pty({ id, data: bracketedPaste(text) })`; then `term.focus()`.
+   - Skip exit copy mode when `PaneIdentity.graphics` is true. Add `graphics: boolean` to `PaneIdentity` if it is absent.
+   - This is the same behaviour as `terminal.ts:820-830`. Do not use xterm's `term.paste`, which translates newlines differently.
+2. **Diagram rendering location (open question 1).**
+   - The Mermaid lazy loader and `renderDiagram$` move into `@hafley66/md`, beside `0_diagramRenderCache` and `1_d2Preview`, and md exports them.
+   - boop-xterm's diagram overlay imports them from `@hafley66/md`.
+3. **Theme defaults (open question 8).**
+   - `theme.css` defaults are concrete values. No `var(--accent)`, `--panel-bg`, `--term-bg`, `--term-fg` or `--frame-dark`.
+   - For each such default, copy instant's resolved value for its default theme.
+   - Instant's own stylesheet maps its app tokens onto `--boop-xterm-*` in the cutover lane.
+4. **File numbering.** Pure files moved into the package take the prefix one above their highest package dependency.
+   - Wave 3 models, meaning functions that return `effects`, are `8<letter>_<name>.ts`, lettered in dependency order.
+   - Composition into the pane is `9_view.ts`, owned by lane 3c.
+   - `7_pane.ts` is not edited in 3a or 3b.
+   - `0_turnHue.ts` already exists on main. Import it; do not copy it again.
+5. **Agent squares stream signature.** `agentSquaresStream(term, host, input: SignalSource<AgentSquaresInput | null>, panel: TurnPanelModel, ports: BoopXtermPorts)`.
+   - Frames come from `ports["squares-update"]`, favorites from `ports.favoriteSources`.
+   - This is lane 3c's work.
+6. **SquaresOptions (open question 4).** The wire shape stays exactly as today. Copy the type from instant's generated command input. Add no rename.
+7. **Fork capture (open question 5).** `socket: null`, as today.
+8. **Graphics (open question 7).** Keep `graphics.ts:51-77`'s pending-frame and `requestAnimationFrame` semantics exactly, including `putImageData(x, y)` for partial frames. Coalesce nothing beyond what the current code does.
+9. **Turn panel dependencies (open question 3).** The turn panel's peer dependencies are `react`, `react-dom` and `@hafley66/md`, with Streamdown reached through md. This is lane 3c's work.
+10. **Ports ownership.** Each lane adds only the `BoopXtermPorts` fields its own models read. The planner resolves `3_ports.ts` and `index.ts` merge conflicts.
+11. **No instant edits and no publish in 3a/3b/3c.**
+    - Package lanes copy instant sources; instant keeps its originals until the cutover lane (3d) deletes them.
+    - For every instant test file of an owned source, each `it(`/`test(` title is ported, or listed in the receipt with a reason.
