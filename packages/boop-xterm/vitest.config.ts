@@ -9,6 +9,6 @@ export default defineConfig({
   test: {
     maxWorkers: 1,
     fileParallelism: false,
-    exclude: ["**/node_modules/**", "**/dist/**"],
+    exclude: ["**/node_modules/**", "**/dist/**", "**/*.browser.test.ts"],
   },
 })
