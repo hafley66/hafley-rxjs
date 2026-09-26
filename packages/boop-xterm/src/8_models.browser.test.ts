@@ -1,6 +1,7 @@
 import { Signal } from "@hafley66/signals";
 import { EMPTY, merge, of, throwError, type Subscription } from "rxjs";
 import { afterEach, describe, expect, it } from "vitest";
+import "./theme.css";
 import type { VisibleTurn } from "./0_types.js";
 import type { PromptContextItem } from "./1_contextQueuePure.js";
 import type { GutterPaint, StructuredSelectable } from "./1_contextGutterPure.js";
@@ -283,4 +284,35 @@ it("stacks annotation marks and two fork lanes on a structured row without a hov
 ]`);
   expect(host.querySelector<HTMLElement>(".term-context-structured-check")?.style.left)
     .toBe(`${gutterLeft(geometry, 51)}px`);
+});
+
+it("keeps the structured checkbox inside the pane under a host XP.css checkbox reset", async () => {
+  const reset = document.createElement("style");
+  reset.textContent = "input[type=checkbox]{appearance:none;margin:0;background:0;position:fixed;opacity:0;border:none}";
+  document.head.append(reset);
+  try {
+    const { term, host, queue, visibility, anchors } = queueFixture();
+    await writeTerminal(term, "| A | B |\r\n");
+    const row = readRowGeometry(term, host)!.viewportY;
+    visibility.state.$({ visible: [{ ...turn(row), regions: [{ id: "r1", turnId: "sess-a:3", kind: "table" as const,
+      sourceStart: 0, sourceEnd: 0, text: "| A | B |", bufferStart: row, bufferEnd: row }] }] });
+    anchors.state.$({ visible: [{ id: "line-1", bufferStart: row, bufferEnd: row, viewportStart: 0,
+      viewportEnd: 0, text: "| A | B |" }], settled: true, elementsByBufferRow: new Map() });
+    connected.push(contextGutterStream(term, host, queue, visibility, anchors).effects.subscribe());
+    await waitFor(() => host.querySelector(".term-context-structured-check") !== null);
+    const check = host.querySelector<HTMLElement>(".term-context-structured-check")!;
+    const box = check.getBoundingClientRect(), pane = host.getBoundingClientRect();
+    expect({ position: getComputedStyle(check).position, opacity: getComputedStyle(check).opacity,
+      insidePane: box.left >= pane.left && box.right <= pane.right && box.top >= pane.top && box.bottom <= pane.bottom,
+      hit: document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2) === check }).toMatchInlineSnapshot(`
+        {
+          "hit": true,
+          "insidePane": true,
+          "opacity": "1",
+          "position": "absolute",
+        }
+      `);
+  } finally {
+    reset.remove();
+  }
 });
