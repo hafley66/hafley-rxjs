@@ -8,7 +8,7 @@ import type { DiagramLanguage } from "./0b_isSequenceSource.js";
 import { sequenceFrameWithSource } from "./0b_sequenceFrame.js";
 import { recordSequenceSource, releaseSequenceSource } from "./0b_sequenceSource.js";
 import { renderD2 } from "./d2.js";
-import { getMdviewHost } from "./ports.js";
+import { optionalMdviewHost } from "./ports.js";
 
 const FALLBACK_VIEWPORT = { width: 800, height: 420 };
 
@@ -24,9 +24,9 @@ export function SequenceDiagram({
   /** Where the fence body starts in the file, when the caller knows it. */
   sourceStart?: FenceOrigin;
 }) {
-  const host = getMdviewHost();
-  host.useRenderProbe("SequenceDiagram", language, { dark, sourceBytes: code.length });
-  host.useLifecycleProbe("SequenceDiagram");
+  const host = optionalMdviewHost();
+  host?.useRenderProbe("SequenceDiagram", language, { dark, sourceBytes: code.length });
+  host?.useLifecycleProbe("SequenceDiagram");
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [svg, setSvg] = useState("");
   const [error, setError] = useState("");
@@ -59,7 +59,7 @@ export function SequenceDiagram({
         // The file offset this fence body starts at, so a page can name its bytes
         // without reaching into the frame.
         if (origin) mount.dataset.graphtSource = String(origin.start);
-        host.recordOperation("mdview.renderSequence", {
+        host?.recordOperation("mdview.renderSequence", {
           language,
           dark,
           sourceBytes: code.length,

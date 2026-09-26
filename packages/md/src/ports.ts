@@ -160,6 +160,10 @@ export interface MdviewHost {
 
 let host: MdviewHost | null = null;
 
+export function optionalMdviewHost(): MdviewHost | null {
+  return host;
+}
+
 export function installMdviewHost(impl: MdviewHost): void {
   host = impl;
 }
