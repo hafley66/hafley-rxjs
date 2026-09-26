@@ -1,6 +1,6 @@
 import { Signal, toSignal, type Signal as SignalType } from "@hafley66/signals";
 import type { Terminal } from "@xterm/xterm";
-import { animationFrameScheduler, auditTime, debounceTime, defer, filter, finalize, map, merge, scan, share, skip, startWith, takeUntil, tap } from "rxjs";
+import { animationFrameScheduler, auditTime, debounceTime, defer, filter, finalize, map, merge, scan, shareReplay, skip, startWith, takeUntil, tap } from "rxjs";
 import type { BoopXtermPorts, LineAnchorModel, LineAnchorState, PaneRuntimeState, TerminalLineAnchorEvent, ViewportModel, ViewportSnapshot, VisibleTerminalLine } from "./3_ports.js";
 
 function hashLine(value: string): string {
@@ -60,7 +60,7 @@ export function lineAnchorsStream(
   const initial: LineAnchorState = { visible: [], settled: true, elementsByBufferRow: new Map() };
   const closed$ = toSignal(ports.paneClosed).$.pipe(filter(Boolean));
   const source$ = defer(() => {
-    const snapshots$ = viewport.snapshot.$.pipe(share());
+    const snapshots$ = viewport.snapshot.$.pipe(shareReplay({ bufferSize: 1, refCount: true }));
     const refresh$ = snapshots$.pipe(auditTime(0, animationFrameScheduler), map((snapshot) => ({ kind: "refresh" as const, snapshot })));
     const settled$ = snapshots$.pipe(skip(1), debounceTime(80), map(() => ({ kind: "settled" as const })));
     return merge(refresh$, settled$).pipe(

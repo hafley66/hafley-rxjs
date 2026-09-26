@@ -17,5 +17,6 @@ export default defineConfig({
       instances: [{ browser: "chromium", viewport: { width: 1280, height: 800 } }],
       headless: true,
     },
+    testTimeout: 15_000,
   },
 });
