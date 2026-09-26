@@ -1,7 +1,7 @@
 {
   "name": "@hafley66/boop-xterm",
   "version": "0.0.1",
-  "description": "Pure terminal geometry, token, and turn matching helpers for boop",
+  "description": "Terminal geometry, reactive overlays, and pane models for boop",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -15,11 +15,12 @@
       "import": "./dist/index.js"
     },
     "./theme.css": {
+      "types": "./dist/theme.css.d.ts",
       "default": "./dist/theme.css"
     }
   },
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && cp src/theme.css src/theme.css.d.ts dist/",
     "prepack": "pnpm --workspace-root exec node scripts/0_prepack.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
@@ -27,7 +28,10 @@
   "peerDependencies": {
     "@xterm/xterm": "^6.0.0",
     "@hafley66/signals": ">=0.1.0",
-    "rxjs": ">=7.8.0"
+    "rxjs": ">=7.8.0",
+    "@hafley66/md": ">=0.1.2",
+    "react": ">=19.2.7",
+    "react-dom": ">=19.2.7"
   },
   "devDependencies": {
     "@xterm/xterm": "^6.0.0",
@@ -39,7 +43,10 @@
     "rxjs": "^7.8.2",
     "@vitest/browser": "4.1.11",
     "@vitest/browser-playwright": "4.1.11",
-    "playwright": "^1.62.1"
+    "playwright": "^1.62.1",
+    "@hafley66/md": "workspace:*",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   },
   "license": "MIT",
   "publishConfig": {

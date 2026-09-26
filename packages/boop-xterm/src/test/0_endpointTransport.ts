@@ -38,6 +38,8 @@ export function testPorts(script: Script): BoopXtermPorts {
     forkLivePane: Signal(false),
     tabName: Signal("test"),
     sessionIds: Signal<string[]>([]),
+    inlineDiagrams: Signal(true),
+    diagramInference: Signal<"explicit" | "labels" | "inferred">("labels"),
   };
 }
 

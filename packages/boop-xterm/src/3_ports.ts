@@ -1,6 +1,7 @@
 import type { Endpoint, Query, Signal, SignalSource } from "@hafley66/signals";
 import type { Observable } from "rxjs";
 import type { ProjectedTurnRegion } from "./0_turnRegions.js";
+import type { DiagramInference } from "./1_terminalDiagrams.js";
 import type { BoopTurn, HarnessId, LogicalLine, VisibleTurn } from "./0_types.js";
 import type { PinnedSelection, SelectionCell } from "./2_pinnedSelectionPure.js";
 import type { TurnSpan, TurnVisibilityEvent } from "./2_turnLocate.js";
@@ -71,6 +72,8 @@ export type BoopXtermPorts = {
   forkLivePane: SignalSource<boolean>;
   tabName: SignalSource<string>;
   sessionIds: SignalSource<string[]>;
+  inlineDiagrams: SignalSource<boolean>;
+  diagramInference: SignalSource<DiagramInference>;
 };
 export type ViewportModel = {
   snapshot: Signal<ViewportSnapshot>;
