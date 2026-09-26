@@ -654,3 +654,16 @@ const terminalEffects = merge(
 | `BoopConversation` has no wave 2 runtime constructor or call site. Should its type-only export stay in the package surface? | `00a_terminalIntersection.ts:145-150` |
 | `commandEndpoint<T>(name)` fixes input to `NativeCommandInput`; the host sketch narrows each domain input with an assertion. Should the generator add an input generic to remove those assertions? | `generated/native.ts:124-150`; `reactive/nativeTransport.ts:10` |
 | Query polling drops ticks during an in-flight request, and refetch cancels the current request. Does the one-pending scan state need to retry after both capture and locator finish? | `packages/signals/src/4_Query.ts:190-225`; `0_terminalTurnVisibility.ts:359-379` |
+
+## 9. Coordinator rulings on r2 (binding for the implementation lane)
+
+| # | item | ruling |
+| --- | --- | --- |
+| 1 | `PaneRuntimeState.scan.{generation,running,pending}` | Delete. One in-flight + one pending scan is `exhaustMap` over the trigger with a trailing re-run (`throttle(..., {leading:true, trailing:true})` around the query chain). Stale results are dropped by `switchMap`, which replaces generation counting. |
+| 2 | `PaneRuntimeState.scan.activityAt` | Delete. The lease is `activity$.pipe(switchMap(() => concat(of(true), timer(TURN_ACTIVITY_LEASE_MS).pipe(map(() => false)))))` fed to `pauseWhen`. |
+| 3 | `wheel.accumulatedRows`, `anchors.previousTop` | Delete from the root. `scan` inside the wheel frame pipeline; `pairwise` over viewport top. |
+| 4 | `PaneRuntimeState` after 1-3 | Holds only values a JSX reader or another model reads (`viewportRevision`, `selection`). Each field names its reader. |
+| 5 | `attachCustomWheelEventHandler` sync boolean return | Allowed as the native callback at its direct call site inside `new Observable`; the handler writes to the subscriber and returns the reduced decision synchronously. Teardown re-attaches a pass-through handler (xterm has no remove). |
+| 6 | `commandEndpoint` input generic | Yes. Wave 2 instant lane adds `commandEndpoint<I, O>(name)` in the generator (`scripts/generate-native.mjs`), no casts at call sites. |
+| 7 | `BoopConversation` | Stays type-only in instant this wave; not exported from boop-xterm. |
+| 8 | `pointQuery` / `turnAtPoint` / `regionAtPoint` | Replace with pure exported functions `turnAtPoint(state, point)`, `regionAtPoint(state, point)` over `visibility.state.$()`; delete the `pointQuery` port. |
