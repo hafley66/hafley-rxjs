@@ -1,6 +1,5 @@
 /// <reference types="vite/client" />
-import mermaidBundleUrl from "mermaid/dist/mermaid.min.js?url";
-import { Observable, defer, finalize, from, of, shareReplay, switchMap } from "rxjs";
+import { Observable, defer, finalize, from, map, of, shareReplay, switchMap } from "rxjs";
 import { renderD2 } from "../d2.js";
 
 export type DiagramPalette = {
@@ -40,13 +39,14 @@ async function bundleFailureReason(url: string): Promise<string> {
   }
 }
 
-/** A lazy, cancellable script lease. A failed attempt leaves no cached failure. */
-export function loadMermaid$(url: string = mermaidBundleUrl): Observable<MermaidApi> {
+/** A lazy, cancellable load. With a `url`, a script lease for a UMD bundle; without one, the module import.
+ * A failed attempt leaves no cached failure. */
+export function loadMermaid$(url?: string): Observable<MermaidApi> {
   return defer(() => {
     const loaded = mermaidGlobal();
     if (loaded) return of(loaded);
     if (pendingMermaid$) return pendingMermaid$;
-    const script$ = new Observable<MermaidApi>((observer) => {
+    const script$ = url === undefined ? from(import("mermaid")).pipe(map((module) => module.default)) : new Observable<MermaidApi>((observer) => {
       const script = document.createElement("script");
       script.src = url;
       const onLoad = () => {

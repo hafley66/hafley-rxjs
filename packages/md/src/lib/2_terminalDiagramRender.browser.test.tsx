@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { firstValueFrom } from "rxjs";
 import { loadMermaid$, renderDiagram$, type DiagramPalette, type RenderableDiagram } from "./2_terminalDiagramRender.js";
+import mermaidBundleUrl from "mermaid/dist/mermaid.min.js?url";
 
 const palette: DiagramPalette = {
   background: "#0f172a", surface: "#1e293b", surfaceAlt: "#172554", surfaceMuted: "#3f1d2e",
@@ -37,7 +38,7 @@ describe("mermaid bundle loader", () => {
       .rejects.toThrow(/ran without defining globalThis\.mermaid/);
   });
   it("removes the script when its observer leaves before load", () => {
-    const subscription = loadMermaid$().subscribe();
+    const subscription = loadMermaid$(mermaidBundleUrl).subscribe();
     const script = pendingScript();
     subscription.unsubscribe();
     expect(script.isConnected).toBe(false);
@@ -52,9 +53,9 @@ describe("mermaid bundle loader", () => {
     await expect(second).rejects.toThrow(/HTTP 404/);
   });
   it("shares one in-flight script and removes it after the final observer", async () => {
-    const first = firstValueFrom(loadMermaid$());
+    const first = firstValueFrom(loadMermaid$(mermaidBundleUrl));
     const script = pendingScript();
-    const second = firstValueFrom(loadMermaid$());
+    const second = firstValueFrom(loadMermaid$(mermaidBundleUrl));
     expect(pendingScript()).toBe(script);
     const [firstApi, secondApi] = await Promise.all([first, second]);
     expect(firstApi).toBe(secondApi);
