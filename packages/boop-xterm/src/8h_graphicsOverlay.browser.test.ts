@@ -2,7 +2,7 @@
 import "./theme.css";
 import { Subject } from "rxjs";
 import { describe, expect, it } from "vitest";
-import { graphicsOverlayStream, type GraphicsFrame } from "./8b_graphicsOverlay.js";
+import { graphicsOverlayStream, type GraphicsFrame } from "./8h_graphicsOverlay.js";
 import { nextFrame, openRealTerminal } from "./test/1_realTerminal.js";
 
 const frame = (id: string, color: [number, number, number, number], x = 0): GraphicsFrame => ({

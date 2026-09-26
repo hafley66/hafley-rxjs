@@ -7,6 +7,7 @@ import type { PinnedSelection, SelectionCell } from "./2_pinnedSelectionPure.js"
 import type { TurnSpan, TurnVisibilityEvent } from "./2_turnLocate.js";
 import type { TerminalWheelState } from "./2_wheelReduce.js";
 import type { BoopTurnComment, BoopTurnCommentFork } from "./2_contextSyncPure.js";
+import type { SquaresOptions, Strip } from "./1_agentSquaresFeed.js";
 
 export type PaneIdentity = { id: string; target: string; socket: string | null; graphics?: boolean };
 export type PaneSessionBinding = { session: string; harness: string | null };
@@ -61,6 +62,9 @@ export type BoopXtermPorts = {
   boop_turn_comments_sent: Endpoint<{ clientIds: string[] }, void>;
   boop_mux_exit_copy_mode: Endpoint<{ target: string; socket: string | null }, boolean>;
   write_pty: Endpoint<{ id: string; data: string }, void>;
+  squares_watch: Endpoint<{ pty: string; session: string; target: string; socket?: string; options: SquaresOptions }, void>;
+  squares_unwatch: Endpoint<{ pty: string }, void>;
+  "squares-update": Observable<Strip>;
   paneVisible: SignalSource<boolean>;
   paneClosed: SignalSource<boolean>;
   harness: SignalSource<HarnessId | null>;
@@ -74,6 +78,11 @@ export type BoopXtermPorts = {
   sessionIds: SignalSource<string[]>;
   inlineDiagrams: SignalSource<boolean>;
   diagramInference: SignalSource<DiagramInference>;
+  structuredOverlayEnabled: SignalSource<boolean>;
+  turnDebugEnabled: SignalSource<boolean>;
+  agentSquaresEnabled: SignalSource<boolean>;
+  squaresOptions: SignalSource<SquaresOptions>;
+  favoriteSources: SignalSource<ReadonlySet<string>>;
 };
 export type ViewportModel = {
   snapshot: Signal<ViewportSnapshot>;

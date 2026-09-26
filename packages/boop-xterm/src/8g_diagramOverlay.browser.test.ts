@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import type { TurnVisibilityEvent } from "./2_turnLocate.js";
 import type { VisibleTurn } from "./0_types.js";
 import { defaultTerminalDiagramLayout } from "./1_terminalDiagrams.js";
-import { diagramOverlayStream } from "./8a_diagramOverlay.js";
+import { diagramOverlayStream } from "./8g_diagramOverlay.js";
 import { nextFrame, openRealTerminal, waitFor, writeTerminal } from "./test/1_realTerminal.js";
 
 function rig() {
