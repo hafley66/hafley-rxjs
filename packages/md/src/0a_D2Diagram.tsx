@@ -1,13 +1,13 @@
 import { useEffect, useState, type KeyboardEvent } from "react";
 import { DiagramLightbox, diagramSvgMarkup } from "./0_DiagramLightbox.js";
 import { renderD2 } from "./d2.js";
-import { optionalMdviewHost } from "./ports.js";
+import { getMdviewHost } from "./ports.js";
 import { CAT_DIAGRAM, LOG, mdNow } from "./0_log.js";
 
 export function D2Diagram({ code, dark }: { code: string; dark: boolean }) {
-  const host = optionalMdviewHost();
-  host?.useRenderProbe("D2Diagram", undefined, { dark, sourceBytes: code.length });
-  host?.useLifecycleProbe("D2Diagram");
+  const host = getMdviewHost();
+  host.useRenderProbe("D2Diagram", undefined, { dark, sourceBytes: code.length });
+  host.useLifecycleProbe("D2Diagram");
   const [svg, setSvg] = useState("");
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
@@ -18,7 +18,7 @@ export function D2Diagram({ code, dark }: { code: string; dark: boolean }) {
     void renderD2(code, dark)
       .then((rendered) => {
         if (LOG.on) LOG.emit(CAT_DIAGRAM, "d2 {durationMs}ms", { kind: "d2", durationMs: Math.round(mdNow() - started), sourceBytes: code.length, svgBytes: rendered.length });
-        host?.recordOperation("mdview.renderD2", { dark, sourceBytes: code.length, svgBytes: rendered.length, elapsedMs: Math.round(mdNow() - started) });
+        host.recordOperation("mdview.renderD2", { dark, sourceBytes: code.length, svgBytes: rendered.length, elapsedMs: Math.round(mdNow() - started) });
         if (!disposed) {
           setError("");
           setSvg(rendered);

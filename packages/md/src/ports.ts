@@ -2,8 +2,8 @@
 // non-third-party value the package's files touch is declared here as a
 // member of MdviewHost and reached through getMdviewHost() instead of a
 // `../` import. The host app installs one implementation at boot
-// (installMdviewHost, called from src/main.ts); a fresh page that forgets to
-// install one gets a clear throw instead of a silent undefined.
+// (installMdviewHost, called from src/main.ts). Standalone markdown rendering
+// uses the default host until then.
 import type { ComponentType, ReactNode } from "react";
 import type { IDockviewPanelProps } from "dockview";
 import type { Observable } from "rxjs";
@@ -160,19 +160,32 @@ export interface MdviewHost {
 
 let host: MdviewHost | null = null;
 
-export function optionalMdviewHost(): MdviewHost | null {
-  return host;
-}
+const defaultHost: MdviewHost = {
+  readText: async () => "",
+  readImage: async () => "",
+  listDir: async () => ({ entries: [] }),
+  openHref: async () => {},
+  openPath: async () => {},
+  watchFile: async () => function unsubscribe() {},
+  FileTree: () => null,
+  PanZoomViewport: ({ children }) => children,
+  useRenderProbe: () => {},
+  useLifecycleProbe: () => {},
+  recordOperation: () => {},
+  registerZoomKind: () => {},
+  resetPanelZoom: () => {},
+  readPluginState: (_pluginId, fallback) => fallback,
+  savePluginState: () => {},
+  useAppState: () => ({ dark: false, panelZoom: {} }),
+  openMdPanel: () => {},
+  mdPanelId: (path) => path,
+  registerPlugin: () => {},
+};
 
 export function installMdviewHost(impl: MdviewHost): void {
   host = impl;
 }
 
 export function getMdviewHost(): MdviewHost {
-  if (!host) {
-    throw new Error(
-      "mdview: no host installed, call installMdviewHost() before mounting any mdview component or plugin",
-    );
-  }
-  return host;
+  return host ?? defaultHost;
 }
