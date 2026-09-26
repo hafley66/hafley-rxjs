@@ -90,11 +90,20 @@ it("uses host token overrides for squares, panel and diagram", async () => {
   host.style.setProperty("--boop-xterm-diagram-dark-surface", "#abcdef");
   await waitFor(() => calls.some((call) => call.url === "squares_watch"));
   frames.next(frame("s1"));
+  await waitFor(() => !!host.querySelector('[data-turn="s1:1"]'));
   const square = host.querySelector<HTMLElement>(".asq")!;
   square.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, clientX: 30, clientY: 30 }));
   await waitFor(() => !!host.querySelector(".turn-panel"));
   await writeTerminal(term, "```mermaid\r\nflowchart LR\r\n A --> B\r\n```");
-  await waitFor(() => !!host.querySelector(".term-diagram svg"), 10_000);
+  await waitFor(() => {
+    const panel = host.querySelector<HTMLElement>(".turn-panel");
+    const diagram = host.querySelector<HTMLElement>(".term-diagram");
+    return getComputedStyle(square).backgroundColor === "rgb(61, 1, 152)"
+      && !!panel && getComputedStyle(panel).backgroundColor === "rgb(18, 52, 86)"
+      && !!diagram?.querySelector("svg")
+      && getComputedStyle(diagram).backgroundColor === "rgb(51, 68, 85)"
+      && diagram.innerHTML.toLowerCase().includes("#abcdef");
+  }, 10_000);
   expect({
     square: getComputedStyle(square).backgroundColor,
     panel: getComputedStyle(host.querySelector<HTMLElement>(".turn-panel")!).backgroundColor,
