@@ -527,6 +527,45 @@ body[data-mode="dark"] .mdview-root .md-body a {
   margin: 0 auto;
 }
 
+.mdview-sequence-notice {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  padding: 3px 10px;
+  border-radius: 3px;
+  background: rgb(0 0 0 / 0.5);
+  color: #fff;
+  font: 12px/1.3 system-ui, sans-serif;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.mdview-sequence:hover .mdview-sequence-notice,
+.mdview-sequence:focus-within .mdview-sequence-notice,
+.mdview-sequence:has([data-grapht-wheel="armed"]) .mdview-sequence-notice {
+  visibility: visible;
+}
+
+.mdview-sequence-notice [data-when="armed"],
+.mdview-sequence:has([data-grapht-wheel="armed"]) .mdview-sequence-notice [data-when="passive"] {
+  display: none;
+}
+
+.mdview-sequence:has([data-grapht-wheel="armed"]) .mdview-sequence-notice [data-when="armed"] {
+  display: inline;
+}
+
+.mdview-sequence:has([data-grapht-wheel="armed"]) {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
+
+.mdview-sequence-graph:focus {
+  outline: none;
+}
+
 .mdview-renderer-switch {
   display: inline-flex;
   border: 1px solid var(--frame, #d4d0c8);

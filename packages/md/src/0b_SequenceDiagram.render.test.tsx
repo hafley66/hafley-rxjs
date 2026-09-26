@@ -1,6 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it } from "vitest";
+import { userEvent } from "vitest/browser";
 import { mdDocument } from "@hafley66/grapht-model";
 import StreamdownBody from "./0_Streamdown.js";
 import { withFenceOrigins } from "./0b_fenceOrigin.js";
@@ -217,6 +218,126 @@ it("resolves a rendered message to the exact bytes in the file", async () => {
   } finally {
     await act(() => root.unmount());
     container.remove();
+    Reflect.deleteProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT");
+  }
+});
+
+it("a grapht diagram lets the doc scroll until right-click, names the chords, and releases on Escape", async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  mdUi.$({ ...mdUi.$(), diagramRenderer: "grapht" });
+  const page = document.createElement("div");
+  page.style.cssText = "position:fixed;inset:0;overflow:auto";
+  const container = document.createElement("div");
+  container.style.cssText = "width:1200px;padding-bottom:4000px";
+  page.append(container);
+  document.body.append(page);
+  const root = createRoot(container);
+  try {
+    const single = [`${fence}mermaid`, "sequenceDiagram", "  participant Alice", "  participant Bob", "  Alice->>Bob: hello", fence, ""].join("\n");
+    await act(() => root.render(<StreamdownBody components={{}} dark>{single}</StreamdownBody>));
+    const host = () => container.querySelector<HTMLElement>("[data-grapht-host='mermaid']")!;
+    await settle(() => host()?.dataset.graphtItems !== undefined && host()?.dataset.graphtWheel !== undefined);
+    const box = host().closest<HTMLElement>(".mdview-sequence")!;
+    const notice = box.querySelector<HTMLElement>(".mdview-sequence-notice")!;
+    const shown = (element: HTMLElement) => getComputedStyle(element).visibility === "visible" && getComputedStyle(element).display !== "none";
+    const trace: Record<string, unknown>[] = [];
+    let lastScrollTop = page.scrollTop;
+    const record = async (step: string) => {
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 700));
+      });
+      trace.push({
+        step,
+        wheel: host().dataset.graphtWheel,
+        pageScrolled: page.scrollTop !== lastScrollTop,
+        notice: shown(notice) ? [...notice.querySelectorAll<HTMLElement>("span")].filter(shown).map((span) => span.textContent) : "hidden",
+      });
+      lastScrollTop = page.scrollTop;
+    };
+    await record("mounted");
+    await userEvent.hover(box);
+    await record("hover");
+    await userEvent.wheel(host(), { delta: { y: 60 } });
+    await record("wheel while passive");
+    await act(async () => {
+      host().dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+    });
+    await record("right-click");
+    await userEvent.wheel(host(), { delta: { y: 20 } });
+    await record("wheel while armed, drawing smaller than the box: clamp holds, page takes the wheel");
+    await act(async () => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    });
+    await record("Escape");
+    await act(async () => {
+      host().focus();
+    });
+    await userEvent.keyboard("{Enter}");
+    await record("Enter on the focused diagram");
+    expect({ trace, noticeBackground: getComputedStyle(notice).backgroundColor }).toMatchInlineSnapshot(`
+      {
+        "noticeBackground": "rgba(0, 0, 0, 0.5)",
+        "trace": [
+          {
+            "notice": "hidden",
+            "pageScrolled": false,
+            "step": "mounted",
+            "wheel": "passive",
+          },
+          {
+            "notice": [
+              "Right-click for scroll zoom",
+            ],
+            "pageScrolled": false,
+            "step": "hover",
+            "wheel": "passive",
+          },
+          {
+            "notice": [
+              "Right-click for scroll zoom",
+            ],
+            "pageScrolled": true,
+            "step": "wheel while passive",
+            "wheel": "passive",
+          },
+          {
+            "notice": [
+              "Esc to release",
+            ],
+            "pageScrolled": false,
+            "step": "right-click",
+            "wheel": "armed",
+          },
+          {
+            "notice": [
+              "Esc to release",
+            ],
+            "pageScrolled": true,
+            "step": "wheel while armed, drawing smaller than the box: clamp holds, page takes the wheel",
+            "wheel": "armed",
+          },
+          {
+            "notice": [
+              "Right-click for scroll zoom",
+            ],
+            "pageScrolled": false,
+            "step": "Escape",
+            "wheel": "passive",
+          },
+          {
+            "notice": [
+              "Esc to release",
+            ],
+            "pageScrolled": false,
+            "step": "Enter on the focused diagram",
+            "wheel": "armed",
+          },
+        ],
+      }
+    `);
+  } finally {
+    await act(() => root.unmount());
+    page.remove();
     Reflect.deleteProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT");
   }
 });

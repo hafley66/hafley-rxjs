@@ -27,3 +27,34 @@ export function wheelCamera(camera: GraphCamera, event: Pick<WheelEvent, "deltaX
   }
   return { ...camera, x: camera.x - dx, y: camera.y - dy }
 }
+
+export type DrawBounds = { x: number; y: number; width: number; height: number }
+
+/** The scale at which `bounds` fits the viewport on both axes. */
+export function fitScaleOf(bounds: DrawBounds, viewport: { width: number; height: number }): number {
+  if (bounds.width <= 0 || bounds.height <= 0 || viewport.width <= 0 || viewport.height <= 0) return 1
+  return Math.min(viewport.width / bounds.width, viewport.height / bounds.height)
+}
+
+/** Keep the drawing on screen: on each axis, empty space between a drawing edge and the facing
+ * viewport edge is at most `slack` of the viewport, and the scale never drops below `minScale`.
+ * A scale raised to the floor keeps the viewport center still. */
+export function clampCamera(camera: GraphCamera, bounds: DrawBounds, minScale = 0, slack = 0.5): GraphCamera {
+  const { width, height } = camera.viewport
+  const scale = Math.max(camera.scale, minScale)
+  const x = width / 2 - (width / 2 - camera.x) * scale / camera.scale
+  const y = height / 2 - (height / 2 - camera.y) * scale / camera.scale
+  // pseudo: left edge <= slack*width, right edge >= (1-slack)*width, same for y.
+  const clampAxis = (at: number, start: number, size: number, extent: number) =>
+    Math.min(slack * extent - start * scale, Math.max((1 - slack) * extent - (start + size) * scale, at))
+  return {
+    ...camera,
+    scale,
+    x: clampAxis(x, bounds.x, bounds.width, width),
+    y: clampAxis(y, bounds.y, bounds.height, height),
+  }
+}
+
+export function sameCamera(left: GraphCamera, right: GraphCamera): boolean {
+  return Math.abs(left.x - right.x) < 0.5 && Math.abs(left.y - right.y) < 0.5 && Math.abs(left.scale - right.scale) < 1e-6
+}

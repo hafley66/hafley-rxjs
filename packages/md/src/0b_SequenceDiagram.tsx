@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { SignalReact } from "@hafley66/signals/react";
 import { graphRenderReceipt } from "@hafley66/grapht/browser";
 import { createCytoscapeGraphFrameResource } from "@hafley66/grapht-render-cytoscape";
@@ -10,10 +10,15 @@ import { sequenceFrameWithSource } from "./0b_sequenceFrame.js";
 import { recordSequenceSource, releaseSequenceSource } from "./0b_sequenceSource.js";
 import { renderD2 } from "./d2.js";
 import { getMdviewHost } from "./ports.js";
+import { chordText, matchesChord, parseChord } from "@hafley66/xdom";
 import { DiagramRendererSwitch } from "./0b_DiagramRendererSwitch.js";
 import { mdUi } from "./signals.js";
 
 const FALLBACK_VIEWPORT = { width: 800, height: 420 };
+// The grapht canvas takes the wheel only once armed, so the doc scrolls past it.
+const ARM_CHORD = "Enter";
+const RELEASE_CHORD = "Escape";
+const capitalized = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 export const SequenceDiagram = SignalReact(function SequenceDiagram({
   code,
@@ -31,6 +36,7 @@ export const SequenceDiagram = SignalReact(function SequenceDiagram({
   host.useRenderProbe("SequenceDiagram", language, { dark, sourceBytes: code.length });
   host.useLifecycleProbe("SequenceDiagram");
   const mountRef = useRef<HTMLDivElement | null>(null);
+  const resourceRef = useRef<ReturnType<typeof createCytoscapeGraphFrameResource> | undefined>(undefined);
   const [svg, setSvg] = useState("");
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
@@ -61,7 +67,8 @@ export const SequenceDiagram = SignalReact(function SequenceDiagram({
           height: mount.clientHeight || FALLBACK_VIEWPORT.height,
         }, origin);
         if (source) recordSequenceSource(mount, source);
-        resource = createCytoscapeGraphFrameResource(mount, undefined, { ribbon: true });
+        resource = createCytoscapeGraphFrameResource(mount, undefined, { ribbon: true }, { wheel: "armed" });
+        resourceRef.current = resource;
         resource.applyTheme(dark ? "dark" : "light");
         resource.render(frame, graphRenderReceipt(new Set(), frame));
         // One item is the sealed root alone: the language adapter recovered no bindings.
@@ -89,6 +96,7 @@ export const SequenceDiagram = SignalReact(function SequenceDiagram({
     return () => {
       disposed = true;
       releaseSequenceSource(mount);
+      if (resourceRef.current === resource) resourceRef.current = undefined;
       resource?.unsubscribe();
     };
   }, [code, dark, language, originStart, originLine, renderer]);
@@ -102,10 +110,21 @@ export const SequenceDiagram = SignalReact(function SequenceDiagram({
         data-diagram-theme={dark ? "dark" : "light"}
         data-diagram-language={language}
         data-diagram-renderer={renderer}
+        onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
+          if (matchesChord(event.nativeEvent, parseChord(ARM_CHORD))) resourceRef.current?.setWheelArmed(true);
+        }}
       >
         {renderer === "grapht"
           ? <div key="grapht" ref={mountRef} className="mdview-sequence-graph" data-grapht-host={language} />
           : <div key="svg" ref={mountRef} className="mdview-sequence-svg" dangerouslySetInnerHTML={{ __html: diagramSvgMarkup(svg) }} />}
+        {renderer === "grapht" && (
+          <div className="mdview-sequence-notice" aria-live="polite">
+            <span data-when="passive" title={`${chordText(ARM_CHORD)} also arms a focused diagram`}>
+              {capitalized(chordText("RightClick"))} for scroll zoom
+            </span>
+            <span data-when="armed">{chordText(RELEASE_CHORD)} to release</span>
+          </div>
+        )}
         <DiagramRendererSwitch className="mdview-sequence-renderer" />
         <button type="button" className="mdview-sequence-open" title="Open diagram" disabled={svg === ""} onClick={() => setOpen(true)}>
           ⤢

@@ -1,6 +1,6 @@
 // A bounded wheel tail: immediate input stays responsive; residual movement decays over time.
 import type { GraphCamera } from "../2_graph/0_frame.js"
-import { wheelCamera, wheelSettingsOf, type WheelSettings } from "./1_wheelCamera.js"
+import { sameCamera, wheelCamera, wheelSettingsOf, type WheelSettings } from "./1_wheelCamera.js"
 
 export type WheelImpulse = Pick<WheelEvent, "deltaX" | "deltaY" | "deltaMode" | "shiftKey" | "ctrlKey" | "metaKey">
 
@@ -18,6 +18,8 @@ export class WheelMomentum {
   event: WheelImpulse = { deltaX: 0, deltaY: 0, deltaMode: 0, shiftKey: false, ctrlKey: false, metaKey: false }
   previous = 0
   until = 0
+  /** Applied to every camera this produces; the coast ends where the clamp bites. */
+  clamp: (camera: GraphCamera) => GraphCamera = camera => camera
 
   push(camera: GraphCamera, event: WheelImpulse, at: { x: number; y: number }, now: number): GraphCamera {
     const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? camera.viewport.height : 1
@@ -28,7 +30,7 @@ export class WheelMomentum {
     this.at = at
     this.previous = now
     this.until = this.settings.momentum ? now + this.settings.maxDurationMs : now
-    return wheelCamera(camera, event, at, this.settings.zoomSensitivity)
+    return this.clamp(wheelCamera(camera, event, at, this.settings.zoomSensitivity))
   }
 
   step(camera: GraphCamera, now: number): GraphCamera | undefined {
@@ -40,7 +42,9 @@ export class WheelMomentum {
     const next = wheelCamera(camera, { ...this.event, deltaX: this.velocityX * distance, deltaY: this.velocityY * distance }, this.at, this.settings.zoomSensitivity)
     this.velocityX *= decay
     this.velocityY *= decay
-    return next
+    const clamped = this.clamp(next)
+    if (!sameCamera(clamped, next)) this.unsubscribe()
+    return clamped
   }
 
   unsubscribe(): void { this.velocityX = 0; this.velocityY = 0; this.until = 0 }
