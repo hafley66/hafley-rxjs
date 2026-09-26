@@ -2,6 +2,8 @@
 // consume this, and the option shape is the CSV contract shared with
 // ~/projects/sparkup/scripts/5_echarts_lines.py so the same CSV files drive both renderers.
 
+import { csvParseRows } from "d3-dsv";
+
 export interface EchartsLineSeries {
   name: string;
   type: "line";
@@ -29,31 +31,8 @@ export function echartsTitle(meta: string | undefined): string {
   return match?.[1] ?? match?.[2] ?? match?.[3] ?? "";
 }
 
-/** One CSV record. Quotes wrap a cell and `""` is a literal quote, as `csv.reader` reads it. */
-function splitCsvLine(line: string): string[] {
-  const cells: string[] = [];
-  let cell = "";
-  let quoted = false;
-  for (let i = 0; i < line.length; i += 1) {
-    const character = line[i];
-    if (quoted) {
-      if (character !== '"') cell += character;
-      else if (line[i + 1] === '"') { cell += '"'; i += 1; }
-      else quoted = false;
-    } else if (character === '"') quoted = true;
-    else if (character === ",") { cells.push(cell); cell = ""; }
-    else cell += character;
-  }
-  cells.push(cell);
-  return cells;
-}
-
 function csvRows(code: string): string[][] {
-  return code
-    .replace(/\r?\n$/, "")
-    .split(/\r?\n/)
-    .filter((line) => line !== "")
-    .map(splitCsvLine);
+  return csvParseRows(code).filter((row) => !(row.length === 1 && row[0] === ""));
 }
 
 function numberOrNull(raw: string): number | null {
