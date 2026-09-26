@@ -40,3 +40,22 @@ pending:
 # lane warmup: boop lane create runs this in each new worktree
 boop-start:
     pnpm install --frozen-lockfile --prefer-offline
+
+# dev-stamp and publish packages to local verdaccio from a throwaway worktree of HEAD
+# usage: just publish-local trace md boop-xterm
+publish-local +pkgs:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    reg=http://127.0.0.1:4873/
+    wt=$(mktemp -d)/publish-local
+    git worktree add -q --detach "$wt" HEAD
+    trap 'git worktree remove --force "$wt"' EXIT
+    ts=$(node -e 'console.log(Date.now())')
+    for p in {{pkgs}}; do
+      (cd "$wt/packages/$p" && npm pkg set version="$(node -e 'console.log(require("./package.json").version.split("-")[0])')-dev.$ts" publishConfig.registry=$reg)
+    done
+    cd "$wt"
+    pnpm install --frozen-lockfile --prefer-offline >/dev/null
+    filters=(); for p in {{pkgs}}; do filters+=(--filter "@hafley66/$p^..." --filter "@hafley66/$p"); done
+    pnpm "${filters[@]}" build >/dev/null
+    for p in {{pkgs}}; do (cd "packages/$p" && pnpm publish --registry $reg --no-git-checks --tag dev); done
