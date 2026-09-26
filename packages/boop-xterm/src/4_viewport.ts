@@ -1,6 +1,6 @@
-import { Signal, toSignal } from "@hafley66/signals";
+import { Signal, signalMap, toSignal } from "@hafley66/signals";
 import type { Terminal } from "@xterm/xterm";
-import { Observable, filter, map, merge, takeUntil, tap } from "rxjs";
+import { Observable, filter, map, merge, skip, startWith, takeUntil, tap } from "rxjs";
 import type { BoopXtermPorts, PaneRuntimeState, ViewportChange, ViewportGeometry, ViewportModel, ViewportPoint, ViewportSnapshot } from "./3_ports.js";
 import type { LogicalLine } from "./0_types.js";
 import type { Signal as SignalType } from "@hafley66/signals";
@@ -80,7 +80,9 @@ export function viewportStream(
       runtime.viewportRevision.$(runtime.viewportRevision.$() + 1);
       changes.$(change);
     }),
-    map((change) => snapshot(term, change, paneVisible.$())),
+    startWith(initial),
+    signalMap((change) => snapshot(term, change, paneVisible.$())),
+    skip(1),
     takeUntil(closed$),
   );
   const retained = Signal(source$, snapshot(term, initial, paneVisible.$()));

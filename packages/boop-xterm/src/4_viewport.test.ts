@@ -50,4 +50,16 @@ describe("viewportStream", () => {
       bufferRowAtPoint({ top: 100, cellHeight: 10, viewportY: 40, rows: 20 }, { clientX: 0, clientY: 90 }),
     ]).toEqual([42, null]);
   });
+
+  it("updates the snapshot when host visibility changes without an xterm event", () => {
+    const scheduler = new TestScheduler((actual, expected) => expect(actual).toEqual(expected));
+    scheduler.run(({ expectObservable }) => {
+      const terminal = testTerminal(["alpha"]);
+      const ports = testPorts(emptyTransport);
+      const viewport = viewportStream(terminal.term, runtime(), ports);
+      expectObservable(viewport.snapshot.visible.$, "^------!").toBe("a-b-c", { a: true, b: false, c: true });
+      scheduler.schedule(() => toSignal(ports.paneVisible).$(false), 2);
+      scheduler.schedule(() => toSignal(ports.paneVisible).$(true), 4);
+    });
+  });
 });
