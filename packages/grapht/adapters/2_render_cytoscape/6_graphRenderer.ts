@@ -6,6 +6,7 @@ import { graphStylesheet } from "../../src/lib/1_graphStylesheet.js"
 import { GRAPH_STYLES, graphStyleOf, type GraphStyle, type GraphStyleInput } from "../../src/lib/0_graphStyle.js"
 import { applySvgStyle } from "../../src/lib/2_svgStyle.js"
 import { WheelMomentum } from "../../src/lib/2_wheelMomentum.js"
+import { clampCamera, fitScaleOf, sameCamera, type DrawBounds } from "../../src/lib/1_wheelCamera.js"
 import { createStickyOverlay, type StickyOptions } from "../../src/lib/0_stickyOverlay.js"
 import cytoscape, { type Core, type ElementDefinition } from "cytoscape"
 import createDOMPurify from "dompurify"
@@ -246,6 +247,8 @@ function headerViewStyle(c: GraphStyle, left: number, top: number, width: number
 
 export type CytoscapeGraphFrameResource = GraphFrameResource & {
   applyWheelSettings: (settings: WheelSettings) => void
+  /** `wheel: "armed"` only: take or release the wheel. Arming one diagram releases any other. */
+  setWheelArmed: (armed: boolean) => void
   cy: Core
   applySticky: (options: Pick<StickyOptions, "ribbon" | "groups">) => void
   /** Recolor native primitives and headers while retaining the current camera and geometry. */
@@ -254,12 +257,21 @@ export type CytoscapeGraphFrameResource = GraphFrameResource & {
   sealedSvgViews: ReadonlyMap<string, HTMLElement>
 }
 
+// At most one armed diagram per page; arming another releases this one.
+let releaseArmed: (() => void) | undefined
+
 export function createCytoscapeGraphFrameResource(
   host?: HTMLElement,
   interactions?: RendererInteractions,
   sticky?: StickyOptions,
+  options?: {
+    /** "always": the wheel always moves the camera (labs). "armed": the wheel scrolls the page
+     * until right-click or `setWheelArmed(true)`; Esc, a click outside, or leaving releases it. */
+    wheel?: "always" | "armed"
+  },
 ): CytoscapeGraphFrameResource {
   const originalBackground = host?.style.background ?? ""
+  const wheelMode = options?.wheel ?? "always"
   host?.addEventListener("wheel", onWheel, { capture: true, passive: false })
   const cy = cytoscape({
     container: host,
@@ -292,8 +304,31 @@ export function createCytoscapeGraphFrameResource(
 
   // Canvas viewport changes must move the sealed DOM artifacts in the same event.
   let renderedFrame: GraphFrame | undefined
+  // Model-space extent of the drawing and the smallest allowed scale, refreshed per render.
+  let drawBounds: DrawBounds | undefined
+  let minScale = 0
+  let clamping = false
+  const cameraOf = () => {
+    const pan = cy.pan()
+    return { x: pan.x, y: pan.y, scale: cy.zoom(), viewport: { x: 0, y: 0, width: cy.width(), height: cy.height() } }
+  }
+  const clampToDrawing = (camera: ReturnType<typeof cameraOf>) =>
+    drawBounds === undefined ? camera : clampCamera(camera, drawBounds, minScale)
   cy.on("viewport", () => {
     if (applyingFrame || renderedFrame === undefined) return
+    if (!clamping && drawBounds !== undefined) {
+      const current = cameraOf()
+      const clamped = clampToDrawing(current)
+      if (!sameCamera(clamped, current)) {
+        clamping = true
+        try {
+          cy.viewport({ zoom: clamped.scale, pan: { x: clamped.x, y: clamped.y } })
+        } finally {
+          clamping = false
+        }
+        return
+      }
+    }
     const pan = cy.pan()
     const scale = cy.zoom()
     stickyOverlay?.applyCamera({ x: pan.x, y: pan.y, scale, viewport: { x: 0, y: 0, width: cy.width(), height: cy.height() } })
@@ -311,6 +346,7 @@ export function createCytoscapeGraphFrameResource(
   })
 
   const momentum = new WheelMomentum()
+  momentum.clamp = clampToDrawing
   let momentumFrame = 0
   const unsubscribeMomentum = (): void => {
     cancelAnimationFrame(momentumFrame)
@@ -329,14 +365,59 @@ export function createCytoscapeGraphFrameResource(
 
   function onWheel(event: WheelEvent): void {
     if (!host || renderedFrame === undefined) return
-    event.preventDefault()
     // Capture before Cytoscape's built-in wheel zoom sees this event.
     event.stopImmediatePropagation()
+    // Unarmed: no preventDefault, so the page scrolls past the diagram.
+    if (wheelMode === "armed" && !armed) return
     const rect = host.getBoundingClientRect()
-    const pan = cy.pan()
-    const next = momentum.push({ x: pan.x, y: pan.y, scale: cy.zoom(), viewport: { x: 0, y: 0, width: cy.width(), height: cy.height() } }, event, { x: event.clientX - rect.left, y: event.clientY - rect.top }, performance.now())
+    const current = cameraOf()
+    const next = momentum.push(current, event, { x: event.clientX - rect.left, y: event.clientY - rect.top }, performance.now())
+    // A pan pinned at the clamp edge falls through to the page. Zoom never does: Ctrl+wheel is page zoom.
+    if (!event.metaKey && !event.ctrlKey && sameCamera(next, current)) {
+      unsubscribeMomentum()
+      return
+    }
+    event.preventDefault()
     cy.viewport({ zoom: next.scale, pan: { x: next.x, y: next.y } })
     if (!momentumFrame) momentumFrame = requestAnimationFrame(coast)
+  }
+
+  let armed = false
+  const release = (): void => setWheelArmed(false)
+  function setWheelArmed(next: boolean): void {
+    if (!host || wheelMode !== "armed" || armed === next) return
+    if (next) {
+      releaseArmed?.()
+      releaseArmed = release
+    } else if (releaseArmed === release) {
+      releaseArmed = undefined
+    }
+    armed = next
+    host.dataset.graphtWheel = next ? "armed" : "passive"
+    if (!next) unsubscribeMomentum()
+  }
+  const onContextMenu = (event: MouseEvent): void => {
+    event.preventDefault()
+    setWheelArmed(true)
+    host?.focus({ preventScroll: true })
+  }
+  const onKeyDown = (event: KeyboardEvent): void => {
+    if (armed && event.key === "Escape") release()
+  }
+  const onPointerDown = (event: PointerEvent): void => {
+    if (armed && host && !host.contains(event.target as Node)) release()
+  }
+  const onFocusOut = (event: FocusEvent): void => {
+    if (host && !host.contains(event.relatedTarget as Node | null)) release()
+  }
+  if (host && wheelMode === "armed") {
+    host.dataset.graphtWheel = "passive"
+    if (host.tabIndex < 0) host.tabIndex = 0
+    host.addEventListener("contextmenu", onContextMenu)
+    host.addEventListener("pointerleave", release)
+    host.addEventListener("focusout", onFocusOut)
+    host.ownerDocument.addEventListener("keydown", onKeyDown)
+    host.ownerDocument.addEventListener("pointerdown", onPointerDown, { capture: true })
   }
   if (interactions) {
     let moving: { id: string; x: number; y: number; dx: number; dy: number } | undefined
@@ -429,7 +510,8 @@ export function createCytoscapeGraphFrameResource(
     stickyOverlay?.applyHover(hops)
   }
   return {
-    applyWheelSettings(settings) { unsubscribeMomentum(); momentum.configure(settings) },
+    applyWheelSettings(settings) { unsubscribeMomentum(); momentum.configure(settings); momentum.clamp = clampToDrawing },
+    setWheelArmed,
     applyHover,
     cy,
     applySticky: options => stickyOverlay?.applySticky(options),
@@ -520,6 +602,12 @@ export function createCytoscapeGraphFrameResource(
         applyingFrame = false
       }
       renderedGeometryRevision = frame.geometry.revisionId
+      // The clamp belongs to embedded diagrams; the labs keep a free camera.
+      if (host && wheelMode === "armed") {
+        const box = cy.elements().boundingBox({})
+        drawBounds = box.w > 0 && box.h > 0 ? { x: box.x1, y: box.y1, width: box.w, height: box.h } : undefined
+        minScale = drawBounds === undefined ? 0 : Math.min(frame.camera.scale, fitScaleOf(drawBounds, { width: cy.width(), height: cy.height() }))
+      }
       if (host) {
         host.dataset.graphtRenderer = "cytoscape"
         host.dataset.graphtItemCount = String(cy.elements().length)
@@ -602,6 +690,14 @@ export function createCytoscapeGraphFrameResource(
     unsubscribe() {
       unsubscribeMomentum()
       host?.removeEventListener("wheel", onWheel, { capture: true })
+      if (host && wheelMode === "armed") {
+        release()
+        host.removeEventListener("contextmenu", onContextMenu)
+        host.removeEventListener("pointerleave", release)
+        host.removeEventListener("focusout", onFocusOut)
+        host.ownerDocument.removeEventListener("keydown", onKeyDown)
+        host.ownerDocument.removeEventListener("pointerdown", onPointerDown, { capture: true })
+      }
       if (host) host.style.background = originalBackground
       stickyOverlay?.unsubscribe()
       headerLayer?.remove()

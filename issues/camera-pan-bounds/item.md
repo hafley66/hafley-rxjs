@@ -2,7 +2,7 @@
 created: 2026-09-26
 updated: 2026-09-26
 type: bug
-status: open
+status: done
 priority: high
 ---
 
@@ -40,3 +40,6 @@ A trackpad fling sends dozens of events. Each one applies its full delta and res
 - [ ] Unit test: zoom out cannot go below the fit scale.
 - [ ] Browser test: a wheel over the diagram at its edge scrolls the host page (`scrollTop` changes).
 - [ ] Browser test in the md `MarkdownBody` harness with the ryi serve discussion doc (`hafley-rs/plans/2026-09-26-ryi-serve-memory-and-contracts.DISCUSSION.md`). After a fling, the node canvas bbox still intersects the host.
+
+## Resolution
+The clamp is active only under `wheel: "armed"` (embedded diagrams such as md). The labs (`"always"`) keep a free camera: clamping them broke `10_stickyRibbon` and `6_graphRenderer` browser receipts that pan past the drawing.

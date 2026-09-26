@@ -2,7 +2,7 @@
 created: 2026-09-26
 updated: 2026-09-26
 type: bug
-status: open
+status: done
 priority: high
 ---
 
