@@ -69,6 +69,7 @@ export {
 } from "./lib/1_proseWidth.js";
 export { blockAt, mdDocument, parseMdSections } from "./model.js";
 export { isMarkdownPath, markdownHeadingRows, type MarkdownHeadingRow } from "./lib/0_markdownTree.js";
+export { DiagramRenderCache } from "./lib/0_diagramRenderCache.js";
 export { markdownTableStarts } from "./6_tableAnchors.js";
 export type { MdBlock, MdBlockKind, MdDocument, SourceSpan } from "./model.js";
 

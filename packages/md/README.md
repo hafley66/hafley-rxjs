@@ -246,6 +246,8 @@ Hosts import that stylesheet once from their composition root.
 
 The SVG viewport helpers parse source bounds, normalize entities, fit, zoom, pan, and manage painted surfaces.
 
+`DiagramRenderCache` shares in-flight renders and bounds retained SVG output by bytes and entries.
+
 ```ts
 installMdviewHost
 getMdviewHost
