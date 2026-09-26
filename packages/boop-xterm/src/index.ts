@@ -27,5 +27,5 @@ export * from "./1_agentSquaresFeed.js";
 export * from "./2_agentSquaresMarks.js";
 export * from "./2_agentSquaresModel.js";
 export * from "./1_terminalDiagrams.js";
-export * from "./8a_diagramOverlay.js";
-export * from "./8b_graphicsOverlay.js";
+export * from "./8g_diagramOverlay.js";
+export * from "./8h_graphicsOverlay.js";
