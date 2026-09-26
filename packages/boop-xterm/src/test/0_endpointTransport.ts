@@ -50,6 +50,7 @@ export function testPorts(script: Script): BoopXtermPorts {
     agentSquaresEnabled: Signal(false),
     squaresOptions: Signal<SquaresOptions>({ mode: "relative", userKeep: 5 }),
     favoriteSources: Signal<ReadonlySet<string>>(new Set<string>()),
+    turnTags: Signal<ReadonlyMap<string, readonly string[]>>(new Map()),
   };
 }
 

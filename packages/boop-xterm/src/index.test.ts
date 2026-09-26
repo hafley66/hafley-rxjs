@@ -1,13 +1,12 @@
-import { readdirSync, readFileSync } from "node:fs";
+/// <reference types="vite/client" />
 import { describe, expect, it } from "vitest";
+
+const sources = import.meta.glob(["./*.ts", "!./*.test.ts", "!./index.ts", "!./*.d.ts"]);
+const index = import.meta.glob<string>("./index.ts", { query: "?raw", import: "default", eager: true })["./index.ts"];
 
 describe("index", () => {
   it("re-exports every source module", () => {
-    const dir = new URL(".", import.meta.url);
-    const index = readFileSync(new URL("index.ts", dir), "utf8");
-    const modules = readdirSync(dir)
-      .filter((name) => name.endsWith(".ts") && !name.includes(".test.") && name !== "index.ts" && !name.endsWith(".d.ts"))
-      .map((name) => name.slice(0, -3));
+    const modules = Object.keys(sources).map((path) => path.slice(2, -3));
     expect(modules.filter((name) => !index.includes(`"./${name}.js"`) && !index.includes(`"./${name}"`))).toMatchInlineSnapshot(`[]`);
   });
 });

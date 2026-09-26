@@ -66,7 +66,8 @@ export function createBoopXtermView(
   const structuredOverlay = structuredOverlayStream(term, host, pane.visibility, ports.structuredOverlayEnabled);
   const turnDebugOverlay = turnDebugOverlayStream(term, host, pane.visibility, turnPanel, ports.turnDebugEnabled);
   const favorites = toSignal(ports.favoriteSources);
-  const marks$ = combineLatest([agentSquares.state.frame.$, pane.visibility.state.visible.$, favorites.$]).pipe(tap(([frame, visible, sources]) => {
+  const hostTags = toSignal(ports.turnTags);
+  const marks$ = combineLatest([agentSquares.state.frame.$, pane.visibility.state.visible.$, favorites.$, hostTags.$]).pipe(tap(([frame, visible, sources, tagged]) => {
     const next = new Map<string, TurnMark>();
     if (frame) {
       const byTurn = marksOf(frame, sources);
@@ -79,6 +80,8 @@ export function createBoopXtermView(
       const source = `turn:${turn.session}:${turn.turn}`;
       if (!next.has(source)) next.set(source, { favorite: sources.has(source), tags: [] });
     }
+    // Host tag edits win over the strip frame's tags, which lag until the next frame.
+    for (const [source, tags] of tagged) next.set(source, { favorite: sources.has(source), tags: [...tags] });
     marks.$(next);
   }), map(() => void 0));
   const closed$ = toSignal(ports.paneClosed).$.pipe(filter(Boolean));

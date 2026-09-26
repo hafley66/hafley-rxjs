@@ -83,6 +83,7 @@ export type BoopXtermPorts = {
   agentSquaresEnabled: SignalSource<boolean>;
   squaresOptions: SignalSource<SquaresOptions>;
   favoriteSources: SignalSource<ReadonlySet<string>>;
+  turnTags: SignalSource<ReadonlyMap<string, readonly string[]>>;
 };
 export type ViewportModel = {
   snapshot: Signal<ViewportSnapshot>;

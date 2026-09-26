@@ -164,3 +164,26 @@ it("mounts structured and debug overlays from their gates and releases them", as
   closed.$(true);
   await waitFor(() => calls.some((call) => call.url === "squares_unwatch"));
 });
+
+it("paints host tag edits on an open turn card before the next strip frame", async () => {
+  const { host, frames, calls, ports, closed } = rig();
+  await waitFor(() => calls.some((call) => call.url === "squares_watch"));
+  frames.next(frame("s1"));
+  host.querySelector<HTMLElement>(".asq")!.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+  await waitFor(() => !!host.querySelector(".turn-panel .mdview-streamdown"));
+  const tags = () => [...host.querySelectorAll(".turn-panel-tag")].map((chip) => chip.textContent);
+  const before = tags();
+  toSignal(ports.turnTags).$(new Map([["turn:s1:1", ["keep", "review"]]]));
+  await waitFor(() => tags().length === 2);
+  expect({ before, after: tags() }).toMatchInlineSnapshot(`
+    {
+      "after": [
+        "#keep",
+        "#review",
+      ],
+      "before": [],
+    }
+  `);
+  closed.$(true);
+  await waitFor(() => calls.some((call) => call.url === "squares_unwatch"));
+});
