@@ -26,6 +26,8 @@ export function testPorts(script: Script): BoopXtermPorts {
     tabSessionIds: Signal<string[]>([]),
     scanRequested: Signal<void>(),
     selectionClear: Signal<void>(),
+    inlineDiagrams: Signal(true),
+    diagramInference: Signal<"explicit" | "labels" | "inferred">("labels"),
   };
 }
 

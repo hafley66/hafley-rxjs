@@ -197,24 +197,33 @@ importers:
 
   packages/boop-xterm:
     devDependencies:
+      '@hafley66/md':
+        specifier: workspace:*
+        version: link:../md
       '@hafley66/signals':
         specifier: workspace:*
         version: link:../signals
-      rxjs:
-        specifier: ^7.8.2
-        version: 7.8.2
       '@vitest/browser':
         specifier: 4.1.11
         version: 4.1.11(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.1.11)
       '@vitest/browser-playwright':
         specifier: 4.1.11
         version: 4.1.11(playwright@1.62.1)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.1.11)
-      playwright:
-        specifier: ^1.62.1
-        version: 1.62.1
       '@xterm/xterm':
         specifier: ^6.0.0
         version: 6.0.0
+      playwright:
+        specifier: ^1.62.1
+        version: 1.62.1
+      react:
+        specifier: ^19.2.7
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.2.7
+        version: 19.2.8(react@19.2.8)
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
       typescript:
         specifier: 7.0.2
         version: 7.0.2

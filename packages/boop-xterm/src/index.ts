@@ -21,3 +21,11 @@ export * from "./5_pinnedSelection.js";
 export * from "./6_turnVisibility.js";
 export * from "./7_pane.js";
 export * from "./0_turnHue";
+
+export * from "./0_agentSquareVisual.js";
+export * from "./1_agentSquaresFeed.js";
+export * from "./2_agentSquaresMarks.js";
+export * from "./2_agentSquaresModel.js";
+export * from "./1_terminalDiagrams.js";
+export * from "./8a_diagramOverlay.js";
+export * from "./8b_graphicsOverlay.js";
