@@ -2,6 +2,8 @@ import { Endpoint, Signal, type EndpointRequest, type EndpointResponse, type End
 import { of, type Observable } from "rxjs";
 import type { BoopXtermPorts } from "../3_ports.js";
 import type { HarnessId } from "../0_types.js";
+import type { SquaresOptions, Strip } from "../1_agentSquaresFeed.js";
+import { Subject } from "rxjs";
 
 export type Script = (request: EndpointRequest) => Observable<EndpointResponse>;
 
@@ -27,6 +29,9 @@ export function testPorts(script: Script): BoopXtermPorts {
     boop_turn_comments_sent: endpoint("boop_turn_comments_sent"),
     boop_mux_exit_copy_mode: endpoint("boop_mux_exit_copy_mode"),
     write_pty: endpoint("write_pty"),
+    squares_watch: endpoint("squares_watch"),
+    squares_unwatch: endpoint("squares_unwatch"),
+    "squares-update": new Subject<Strip>(),
     paneVisible: Signal(true),
     paneClosed: Signal(false),
     harness: Signal<HarnessId | null>("omp"),
@@ -40,6 +45,11 @@ export function testPorts(script: Script): BoopXtermPorts {
     sessionIds: Signal<string[]>([]),
     inlineDiagrams: Signal(true),
     diagramInference: Signal<"explicit" | "labels" | "inferred">("labels"),
+    structuredOverlayEnabled: Signal(false),
+    turnDebugEnabled: Signal(false),
+    agentSquaresEnabled: Signal(false),
+    squaresOptions: Signal<SquaresOptions>({ mode: "relative", userKeep: 5 }),
+    favoriteSources: Signal<ReadonlySet<string>>(new Set<string>()),
   };
 }
 

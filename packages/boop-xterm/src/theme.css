@@ -543,3 +543,111 @@
 .asq[data-pop="down"]:focus-visible .asq-pop {
   transform: translateY(0) translateX(0);
 }
+
+:root {
+  --boop-xterm-structured-layer-z: 5;
+  --boop-xterm-structured-modal-z: 10000;
+  --boop-xterm-structured-border: #5c9f72;
+  --boop-xterm-structured-border-width: 1px;
+  --boop-xterm-structured-fg: #b9f6ca;
+  --boop-xterm-structured-bg: #193d28;
+  --boop-xterm-structured-font: 12px Menlo, Monaco, monospace;
+  --boop-xterm-structured-padding: 4px 10px;
+  --boop-xterm-structured-modal-backdrop: #0008;
+  --boop-xterm-structured-modal-fg: #222;
+  --boop-xterm-structured-modal-bg: #fff;
+  --boop-xterm-structured-modal-border: #7f9db9;
+  --boop-xterm-structured-modal-max-width: 900px;
+  --boop-xterm-structured-modal-viewport-width: 90vw;
+  --boop-xterm-structured-modal-border-width: 2px;
+  --boop-xterm-structured-modal-max-height: 80vh;
+  --boop-xterm-structured-modal-padding: 8px;
+  --boop-xterm-structured-cell-padding: 6px 10px;
+  --boop-xterm-structured-list-padding: 8px 28px;
+  --boop-xterm-structured-table-min-width: 480px;
+  --boop-xterm-structured-button-width: 190px;
+  --boop-xterm-structured-button-height: 1.5;
+  --boop-xterm-debug-layer-z: 8;
+  --boop-xterm-debug-font: 10px Menlo, Monaco, monospace;
+  --boop-xterm-debug-bg: rgba(0,0,0,.82);
+  --boop-xterm-debug-idle-fg: rgba(150,150,150,.45);
+  --boop-xterm-debug-pointer-bg: rgba(0,0,0,.45);
+  --boop-xterm-debug-min-width: 106px;
+  --boop-xterm-debug-padding: 0 5px;
+  --boop-xterm-debug-radius: 2px;
+  --boop-xterm-debug-body-width: 2px;
+  --boop-xterm-debug-body-font-size: 0px;
+  --boop-xterm-debug-body-bg: transparent;
+  --boop-xterm-debug-edge-width: 2px;
+  --boop-xterm-debug-region-width: 1px;
+  --boop-xterm-debug-turn-saturation: 75%;
+  --boop-xterm-debug-turn-lightness: 62%;
+  --boop-xterm-debug-pointer-saturation: 100%;
+  --boop-xterm-debug-pointer-lightness: 82%;
+  --boop-xterm-debug-edge-saturation: 80%;
+  --boop-xterm-debug-edge-lightness: 55%;
+  --boop-xterm-debug-region-saturation: 70%;
+  --boop-xterm-debug-region-lightness: 60%;
+  --boop-xterm-debug-pointer-weight: 700;
+  --boop-xterm-debug-row-weight: 400;
+  --boop-xterm-panel-z: 9;
+  --boop-xterm-panel-min-width: 560px;
+  --boop-xterm-panel-max-width: 920px;
+  --boop-xterm-panel-max-height: 860px;
+  --boop-xterm-panel-width-limit: 94%;
+  --boop-xterm-panel-height-limit: 82%;
+  --boop-xterm-panel-padding: 12px 14px;
+  --boop-xterm-panel-radius: 6px;
+  --boop-xterm-panel-shadow: 0 6px 22px rgb(0 0 0 / .34);
+  --boop-xterm-panel-bg: #fff;
+  --boop-xterm-panel-fg: #222;
+  --boop-xterm-panel-border: #7f9db9;
+  --boop-xterm-panel-font: 14px/1.55 Menlo, Monaco, monospace;
+  --boop-xterm-panel-body-bg: #000;
+  --boop-xterm-panel-body-fg: #d4d4d4;
+  --boop-xterm-panel-body-border: #888;
+  --boop-xterm-panel-star-active: #3b6ea5;
+  --boop-xterm-panel-tag-font: 10px;
+  --boop-xterm-panel-gap: 6px;
+  --boop-xterm-panel-head-gap: 8px;
+  --boop-xterm-panel-head-padding: 6px;
+  --boop-xterm-panel-control-padding: 2px 8px;
+  --boop-xterm-panel-control-radius: 4px;
+  --boop-xterm-panel-tag-gap: 4px;
+  --boop-xterm-panel-tag-padding: 1px 6px;
+  --boop-xterm-panel-tag-radius: 999px;
+  --boop-xterm-panel-body-padding: 10px 12px;
+  --boop-xterm-panel-body-border-width: 2px;
+  --boop-xterm-panel-border-width: 1px;
+  --boop-xterm-panel-hover-bg: #e6e6e6;
+  --boop-xterm-panel-muted-fg: #666;
+}
+.term-structured-overlays { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: var(--boop-xterm-structured-layer-z); }
+.term-structured-overlay { position: absolute; border: var(--boop-xterm-structured-border-width) solid var(--boop-xterm-structured-border); color: var(--boop-xterm-structured-fg); background: var(--boop-xterm-structured-bg); font: var(--boop-xterm-structured-font); text-align: left; padding: var(--boop-xterm-structured-padding); pointer-events: auto; }
+.term-structured-modal { position: fixed; inset: 0; z-index: var(--boop-xterm-structured-modal-z); display: grid; place-items: center; background: var(--boop-xterm-structured-modal-backdrop); }
+.term-structured-modal section { max-width: min(var(--boop-xterm-structured-modal-max-width), var(--boop-xterm-structured-modal-viewport-width)); max-height: var(--boop-xterm-structured-modal-max-height); overflow: auto; color: var(--boop-xterm-structured-modal-fg); background: var(--boop-xterm-structured-modal-bg); border: var(--boop-xterm-structured-modal-border-width) ridge var(--boop-xterm-structured-modal-border); padding: var(--boop-xterm-structured-modal-padding); }
+.term-structured-modal header { display: flex; justify-content: space-between; margin-bottom: var(--boop-xterm-structured-modal-padding); }
+.term-structured-modal table { border-collapse: collapse; min-width: var(--boop-xterm-structured-table-min-width); }
+.term-structured-modal th, .term-structured-modal td { border: var(--boop-xterm-structured-modal-border-width) ridge var(--boop-xterm-structured-modal-border); padding: var(--boop-xterm-structured-cell-padding); text-align: left; }
+.term-structured-modal ul { margin: 0; padding: var(--boop-xterm-structured-list-padding); }
+.term-turn-debug { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: var(--boop-xterm-debug-layer-z); }
+.term-turn-debug-row { position: absolute; box-sizing: border-box; min-width: var(--boop-xterm-debug-min-width); padding: var(--boop-xterm-debug-padding); white-space: pre; font: var(--boop-xterm-debug-font); text-align: left; background: var(--boop-xterm-debug-bg); border-radius: var(--boop-xterm-debug-radius) 0 0 var(--boop-xterm-debug-radius); pointer-events: auto; color: var(--boop-xterm-debug-idle-fg); font-weight: var(--boop-xterm-debug-row-weight); }
+.term-turn-debug-row[data-turn-id]:not([data-turn-id=""]) { color: hsl(var(--boop-xterm-debug-row-hue) var(--boop-xterm-debug-turn-saturation) var(--boop-xterm-debug-turn-lightness)); border-left: var(--boop-xterm-debug-edge-width) solid hsl(var(--boop-xterm-debug-row-hue) var(--boop-xterm-debug-edge-saturation) var(--boop-xterm-debug-edge-lightness)); }
+.term-turn-debug-row[data-span="single"], .term-turn-debug-row[data-span="start"] { border-top: var(--boop-xterm-debug-region-width) solid hsl(var(--boop-xterm-debug-row-hue) var(--boop-xterm-debug-edge-saturation) var(--boop-xterm-debug-edge-lightness)); }
+.term-turn-debug-row[data-span="single"], .term-turn-debug-row[data-span="end"] { border-bottom: var(--boop-xterm-debug-region-width) solid hsl(var(--boop-xterm-debug-row-hue) var(--boop-xterm-debug-edge-saturation) var(--boop-xterm-debug-edge-lightness)); }
+.term-turn-debug-row[data-pointer="true"] { background: var(--boop-xterm-debug-pointer-bg); font-weight: var(--boop-xterm-debug-pointer-weight); }
+.term-turn-debug-row[data-pointer="true"][data-turn-id]:not([data-turn-id=""]) { color: hsl(var(--boop-xterm-debug-row-hue) var(--boop-xterm-debug-pointer-saturation) var(--boop-xterm-debug-pointer-lightness)); }
+.term-turn-debug-row[data-region="true"] { border-bottom: var(--boop-xterm-debug-region-width) dashed hsl(var(--boop-xterm-debug-row-hue) var(--boop-xterm-debug-region-saturation) var(--boop-xterm-debug-region-lightness)); }
+.term-turn-debug-row[data-span="body"] { width: var(--boop-xterm-debug-body-width); min-width: var(--boop-xterm-debug-body-width); padding: 0; overflow: hidden; font-size: var(--boop-xterm-debug-body-font-size); background: var(--boop-xterm-debug-body-bg); border-radius: 0; }
+.term-turn-debug-row[data-span="body"][data-pointer="true"] { background: var(--boop-xterm-debug-pointer-bg); }
+.turn-panel { position: absolute; z-index: var(--boop-xterm-panel-z); display: flex; flex-direction: column; gap: var(--boop-xterm-panel-gap); box-sizing: border-box; min-width: min(var(--boop-xterm-panel-min-width), var(--boop-xterm-panel-width-limit)); max-width: min(var(--boop-xterm-panel-max-width), var(--boop-xterm-panel-width-limit)); max-height: min(var(--boop-xterm-panel-height-limit), var(--boop-xterm-panel-max-height)); padding: var(--boop-xterm-panel-padding); border: var(--boop-xterm-panel-border-width) solid var(--boop-xterm-panel-border); border-radius: var(--boop-xterm-panel-radius); background: var(--boop-xterm-panel-bg); color: var(--boop-xterm-panel-fg); box-shadow: var(--boop-xterm-panel-shadow); font: var(--boop-xterm-panel-font); }
+.turn-panel-head { display: flex; align-items: center; gap: var(--boop-xterm-panel-head-gap); padding-bottom: var(--boop-xterm-panel-head-padding); border-bottom: var(--boop-xterm-panel-border-width) solid var(--boop-xterm-panel-border); }
+.turn-panel-at { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--boop-xterm-panel-muted-fg); }
+.turn-panel-star, .turn-panel-edit { flex: none; padding: var(--boop-xterm-panel-control-padding); border: var(--boop-xterm-panel-border-width) solid var(--boop-xterm-panel-border); border-radius: var(--boop-xterm-panel-control-radius); background: var(--boop-xterm-panel-bg); color: var(--boop-xterm-panel-fg); font: inherit; cursor: pointer; }
+.turn-panel-star:hover, .turn-panel-edit:hover { background: var(--boop-xterm-panel-hover-bg); }
+.turn-panel-star[aria-pressed="true"] { border-color: var(--boop-xterm-panel-star-active); color: var(--boop-xterm-panel-star-active); }
+.turn-panel-tagrow { display: flex; align-items: flex-start; gap: var(--boop-xterm-panel-head-gap); }
+.turn-panel-tags { display: flex; flex: 1; flex-wrap: wrap; gap: var(--boop-xterm-panel-tag-gap); min-width: 0; }
+.turn-panel-tag { padding: var(--boop-xterm-panel-tag-padding); border: var(--boop-xterm-panel-border-width) solid var(--boop-xterm-panel-border); border-radius: var(--boop-xterm-panel-tag-radius); color: var(--boop-xterm-panel-fg); font-size: var(--boop-xterm-panel-tag-font); }
+.turn-panel-none { color: var(--boop-xterm-panel-muted-fg); font-size: var(--boop-xterm-panel-tag-font); }
+.turn-panel-body { min-height: 0; overflow: auto; padding: var(--boop-xterm-panel-body-padding); border-left: var(--boop-xterm-panel-body-border-width) solid var(--boop-xterm-panel-body-border); background: var(--boop-xterm-panel-body-bg); color: var(--boop-xterm-panel-body-fg); word-break: break-word; }
