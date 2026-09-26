@@ -6,4 +6,8 @@ export * from "./0_fontGeometry.js";
 export * from "./1_termWrapJoin.js";
 export * from "./1_rowGeometry.js";
 export * from "./1_turnMatching.js";
+export * from "./1_ompTurnBinding.js";
 export * from "./2_termBufferToken.js";
+export * from "./2_turnLocate.js";
+export * from "./2_pinnedSelectionPure.js";
+export * from "./2_wheelReduce.js";
