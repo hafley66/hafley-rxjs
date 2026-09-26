@@ -44,6 +44,7 @@ import { useFsWatch } from "./0_watch.js";
 import { useProseWidth } from "./2_useProseWidth.js";
 import { CAT_COMMIT, CAT_PAINT, LOG, mdNow } from "./0_log.js";
 import { ProseWidthControl, ProseWidthHandle } from "./3_ProseWidthControl.js";
+import { DiagramRendererSwitch } from "./0b_DiagramRendererSwitch.js";
 import { CODE_ADVANCE_PX, fenceColumns } from "./lib/4_fenceCommands.js";
 import type { MdInlineDoc } from "./plugins/0_types.js";
 import { MdInlineDocContext, MdPluginContext, type MdPluginScope } from "./plugins/4_MdPluginContext.js";
@@ -503,6 +504,7 @@ export const MdPanel = SignalReact(function MdPanel({
           />
           fold on open
         </label>
+        <DiagramRendererSwitch className="mdview-toolbar-renderer" />
         {zoom !== 1 ? (
           <button type="button" onClick={() => host.resetPanelZoom(pid)} title="content zoom — reset (⌘0)">
             {Math.round(zoom * 100)}%

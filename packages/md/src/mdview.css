@@ -510,6 +510,58 @@ body[data-mode="dark"] .mdview-root .md-body a {
   color: #f8fafc;
 }
 
+.mdview-sequence[data-diagram-renderer="svg"] {
+  height: auto;
+  min-height: 120px;
+  overflow: auto;
+}
+
+.mdview-sequence-svg {
+  padding: 36px 8px 8px;
+}
+
+.mdview-sequence-svg svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.mdview-renderer-switch {
+  display: inline-flex;
+  border: 1px solid var(--frame, #d4d0c8);
+  border-radius: 3px;
+  overflow: hidden;
+  font: 11px/1.2 system-ui, sans-serif;
+}
+
+.mdview-renderer-switch > button {
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--panel-bg, #fff);
+  color: var(--panel-fg, #222);
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.mdview-renderer-switch > button[data-active="true"] {
+  background: #2563eb;
+  color: #fff;
+  opacity: 1;
+}
+
+.mdview-sequence-renderer {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+}
+
 .mdview-sequence-open {
   position: absolute;
   top: 6px;

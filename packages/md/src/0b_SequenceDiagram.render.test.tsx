@@ -6,6 +6,7 @@ import StreamdownBody from "./0_Streamdown.js";
 import { withFenceOrigins } from "./0b_fenceOrigin.js";
 import { sequenceSourceIndex, sourceSpanOfElement } from "./0b_sequenceSource.js";
 import { installMdviewHost, type MdviewHost } from "./ports.js";
+import { mdUi } from "./signals.js";
 import "./mdview.css";
 
 const fence = "```";
@@ -42,6 +43,7 @@ installMdviewHost({
   useRenderProbe: () => undefined,
   useLifecycleProbe: () => undefined,
   recordOperation: () => undefined,
+  savePluginState: () => undefined,
 } as unknown as MdviewHost);
 
 async function settle(predicate: () => boolean, timeoutMs = 100_000): Promise<void> {
@@ -55,8 +57,84 @@ async function settle(predicate: () => boolean, timeoutMs = 100_000): Promise<vo
   throw new Error(`timed out waiting for the diagram fences to settle: ${document.body.innerHTML.slice(0, 4000)}`);
 }
 
+it("draws sequence fences as renderer SVG by default, and one switch click moves every fence to grapht", async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  mdUi.$({ ...mdUi.$(), diagramRenderer: "svg" });
+  const container = document.createElement("div");
+  container.style.width = "1200px";
+  document.body.append(container);
+  const root = createRoot(container);
+  try {
+    await act(() => root.render(<StreamdownBody components={{}} dark={false}>{body}</StreamdownBody>));
+    const sequences = () => [...container.querySelectorAll<HTMLElement>(".mdview-sequence")];
+    const shape = () => sequences().map((element) => ({
+      language: element.dataset.diagramLanguage,
+      renderer: element.dataset.diagramRenderer,
+      inlineSvg: element.querySelector(".mdview-sequence-svg svg") !== null,
+      canvas: element.querySelector("[data-grapht-host] canvas") !== null,
+      active: [...element.querySelectorAll<HTMLElement>(".mdview-renderer-switch [data-active='true']")].map((button) => button.textContent),
+    }));
+    await settle(() => sequences().length === 2 && sequences().every((element) => element.querySelector(".mdview-sequence-svg svg") !== null));
+    const before = shape();
+    const graphtButton = [...sequences()[0]!.querySelectorAll<HTMLButtonElement>(".mdview-renderer-switch button")]
+      .find((button) => button.textContent === "grapht")!;
+    await act(() => graphtButton.click());
+    await settle(() => sequences().every((element) => element.querySelector("[data-grapht-host]")?.getAttribute("data-grapht-items") != null));
+    expect({ before, after: shape(), global: mdUi.$().diagramRenderer }).toMatchInlineSnapshot(`
+      {
+        "after": [
+          {
+            "active": [
+              "grapht",
+            ],
+            "canvas": true,
+            "inlineSvg": false,
+            "language": "mermaid",
+            "renderer": "grapht",
+          },
+          {
+            "active": [
+              "grapht",
+            ],
+            "canvas": true,
+            "inlineSvg": false,
+            "language": "d2",
+            "renderer": "grapht",
+          },
+        ],
+        "before": [
+          {
+            "active": [
+              "svg",
+            ],
+            "canvas": false,
+            "inlineSvg": true,
+            "language": "mermaid",
+            "renderer": "svg",
+          },
+          {
+            "active": [
+              "svg",
+            ],
+            "canvas": false,
+            "inlineSvg": true,
+            "language": "d2",
+            "renderer": "svg",
+          },
+        ],
+        "global": "grapht",
+      }
+    `);
+  } finally {
+    await act(() => root.unmount());
+    container.remove();
+    Reflect.deleteProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT");
+  }
+});
+
 it("routes sequence fences through grapht and leaves every other fence on the SVG path", async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  mdUi.$({ ...mdUi.$(), diagramRenderer: "grapht" });
   const container = document.createElement("div");
   container.style.width = "1200px";
   document.body.append(container);
@@ -105,6 +183,7 @@ it("routes sequence fences through grapht and leaves every other fence on the SV
 
 it("resolves a rendered message to the exact bytes in the file", async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  mdUi.$({ ...mdUi.$(), diagramRenderer: "grapht" });
   const parsed = mdDocument("docs/example.md", body);
   const section = parsed.doc.byId.get("diagrams")!;
   const marked = withFenceOrigins(

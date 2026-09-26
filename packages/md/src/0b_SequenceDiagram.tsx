@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { SignalReact } from "@hafley66/signals/react";
 import { graphRenderReceipt } from "@hafley66/grapht/browser";
 import { createCytoscapeGraphFrameResource } from "@hafley66/grapht-render-cytoscape";
-import { DiagramLightbox } from "./0_DiagramLightbox.js";
+import { DiagramLightbox, diagramSvgMarkup } from "./0_DiagramLightbox.js";
 import { renderMermaidSvg } from "./0a_mermaid.js";
 import type { FenceOrigin } from "./0b_fenceOrigin.js";
 import type { DiagramLanguage } from "./0b_isSequenceSource.js";
@@ -9,10 +10,12 @@ import { sequenceFrameWithSource } from "./0b_sequenceFrame.js";
 import { recordSequenceSource, releaseSequenceSource } from "./0b_sequenceSource.js";
 import { renderD2 } from "./d2.js";
 import { getMdviewHost } from "./ports.js";
+import { DiagramRendererSwitch } from "./0b_DiagramRendererSwitch.js";
+import { mdUi } from "./signals.js";
 
 const FALLBACK_VIEWPORT = { width: 800, height: 420 };
 
-export function SequenceDiagram({
+export const SequenceDiagram = SignalReact(function SequenceDiagram({
   code,
   language,
   dark,
@@ -33,6 +36,7 @@ export function SequenceDiagram({
   const [open, setOpen] = useState(false);
   const originStart = sourceStart?.start;
   const originLine = sourceStart?.lineStart;
+  const renderer = mdUi.$().diagramRenderer;
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -43,6 +47,12 @@ export function SequenceDiagram({
     void rendering
       .then((rendered) => {
         if (disposed) return;
+        if (renderer === "svg") {
+          host.recordOperation("mdview.renderSequence", { language, dark, renderer, sourceBytes: code.length, svgBytes: rendered.length });
+          setError("");
+          setSvg(rendered);
+          return;
+        }
         const origin = originStart !== undefined && originLine !== undefined
           ? { start: originStart, lineStart: originLine }
           : undefined;
@@ -62,6 +72,7 @@ export function SequenceDiagram({
         host.recordOperation("mdview.renderSequence", {
           language,
           dark,
+          renderer,
           sourceBytes: code.length,
           svgBytes: rendered.length,
           boundIds: Object.keys(frame.graph).length,
@@ -80,14 +91,22 @@ export function SequenceDiagram({
       releaseSequenceSource(mount);
       resource?.unsubscribe();
     };
-  }, [code, dark, language, originStart, originLine]);
+  }, [code, dark, language, originStart, originLine, renderer]);
 
   if (error) return <pre className="mdview-sequence-error">{error}</pre>;
 
   return (
     <>
-      <div className="mdview-sequence" data-diagram-theme={dark ? "dark" : "light"} data-diagram-language={language}>
-        <div ref={mountRef} className="mdview-sequence-graph" data-grapht-host={language} />
+      <div
+        className="mdview-sequence"
+        data-diagram-theme={dark ? "dark" : "light"}
+        data-diagram-language={language}
+        data-diagram-renderer={renderer}
+      >
+        {renderer === "grapht"
+          ? <div key="grapht" ref={mountRef} className="mdview-sequence-graph" data-grapht-host={language} />
+          : <div key="svg" ref={mountRef} className="mdview-sequence-svg" dangerouslySetInnerHTML={{ __html: diagramSvgMarkup(svg) }} />}
+        <DiagramRendererSwitch className="mdview-sequence-renderer" />
         <button type="button" className="mdview-sequence-open" title="Open diagram" disabled={svg === ""} onClick={() => setOpen(true)}>
           ⤢
         </button>
@@ -103,4 +122,4 @@ export function SequenceDiagram({
       )}
     </>
   );
-}
+});

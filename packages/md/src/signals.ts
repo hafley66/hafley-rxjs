@@ -26,7 +26,10 @@ export interface MdUi {
   proseWidths: Record<string, number>; // per-panel prose width overrides
   proseWidthMin: number; // global editable lower bound in CSS pixels
   proseWidthMax: number; // global editable upper bound in CSS pixels
+  diagramRenderer: DiagramRenderer; // sequence fences: raw renderer SVG, or the experimental grapht canvas (global)
 }
+
+export type DiagramRenderer = "svg" | "grapht";
 
 const DEFAULT_UI: MdUi = {
   startFolded: true,
@@ -37,6 +40,7 @@ const DEFAULT_UI: MdUi = {
   proseWidths: {},
   proseWidthMin: DEFAULT_PROSE_WIDTH_BOUNDS.min,
   proseWidthMax: DEFAULT_PROSE_WIDTH_BOUNDS.max,
+  diagramRenderer: "svg",
 };
 
 // Seeded with defaults at module load (before a host may exist); the real
