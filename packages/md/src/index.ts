@@ -68,6 +68,9 @@ export {
   DEFAULT_PROSE_WIDTH_BOUNDS,
 } from "./lib/1_proseWidth.js";
 export { blockAt, mdDocument, parseMdSections } from "./model.js";
+export { isMarkdownPath, markdownHeadingRows, type MarkdownHeadingRow } from "./lib/0_markdownTree.js";
+export { DiagramRenderCache } from "./lib/0_diagramRenderCache.js";
+export { d2SiblingPaths, resolveD2Preview, type D2Preview } from "./lib/1_d2Preview.js";
 export { markdownTableStarts } from "./6_tableAnchors.js";
 export type { MdBlock, MdBlockKind, MdDocument, SourceSpan } from "./model.js";
 
@@ -144,4 +147,16 @@ export function registerMdview() {
   host.registerZoomKind({ prefix: "md:", min: 0.5, max: 2.5, step: 0.1 });
 }
 
-export { svgPaintBox, svgNeedsRepaint, svgCssTransform, svgFitBox } from "./lib/0_svgSurface.js";
+export {
+  normalizeSvgEntities,
+  panSvgBox,
+  svgBoxAtZoom,
+  svgCssTransform,
+  svgFitBox,
+  svgMinimumZoom,
+  svgNativeBox,
+  svgNeedsRepaint,
+  svgPaintBox,
+  svgSourceBox,
+  type SvgBox,
+} from "./lib/0_svgSurface.js";
