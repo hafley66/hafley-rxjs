@@ -11,15 +11,18 @@ export const locatorSchema: z.ZodType<LocatorQuery> = z.lazy(() =>
       placeholder: z.string().optional(),
       label: z.string().optional(),
       testid: z.string().optional(),
+      text: z.string().min(1).optional(),
       selector: z.string().min(1).optional(),
       within: locatorSchema.optional(),
       has: locatorSchema.optional(),
+      hasText: z.string().min(1).optional(),
       visible: z.boolean().optional(),
       index: z.number().int().nonnegative().optional(),
+      indexes: z.array(z.number().int().nonnegative()).optional(),
     })
     .strict()
     .refine(
-      q => [q.role, q.placeholder, q.label, q.testid, q.selector].filter(v => v !== undefined).length === 1,
+      q => [q.role, q.placeholder, q.label, q.testid, q.text, q.selector].filter(v => v !== undefined).length === 1,
       "Specify exactly one locator kind.",
     ),
 )
@@ -34,7 +37,9 @@ export const locatorActionSchema = z
       "enabled",
       "value",
       "texts",
+      "blocks",
       "click",
+      "tap",
       "fill",
       "select",
       "press",
@@ -44,6 +49,7 @@ export const locatorActionSchema = z
     value: z.string().max(16_000).optional(),
     state: z.enum(["visible", "hidden", "attached", "detached"]).optional(),
     timeoutMs: z.number().int().min(1).max(30_000).default(LOCATOR_TIMEOUT_MS),
+    background: z.boolean().default(false).describe("Use inactive-tab automation with host-timed polling."),
     allowSubmit: z
       .boolean()
       .default(false)
@@ -84,14 +90,7 @@ export const browserCommandSchema = z.union([
   z.object({ op: z.literal("download"), tabId: tabSchema, url: z.string().min(1).max(16_000) }).strict(),
   z.object({ op: z.literal("navigate"), tabId: tabSchema, url: z.url().max(16_000) }).strict(),
   z.object({ op: z.literal("activate"), tabId: tabSchema }).strict(),
-  z
-    .object({
-      op: z.literal("evaluate"),
-      tabId: tabSchema,
-      source: z.string().min(1).max(200_000),
-      args: z.array(z.unknown()).max(20).default([]),
-    })
-    .strict(),
+  z.object({ op: z.literal("where"), tabId: tabSchema, index: z.number().int().nonnegative() }).strict(),
   z
     .object({
       op: z.literal("storage"),
@@ -107,6 +106,7 @@ export const browserCommandSchema = z.union([
       fullPage: z.boolean().default(false),
       selector: z.string().max(1_000).optional(),
       format: z.enum(["png", "jpeg"]).default("png"),
+      timeoutMs: z.number().int().min(1_000).max(120_000).optional(),
     })
     .strict(),
   observationStartSchema.extend({ op: z.literal("observe"), action: z.literal("start") }),

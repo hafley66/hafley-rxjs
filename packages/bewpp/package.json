@@ -20,7 +20,8 @@
       "types": "./src/0_pairing.d.mts",
       "import": "./src/0_pairing.mjs"
     },
-    "./dom": "./src/extension/1_dom.ts"
+    "./dom": "./src/extension/1_dom.ts",
+    "./cli": "./dist/cli.js"
   },
   "files": [
     "dist",
@@ -46,14 +47,16 @@
   "dependencies": {
     "@aklinker1/zero-serialize-error": "1.0.2",
     "@fastify/websocket": "11.3.0",
+    "@leeoniya/ufuzzy": "1.0.19",
     "@testing-library/dom": "10.4.1",
     "@testing-library/user-event": "14.6.7",
     "@webext-core/messaging": "4.0.0",
     "async-mutex": "0.5.0",
     "birpc": "4.2.0",
+    "html-to-image": "1.11.13",
+    "playwright-core": "1.62.1",
     "rolldown": "1.2.7",
-    "zod": "4.5.4",
-    "html-to-image": "1.11.13"
+    "zod": "4.5.4"
   },
   "peerDependencies": {
     "fastify": "^5.0.0"
@@ -84,5 +87,8 @@
     "type": "git",
     "url": "https://github.com/hafley66/hafley-rxjs",
     "directory": "packages/bewpp"
+  },
+  "bin": {
+    "bew": "dist/cli.js"
   }
 }

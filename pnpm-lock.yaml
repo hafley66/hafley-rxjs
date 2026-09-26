@@ -84,6 +84,9 @@ importers:
       '@fastify/websocket':
         specifier: 11.3.0
         version: 11.3.0
+      '@leeoniya/ufuzzy':
+        specifier: 1.0.19
+        version: 1.0.19
       '@testing-library/dom':
         specifier: 10.4.1
         version: 10.4.1
@@ -102,6 +105,9 @@ importers:
       html-to-image:
         specifier: 1.11.13
         version: 1.11.13
+      playwright-core:
+        specifier: 1.62.1
+        version: 1.62.1
       rolldown:
         specifier: 1.2.7
         version: 1.2.7
@@ -2713,6 +2719,9 @@ packages:
 
   '@js-sdsl/ordered-map@4.4.2':
     resolution: {integrity: sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==}
+
+  '@leeoniya/ufuzzy@1.0.19':
+    resolution: {integrity: sha512-0pikDeYt0IHEUPza5RTCDXc/17S1pTrYnReEMp8Aa6k1ovzw5QdZLwicW8TjljwEZRb6oYag0xmALohrcq/yOQ==}
 
   '@lezer/common@1.5.2':
     resolution: {integrity: sha512-sxQE460fPZyU3sdc8lafxiPwJHBzZRy/udNFynGQky1SePYBdhkBl1kOagA9uT3pxR8K09bOrmTUqA9wb/PjSQ==}
@@ -8812,6 +8821,8 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.5
 
   '@js-sdsl/ordered-map@4.4.2': {}
+
+  '@leeoniya/ufuzzy@1.0.19': {}
 
   '@lezer/common@1.5.2': {}
 

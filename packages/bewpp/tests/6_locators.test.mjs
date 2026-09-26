@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
+import { mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { randomUUID } from "node:crypto"
@@ -8,13 +8,6 @@ import Fastify from "fastify"
 import { chromium } from "playwright"
 import { ExtensionConnection, registerExtensionBridge } from "@hafley66/bewpp"
 import { buildExtension } from "@hafley66/bewpp/build"
-
-const enginePath = [
-  process.env.BEWPP_ENGINE_SOURCE,
-  join(process.env.HOME ?? "", "projects/lol/playwright-local/packages/injected/lib/injectedScript.js"),
-]
-  .filter(Boolean)
-  .find(path => existsSync(path))
 
 const fixture = `<!doctype html><html><body>
 <ul><li class="row">first row</li><li class="row">second row</li><li class="row">third row</li></ul>
@@ -63,8 +56,8 @@ test("locator surface: first, last, textContent, getAttribute, isChecked", { tim
     await until(() => connection.status().page_ready)
     await connection.refreshTabs()
     const page = connection.getPage(connection.tabs[0].id)
-    // No engine on this page, so every locator assertion below runs the Testing Library fallback.
-    await assert.rejects(page.resolveSelector("css=body"), /Install the selector engine/)
+    // The engine ships inside the extension, so every permitted page can resolve Playwright selectors.
+    assert.equal((await page.resolveSelector("css=body")).count, 1)
 
     const rows = page.locator(".row")
     assert.equal(await rows.count(), 3)
@@ -89,9 +82,8 @@ test("locator surface: first, last, textContent, getAttribute, isChecked", { tim
 
 test(
   "engine-backed locators: queries resolve through Playwright's own selector engine",
-  { timeout: 60_000, skip: enginePath ? false : "no injected script: set BEWPP_ENGINE_SOURCE" },
+  { timeout: 60_000 },
   async () => {
-    const source = readFileSync(enginePath, "utf8")
     const directory = mkdtempSync(join(tmpdir(), "bewpp-engine-locators-"))
     const connection = new ExtensionConnection()
     const token = randomUUID()
@@ -124,7 +116,6 @@ test(
       await until(() => connection.status().page_ready)
       await connection.refreshTabs()
       const page = connection.getPage(connection.tabs[0].id)
-      assert.equal((await page.installSelectorEngine(source)).installed, true)
 
       // Role and name come from Playwright's engine, not from Testing Library: a lowercase substring of
       // the accessible name matches, and an aria-label beats the element's text.
@@ -141,6 +132,9 @@ test(
       // nth/first/last compose into the selector; multi-element reads resolve loosely.
       assert.equal(await page.locator(".row").count(), 3)
       assert.deepEqual(await page.locator(".row").allTextContents(), ["first row", "second row", "third row"])
+      // Playwright's text pseudo-classes, which the browser's own querySelectorAll rejects.
+      assert.equal(await page.locator('li.row:has-text("second")').count(), 1)
+      assert.equal(await page.locator(':text-matches("th(ird|ree)", "i")').count(), 1)
       assert.equal(await page.locator(".row").first().textContent(), "first row")
       assert.equal(await page.locator(".row").last().textContent(), "third row")
       assert.equal(await page.locator(".row").nth(1).textContent(), "second row")
@@ -172,6 +166,82 @@ test(
       await until(async () => (await page.resolveSelector("role=button").catch(() => ({ count: 0 }))).count === 4)
       await page.getByRole("button", { name: "save" }).click()
       assert.equal(await page.getByTestId("pressed").textContent(), "save")
+    } finally {
+      await browser?.close()
+      await connection.shutdown()
+      await app.close()
+      rmSync(directory, { recursive: true, force: true })
+    }
+  },
+)
+
+test(
+  "background mode drives an inactive tab without RAF or focus changes",
+  { timeout: 60_000 },
+  async () => {
+    const directory = mkdtempSync(join(tmpdir(), "bewpp-background-"))
+    const connection = new ExtensionConnection()
+    const token = randomUUID()
+    const app = Fastify()
+    registerExtensionBridge(app, { connection, token })
+    app.get("/background", (_request, reply) => reply.type("text/html").send(`<!doctype html><body>
+      <input id="entry" aria-label="Entry"><button id="run">Run</button>
+      <button id="submit" type="submit">Submit</button><button id="disabled" disabled>Disabled</button>
+      <output id="result"></output><div id="secret" hidden data-kind="hidden">attached hidden</div>
+      <ul><li class="row">zero</li><li class="row">one</li><li class="row">two</li></ul>
+      <script>
+        window.requestAnimationFrame = () => 0;
+        document.querySelector('#run').onclick = () => document.querySelector('#result').textContent = document.querySelector('#entry').value;
+        document.querySelector('#entry').addEventListener('keydown', event => { if (event.key === 'Enter') document.querySelector('#result').textContent = 'entered'; });
+        const host = document.createElement('div'); host.id = 'shadow-host'; const root = host.attachShadow({mode:'open'});
+        const button = document.createElement('button'); button.textContent = 'Shadow'; button.onclick = () => document.querySelector('#result').textContent = 'shadow'; root.append(button); document.body.append(host);
+      </script></body>`))
+    const address = await app.listen({ host: "127.0.0.1", port: 0 })
+    let browser
+    const until = async predicate => {
+      for (let index = 0; index < 100; index++) {
+        if (await predicate()) return
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+      throw new Error("Timed out waiting for extension state.")
+    }
+    try {
+      const extension = await buildExtension({ outDir: join(directory, "bewpp"), token, url: address.replace("http:", "ws:") + "/extension", matches: ["http://127.0.0.1/*"] })
+      browser = await chromium.launchPersistentContext(join(directory, "profile"), {
+        channel: "chromium", headless: true,
+        args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
+      })
+      const foreground = await browser.newPage()
+      await foreground.goto(address + "/background?foreground")
+      const target = await browser.newPage()
+      await target.goto(address + "/background?target")
+      await foreground.bringToFront()
+      await until(() => connection.tabs.length === 2 && connection.tabs.some(tab => tab.active))
+      await connection.refreshTabs()
+      const targetTab = connection.tabs.find(tab => tab.url.endsWith("background?target"))
+      assert.ok(targetTab)
+      assert.equal(targetTab.active, false)
+      const page = connection.getPage(targetTab.id)
+      const background = page.background()
+
+      // The target stays inactive while fill, Enter, click, and wait run through host-timed polling.
+      await background.getByLabel("Entry").fill("background value")
+      await background.getByLabel("Entry").press("Enter")
+      await background.getByRole("button", { name: "Run" }).click()
+      await background.locator("#result").waitFor({ state: "visible", timeout: 2_000 })
+      assert.equal(await background.locator("#result").textContent(), "background value")
+      assert.equal(connection.tabs.find(tab => tab.id === targetTab.id)?.active, false)
+
+      // Attached hidden reads, open-shadow marker actions, and chained positional selectors.
+      assert.equal(await background.locator("#secret").textContent(), "attached hidden")
+      assert.equal(await background.locator("#secret").getAttribute("data-kind"), "hidden")
+      await assert.rejects(background.locator(".row").nth(1).nth(1).textContent(), /Expected one element; found 0/)
+      await background.getByRole("button", { name: "Shadow" }).click()
+      assert.equal(await background.locator("#result").textContent(), "shadow")
+
+      await assert.rejects(background.locator("#disabled").click(), /disabled/)
+      await assert.rejects(background.locator("#submit").click(), /allowSubmit/)
+      await background.locator("#submit").click({ allowSubmit: true })
     } finally {
       await browser?.close()
       await connection.shutdown()

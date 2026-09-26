@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
+import { mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { randomUUID } from "node:crypto"
@@ -8,13 +8,6 @@ import Fastify from "fastify"
 import { chromium } from "playwright"
 import { ClickLog, ExtensionConnection, registerExtensionBridge } from "@hafley66/bewpp"
 import { buildExtension } from "@hafley66/bewpp/build"
-
-const enginePath = [
-  process.env.BEWPP_ENGINE_SOURCE,
-  join(process.env.HOME ?? "", "projects/lol/playwright-local/packages/injected/lib/injectedScript.js"),
-]
-  .filter(Boolean)
-  .find(path => existsSync(path))
 
 const fixture = `<!doctype html><html><body>
 <button id="checkout" aria-label="Checkout">Checkout</button>
@@ -25,7 +18,7 @@ const fixture = `<!doctype html><html><body>
     document.getElementById(id).addEventListener("click", event => { document.getElementById("pressed").textContent = event.currentTarget.id })
 </script></body></html>`
 
-test("click recording: clicks come back with Playwright selectors, persist to sqlite, and read back", { timeout: 60_000, skip: enginePath ? false : "no injected script: set BEWPP_ENGINE_SOURCE" }, async () => {
+test("click recording: clicks come back with Playwright selectors, persist to sqlite, and read back", { timeout: 60_000 }, async () => {
   const directory = mkdtempSync(join(tmpdir(), "bewpp-clicks-"))
   const connection = new ExtensionConnection()
   const token = randomUUID()
@@ -60,8 +53,7 @@ test("click recording: clicks come back with Playwright selectors, persist to sq
     const page = connection.getPage(connection.tabs[0].id)
     const url = page.url()
 
-    // The recorder prefers the engine's own selector generator; without it only the CSS candidates remain.
-    await page.installSelectorEngine(readFileSync(enginePath, "utf8"))
+    // The content script completes each click report with the bundled engine's selector.
     await page.observe({ sources: ["click"], debounceMs: 0 })
     await page.getByRole("button", { name: "Checkout" }).click()
     await page.getByRole("button", { name: "Apply promo" }).click()

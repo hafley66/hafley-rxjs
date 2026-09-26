@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { mkdtempSync, readFileSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { randomUUID } from "node:crypto"
@@ -8,12 +8,6 @@ import Fastify from "fastify"
 import { chromium } from "playwright"
 import { ExtensionConnection, registerExtensionBridge } from "@hafley66/bewpp"
 import { buildExtension } from "@hafley66/bewpp/build"
-
-const engineCandidates = [
-  process.env.BEWPP_ENGINE_SOURCE,
-  join(process.env.HOME ?? "", "projects/lol/playwright-local/packages/injected/lib/injectedScript.js"),
-].filter(Boolean)
-const enginePath = engineCandidates.find(path => existsSync(path))
 
 const fixture = `<!doctype html><html><body>
 <button id="save">Save</button><button id="cancel">Cancel</button>
@@ -26,9 +20,8 @@ const fixture = `<!doctype html><html><body>
 
 test(
   "selector engine: the extension installs Playwright's engine in the page realm and resolves its selectors",
-  { timeout: 60_000, skip: enginePath ? false : "no injected script: run `node utils/generate_injected.js` in a playwright checkout and set BEWPP_ENGINE_SOURCE" },
+  { timeout: 60_000 },
   async () => {
-    const source = readFileSync(enginePath, "utf8")
     const directory = mkdtempSync(join(tmpdir(), "bewpp-engine-"))
     const connection = new ExtensionConnection()
     const token = randomUUID()
@@ -53,6 +46,8 @@ test(
       })
       const manifest = JSON.parse(readFileSync(join(extension, "manifest.json"), "utf8"))
       assert.deepEqual(manifest.permissions, ["scripting", "alarms", "webNavigation"])
+      // The engine ships in the isolated world beside the content script, never in the page's own.
+      assert.deepEqual(manifest.content_scripts.find(script => script.world === "ISOLATED").js, ["engine.js", "content.js"])
 
       browser = await chromium.launchPersistentContext(join(directory, "profile"), {
         channel: "chromium",
@@ -64,9 +59,6 @@ test(
       await until(() => connection.status().page_ready)
       await connection.refreshTabs()
       const page = connection.getPage(connection.tabs[0].id)
-
-      assert.equal((await page.installSelectorEngine(source)).installed, true)
-      assert.equal((await page.installSelectorEngine(source)).installed, false)
 
       const unique = await page.resolveSelector('role=button[name="Save"]')
       assert.equal(unique.count, 1)
@@ -83,11 +75,9 @@ test(
 
       await assert.rejects(page.resolveSelector("role=button", { strict: true }), /resolved to 2 elements/)
 
-      // Page-realm evaluation, including storage reads that observation alone cannot provide.
-      assert.equal(await page.evaluate("() => 1 + 1"), 2)
-      assert.equal(await page.evaluate("(a, b) => a + b", [2, 3]), 5)
-      await assert.rejects(page.evaluate("() => { throw new Error('boom') }"), /boom/)
-      await page.evaluate("() => { localStorage.setItem('token', 'abc'); sessionStorage.setItem('once', '1') }")
+      // Storage reads run in the content script; bewpp has no way to evaluate code in the page.
+      assert.equal(page.evaluate, undefined)
+      await tab.evaluate(() => { localStorage.setItem("token", "abc"); sessionStorage.setItem("once", "1") })
       assert.equal(await page.readStorage("localStorage", "token"), "abc")
       assert.deepEqual({ ...(await page.snapshotStorage("localStorage")) }, { token: "abc" })
       assert.equal(await page.readStorage("localStorage", "absent"), null)

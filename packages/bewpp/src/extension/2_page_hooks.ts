@@ -72,7 +72,7 @@ if (state.bewppPageHooksBuild !== __BEWPP_BUILD__) {
   }
 
   // Click recording: enough context for a human or a model to name the automation target without
-  // parsing the DOM, using the injected engine's own selector generator when it is installed.
+  // parsing the DOM. The content script adds the Playwright engine's selector to this report.
   const accessibleName = (element: Element) =>
     (element.getAttribute("aria-label") || element.textContent || element.getAttribute("title") || "")
       .trim()
@@ -83,11 +83,7 @@ if (state.bewppPageHooksBuild !== __BEWPP_BUILD__) {
       if (!sources.has("click")) return
       const target = event.target
       if (!(target instanceof Element)) return
-      const engine = (
-        globalThis as typeof globalThis & { __bewppEngine?: { selectorFor: (element: Element) => string | null } }
-      ).__bewppEngine
       const candidates = [
-        engine?.selectorFor(target) ?? null,
         target.id ? `#${target.id}` : null,
         target.getAttribute("data-testid") ? `[data-testid="${target.getAttribute("data-testid")}"]` : null,
         target.getAttribute("aria-label") ? `[aria-label="${target.getAttribute("aria-label")}"]` : null,
@@ -104,7 +100,6 @@ if (state.bewppPageHooksBuild !== __BEWPP_BUILD__) {
       emit({
         source: "click",
         operation: "click",
-        playwrightSelector: engine?.selectorFor(target) ?? undefined,
         candidates,
         path,
         text: accessibleName(target),

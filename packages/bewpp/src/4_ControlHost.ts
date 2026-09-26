@@ -55,7 +55,8 @@ export class BrowserControlHost {
         return { activated: true }
       }
       // Page-level operations are not DOM commands: they run in the page realm, not the content script.
-      if (command.op === "evaluate") return page.evaluate(command.source, command.args)
+      // No `evaluate` op: a bridge client must never ship arbitrary source into a logged-in page.
+      if (command.op === "where") return page.rpc.describeControl(command.tabId, command.index)
       if (command.op === "storage")
         return command.key == null ? page.snapshotStorage(command.kind) : page.readStorage(command.kind, command.key)
       if (command.op === "screenshot")

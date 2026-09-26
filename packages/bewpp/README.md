@@ -62,12 +62,19 @@ await app.close()
 tab; `getPage()` retains its selected tab while available. The optional `acceptsPage`
 predicate limits default selection. `page.bringToFront()` activates its tab/window.
 
-Locators support role/name, label, placeholder, test ID, CSS, nested roles, `has`/visibility
-filters, and `nth`. With the selector engine installed (`page.installSelectorEngine(loadEngineSource())`)
-a locator compiles to the Playwright selector its `getBy*` would compile to and resolves through
-Playwright's own engine, so `exact`, strict mode, and error text are Playwright's; without an engine
-each operation falls back to Testing Library resolution, which matches role names exactly and treats
-`exact: false` as a case-sensitive substring. Operations include click, fill, select, navigation keys,
+`page.background()` returns a page facade for automation against an inactive tab. Locator actions
+retain strict resolution, disabled-control checks, and the explicit `allowSubmit` safeguard, while
+using host-timed polling without activating the tab. The same escape hatch is available per action
+as `{ background: true }`. This does not alter page `requestAnimationFrame` scheduling or make
+application timers unthrottled.
+
+Locators support role/name, label, placeholder, test ID, text, CSS, nested roles, `has`/`hasText`/
+visibility filters, and `nth`. A locator compiles to the Playwright selector its `getBy*` would compile
+to and resolves through Playwright's own engine, so `exact`, strict mode, and error text are
+Playwright's, and CSS accepts Playwright's pseudo-classes (`:has-text()`, `:text()`, `:text-matches()`,
+`:visible`). The build extracts that engine from the pinned `playwright-core` into `engine.js`, which
+loads beside the content script in the isolated world, where the page cannot see or replace it. If it
+fails to load, each operation falls back to Testing Library resolution. Operations include click, fill, select, navigation keys,
 hover, wait, value/text reads, structured page inspection, image enumeration, and image download.
 Single-element operations resolve strictly, retry until `timeout` expires (default 5000 ms), and fail
 with `Expected one element; found N.`; `count`, `allTextContents`, and `waitFor` resolve loosely, and
@@ -85,12 +92,11 @@ are excluded unless `includeValues` is true. Main-world hooks observe same-tab p
 writes while the isolated content script retains the buffer and extension channel.
 Observations and cursors are discarded by navigation.
 
-`page.evaluate(source, args)` runs a function expression in the page's own realm and returns its
-awaited, serializable result; `readStorage(kind, key)` and `snapshotStorage(kind)` read Web Storage,
-which observation cannot do for values written before it started.
+`readStorage(kind, key)` and `snapshotStorage(kind)` read Web Storage from the content script, which
+observation cannot do for values written before it started. No command evaluates caller-supplied code
+in the page.
 
-The `click` source records clicks with a Playwright selector when the selector engine is installed,
-plus fallback candidates (`#id`, `[data-testid=…]`, `[aria-label=…]`, `:has-text(…)`) and the clicked
+The `click` source records clicks with the engine's Playwright selector, plus fallback candidates (`#id`, `[data-testid=…]`, `[aria-label=…]`, `:has-text(…)`) and the clicked
 element's ancestry. `ClickLog({ path })` persists them to SQLite through `node:sqlite` and reads the
 most recent back with `recent(limit)`, so a person can click through a flow and hand the targets over
 for automation without anyone parsing the DOM.
@@ -106,11 +112,10 @@ tabs on connection and tab changes. It does not retain or replay DOM commands.
 Locators retain query descriptions. Each operation resolves the current DOM, so a
 React render may replace an element between calls. Content-script registration is
 guarded per bundle build and document. The host receives results through birpc;
-Chrome messages use `@webext-core/messaging`. Query resolution uses Playwright's
-injected engine where it is installed — the engine runs in the main world and the
-content script in the isolated world, so the engine tags its matches with a marker
-attribute and the content script addresses those elements by marker. Interaction and
-the engine-less fallback use Testing Library. Rolldown builds both the Node entry and
+Chrome messages use `@webext-core/messaging`. Query resolution uses the bundled
+Playwright engine; `resolveSelector` tags its matches with a marker attribute so a later
+action addresses exactly those elements. Interaction and the engine-less fallback use
+Testing Library. Rolldown builds both the Node entry and
 the extension bundles.
 
 Application jobs, retries, receipts, provider wiring, and UI subscriptions belong to

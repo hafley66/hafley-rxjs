@@ -6,11 +6,17 @@ export type LocatorQuery = {
   placeholder?: string
   label?: string
   testid?: string
+  /** Smallest elements whose text matches, like Playwright's `getByText`. */
+  text?: string
   selector?: string
   within?: LocatorQuery
   has?: LocatorQuery
+  /** Keeps elements whose text contains this, case-insensitive, like Playwright's `hasText`. */
+  hasText?: string
   visible?: boolean
   index?: number
+  /** Ordered positional filters, retained so nth calls compose like Playwright. */
+  indexes?: number[]
   /** Selects the final match of the filtered set, after `has`/`visible` filters. */
   last?: boolean
   /**
@@ -76,6 +82,8 @@ export type ObservationBatch = {
 export type DomCommand =
   | { op: "inspect" | "images" | "location" }
   | { op: "download"; url: string }
+  | { op: "storage"; kind: "localStorage" | "sessionStorage"; key?: string }
+  | { op: "resolve"; selector: string; strict?: boolean }
   | ({ op: "observe" } & (
       | ({ action: "start" } & ObservationOptions)
       | { action: "read"; afterSequence?: number; limit?: number }
@@ -90,10 +98,12 @@ export type DomCommand =
         | "enabled"
         | "value"
         | "texts"
+        | "blocks"
         | "text"
         | "attribute"
         | "checked"
         | "click"
+        | "tap"
         | "fill"
         | "select"
         | "press"
@@ -102,6 +112,8 @@ export type DomCommand =
       value?: string
       state?: "visible" | "hidden" | "attached" | "detached"
       timeoutMs?: number
+      /** Use host-timed polling and synthetic events for an inactive tab. */
+      background?: boolean
       /** Milliseconds between the pointer or key down and up phases, forwarded to user-event. */
       delayMs?: number
       allowSubmit?: boolean
@@ -117,6 +129,8 @@ export type TimeoutOptions = { timeout?: number }
  */
 export type ActionOptions = TimeoutOptions & {
   delay?: number
+  /** Explicit inactive-tab automation escape hatch for this action. */
+  background?: boolean
   force?: boolean
   noWaitAfter?: boolean
   /** Unsupported: a trial action must not perform the action, and no actionability check exists to run. */
@@ -176,12 +190,11 @@ export interface PageControls {
   observe(options: ObservationOptions): Promise<ObservationBatch>
   readObservations(options?: { afterSequence?: number; limit?: number }): Promise<ObservationBatch>
   stopObserving(): Promise<ObservationBatch>
-  installSelectorEngine(source: string, options?: { frameId?: number }): Promise<EngineInstall>
   resolveSelector(selector: string, options?: { strict?: boolean; frameId?: number }): Promise<EngineResult>
-  /** Runs a function expression in the page's own realm and returns its resolved, serializable value. */
-  evaluate<R = unknown>(source: string, args?: unknown[]): Promise<R>
   readStorage(kind: "localStorage" | "sessionStorage", key: string): Promise<string | null>
   snapshotStorage(kind: "localStorage" | "sessionStorage"): Promise<Record<string, string>>
+  /** Returns a page facade whose locators may automate an inactive tab without RAF-dependent waits. */
+  background(): PageControls
   /** Rasterizes in the page realm: full page and element clips work without a compositor capture. */
   screenshot(options?: ScreenshotOptions): Promise<ImageAsset>
 }
@@ -191,9 +204,8 @@ export interface ExtensionCommands {
   open(url: string): Promise<TabInfo>
   navigate(tabId: number, url: string): Promise<void>
   activate(tabId: number): Promise<void>
-  installSelectorEngine(tabId: number, source: string, frameId?: number): Promise<EngineInstall>
   resolveWithSelectorEngine(tabId: number, query: EngineQuery): Promise<EngineResult>
-  evaluateInPage(tabId: number, source: string, args?: unknown[]): Promise<unknown>
+  describeControl(tabId: number, index: number): Promise<unknown>
   capturePage(tabId: number, options: ScreenshotOptions): Promise<ImageAsset>
 }
 /** Playwright selector query handed to the injected engine in the page realm. */
@@ -201,7 +213,7 @@ export type EngineQuery = { selector: string; strict?: boolean; frameId?: number
 /** Matched elements are tagged `data-bewpp-hit="<marker>-<index>"` so content-script actions can address them. */
 export type EngineResult = { count: number; marker: string; installed: boolean }
 export type EngineInstall = { installed: boolean }
-export type ScreenshotOptions = { fullPage?: boolean; selector?: string; format?: "png" | "jpeg" }
+export type ScreenshotOptions = { fullPage?: boolean; selector?: string; format?: "png" | "jpeg"; timeoutMs?: number }
 export interface BridgeEvents {
   changed(tabs: TabInfo[]): void
   ping(): void

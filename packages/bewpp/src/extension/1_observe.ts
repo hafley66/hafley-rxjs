@@ -1,3 +1,4 @@
+import { bundledEngine } from "./0_engine.js"
 import type {
   DomCommand,
   ObservationBatch,
@@ -60,10 +61,36 @@ function startDomObserver() {
   observer.observe(root, { subtree: true, childList: true, characterData: true })
 }
 
+/**
+ * The page hook reports clicks from the main world, where there is no engine. This isolated-world listener
+ * sees the same click first, so the report is completed with the bundled engine's selector for it.
+ */
+let lastClicked: Element | null = null
+window.addEventListener(
+  "click",
+  event => {
+    if (event.target instanceof Element) lastClicked = event.target
+  },
+  true,
+)
+function clickSelector(): string | undefined {
+  const engine = bundledEngine()
+  if (!engine || !lastClicked?.isConnected) return undefined
+  try {
+    return engine.generateSelectorSimple(lastClicked, {})
+  } catch {
+    return undefined
+  }
+}
+
 window.addEventListener("message", event => {
   if (event.source !== window || event.data?.channel !== channel || event.data?.direction !== "event") return
   const payload = event.data.payload as Omit<PageObservationEvent, "sequence"> | undefined
   if (!payload || !["localStorage", "sessionStorage", "indexedDB", "click"].includes(payload.source)) return
+  if (payload.source === "click") {
+    const selector = clickSelector()
+    if (selector) Object.assign(payload, { playwrightSelector: selector, candidates: [selector, ...((payload as { candidates?: string[] }).candidates ?? [])] })
+  }
   const eventValue = options?.includeValues
     ? payload
     : {

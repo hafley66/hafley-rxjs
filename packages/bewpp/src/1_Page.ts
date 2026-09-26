@@ -43,10 +43,15 @@ export class ExtensionPage implements PageControls {
   id: number
   rpc: Rpc
   tabs: () => TabInfo[]
-  constructor(id: number, rpc: Rpc, tabs: () => TabInfo[]) {
+  backgroundMode: boolean
+  constructor(id: number, rpc: Rpc, tabs: () => TabInfo[], backgroundMode = false) {
     this.id = id
     this.rpc = rpc
     this.tabs = tabs
+    this.backgroundMode = backgroundMode
+  }
+  background() {
+    return new ExtensionPage(this.id, this.rpc, this.tabs, true)
   }
   url() {
     return this.tabs().find(tab => tab.id === this.id)?.url ?? ""
@@ -116,9 +121,6 @@ export class ExtensionPage implements PageControls {
   async stopObserving() {
     return (await this.rpc.execute(this.id, { op: "observe", action: "stop" })) as ObservationBatch
   }
-  async installSelectorEngine(source: string, options: { frameId?: number } = {}) {
-    return this.rpc.installSelectorEngine(this.id, source, options.frameId)
-  }
   /**
    * Engine resolution that reports installation instead of requiring it, so a locator can fall back to
    * Testing Library resolution on a page that never installed the engine.
@@ -131,19 +133,14 @@ export class ExtensionPage implements PageControls {
     if (!resolved.installed) throw new Error(MISSING_ENGINE_MESSAGE)
     return resolved
   }
-  async evaluate<R = unknown>(source: string, args: unknown[] = []): Promise<R> {
-    return (await this.rpc.evaluateInPage(this.id, source, args)) as R
-  }
   async readStorage(kind: "localStorage" | "sessionStorage", key: string) {
-    return this.evaluate<string | null>("(kind, key) => window[kind].getItem(key)", [kind, key])
+    return (await this.rpc.execute(this.id, { op: "storage", kind, key })) as string | null
   }
   async screenshot(options: ScreenshotOptions = {}) {
     return this.rpc.capturePage(this.id, options)
   }
   async snapshotStorage(kind: "localStorage" | "sessionStorage") {
-    return this.evaluate<Record<string, string>>("(kind) => Object.fromEntries(Object.entries({ ...window[kind] }))", [
-      kind,
-    ])
+    return (await this.rpc.execute(this.id, { op: "storage", kind })) as Record<string, string>
   }
 }
 
@@ -163,7 +160,7 @@ export class ExtensionLocator implements LocatorControls {
     })
   }
   first() {
-    return new ExtensionLocator(this.page, { ...this.query, index: 0 })
+    return new ExtensionLocator(this.page, { ...this.query, indexes: [...(this.query.indexes ?? []), 0] })
   }
   last() {
     return new ExtensionLocator(this.page, { ...this.query, last: true })
@@ -176,7 +173,7 @@ export class ExtensionLocator implements LocatorControls {
     })
   }
   nth(index: number) {
-    return new ExtensionLocator(this.page, { ...this.query, index })
+    return new ExtensionLocator(this.page, { ...this.query, indexes: [...(this.query.indexes ?? []), index] })
   }
   /** The Playwright selector this query compiles to. The engine resolves it; the content script never sees it. */
   get selector() {
@@ -217,6 +214,7 @@ export class ExtensionLocator implements LocatorControls {
       query: marker ? { marker } : this.query,
       action,
       ...options,
+      background: this.page.backgroundMode || options.background === true,
     })
   }
   async count(options: TimeoutOptions = {}) {
@@ -248,21 +246,11 @@ export class ExtensionLocator implements LocatorControls {
       : this.execute("checked", { timeoutMs: options.timeout }))) as boolean
   }
   async isVisible(options: TimeoutOptions = {}) {
-    const timeout = options.timeout ?? LOCATOR_TIMEOUT_MS
-    const deadline = Date.now() + timeout
-    const selector = this.selector
-    for (;;) {
-      const resolved = await this.#engine(selector, true)
-      if (!resolved) return (await this.execute("visible", { timeoutMs: options.timeout })) as boolean
-      if (resolved.count === 1)
-        return (await this.execute(
-          "visible",
-          { timeoutMs: Math.max(1, deadline - Date.now()) },
-          resolved.marker,
-        )) as boolean
-      if (Date.now() >= deadline) return false
-      await sleep(LOCATOR_POLL_MS)
-    }
+    // Visibility is a snapshot. Explicit waitFor owns polling and its deadline.
+    const resolved = await this.#engine(this.selector, true)
+    if (!resolved) return (await this.execute("visible", { timeoutMs: options.timeout })) as boolean
+    if (resolved.count === 0) return false
+    return (await this.execute("visible", { timeoutMs: options.timeout }, resolved.marker)) as boolean
   }
   async isEnabled(options: TimeoutOptions = {}) {
     const resolved = await this.#single(options.timeout ?? LOCATOR_TIMEOUT_MS)
