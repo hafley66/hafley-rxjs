@@ -1,4 +1,4 @@
-import { Signal } from "@hafley66/signals";
+import { toSignal } from "@hafley66/signals";
 import { Terminal } from "@xterm/xterm";
 import { afterEach, describe, expect, it } from "vitest";
 import { createBoopXtermPane } from "./7_pane.js";
@@ -23,6 +23,18 @@ function write(term: Terminal, data: string): Promise<void> {
 
 function frame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+function dragFirstFive(term: Terminal, host: HTMLElement, finish = true) {
+  const box = host.querySelector<HTMLElement>(".xterm-screen")?.getBoundingClientRect();
+  if (!box) throw new Error("xterm screen missing");
+  const y = box.top + box.height / term.rows / 2;
+  const x = box.left + box.width / term.cols / 2;
+  const endX = x + box.width / term.cols * 4;
+  host.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0, clientX: x, clientY: y }));
+  document.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, clientX: endX, clientY: y }));
+  if (finish) document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, clientX: endX, clientY: y }));
+  return { endX, y };
 }
 
 afterEach(() => {
@@ -78,15 +90,7 @@ describe("real xterm model adapters", () => {
     const effects = pane.effects.subscribe();
     const copy = pane.pinned.copy.$.subscribe((value) => { if (value) copied.push(value); });
     await write(term, "hello world\x1b[?1000h");
-    const screen = host.querySelector<HTMLElement>(".xterm-screen");
-    expect(screen).not.toBeNull();
-    const box = screen?.getBoundingClientRect();
-    if (!box) throw new Error("xterm screen missing");
-    const y = box.top + box.height / term.rows / 2;
-    const x = box.left + box.width / term.cols / 2;
-    host.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0, clientX: x, clientY: y }));
-    document.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, clientX: x + box.width / term.cols * 4, clientY: y }));
-    document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, clientX: x + box.width / term.cols * 4, clientY: y }));
+    dragFirstFive(term, host);
     await frame();
     expect(pane.pinned.text.$()).toBe("hello");
     expect(copied).toEqual(["hello"]);
@@ -94,5 +98,58 @@ describe("real xterm model adapters", () => {
     copy.unsubscribe();
     effects.unsubscribe();
     expect(host.querySelector(".term-pinned-root")).toBeNull();
+  });
+
+  it("pinned repaint invalidation clears changed buffer cells", async () => {
+    const { term, host } = terminal();
+    const ports = testPorts(() => of({ status: 200, body: null }));
+    const pane = createBoopXtermPane(term, host, { id: "p", target: "p", socket: null }, ports);
+    const subscription = pane.effects.subscribe();
+    await write(term, "hello world\x1b[?1000h");
+    dragFirstFive(term, host);
+    await frame();
+    expect(pane.pinned.text.$()).toBe("hello");
+    await write(term, "\rxxxxx");
+    await frame();
+    expect(pane.pinned.text.$()).toBe("");
+    expect(host.querySelectorAll(".term-pinned-selection").length).toBe(0);
+    subscription.unsubscribe();
+  });
+
+  it("pinned clear during drag releases document listeners without copying", async () => {
+    const { term, host } = terminal();
+    const ports = testPorts(() => of({ status: 200, body: null }));
+    const pane = createBoopXtermPane(term, host, { id: "p", target: "p", socket: null }, ports);
+    const copied: string[] = [];
+    const subscription = pane.effects.subscribe();
+    const copy = pane.pinned.copy.$.subscribe((value) => { if (value) copied.push(value); });
+    await write(term, "hello world\x1b[?1000h");
+    const { endX, y } = dragFirstFive(term, host, false);
+    ports.selectionClear.$(undefined);
+    document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, clientX: endX, clientY: y }));
+    await frame();
+    expect(pane.runtime.selection.dragging.$()).toBe(false);
+    expect(pane.pinned.text.$()).toBe("");
+    expect(copied).toEqual([]);
+    copy.unsubscribe();
+    subscription.unsubscribe();
+  });
+
+  it("pinned clipboard disabled retains highlight without a copy event", async () => {
+    const { term, host } = terminal();
+    const ports = testPorts(() => of({ status: 200, body: null }));
+    toSignal(ports.clipboardEnabled).$(false);
+    const pane = createBoopXtermPane(term, host, { id: "p", target: "p", socket: null }, ports);
+    const copied: string[] = [];
+    const subscription = pane.effects.subscribe();
+    const copy = pane.pinned.copy.$.subscribe((value) => { if (value) copied.push(value); });
+    await write(term, "hello world\x1b[?1000h");
+    dragFirstFive(term, host);
+    await frame();
+    expect(pane.pinned.text.$()).toBe("hello");
+    expect(host.querySelectorAll(".term-pinned-selection").length).toBe(1);
+    expect(copied).toEqual([]);
+    copy.unsubscribe();
+    subscription.unsubscribe();
   });
 });
