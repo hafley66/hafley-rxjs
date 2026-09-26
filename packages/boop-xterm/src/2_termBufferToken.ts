@@ -1,5 +1,5 @@
 // The token a ⌘-click or hover names, read from an xterm buffer. Pure over
-// IBuffer, so a Terminal that was never opened drives it under vitest.
+// IBuffer, so an unopened Terminal can drive it under vitest.
 import type { IBuffer } from "@xterm/xterm";
 import { tokenAtColumn, widenAcrossSpaces } from "./0_termTokens.js";
 import {
