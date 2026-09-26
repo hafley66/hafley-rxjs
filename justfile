@@ -51,11 +51,13 @@ publish-local +pkgs:
     git worktree add -q --detach "$wt" HEAD
     trap 'git worktree remove --force "$wt"' EXIT
     ts=$(node -e 'console.log(Date.now())')
+    cd "$wt"
+    dir() { dirname "$(grep -rl --include=package.json -e "\"name\": \"@hafley66/$1\"" packages --exclude-dir=node_modules | head -1)"; }
     for p in {{pkgs}}; do
-      (cd "$wt/packages/$p" && npm pkg set version="$(node -e 'console.log(require("./package.json").version.split("-")[0])')-dev.$ts" publishConfig.registry=$reg)
+      (cd "$(dir $p)" && npm pkg set version="$(node -e 'console.log(require("./package.json").version.split("-")[0])')-dev.$ts" publishConfig.registry=$reg)
     done
     cd "$wt"
-    pnpm install --frozen-lockfile --prefer-offline >/dev/null
+    pnpm install --frozen-lockfile --prefer-offline 2>&1 | tail -5
     filters=(); for p in {{pkgs}}; do filters+=(--filter "@hafley66/$p^..." --filter "@hafley66/$p"); done
     pnpm "${filters[@]}" build >/dev/null
-    for p in {{pkgs}}; do (cd "packages/$p" && pnpm publish --registry $reg --no-git-checks --tag dev); done
+    for p in {{pkgs}}; do (cd "$(dir $p)" && pnpm publish --registry $reg --no-git-checks --tag dev); done
