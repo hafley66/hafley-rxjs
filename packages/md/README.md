@@ -248,6 +248,8 @@ The SVG viewport helpers parse source bounds, normalize entities, fit, zoom, pan
 
 `DiagramRenderCache` shares in-flight renders and bounds retained SVG output by bytes and entries.
 
+`d2SiblingPaths` and `resolveD2Preview` choose a sibling SVG, rendered source SVG, or PNG fallback.
+
 ```ts
 installMdviewHost
 getMdviewHost

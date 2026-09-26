@@ -70,6 +70,7 @@ export {
 export { blockAt, mdDocument, parseMdSections } from "./model.js";
 export { isMarkdownPath, markdownHeadingRows, type MarkdownHeadingRow } from "./lib/0_markdownTree.js";
 export { DiagramRenderCache } from "./lib/0_diagramRenderCache.js";
+export { d2SiblingPaths, resolveD2Preview, type D2Preview } from "./lib/1_d2Preview.js";
 export { markdownTableStarts } from "./6_tableAnchors.js";
 export type { MdBlock, MdBlockKind, MdDocument, SourceSpan } from "./model.js";
 
