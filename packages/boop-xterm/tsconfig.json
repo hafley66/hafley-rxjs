@@ -2,12 +2,6 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "paths": {
-      "@hafley66/signals": [
-        "../signals/src/index.ts"
-      ]
-    },
-    "rootDir": "..",
     "composite": false
   },
   "include": [
