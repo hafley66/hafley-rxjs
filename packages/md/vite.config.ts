@@ -17,6 +17,7 @@ export default defineConfig({
         index: resolve(import.meta.dirname, "src/index.ts"),
         "plugins/index": resolve(import.meta.dirname, "src/plugins/index.ts"),
         "plugins/marbles": resolve(import.meta.dirname, "src/plugins/marbles.ts"),
+        "plugins/echarts": resolve(import.meta.dirname, "src/plugins/echarts.ts"),
         "plugins/steps": resolve(import.meta.dirname, "src/plugins/steps.ts"),
         "plugins/fs-tree": resolve(import.meta.dirname, "src/plugins/fs-tree.ts"),
       },
