@@ -242,6 +242,8 @@ Hosts import that stylesheet once from their composition root.
 
 ## Public exports
 
+`isMarkdownPath` and `markdownHeadingRows` identify Markdown files and project their headings into tree rows.
+
 ```ts
 installMdviewHost
 getMdviewHost

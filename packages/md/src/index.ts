@@ -68,6 +68,7 @@ export {
   DEFAULT_PROSE_WIDTH_BOUNDS,
 } from "./lib/1_proseWidth.js";
 export { blockAt, mdDocument, parseMdSections } from "./model.js";
+export { isMarkdownPath, markdownHeadingRows, type MarkdownHeadingRow } from "./lib/0_markdownTree.js";
 export { markdownTableStarts } from "./6_tableAnchors.js";
 export type { MdBlock, MdBlockKind, MdDocument, SourceSpan } from "./model.js";
 
