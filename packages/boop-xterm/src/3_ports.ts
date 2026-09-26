@@ -5,8 +5,9 @@ import type { BoopTurn, HarnessId, LogicalLine, VisibleTurn } from "./0_types.js
 import type { PinnedSelection, SelectionCell } from "./2_pinnedSelectionPure.js";
 import type { TurnSpan, TurnVisibilityEvent } from "./2_turnLocate.js";
 import type { TerminalWheelState } from "./2_wheelReduce.js";
+import type { BoopTurnComment, BoopTurnCommentFork } from "./2_contextSyncPure.js";
 
-export type PaneIdentity = { id: string; target: string; socket: string | null };
+export type PaneIdentity = { id: string; target: string; socket: string | null; graphics?: boolean };
 export type PaneSessionBinding = { session: string; harness: string | null };
 export type BoopSyncStat = { written: number; dropped: number };
 export type ViewportPoint = { clientX: number; clientY: number };
@@ -51,6 +52,14 @@ export type BoopXtermPorts = {
   boop_sync_session: Endpoint<{ session: string; harness: string }, BoopSyncStat>;
   boop_locate_turns: Endpoint<{ lines: LogicalLine[]; turns: BoopTurn[] }, TurnSpan[]>;
   scroll_session: Endpoint<{ name: string; up: boolean; lines: number }, void>;
+  boop_turn_comments: Endpoint<{ tab: string; sessions: string[] }, BoopTurnComment[]>;
+  boop_turn_annotations: Endpoint<{ sessions: string[] }, BoopTurnComment[]>;
+  boop_turn_comment_forks: Endpoint<{ commentIds: number[] }, BoopTurnCommentFork[]>;
+  boop_turn_comment_upsert: Endpoint<{ comment: BoopTurnComment }, number>;
+  boop_turn_comment_delete: Endpoint<{ clientId: string }, void>;
+  boop_turn_comments_sent: Endpoint<{ clientIds: string[] }, void>;
+  boop_mux_exit_copy_mode: Endpoint<{ target: string; socket: string | null }, boolean>;
+  write_pty: Endpoint<{ id: string; data: string }, void>;
   paneVisible: SignalSource<boolean>;
   paneClosed: SignalSource<boolean>;
   harness: SignalSource<HarnessId | null>;
@@ -58,6 +67,10 @@ export type BoopXtermPorts = {
   tabSessionIds: SignalSource<string[]>;
   scanRequested: Signal<void | undefined>;
   selectionClear: Signal<void | undefined>;
+  inlineStructuredSelectors: SignalSource<boolean>;
+  forkLivePane: SignalSource<boolean>;
+  tabName: SignalSource<string>;
+  sessionIds: SignalSource<string[]>;
 };
 export type ViewportModel = {
   snapshot: Signal<ViewportSnapshot>;

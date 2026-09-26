@@ -19,6 +19,14 @@ export function testPorts(script: Script): BoopXtermPorts {
     boop_sync_session: endpoint("boop_sync_session"),
     boop_locate_turns: endpoint("boop_locate_turns"),
     scroll_session: endpoint("scroll_session"),
+    boop_turn_comments: endpoint("boop_turn_comments"),
+    boop_turn_annotations: endpoint("boop_turn_annotations"),
+    boop_turn_comment_forks: endpoint("boop_turn_comment_forks"),
+    boop_turn_comment_upsert: endpoint("boop_turn_comment_upsert"),
+    boop_turn_comment_delete: endpoint("boop_turn_comment_delete"),
+    boop_turn_comments_sent: endpoint("boop_turn_comments_sent"),
+    boop_mux_exit_copy_mode: endpoint("boop_mux_exit_copy_mode"),
+    write_pty: endpoint("write_pty"),
     paneVisible: Signal(true),
     paneClosed: Signal(false),
     harness: Signal<HarnessId | null>("omp"),
@@ -26,6 +34,10 @@ export function testPorts(script: Script): BoopXtermPorts {
     tabSessionIds: Signal<string[]>([]),
     scanRequested: Signal<void>(),
     selectionClear: Signal<void>(),
+    inlineStructuredSelectors: Signal(true),
+    forkLivePane: Signal(false),
+    tabName: Signal("test"),
+    sessionIds: Signal<string[]>([]),
   };
 }
 
