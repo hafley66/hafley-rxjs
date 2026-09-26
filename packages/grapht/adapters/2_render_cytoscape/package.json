@@ -3,23 +3,27 @@
   "version": "0.1.0",
   "description": "Cytoscape projection adapter for the grapht-bench/0 protocol: loads external grapht-geometry/0 positions, projects through Cytoscape preset layout, exercises pan/zoom/select/readback/disposal, and emits JSONL samples, screenshot, trace, and correctness receipt",
   "type": "module",
-  "main": "./index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./index.ts",
-    "./benchmark": "./4_adapter.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./benchmark": {
+      "types": "./dist/4_adapter.d.ts",
+      "import": "./dist/4_adapter.js"
+    }
   },
   "bin": {
-    "render-cytoscape": "./bin/grapht-adapter-render-cytoscape.ts"
+    "render-cytoscape": "./dist/bin/grapht-adapter-render-cytoscape.js"
   },
   "files": [
-    "dist",
-    "bin",
-    "index.html",
-    "3_style.css",
-    "README.md"
+    "dist"
   ],
   "scripts": {
-    "build": "vite build && tsc --noEmit -p tsconfig.json",
+    "build": "vite build --config vite.lib.config.ts && tsc --noEmit -p tsconfig.json",
+    "build:app": "vite build --config vite.config.ts",
     "test": "pnpm run build && vitest run",
     "typecheck": "tsc --noEmit",
     "receipts": "pnpm run typecheck && pnpm run test && pnpm run test:browser",
@@ -49,7 +53,8 @@
     "@types/node": "^25.0.8",
     "typescript": "7.0.2",
     "vitest": "^4.1.10",
-    "vite": "^8.2.1"
+    "vite": "^8.2.1",
+    "vite-plugin-dts": "^5.0.3"
   },
   "license": "MIT",
   "publishConfig": {
