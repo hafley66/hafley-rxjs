@@ -36,3 +36,7 @@ pending:
       }
     }
     process.exit(rc)
+
+# lane warmup: boop lane create runs this in each new worktree
+boop-start:
+    pnpm install --frozen-lockfile --prefer-offline
