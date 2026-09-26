@@ -60,7 +60,7 @@ const probe = (stage) => tap({
 })
 
 // ---- grid: probe records folded into rows, painted once per frame --------------------------
-const ORDER = ["settings", "scroll$", "settle timer", "pointermove (all)", "realMove$", "scan distance", "first(enough)", "leave$", "intent$"]
+const ORDER = ["settings", "scroll$", "enter$", "restart", "settle timer", "pointermove (all)", "realMove$", "scan distance", "first(enough)", "leave$", "intent$"]
 const grid = document.getElementById("grid")
 const rows = Object.fromEntries(ORDER.map((stage) => {
   const tr = document.createElement("tr")
@@ -121,13 +121,15 @@ function pointerIntent(el, { settleMs, minPx, minMs }) {
     fromEvent(doc, "scroll", { capture: true, passive: true }),
   ).pipe(map((e) => e.type), probe("scroll$"))
   const leave$ = fromEvent(el, "pointerleave").pipe(map((e) => e.type), probe("leave$"))
+  const enter$ = fromEvent(el, "pointerenter").pipe(map((e) => e.type), probe("enter$"))
   const realMove$ = fromEvent(el, "pointermove").pipe(
     probe("pointermove (all)"),
     filter((e) => e.movementX !== 0 || e.movementY !== 0),
     probe("realMove$"),
   )
-  return scroll$.pipe(
+  return merge(scroll$, enter$).pipe(
     startWith("start"),
+    probe("restart"),
     switchMap(() => timer(settleMs).pipe(
       probe("settle timer"),
       switchMap(() => realMove$.pipe(
