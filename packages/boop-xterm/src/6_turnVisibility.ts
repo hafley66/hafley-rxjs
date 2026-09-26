@@ -1,6 +1,6 @@
 import { Signal, createMutation, createQuery, toSignal, type Query } from "@hafley66/signals";
 import type { Terminal } from "@xterm/xterm";
-import { EMPTY, Observable, catchError, combineLatest, concat, debounceTime, defer, distinctUntilChanged, exhaustMap, expand, filter, forkJoin, map, merge, of, scan, share, shareReplay, skip, startWith, switchMap, take, takeUntil, tap, timer } from "rxjs";
+import { EMPTY, Observable, catchError, combineLatest, concat, debounceTime, defer, distinctUntilChanged, exhaustMap, expand, filter, forkJoin, map, merge, of, scan, share, shareReplay, skip, skipWhile, startWith, switchMap, take, takeUntil, tap, timer } from "rxjs";
 import { regionAtBufferRow as findRegion, type ProjectedTurnRegion } from "./0_turnRegions.js";
 import type { BoopTurn, LogicalLine, VisibleTurn } from "./0_types.js";
 import { projectionTurnSources } from "./1_ompTurnBinding.js";
@@ -57,6 +57,7 @@ function locate(
   const paneLines = dropTmuxStatusRow(lines, capture);
   const native = createQuery(ports.boop_locate_turns, { lines: paneLines, turns }, { cacheTime: 0 });
   return native.$.pipe(
+    skipWhile((state) => !state.isLoading),
     filter((state) => !state.isLoading && (state.isSuccess || state.isError)),
     take(1),
     map((state) => state.isSuccess && state.data
