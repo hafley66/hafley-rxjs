@@ -1,0 +1,106 @@
+:root {
+  --boop-xterm-context-layer-z: 7;
+  --boop-xterm-context-font: 11px/1.3 Menlo, Monaco, monospace;
+  --boop-xterm-gutter-offset: 42px;
+  --boop-xterm-gutter-check-size: 16px;
+  --boop-xterm-context-mark-font: 12px/14px Menlo, Monaco, monospace;
+  --boop-xterm-context-mark-fg: #3b6ea5;
+  --boop-xterm-context-mark-hover-bg: #3b6ea52e;
+  --boop-xterm-context-queue-bg: #fff;
+  --boop-xterm-context-queue-fg: #222;
+  --boop-xterm-context-queue-border: #7f9db9;
+  --boop-xterm-context-queue-shadow: 0 6px 22px rgb(0 0 0 / .34);
+  --boop-xterm-context-queue-width: 420px;
+  --boop-xterm-context-queue-max-height: 52%;
+  --boop-xterm-context-status-fg: #e2a65a;
+  --boop-xterm-context-chip-saturation: 75%;
+  --boop-xterm-context-chip-lightness: 72%;
+  --boop-xterm-context-chip-border-saturation: 70%;
+  --boop-xterm-context-chip-border-lightness: 46%;
+  --boop-xterm-chip-hue: 210;
+  --boop-xterm-context-border-width: 1px;
+  --boop-xterm-context-mark-padding: 0 2px;
+  --boop-xterm-context-mark-radius: 2px;
+  --boop-xterm-context-queue-inline-gap: 20px;
+  --boop-xterm-context-title-font-size: 10px;
+  --boop-xterm-context-title-letter-spacing: .09em;
+  --boop-xterm-context-check-bg: #2e2e2e;
+  --boop-xterm-context-check-border: #7797b4;
+  --boop-xterm-context-check-fg: #3b6ea5;
+  --boop-xterm-context-item-padding: 8px 9px;
+  --boop-xterm-context-item-radius: 5px;
+  --boop-xterm-context-quote-bg: #000;
+  --boop-xterm-context-quote-fg: #d4d4d4;
+  --boop-xterm-context-note-font: 11px/1.3 Menlo, Monaco, monospace;
+  --boop-xterm-context-check-radius: 2px;
+  --boop-xterm-context-check-font: bold 12px/11px Menlo, Monaco, monospace;
+  --boop-xterm-context-queue-inset: 10px;
+  --boop-xterm-context-queue-padding: 11px 12px 12px;
+  --boop-xterm-context-queue-radius: 6px;
+  --boop-xterm-context-queue-gap: 10px;
+  --boop-xterm-context-queue-header-padding: 8px;
+  --boop-xterm-context-queue-button-padding: 4px 14px;
+  --boop-xterm-context-queue-button-radius: 4px;
+  --boop-xterm-context-item-gap: 8px;
+  --boop-xterm-context-item-border: #7f9db9;
+  --boop-xterm-context-item-bg: #0008;
+  --boop-xterm-context-item-meta-gap: 7px;
+  --boop-xterm-context-chip-padding: 1px 7px;
+  --boop-xterm-context-chip-radius: 999px;
+  --boop-xterm-context-chip-font-size: 10px;
+  --boop-xterm-context-remove-size: 20px;
+  --boop-xterm-context-remove-font-size: 15px;
+  --boop-xterm-context-quote-max-height: 84px;
+  --boop-xterm-context-quote-padding: 6px 8px;
+  --boop-xterm-context-note-min-height: 40px;
+  --boop-xterm-context-note-max-height: 110px;
+  --boop-xterm-context-note-padding: 6px 8px;
+  --boop-xterm-context-note-bg: #000;
+  --boop-xterm-context-note-fg: #d4d4d4;
+  --boop-xterm-fork-z: 3;
+  --boop-xterm-fork-font: 11px/16px Menlo, Monaco, monospace;
+  --boop-xterm-fork-border: #3b6ea5;
+  --boop-xterm-fork-bg: #fff;
+  --boop-xterm-fork-fg: #222;
+  --boop-xterm-fork-pane-border: #34d399;
+  --boop-xterm-fork-dead-border: #b45309;
+  --boop-xterm-fork-pane-header: #34d399;
+  --boop-xterm-fork-pane-bg: #000;
+  --boop-xterm-fork-header-fg: #3b6ea5;
+  --boop-xterm-fork-header-border: #7f9db9;
+  --boop-xterm-fork-shadow: 0 6px 18px rgb(0 0 0 / .55);
+  --boop-xterm-fork-radius: 3px;
+  --boop-xterm-fork-border-width: 1px;
+  --boop-xterm-fork-header-padding: 0 6px;
+  --boop-xterm-fork-body-padding: 0 6px 3px;
+  --boop-xterm-fork-indent: 26px;
+  --boop-xterm-fork-pane-rows: 8;
+}
+.term-context-root { position: absolute; inset: 0; z-index: var(--boop-xterm-context-layer-z); pointer-events: none; font: var(--boop-xterm-context-font); }
+.term-context-gutter, .term-context-marks, .term-fork-layer { position: absolute; inset: 0; }
+.term-context-structured-check, .term-context-hover-check, .term-context-mark, .term-context-queue, .term-fork { pointer-events: auto; }
+.term-context-structured-check, .term-context-hover-check { position: absolute; box-sizing: border-box; width: var(--boop-xterm-gutter-check-size); height: var(--boop-xterm-gutter-check-size); margin: 0; appearance: none; border: var(--boop-xterm-context-border-width) solid var(--boop-xterm-context-check-border); border-radius: var(--boop-xterm-context-check-radius); background: var(--boop-xterm-context-check-bg); }
+.term-context-structured-check:checked::after, .term-context-hover-check:checked::after { content: "✓"; display: block; color: var(--boop-xterm-context-check-fg); font: var(--boop-xterm-context-check-font); text-align: center; }
+.term-context-hover-check { opacity: .55; }
+.term-context-hover-check:checked, .term-context-hover-check:hover { opacity: 1; }
+.term-context-mark { position: absolute; padding: var(--boop-xterm-context-mark-padding); border: 0; border-radius: var(--boop-xterm-context-mark-radius); background: transparent; color: var(--boop-xterm-context-mark-fg); font: var(--boop-xterm-context-mark-font); cursor: pointer; opacity: .8; }
+.term-context-mark:hover { opacity: 1; background: var(--boop-xterm-context-mark-hover-bg); }
+.term-context-queue { position: absolute; right: var(--boop-xterm-context-queue-inset); bottom: var(--boop-xterm-context-queue-inset); width: min(var(--boop-xterm-context-queue-width), calc(100% - var(--boop-xterm-context-queue-inline-gap))); max-height: var(--boop-xterm-context-queue-max-height); overflow: auto; padding: var(--boop-xterm-context-queue-padding); border: var(--boop-xterm-context-border-width) solid var(--boop-xterm-context-queue-border); border-radius: var(--boop-xterm-context-queue-radius); background: var(--boop-xterm-context-queue-bg); color: var(--boop-xterm-context-queue-fg); box-shadow: var(--boop-xterm-context-queue-shadow); }
+.term-context-queue header { display: flex; align-items: center; justify-content: space-between; gap: var(--boop-xterm-context-queue-gap); padding-bottom: var(--boop-xterm-context-queue-header-padding); margin-bottom: var(--boop-xterm-context-queue-gap); border-bottom: var(--boop-xterm-context-border-width) solid var(--boop-xterm-context-queue-border); }
+.term-context-queue-title { font-size: var(--boop-xterm-context-title-font-size); font-weight: 700; letter-spacing: var(--boop-xterm-context-title-letter-spacing); opacity: .72; }
+.term-context-queue-status { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--boop-xterm-context-status-fg); font-size: var(--boop-xterm-context-title-font-size); }
+.term-context-queue header button { padding: var(--boop-xterm-context-queue-button-padding); border: var(--boop-xterm-context-border-width) solid var(--boop-xterm-context-queue-border); border-radius: var(--boop-xterm-context-queue-button-radius); background: var(--boop-xterm-context-queue-bg); color: var(--boop-xterm-context-queue-fg); font: inherit; cursor: pointer; }
+.term-context-queue-item { padding: var(--boop-xterm-context-item-padding); border: var(--boop-xterm-context-border-width) solid var(--boop-xterm-context-item-border); border-radius: var(--boop-xterm-context-item-radius); background: var(--boop-xterm-context-item-bg); }
+.term-context-queue-item + .term-context-queue-item { margin-top: var(--boop-xterm-context-item-gap); }
+.term-context-queue-item[data-disabled="true"] { opacity: .45; }
+.term-context-queue-meta { display: flex; align-items: center; gap: var(--boop-xterm-context-item-meta-gap); margin-bottom: var(--boop-xterm-context-item-meta-gap); }
+.term-context-queue-turn { padding: var(--boop-xterm-context-chip-padding); border: var(--boop-xterm-context-border-width) solid currentColor; border-radius: var(--boop-xterm-context-chip-radius); color: hsl(var(--boop-xterm-chip-hue) var(--boop-xterm-context-chip-saturation) var(--boop-xterm-context-chip-lightness)); font-size: var(--boop-xterm-context-chip-font-size); white-space: nowrap; }
+.term-context-queue-remove { margin-left: auto; width: var(--boop-xterm-context-remove-size); height: var(--boop-xterm-context-remove-size); padding: 0; border: 0; background: transparent; color: inherit; font-size: var(--boop-xterm-context-remove-font-size); cursor: pointer; }
+.term-context-queue-quote { max-height: var(--boop-xterm-context-quote-max-height); margin: 0 0 var(--boop-xterm-context-item-meta-gap); padding: var(--boop-xterm-context-quote-padding); overflow: auto; background: var(--boop-xterm-context-quote-bg); color: var(--boop-xterm-context-quote-fg); font: inherit; white-space: pre-wrap; word-break: break-word; }
+.term-context-queue textarea { box-sizing: border-box; display: block; width: 100%; min-height: var(--boop-xterm-context-note-min-height); max-height: var(--boop-xterm-context-note-max-height); padding: var(--boop-xterm-context-note-padding); resize: vertical; border: var(--boop-xterm-context-border-width) solid var(--boop-xterm-context-queue-border); border-radius: var(--boop-xterm-context-queue-button-radius); background: var(--boop-xterm-context-note-bg); color: var(--boop-xterm-context-note-fg); font: var(--boop-xterm-context-note-font); }
+.term-fork { position: absolute; overflow: hidden; border: var(--boop-xterm-fork-border-width) solid var(--boop-xterm-fork-border); border-radius: var(--boop-xterm-fork-radius); background: var(--boop-xterm-fork-bg); color: var(--boop-xterm-fork-fg); font: var(--boop-xterm-fork-font); box-shadow: var(--boop-xterm-fork-shadow); z-index: var(--boop-xterm-fork-z); }
+.term-fork[data-shape="pane"] { border-color: var(--boop-xterm-fork-pane-border); background: var(--boop-xterm-fork-pane-bg); }
+.term-fork[data-state="dead"] { border-color: var(--boop-xterm-fork-dead-border); }
+.term-fork-header { display: block; width: 100%; padding: var(--boop-xterm-fork-header-padding); border: 0; background: transparent; color: var(--boop-xterm-fork-header-fg); font: inherit; text-align: left; white-space: pre; cursor: pointer; }
+.term-fork[data-shape="pane"] .term-fork-header { color: var(--boop-xterm-fork-pane-header); border-bottom: var(--boop-xterm-fork-border-width) solid var(--boop-xterm-fork-header-border); cursor: default; }
+.term-fork-body { margin: 0; padding: var(--boop-xterm-fork-body-padding); white-space: pre; overflow: hidden; }
