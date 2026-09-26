@@ -1185,13 +1185,14 @@ importers:
         version: 7.0.2
 
   packages/path:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       typescript:
         specifier: 7.0.2
         version: 7.0.2
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
 
   packages/path-router-lab:
     dependencies:
