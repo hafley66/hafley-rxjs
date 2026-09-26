@@ -1,26 +1,22 @@
-# boop-xterm wave 2 design
+# boop-xterm wave 2 design r2
 
 ## 1. Type signatures
 
-| Source exports | Current signature | Proposed signature |
+| Exported symbol group | Current signature | Proposed signature |
 | --- | --- | --- |
-| `00a_terminalIntersection.ts`: `LogicalLine`, `ViewportChange`, `BoopFavorite` | Declarations below, unchanged | Re-export from `0_types.ts`; declarations below |
-| `00a_terminalIntersection.ts`: `XtermViewport`, `XtermViewportAdapter` | Interface and class below | `viewportStream` and `ViewportSnapshot` below |
-| `00a_terminalIntersection.ts`: `TmuxPane`, `NativeTmuxPane` | Interface and class below | `paneSessionStream` and IPC port streams below |
-| `00a_terminalIntersection.ts`: `BoopConversation` | Interface below | Same type-only interface in `0_types.ts`; no implementation in this wave |
-| `00b_terminalLineAnchors.ts`: `VisibleTerminalLine`, `TerminalLineAnchorEvent`, `terminalLineId` | Declarations below, unchanged | Same declarations in `1_lineAnchors.ts` |
-| `00b_terminalLineAnchors.ts`: `TerminalLineAnchors` | Class below | `lineAnchorsStream` below |
-| `0_terminalTurnVisibility.ts`: `normalizeTurnLine`, `BoopTurn`, `VisibleTurn`, `TurnVisibilityEvent`, `selectProjectionTurns`, `tmuxConfirms`, `dropTmuxStatusRow`, `TerminalInputRegion`, `terminalInputRegion`, `dropTerminalInputRows`, `locateVisibleTurns`, `extendTo`, `TurnSpan`, `TURN_ACTIVITY_POLL_MS`, `TURN_ACTIVITY_LEASE_MS`, `attachTurnRegions` | Declarations below, unchanged | Same declarations in `0_types.ts`, `0_turnMatching.ts`, and `1_turnVisibility.ts` |
-| `0_terminalTurnVisibility.ts`: `TurnLocator`, `TerminalTurnVisibilityV2` | Alias and class below | `LocateTurnRequest`, `LocateTurnResponse`, `turnVisibilityStream` below |
-| `0_terminalWheel.ts`: `TerminalMouseMode`, `TerminalWheelState`, `TerminalWheelEvent`, `initialTerminalWheelState`, `reduceTerminalWheel` | Declarations below, unchanged | Same declarations in `1_wheel.ts` |
-| `0_terminalWheel.ts`: `TerminalWheelRouter` | Class below | `wheelStream` below |
-| `0_terminalPinnedSelection.ts`: `SelectionCell`, `PinnedSelection`, `PinnedRowSpan`, `orderedSelection`, `pinnedRowSpans`, `wordSpanAt`, `lineSpanAt`, `isEmptySelection`, `joinPinnedRows` | Declarations below, unchanged | Same declarations in `1_pinnedSelection.ts` |
-| `0_terminalPinnedSelection.ts`: `PinnedSelectionOptions`, `TerminalPinnedSelection` | Alias and class below | `pinnedSelectionStream` below |
-| `0b_ompTurnBinding.ts`: `OmpTurnSources`, `projectionTurnSources` | Declarations below, unchanged | Same declarations in `0_turnMatching.ts` |
-| New wave 2 export | No current signature | `BoopXtermPorts` below |
+| `LogicalLine`, `ViewportChange`, `BoopFavorite`, `BoopTurn`, `VisibleTurn`, `TurnSpan` | Current signature blocks below | Existing wire and model declarations remain unchanged in `0_types.ts` and wave 2 types. |
+| `XtermViewport`, `XtermViewportAdapter` | Current signature block below | `viewportStream` and `ViewportModel` below. |
+| `TmuxPane`, `NativeTmuxPane` | Current signature block below | `paneSessionStream` and `BoopXtermPorts.boop_mux_session` / `.boop_mux_capture` below. |
+| `BoopConversation<TTurn>` | Current signature block below | Same type-only interface, with no wave 2 runtime constructor. |
+| `VisibleTerminalLine`, `TerminalLineAnchorEvent`, `terminalLineId`, `TerminalLineAnchors` | Current signature block below | Pure declarations unchanged; `lineAnchorsStream` below. |
+| `normalizeTurnLine`, `TurnVisibilityEvent`, `selectProjectionTurns`, `tmuxConfirms`, `dropTmuxStatusRow`, `TerminalInputRegion`, `terminalInputRegion`, `dropTerminalInputRows`, `locateVisibleTurns`, `extendTo`, `TURN_ACTIVITY_POLL_MS`, `TURN_ACTIVITY_LEASE_MS`, `attachTurnRegions`, `TurnLocator`, `TerminalTurnVisibilityV2` | Current signature block below | Pure declarations/constants unchanged; locator is an Endpoint; `turnVisibilityStream` below. |
+| `TerminalMouseMode`, `TerminalWheelState`, `TerminalWheelEvent`, `initialTerminalWheelState`, `reduceTerminalWheel`, `TerminalWheelRouter` | Current signature block below | Pure declarations unchanged; `wheelStream` below. |
+| `SelectionCell`, `PinnedSelection`, `PinnedRowSpan`, `orderedSelection`, `pinnedRowSpans`, `wordSpanAt`, `lineSpanAt`, `isEmptySelection`, `joinPinnedRows`, `PinnedSelectionOptions`, `TerminalPinnedSelection` | Current signature block below | Pure declarations unchanged; option callback becomes `copy` event; `pinnedSelectionStream` below. |
+| `OmpTurnSources`, `projectionTurnSources` | Current signature block below | Same pure declarations and body in `1_turnMatching.ts`. |
+| New `BoopXtermPorts` | No current signature | One endpoint and host-input record below. |
 
 ```ts
-// Current: 00a_terminalIntersection.ts, public surface.
+// Current signature: 00a_terminalIntersection.ts, public surface.
 export type LogicalLine = { text: string; start: number; end: number };
 export type ViewportChange = {
   kind: "write" | "scroll" | "resize";
@@ -79,80 +75,7 @@ export interface BoopConversation<TTurn> {
 ```
 
 ```ts
-// Proposed unchanged exports: identical bodies and signatures move by layer.
-export type LogicalLine = { text: string; start: number; end: number };
-export type ViewportChange = {
-  kind: "write" | "scroll" | "resize";
-  cols: number; rows: number; viewportY: number; bufferLength: number;
-};
-export type BoopFavorite = {
-  favorite_id: number; note: string; source: string; created_ts: number;
-  bytes: number; body: string; tags?: string[];
-};
-export type VisibleTerminalLine = {
-  id: string; bufferStart: number; bufferEnd: number;
-  viewportStart: number; viewportEnd: number; text: string;
-};
-export type TerminalLineAnchorEvent =
-  | { kind: "entered"; line: VisibleTerminalLine }
-  | { kind: "moved"; line: VisibleTerminalLine; previousViewportStart: number }
-  | { kind: "changed"; line: VisibleTerminalLine; previousText: string }
-  | { kind: "exited"; id: string }
-  | { kind: "viewport-jump"; previousTop: number; top: number }
-  | { kind: "top-line-changed"; previousId: string; id: string };
-export function terminalLineId(text: string, duplicateIndex?: number): string;
-export { normalizeTurnLine } from "./1_turnMatching.js";
-export type BoopTurn = {
-  session: string; harness: string; turn: number; ts: number; role: string; said: string;
-  session_scope?: "root" | "child" | "unknown"; parent_session?: string | null;
-};
-export type VisibleTurn = BoopTurn & {
-  id: string; bufferStart: number; bufferEnd: number; anchorStart: number; anchorEnd: number;
-  regions: ProjectedTurnRegion[]; confidence: "anchored" | "extended";
-  source: "xterm+boop" | "xterm+tmux+boop";
-  clippedAbove?: boolean; clippedBelow?: boolean;
-};
-export type TurnVisibilityEvent = { visible: VisibleTurn[]; entered: VisibleTurn[]; exited: VisibleTurn[] };
-export function selectProjectionTurns(direct: BoopTurn[], candidates: BoopTurn[]): BoopTurn[];
-export function tmuxConfirms(lines: LogicalLine[], tmuxCapture: string): boolean;
-export function dropTmuxStatusRow(lines: LogicalLine[], tmuxCapture: string): LogicalLine[];
-export type TerminalInputRegion = { start: number; end: number };
-export function terminalInputRegion(harness: string, lines: LogicalLine[]): TerminalInputRegion | null;
-export function dropTerminalInputRows(lines: LogicalLine[], harness: string): LogicalLine[];
-export function locateVisibleTurns(lines: LogicalLine[], turns: BoopTurn[], tmuxCapture?: string): VisibleTurn[];
-export function extendTo(
-  screen: { start: number; end: number; normalized: string }[],
-  anchor: number, limit: number, step: 1 | -1,
-): number;
-export type TurnSpan = Omit<VisibleTurn, "regions" | "source">;
-export const TURN_ACTIVITY_POLL_MS: 1_000;
-export const TURN_ACTIVITY_LEASE_MS: 5_000;
-export function attachTurnRegions(spans: TurnSpan[], lines: LogicalLine[], tmuxBacked?: boolean): VisibleTurn[];
-export type TerminalMouseMode = Terminal["modes"]["mouseTrackingMode"];
-export type TerminalWheelState = { mouseMode: TerminalMouseMode; native: boolean; wheels: number };
-export type TerminalWheelEvent =
-  | { type: "sync"; mouseMode: TerminalMouseMode }
-  | { type: "wheel"; mouseMode: TerminalMouseMode; bypass?: boolean };
-export const initialTerminalWheelState: TerminalWheelState;
-export function reduceTerminalWheel(state: TerminalWheelState, event: TerminalWheelEvent): TerminalWheelState;
-export type SelectionCell = { row: number; col: number };
-export type PinnedSelection = { anchor: SelectionCell; focus: SelectionCell };
-export type PinnedRowSpan = { row: number; startCol: number; endCol: number };
-export function orderedSelection(selection: PinnedSelection): PinnedSelection;
-export function pinnedRowSpans(selection: PinnedSelection, cols: number): PinnedRowSpan[];
-export function wordSpanAt(text: string, col: number): { startCol: number; endCol: number } | null;
-export function lineSpanAt(text: string): { startCol: number; endCol: number } | null;
-export function isEmptySelection(selection: PinnedSelection): boolean;
-export function joinPinnedRows(rows: string[]): string;
-export type OmpTurnSources = { direct: BoopTurn[]; candidates: BoopTurn[] };
-export function projectionTurnSources(
-  harness: HarnessId | null, boundSession: string | null,
-  paneTurns: BoopTurn[], tabTurns: BoopTurn[], candidates: BoopTurn[],
-): OmpTurnSources;
-```
-
-```ts
-// Current: 00b_terminalLineAnchors.ts, public surface.
+// Current signature: 00b_terminalLineAnchors.ts, public surface.
 export type VisibleTerminalLine = {
   id: string; bufferStart: number; bufferEnd: number;
   viewportStart: number; viewportEnd: number; text: string;
@@ -182,7 +105,7 @@ export class TerminalLineAnchors {
 ```
 
 ```ts
-// Current: 0_terminalTurnVisibility.ts, public surface.
+// Current signature: 0_terminalTurnVisibility.ts, public surface.
 export { normalizeTurnLine } from "./0a_terminalTurnMatching";
 export type BoopTurn = {
   session: string; harness: string; turn: number; ts: number; role: string; said: string;
@@ -247,7 +170,7 @@ export class TerminalTurnVisibilityV2 {
 ```
 
 ```ts
-// Current: 0_terminalWheel.ts, 0_terminalPinnedSelection.ts, 0b_ompTurnBinding.ts.
+// Current signature: 0_terminalWheel.ts, 0_terminalPinnedSelection.ts, 0b_ompTurnBinding.ts.
 export type TerminalMouseMode = Terminal["modes"]["mouseTrackingMode"];
 export type TerminalWheelState = { mouseMode: TerminalMouseMode; native: boolean; wheels: number };
 export type TerminalWheelEvent =
@@ -322,353 +245,412 @@ export function projectionTurnSources(
 ```
 
 ```ts
-// Proposed: types in 0_types.ts and 1_*.ts; pure declarations above retain
-// their exact signatures and bodies, including normalizeTurnLine's re-export.
+// Proposed public signatures; existing pure signatures in the current column
+// retain their parameters and bodies. Imports are from @hafley66/signals and rxjs.
+export type PaneIdentity = {
+  id: string;
+  target: string;
+  socket: string | null;
+};
 export type PaneSessionBinding = { session: string; harness: string | null };
-export type RpcResponse<T> =
-  | { requestId: number; ok: true; value: T }
-  | { requestId: number; ok: false; error: unknown };
+export type BoopSyncStat = { written: number; dropped: number };
+export type ViewportPoint = { clientX: number; clientY: number };
 export type ViewportSnapshot = {
   change: ViewportChange;
   lines: LogicalLine[];
   visible: boolean;
 };
-export type ViewportPoint = { clientX: number; clientY: number };
-export type LocateTurnRequest = { requestId: number; lines: LogicalLine[]; turns: BoopTurn[] };
-export type LocateTurnResponse = RpcResponse<TurnSpan[]>;
-export type TurnSourceRequest = { requestId: number; paneId: string };
-export type TurnSourceResponse = RpcResponse<{
-  paneTurns: BoopTurn[]; tabTurns: BoopTurn[]; candidates: BoopTurn[];
-}>;
-export type PaneRequest = { requestId: number; target: string; socket: string | null };
-export type WheelScrollRequest = { name: string; up: boolean; lines: number };
-export type TurnVisibilityState = {
-  visible: VisibleTurn[]; scanning: boolean; viewportRevision: number;
-  generation: number; activityAt: number; rescanPending: boolean;
-};
 export type SelectionState = {
-  selection: PinnedSelection | null; captured: string[];
-  anchor: SelectionCell | null; dragging: boolean;
+  selection: PinnedSelection | null;
+  captured: string[];
+  anchor: SelectionCell | null;
+  dragging: boolean;
+};
+export type PaneRuntimeState = {
+  viewportRevision: number;
+  scan: {
+    generation: number;
+    running: boolean;
+    pending: boolean;
+    activityAt: number;
+  };
+  anchors: { previousTop: number };
+  turns: { recentSince: number };
+  wheel: { accumulatedRows: number };
+  selection: SelectionState;
+};
+export type TurnVisibilityState = {
+  visible: VisibleTurn[];
+};
+export type LineAnchorState = {
+  visible: VisibleTerminalLine[];
+  settled: boolean;
+  elementsByBufferRow: ReadonlyMap<number, HTMLElement>;
 };
 export type BoopXtermPorts = {
-  pane_closed$: Observable<void>;
-  pane_visible$: Observable<boolean>;
-  activity_clock$: Observable<number>;
-  scan_requested$: Observable<void>;
-  point_query$: Observable<ViewportPoint>;
-  selection_clear$: Observable<void>;
-  clipboard_enabled$: Observable<boolean>;
-  harness$: Observable<HarnessId | null>;
-  boop_mux_capture: Observable<RpcResponse<string>>;
-  boop_mux_session: Observable<RpcResponse<PaneSessionBinding | null>>;
-  boop_turns: Observable<RpcResponse<BoopTurn[]>>;
-  boop_turns_recent: Observable<RpcResponse<BoopTurn[]>>;
-  boop_sync_session: Observable<RpcResponse<{ written: number; dropped: number }>>;
-  boop_locate_turns: Observable<LocateTurnResponse>;
-  turn_sources_response$: Observable<TurnSourceResponse>;
+  boop_mux_session: Endpoint<{ target: string; socket: string | null }, PaneSessionBinding | null>;
+  boop_mux_capture: Endpoint<{ target: string; socket: string | null }, string>;
+  boop_turns: Endpoint<{ session: string }, BoopTurn[]>;
+  boop_turns_recent: Endpoint<{ since: number; harness: string }, BoopTurn[]>;
+  boop_sync_session: Endpoint<{ session: string; harness: string }, BoopSyncStat>;
+  boop_locate_turns: Endpoint<{ lines: LogicalLine[]; turns: BoopTurn[] }, TurnSpan[]>;
+  scroll_session: Endpoint<{ name: string; up: boolean; lines: number }, void>;
+  paneVisible: SignalSource<boolean>;
+  paneClosed: SignalSource<boolean>;
+  harness: SignalSource<HarnessId | null>;
+  clipboardEnabled: SignalSource<boolean>;
+  tabSessionIds: SignalSource<string[]>;
+  scanRequested: Signal<void | undefined>;
+  pointQuery: Signal<ViewportPoint | undefined>;
+  selectionClear: Signal<void | undefined>;
 };
-export type ViewportStreams = {
-  changes$: Observable<ViewportChange>;
-  snapshot$: Observable<ViewportSnapshot>;
-  buffer_row_at_point$: Observable<{ point: ViewportPoint; row: number | null }>;
+export type ViewportModel = {
+  snapshot: Signal<ViewportSnapshot>;
+  changes: Signal<ViewportChange | undefined>;
+  bufferRowAtPoint: Observable<{ point: ViewportPoint; row: number | null }>;
+  effects: Observable<void>;
 };
-export type PaneSessionStreams = {
-  boop_mux_session_request$: Observable<PaneRequest>;
-  pane_session_binding$: Observable<PaneSessionBinding | null>;
-  session_id$: Observable<string | null>;
+export type LineAnchorModel = {
+  state: Signal<LineAnchorState>;
+  events: Signal<TerminalLineAnchorEvent[] | undefined>;
+  effects: Observable<void>;
 };
-export type LineAnchorStreams = {
-  visible$: Observable<VisibleTerminalLine[]>;
-  events$: Observable<TerminalLineAnchorEvent[]>;
-  settled$: Observable<boolean>;
-  element_by_buffer_row$: Observable<ReadonlyMap<number, HTMLElement>>;
-  effects$: Observable<void>;
+export type TurnVisibilityModel = {
+  state: Signal<TurnVisibilityState>;
+  scanning: Signal<boolean>;
+  changes: Signal<TurnVisibilityEvent | undefined>;
+  settled: Signal<void | undefined>;
+  turnAtPoint: Observable<{ point: ViewportPoint; turn: VisibleTurn | null }>;
+  regionAtPoint: Observable<{ point: ViewportPoint; region: ProjectedTurnRegion | null }>;
+  effects: Observable<void>;
 };
-export type TurnVisibilityStreams = {
-  state$: Observable<TurnVisibilityState>;
-  changes$: Observable<TurnVisibilityEvent>;
-  settled$: Observable<void>;
-  turn_at_point$: Observable<{ point: ViewportPoint; turn: VisibleTurn | null }>;
-  region_at_point$: Observable<{ point: ViewportPoint; region: ProjectedTurnRegion | null }>;
-  boop_mux_capture_request$: Observable<PaneRequest>;
-  turn_sources_request$: Observable<TurnSourceRequest>;
-  boop_locate_turns_request$: Observable<LocateTurnRequest>;
-  boop_sync_session_request$: Observable<{ session: string; harness: string }>;
-  effects$: Observable<void>;
+export type WheelModel = {
+  state: Signal<TerminalWheelState>;
+  activity: Signal<void | undefined>;
+  effects: Observable<void>;
 };
-export type WheelStreams = {
-  events$: Observable<TerminalWheelEvent>;
-  state$: Observable<TerminalWheelState>;
-  activity$: Observable<void>;
-  scroll_session_request$: Observable<WheelScrollRequest>;
-  effects$: Observable<void>;
+export type PinnedSelectionModel = {
+  text: Signal<string>;
+  copy: Signal<string | undefined>;
+  effects: Observable<void>;
 };
-export type PinnedSelectionStreams = {
-  state$: Observable<SelectionState>;
-  copy$: Observable<string>;
-  text$: Observable<string>;
-  effects$: Observable<void>;
+export type BoopXtermPane = {
+  runtime: Signal<PaneRuntimeState>;
+  paneSession: Query<{ target: string; socket: string | null }, PaneSessionBinding | null>;
+  viewport: ViewportModel;
+  anchors: LineAnchorModel;
+  visibility: TurnVisibilityModel;
+  wheel: WheelModel;
+  pinned: PinnedSelectionModel;
+  effects: Observable<void>;
 };
-export function viewportStream(term: Terminal, ports: BoopXtermPorts): ViewportStreams;
+export function viewportStream(
+  term: Terminal, runtime: Signal<PaneRuntimeState>, ports: BoopXtermPorts,
+): ViewportModel;
 export function paneSessionStream(
-  paneId: string, target: string, socket: string | null,
-  ports: BoopXtermPorts,
-): PaneSessionStreams;
+  identity: PaneIdentity, ports: BoopXtermPorts,
+): Query<{ target: string; socket: string | null }, PaneSessionBinding | null>;
 export function lineAnchorsStream(
-  term: Terminal, viewport: ViewportStreams, ports: BoopXtermPorts,
-): LineAnchorStreams;
+  term: Terminal, viewport: ViewportModel,
+  runtime: Signal<PaneRuntimeState>, ports: BoopXtermPorts,
+): LineAnchorModel;
 export function turnVisibilityStream(
-  paneId: string, target: string, socket: string | null,
-  viewport: ViewportStreams, pane: PaneSessionStreams,
-  ports: BoopXtermPorts,
-): TurnVisibilityStreams;
+  term: Terminal, identity: PaneIdentity, viewport: ViewportModel,
+  paneSession: Query<{ target: string; socket: string | null }, PaneSessionBinding | null>,
+  runtime: Signal<PaneRuntimeState>, ports: BoopXtermPorts,
+): TurnVisibilityModel;
 export function wheelStream(
-  term: Terminal, name: string, ports: BoopXtermPorts,
-): WheelStreams;
+  term: Terminal, identity: PaneIdentity,
+  runtime: Signal<PaneRuntimeState>, ports: BoopXtermPorts,
+): WheelModel;
 export function pinnedSelectionStream(
-  term: Terminal, host: HTMLElement, ports: BoopXtermPorts,
-): PinnedSelectionStreams;
-export interface BoopConversation<TTurn> {
-  readonly session: string;
-  turns(): Promise<TTurn[]>;
-  favorites(): Promise<BoopFavorite[]>;
-  toggleFavorite(turn: TTurn): Promise<BoopFavorite[]>;
-}
+  term: Terminal, host: HTMLElement,
+  runtime: Signal<PaneRuntimeState>, ports: BoopXtermPorts,
+): PinnedSelectionModel;
+export function createBoopXtermPane(
+  term: Terminal, host: HTMLElement, identity: PaneIdentity, ports: BoopXtermPorts,
+): BoopXtermPane;
 ```
+
+| Port field | Rust command in `generated/native.ts` | Domain input `I` | Domain output `O` | Primitive |
+| --- | --- | --- | --- | --- |
+| `boop_mux_session` | `boop_mux_session` | `{ target: string; socket: string \| null }` | `PaneSessionBinding \| null` | `createQuery`, 1s unknown / 5s known polling |
+| `boop_mux_capture` | `boop_mux_capture` | `{ target: string; socket: string \| null }` | `string` | `createQuery`, activity lease polling |
+| `boop_turns` | `boop_turns` | `{ session: string }` | `BoopTurn[]` | `createQuery` |
+| `boop_turns_recent` | `boop_turns_recent` | `{ since: number; harness: string }` | `BoopTurn[]` | `createQuery` |
+| `boop_sync_session` | `boop_sync_session` | `{ session: string; harness: string }` | `BoopSyncStat` | `createMutation` |
+| `boop_locate_turns` | `boop_locate_turns` | `{ lines: LogicalLine[]; turns: BoopTurn[] }` | `TurnSpan[]` | `createQuery` |
+| `scroll_session` | `scroll_session` | `{ name: string; up: boolean; lines: number }` | `void` | `createMutation` |
+
+| Other public function-typed parameter | Disposition | Source |
+| --- | --- | --- |
+| None | `Endpoint` config, `Signal(() => ...)`, `signalMap`, and `QueryOptions.refetchInterval` accept functions inside the signals API; wave 2 public function parameters contain no function type. | `packages/signals/src/3_Endpoint.ts:33-38`; `2_Signal.ts:45-50`; `7_signalMap.ts:7-9`; `4_Query.ts:44-58` |
 
 ## 2. Pseudo-code bodies
 
 ```ts
-// viewportStream(term, ports)
-// defer registration of onWriteParsed, onScroll, onResize until effects$/snapshot$ is run;
-// adapt each xterm registration to a cold Observable with its own teardown;
-// merge write/scroll/resize, map each to one ViewportChange, share();
-// withLatestFrom(pane_visible$), map to synchronous xterm logical lines and visibility;
-// shareReplay({ bufferSize: 1, refCount: true }) after snapshot construction;
-// point_query$ maps through xterm screen geometry; share();
-// takeUntil(pane_closed$) on all three returned streams.
+// createBoopXtermPane(term, host, identity, ports)
+// Create one Signal(value) root for PaneRuntimeState, once per pane lifetime.
+// Convert host SignalSource inputs with toSignal; preserve existing Signal identity.
+// Build the six models and one paneSession Query from the same root and ports.
+// Merge their effects with observations of paneSession.$, viewport.snapshot.$,
+// anchors.state.$, visibility.state.$, wheel.state.$ and pinned.text.$;
+// ignore state emissions after connecting the producers.
+// takeUntil(paneClosed.$.pipe(filter(Boolean))) on that stream; share() once at root.
+// Return grouped root, query, models, and effects. No runtime work at construction.
 
-// paneSessionStream(paneId, target, socket, ports)
-// merge(initial request, leased scan requests), scan requestId and TTL state;
-// known session: 5000 ms TTL; null session: 1000 ms TTL;
-// emit boop_mux_session_request$ only when TTL expires;
-// match ports.boop_mux_session by requestId, convert errors to null;
-// scan last binding; distinctUntilChanged on session and harness;
-// shareReplay({ bufferSize: 1, refCount: true }) on session_id$ and binding$;
-// takeUntil(pane_closed$), no command execution in this function.
+// viewportStream(term, runtime, ports)
+// new Observable for onWriteParsed, onScroll, onResize; each native registration
+// returns teardown that calls its own registration.dispose() at the direct site.
+// merge events, map ViewportChange, share(); tap increments runtime.viewportRevision.
+// signalMap over events reads paneVisible.$() and xterm buffer to build snapshot.
+// Signal(snapshot$, initialSnapshot) owns the lazy, shared viewport state.
+// Bare Signal<ViewportChange>() is the transient changes event; tap writes it.
+// pointQuery.$ maps xterm geometry to buffer row; share(); close via takeUntil.
 
-// lineAnchorsStream(term, viewport, ports)
-// merge(initial snapshot, viewport.snapshot$); share();
-// immediate branch auditTime(0, animationFrameScheduler), map project lines/DOM row map;
-// trailing branch debounceTime(80), map final project lines/DOM row map;
-// merge branches; scan previousTop/visible to derive ordered events and equality;
-// shareReplay({ bufferSize: 1, refCount: true }) on state after scan;
-// visible$/events$/element_by_buffer_row$ derive from shared state, share();
-// settled$ merges false on activity and true on trailing refresh, starts true;
-// effects$ taps to stamp data attributes and anchor-name, removes stamps in finalize;
-// takeUntil(pane_closed$) cancels frame and debounce scheduler work.
+// paneSessionStream(identity, ports)
+// createQuery(ports.boop_mux_session, {target, socket}, {
+//   cacheTime: 0, staleTime: 0,
+//   refetchInterval: state => state.isError || !state.data?.session ? 1000 : 5000,
+//   pauseWhen: panePaused.$,
+// });
+// Query data is the binding source of truth; no copied session fields.
+// Distinct session+harness projection drives host binding updates.
 
-// turnVisibilityStream(paneId, target, socket, viewport, pane, ports)
-// share() viewport.changes$; scan viewportRevision on every change;
-// scan activityAt on write or scroll; filter activity_clock$ by 5000 ms lease;
-// merge initial trigger, nonwrite changes, debounced write at 120 ms,
-// leased clock ticks, scan_requested$, and successful sync results;
-// gate triggers with pane_visible$; keep one pending bit during an active scan;
-// auditTime(0, animationFrameScheduler) before scan start;
-// scan state machine: idle -> running; running trigger -> pending=true;
-// running completion -> emit settled, then schedule one pending run after observers paint;
-// each run emits correlated boop_mux_capture_request$ and turn_sources_request$;
-// join ports.boop_mux_capture / turn_sources_response$ by requestId;
-// capture failure becomes empty string;
-// dropTmuxStatusRow once; pass untrimmed pane rows to boop_locate_turns_request$;
-// on ports.boop_locate_turns error use dropTerminalInputRows + locateVisibleTurns locally;
-// attachTurnRegions with the composer-trimmed rows on native success;
-// discard results when generation or viewportRevision changed;
-// scan previous visible into entered/exited/changed; emit only changed projections;
-// shareReplay({ bufferSize: 1, refCount: true }) after state scan;
-// changes$ and settled$ derive from the shared state/event stream, share();
-// boop_sync_session_request$ derives from debounced writes and leased ticks,
-// gated by pane visibility and non-null session/harness, throttled to 1000 ms;
-// sync response with written+dropped > 0 queues another scan;
-// turn_at_point$/region_at_point$ combine point_query$ with latest visible state;
-// takeUntil(pane_closed$) and refCount cancellation invalidate in-flight IDs.
+// lineAnchorsStream(term, viewport, runtime, ports)
+// merge initial viewport snapshot and later semantic changes; share().
+// auditTime(0, animationFrameScheduler) refresh branch, debounceTime(80) settled branch.
+// scan previous visible/top into line IDs, entered/moved/changed/exited events.
+// Signal(projected$, initialLineAnchorState) holds the observable-backed state.
+// Bare Signal<TerminalLineAnchorEvent[]>() emits transient event batches.
+// tap stamps xterm row data and anchor-name; finalize removes those stamps.
+// runtime.anchors.previousTop is the scan's one retained top value.
 
-// wheelStream(term, name, ports)
-// defer xterm parsed-write registration and custom wheel handler registration;
-// handler computes mouse mode and Shift bypass synchronously, emits event, returns
-// true for native mouse forwarding or false for app scroll; no public callback;
-// merge initial sync, parsed sync, wheel events; scan(reduceTerminalWheel);
-// shareReplay({ bufferSize: 1, refCount: true }) after scan;
-// wheel events map to activity$, share();
-// app-owned wheels map deltaMode to rows, scan frame accumulator;
-// auditTime(0, animationFrameScheduler), round/clamp 1..50, map to scroll_session_request$;
-// effects$ taps preventDefault on app-owned wheel before xterm handler returns;
-// takeUntil(pane_closed$), finalize xterm registration teardown where available.
+// turnVisibilityStream(term, identity, viewport, paneSession, runtime, ports)
+// Signal(() => paneSession.isError.$() ? null : paneSession.data.$() ?? null)
+// names the reused binding value and preserves current error-to-null behavior.
+// createQuery(ports.boop_turns, computed pane-session input, {staleTime:1000}).
+// For tabSessionIds, switchMap to combineLatest of per-session boop_turns queries.
+// createQuery(ports.boop_turns_recent, {since: now-6h,harness}, {staleTime:10000});
+// if the recent result is empty, set a grouped fallback-since value to 0 and
+// issue the unbounded query; create boop_turns queries for candidate sessions.
+// A harness change resets runtime.turns.recentSince to the six-hour floor.
+// projectionTurnSources and selectProjectionTurns remain pure selection stages.
+// debounceTime(120) writes; immediate scroll/resize/manual scan triggers.
+// createQuery(ports.boop_mux_capture, {target,socket}, {
+//   cacheTime:0, refetchInterval: state => activeLease ? 1000 : false,
+//   pauseWhen: paneHiddenOrLeaseExpired$,
+// });
+// pauseWhen uses paneVisible plus switchMap(timer(5000)) from write/scroll activity;
+// no free-running scan clock. Trigger query.refetch() from tap for nonwrite changes.
+// Query polling drops a tick during an active request; scan state coalesces one
+// pending immediate trigger while capture/turn/locator work is in flight.
+// After capture and turns settle, dropTmuxStatusRow once, then
+// createQuery(ports.boop_locate_turns, {lines:paneLines,turns}, {cacheTime:0}).
+// Native locator gets untrimmed composer rows; local fallback gets trimmed rows.
+// On locator query error, use locateVisibleTurns; on success attachTurnRegions.
+// filter stale viewportRevision/generation, scan previous visible to changes.
+// Signal(projected$, initialTurnVisibilityState) owns retained projection.
+// Bare Signal<TurnVisibilityEvent>() and Signal<void>() carry changes/settled.
+// filter defined pointQuery events; signalMap reads state.visible.$() for
+// point and region outputs.
+// scanning aliases runtime.scan.running, rather than storing a second boolean.
+// sync trigger uses write debounce and active lease, throttleTime(1000),
+// filter paneSession.data and harness, exhaustMap per-trigger
+// createMutation(ports.boop_sync_session, {session,harness}) until terminal state.
+// tap on written+dropped > 0 invalidates turn queries and refetches capture.
+// takeUntil(paneClosed true), finalize cancels the active scan graph.
 
-// pinnedSelectionStream(term, host, ports)
-// defer root DOM creation and mousedown/onRender/onResize registration;
-// merge mouse down/move/up, render, resize, selection_clear$;
-// scan SelectionState for capture, drag, click-count word/line, invalidation;
-// shareReplay({ bufferSize: 1, refCount: true }) after scan;
-// auditTime(0, animationFrameScheduler) render branch;
-// effects$ taps paint/clear and registers document drag listeners only for drag;
-// copy$ filters finished nonempty selections; withLatestFrom(clipboard_enabled$);
-// text$ maps captured rows through joinPinnedRows; shareReplay(1, refCount);
-// takeUntil(pane_closed$); finalize removes listeners, pending frame, and root.
+// wheelStream(term, identity, runtime, ports)
+// new Observable adapts onWriteParsed, with native dispose in its teardown.
+// The custom wheel handler is owned by the Terminal lifetime if xterm has no remover.
+// handler computes native/Shift return synchronously; emit event synchronously.
+// merge initial sync, parsed sync, wheel; scan(reduceTerminalWheel).
+// Signal(state$, initialTerminalWheelState) owns retained wheel state.
+// Bare Signal<void>() emits activity on each wheel via tap.
+// For app-owned wheels, normalize deltaMode, scan rows per animation frame,
+// auditTime(0, animationFrameScheduler), clamp 1..50.
+// concatMap each scroll to createMutation(ports.scroll_session, input).$
+// until success/error; serializes frames because mutation input switchMap cancels.
+// tap preventDefault before handler returns; takeUntil pane close; finalize teardown.
+
+// pinnedSelectionStream(term, host, runtime, ports)
+// defer overlay root creation; xdom event streams for mousedown/move/up;
+// new Observable adapters for onRender/onResize, each with native teardown.
+// merge click, drag, render, resize, selectionClear; scan transitions into
+// runtime.selection nested paths, one grouped state root and no copies.
+// Signal(() => joinPinnedRows(runtime.selection.captured.$())) names reused text.
+// Bare Signal<string>() emits a finished nonempty copy, gated by clipboardEnabled.
+// auditTime(0, animationFrameScheduler) for paint; tap paints or clears DOM.
+// finalize removes overlay and document listeners; takeUntil pane close.
 ```
 
 ## 3. Instance timelines
 
-| Current class | Creation | Held while live | End | Proposed stream start | Proposed stream end |
-| --- | --- | --- | --- | --- | --- |
-| `XtermViewportAdapter` | `terminal.ts:771`, after `term.open` | `closed` Subject, merged xterm event registrations, `term` | `terminal.ts:630,1346` calls `dispose` | Root runs `viewport.snapshot$`/`changes$` through composed effects | `pane_closed$` or root unsubscribe tears down xterm registrations |
-| `NativeTmuxPane` | `terminal.ts:772` | target/socket, cached session, read timestamp, binding callback | Abandoned with tab; no `dispose` | Root runs session request and binding streams | `pane_closed$` or root unsubscribe cancels response correlation |
-| `TerminalLineAnchors` | `terminal.ts:826`; constructor refreshes immediately | three signals, DOM map, frame, previousTop, subscription | `terminal.ts:626,1342` | Root runs `lineAnchors.effects$`, projections shared with consumers | `pane_closed$` or root unsubscribe removes row stamps and frame work |
-| `TerminalTurnVisibilityV2` | `terminal.ts:777`; constructor schedules immediately | Subjects, visible turns, revisions, generation, frame, lease and subscription | `terminal.ts:629,1345` | Root runs requests/effects and projection consumers | `pane_closed$` or root unsubscribe invalidates pending request IDs |
-| `TerminalWheelRouter` | `terminal.ts:891`; constructor syncs immediately | event/state Subjects, xterm registration, wheel rows/frame, subscription | `terminal.ts:632,1348` | Root runs `wheel.effects$`, requests, activity, state | `pane_closed$` or root unsubscribe cancels frame and xterm registration |
-| `TerminalPinnedSelection` | `terminal.ts:901`; constructor creates overlay | root, selection/captured/drag, render/resize registrations, mouse listeners/frame | `terminal.ts:633,1349` | Root runs `pinnedSelection.effects$`, state, copy | `pane_closed$` or root unsubscribe removes overlay and listeners |
+| Current class | Current creation / storage / end | Proposed activation | Proposed completion |
+| --- | --- | --- | --- |
+| `XtermViewportAdapter` | `terminal.ts:771`; xterm registrations plus close event; `terminal.ts:630,1346` calls teardown | First observation of `viewport.snapshot` or pane `effects` connects cold adapters | `paneClosed` true or final observer leaving calls xterm registration teardowns |
+| `NativeTmuxPane` | `terminal.ts:772`; session ID, timestamp, binding, callback; abandoned with tab | Observation of `paneSession.$` connects `boop_mux_session` query | `paneClosed` or final query observer leaving cancels transport and polling |
+| `TerminalLineAnchors` | `terminal.ts:826`; signals, DOM row map, frame, lifetime; `terminal.ts:626,1342` tears down | Observation of `anchors.state` or pane `effects` connects viewport projection | Pane close or final observer leaving cancels frame and removes row stamps |
+| `TerminalTurnVisibilityV2` | `terminal.ts:777`; visible turns, scan flags, lease, subscriptions; `terminal.ts:629,1345` tears down | Observation of visibility state or pane effects connects query chain | Pane close or final observer leaving cancels in-flight query observations and frames |
+| `TerminalWheelRouter` | `terminal.ts:891`; event/state holders, xterm handlers, frame; `terminal.ts:632,1348` tears down | Observation of wheel state or pane effects connects handlers and mutation chain | Pane close releases parsed registration and frame; `term.dispose()` ends the custom wheel handler |
+| `TerminalPinnedSelection` | `terminal.ts:901`; DOM root, selection, capture, listeners, frame; `terminal.ts:633,1349` tears down | Observation of pinned text/copy or pane effects creates overlay and listeners | Pane close or final observer leaving removes root/listeners and cancels frame |
 
 ```text
-viewport changes       --w---s-r--------|     w=write s=scroll r=resize
-viewport snapshot      --v---v-v--------|     snapshot on each semantic change
-pane session requests  r----r-------r---|     r only after 1s unknown / 5s known TTL
-pane binding           ----b-----------|     b only when session or harness changes
-line anchor visible    v---v--v--------|     initial, next frame, 80ms settled
-line anchor settled    t-f---f--t------|     false on activity, true after quiet
-turn scan trigger      i--w---c--q-----|     i=initial w=write c=clock q=manual
-turn visibility        ----V-----V-----|     stale revisions yield no V
-turn settled           ----s-----s-----|     one s per completed/discarded scan
-wheel state            n--w--w---------|     initial sync and every wheel
-scroll request         ----r---r-------|     frame-coalesced rows
-pinned state           n--d-m-u--x-----|     down/move/up and external clear
-pinned copy            -------c--------|     finished nonempty selection
+viewport source       --w---s-r--------|   w=write s=scroll r=resize
+viewport snapshot     v-v---v-v--------|   Signal(source$, initial)
+session query         q---q------q-----|   q=Endpoint execute; interval 1s/5s
+session binding       n---b------------|   n=null b=known binding
+anchors state         a--a---a---a-----|   a=projected visible lines
+anchors settled       t--f---f---t-----|   80ms quiet branch restores true
+capture query         q---q---q--------|   write/scroll/active lease
+visibility state      v------v-----v---|   stale generation yields no change
+visibility settled    -----s------s----|   completion or discard emits s
+sync mutation         ----m------m-----|   m=boop_sync_session write
+wheel state           n---w-w----------|   n=initial; w=wheel reduction
+scroll mutation       -----m-m---------|   serialized frame requests
+pinned state          n--d-m-u--c------|   drag then clear
+pinned copy           -------t---------|   t=finished nonempty text
 ```
+
+| Signal kind | Fields / outputs | Connection rule |
+| --- | --- | --- |
+| `Signal(value)` | One `PaneRuntimeState` root: scan control, viewport revision, anchor top, wheel accumulation, selection | Constructed once per pane; nested paths are direct projections. |
+| `Signal(source$, initial)` | Viewport snapshot, line-anchor state, turn-visibility state, wheel state | Connect on first reader, ref-counted source; initial values support first JSX render. |
+| `Signal(() => derived)` | Pane active, effective session binding, selected text, OMP turn source selection | Tracks signal reads; no copied holder for query or source state. |
+| `signalMap` | Viewport event plus `paneVisible` and point query plus latest visible turns | Tracks the host signal read while retaining source emission semantics. |
+| Bare `Signal<Event>()` | Viewport changes, anchor event batches, turn changes/settled, wheel activity, pinned copy | Transient, no replay to a late reader. |
 
 ## 4. Storage and sequence
 
-| Current storage | Location | Proposed owner | Read/write order | Uniqueness / lifetime condition |
+| Current mutable field | Source | R2 owner / kind | Read then write order | Uniqueness condition |
 | --- | --- | --- | --- | --- |
-| `closed` Subject | intersection:27 | `pane_closed$` input | host close emits, `takeUntil` completes | one close per pane ID |
-| `session_id`, `session_read_at`, `session_binding` | intersection:102-104 | `paneSessionStream` scan state | read TTL, request, correlate response, compare binding, write timestamp | one outstanding session lookup per pane; 5s known / 1s unknown |
-| `events`, `visible`, `settled` signals | lineAnchors:27-29 | shared line state plus derived streams | snapshot, compute IDs, compare prior, emit events, set settled | line ID = text hash plus duplicate index within viewport |
-| `elementsByBufferRow` | lineAnchors:30 | shared line state map | read xterm row elements, stamp, publish map | one element per visible buffer row |
-| `frame`, `lifetime`, `previousTop` | lineAnchors:31-33 | animation scheduler, root subscription, scan state | coalesce frame, compare top, publish, cancel on teardown | one scheduled refresh per frame per pane |
-| `updates`, `settles`, `visible` | turnVisibility:293-299 | shared projection state and derived streams | receive completed scan, diff IDs, emit changes and settle | turn ID = `session:turn` |
-| `generation`, `viewportRevision` | turnVisibility:300-301 | scan state | increment revision on change, capture revision at scan read, reject mismatched completion | requestId and generation scoped to pane subscription |
-| `frame`, `disposed`, `scanning`, `rescanPending` | turnVisibility:302-305 | scheduler and scan state | gate hidden, queue one frame, mark running, mark pending, settle, schedule pending | at most one active scan and one pending scan per pane |
-| `activityAt`, `subscription` | turnVisibility:306-307 | scan state and root subscription | write/scroll time, lease comparison, root teardown | 5s lease, shared 1s clock |
-| `events`, `state`, `subscription` | wheel:37-39 | `events$` and `scan(reduceTerminalWheel)` | sync/wheel event, reduce, replay latest | one wheel state per pane |
-| `parsed`, `wheelRows`, `wheelFrame` | wheel:40-42 | deferred registration and frame accumulation | read delta, accumulate within frame, emit rounded capped scroll | one scroll request per nonzero frame |
-| `root`, `selection`, `captured`, `anchor`, `dragging` | pinnedSelection:70-74 | subscription-owned DOM root plus `SelectionState` scan | press, capture rows, drag, settle, emit copy | one overlay root per active pane subscription |
-| `frame`, `render`, `resize`, mouse handlers | pinnedSelection:75-80 | scheduler and deferred event registrations | render/resize invalidate or paint; teardown all listeners | one pending paint per frame; document listeners only during drag |
+| `closed` | `00a_terminalIntersection.ts:27` | Host `paneClosed: SignalSource<boolean>` | Observe false then true; `takeUntil` ends each cold source | One pane close transition per pane ID |
+| `session_id`, `session_read_at`, `session_binding` | `00a_terminalIntersection.ts:102-104` | `boop_mux_session` Query state; derived binding `Signal(() => ...)` | Query reads endpoint result; interval is 5s known, 1s null/error; distinct session/harness emits host binding | Endpoint key includes target and socket; no second binding copy |
+| `events`, `visible`, `settled` | `00b_terminalLineAnchors.ts:27-29` | Bare event signal; `Signal(source$, initial)` line state | Snapshot, duplicate indices, compare prior, emit batch, settle after 80ms | Line ID hashes text plus duplicate index within viewport |
+| `elementsByBufferRow` | `00b_terminalLineAnchors.ts:30` | Nested line-state map in source signal | Build row map from visible xterm DOM, stamp, publish with lines | One element per visible buffer row |
+| `frame`, `lifetime`, `previousTop` | `00b_terminalLineAnchors.ts:31-33` | Animation scheduler; returned effects connection; `runtime.anchors.previousTop` | Coalesce frame, compare top, write top, emit jump | One pending frame per pane |
+| `updates`, `settles`, `visible` | `0_terminalTurnVisibility.ts:293-299` | Bare change/settled signals; `Signal(source$, initial)` visibility | Complete scan, compare IDs/content, emit changed projection and settle | Turn ID is `session:turn` |
+| `generation`, `viewportRevision` | `0_terminalTurnVisibility.ts:300-301` | `runtime.scan.generation`, `runtime.viewportRevision` | Increment at new scan/change, capture at query start, reject stale result | Generation monotonic within one pane lifetime |
+| `frame`, `disposed`, `scanning`, `rescanPending` | `0_terminalTurnVisibility.ts:302-305` | Animation scheduler, `paneClosed`, nested `runtime.scan` | Gate hidden, start one scan, set pending during flight, settle, start pending next frame | At most one running scan and one pending trigger |
+| `activityAt`, `subscription` | `0_terminalTurnVisibility.ts:306-307` | `runtime.scan.activityAt`; query `refetchInterval` / `pauseWhen`; outer effect connection | Write/scroll updates time; lease stream unpauses query; teardown releases poll | 5s lease, no free-running interval source |
+| Candidate fallback floor | `favorites.ts:160-186`; `terminal.ts:785` | `runtime.turns.recentSince` in the grouped root | Start at now minus six hours, retry at zero after empty recent result, reset on harness change | One candidate floor per pane and harness |
+| `events`, `state`, `subscription` | `0_terminalWheel.ts:37-39` | Bare event signal; `Signal(source$, initial)` wheel state; outer effect connection | Sync or wheel event, pure reducer, publish state | One wheel state per pane |
+| `parsed`, `wheelRows`, `wheelFrame` | `0_terminalWheel.ts:40-42` | Native Observable teardown; `runtime.wheel.accumulatedRows`; animation scheduler | Normalize deltas, accumulate, emit one capped command, reset rows | One scroll mutation per nonzero frame; `concatMap` preserves order |
+| `root`, `selection`, `captured`, `anchor`, `dragging` | `0_terminalPinnedSelection.ts:70-74` | DOM resource in `defer`; nested `runtime.selection` paths | Press, capture buffer text, drag, settle, copy | One overlay root per connected pane |
+| `frame`, `render`, `resize`, mouse handlers | `0_terminalPinnedSelection.ts:75-80` | Animation scheduler, xdom/Observable registration teardowns | Repaint or resize, verify captured text, clear or paint | One pending paint frame; drag listeners only while dragging |
 
 ## 5. Callback ledger
 
-| Callback / effect | File:line | Replacement stream | Direction |
+| Current callback or imperative call | File:line | R2 replacement | Direction |
 | --- | --- | --- | --- |
-| `register(emit)` and `emit` for write/scroll/resize | `00a_terminalIntersection.ts:37-45` | `viewport.changes$` via deferred xterm registration | host xterm -> pkg |
-| `onSessionBinding(binding)` | `00a_terminalIntersection.ts:107,129`; `terminal.ts:775` | `pane_session_binding$` | pkg -> host |
-| `captureVisible()` Promise method | `00a_terminalIntersection.ts:97,111` | `boop_mux_capture_request$` / `BoopXtermPorts.boop_mux_capture` | pkg -> host / host -> pkg |
-| `session()` Promise method | `00a_terminalIntersection.ts:115`; `terminal.ts:780,807` | `boop_mux_session_request$` / `BoopXtermPorts.boop_mux_session` | pkg -> host / host -> pkg |
-| `turns: () => Promise<BoopTurn[]>` | `0_terminalTurnVisibility.ts:312`; `terminal.ts:779-797` | `turn_sources_request$` / `turn_sources_response$`; host uses `boop_turns` and `boop_turns_recent` | pkg -> host / host -> pkg |
-| `TurnLocator` / `locate(lines, turns)` | `0_terminalTurnVisibility.ts:258,315,417`; `terminal.ts:799` | `boop_locate_turns_request$` / `BoopXtermPorts.boop_locate_turns` | pkg -> host / host -> pkg |
-| `ingest: () => void` | `0_terminalTurnVisibility.ts:319,352`; `terminal.ts:800` | `boop_sync_session_request$` / `BoopXtermPorts.boop_sync_session` | pkg -> host / host -> pkg |
-| `scrollTmux(up, lines)` | `0_terminalWheel.ts:46,79`; `terminal.ts:893` | `scroll_session_request$` | pkg -> host |
-| `activity()` | `0_terminalWheel.ts:47,64`; `terminal.ts:894-897` | `activity$` to diagram and scan trigger streams | pkg -> host |
-| xterm parsed-write / custom wheel handlers | `0_terminalWheel.ts:52-53` | `wheel.events$`, `wheel.effects$` | host xterm -> pkg |
-| `PinnedSelectionOptions.copy(text)` | `0_terminalPinnedSelection.ts:66`; `terminal.ts:903-907` | `copy$` plus `clipboard_enabled$` | pkg -> host / host -> pkg |
-| pinned mouse/render/resize handlers | `0_terminalPinnedSelection.ts:77-80,91-94` | `pinnedSelection.state$` and `effects$` | host DOM/xterm -> pkg |
-| `XtermViewport.visible()` | `00a_terminalIntersection.ts:21,49`; `0_terminalTurnVisibility.ts:350,366` | `pane_visible$` | host -> pkg |
-| `XtermViewport.readVisibleLogicalLines()` | `00a_terminalIntersection.ts:17,55`; `0_terminalTurnVisibility.ts:392` | `viewport.snapshot$` | host xterm -> pkg |
-| `XtermViewport.bufferRowAtClientY(clientY)` | `00a_terminalIntersection.ts:18,77`; `0_terminalTurnVisibility.ts:426` | `point_query$` / `buffer_row_at_point$` | host -> pkg / pkg -> host |
-| `lineAnchors.elementForBufferRow(row)` | `00b_terminalLineAnchors.ts:95` | `element_by_buffer_row$` | pkg -> host |
-| `turnAtClientPoint` / `regionAtClientPoint` | `0_terminalTurnVisibility.ts:433-441`; `chrome.ts:377` | `point_query$` / `turn_at_point$` / `region_at_point$` | host -> pkg / pkg -> host |
-| pinned `text()` / `hasSelection()` / `clear()` | `0_terminalPinnedSelection.ts:125-130,258`; `terminal.ts:1193-1194,1407,1423,1431,1445` | `text$`, `state$`, `selection_clear$` | pkg -> host / host -> pkg |
+| `register(emit)` for write/scroll/resize | `00a_terminalIntersection.ts:37-45` | Cold `new Observable` adapters; native `dispose()` in each source teardown | host->pkg |
+| `onSessionBinding(binding)` | `00a_terminalIntersection.ts:107,129`; `terminal.ts:775` | Derived `paneSession.data` stream, host `tap(setPaneSessionBinding)` | pkg->host |
+| `captureVisible()` | `00a_terminalIntersection.ts:97,111` | `createQuery(ports.boop_mux_capture, inputSignal, options)` | pkg->host->pkg |
+| `session()` | `00a_terminalIntersection.ts:115`; `terminal.ts:780,807` | `createQuery(ports.boop_mux_session, inputSignal, options)` | pkg->host->pkg |
+| `turns: () => Promise<BoopTurn[]>` | `0_terminalTurnVisibility.ts:312`; `terminal.ts:779-797` | `boop_turns` and `boop_turns_recent` queries plus host `tabSessionIds` | host->pkg |
+| `TurnLocator` / `locate(lines, turns)` | `0_terminalTurnVisibility.ts:258,315,417`; `terminal.ts:799` | `createQuery(ports.boop_locate_turns, inputSignal, options)` | pkg->host->pkg |
+| `ingest: () => void` | `0_terminalTurnVisibility.ts:319,352`; `terminal.ts:800` | `createMutation(ports.boop_sync_session, inputSignal)` | pkg->host->pkg |
+| `scrollTmux(up, lines)` | `0_terminalWheel.ts:46,79`; `terminal.ts:893` | `createMutation(ports.scroll_session, inputSignal)` | pkg->host->pkg |
+| `activity()` | `0_terminalWheel.ts:47,64`; `terminal.ts:894-897` | Bare `wheel.activity` event signal, host consumes in diagram/visibility stream | pkg->host |
+| xterm parsed-write and custom wheel handlers | `0_terminalWheel.ts:52-53` | Cold xterm adapters with teardown; synchronous wheel return | host->pkg |
+| `PinnedSelectionOptions.copy(text)` | `0_terminalPinnedSelection.ts:66`; `terminal.ts:903-907` | Bare `pinned.copy` event gated by `clipboardEnabled` | pkg->host |
+| pinned mouse/render/resize handlers | `0_terminalPinnedSelection.ts:77-80,91-94` | xdom DOM event stream plus native Observable adapters | host->pkg |
+| `XtermViewport.visible()` | `00a_terminalIntersection.ts:21,49` | Host `paneVisible: SignalSource<boolean>` | host->pkg |
+| `readVisibleLogicalLines()` | `00a_terminalIntersection.ts:17,55` | `viewport.snapshot` signal, xterm read in source map | host->pkg |
+| `bufferRowAtClientY(clientY)` | `00a_terminalIntersection.ts:18,77` | `pointQuery` event to `bufferRowAtPoint` stream | host->pkg->host |
+| `lineAnchors.elementForBufferRow(row)` | `00b_terminalLineAnchors.ts:95` | `anchors.state.elementsByBufferRow.$()` path | pkg->host |
+| `turnAtClientPoint` / `regionAtClientPoint` | `0_terminalTurnVisibility.ts:433-441`; `chrome.ts:377` | `pointQuery` to `turnAtPoint` / `regionAtPoint` | host->pkg->host |
+| pinned `text()` / `hasSelection()` / `clear()` | `0_terminalPinnedSelection.ts:125-130,258`; `terminal.ts:1193-1194,1407,1423,1431,1445` | `pinned.text.$()`, `runtime.selection` paths, `selectionClear` event | pkg->host / host->pkg |
+| `BoopConversation` Promise methods | `00a_terminalIntersection.ts:145-150` | Type-only interface retained; no wave 2 runtime call site | none |
+| private `lastIndexWhere` predicate | `0_terminalTurnVisibility.ts:107-112` | Same private pure helper; no host effect or public function-typed parameter | internal |
 
 ## 6. Host composition sketch
 
 ```ts
-// instant/src/terminal.ts; design sketch, one pane scope under the app root.
-// All native command names below are the Rust/IPC spellings.
-// `requestBus` subjects belong to instant and only bridge output requests to
-// native response Observables; no package owns or executes invoke.
-// const boop_mux_capture = requestBus.boop_mux_capture$.pipe(
-//   mergeMap(({ requestId, target, socket }) =>
-//     from(invoke<string>("boop_mux_capture", { target, socket })).pipe(
-//       map(value => ({ requestId, ok: true as const, value })),
-//       catchError(error => of({ requestId, ok: false as const, error })),
-//     ))), share());
-// Repeat for boop_mux_session, boop_turns, boop_turns_recent,
-// boop_sync_session, boop_locate_turns; scroll_session is an output effect.
-// turn_sources_response$ preserves the existing favorites.ts cache, tab-session
-// aggregation, candidate window, projectionTurnSources, selectProjectionTurns.
-// Its host construction reads boop_turns and boop_turns_recent responses;
-// request IDs distinguish pane, tab, and candidate reads for the same pane.
-// const ports: BoopXtermPorts = { pane_closed$, pane_visible$, activity_clock$,
-//   scan_requested$, point_query$, selection_clear$, clipboard_enabled$, harness$,
-//   boop_mux_capture, boop_mux_session, boop_turns, boop_turns_recent,
-//   boop_sync_session, boop_locate_turns,
-//   turn_sources_response$ };
-// const viewport = viewportStream(term, ports);
-// const pane = paneSessionStream(id, tmuxTarget ?? name, null, ports);
-// const anchors = lineAnchorsStream(term, viewport, ports);
-// const visibility = turnVisibilityStream(id, tmuxTarget ?? name, null, viewport, pane, ports);
-// const wheel = wheelStream(term, tmuxTarget ?? name, ports);
-// const pinned = pinnedSelectionStream(term, el, ports);
-// const paneEffects$ = merge(
-//   viewport.snapshot$.pipe(ignoreElements()), anchors.effects$,
-//   visibility.effects$, wheel.effects$, pinned.effects$,
-//   pane.boop_mux_session_request$.pipe(tap(request => requestBus.boop_mux_session$.next(request))),
-//   visibility.boop_mux_capture_request$.pipe(tap(request => requestBus.boop_mux_capture$.next(request))),
-//   visibility.turn_sources_request$.pipe(tap(request => requestBus.turn_sources$.next(request))),
-//   visibility.boop_locate_turns_request$.pipe(tap(request => requestBus.boop_locate_turns$.next(request))),
-//   visibility.boop_sync_session_request$.pipe(tap(request => requestBus.boop_sync_session$.next(request))),
-//   wheel.scroll_session_request$.pipe(mergeMap(request =>
-//     from(invoke("scroll_session", request)).pipe(catchError(() => EMPTY)))),
-//   wheel.activity$.pipe(tap(() => diagrams?.viewportScrolled())),
-//   pinned.copy$.pipe(tap(text => navigator.clipboard.writeText(text))),
-//   pane.pane_session_binding$.pipe(tap(binding => setPaneSessionBinding(id, binding))),
-// );
-// terminal.ts returns paneEffects$; tab close feeds pane_closed$.
-// main.ts merges terminal effects with other application effects and owns
-// the one root subscription. Pane graph is share/refCount scoped by pane_closed$.
+// instant/src/terminal.ts, wave 2 composition sketch.
+// Each constant below is a stable Endpoint instance made with existing generated API.
+// Domain I types are the BoopXtermPorts field declarations in section 1.
+const endpoint = <I extends NativeCommandInput, O>(name: CommandName): Endpoint<I, O> =>
+  commandEndpoint<O>(name) as Endpoint<I, O>;
+const ports: BoopXtermPorts = {
+  boop_mux_session: endpoint<{ target: string; socket: string | null }, PaneSessionBinding | null>("boop_mux_session"),
+  boop_mux_capture: endpoint<{ target: string; socket: string | null }, string>("boop_mux_capture"),
+  boop_turns: endpoint<{ session: string }, BoopTurn[]>("boop_turns"),
+  boop_turns_recent: endpoint<{ since: number; harness: string }, BoopTurn[]>("boop_turns_recent"),
+  boop_sync_session: endpoint<{ session: string; harness: string }, BoopSyncStat>("boop_sync_session"),
+  boop_locate_turns: endpoint<{ lines: LogicalLine[]; turns: BoopTurn[] }, TurnSpan[]>("boop_locate_turns"),
+  scroll_session: endpoint<{ name: string; up: boolean; lines: number }, void>("scroll_session"),
+  paneVisible: tabSignals.visible,
+  paneClosed: tabSignals.closed,
+  harness: tabSignals.harness,
+  clipboardEnabled: settings.clipboardFromTerminal,
+  tabSessionIds: tabSignals.sessionIds,
+  scanRequested: tabSignals.scanRequested,
+  pointQuery: tabSignals.pointQuery,
+  selectionClear: tabSignals.selectionClear,
+};
+const pane = createBoopXtermPane(term, el, {
+  id, target: tmuxTarget ?? name, socket: null,
+}, ports);
+const terminalEffects = merge(
+  pane.effects,
+  pane.paneSession.$.pipe(tap(state => setPaneSessionBinding(id, state.isError ? null : state.data ?? null))),
+  pane.wheel.activity.$.pipe(tap(() => diagrams?.viewportScrolled())),
+  pane.pinned.copy.$.pipe(tap(text => {
+    if (text) void navigator.clipboard.writeText(text);
+  })),
+).pipe(takeUntil(tabSignals.closed.$.pipe(filter(Boolean))));
+// terminal.ts returns terminalEffects as the pane's one composed stream.
+// main.ts merges it with other app effects at its sole explicit root subscription.
+// A later-wave JSX reader uses pane.visibility.state.visible.$(),
+// pane.visibility.scanning.$(), pane.anchors.state.visible.$(),
+// pane.wheel.state.native.$(), pane.pinned.text.$(), and
+// pane.paneSession.data.$() in plain JSX under signalsJsx().
 ```
+
+| Target boundary | Explicit root connections |
+| --- | ---: |
+| `packages/boop-xterm` source | 0 |
+| `instant/src/main.ts` after app composition | 1 |
 
 ## 7. Test plan
 
 ```ts
-// TestScheduler.run uses virtual time for 80ms/120ms/1000ms/5000ms gates.
-// Supply animate("---x---x---x") for animationFrameScheduler branches.
-// Cold RPC response marbles carry requestId; assertions include teardown frames.
+// TestScheduler.run supplies virtual time and animation frames.
+// A real Endpoint configured with a test EndpointTransport returns cold marble
+// EndpointResponse streams; assertions inspect command URL, body, cancellation,
+// and query/mutation state. No product module is mocked.
 ```
 
 | Function | Case | Input marbles | Expected marbles | Why it exists |
 | --- | --- | --- | --- | --- |
-| `viewportStream` | write/scroll/resize | `--w-s-r-|` | `--w-s-r-|` | Exact semantic event order, one snapshot each |
-| `viewportStream` | close tears registrations | `--w-s-r-`, close `----c` | `--w-|` | No events after pane close |
-| `paneSessionStream` | unknown then known TTL | requests `i-1s-5s` / replies `--n--b` | bindings `--n--b` | 1s retry while unknown, 5s when known |
-| `paneSessionStream` | equal binding | replies `--b-b-c` | binding `--b---c` | Session and harness pair controls change emission |
-| `lineAnchorsStream` | two writes in one frame | `--ww----|` | visible `---v----|`; settled `--f--t--|` | Frame coalescing and 80ms quiet branch |
-| `lineAnchorsStream` | duplicate text | snapshot `--(aa)-|` | IDs `--(a0a1)-|` | Per-viewport duplicate index is unique |
-| `turnVisibilityStream` | revision changes during locate | trigger `a---b---|`, reply `----A-b-|` | changes `------B-|`; settled `----s--s|` | Stale result discarded but scan settles |
-| `turnVisibilityStream` | pending scan coalesces | trigger `a-bc----|`, reply `----A---B|` | requests `a---b---|` | One in-flight and one pending scan |
-| `turnVisibilityStream` | native locator fails | locate reply `--#-|` | local projection `--v-|` | Pure fallback and composer trim |
-| `turnVisibilityStream` | hidden lease | visible `f-----t`, clock `-c-c-c-` | request `------r` | No hidden scan or ingest; lease survives |
-| `turnVisibilityStream` | sync no change / changed | stat `--0--1--|` | rescan `-----r--|` | Only written/dropped counts retrigger |
-| `wheelStream` | tracked mouse vs Shift bypass | wheel `--n-s--|` | scroll `----r--|`, state `--N-S--|` | Native forwarding and bypass |
-| `wheelStream` | accumulated wheel pixels | wheel `--(abc)--|` | scroll `---r----|` | One rounded, capped request per frame |
-| `pinnedSelectionStream` | drag ends with text | mouse `--d-m-u-|` | copy `------c-|` | Captured rows copied once at mouse-up |
-| `pinnedSelectionStream` | text changes on repaint | mouse `--d-m-u-r-|` | text `------t--|` then empty | Invalidated highlight never names changed cells |
-| `pinnedSelectionStream` | clear while dragging | mouse `--d-m---|`, clear `----x` | copy `--------|` | External clear cancels drag and listeners |
+| `createBoopXtermPane` | cold until observed | pane `p---|`, reader `--r---u` | transport `--q--|` | A model allocation does not start commands or xterm listeners; last reader releases them |
+| `viewportStream` | semantic events | xterm `--w-s-r-|` | snapshot `v-v-v-v-|` | Initial shape plus write, scroll, resize; one native registration each |
+| `viewportStream` | close teardown | events `--w-s-r-`, close `----c` | snapshot `v-w-|` | No xterm reads after pane close |
+| `paneSessionStream` | null then known | transport `--n--b`, virtual time `1s/5s` | poll `q-q-----q`, binding `--n--b` | Interval switches from 1s to 5s by Query state |
+| `paneSessionStream` | hidden and resume | visibility `t--f----t`, response `--b` | poll `q-------q` | `pauseWhen` stops hidden polling and refetches stale binding on resume |
+| `lineAnchorsStream` | renderer burst | viewport `--ww----|` | state `v--a----|`, settled `t--f--t-|` | Frame coalescing and 80ms quiet phase |
+| `lineAnchorsStream` | duplicate text | rows `--(aa)-|` | IDs `--(a0a1)-|` | Duplicate index stays unique in viewport |
+| `turnVisibilityStream` | stale scan | viewport `a---b---|`, locate `----A-b-|` | visible `------B-|`, settled `----s--s|` | Revision/generation guard discards stale result |
+| `turnVisibilityStream` | in-flight activity | trigger `a-bc----|`, endpoint `----A---B|` | starts `a---b---|` | At most one pending scan survives a burst |
+| `turnVisibilityStream` | locator error | locator `--#-|` | local visible `--v-|` | Pure fallback preserves composer trim |
+| `turnVisibilityStream` | lease expires | activity `a------|`, virtual time `1s..5s` | capture `q-qqqqq-|` | Query polling ends after the activity lease |
+| `turnVisibilityStream` | sync changes | mutation `--0--1--|` | capture refresh `-----q--|` | Only written/dropped count triggers reread |
+| `wheelStream` | tracked mouse and Shift | wheels `--n-s--|` | scroll mutation `----m--|`, state `--N-S--|` | Native mouse forwarding and bypass |
+| `wheelStream` | rapid frames | wheels `--(abc)de-|` | mutations `---m---n-|` | Frame aggregation and sequential writes |
+| `pinnedSelectionStream` | drag/copy | mouse `--d-m-u-|` | text `------t-|`, copy `------c-|` | Finished text copied once |
+| `pinnedSelectionStream` | repaint invalidation | mouse `--d-m-u-r-|` | text `------t-e|` | Changed buffer cells clear painted selection |
+| `pinnedSelectionStream` | clear during drag | mouse `--d-m---|`, clear `----x` | copy `--------|` | Document drag listeners release without copying |
+| `pinnedSelectionStream` | clipboard disabled | enabled `f-------|`, mouse `--d-m-u-|` | state `------s-|`, copy `--------|` | Highlight remains while host receives no copy event |
 
 ## 8. Open questions
 
 | Question | Source |
 | --- | --- |
-| `attachCustomWheelEventHandler` currently has no stored unregistration token; confirm xterm's contract for replacing/removing the handler on pane teardown. | `0_terminalWheel.ts:53,83-89` |
-| A synchronous wheel handler must return `boolean` and call `preventDefault` before return; confirm that synchronous delivery through the returned effects stream is retained by the host root. | `0_terminalWheel.ts:57-65` |
-| `lineAnchors` emits `changed` only when a stable ID has different text, while the ID hashes text; identify whether that event is reachable and whether compatibility requires retaining it. | `00b_terminalLineAnchors.ts:24,71-83` |
-| Current `NativeTmuxPane` swallows session lookup errors as null and may notify a binding change; confirm whether errors should remain indistinguishable from a missing binding. | `00a_terminalIntersection.ts:122-129` |
-| `TerminalTurnVisibilityV2.scan(supplied)` is public and tests use direct supplied turns; identify non-test call sites before replacing it with a test port emission. | `0_terminalTurnVisibility.ts:382`; `0_terminalTurnVisibility.test.ts:73-211` |
-| Existing `TerminalPinnedSelection` copies on settle while the host checks a clipboard setting; confirm whether disabled copy still retains the painted selection. | `0_terminalPinnedSelection.ts:213-218`; `terminal.ts:903-907` |
-| `BoopConversation` appears as an exported interface with no constructor in the wave 2 caller graph; confirm whether its stream record belongs in wave 2 exports or a later transport lane. | `00a_terminalIntersection.ts:145-150` |
+| Does `attachCustomWheelEventHandler` replace an existing handler with a removable value? The current call stores no teardown token. | `0_terminalWheel.ts:53,83-89` |
+| The wheel callback must return a boolean and prevent default synchronously. Confirm same-turn delivery through the connected effect stream. | `0_terminalWheel.ts:57-65` |
+| `TerminalLineAnchors` hashes text into its ID but also emits `changed` for a stable ID with different text. Is that event reachable? | `00b_terminalLineAnchors.ts:24,71-83` |
+| `BoopConversation` has no wave 2 runtime constructor or call site. Should its type-only export stay in the package surface? | `00a_terminalIntersection.ts:145-150` |
+| `commandEndpoint<T>(name)` fixes input to `NativeCommandInput`; the host sketch narrows each domain input with an assertion. Should the generator add an input generic to remove those assertions? | `generated/native.ts:124-150`; `reactive/nativeTransport.ts:10` |
+| Query polling drops ticks during an in-flight request, and refetch cancels the current request. Does the one-pending scan state need to retry after both capture and locator finish? | `packages/signals/src/4_Query.ts:190-225`; `0_terminalTurnVisibility.ts:359-379` |
