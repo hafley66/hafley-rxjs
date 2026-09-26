@@ -119,18 +119,20 @@ function pointerIntent(el, { settleMs, minPx, minMs }) {
   const scroll$ = merge(
     fromEvent(doc, "wheel", { capture: true, passive: true }),
     fromEvent(doc, "scroll", { capture: true, passive: true }),
-  ).pipe(map((e) => e.type), probe("scroll$"))
+  ).pipe(map((e) => ({ kind: "scroll", at: e.timeStamp })), probe("scroll$"))
   const leave$ = fromEvent(el, "pointerleave").pipe(map((e) => e.type), probe("leave$"))
-  const enter$ = fromEvent(el, "pointerenter").pipe(map((e) => e.type), probe("enter$"))
+  const enter$ = fromEvent(el, "pointerenter").pipe(map((e) => ({ kind: "enter", at: e.timeStamp })), probe("enter$"))
   const realMove$ = fromEvent(el, "pointermove").pipe(
     probe("pointermove (all)"),
     filter((e) => e.movementX !== 0 || e.movementY !== 0),
     probe("realMove$"),
   )
   return merge(scroll$, enter$).pipe(
-    startWith("start"),
+    startWith({ kind: "start", at: 0 }),
+    scan((prev, e) => ({ ...e, lastScroll: e.kind === "scroll" ? e.at : prev.lastScroll }), { lastScroll: -Infinity }),
+    map((e) => ({ kind: e.kind === "enter" && e.at - e.lastScroll >= settleMs ? "real enter" : e.kind, sinceScroll: Math.round(e.at - e.lastScroll) })),
     probe("restart"),
-    switchMap(() => timer(settleMs).pipe(
+    switchMap((e) => e.kind === "real enter" ? NEVER.pipe(startWith(true), takeUntil(leave$), endWith(false)) : timer(settleMs).pipe(
       probe("settle timer"),
       switchMap(() => realMove$.pipe(
         scan((acc, e) => ({ px: acc.px + Math.hypot(e.movementX, e.movementY), t0: acc.t0 || e.timeStamp, t: e.timeStamp }), { px: 0, t0: 0, t: 0 }),
