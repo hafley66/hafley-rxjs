@@ -3,6 +3,7 @@ import { defineConfig } from "vite"
 import dts from "vite-plugin-dts"
 
 export default defineConfig({
+  resolve: { alias: { "@hafley66/signals": resolve(import.meta.dirname, "../signals/src/index.ts") } },
   plugins: [dts({
     include: ["src/**/*.ts"],
     exclude: ["src/**/*.test.ts"],
