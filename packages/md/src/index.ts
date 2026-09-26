@@ -145,4 +145,16 @@ export function registerMdview() {
   host.registerZoomKind({ prefix: "md:", min: 0.5, max: 2.5, step: 0.1 });
 }
 
-export { svgPaintBox, svgNeedsRepaint, svgCssTransform, svgFitBox } from "./lib/0_svgSurface.js";
+export {
+  normalizeSvgEntities,
+  panSvgBox,
+  svgBoxAtZoom,
+  svgCssTransform,
+  svgFitBox,
+  svgMinimumZoom,
+  svgNativeBox,
+  svgNeedsRepaint,
+  svgPaintBox,
+  svgSourceBox,
+  type SvgBox,
+} from "./lib/0_svgSurface.js";

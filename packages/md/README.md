@@ -244,6 +244,8 @@ Hosts import that stylesheet once from their composition root.
 
 `isMarkdownPath` and `markdownHeadingRows` identify Markdown files and project their headings into tree rows.
 
+The SVG viewport helpers parse source bounds, normalize entities, fit, zoom, pan, and manage painted surfaces.
+
 ```ts
 installMdviewHost
 getMdviewHost
