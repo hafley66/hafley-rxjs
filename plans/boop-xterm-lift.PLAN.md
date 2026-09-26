@@ -8,6 +8,10 @@ Source maps: `plans/boop-xterm-lift-map.REPORT.md`, `plans/md-main-inventory.REP
   Baseline instant non-test: 74 in 34 files.
 - instant rewires its imports and deletes each lifted original in the same wave.
 
+## User ruling (2026-09-26)
+- instant is stripped down to a composition of libraries as far as possible. Every feature lives in a package; instant keeps wiring, settings and app chrome.
+- The group-chat panel (`instant/src/0_boopSelection.ts`, `1_boopSelection.tsx`) becomes a sub-feature of boop's messaging layer. Its closest homes are the Rust crate `hafley-rs/crates/boop-acp` (lane channels: acp, acpx, claude, terminal) plus `boop/src/cli/shout.rs`, and a TS package on the boop-xterm pattern that reads selection and sends shouts through Endpoints instead of shelling out.
+
 ## Waves (max 2 build-heavy lanes at once)
 
 | wave | repo | lane | files |
