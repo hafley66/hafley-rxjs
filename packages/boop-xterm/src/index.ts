@@ -1,4 +1,5 @@
-export * from "./0_turnRegions.js";
+export { alignRegionRows, detectTurnRegions, projectTurnRegions } from "./0_turnRegions.js";
+export type { TurnRegionKind, TurnRegion, ProjectedTurnRegion } from "./0_turnRegions.js";
 export * from "./0_types.js";
 export * from "./0_termTokens.js";
 export * from "./0_termCell.js";
@@ -11,3 +12,11 @@ export * from "./2_termBufferToken.js";
 export * from "./2_turnLocate.js";
 export * from "./2_pinnedSelectionPure.js";
 export * from "./2_wheelReduce.js";
+export * from "./3_ports.js";
+export * from "./4_viewport.js";
+export * from "./4_paneSession.js";
+export * from "./5_lineAnchors.js";
+export * from "./5_wheel.js";
+export * from "./5_pinnedSelection.js";
+export * from "./6_turnVisibility.js";
+export * from "./7_pane.js";
