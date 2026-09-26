@@ -17,6 +17,8 @@ export type DiagramInputs = {
 };
 export type DiagramOverlayModel = {
   opened: SignalType<DiagramLightboxEntry | undefined>;
+  /** Host request to open the diagram under a point (e.g. a context-menu item); a null clientX matches the row alone. */
+  openAt: SignalType<{ clientX: number | null; clientY: number } | undefined>;
   effects: Observable<void>;
 };
 type OverlayEvent = "mount" | "write" | "scroll" | "resize" | "click";
@@ -144,9 +146,22 @@ function paint(term: Terminal, host: HTMLElement, root: HTMLElement, layout: Ter
   positionElements(term, host, root);
 }
 
+function entryAt(root: ParentNode, clientX: number | null, clientY: number): DiagramLightboxEntry | null {
+  const element = diagramElementAtPoint(Array.from(root.querySelectorAll<HTMLElement>(".term-diagram")), clientX, clientY);
+  if (!element) return null;
+  return {
+    id: `${element.dataset.diagramKey}:${performance.now()}`, svg: element.innerHTML,
+    language: element.dataset.language === "d2" ? "d2" : "mermaid",
+    dark: element.dataset.diagramTheme === "dark", code: element.dataset.diagramCode ?? "",
+    locator: element.dataset.diagramLocator ?? "terminal buffer",
+    bufferStart: Number(element.dataset.bufferStart), bufferEnd: Number(element.dataset.bufferEnd), inferred: false,
+  };
+}
+
 export function diagramOverlayStream(term: Terminal, host: HTMLElement,
   visibility: TurnVisibilityModel, inputs: DiagramInputs): DiagramOverlayModel {
   const opened = Signal<DiagramLightboxEntry | undefined>(undefined);
+  const openAt = Signal<{ clientX: number | null; clientY: number }>();
   const enabled = toSignal(inputs.enabled);
   const inference = toSignal(inputs.inference);
   const mount$ = new Observable<{ root: HTMLDivElement; events: Observable<OverlayEvent> }>((observer) => {
@@ -156,15 +171,9 @@ export function diagramOverlayStream(term: Terminal, host: HTMLElement,
     const events = Signal<OverlayEvent>();
     const onClick = (event: MouseEvent) => {
       if (event.metaKey || event.button !== 0) return;
-      const element = diagramElementAtPoint(Array.from(root.querySelectorAll<HTMLElement>(".term-diagram")), event.clientX, event.clientY);
-      if (!element) return;
-      opened.$({
-        id: `${element.dataset.diagramKey}:${performance.now()}`, svg: element.innerHTML,
-        language: element.dataset.language === "d2" ? "d2" : "mermaid",
-        dark: element.dataset.diagramTheme === "dark", code: element.dataset.diagramCode ?? "",
-        locator: element.dataset.diagramLocator ?? "terminal buffer",
-        bufferStart: Number(element.dataset.bufferStart), bufferEnd: Number(element.dataset.bufferEnd), inferred: false,
-      });
+      const entry = entryAt(root, event.clientX, event.clientY);
+      if (!entry) return;
+      opened.$(entry);
       event.preventDefault();
       event.stopImmediatePropagation();
     };
@@ -272,5 +281,9 @@ export function diagramOverlayStream(term: Terminal, host: HTMLElement,
       });
     }));
   });
-  return { opened, effects: merge(overlay$, lightbox$).pipe(map(() => void 0)) };
+  const openAt$ = openAt.$.pipe(tap((point) => {
+    const entry = point && entryAt(host, point.clientX, point.clientY);
+    if (entry) opened.$(entry);
+  }));
+  return { opened, openAt, effects: merge(overlay$, lightbox$, openAt$).pipe(map(() => void 0)) };
 }

@@ -9,8 +9,11 @@ import type { BoopXtermPorts } from "./3_ports.js";
 import type { TurnPanelModel, TurnPanelTarget } from "./8i_turnPanel.js";
 
 export type AgentSquaresInput = { pty: string; session: string; target: string; socket?: string };
+/** One sample per painted frame: how many squares the projection drew and where. */
+export type SquaresPainted = { mode: "relative" | "recent" | "none"; squares: number; band: number; track: number; pane: number };
 export type AgentSquaresModel = {
   gutterChanged: Signal<void | undefined>;
+  painted: Signal<SquaresPainted | undefined>;
   state: Signal<{ frame: Strip | null; recentOffsetPx: number }>;
   effects: Observable<void>;
 };
@@ -44,6 +47,7 @@ export function agentSquaresStream(
   panel: TurnPanelModel, ports: BoopXtermPorts,
 ): AgentSquaresModel {
   const gutterChanged = Signal<void>();
+  const painted = Signal<SquaresPainted>();
   const state = Signal({ frame: null as Strip | null, recentOffsetPx: 0 });
   const source = toSignal(input);
   const options = toSignal(ports.squaresOptions);
@@ -98,6 +102,8 @@ export function agentSquaresStream(
         strip.style.setProperty("--asq-pane-w", `${pane.width}px`);
         gap.hidden = !props.gap;
         if (props.gap) gap.style.transform = `translateY(${props.gap.y}px)`;
+        painted.$({ mode: frame.layout?.mode ?? "none", squares: props.squares.length, band: props.band,
+          track: Math.round(props.track), pane: Math.round(pane.height) });
         if (frame.layout) strip.dataset.mode = frame.layout.mode;
         else delete strip.dataset.mode;
         const marks = marksOf(frame, favorites.$());
@@ -234,5 +240,5 @@ export function agentSquaresStream(
       next.input ? command(ports.squares_watch, { ...next.input, options: next.options }) : EMPTY,
     )), map(() => void 0),
   );
-  return { gutterChanged, state, effects: merge(mount$, watch$) };
+  return { gutterChanged, painted, state, effects: merge(mount$, watch$) };
 }

@@ -205,3 +205,24 @@ it("repaints an existing diagram after a host palette change", async () => {
   expect(host.querySelector(".term-diagram")).toBe(element);
   subscription.unsubscribe();
 });
+
+it("opens the diagram under a host-requested row and ignores rows with none", async () => {
+  const { term, host, model, subscription } = rig();
+  await writeTerminal(term, source);
+  await waitFor(() => !!host.querySelector(".term-diagram svg"), 10_000);
+  const box = host.querySelector<HTMLElement>(".term-diagram")!.getBoundingClientRect();
+  model.openAt.$({ clientX: null, clientY: box.bottom + 400 });
+  const missed = model.opened.$();
+  model.openAt.$({ clientX: null, clientY: box.top + box.height / 2 });
+  await waitFor(() => !!model.opened.$());
+  const opened = model.opened.$();
+  expect({ missed: missed ?? null, language: opened?.language, code: opened?.code }).toMatchInlineSnapshot(`
+    {
+      "code": "flowchart LR
+      A --> B",
+      "language": "mermaid",
+      "missed": null,
+    }
+  `);
+  subscription.unsubscribe();
+});

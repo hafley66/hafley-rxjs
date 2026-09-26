@@ -110,3 +110,24 @@ it("keeps the wheel live during the hold, repainting the held frame", async () =
   await waitFor(() => host.querySelector<HTMLElement>('[data-turn="s1:40"]')?.dataset.active === "true");
   expect(Number.parseFloat(oldest.style.getPropertyValue("--asq-y")) - before).toBe(-200);
 });
+
+it("emits one painted sample per drawn frame", async () => {
+  const { frames, squares } = rig();
+  const samples: Array<import("./8j_agentSquares.js").SquaresPainted> = [];
+  connected.push(squares.painted.$.subscribe((sample) => { if (sample) samples.push(sample); }));
+  frames.next(recentFrame(3));
+  frames.next(recentFrame(5));
+  expect(samples.map(({ mode, squares: count }) => ({ mode, count }))).toMatchInlineSnapshot(`
+    [
+      {
+        "count": 3,
+        "mode": "recent",
+      },
+      {
+        "count": 5,
+        "mode": "recent",
+      },
+    ]
+  `);
+  expect(samples.every((sample) => sample.track > 0 && sample.pane > 0)).toBe(true);
+});
