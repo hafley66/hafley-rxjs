@@ -25,5 +25,5 @@ Source maps: `plans/boop-xterm-lift-map.REPORT.md`, `plans/md-main-inventory.REP
 - `.subscribe(` count, plus `firstValueFrom|lastValueFrom|\.forEach\(` on streams, in non-test package src = 0.
 - Port and public signatures take and return Observables; a function-typed callback parameter is a defect.
 - Every moved test file moves with `git mv`; `it(`/`test(` count per moved file is equal before and after.
-- No `as any`, `@ts-ignore`, `@ts-expect-error`, `.skip`, `.only` added.
+- No `as any`, `as unknown as`, `as never`, `@ts-ignore`, `@ts-expect-error`, `.skip`, `.only` added. No hand-built doubles of third-party classes (xterm Terminal etc.); use the real class in vitest browser.
 - No `toBeDefined`. Snapshot assertions preferred.
