@@ -36,6 +36,8 @@ export { absoluteSpan, fenceOriginOf, renderedOffsetsForSourceStarts, withFenceO
 export type { FenceOrigin } from "./0b_fenceOrigin.js";
 export { releaseSequenceSource, sequenceSourceIndex, sourceSpanOfElement } from "./0b_sequenceSource.js";
 export { renderMermaidSvg } from "./0a_mermaid.js";
+export { loadMermaid$, renderDiagram$ } from "./lib/2_terminalDiagramRender.js";
+export type { DiagramPalette, RenderableDiagram, RenderedDiagram } from "./lib/2_terminalDiagramRender.js";
 export { preloadD2, renderD2 } from "./d2.js";
 export { ProseWidthControl, ProseWidthHandle } from "./3_ProseWidthControl.js";
 export { useProseWidth } from "./2_useProseWidth.js";
