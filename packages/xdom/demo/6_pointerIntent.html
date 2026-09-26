@@ -1,0 +1,164 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>pointerIntent: probe grid</title>
+<script src="https://unpkg.com/rxjs@7.8.1/dist/bundles/rxjs.umd.min.js"></script>
+<style>
+  body { margin: 0; font: 13px/1.4 system-ui, sans-serif; background: #111827; color: #e5e7eb; }
+  main { margin-right: 560px; padding: 24px; }
+  .filler { height: 70vh; border-left: 2px dashed #374151; padding-left: 12px; color: #6b7280; }
+  div#target { position: relative; height: 320px; margin: 24px 0; border: 1px solid #334155; border-radius: 4px; background: #0f172a; display: grid; place-items: center; }
+  div#target[data-intent="true"] { outline: 2px solid #2563eb; }
+  div#notice { position: absolute; bottom: 16px; padding: 6px 12px; border-radius: 4px; background: rgb(15 23 42 / 0.5); border: 1px solid rgb(148 163 184 / 0.5); opacity: 0; transition: opacity 120ms; pointer-events: none; }
+  div#target[data-intent="true"] #notice { opacity: 1; }
+  aside { position: fixed; top: 0; right: 0; width: 540px; height: 100vh; overflow: auto; padding: 12px; box-sizing: border-box; background: #0b1020; border-left: 1px solid #334155; }
+  table { width: 100%; border-collapse: collapse; font: 12px/1.3 ui-monospace, monospace; }
+  th, td { text-align: left; padding: 3px 6px; border-bottom: 1px solid #1f2937; vertical-align: top; }
+  td.last { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  tr[data-live="true"] td:first-child { color: #34d399; }
+  tr[data-live="false"] td:first-child { color: #6b7280; }
+  tr.hit { animation: hit 400ms ease-out; }
+  @keyframes hit { from { background: #1d4ed8; } to { background: transparent; } }
+  label { display: block; margin: 8px 0; }
+</style>
+</head>
+<body>
+<main>
+  <h3>Scroll with the cursor parked over the box, then move the mouse.</h3>
+  <div class="filler">filler: scroll ↓</div>
+  <div id="target" data-intent="false">
+    <span>diagram stand-in</span>
+    <div id="notice">Right-click for scroll zoom</div>
+  </div>
+  <div class="filler">filler: scroll ↑</div>
+</main>
+<aside>
+  <label>settleMs <input id="settleMs" type="range" min="0" max="600" value="150" /> <output></output></label>
+  <label>minPx <input id="minPx" type="range" min="0" max="60" value="12" /> <output></output></label>
+  <label>minMs <input id="minMs" type="range" min="0" max="400" value="80" /> <output></output></label>
+  <table>
+    <thead><tr><th>stage</th><th>subs</th><th>next</th><th>last</th><th>@ms</th></tr></thead>
+    <tbody id="grid"></tbody>
+  </table>
+</aside>
+<script>
+const { Subject, merge, fromEvent, timer, NEVER, animationFrameScheduler } = rxjs
+const { tap, map, filter, scan, first, switchMap, takeUntil, startWith, endWith, concatWith, distinctUntilChanged, auditTime, combineLatestWith } = rxjs
+
+// ---- probe: a tap that reports each stage's lifecycle to the grid --------------------------
+const probe$ = new Subject()
+const t0 = performance.now()
+const show = (v) => typeof v === "object" && v !== null
+  ? JSON.stringify(v, (_k, x) => (typeof x === "number" ? Math.round(x * 10) / 10 : x instanceof Event ? `${x.type}(${x.movementX ?? ""},${x.movementY ?? ""})` : x))
+  : String(v)
+const probe = (stage) => tap({
+  subscribe: () => probe$.next({ stage, kind: "subscribe" }),
+  next: (value) => probe$.next({ stage, kind: "next", value }),
+  complete: () => probe$.next({ stage, kind: "complete" }),
+  unsubscribe: () => probe$.next({ stage, kind: "unsubscribe" }),
+})
+
+// ---- grid: probe records folded into rows, painted once per frame --------------------------
+const ORDER = ["settings", "scroll$", "settle timer", "pointermove (all)", "realMove$", "scan distance", "first(enough)", "leave$", "intent$"]
+const grid = document.getElementById("grid")
+const rows = Object.fromEntries(ORDER.map((stage) => {
+  const tr = document.createElement("tr")
+  tr.innerHTML = `<td>${stage}</td><td></td><td></td><td class="last"></td><td></td>`
+  grid.append(tr)
+  return [stage, tr]
+}))
+const painted$ = probe$.pipe(
+  scan((state, record) => {
+    const row = state[record.stage] ?? { subs: 0, live: 0, next: 0, last: "", at: 0, dirty: false }
+    const at = Math.round(performance.now() - t0)
+    const next = { ...row, at, dirty: true }
+    if (record.kind === "subscribe") { next.subs++; next.live++ }
+    if (record.kind === "unsubscribe" || record.kind === "complete") next.live = Math.max(0, next.live - 1)
+    if (record.kind === "complete") next.last = "complete"
+    if (record.kind === "next") { next.next++; next.last = show(record.value) }
+    return { ...state, [record.stage]: next }
+  }, {}),
+  auditTime(0, animationFrameScheduler),
+  tap((state) => {
+    for (const [stage, row] of Object.entries(state)) {
+      if (!row.dirty) continue
+      row.dirty = false
+      const tr = rows[stage]
+      tr.dataset.live = String(row.live > 0)
+      tr.cells[1].textContent = `${row.live}/${row.subs}`
+      tr.cells[2].textContent = row.next
+      tr.cells[3].textContent = row.last
+      tr.cells[3].title = row.last
+      tr.cells[4].textContent = row.at
+      tr.classList.remove("hit")
+      void tr.offsetWidth
+      tr.classList.add("hit")
+    }
+  }),
+)
+
+// ---- settings: the three knobs as one stream ----------------------------------------------
+const knob = (id) => {
+  const input = document.getElementById(id)
+  return fromEvent(input, "input").pipe(
+    map(() => Number(input.value)),
+    startWith(Number(input.value)),
+    tap((value) => { input.nextElementSibling.value = value }),
+  )
+}
+const settings$ = knob("settleMs").pipe(
+  combineLatestWith(knob("minPx"), knob("minMs")),
+  map(([settleMs, minPx, minMs]) => ({ settleMs, minPx, minMs })),
+  probe("settings"),
+)
+
+// ---- pointerIntent: the library part, returns an Observable, never subscribes --------------
+function pointerIntent(el, { settleMs, minPx, minMs }) {
+  const doc = el.ownerDocument
+  const scroll$ = merge(
+    fromEvent(doc, "wheel", { capture: true, passive: true }),
+    fromEvent(doc, "scroll", { capture: true, passive: true }),
+  ).pipe(map((e) => e.type), probe("scroll$"))
+  const leave$ = fromEvent(el, "pointerleave").pipe(map((e) => e.type), probe("leave$"))
+  const realMove$ = fromEvent(el, "pointermove").pipe(
+    probe("pointermove (all)"),
+    filter((e) => e.movementX !== 0 || e.movementY !== 0),
+    probe("realMove$"),
+  )
+  return scroll$.pipe(
+    startWith("start"),
+    switchMap(() => timer(settleMs).pipe(
+      probe("settle timer"),
+      switchMap(() => realMove$.pipe(
+        scan((acc, e) => ({ px: acc.px + Math.hypot(e.movementX, e.movementY), t0: acc.t0 || e.timeStamp, t: e.timeStamp }), { px: 0, t0: 0, t: 0 }),
+        map((acc) => ({ px: acc.px, ms: acc.t - acc.t0 })),
+        probe("scan distance"),
+        first((acc) => acc.px >= minPx && acc.ms >= minMs),
+        probe("first(enough)"),
+        map(() => true),
+        concatWith(NEVER),
+      )),
+      takeUntil(leave$),
+      endWith(false),
+      startWith(false),
+    )),
+    distinctUntilChanged(),
+  )
+}
+
+// ---- app: settings rebuild the intent pipeline; intent paints the box -----------------------
+const target = document.getElementById("target")
+const intent$ = settings$.pipe(
+  switchMap((settings) => pointerIntent(target, settings)),
+  probe("intent$"),
+  tap((intent) => { target.dataset.intent = String(intent) }),
+)
+
+const app$ = merge(painted$, intent$)
+
+// The application boundary: the one subscribe in this page.
+app$.subscribe()
+</script>
+</body>
+</html>
