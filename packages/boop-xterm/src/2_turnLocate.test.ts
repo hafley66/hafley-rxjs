@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { locateVisibleTurns, dropTerminalInputRows, selectProjectionTurns } from "./2_turnLocate.js";
 import type { BoopTurn } from "./0_types.js";
 import { boopContent, normalizeTurnLine, sourceLines } from "./1_turnMatching.js";
+import ompChaotic from "./test/2_ompChaotic.json";
+import ompChaoticGolden from "./test/2_ompChaoticGolden.json";
+import ompChaoticTurns from "./test/2_ompChaoticTurns.json";
 
 const turn = (turn: number, said: string): BoopTurn => ({
   session: "session-a", harness: "codex", turn, ts: turn, role: "assistant", said,
@@ -510,6 +513,22 @@ describe("terminal turn location", () => {
   // Defect receipt 2026-08-29: the right-click menu reads turnAtClientPoint,
   // which reads turnAtBufferRow. Every other test asserts the located spans
   // directly, so the accessor itself needs one that drives the real class.
+  it("keeps the OMP structured tool command and output distinct from repeated tool calls", () => {
+    const visible = locateVisibleTurns(ompChaotic.lines, ompChaoticTurns);
+    expect(visible.map(({ id, turn, role, confidence, anchorStart, anchorEnd, bufferStart, bufferEnd }) => ({
+      id, turn, role, confidence, anchorStart, anchorEnd, bufferStart, bufferEnd,
+    }))).toEqual(ompChaoticGolden.turns);
+
+    const owner = (row: number) => visible.find((turn) => turn.anchorStart <= row && row <= turn.anchorEnd)?.id ?? null;
+    expect(ompChaotic.lines.map((line) => ({
+      start: line.start,
+      normalized: normalizeTurnLine(line.text),
+      id: owner(line.start),
+    }))).toEqual(ompChaoticGolden.lines);
+    expect([500, 509, 512, 513, 514, 515].map(owner)).toEqual([null, null, null, null, null, null]);
+    expect(visible.every((turn, index) => index === 0 || visible[index - 1].bufferEnd < turn.bufferStart)).toBe(true);
+  });
+
   it("keeps an unambiguous short non-tool turn", () => {
     expect(locateVisibleTurns([{ text: "done", start: 1, end: 1 }], [
       { ...turn(1, "done"), session: "edge" },
