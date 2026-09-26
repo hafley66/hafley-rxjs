@@ -23,16 +23,17 @@ export function regionAtBufferRow(visibleOrRegions: VisibleTurn[] | ProjectedTur
   return findRegion(visibleOrRegions as ProjectedTurnRegion[], row);
 }
 
-function queryData<I, O>(query: Query<I, O>, fallback: O): Observable<O> {
+function queryData<I, O>(query: Query<I, O>, fallback: O, staleTime?: number): Observable<O> {
   return query.$.pipe(
     filter((state) => !state.isLoading && (state.isSuccess || state.isError)),
+    filter((state) => staleTime === undefined || state.updatedAt === undefined || Date.now() - state.updatedAt < staleTime),
     take(1),
     map((state) => state.data ?? fallback),
   );
 }
 
 function turnsFor(session: string, ports: BoopXtermPorts): Observable<BoopTurn[]> {
-  return queryData(createQuery(ports.boop_turns, { session }, { staleTime: 1_000 }), []);
+  return queryData(createQuery(ports.boop_turns, { session }, { staleTime: 1_000 }), [], 1_000);
 }
 
 function allTurns(sessions: string[], ports: BoopXtermPorts): Observable<BoopTurn[]> {
@@ -44,7 +45,7 @@ function allTurns(sessions: string[], ports: BoopXtermPorts): Observable<BoopTur
 
 function recentTurns(harness: string | null, ports: BoopXtermPorts): Observable<BoopTurn[]> {
   if (!harness || harness === "omp") return of([]);
-  const query = (since: number) => queryData(createQuery(ports.boop_turns_recent, { since, harness }, { staleTime: 10_000 }), []);
+  const query = (since: number) => queryData(createQuery(ports.boop_turns_recent, { since, harness }, { staleTime: 10_000 }), [], 10_000);
   return query(Date.now() - 6 * 60 * 60 * 1_000).pipe(
     switchMap((recent) => recent.length ? of(recent) : query(0)),
     switchMap((recent) => allTurns(recent.map((turn) => turn.session), ports)),

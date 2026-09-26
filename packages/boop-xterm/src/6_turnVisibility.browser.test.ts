@@ -1,6 +1,6 @@
 import { Signal, toSignal, type EndpointResponse } from "@hafley66/signals";
 import { of, throwError, timer, map, type Observable } from "rxjs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { BoopTurn, VisibleTurn } from "./0_types.js";
 import { terminalInputRegion, type TurnSpan } from "./2_turnLocate.js";
 import type { PaneRuntimeState } from "./3_ports.js";
@@ -147,6 +147,142 @@ describe("turnVisibilityStream with a real Terminal", () => {
     expect(captures.length).toBe(count);
     expect(count).toBeGreaterThanOrEqual(5);
     subscription.unsubscribe();
+  });
+
+  it("skips scans while the pane is hidden and scans when it becomes visible", async () => {
+    const scans: string[] = [];
+    const { term, ports, visibility } = await rig((request) => {
+      if (request.url === "boop_locate_turns") {
+        scans.push(request.url);
+        return of({ status: 200, body: [span(source)] });
+      }
+      return response(request.url);
+    });
+    toSignal(ports.paneVisible).$(false);
+    const subscription = visibility.effects.subscribe();
+    vi.useFakeTimers();
+    try {
+      const writing = writeTerminal(term, "\r\x1b[2Khidden output");
+      await vi.advanceTimersByTimeAsync(1_200);
+      await writing;
+      const hidden = scans.length;
+      toSignal(ports.paneVisible).$(true);
+      await vi.advanceTimersByTimeAsync(1_000);
+      expect({ hidden, rescannedAfterShow: scans.length > hidden }).toMatchInlineSnapshot(`
+        {
+          "hidden": 0,
+          "rescannedAfterShow": true,
+        }
+      `);
+    } finally {
+      subscription.unsubscribe();
+      vi.useRealTimers();
+    }
+  });
+
+  it("polls capture through continuous output before the write debounce settles", async () => {
+    const captures: number[] = [];
+    const syncs: number[] = [];
+    const { term, visibility } = await rig((request) => {
+      if (request.url === "boop_mux_capture") captures.push(performance.now());
+      if (request.url === "boop_sync_session") syncs.push(performance.now());
+      return response(request.url);
+    });
+    const subscription = visibility.effects.subscribe();
+    vi.useFakeTimers();
+    try {
+      const writing = setInterval(() => term.write("."), 100);
+      await vi.advanceTimersByTimeAsync(3_000);
+      const whileWriting = captures.length;
+      const syncsWhileWriting = syncs.length;
+      clearInterval(writing);
+      await vi.advanceTimersByTimeAsync(120);
+      const afterWriteDebounce = captures.length;
+      await vi.advanceTimersByTimeAsync(4_880);
+      const afterLease = captures.length;
+      await vi.advanceTimersByTimeAsync(5_000);
+      const afterQuiet = captures.length;
+      expect({ whileWriting, syncsWhileWriting, afterWriteDebounce, afterLease, afterQuiet }).toMatchInlineSnapshot(`
+        {
+          "afterLease": 8,
+          "afterQuiet": 8,
+          "afterWriteDebounce": 4,
+          "syncsWhileWriting": 0,
+          "whileWriting": 3,
+        }
+      `);
+    } finally {
+      subscription.unsubscribe();
+      vi.useRealTimers();
+    }
+  });
+
+  it("emits when the same turn id changes role at a fixed pointer row", async () => {
+    let role: BoopTurn["role"] = "user";
+    let now = Date.now();
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => now);
+    const turnRequests: string[] = [];
+    const locatedRoles: string[] = [];
+    const { ports, viewport, visibility } = await rig((request) => {
+      if (request.url === "boop_turns") {
+        turnRequests.push(role);
+        return of({ status: 200, body: [{ ...source, role }] });
+      }
+      if (request.url === "boop_locate_turns") {
+        const turns = (request.body as { turns: BoopTurn[] }).turns;
+        locatedRoles.push(turns[0].role);
+        return of({ status: 200, body: [span(turns[0])] });
+      }
+      return response(request.url);
+    });
+    const geometry = viewport.snapshot.geometry.$();
+    const row = bufferRowAtPoint(geometry, { clientX: 5, clientY: geometry.top + geometry.cellHeight / 2 });
+    if (row === null) throw new Error("sampled point was outside the viewport");
+    const events: Array<{ role: string; entered: number; exited: number; pointerId: string | null }> = [];
+    const changes = visibility.changes.$.subscribe((event) => {
+      if (!event) return;
+      events.push({
+        role: event.visible[0]?.role ?? "",
+        entered: event.entered.length,
+        exited: event.exited.length,
+        pointerId: turnAtBufferRow(event.visible, row)?.id ?? null,
+      });
+    });
+    const subscription = visibility.state.$.subscribe();
+    await waitFor(() => events.length === 1);
+    try {
+      role = "assistant";
+      now += 1_001;
+      const beforeScans = locatedRoles.length;
+      toSignal(ports.scanRequested).$(undefined);
+      await waitFor(() => locatedRoles.length > beforeScans);
+      expect({ events, turnRequests }).toMatchInlineSnapshot(`
+        {
+          "events": [
+            {
+              "entered": 1,
+              "exited": 0,
+              "pointerId": "s1:1",
+              "role": "user",
+            },
+            {
+              "entered": 0,
+              "exited": 0,
+              "pointerId": "s1:1",
+              "role": "assistant",
+            },
+          ],
+          "turnRequests": [
+            "user",
+            "assistant",
+          ],
+        }
+      `);
+    } finally {
+      subscription.unsubscribe();
+      changes.unsubscribe();
+      clock.mockRestore();
+    }
   });
 
   it("sync changes refetch capture only after nonzero written or dropped count", async () => {
