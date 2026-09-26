@@ -12,7 +12,11 @@ echo "$diff" | while IFS= read -r line; do
   [[ $file =~ \.(ts|tsx|js|mjs|json|rs)$ ]] || continue
   hit=""
   [[ $l =~ (^|[^A-Za-z_])as\ (unknown\ as|never|any)([^A-Za-z_]|$)|:\ any([^A-Za-z_]|$)|@ts-ignore|@ts-expect-error|@ts-nocheck ]] && hit="type escape"
-  [[ $l =~ \.(skip|only|todo)\(|\bxit\(|\bxdescribe\( ]] && hit="skipped test"
+  if [[ $file =~ \.(ts|tsx|js|mjs)$ ]]; then
+    [[ $l =~ (it|test|describe)\.(skip|only|todo)\(|(^|[^A-Za-z_])(xit|xdescribe)\( ]] && hit="skipped test"
+  else
+    [[ $l =~ \#\[ignore ]] && hit="skipped test"
+  fi
   [[ $l =~ toBeDefined|expect\(true\)|toBeTruthy\(\)$|expect\.anything\(\) ]] && hit="hollow assertion"
   [[ $l =~ eslint-disable|biome-ignore|#\[allow\(|#!\[allow\( ]] && hit="lint suppress"
   [[ $l =~ passWithNoTests|--passWithNoTests|\|\|\ true|exit\ 0 ]] && hit="gate bypass"
