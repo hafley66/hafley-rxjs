@@ -23,9 +23,10 @@ echo "$diff" | while IFS= read -r line; do
   fi
   [[ -n $hit ]] && printf '%s\t%s\t%s\n' "$hit" "$file" "$(echo "$l" | cut -c1-140)"
 done
-# deleted test cases per test file
-git -C "$wt" diff "$base" --numstat -- '*.test.*' '*.spec.*' 2>/dev/null | while read -r a d f; do
-  before=$(git -C "$wt" show "$base:$f" 2>/dev/null | grep -cE '^\s*(it|test)\(' ); after=$(grep -cE '^\s*(it|test)\(' "$wt/$f" 2>/dev/null || echo 0)
-  (( before > after )) && printf 'test cases dropped\t%s\t%s -> %s\n' "$f" "$before" "$after"
+# deleted test cases per test file stem (a.test.ts -> a.browser.test.ts counts as the same stem)
+git -C "$wt" diff "$base" --name-only -- '*.test.*' '*.spec.*' 2>/dev/null | sed -E 's/\.(browser\.|dom\.|render\.)?(test|spec)\.[a-z]+$//' | sort -u | while read -r stem; do
+  before=0; for f in $(git -C "$wt" ls-tree -r --name-only "$base" -- "$(dirname "$stem")" | grep -E "^${stem}\.([a-z]+\.)?(test|spec)\.[a-z]+$"); do before=$((before + $(git -C "$wt" show "$base:$f" | grep -cE '^\s*(it|test)\('))); done
+  after=0; for f in "$wt/$stem".*test.* "$wt/$stem".*spec.*; do [ -f "$f" ] && after=$((after + $(grep -cE '^\s*(it|test)\(' "$f"))); done
+  (( before > after )) && printf 'test cases dropped\t%s\t%s -> %s\n' "$stem" "$before" "$after"
 done
 exit 0
