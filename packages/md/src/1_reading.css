@@ -196,6 +196,8 @@
 
 .mdview-table-grid[data-route="g"] {
   --sg-pad: 4px;
+  /* The resize target straddles the column edge; the theme's 10px reads as a wide band. */
+  --sg-resize-hit: 4px;
   --sg-bg: var(--panel-bg, var(--md-code-bg, #fff));
   --sg-fg: var(--panel-fg, var(--md-code-fg, #24292e));
   --sg-head-bg: color-mix(in srgb, var(--sg-fg) 6%, var(--sg-bg));
