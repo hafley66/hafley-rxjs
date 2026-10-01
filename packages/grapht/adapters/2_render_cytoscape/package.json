@@ -39,7 +39,8 @@
     "@hafley66/grapht": "workspace:^",
     "@hafley66/grapht-model": "workspace:*",
     "@hafley66/signals": "workspace:*",
-    "cytoscape": "^3.31.1",
+    "cytoscape": "3.34.0",
+    "cytoscape-navigator": "2.0.2",
     "dompurify": "3.4.14",
     "playwright": "^1.62.1",
     "rxjs": "^7.8.2",
@@ -48,13 +49,14 @@
   "devDependencies": {
     "@hafley66/trace": "workspace:*",
     "@playwright/test": "^1.62.1",
+    "@types/cytoscape-navigator": "^2.0.4",
+    "@types/node": "^25.0.8",
     "@vitest/browser": "4.1.10",
     "@vitest/browser-playwright": "4.1.10",
-    "@types/node": "^25.0.8",
     "typescript": "7.0.2",
-    "vitest": "^4.1.10",
     "vite": "^8.2.1",
-    "vite-plugin-dts": "^5.0.3"
+    "vite-plugin-dts": "^5.0.3",
+    "vitest": "^4.1.10"
   },
   "license": "MIT",
   "publishConfig": {

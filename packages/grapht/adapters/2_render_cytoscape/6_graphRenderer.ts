@@ -1,4 +1,7 @@
 import { graphHoverColor } from "../../src/lib/0_graphStyle.js"
+import { treeGraphFrame } from "../../src/2_graph/17a_treeFrame.js"
+import { supportsWebgl, cullWebgl } from "./5b_gpu.js"
+import { createMinimap } from "./5a_minimap.js"
 import { hoverEdgeStops } from "../../src/lib/3_hoverPaint.js"
 import type { WheelSettings } from "../../src/lib/1_wheelCamera.js"
 import { hoverOpacity } from "../../src/2_graph/16_neighborhood.js"
@@ -281,6 +284,12 @@ export function createCytoscapeGraphFrameResource(
   interactions?: RendererInteractions,
   sticky?: StickyOptions,
   options?: {
+    /** Navigator thumbnail with viewport panning and zooming. */
+    minimap?: boolean
+    /** WebGL2 with viewport submission culling; falls back to Canvas if unavailable. */
+    gpu?: boolean
+    /** Render parentId as directory branches instead of enclosing compound boxes. */
+    containment?: "compound" | "tree"
     /** "always": the wheel always moves the camera (labs). "armed": the wheel scrolls the page
      * until right-click or `setWheelArmed(true)`; Esc, a click outside, or leaving releases it. */
     wheel?: "always" | "armed"
@@ -289,7 +298,9 @@ export function createCytoscapeGraphFrameResource(
   const originalBackground = host?.style.background ?? ""
   const wheelMode = options?.wheel ?? "always"
   host?.addEventListener("wheel", onWheel, { capture: true, passive: false })
+  const gpu = !!(host && options?.gpu && supportsWebgl(host.ownerDocument))
   const cy = cytoscape({
+    webgl: gpu,
     container: host,
     headless: host === undefined,
     styleEnabled: true,
@@ -297,6 +308,10 @@ export function createCytoscapeGraphFrameResource(
     layout: { name: "preset" },
     style: graphStylesheet(GRAPH_STYLES.light) as any,
   })
+  if (host) {
+    host.dataset.graphtBackend = gpu ? "webgl2" : "canvas"
+    if (gpu) cullWebgl(cy)
+  }
   const headerLayer = host?.ownerDocument.createElement("div")
   const headerViews = new Map<string, HTMLElement>()
   const sealedSvgLayer = host?.ownerDocument.createElement("div")
@@ -316,6 +331,8 @@ export function createCytoscapeGraphFrameResource(
   let themed = false
   let applyingFrame = false
   let renderedGeometryRevision: string | undefined
+  let minimap: ReturnType<typeof createMinimap> | undefined
+  let minimapHiddenIds = ""
   const primitivesByRevision = new Map<string, readonly SvgGraphPrimitive[]>()
 
   // Canvas viewport changes must move the sealed DOM artifacts in the same event.
@@ -381,6 +398,7 @@ export function createCytoscapeGraphFrameResource(
 
   function onWheel(event: WheelEvent): void {
     if (!host || renderedFrame === undefined) return
+    if (event.target instanceof Element && event.target.closest("[data-grapht-minimap]")) return
     // Capture before Cytoscape's built-in wheel zoom sees this event.
     event.stopImmediatePropagation()
     // Unarmed: no preventDefault, so the page scrolls past the diagram.
@@ -544,6 +562,11 @@ export function createCytoscapeGraphFrameResource(
       rgbByColor.clear()
       applyHover(currentHops)
       if (host) host.style.background = theme.canvasBackground
+      if (minimap) {
+        minimap.el.style.background = theme.canvasBackground
+        minimap.el.style.borderColor = theme.nodeBorder
+        minimap.refresh()
+      }
       stickyOverlay?.applyTheme(theme)
       for (const view of sealedSvgViews.values()) {
         const svg = view.querySelector("svg")
@@ -565,7 +588,17 @@ export function createCytoscapeGraphFrameResource(
     sealedSvgViews,
     render(frame, receipt) {
       unsubscribeMomentum()
+      const previous = renderedFrame
       renderedFrame = frame
+      // Immutable frame parts are retained by camera-only projections.
+      if (previous && !stickyOverlay && !headerViews.size && !sealedSvgViews.size && previous.graph === frame.graph && previous.geometry === frame.geometry
+        && Object.keys({ ...previous.presentation, ...frame.presentation }).every(key =>
+          previous.presentation[key as keyof GraphFrame["presentation"]] === frame.presentation[key as keyof GraphFrame["presentation"]])) {
+        applyingFrame = true
+        try { cy.viewport({ pan: { x: frame.camera.x, y: frame.camera.y }, zoom: frame.camera.scale }) }
+        finally { applyingFrame = false }
+        return
+      }
       hoverSignatureById.clear()
       cy.userPanningEnabled(!frame.presentation.editable)
       const activeRevisions = new Set(Object.values(frame.presentation.sealedSvgArtifactsByRootId).map(artifact => artifact.revisionId))
@@ -578,7 +611,7 @@ export function createCytoscapeGraphFrameResource(
         primitivesByRevision.set(artifact.revisionId, measured)
         return measured.map(primitive => ({ ...primitive, rootId: artifact.rootId }))
       })
-      const next = definitions(frame, sourcePrimitives)
+      const next = definitions(options?.containment === "tree" ? treeGraphFrame(frame) : frame, sourcePrimitives)
       const nextById = new Map(next.map(definition => [String(definition.data?.id), definition]))
       for (const id of hoverPaintById.keys()) if (!nextById.has(id)) hoverPaintById.delete(id)
       const geometryChanged = renderedGeometryRevision !== frame.geometry.revisionId
@@ -702,9 +735,17 @@ export function createCytoscapeGraphFrameResource(
         )
       }
       stickyOverlay?.render(frame)
+      if (host && options?.minimap && !minimap && cy.nodes().nonempty()) minimap = createMinimap(cy, host, theme)
+      if (minimap) {
+        const hidden = JSON.stringify([...frame.presentation.hiddenIds].sort())
+        if (geometryChanged || previous?.graph !== frame.graph || hidden !== minimapHiddenIds) minimap.refresh()
+        minimapHiddenIds = hidden
+      }
     },
     unsubscribe() {
       unsubscribeMomentum()
+      minimap?.unsubscribe()
+      minimap = undefined
       host?.removeEventListener("wheel", onWheel, { capture: true })
       if (host && wheelMode === "armed") {
         release()

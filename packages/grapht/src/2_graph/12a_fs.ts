@@ -3,6 +3,7 @@ import { fsRoutes } from "../lib/5_fsRoutes.js"
 import type { GraphGeometry } from "./0_frame.js"
 
 export type FsHints = {
+  nodeWidth?: number
   entrypoints?: readonly string[]
   order?: readonly string[]
   symlinks?: readonly string[]
@@ -10,6 +11,8 @@ export type FsHints = {
 
 /** ordered DFS forest, one row per item, one indent per depth. */
 export function FS(hints: FsHints = {}) {
+  const width = hints.nodeWidth ?? 144
+  if (!Number.isFinite(width) || width <= 0) throw new Error("FS nodeWidth must be positive")
   return (graph: Graph, signal: AbortSignal): GraphGeometry => {
     signal.throwIfAborted()
     const diagnostics = validateGraph(graph)
@@ -52,7 +55,7 @@ export function FS(hints: FsHints = {}) {
         const { id, depth } = stack.pop()!
         if (seen.has(id)) continue
         seen.add(id)
-        const bounds = { x: 24 + depth * 32, y: 24 + row++ * 40, width: 144, height: 28 }
+        const bounds = { x: 24 + depth * 32, y: 24 + row++ * 40, width, height: 28 }
         if (graph[id].type === "node") boundsById[id] = bounds
         endpointAnchorById[id] = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }
         const next = children.get(id)!
