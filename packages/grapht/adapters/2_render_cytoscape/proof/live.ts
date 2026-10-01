@@ -1,3 +1,4 @@
+import { layoutFrame, layoutAlgorithms } from "./6_layoutFrame.ts"
 import { documentFingerprint } from "@hafley66/grapht-model"
 import { moveGraphFrame, movementOffsets, type GraphMove, type MoveHistory } from "../../../src/2_graph/23_manualMovement.ts"
 import { d2SvgFrame } from "../../../src/2_graph/22_d2SvgFrame.ts"
@@ -22,7 +23,7 @@ import { describeSvgInference, formatSvgInferStep, svgInferSequence, type SvgInf
 import { svgInferFrame, type SvgInferStep } from "../../../src/2_graph/24_svgInfer.ts"
 
 type Mode = "document" | "cytoscape"
-type Source = "arch" | "sequence" | "svg" | "paired-d2" | "paired-mermaid" | SvgInferExample
+type Source = "layout" | "arch" | "sequence" | "svg" | "paired-d2" | "paired-mermaid" | SvgInferExample
 
 const cameraInput$ = new Subject<GraphCamera>()
 const focusInput$ = new Subject<ReadonlySet<string>>()
@@ -233,7 +234,7 @@ document.querySelector("#group-actors")!.addEventListener("click", () => {
 
 let mountGeneration = 0
 async function mount(next: Mode): Promise<void> {
-  const interactive = Object.values(frame.$().presentation.sealedSvgArtifactsByRootId).some(
+  const interactive = Object.keys(frame.$().presentation.sealedSvgArtifactsByRootId).length === 0 || Object.values(frame.$().presentation.sealedSvgArtifactsByRootId).some(
     artifact => artifact.bindings?.length || Object.keys(artifact.graphIdByElementId ?? {}).length > 0,
   )
   if (next === "cytoscape" && !interactive) return
@@ -255,8 +256,18 @@ async function mount(next: Mode): Promise<void> {
   mounted$.next(resource)
 }
 
+const layoutChoice = Signal<keyof typeof layoutAlgorithms>("FS")
+const layoutSelect = document.querySelector<HTMLSelectElement>("#graph-layout")!
+layoutSelect.addEventListener("change", () => {
+  const name = layoutSelect.value as keyof typeof layoutAlgorithms
+  if (!(name in layoutAlgorithms)) return
+  layoutChoice.$(name)
+  void useSource("layout")
+})
+
 let sourceGeneration = 0
 async function loadSource(next: Exclude<Source, "svg">): Promise<{ frame: GraphFrame; report: string }> {
+  if (next === "layout") return { frame: await layoutFrame(layoutChoice.$(), { width: innerWidth, height: innerHeight }), report: "" }
   if (next === "arch") return { frame: artifactFrame, report: "" }
   if (next === "sequence-svg" || next === "paired-d2-svg" || next === "paired-mermaid-svg") {
     const inferred = await svgInferSequence({ width: window.innerWidth, height: window.innerHeight }, next, step => inferStep$.next({ source: next, step }))
@@ -276,7 +287,7 @@ async function useSource(next: Exclude<Source, "svg">): Promise<void> {
   }
   if (generation !== sourceGeneration) return
   ui.source.$(next)
-  cameraInput$.next(fitGraphCamera(loaded.frame.geometry, { x: 0, y: 0, width: innerWidth, height: innerHeight }, 24, fitMode.$()))
+  cameraInput$.next(next === "layout" ? loaded.frame.camera : fitGraphCamera(loaded.frame.geometry, { x: 0, y: 0, width: innerWidth, height: innerHeight }, 24, fitMode.$()))
   documentState.$({ original: loaded.frame, collapsed: new Set<string>() })
   hoveredIds.$(new Set())
   inspector.hidden = true
@@ -290,7 +301,8 @@ async function useSource(next: Exclude<Source, "svg">): Promise<void> {
   const cytoButton = document.querySelector<HTMLButtonElement>("#renderer-cytoscape")!
   cytoButton.disabled = false
   cytoButton.title = "Native Cytoscape nodes and edges"
-  await mount(ui.mode.$())
+  await mount(next === "layout" ? "cytoscape" : ui.mode.$())
+  document.body.dataset.layout = next === "layout" ? layoutChoice.$() : ""
 }
 
 document.querySelector<HTMLInputElement>("#svg-import")!.addEventListener("change", async event => {
@@ -398,7 +410,12 @@ for (const [id, delta] of [["undo-move", -1], ["redo-move", 1]] as const) docume
 })
 // The page entry is the runtime boundary; this subscription is its only one.
 const runtime = painted$.subscribe()
-await useSource("sequence")
+const initialLayout = new URLSearchParams(location.search).get("layout") as keyof typeof layoutAlgorithms | null
+if (initialLayout && Object.hasOwn(layoutAlgorithms, initialLayout)) {
+  layoutChoice.$(initialLayout)
+  layoutSelect.value = initialLayout
+  await useSource("layout")
+} else await useSource("sequence")
 
 document.querySelector("#document")?.addEventListener("click", () => void mount("document"))
 document.querySelector("#renderer-cytoscape")?.addEventListener("click", () => void mount("cytoscape"))

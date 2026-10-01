@@ -360,3 +360,6 @@ export {
   type MessageLifecycle,
   type TrailerCommit,
 } from "./7_docHistory/0_trailer.js"
+
+export { FS, type FsHints } from "./2_graph/12a_fs.js"
+export { zigzag } from "./2_graph/12b_zigzag.js"

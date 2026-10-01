@@ -226,6 +226,19 @@ function definitions(frame: GraphFrame, sourcePrimitives: readonly BoundPrimitiv
       position: position(frame, id),
       classes: "graph-endpoint-anchor",
     })
+    const route = frame.geometry.routesById[id]
+    const segmentWeights: number[] = []
+    const segmentDistances: number[] = []
+    if (route && route.length >= 4) {
+      const a = position(frame, item.fromId), b = position(frame, item.toId)
+      const dx = b.x - a.x, dy = b.y - a.y
+      const length = Math.hypot(dx, dy)
+      if (length > 0) for (let at = 2; at < route.length - 2; at += 2) {
+        const x = route[at] - a.x, y = route[at + 1] - a.y
+        segmentWeights.push((x * dx + y * dy) / (length * length))
+        segmentDistances.push((dx * y - dy * x) / length)
+      }
+    }
     edges.push({
       data: {
         id,
@@ -234,8 +247,11 @@ function definitions(frame: GraphFrame, sourcePrimitives: readonly BoundPrimitiv
         source: from,
         target: to,
         direction: item.direction,
+        segmentWeights,
+        segmentDistances,
         label: headerIds.has(id) ? "" : labelsById[id]?.text ?? "",
       },
+      ...(route ? { classes: segmentWeights.length ? "graph-native-segments" : "graph-native-message" } : {}),
     })
   }
   return [...nodes, ...edges, ...primitiveDefinitions(frame, sourcePrimitives)]

@@ -37,3 +37,6 @@ export { svgFrame, type SvgFrameInput } from "./2_graph/21_svgFrame.js"
 
 export { d2SvgFrame } from "./2_graph/22_d2SvgFrame.js"
 export { moveGraphFrame, movementOffsets, type GraphMove, type MoveHistory } from "./2_graph/23_manualMovement.js"
+
+export { FS, type FsHints } from "./2_graph/12a_fs.js"
+export { zigzag } from "./2_graph/12b_zigzag.js"
