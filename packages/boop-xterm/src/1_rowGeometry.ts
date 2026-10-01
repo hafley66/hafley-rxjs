@@ -67,7 +67,7 @@ export function gutterLeft(geometry: TerminalRowGeometry, offset: number): numbe
 /// The buffer row under a client y. By geometry, never by hit target: xterm
 /// stacks selection and decoration layers over its rows.
 export function bufferRowAtClientY(geometry: TerminalRowGeometry, clientY: number): number | null {
-  if (clientY < geometry.screen.top || clientY > geometry.screen.bottom) return null;
+  if (clientY < geometry.screen.top || clientY >= geometry.screen.bottom) return null;
   const viewportRow = Math.min(
     geometry.rows - 1,
     Math.max(0, Math.floor((clientY - geometry.screen.top) / (geometry.cellHeight || 1))),

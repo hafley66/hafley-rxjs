@@ -1,0 +1,159 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`tracks top, bottom, multirow and disabled status without shifting buffer coordinates 1`] = `
+[
+  {
+    "lines": [
+      {
+        "end": 20,
+        "start": 20,
+        "text": "row 20",
+      },
+      {
+        "end": 21,
+        "start": 21,
+        "text": "row 21",
+      },
+      {
+        "end": 22,
+        "start": 22,
+        "text": "row 22",
+      },
+      {
+        "end": 23,
+        "start": 23,
+        "text": "row 23",
+      },
+    ],
+    "range": {
+      "end": 24,
+      "start": 24,
+    },
+    "selectable": [
+      true,
+      true,
+      true,
+      true,
+      false,
+    ],
+    "status": {
+      "position": "bottom",
+      "rows": 1,
+    },
+  },
+  {
+    "lines": [
+      {
+        "end": 21,
+        "start": 21,
+        "text": "row 21",
+      },
+      {
+        "end": 22,
+        "start": 22,
+        "text": "row 22",
+      },
+      {
+        "end": 23,
+        "start": 23,
+        "text": "row 23",
+      },
+      {
+        "end": 24,
+        "start": 24,
+        "text": "row 24",
+      },
+    ],
+    "range": {
+      "end": 20,
+      "start": 20,
+    },
+    "selectable": [
+      true,
+      false,
+      true,
+      true,
+      true,
+    ],
+    "status": {
+      "position": "top",
+      "rows": 1,
+    },
+  },
+  {
+    "lines": [
+      {
+        "end": 22,
+        "start": 22,
+        "text": "row 22",
+      },
+      {
+        "end": 23,
+        "start": 23,
+        "text": "row 23",
+      },
+      {
+        "end": 24,
+        "start": 24,
+        "text": "row 24",
+      },
+    ],
+    "range": {
+      "end": 21,
+      "start": 20,
+    },
+    "selectable": [
+      true,
+      false,
+      false,
+      true,
+      true,
+    ],
+    "status": {
+      "position": "top",
+      "rows": 2,
+    },
+  },
+  {
+    "lines": [
+      {
+        "end": 20,
+        "start": 20,
+        "text": "row 20",
+      },
+      {
+        "end": 21,
+        "start": 21,
+        "text": "row 21",
+      },
+      {
+        "end": 22,
+        "start": 22,
+        "text": "row 22",
+      },
+      {
+        "end": 23,
+        "start": 23,
+        "text": "row 23",
+      },
+      {
+        "end": 24,
+        "start": 24,
+        "text": "row 24",
+      },
+    ],
+    "range": null,
+    "selectable": [
+      true,
+      true,
+      true,
+      true,
+      true,
+    ],
+    "status": {
+      "position": "bottom",
+      "rows": 0,
+    },
+  },
+]
+`;

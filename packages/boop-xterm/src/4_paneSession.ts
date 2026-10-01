@@ -1,9 +1,9 @@
 import { createQuery, toSignal, type Query } from "@hafley66/signals";
 import { combineLatest, map } from "rxjs";
-import type { BoopXtermPorts, PaneIdentity, PaneSessionBinding } from "./3_ports.js";
+import type { BoopXtermPanePorts, PaneIdentity, PaneSessionBinding } from "./3_ports.js";
 
 export function paneSessionStream(
-  identity: PaneIdentity, ports: BoopXtermPorts,
+  identity: PaneIdentity, ports: BoopXtermPanePorts,
 ): Query<{ target: string; socket: string | null }, PaneSessionBinding | null> {
   const paneVisible = toSignal(ports.paneVisible);
   const paneClosed = toSignal(ports.paneClosed);

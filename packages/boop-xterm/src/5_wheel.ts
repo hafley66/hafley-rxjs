@@ -1,13 +1,13 @@
 import { Signal, createMutation, toSignal, type Signal as SignalType } from "@hafley66/signals";
 import type { Terminal } from "@xterm/xterm";
 import { Observable, animationFrameScheduler, auditTime, buffer, concatMap, filter, map, merge, of, scan, share, take, takeUntil, tap } from "rxjs";
-import type { BoopXtermPorts, PaneIdentity, PaneRuntimeState, WheelModel } from "./3_ports.js";
+import type { BoopXtermPanePorts, PaneIdentity, PaneRuntimeState, WheelModel } from "./3_ports.js";
 import { initialTerminalWheelState, reduceTerminalWheel, type TerminalWheelEvent } from "./2_wheelReduce.js";
 
 type WheelInput = { event: TerminalWheelEvent; rows: number };
 
 export function wheelStream(
-  term: Terminal, identity: PaneIdentity, _runtime: SignalType<PaneRuntimeState>, ports: BoopXtermPorts,
+  term: Terminal, identity: PaneIdentity, _runtime: SignalType<PaneRuntimeState>, ports: BoopXtermPanePorts,
 ): WheelModel {
   const activity = Signal<void>();
   const closed$ = toSignal(ports.paneClosed).$.pipe(filter(Boolean));

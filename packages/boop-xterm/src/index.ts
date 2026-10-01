@@ -48,3 +48,6 @@ export * from "./2_hoverCheckPure.js";
 export * from "./3_turnMarksPure.js";
 export * from "./4_forkMarks.js";
 export * from "./5_forkRenderPure.js";
+
+export { isTerminalContentRow, terminalStatusRange, setTerminalStatus, type TmuxStatus } from "./0_tmuxStatus.js";
+export { turnAtClientPoint } from "./7_turnAtPoint.js";

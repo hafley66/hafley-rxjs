@@ -1,7 +1,7 @@
 import { Signal, toSignal, type Signal as SignalType } from "@hafley66/signals";
 import type { Terminal } from "@xterm/xterm";
 import { animationFrameScheduler, auditTime, debounceTime, defer, filter, finalize, map, merge, scan, shareReplay, skip, startWith, takeUntil, tap } from "rxjs";
-import type { BoopXtermPorts, LineAnchorModel, LineAnchorState, PaneRuntimeState, TerminalLineAnchorEvent, ViewportModel, ViewportSnapshot, VisibleTerminalLine } from "./3_ports.js";
+import type { BoopXtermPanePorts, LineAnchorModel, LineAnchorState, PaneRuntimeState, TerminalLineAnchorEvent, ViewportModel, ViewportSnapshot, VisibleTerminalLine } from "./3_ports.js";
 
 function hashLine(value: string): string {
   let hash = 2166136261;
@@ -30,7 +30,13 @@ function projectLines(term: Terminal, snapshot: ViewportSnapshot, prior: LineAnc
   for (let row = top; row < top + snapshot.change.rows; row++) {
     const element = rowElements[row - top];
     const line = next.find((candidate) => candidate.bufferStart <= row && row <= candidate.bufferEnd);
-    if (!element || !line) continue;
+    if (!element) continue;
+    if (!line) {
+      delete element.dataset.terminalLineId;
+      delete element.dataset.bufferRow;
+      element.style.removeProperty("anchor-name");
+      continue;
+    }
     element.dataset.terminalLineId = line.id;
     element.dataset.bufferRow = String(row);
     element.style.setProperty("anchor-name", `--${line.id}`);
@@ -54,7 +60,7 @@ function projectLines(term: Terminal, snapshot: ViewportSnapshot, prior: LineAnc
 }
 
 export function lineAnchorsStream(
-  term: Terminal, viewport: ViewportModel, _runtime: SignalType<PaneRuntimeState>, ports: BoopXtermPorts,
+  term: Terminal, viewport: ViewportModel, _runtime: SignalType<PaneRuntimeState>, ports: BoopXtermPanePorts,
 ): LineAnchorModel {
   const events = Signal<TerminalLineAnchorEvent[]>();
   const initial: LineAnchorState = { visible: [], settled: true, elementsByBufferRow: new Map() };

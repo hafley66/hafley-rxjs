@@ -9,6 +9,8 @@ import type { TerminalWheelState } from "./2_wheelReduce.js";
 import type { BoopTurnComment, BoopTurnCommentFork } from "./2_contextSyncPure.js";
 import type { SquaresOptions, Strip } from "./1_agentSquaresFeed.js";
 
+import type { TmuxStatus } from "./0_tmuxStatus.js";
+
 export type PaneIdentity = { id: string; target: string; socket: string | null; graphics?: boolean };
 export type PaneSessionBinding = { session: string; harness: string | null };
 export type BoopSyncStat = { written: number; dropped: number };
@@ -47,6 +49,7 @@ export type LineAnchorState = {
   elementsByBufferRow: ReadonlyMap<number, HTMLElement>;
 };
 export type BoopXtermPorts = {
+  boop_mux_status?: Endpoint<{ target: string; socket: string | null }, TmuxStatus | null>;
   boop_mux_session: Endpoint<{ target: string; socket: string | null }, PaneSessionBinding | null>;
   boop_mux_capture: Endpoint<{ target: string; socket: string | null }, string>;
   boop_turns: Endpoint<{ session: string }, BoopTurn[]>;
@@ -124,3 +127,11 @@ export type BoopXtermPane = {
 };
 export type TurnAtPoint = { point: ViewportPoint; turn: VisibleTurn | null };
 export type RegionAtPoint = { point: ViewportPoint; region: ProjectedTurnRegion | null };
+
+/** Inputs used by the pane models; lifted view modules use BoopXtermPorts. */
+export type BoopXtermPanePorts = Pick<BoopXtermPorts,
+  | "boop_mux_status" | "boop_mux_session" | "boop_mux_capture" | "boop_turns"
+  | "boop_turns_recent" | "boop_sync_session" | "boop_locate_turns" | "scroll_session"
+  | "paneVisible" | "paneClosed" | "harness" | "clipboardEnabled" | "tabSessionIds"
+  | "scanRequested" | "selectionClear"
+>;

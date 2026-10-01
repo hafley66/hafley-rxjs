@@ -1,15 +1,15 @@
 import { Signal, createMutation, createQuery, toSignal, type Query } from "@hafley66/signals";
 import type { Terminal } from "@xterm/xterm";
-import { EMPTY, Observable, catchError, combineLatest, concat, debounceTime, defer, distinctUntilChanged, exhaustMap, expand, filter, forkJoin, map, merge, of, scan, share, shareReplay, skip, skipWhile, startWith, switchMap, take, takeUntil, tap, timer } from "rxjs";
+import { EMPTY, Observable, catchError, combineLatest, concat, debounceTime, defer, distinctUntilChanged, exhaustMap, expand, filter, forkJoin, map, merge, of, scan, share, shareReplay, skip, startWith, switchMap, take, takeUntil, tap, timer } from "rxjs";
 import { regionAtBufferRow as findRegion, type ProjectedTurnRegion } from "./0_turnRegions.js";
 import type { BoopTurn, LogicalLine, VisibleTurn } from "./0_types.js";
 import { projectionTurnSources } from "./1_ompTurnBinding.js";
-import { attachTurnRegions, dropTerminalInputRows, dropTmuxStatusRow, locateVisibleTurns, selectProjectionTurns, tmuxConfirms, TURN_ACTIVITY_LEASE_MS, TURN_ACTIVITY_POLL_MS, type TurnSpan, type TurnVisibilityEvent } from "./2_turnLocate.js";
-import type { BoopXtermPorts, PaneIdentity, PaneRuntimeState, PaneSessionBinding, TurnVisibilityModel, TurnVisibilityState, ViewportModel, ViewportSnapshot } from "./3_ports.js";
+import { attachTurnRegions, dropTerminalInputRows, locateVisibleTurns, selectProjectionTurns, tmuxConfirms, TURN_ACTIVITY_LEASE_MS, TURN_ACTIVITY_POLL_MS, type TurnSpan, type TurnVisibilityEvent } from "./2_turnLocate.js";
+import type { BoopXtermPanePorts, PaneIdentity, PaneRuntimeState, PaneSessionBinding, TurnVisibilityModel, TurnVisibilityState, ViewportModel, ViewportSnapshot } from "./3_ports.js";
 import type { Signal as SignalType } from "@hafley66/signals";
 
 export function turnAtBufferRow(visible: VisibleTurn[], row: number | null): VisibleTurn | null {
-  return row === null ? null : visible.find((turn) => turn.anchorStart <= row && row <= turn.anchorEnd) ?? null;
+  return row === null ? null : visible.find((turn) => turn.bufferStart <= row && row <= turn.bufferEnd) ?? null;
 }
 
 export function regionAtBufferRow(visible: VisibleTurn[], row: number | null): ProjectedTurnRegion | null;
@@ -32,18 +32,18 @@ function queryData<I, O>(query: Query<I, O>, fallback: O, staleTime?: number): O
   );
 }
 
-function turnsFor(session: string, ports: BoopXtermPorts): Observable<BoopTurn[]> {
+function turnsFor(session: string, ports: BoopXtermPanePorts): Observable<BoopTurn[]> {
   return queryData(createQuery(ports.boop_turns, { session }, { staleTime: 1_000 }), [], 1_000);
 }
 
-function allTurns(sessions: string[], ports: BoopXtermPorts): Observable<BoopTurn[]> {
+function allTurns(sessions: string[], ports: BoopXtermPanePorts): Observable<BoopTurn[]> {
   const unique = [...new Set(sessions.filter(Boolean))];
   return unique.length
     ? forkJoin(unique.map((session) => turnsFor(session, ports))).pipe(map((groups) => groups.flat()))
     : of([]);
 }
 
-function recentTurns(harness: string | null, ports: BoopXtermPorts): Observable<BoopTurn[]> {
+function recentTurns(harness: string | null, ports: BoopXtermPanePorts): Observable<BoopTurn[]> {
   if (!harness || harness === "omp") return of([]);
   const query = (since: number) => queryData(createQuery(ports.boop_turns_recent, { since, harness }, { staleTime: 10_000 }), [], 10_000);
   return query(Date.now() - 6 * 60 * 60 * 1_000).pipe(
@@ -53,12 +53,13 @@ function recentTurns(harness: string | null, ports: BoopXtermPorts): Observable<
 }
 
 function locate(
-  lines: LogicalLine[], turns: BoopTurn[], capture: string, harness: string | null, ports: BoopXtermPorts,
+  lines: LogicalLine[], turns: BoopTurn[], capture: string, harness: string | null, ports: BoopXtermPanePorts,
 ): Observable<VisibleTurn[]> {
-  const paneLines = dropTmuxStatusRow(lines, capture);
+  const paneLines = lines; // Viewport excludes live tmux status rows without renumbering.
   const native = createQuery(ports.boop_locate_turns, { lines: paneLines, turns }, { cacheTime: 0 });
   return native.$.pipe(
-    skipWhile((state) => !state.isLoading),
+    // Identical inputs can reuse an already settled query. Waiting for a new
+    // loading edge strands the scan and every coalesced trigger behind it.
     filter((state) => !state.isLoading && (state.isSuccess || state.isError)),
     take(1),
     map((state) => state.isSuccess && state.data
@@ -68,12 +69,12 @@ function locate(
   );
 }
 
-type ScanTrigger = { snapshot: ViewportSnapshot; kind: "viewport" | "capture" | "manual" | "resume" };
+type ScanTrigger = { snapshot: ViewportSnapshot; kind: "viewport" | "capture" | "manual" | "resume" | "binding" };
 
 export function turnVisibilityStream(
   _term: Terminal, _identity: PaneIdentity, viewport: ViewportModel,
   paneSession: Query<{ target: string; socket: string | null }, PaneSessionBinding | null>,
-  runtime: SignalType<PaneRuntimeState>, ports: BoopXtermPorts,
+  runtime: SignalType<PaneRuntimeState>, ports: BoopXtermPanePorts,
 ): TurnVisibilityModel {
   const stateInitial: TurnVisibilityState = { visible: [] };
   const changes = Signal<TurnVisibilityEvent>();
@@ -119,6 +120,12 @@ export function turnVisibilityStream(
     distinctUntilChanged(), filter(Boolean),
     switchMap(() => currentSnapshot$.pipe(take(1), map((snapshot) => ({ snapshot, kind: "resume" as const })))),
   );
+  const bindingTriggers$ = paneSession.data.$.pipe(
+    map((binding) => binding?.session ?? null),
+    distinctUntilChanged(),
+    filter((session) => session !== null && visible.$()),
+    switchMap(() => currentSnapshot$.pipe(take(1), map((snapshot) => ({ snapshot, kind: "binding" as const })))),
+  );
   const scanOnce = (trigger: ScanTrigger): Observable<VisibleTurn[] | null> => defer(() => {
     if (!visible.$()) return of(null);
     const revision = runtime.viewportRevision.$();
@@ -143,7 +150,7 @@ export function turnVisibilityStream(
   });
   const scanResults$ = defer(() => {
     let pending: ScanTrigger | null = null;
-    return merge(viewportTriggers$, captureTriggers$, manualTriggers$, resumeTriggers$).pipe(
+    return merge(viewportTriggers$, captureTriggers$, manualTriggers$, resumeTriggers$, bindingTriggers$).pipe(
       tap((trigger) => { pending = trigger; }),
       exhaustMap((trigger) => {
         pending = null;

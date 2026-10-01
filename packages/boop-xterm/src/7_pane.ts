@@ -1,7 +1,7 @@
 import { Signal, toSignal } from "@hafley66/signals";
 import type { Terminal } from "@xterm/xterm";
 import { filter, map, merge, share, takeUntil } from "rxjs";
-import type { BoopXtermPane, BoopXtermPorts, PaneIdentity, PaneRuntimeState } from "./3_ports.js";
+import type { BoopXtermPane, BoopXtermPanePorts, PaneIdentity, PaneRuntimeState } from "./3_ports.js";
 import { viewportStream } from "./4_viewport.js";
 import { paneSessionStream } from "./4_paneSession.js";
 import { lineAnchorsStream } from "./5_lineAnchors.js";
@@ -10,9 +10,9 @@ import { pinnedSelectionStream } from "./5_pinnedSelection.js";
 import { turnVisibilityStream } from "./6_turnVisibility.js";
 
 export function createBoopXtermPane(
-  term: Terminal, host: HTMLElement, identity: PaneIdentity, ports: BoopXtermPorts,
+  term: Terminal, host: HTMLElement, identity: PaneIdentity, ports: BoopXtermPanePorts,
 ): BoopXtermPane {
-  const inputs: BoopXtermPorts = {
+  const inputs: BoopXtermPanePorts = {
     ...ports,
     paneVisible: toSignal(ports.paneVisible),
     paneClosed: toSignal(ports.paneClosed),
@@ -25,7 +25,7 @@ export function createBoopXtermPane(
     selection: { selection: null, captured: [], anchor: null, dragging: false },
   });
   const paneSession = paneSessionStream(identity, inputs);
-  const viewport = viewportStream(term, runtime, inputs);
+  const viewport = viewportStream(term, runtime, inputs, identity);
   const anchors = lineAnchorsStream(term, viewport, runtime, inputs);
   const wheel = wheelStream(term, identity, runtime, inputs);
   const pinned = pinnedSelectionStream(term, host, runtime, inputs);

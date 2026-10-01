@@ -1,11 +1,12 @@
 import { Signal, toSignal, type Signal as SignalType } from "@hafley66/signals";
 import type { Terminal } from "@xterm/xterm";
 import { Observable, animationFrameScheduler, auditTime, defer, filter, finalize, fromEvent, map, merge, switchMap, takeUntil, takeWhile, tap } from "rxjs";
-import type { BoopXtermPorts, PaneRuntimeState, PinnedSelectionModel } from "./3_ports.js";
+import type { BoopXtermPanePorts, PaneRuntimeState, PinnedSelectionModel } from "./3_ports.js";
+import { isTerminalContentRow } from "./0_tmuxStatus.js";
 import { isEmptySelection, joinPinnedRows, lineSpanAt, pinnedRowSpans, wordSpanAt, type PinnedSelection, type SelectionCell } from "./2_pinnedSelectionPure.js";
 
 export function pinnedSelectionStream(
-  term: Terminal, host: HTMLElement, runtime: SignalType<PaneRuntimeState>, ports: BoopXtermPorts,
+  term: Terminal, host: HTMLElement, runtime: SignalType<PaneRuntimeState>, ports: BoopXtermPanePorts,
 ): PinnedSelectionModel {
   const copy = Signal<string>();
   const text = Signal(() => runtime.selection.selection.$() ? joinPinnedRows(runtime.selection.captured.$()) : "");
@@ -35,7 +36,7 @@ export function pinnedSelectionStream(
       const line = term.buffer.active.getLine(span.row);
       return line ? line.translateToString(false, span.startCol, span.endCol) : "";
     };
-    const capture = (selection: PinnedSelection) => pinnedRowSpans(selection, term.cols).map(rowText);
+    const capture = (selection: PinnedSelection) => pinnedRowSpans(selection, term.cols).filter((span) => isTerminalContentRow(term, span.row)).map(rowText);
     const clear = () => {
       runtime.selection.$({ selection: null, captured: [], anchor: null, dragging: false });
       root.replaceChildren();
@@ -47,7 +48,7 @@ export function pinnedSelectionStream(
     const paint = () => {
       const selection = runtime.selection.selection.$();
       if (!selection) { root.replaceChildren(); return; }
-      const spans = pinnedRowSpans(selection, term.cols);
+      const spans = pinnedRowSpans(selection, term.cols).filter((span) => isTerminalContentRow(term, span.row));
       const live = spans.map(rowText);
       const captured = runtime.selection.captured.$();
       if (live.length !== captured.length || live.some((row, index) => row !== captured[index])) {
@@ -76,6 +77,7 @@ export function pinnedSelectionStream(
         && !(event.target instanceof HTMLElement && event.target.closest(".term-diagrams"))),
       tap(clear),
       filter(() => term.modes.mouseTrackingMode !== "none"),
+      filter((event) => isTerminalContentRow(term, cellAt(event.clientX, event.clientY).row)),
       switchMap((event) => {
         const cell = cellAt(event.clientX, event.clientY);
         if (event.detail >= 2) {
