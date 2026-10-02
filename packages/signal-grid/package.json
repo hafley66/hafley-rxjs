@@ -10,12 +10,20 @@
   ],
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./theme.css": "./dist/theme.css",
-    "./tree.css": "./dist/tree.css",
+    "./theme.css": {
+      "source": "./src/theme.css",
+      "default": "./dist/theme.css"
+    },
+    "./tree.css": {
+      "source": "./src/tree.css",
+      "default": "./dist/tree.css"
+    },
     "./react": {
+      "source": "./src/react/index.tsx",
       "types": "./dist/react/index.d.ts",
       "import": "./dist/react.js"
     }

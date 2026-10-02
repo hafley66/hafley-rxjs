@@ -7,10 +7,12 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "source": "./index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./benchmark": {
+      "source": "./4_adapter.ts",
       "types": "./dist/4_adapter.d.ts",
       "import": "./dist/4_adapter.js"
     }

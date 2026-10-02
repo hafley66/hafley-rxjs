@@ -7,14 +7,17 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./plugin": {
+      "source": "./src/plugin.ts",
       "types": "./dist/plugin.d.ts",
       "import": "./dist/plugin.js"
     },
     "./report": {
+      "source": "./src/report/index.ts",
       "types": "./dist/report/index.d.ts",
       "import": "./dist/report/index.js"
     }

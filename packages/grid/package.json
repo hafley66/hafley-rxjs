@@ -10,10 +10,12 @@
   ],
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./react": {
+      "source": "./src/3_react.ts",
       "types": "./dist/3_react.d.ts",
       "import": "./dist/3_react.js"
     }

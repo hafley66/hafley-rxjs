@@ -7,14 +7,17 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./react": {
+      "source": "./src/react.tsx",
       "types": "./dist/react.d.ts",
       "import": "./dist/react.js"
     },
     "./marbles.css": {
+      "source": "./src/marbles.css",
       "types": "./dist/marbles.css.d.ts",
       "default": "./dist/marbles.css"
     }

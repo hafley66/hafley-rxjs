@@ -11,26 +11,32 @@
   ],
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./Signal": {
+      "source": "./src/2_Signal.ts",
       "types": "./dist/2_Signal.d.ts",
       "import": "./dist/2_Signal.js"
     },
     "./react": {
+      "source": "./src/3_react.ts",
       "types": "./dist/3_react.d.ts",
       "import": "./dist/3_react.js"
     },
     "./jsx-runtime": {
+      "source": "./src/jsx-runtime.ts",
       "types": "./dist/jsx-runtime.d.ts",
       "import": "./dist/jsx-runtime.js"
     },
     "./jsx-dev-runtime": {
+      "source": "./src/jsx-dev-runtime.ts",
       "types": "./dist/jsx-dev-runtime.d.ts",
       "import": "./dist/jsx-dev-runtime.js"
     },
     "./vite": {
+      "source": "./src/vite-plugin.ts",
       "types": "./dist/vite-plugin.d.ts",
       "import": "./dist/vite-plugin.js"
     }

@@ -11,26 +11,32 @@
   ],
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./plugins": {
+      "source": "./src/plugins/index.ts",
       "types": "./dist/plugins/index.d.ts",
       "import": "./dist/plugins/index.js"
     },
     "./plugins/marbles": {
+      "source": "./src/plugins/marbles.ts",
       "types": "./dist/plugins/marbles.d.ts",
       "import": "./dist/plugins/marbles.js"
     },
     "./plugins/echarts": {
+      "source": "./src/plugins/echarts.ts",
       "types": "./dist/plugins/echarts.d.ts",
       "import": "./dist/plugins/echarts.js"
     },
     "./plugins/steps": {
+      "source": "./src/plugins/steps.ts",
       "types": "./dist/plugins/steps.d.ts",
       "import": "./dist/plugins/steps.js"
     },
     "./plugins/fs-tree": {
+      "source": "./src/plugins/fs-tree.ts",
       "types": "./dist/plugins/fs-tree.d.ts",
       "import": "./dist/plugins/fs-tree.js"
     },

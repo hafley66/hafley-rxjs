@@ -11,10 +11,12 @@
   ],
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./theme.css": {
+      "source": "./src/theme.css",
       "types": "./dist/theme.css.d.ts",
       "default": "./dist/theme.css"
     }

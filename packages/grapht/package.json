@@ -7,14 +7,17 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./browser": {
+      "source": "./src/browser.ts",
       "types": "./dist/browser.d.ts",
       "import": "./dist/browser.js"
     },
     "./react": {
+      "source": "./src/4_board/react/index.tsx",
       "types": "./dist/4_board/react/index.d.ts",
       "import": "./dist/react.js"
     }

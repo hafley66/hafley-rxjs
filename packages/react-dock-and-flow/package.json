@@ -13,13 +13,14 @@
   },
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./style.css": {
-   "types": "./dist/style.css.d.ts",
-   "default": "./dist/style.css"
-  }
+      "types": "./dist/style.css.d.ts",
+      "default": "./dist/style.css"
+    }
   },
   "scripts": {
     "build": "vite build && cp src/style.css.d.ts dist/style.css.d.ts",
