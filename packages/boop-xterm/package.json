@@ -1,6 +1,6 @@
 {
   "name": "@hafley66/boop-xterm",
-  "version": "0.0.1",
+  "version": "0.0.1-dev.20261003.3",
   "description": "Terminal geometry, reactive overlays, and pane models for boop",
   "type": "module",
   "main": "./dist/index.js",

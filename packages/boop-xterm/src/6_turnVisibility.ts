@@ -182,7 +182,7 @@ export function turnVisibilityStream(
       return { visible: found };
     }, stateInitial),
   ), stateInitial);
-  const sync$ = activity$.pipe(
+  const activitySync$ = activity$.pipe(
     debounceTime(120),
     filter(() => visible.$()),
     switchMap(() => {
@@ -191,6 +191,13 @@ export function turnVisibilityStream(
       return binding?.session && activeHarness
         ? of({ session: binding.session, harness: activeHarness }) : EMPTY;
     }),
+  );
+  const bindingSync$ = combineLatest([paneSession.data.$, harness.$]).pipe(
+    filter(([binding, activeHarness]) => !!binding?.session && !!activeHarness),
+    map(([binding, activeHarness]) => ({ session: binding!.session, harness: activeHarness! })),
+    distinctUntilChanged((before, after) => before.session === after.session && before.harness === after.harness),
+  );
+  const sync$ = merge(activitySync$, bindingSync$).pipe(
     exhaustMap((input) => createMutation(ports.boop_sync_session, input).$.pipe(
       filter((result) => result.isSuccess || result.isError), take(1),
       tap((result) => { if (result.data && result.data.written + result.data.dropped > 0) capture.refetch(); }),
