@@ -21,7 +21,7 @@ export const flows: Example = {
       const controls = row(root)
       const keys = ["f", "d", "j", "k"]
       const pad = keys.map((key) => button(key, controls))
-      const burst = button("burst f+d", controls)
+      const bursts = ["f+d", "f+j", "j+k"].map((pair) => button(`burst ${pair}`, controls))
       const wipe = button("clear log", controls)
 
       const windowRead = readout("chord window", root)
@@ -37,7 +37,7 @@ export const flows: Example = {
       // The chord pipeline: everything pressed inside one 40ms window becomes one sorted chord.
       // pipe$ composes and never subscribes; the log memo below is the observer that runs it.
       const chords = keyTap.$.pipe$(
-        buffer(keyTap.$.pipe(debounceTime(40))),
+        buffer(keyTap.$.pipe(debounceTime(400))),
         map((group) => [...group].sort().join("+")),
         filter((name) => name.includes("+")),
       )
@@ -78,14 +78,18 @@ export const flows: Example = {
         }),
       )
 
-      // The pad: one producer for every press, burst included.
+      // The pad: one producer for every press, bursts included — each burst presses its pair
+      // inside the chord window programmatically, so the chord forms without mouse-speed luck.
       const presses = merge(
         ...pad.map((key, i) => fromEvent(key, "click").pipe(map(() => keyTap.$(keys[i])))),
-        fromEvent(burst, "click").pipe(
-          map(() => {
-            keyTap.$("f")
-            keyTap.$("d")
-          }),
+        ...bursts.map((burst, i) =>
+          fromEvent(burst, "click").pipe(
+            map(() => {
+              const [a, b] = ["f+d", "f+j", "j+k"][i].split("+")
+              keyTap.$(a)
+              keyTap.$(b)
+            }),
+          ),
         ),
       )
 
