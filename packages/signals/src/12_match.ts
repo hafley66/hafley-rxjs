@@ -36,15 +36,13 @@ const done = (subs: Subscription[]): (() => void) => {
   }
 }
 
-/**
- * Flat, exhaustive dispatch over a record of event ports. Every handler runs for its key's
- * writes; a state source replays each key's current value on subscribe, an event source
- * (`Signal<Record>()`) fires on the next write only.
- */
 export function switch$<E extends Record<string, unknown>>(
   source: Signal<E>,
   handlers: { [K in keyof E & string]-?: (value: E[K]) => void },
 ): () => void {
+  if (typeof handlers !== "object" || handlers === null) {
+    throw new TypeError("switch$ handlers must be an object keyed by port name")
+  }
   const subs: Subscription[] = []
   for (const key of Object.keys(handlers) as (keyof E & string)[]) {
     const node = (source as unknown as Record<string, Signal<E[typeof key]>>)[key]
@@ -64,10 +62,17 @@ export function match$<E, const P extends string>(
   source: Signal<E>,
   handlers: { [K in P]: (it: Signal<PatternValue<E, K>>, args: ArgsOf<K>) => void },
 ): () => void {
+  if (typeof handlers !== "object" || handlers === null) {
+    throw new TypeError("match$ handlers must be an object keyed by dotted pattern")
+  }
+  // Holed patterns match against root-global write paths, so a pattern attached at a nested node
+  // is rebased with the node's own path: `user.match$("{name}")` fires for the write to
+  // `user.name`, not for a one-segment root write.
+  const prefix = (source as unknown as { $: { path: string[] } }).$.path ?? []
   const subs: Subscription[] = []
   const compiled = (Object.entries(handlers) as [P, (...args: unknown[]) => void][]).map(([pattern, handler]) => ({
-    segments: pattern.split("."),
-    route: pattern.includes("{") ? dots(pattern) : undefined,
+    segments: [...prefix, ...pattern.split(".")],
+    route: pattern.includes("{") ? dots([...prefix, pattern].join(".")) : undefined,
     handler,
   }))
 

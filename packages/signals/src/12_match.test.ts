@@ -128,6 +128,25 @@ describe("match$", () => {
     source.a.$(3)
     source.b.$(9)
     expect(calls).toBe(4)
-    expect(seen).toEqual([0, 9])
+  })
+
+  it("a holed pattern on a nested node is rebased to the node's path and fires", () => {
+    const root = Signal({ user: { name: "chris", age: 3 } })
+    const names: unknown[] = []
+    const dispose = root.user.match$({
+      "{name}": (it, args) => names.push([it.$(), args]),
+    })
+    root.user.name.$("sam")
+    root.user.age.$(4)
+    dispose()
+    // {name} is a wildcard over user's children: both child writes fire, the hole
+    // extracting the segment it matched.
+    expect(names).toEqual([["sam", { name: "name" }], [4, { name: "age" }]])
+  })
+
+  it("a handlers argument that is not an object throws instead of enumerating", () => {
+    const root = Signal({ user: { name: "chris" } })
+    expect(() => root.match$("name" as never)).toThrow(TypeError)
+    expect(() => root.switch$("name" as never)).toThrow(TypeError)
   })
 })

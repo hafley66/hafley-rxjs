@@ -230,12 +230,14 @@ passed against source, falsifying the doc claims. Probes deleted after the run.
 
 Notes from the probe run, recorded for the WIP lane:
 
-- The `match$`/`switch$` postfix form is `node.match$({ pattern: handler })` — handlers object
-  only. The bridge (`special$.match$`, `1_SignalCreator.ts:413` + `12_match.ts:99`) passes the node
-  and forwards handlers; calling it with a pattern string as the first argument silently
-  string-enumerates it into per-character exact patterns whose handlers then throw inside the
-  error-containment of `run()`. A guard rejecting a string `handlers` would turn that into a
-  visible error.
+- FIXED 2026-10-07: `match$`/`switch$` reject a non-object handlers argument with a `TypeError`.
+  The postfix form is `node.match$({ pattern: handler })` — handlers object only. Before the
+  guard, a pattern string passed as handlers was silently string-enumerated into per-character
+  exact patterns whose handlers threw inside the error-containment of `run()`.
+- FIXED 2026-10-07: holed patterns attached at a nested node are rebased to the node's path in
+  `match$` (`12_match.ts` — prefix joined ahead of the pattern before `dots()`), so
+  `user.match$("{name}")` fires for writes under `user`. Before the fix, node-relative patterns
+  were compared against root-global write paths and could never fire.
 - `historyAdapter`'s read stream emits `""` for an absent param (the fallback applies at the
   signal-decode layer, not on the read stream).
 

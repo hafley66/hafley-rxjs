@@ -45,3 +45,12 @@
 ### Housekeeping
 
 - `site/stats.json` regenerated alongside the docs build.
+
+### Fixed
+
+- `match$` holed patterns attached at a nested node are rebased to the node's path: the pattern
+  matches writes under that node instead of being compared against root-global write paths at the
+  wrong depth, where it could never fire.
+- `match$` and `switch$` reject a non-object handlers argument with a `TypeError` instead of
+  silently enumerating it (a string became per-character exact patterns whose handlers threw
+  inside the per-emission error containment).
