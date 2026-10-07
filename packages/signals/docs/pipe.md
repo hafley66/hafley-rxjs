@@ -9,6 +9,8 @@ gives back a Signal, which is a thing to store.
 
 <SignalDemo id="pipe-signal" />
 
+<SignalDemo id="flow-clinic" />
+
 ## The difference is the read
 
 ```ts
