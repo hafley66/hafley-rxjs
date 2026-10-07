@@ -15,7 +15,7 @@ Read out of the TypeScript program by `packages/docs-kit/scripts/api.mjs`: the b
 | [src/3_Endpoint.ts](#src-3-endpoint-ts) | 6 |  |
 | [src/3_react.ts](#src-3-react-ts) | 12 | React integration for signals. |
 | [src/4_Query.ts](#src-4-query-ts) | 8 |  |
-| [src/5_Route.ts](#src-5-route-ts) | 4 |  |
+| [src/5_Route.ts](#src-5-route-ts) | 5 |  |
 | [src/6_Storage.ts](#src-6-storage-ts) | 8 |  |
 | [src/7_signalMap.ts](#src-7-signalmap-ts) | 1 |  |
 | [src/8_sync.ts](#src-8-sync-ts) | 1 |  |
@@ -30,8 +30,8 @@ LogTape is an optional peer, so nothing here may import it statically.
 
 | export | kind |
 | --- | --- |
-| [`LogFields`](#src-0-log-ts-logfields) | type |
-| [`LogEmit`](#src-0-log-ts-logemit) | type |
+| [`LogEmit`](#src-0-log-ts-logemit) | re-export |
+| [`LogFields`](#src-0-log-ts-logfields) | re-export |
 | [`LOG`](#src-0-log-ts-log) | const |
 | [`CAT_WRITE`](#src-0-log-ts-cat-write) | const |
 | [`CAT_EMIT`](#src-0-log-ts-cat-emit) | const |
@@ -45,39 +45,33 @@ LogTape is an optional peer, so nothing here may import it statically.
 | [`enableSignalLogTape`](#src-0-log-ts-enablesignallogtape) | function |
 | [`disableSignalLogging`](#src-0-log-ts-disablesignallogging) | function |
 
-### `LogFields` {#src-0-log-ts-logfields}
-
-`LogFields` is declared at `src/0_log.ts:4`.
-
-```ts
-export type LogFields = Record<string, unknown>
-```
-
 ### `LogEmit` {#src-0-log-ts-logemit}
 
 `LogEmit` is declared at `src/0_log.ts:7`.
 
 ```ts
-export type LogEmit = (
-  category: readonly string[],
-  message: string,
-  fields: LogFields,
-) => void
+LogEmit: any
+```
 
-export function setSignalLogEmit(emit: LogEmit | null): void
+### `LogFields` {#src-0-log-ts-logfields}
+
+`LogFields` is declared at `src/0_log.ts:7`.
+
+```ts
+LogFields: any
 ```
 
 ### `LOG` {#src-0-log-ts-log}
 
-`LOG` is declared at `src/0_log.ts:15`.
+`LOG` is declared at `src/0_log.ts:9`.
 
 ```ts
-LOG: { on: boolean; emit: LogEmit; }
+LOG: Emitter
 ```
 
 ### `CAT_WRITE` {#src-0-log-ts-cat-write}
 
-`CAT_WRITE` is declared at `src/0_log.ts:18`.
+`CAT_WRITE` is declared at `src/0_log.ts:12`.
 
 ```ts
 CAT_WRITE: readonly ["signals", "write"]
@@ -85,7 +79,7 @@ CAT_WRITE: readonly ["signals", "write"]
 
 ### `CAT_EMIT` {#src-0-log-ts-cat-emit}
 
-`CAT_EMIT` is declared at `src/0_log.ts:19`.
+`CAT_EMIT` is declared at `src/0_log.ts:13`.
 
 ```ts
 CAT_EMIT: readonly ["signals", "emit"]
@@ -93,7 +87,7 @@ CAT_EMIT: readonly ["signals", "emit"]
 
 ### `CAT_SELECTOR` {#src-0-log-ts-cat-selector}
 
-`CAT_SELECTOR` is declared at `src/0_log.ts:20`.
+`CAT_SELECTOR` is declared at `src/0_log.ts:14`.
 
 ```ts
 CAT_SELECTOR: readonly ["signals", "selector"]
@@ -101,7 +95,7 @@ CAT_SELECTOR: readonly ["signals", "selector"]
 
 ### `CAT_COMPUTE` {#src-0-log-ts-cat-compute}
 
-`CAT_COMPUTE` is declared at `src/0_log.ts:21`.
+`CAT_COMPUTE` is declared at `src/0_log.ts:15`.
 
 ```ts
 CAT_COMPUTE: readonly ["signals", "compute"]
@@ -109,7 +103,7 @@ CAT_COMPUTE: readonly ["signals", "compute"]
 
 ### `CAT_INVALIDATE` {#src-0-log-ts-cat-invalidate}
 
-`CAT_INVALIDATE` is declared at `src/0_log.ts:22`.
+`CAT_INVALIDATE` is declared at `src/0_log.ts:16`.
 
 ```ts
 CAT_INVALIDATE: readonly ["signals", "invalidate"]
@@ -117,7 +111,7 @@ CAT_INVALIDATE: readonly ["signals", "invalidate"]
 
 ### `CAT_SUBSCRIBE` {#src-0-log-ts-cat-subscribe}
 
-`CAT_SUBSCRIBE` is declared at `src/0_log.ts:23`.
+`CAT_SUBSCRIBE` is declared at `src/0_log.ts:17`.
 
 ```ts
 CAT_SUBSCRIBE: readonly ["signals", "subscribe"]
@@ -125,7 +119,7 @@ CAT_SUBSCRIBE: readonly ["signals", "subscribe"]
 
 ### `CAT_UNSUBSCRIBE` {#src-0-log-ts-cat-unsubscribe}
 
-`CAT_UNSUBSCRIBE` is declared at `src/0_log.ts:24`.
+`CAT_UNSUBSCRIBE` is declared at `src/0_log.ts:18`.
 
 ```ts
 CAT_UNSUBSCRIBE: readonly ["signals", "unsubscribe"]
@@ -133,7 +127,7 @@ CAT_UNSUBSCRIBE: readonly ["signals", "unsubscribe"]
 
 ### `setSignalLogEmit` {#src-0-log-ts-setsignallogemit}
 
-`setSignalLogEmit` is declared at `src/0_log.ts:27`.
+`setSignalLogEmit` is declared at `src/0_log.ts:21`.
 
 ```ts
 setSignalLogEmit: (emit: LogEmit | null) => void
@@ -141,7 +135,7 @@ setSignalLogEmit: (emit: LogEmit | null) => void
 
 ### `isSignalLogging` {#src-0-log-ts-issignallogging}
 
-`isSignalLogging` is declared at `src/0_log.ts:32`.
+`isSignalLogging` is declared at `src/0_log.ts:25`.
 
 ```ts
 isSignalLogging: () => boolean
@@ -149,7 +143,7 @@ isSignalLogging: () => boolean
 
 ### `enableSignalLogTape` {#src-0-log-ts-enablesignallogtape}
 
-`enableSignalLogTape` is declared at `src/0_log.ts:37`.
+`enableSignalLogTape` is declared at `src/0_log.ts:29`.
 
 ```ts
 enableSignalLogTape: () => Promise<void>
@@ -157,7 +151,7 @@ enableSignalLogTape: () => Promise<void>
 
 ### `disableSignalLogging` {#src-0-log-ts-disablesignallogging}
 
-`disableSignalLogging` is declared at `src/0_log.ts:52`.
+`disableSignalLogging` is declared at `src/0_log.ts:33`.
 
 ```ts
 disableSignalLogging: () => void
@@ -900,15 +894,16 @@ createMutation: <I, O, E = unknown>(endpoint: Endpoint<I, O>, source?: SignalSou
 | --- | --- |
 | [`RouteValue`](#src-5-route-ts-routevalue) | type |
 | [`RouteNavigation`](#src-5-route-ts-routenavigation) | type |
+| [`RouteOptions`](#src-5-route-ts-routeoptions) | interface |
 | [`RouteSignal`](#src-5-route-ts-routesignal) | type |
 | [`Route`](#src-5-route-ts-route) | function |
 
 ### `RouteValue` {#src-5-route-ts-routevalue}
 
-`RouteValue` is declared at `src/5_Route.ts:12`.
+`RouteValue` is declared at `src/5_Route.ts:11`.
 
 ```ts
-export type RouteValue<S extends string> = PathValues<S> & {
+export type RouteValue<S extends string> = ValuesOf<S> & {
   path: string
   matched: boolean
   [query: string]: string | boolean
@@ -917,34 +912,56 @@ export type RouteValue<S extends string> = PathValues<S> & {
 
 ### `RouteNavigation` {#src-5-route-ts-routenavigation}
 
-`RouteNavigation` is declared at `src/5_Route.ts:17`.
+`RouteNavigation` is declared at `src/5_Route.ts:16`.
 
 ```ts
 export type RouteNavigation<S extends string> =
 ```
 
+### `RouteOptions` {#src-5-route-ts-routeoptions}
+
+`RouteOptions` is declared at `src/5_Route.ts:21`.
+
+Where the application is mounted. `Route("/:demo", { base: "/hafley-rxjs/signal-grid/demo" })`
+matches that prefix off before the template runs and prints it back on in `href`.
+
+```ts
+export interface RouteOptions {
+  readonly base?: string
+}
+
+export function Route<const S extends string>(template: S, options?: RouteOptions): RouteSignal<S>
+```
+
 ### `RouteSignal` {#src-5-route-ts-routesignal}
 
-`RouteSignal` is declared at `src/5_Route.ts:20`.
+`RouteSignal` is declared at `src/5_Route.ts:25`.
 
 ```ts
 export type RouteSignal<S extends string> = SignalType<RouteValue<S>> & {
   template: S
+  base: string
   href(values: RouteNavigation<S>): string
   navigate(values: RouteNavigation<S>, options?: { replace?: boolean }): void
   back(): void
   forward(): void
+  /** A longer route under this one, carrying the same base. Templates concatenate, so the child's
+   * params join the parent's in the value type. */
+  child<const T extends string>(sub: T): RouteSignal<`${S}${T}`>
+  /** The same read the signal does, against a pathname you hand it rather than `location`. Named
+   * `matchPath` because `match` collides with the value proxy's own key. */
+  matchPath(pathname: string, search?: string): RouteValue<S>
 }
 
-export function Route<const S extends string>(template: S): RouteSignal<S>
+export function Route<const S extends string>(template: S, options?: RouteOptions): RouteSignal<S>
 ```
 
 ### `Route` {#src-5-route-ts-route}
 
-`Route` is declared at `src/5_Route.ts:34`.
+`Route` is declared at `src/5_Route.ts:53`.
 
 ```ts
-Route: <const S extends string>(template: S) => RouteSignal<S>
+Route: <const S extends string>(template: S, options?: RouteOptions | undefined) => RouteSignal<S>
 ```
 
 ## src/6_Storage.ts

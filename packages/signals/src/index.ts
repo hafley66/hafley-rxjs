@@ -1,16 +1,18 @@
+export * from "./0_log.js"
 export type {
   Act,
+  ArgsOf,
   DepthLimit,
   GetNestedValue,
   IsNullish,
   IsRecursive,
+  PatternValue,
   Signal$,
   SignalCreatorOptions,
   SignalEvent,
   SignalPath,
   SignalPathValue,
 } from "./0_types.js"
-export * from "./0_log.js"
 export * from "./1_SignalCreator.js"
 export * from "./2_Signal.js"
 export * from "./3_Endpoint.js"
@@ -21,3 +23,4 @@ export * from "./7_signalMap.js"
 export * from "./8_sync.js"
 export * from "./9_history.js"
 export * from "./10_slice.js"
+export * from "./12_match.js"

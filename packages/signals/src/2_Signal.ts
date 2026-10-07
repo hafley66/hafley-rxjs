@@ -1,11 +1,6 @@
 import { isObservable, Observable, type OperatorFunction } from "rxjs"
-import {
-  createComputedSignal,
-  SignalCreator,
-  type ComputeBody,
-  type ComputedOptions,
-} from "./1_SignalCreator.js"
 import type { Signal as SignalType } from "./0_types.js"
+import { type ComputeBody, type ComputedOptions, createComputedSignal, SignalCreator } from "./1_SignalCreator.js"
 
 export type Signal<T, Base extends object = object, Depth extends number = 5> = SignalType<T, Base, Depth>
 
@@ -14,8 +9,7 @@ export type SignalSource<T> = SignalType<T> | Observable<T> | (() => T) | T
 export function isSignal<T>(value: unknown): value is SignalType<T> {
   if (!value || typeof value !== "object") return false
   const accessor = (value as { $?: unknown }).$
-  return typeof accessor === "function" &&
-    typeof (accessor as { subscribe?: unknown }).subscribe === "function"
+  return typeof accessor === "function" && typeof (accessor as { subscribe?: unknown }).subscribe === "function"
 }
 
 /** Normalize any source accepted by Signal while preserving existing Signals. */
@@ -45,11 +39,7 @@ export function Signal<T>(memo: () => T): SignalType<T>
 export function Signal<T>(scan: ComputeBody<T>, seed: T, options?: ComputedOptions): SignalType<T>
 export function Signal<T>(state: T): SignalType<T>
 export function Signal<T>(): SignalType<T | undefined>
-export function Signal<T>(
-  obs_or_state?: Observable<T> | T,
-  defaults?: T,
-  options?: ComputedOptions,
-): SignalType<T> {
+export function Signal<T>(obs_or_state?: Observable<T> | T, defaults?: T, options?: ComputedOptions): SignalType<T> {
   // Bare form is an event signal: lazy/shared Subject semantics, no initial
   // undefined emission and no replay to late subscribers.
   if (arguments.length === 0) {
@@ -82,22 +72,89 @@ export function Signal<T>(
 export type Source$<T> = Observable<T> | SignalType<T>
 
 export function pipe$<T, A>(source: Source$<T>, op1: OperatorFunction<T, A>): SignalType<A>
-export function pipe$<T, A, B>(source: Source$<T>, op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>): SignalType<B>
-export function pipe$<T, A, B, C>(source: Source$<T>, op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>): SignalType<C>
-export function pipe$<T, A, B, C, D>(source: Source$<T>, op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>): SignalType<D>
-export function pipe$<T, A, B, C, D, E>(source: Source$<T>, op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>): SignalType<E>
-export function pipe$<T, A, B, C, D, E, F>(source: Source$<T>, op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>): SignalType<F>
-export function pipe$<T, A, B, C, D, E, F, G>(source: Source$<T>, op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>): SignalType<G>
-export function pipe$<T, A, B, C, D, E, F, G, H>(source: Source$<T>, op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>, op8: OperatorFunction<G, H>): SignalType<H>
-export function pipe$<T, A, B, C, D, E, F, G, H, I>(source: Source$<T>, op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>, op8: OperatorFunction<G, H>, op9: OperatorFunction<H, I>): SignalType<I>
-export function pipe$<T, A, B, C, D, E, F, G, H, I, J>(source: Source$<T>, op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>, op8: OperatorFunction<G, H>, op9: OperatorFunction<H, I>, op10: OperatorFunction<I, J>): SignalType<J>
-export function pipe$(
-  source: Source$<unknown>,
-  ...operators: Array<OperatorFunction<unknown, unknown>>
-): SignalType<unknown> {
-  const source$ = isSignal(source)
-    ? (source.$ as unknown as Observable<unknown>)
-    : (source as Observable<unknown>)
+export function pipe$<T, A, B>(
+  source: Source$<T>,
+  op1: OperatorFunction<T, A>,
+  op2: OperatorFunction<A, B>,
+): SignalType<B>
+export function pipe$<T, A, B, C>(
+  source: Source$<T>,
+  op1: OperatorFunction<T, A>,
+  op2: OperatorFunction<A, B>,
+  op3: OperatorFunction<B, C>,
+): SignalType<C>
+export function pipe$<T, A, B, C, D>(
+  source: Source$<T>,
+  op1: OperatorFunction<T, A>,
+  op2: OperatorFunction<A, B>,
+  op3: OperatorFunction<B, C>,
+  op4: OperatorFunction<C, D>,
+): SignalType<D>
+export function pipe$<T, A, B, C, D, E>(
+  source: Source$<T>,
+  op1: OperatorFunction<T, A>,
+  op2: OperatorFunction<A, B>,
+  op3: OperatorFunction<B, C>,
+  op4: OperatorFunction<C, D>,
+  op5: OperatorFunction<D, E>,
+): SignalType<E>
+export function pipe$<T, A, B, C, D, E, F>(
+  source: Source$<T>,
+  op1: OperatorFunction<T, A>,
+  op2: OperatorFunction<A, B>,
+  op3: OperatorFunction<B, C>,
+  op4: OperatorFunction<C, D>,
+  op5: OperatorFunction<D, E>,
+  op6: OperatorFunction<E, F>,
+): SignalType<F>
+export function pipe$<T, A, B, C, D, E, F, G>(
+  source: Source$<T>,
+  op1: OperatorFunction<T, A>,
+  op2: OperatorFunction<A, B>,
+  op3: OperatorFunction<B, C>,
+  op4: OperatorFunction<C, D>,
+  op5: OperatorFunction<D, E>,
+  op6: OperatorFunction<E, F>,
+  op7: OperatorFunction<F, G>,
+): SignalType<G>
+export function pipe$<T, A, B, C, D, E, F, G, H>(
+  source: Source$<T>,
+  op1: OperatorFunction<T, A>,
+  op2: OperatorFunction<A, B>,
+  op3: OperatorFunction<B, C>,
+  op4: OperatorFunction<C, D>,
+  op5: OperatorFunction<D, E>,
+  op6: OperatorFunction<E, F>,
+  op7: OperatorFunction<F, G>,
+  op8: OperatorFunction<G, H>,
+): SignalType<H>
+export function pipe$<T, A, B, C, D, E, F, G, H, I>(
+  source: Source$<T>,
+  op1: OperatorFunction<T, A>,
+  op2: OperatorFunction<A, B>,
+  op3: OperatorFunction<B, C>,
+  op4: OperatorFunction<C, D>,
+  op5: OperatorFunction<D, E>,
+  op6: OperatorFunction<E, F>,
+  op7: OperatorFunction<F, G>,
+  op8: OperatorFunction<G, H>,
+  op9: OperatorFunction<H, I>,
+): SignalType<I>
+export function pipe$<T, A, B, C, D, E, F, G, H, I, J>(
+  source: Source$<T>,
+  op1: OperatorFunction<T, A>,
+  op2: OperatorFunction<A, B>,
+  op3: OperatorFunction<B, C>,
+  op4: OperatorFunction<C, D>,
+  op5: OperatorFunction<D, E>,
+  op6: OperatorFunction<E, F>,
+  op7: OperatorFunction<F, G>,
+  op8: OperatorFunction<G, H>,
+  op9: OperatorFunction<H, I>,
+  op10: OperatorFunction<I, J>,
+): SignalType<J>
+export function pipe$(source: unknown, ...operators: Array<OperatorFunction<unknown, unknown>>): SignalType<unknown> {
+  const source$ = isSignal(source) ? (source.$ as unknown as Observable<unknown>) : (source as Observable<unknown>)
   // Pure composition: the piped observable reaches SignalCreator's lazy,
   // ref-counted observable branch. No probe and no keep-alive subscription.
   return SignalCreator({

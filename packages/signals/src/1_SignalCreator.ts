@@ -1,22 +1,21 @@
+import { Draft, isDraftable, produce } from "immer"
+import lodash from "lodash"
 import {
   BehaviorSubject,
   distinctUntilChanged,
   filter,
-  from as streamOf,
   identity,
   isObservable,
+  type MonoTypeOperatorFunction,
   map,
   merge,
   Observable,
-  shareReplay,
-  Subject,
-  tap,
-  type MonoTypeOperatorFunction,
   type OperatorFunction,
+  Subject,
+  shareReplay,
+  from as streamOf,
+  tap,
 } from "rxjs"
-import lodash from "lodash"
-import { Draft, produce, isDraftable } from "immer"
-import type { Signal, Signal$, SignalEvent, SignalCreatorOptions } from "./0_types.js"
 import {
   CAT_COMPUTE,
   CAT_EMIT,
@@ -27,6 +26,7 @@ import {
   CAT_WRITE,
   LOG,
 } from "./0_log.js"
+import type { Signal, Signal$, SignalCreatorOptions, SignalEvent } from "./0_types.js"
 
 type ValidDraftReturn<T> = T | void | undefined
 
@@ -38,6 +38,13 @@ const ROOT_PATH: string[] = []
  * Global dispatch for signal events. Used by Signal.memo() to track dependencies.
  */
 export const signalDispatch = new Subject<SignalEvent<unknown>>()
+
+/** Postfix `$` methods plugged into every node by later modules — `12_match.ts` wires
+ * `match$` and `switch$`. The node proxy's `get` consults this before creating children;
+ * each entry receives the node and returns the method bound to it. Declared here so the
+ * core stays free of any one plugin's knowledge. Types live on the `Signal` type; this
+ * bridge is deliberately loose. */
+export const special$: { [method: string]: (node: unknown) => (handlers: never) => unknown } = {}
 
 /** One level deep, which is what immer's structural sharing already gives per branch. */
 export function shallowEqual(a: unknown, b: unknown): boolean {
@@ -113,11 +120,8 @@ const computingRanks: number[] = []
 
 // Run `compute`, recording every `.$()` signal read into `sink`. Re-throws;
 // `sink` keeps deps observed before the throw so a caller can resubscribe.
-export function trackDependencies<T>(
-  compute: () => T,
-  sink: Set<Signal<unknown>>,
-): T {
-  dependencyCollectors.push((dep) => sink.add(dep))
+export function trackDependencies<T>(compute: () => T, sink: Set<Signal<unknown>>): T {
+  dependencyCollectors.push(dep => sink.add(dep))
   try {
     return compute()
   } finally {
@@ -137,13 +141,12 @@ export function trackDependencies<T>(
  * ```
  */
 export function SignalCreator<T, Base extends object = object>(
-  options: SignalCreatorOptions<T, Base>
+  options: SignalCreatorOptions<T, Base>,
 ): Signal<T, Base> {
   const { initialState, observable, event = false, read, write, createBase } = options
 
-  const state$ = event || (observable && initialState === undefined)
-    ? new Subject<T>()
-    : new BehaviorSubject(initialState as T)
+  const state$ =
+    event || (observable && initialState === undefined) ? new Subject<T>() : new BehaviorSubject(initialState as T)
   let latest = initialState as T
 
   // `from` is the path of the write that caused the emit, not of the subject, which always sits
@@ -168,26 +171,25 @@ export function SignalCreator<T, Base extends object = object>(
     : merge(
         state$,
         observable.pipe(
-          tap({ next: (next) => { latest = next } }),
+          tap({
+            next: next => {
+              latest = next
+            },
+          }),
         ),
-      ).pipe(
-        shareReplay({ refCount: true, bufferSize: 1 }),
-      )
+      ).pipe(shareReplay({ refCount: true, bufferSize: 1 }))
 
   // Track active subscriptions for debugging/cleanup
   const activeSubs: Signal<T, Base>[] = []
 
-  const createProxy = (
-    _path: string[],
-    base?: Base,
-  ): Signal<T, Base> => {
+  const createProxy = (_path: string[], base?: Base): Signal<T, Base> => {
     // Filter out symbols that might sneak through
-    const path = _path.filter((i) => typeof i === "string")
+    const path = _path.filter(i => typeof i === "string")
     const depth = path.length
 
     // Immer-based setter for complex mutations
     const setterImmer = (recipe: (draft: Draft<T>) => ValidDraftReturn<Draft<T>>) => {
-      const curr = get(latest, path)
+      const curr = depth ? get(latest, path) : latest
       if (isDraftable(curr)) {
         const next = produce(curr as Draft<T>, recipe)
         return setter(next as T)
@@ -240,15 +242,14 @@ export function SignalCreator<T, Base extends object = object>(
         if (Array.isArray(context)) {
           // For array methods, wrap to auto-update state on mutation
           return ((...args: unknown[]) => {
-            let toReturn: unknown = undefined
-            const next = produce(context, (draft) => {
+            let toReturn: unknown
+            const next = produce(context, draft => {
               const funcName = path[path.length - 1]
               toReturn = (draft as unknown as Record<string, (...a: unknown[]) => unknown>)[funcName](...args)
             })
 
             if (!isEqual(next, context)) {
-              const parent: Signal<unknown, Base> =
-                depth > 1 ? get(rootProxy, path.slice(0, -1)) : rootProxy
+              const parent: Signal<unknown, Base> = depth > 1 ? get(rootProxy, path.slice(0, -1)) : rootProxy
               parent.$.next(next)
             }
 
@@ -268,17 +269,17 @@ export function SignalCreator<T, Base extends object = object>(
           setter(args[0] as T)
           signalDispatch.next({
             type: "set",
-            value: { signal: proxy as Signal<unknown>, path, value: args[0] },
+            value: { signal: proxy as unknown as Signal<unknown>, path, value: args[0] },
           })
           return proxy
         }
         signalDispatch.next({
           type: "get",
-          value: { signal: proxy as Signal<unknown>, path },
+          value: { signal: proxy as unknown as Signal<unknown>, path },
         })
         // Event-mode signals (stateless Subjects) are imperative event sources,
         // not derived state: don't register them as memo dependencies.
-        if (!event) dependencyCollectors.at(-1)?.(proxy as Signal<unknown>)
+        if (!event) dependencyCollectors.at(-1)?.(proxy as unknown as Signal<unknown>)
         return getter()
       },
     }[selfFnName]
@@ -311,9 +312,7 @@ export function SignalCreator<T, Base extends object = object>(
 
         // Meta events stream ($.$)
         if (p === "$") {
-          return signalDispatch.pipe(
-            filter((i) => i.value.signal === proxy),
-          )
+          return signalDispatch.pipe(filter(i => (i.value.signal as unknown) === (proxy as unknown)))
         }
 
         // Cache hit
@@ -331,7 +330,7 @@ export function SignalCreator<T, Base extends object = object>(
             // write was re-sorting 50k rows through the `sort` selector.
             const distinct = options.distinct === undefined ? distinctShallow<unknown>() : options.distinct
             autoSelector$ = root$.pipe(
-              map((i) => get(i, path)),
+              map(i => get(i, path)),
               distinct === null ? identity : distinct,
               tap({
                 subscribe: () => {
@@ -398,7 +397,8 @@ export function SignalCreator<T, Base extends object = object>(
       ...(base && { $field: base }),
     } as Signal<T, Base>
 
-    // Main proxy for property traversal
+    // Main proxy for property traversal. `$`-suffixed names are a reserved namespace: the
+    // registry (match$, switch$, … filled by later modules) resolves before state keys.
     const proxy = new Proxy(self, {
       get(target, p) {
         // Known properties
@@ -408,6 +408,9 @@ export function SignalCreator<T, Base extends object = object>(
         if (typeof p === "symbol") {
           return (target as Record<string | symbol, unknown>)[p]
         }
+
+        // Plugged postfix methods — node-level graph verbs.
+        if (Object.hasOwn(special$, p)) return special$[p](proxy)
 
         // Lazy create child signals
         return ((target as Record<string | symbol, unknown>)[p] ??= createProxy(
@@ -460,11 +463,7 @@ function isStream<T>(value: ComputeResult<T>): value is Observable<T> | PromiseL
  * time: a dependency change cancels it and reruns (switch), completion after at least one emission
  * reruns (expand), completion with none settles until a dependency changes.
  */
-export function createComputedSignal<T>(
-  compute: ComputeBody<T>,
-  seed?: T,
-  options: ComputedOptions = {},
-): Signal<T> {
+export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, options: ComputedOptions = {}): Signal<T> {
   const id = `memo#${++computedSeq}`
   let dirty = true
   let hasValue = arguments.length >= 2
@@ -548,7 +547,7 @@ export function createComputedSignal<T>(
       cancelInner()
       const started = LOG.on ? performance.now() : 0
       const dependencies = new Set<Signal<unknown>>()
-      dependencyCollectors.push((dependency) => dependencies.add(dependency))
+      dependencyCollectors.push(dependency => dependencies.add(dependency))
       computingRanks.push(0)
 
       const report = (diff: { added: number; removed: number }) => {
@@ -598,13 +597,13 @@ export function createComputedSignal<T>(
       const mine = (token = {})
       let emitted = false
       const sub = streamOf(out as Observable<T>).subscribe({
-        next: (next) => {
+        next: next => {
           emitted = true
           value = next
           hasValue = true
           emit(next)
         },
-        error: (error) => {
+        error: error => {
           for (const observer of [...observers]) observer.error(error)
         },
         complete: () => {
@@ -658,7 +657,7 @@ export function createComputedSignal<T>(
     return result
   }
 
-  const observable = new Observable<T>((subscriber) => {
+  const observable = new Observable<T>(subscriber => {
     subscriberCount++
     readPinned = false
     observers.add(subscriber)
@@ -685,12 +684,13 @@ export function createComputedSignal<T>(
     }
   })
 
-  const write = options.writable !== false
-    ? (next: T) => {
-        value = next
-        hasValue = true
-      }
-    : undefined
+  const write =
+    options.writable !== false
+      ? (next: T) => {
+          value = next
+          hasValue = true
+        }
+      : undefined
 
   return SignalCreator({ observable, read: readMemo, write })
 }

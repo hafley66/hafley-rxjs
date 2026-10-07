@@ -1,3 +1,4 @@
+import { type DotPathSyntax, type ValuesOf } from "@hafley66/path"
 import type { Draft } from "immer"
 import type { BehaviorSubject, MonoTypeOperatorFunction, Observable, OperatorFunction } from "rxjs"
 
@@ -53,68 +54,121 @@ export interface Signal$<T, Base extends object = object> extends BehaviorSubjec
   pipe$<A>(op1: OperatorFunction<T, A>): Signal<A>
   pipe$<A, B>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>): Signal<B>
   pipe$<A, B, C>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>): Signal<C>
-  pipe$<A, B, C, D>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>): Signal<D>
-  pipe$<A, B, C, D, E>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>): Signal<E>
-  pipe$<A, B, C, D, E, F>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>): Signal<F>
-  pipe$<A, B, C, D, E, F, G>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>): Signal<G>
-  pipe$<A, B, C, D, E, F, G, H>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>, op8: OperatorFunction<G, H>): Signal<H>
-  pipe$<A, B, C, D, E, F, G, H, I>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>, op8: OperatorFunction<G, H>, op9: OperatorFunction<H, I>): Signal<I>
-  pipe$<A, B, C, D, E, F, G, H, I, J>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>, op8: OperatorFunction<G, H>, op9: OperatorFunction<H, I>, op10: OperatorFunction<I, J>): Signal<J>
+  pipe$<A, B, C, D>(
+    op1: OperatorFunction<T, A>,
+    op2: OperatorFunction<A, B>,
+    op3: OperatorFunction<B, C>,
+    op4: OperatorFunction<C, D>,
+  ): Signal<D>
+  pipe$<A, B, C, D, E>(
+    op1: OperatorFunction<T, A>,
+    op2: OperatorFunction<A, B>,
+    op3: OperatorFunction<B, C>,
+    op4: OperatorFunction<C, D>,
+    op5: OperatorFunction<D, E>,
+  ): Signal<E>
+  pipe$<A, B, C, D, E, F>(
+    op1: OperatorFunction<T, A>,
+    op2: OperatorFunction<A, B>,
+    op3: OperatorFunction<B, C>,
+    op4: OperatorFunction<C, D>,
+    op5: OperatorFunction<D, E>,
+    op6: OperatorFunction<E, F>,
+  ): Signal<F>
+  pipe$<A, B, C, D, E, F, G>(
+    op1: OperatorFunction<T, A>,
+    op2: OperatorFunction<A, B>,
+    op3: OperatorFunction<B, C>,
+    op4: OperatorFunction<C, D>,
+    op5: OperatorFunction<D, E>,
+    op6: OperatorFunction<E, F>,
+    op7: OperatorFunction<F, G>,
+  ): Signal<G>
+  pipe$<A, B, C, D, E, F, G, H>(
+    op1: OperatorFunction<T, A>,
+    op2: OperatorFunction<A, B>,
+    op3: OperatorFunction<B, C>,
+    op4: OperatorFunction<C, D>,
+    op5: OperatorFunction<D, E>,
+    op6: OperatorFunction<E, F>,
+    op7: OperatorFunction<F, G>,
+    op8: OperatorFunction<G, H>,
+  ): Signal<H>
+  pipe$<A, B, C, D, E, F, G, H, I>(
+    op1: OperatorFunction<T, A>,
+    op2: OperatorFunction<A, B>,
+    op3: OperatorFunction<B, C>,
+    op4: OperatorFunction<C, D>,
+    op5: OperatorFunction<D, E>,
+    op6: OperatorFunction<E, F>,
+    op7: OperatorFunction<F, G>,
+    op8: OperatorFunction<G, H>,
+    op9: OperatorFunction<H, I>,
+  ): Signal<I>
+  pipe$<A, B, C, D, E, F, G, H, I, J>(
+    op1: OperatorFunction<T, A>,
+    op2: OperatorFunction<A, B>,
+    op3: OperatorFunction<B, C>,
+    op4: OperatorFunction<C, D>,
+    op5: OperatorFunction<D, E>,
+    op6: OperatorFunction<E, F>,
+    op7: OperatorFunction<F, G>,
+    op8: OperatorFunction<G, H>,
+    op9: OperatorFunction<H, I>,
+    op10: OperatorFunction<I, J>,
+  ): Signal<J>
   /** React hook - auto re-renders on change. Only available with /react import */
   use?: () => T
 }
 
 /**
- * A signal node. Access `.$` for the reactive accessor,
- * or traverse properties to get child signals.
- *
- * The optional `Base` type param allows extensions (like FormSignal)
- * to attach additional properties at each node via `$field`.
- *
- * @example
- * ```ts
- * const state = Signal({ user: { name: "chris" } })
- *
- * state.user.name.$()           // "chris"
- * state.user.name.$("new name") // write
- * state.user.name.$.pipe(...)   // RxJS
- * state.user.name.$.$           // events
- *
- * // With Base extension (e.g. FormSignal):
- * form.user.name.$field.state   // { errors, isDirty, ... }
- * form.user.name.$field.props   // { input, label, ... }
- * ```
+ * Graph verbs shared by every node, kept in an interface so the recursive `Signal` alias
+ * stays lazily instantiated. `$`-suffixed members are a reserved namespace: the node proxy
+ * resolves them before state keys, so userland state never collides with them.
+ */
+export interface SignalMethods<T> {
+  /**
+   * Deep pattern dispatch: dotted patterns with `{hole}` segments, each handler given the
+   * live child node plus the extracted holes. Patterns resolve against this node. State
+   * nodes run now; event nodes wait for the first write. Returns the disposer.
+   */
+  match$<const P extends string>(
+    handlers: { [K in P]: (it: Signal<PatternValue<T, K>>, args: ArgsOf<K>) => void },
+  ): () => void
+  /** Flat exhaustive dispatch over this node's record: one handler per key, value in hand. */
+  switch$(handlers: { [K in keyof T & string]-?: (value: T[K]) => void }): () => void
+}
+
+/**
+ * A signal node. Access `.$` for the reactive accessor, or traverse properties to get child
+ * signals.
  */
 export type Signal<T, Base extends object = object, Depth extends number = 5> = {
   /** The reactive accessor - read, write, subscribe, pipe */
   $: Signal$<T, Base>
-} & (keyof Base extends never
-  ? unknown
-  : { /** Extension namespace for plugins (e.g. form state) */ $field: Base }
-) & (Depth extends never
-  ? unknown
-  : IsRecursive<NonNullable<T>> extends 1
-    ? {
-        [K in keyof NonNullable<T>]-?: Signal<
-          GetNestedValue<T, K>,
-          Base,
-          DepthLimit[Depth]
-        >
-      } & (NonNullable<T> extends unknown[]
-        ? Record<number, Signal<GetNestedValue<T, number>, Base, DepthLimit[Depth]>>
-        : unknown)
-    : unknown)
+} & (IsRecursive<NonNullable<T>> extends 1 ? SignalMethods<T> : unknown) &
+  (keyof Base extends never ? unknown : { /** Extension namespace for plugins (e.g. form state) */ $field: Base }) &
+  (Depth extends never
+    ? unknown
+    : IsRecursive<NonNullable<T>> extends 1
+      ? {
+          [K in keyof NonNullable<T>]-?: Signal<GetNestedValue<T, K>, Base, DepthLimit[Depth]>
+        } & (NonNullable<T> extends unknown[]
+          ? Record<number, Signal<GetNestedValue<T, number>, Base, DepthLimit[Depth]>>
+          : unknown)
+      : unknown)
 
 /**
  * Get nested value type, preserving undefined when parent might be null/undefined
  */
-export type GetNestedValue<T, K> = IsNullish<T> extends true
-  ? K extends keyof NonNullable<T>
-    ? NonNullable<T>[K] | undefined
-    : never
-  : K extends keyof T
-    ? T[K]
-    : never
+export type GetNestedValue<T, K> =
+  IsNullish<T> extends true
+    ? K extends keyof NonNullable<T>
+      ? NonNullable<T>[K] | undefined
+      : never
+    : K extends keyof T
+      ? T[K]
+      : never
 
 /**
  * Check if type includes null or undefined
@@ -124,13 +178,14 @@ export type IsNullish<T> = null extends T ? true : undefined extends T ? true : 
 /**
  * Check if type should have recursive proxy properties
  */
-export type IsRecursive<T> = NonNullable<T> extends Record<string, unknown>
-  ? NonNullable<T> extends never
-    ? 0
-    : 1
-  : NonNullable<T> extends unknown[]
-    ? 1
-    : 0
+export type IsRecursive<T> =
+  NonNullable<T> extends Record<string, unknown>
+    ? NonNullable<T> extends never
+      ? 0
+      : 1
+    : NonNullable<T> extends unknown[]
+      ? 1
+      : 0
 
 /** Where the key walk stops: members that are behaviour rather than data, so `modified.getTime`
  * is never offered as an addressable key. */
@@ -145,13 +200,14 @@ type SignalPathLeaf =
 
 /** `IsRecursive` gates on an index signature, which an interface never carries. A path walks one
  * anyway, so this answers 1 wherever `IsRecursive` does and widens by that case alone. */
-type SignalPathWalks<T> = NonNullable<T> extends SignalPathLeaf
-  ? 0
-  : IsRecursive<NonNullable<T>> extends 1
-    ? 1
-    : NonNullable<T> extends object
+type SignalPathWalks<T> =
+  NonNullable<T> extends SignalPathLeaf
+    ? 0
+    : IsRecursive<NonNullable<T>> extends 1
       ? 1
-      : 0
+      : NonNullable<T> extends object
+        ? 1
+        : 0
 
 /** One key, alone and as the head of everything under it. A leaf child makes the tail `never`. */
 type SignalPathStep<T, K extends string | number, Depth extends number> =
@@ -171,9 +227,7 @@ export type SignalPath<T, Depth extends number = 5> = [Depth] extends [never]
     : never
 
 /** A numeric segment addresses an array seat, and `keyof` an array holds `number` and never `"0"`. */
-type SignalPathSegment<Segment extends string> = Segment extends `${infer Index extends number}`
-  ? Index
-  : Segment
+type SignalPathSegment<Segment extends string> = Segment extends `${infer Index extends number}` ? Index : Segment
 
 /** One hop, taking the segment as written when the type already keys by it. */
 type SignalPathHop<T, Segment extends string> = Segment extends keyof NonNullable<T>
@@ -185,6 +239,36 @@ type SignalPathHop<T, Segment extends string> = Segment extends keyof NonNullabl
 export type SignalPathValue<T, Path extends string> = Path extends `${infer Head}.${infer Rest}`
   ? SignalPathValue<SignalPathHop<T, Head>, Rest>
   : SignalPathHop<T, Path>
+
+/** The hole values one dotted pattern hands its handler, parsed by @hafley66/path. */
+export type ArgsOf<P extends string> = ValuesOf<P, DotPathSyntax>
+
+/** One hop over a pattern segment. A `{hole}` addresses any key or array seat. */
+type PatternHop<T, Seg extends string> = null extends T
+  ? PatternHop<NonNullable<T>, Seg> | undefined
+  : undefined extends T
+    ? PatternHop<NonNullable<T>, Seg> | undefined
+    : Seg extends `{${string}}`
+      ? NonNullable<T> extends readonly (infer Item)[]
+        ? Item
+        : NonNullable<T> extends Record<string, infer Item>
+          ? Item
+          : never
+      : Seg extends `${infer _Index extends number}`
+        ? NonNullable<T> extends readonly (infer Item)[]
+          ? Item
+          : Seg extends keyof NonNullable<T>
+            ? NonNullable<T>[Seg]
+            : never
+        : Seg extends keyof NonNullable<T>
+          ? NonNullable<T>[Seg]
+          : never
+
+/** What a pattern handler's `it` node reads and writes: the value at the pattern, holes
+ * matching any key. The hole-pattern sibling of `SignalPathValue` above. */
+export type PatternValue<T, P extends string> = P extends `${infer Head}.${infer Rest}`
+  ? PatternValue<PatternHop<T, Head>, Rest>
+  : PatternHop<T, P>
 
 /**
  * Events emitted by the signal system for tracking/debugging/memo
