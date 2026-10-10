@@ -1,7 +1,8 @@
 import type {
   AnyPath, ConflictingPropertyNames, EncodedPathText, FileLocatorSyntax, IPath,
   IPathSyntax, JoinedTemplate, PartsOf, PathMatch, PathPart, RouteMap,
-  Simplify, SlashPathSyntax, DotPathSyntax, ValuesOf, ValuesWithAllowedSets,
+  Simplify, SlashPathSyntax, DotPathSyntax, ValuesOf, ValuesWithSchema,
+  PathSchema, PathValueSchema, PathValueSchemaView, PathSchemaView, JsonValueConstraint,
   ReactRouterPattern, TanStackPattern, OpenApiPattern,
   IPathFactory, PathConversion, Param, ParamMap, ValuesWithParams,
 } from "./0_types.js"
@@ -30,8 +31,21 @@ export const fileLocator = pathFactory<FileLocatorSyntax>({
 
 type RawConfiguration<RawValues, Values> = PathConversion<RawValues, Values>
 
-type AllowedConfiguration<RawValues, AllowedSets> = {
-  values: AllowedSets
+type SchemaConfiguration<RawValues, Schema> = {
+  schema: Schema
+}
+
+type ZodLike = {
+  safeParse(value: unknown): { success: boolean; data?: unknown }
+  toJSONSchema?: () => unknown
+}
+
+type RuntimeSchema = {
+  allowed: Record<string, string[]>
+  patterns: Record<string, RegExp>
+  required: string[]
+  zod: Record<string, ZodLike>
+  properties: Record<string, unknown>
 }
 
 type RuntimePath = {
@@ -39,7 +53,7 @@ type RuntimePath = {
   syntax: IPathSyntax
   parts: PathPart[]
   configuration?: RawConfiguration<Record<string, string | undefined>, unknown>
-  allowed?: Record<string, string[]>
+  schema?: RuntimeSchema
 }
 
 const runtimePaths = new WeakMap<object, RuntimePath>()
@@ -142,14 +156,66 @@ function concatenateConfiguration(
   }
 }
 
-function concatenateAllowed(parent?: Record<string, string[]>, child?: Record<string, string[]>) {
+function isZodLike(entry: unknown): entry is ZodLike {
+  return typeof entry === "object" && entry !== null && typeof (entry as ZodLike).safeParse === "function"
+}
+
+/** Read the JSON Schema config once: allowed sets, patterns, required names, zod backends, view fragments. */
+function describeSchema(
+  schema: { properties?: Record<string, unknown>; required?: readonly string[] } | undefined,
+): RuntimeSchema | undefined {
+  if (!schema) return undefined
+  const allowed: Record<string, string[]> = {}
+  const patterns: Record<string, RegExp> = {}
+  const zod: Record<string, ZodLike> = {}
+  const properties: Record<string, unknown> = {}
+  const required = [...(schema.required ?? [])]
+  for (const [name, entry] of Object.entries(schema.properties ?? {})) {
+    if (entry === undefined) continue
+    if (isZodLike(entry)) {
+      zod[name] = entry
+      properties[name] = typeof entry.toJSONSchema === "function" ? entry.toJSONSchema() : { type: "string" }
+      continue
+    }
+    const fragment = entry as JsonValueConstraint
+    const members = fragment.const !== undefined ? [fragment.const] : fragment.enum ? [...fragment.enum] : undefined
+    if (members) allowed[name] = members
+    if (fragment.pattern !== undefined) patterns[name] = new RegExp(fragment.pattern)
+    properties[name] = fragment
+  }
+  return { allowed, patterns, required, zod, properties }
+}
+
+/** The names a template makes mandatory by structure: mandatory segments, non-optional query, pointer. */
+function requiredNames(template: string, syntax: IPathSyntax): string[] {
+  const target = namesOf(template, syntax)
+  const names: string[] = []
+  for (const part of target.pathname) {
+    if (part.kind === "property" || part.kind === "restProperty") names.push(part.name)
+  }
+  for (const entry of target.queryEntries) {
+    const match = /^\{(.+?)(\?)?\}$/.exec(entry)
+    if (match && !match[2]) names.push(match[1])
+  }
+  const pointer = target.pointer && /^\{(.+)\}$/.exec(target.pointer)
+  if (pointer) names.push(pointer[1])
+  return names
+}
+
+function concatenateSchema(parent?: RuntimeSchema, child?: RuntimeSchema): RuntimeSchema | undefined {
   if (!parent) return child
   if (!child) return parent
-  const allowed = { ...parent }
-  for (const [name, values] of Object.entries(child)) {
-    allowed[name] = allowed[name] ? allowed[name].filter(value => values.includes(value)) : values
+  const allowed = { ...parent.allowed }
+  for (const [name, members] of Object.entries(child.allowed)) {
+    allowed[name] = allowed[name] ? allowed[name].filter(value => members.includes(value)) : members
   }
-  return allowed
+  return {
+    allowed,
+    patterns: { ...parent.patterns, ...child.patterns },
+    required: [...new Set([...parent.required, ...child.required])],
+    zod: { ...parent.zod, ...child.zod },
+    properties: { ...parent.properties, ...child.properties },
+  }
 }
 
 function rawMatch(path: RuntimePath, text: string): PathMatch<Record<string, string | undefined>> {
@@ -228,8 +294,17 @@ function buildPath(runtime: RuntimePath): IPath<any, any, any> {
     template: runtime.template,
     syntax: runtime.syntax,
     parts: runtime.parts as any,
+    get schema() {
+      const names = valueNames(runtime.template, runtime.syntax)
+      const required = [...new Set([...requiredNames(runtime.template, runtime.syntax), ...(runtime.schema?.required ?? [])])]
+      const properties: Record<string, PathValueSchemaView> = {}
+      for (const name of names) {
+        properties[name] = (runtime.schema?.properties?.[name] ?? { type: "string" }) as PathValueSchemaView
+      }
+      return { type: "object" as const, properties, required }
+    },
     print(values: Record<string, unknown>) {
-      if (runtime.allowed) for (const [key, allowed] of Object.entries(runtime.allowed)) {
+      if (runtime.schema) for (const [key, allowed] of Object.entries(runtime.schema.allowed)) {
         if (values[key] !== undefined && !allowed.includes(String(values[key]))) throw new Error(`Invalid value: ${key}`)
       }
       const rawValues = runtime.configuration ? runtime.configuration.print(values) : values
@@ -238,16 +313,34 @@ function buildPath(runtime: RuntimePath): IPath<any, any, any> {
     match(text: string) {
       const raw = rawMatch(runtime, text)
       if (!raw.matched) return raw
-      if (runtime.allowed) for (const [key, allowed] of Object.entries(runtime.allowed)) {
-        const value = raw.values[key]
-        if (value !== undefined && !allowed.includes(value)) return { matched: false, reason: "values" }
+      const schema = runtime.schema
+      const values: Record<string, unknown> = { ...raw.values }
+      if (schema) {
+        for (const name of schema.required) {
+          if (raw.values[name] === undefined) return { matched: false, reason: "schema" }
+        }
+        for (const [name, allowed] of Object.entries(schema.allowed)) {
+          const value = raw.values[name]
+          if (value !== undefined && !allowed.includes(value)) return { matched: false, reason: "schema" }
+        }
+        for (const [name, pattern] of Object.entries(schema.patterns)) {
+          const value = raw.values[name]
+          if (value !== undefined && !pattern.test(value)) return { matched: false, reason: "schema" }
+        }
+        for (const [name, codec] of Object.entries(schema.zod)) {
+          const value = raw.values[name]
+          if (value === undefined) continue
+          const parsed = codec.safeParse(value)
+          if (!parsed.success) return { matched: false, reason: "schema" }
+          values[name] = parsed.data
+        }
       }
-      if (!runtime.configuration) return raw
+      if (!runtime.configuration) return { matched: true, values }
       try {
-        const parsed = runtime.configuration.parse(raw.values)
-        return parsed === undefined ? { matched: false, reason: "values" } : { matched: true, values: parsed }
+        const parsed = runtime.configuration.parse(values as Record<string, string | undefined>)
+        return parsed === undefined ? { matched: false, reason: "schema" } : { matched: true, values: parsed }
       } catch (error) {
-        return { matched: false, reason: "values", error }
+        return { matched: false, reason: "schema", error }
       }
     },
     concatenate(other: IPath<any, any, any>) {
@@ -265,7 +358,7 @@ function buildPath(runtime: RuntimePath): IPath<any, any, any> {
         syntax: runtime.syntax,
         parts: partsOf(template, runtime.syntax),
         configuration: concatenateConfiguration(runtime, child),
-        allowed: concatenateAllowed(runtime.allowed, child.allowed),
+        schema: concatenateSchema(runtime.schema, child.schema),
       })
     },
     check(candidate: string) { return candidate as any },
@@ -312,11 +405,11 @@ function paramsToConversion(
 
 export function path<Syntax extends IPathSyntax, Template extends string>(syntax: Syntax, template: Template): IPath<ValuesOf<Template, Syntax>, Template, Syntax>
 export function path<Syntax extends IPathSyntax, Template extends string, ParsedValues>(syntax: Syntax, template: Template, configuration: RawConfiguration<ValuesOf<Template, Syntax>, ParsedValues>): IPath<ParsedValues, Template, Syntax>
-export function path<Syntax extends IPathSyntax, Template extends string, const AllowedSets extends { [PropertyName in keyof ValuesOf<Template, Syntax>]?: string[] }>(syntax: Syntax, template: Template, configuration: AllowedConfiguration<ValuesOf<Template, Syntax>, AllowedSets>): IPath<ValuesWithAllowedSets<ValuesOf<Template, Syntax>, AllowedSets>, Template, Syntax>
+export function path<Syntax extends IPathSyntax, Template extends string, const Schema extends PathSchema<ValuesOf<Template, Syntax>>>(syntax: Syntax, template: Template, configuration: SchemaConfiguration<ValuesOf<Template, Syntax>, Schema>): IPath<ValuesWithSchema<ValuesOf<Template, Syntax>, Schema>, Template, Syntax>
 export function path<Syntax extends IPathSyntax, Template extends string, const Params extends ParamMap<ValuesOf<Template, Syntax>>>(syntax: Syntax, template: Template, configuration: { params: Params }): IPath<ValuesWithParams<ValuesOf<Template, Syntax>, Params>, Template, Syntax>
 export function path<Values, Syntax extends IPathSyntax = SlashPathSyntax>(syntax: Syntax): IPath<Values, "", Syntax>
 export function path(syntax: IPathSyntax, template = "", configuration?: unknown): IPath<any, any, any> {
-  const config = configuration as { values?: Record<string, string[]>; parse?: RawConfiguration<any, any>["parse"]; print?: RawConfiguration<any, any>["print"]; params?: Record<string, Param<unknown>> } | undefined
+  const config = configuration as { schema?: { properties?: Record<string, unknown>; required?: readonly string[] }; parse?: RawConfiguration<any, any>["parse"]; print?: RawConfiguration<any, any>["print"]; params?: Record<string, Param<unknown>> } | undefined
   const resolved = config?.parse && config.print
     ? { parse: config.parse, print: config.print }
     : config?.params ? paramsToConversion(config.params) : undefined
@@ -324,7 +417,7 @@ export function path(syntax: IPathSyntax, template = "", configuration?: unknown
     template,
     syntax,
     parts: partsOf(template, syntax),
-    allowed: config?.values,
+    schema: describeSchema(config?.schema),
     configuration: resolved,
   })
 }

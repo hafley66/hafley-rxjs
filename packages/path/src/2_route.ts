@@ -109,7 +109,7 @@ export function route<
       const raw = ipath.match(text)
       if (!raw.matched) return raw
       const result = urlSchema.safeParse(raw.values)
-      if (!result.success) return { matched: false, reason: "values", error: result.error }
+      if (!result.success) return { matched: false, reason: "schema", error: result.error }
       return { matched: true, values: result.data }
     },
   }

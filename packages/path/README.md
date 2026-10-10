@@ -41,6 +41,37 @@ shorthand. `ValuesOf<Template>` infers the value shape from the template string.
 
 ---
 
+## Value schema (JSON Schema)
+
+The second argument declares each value in JSON Schema words. The core enforces
+`enum`, `const`, and `pattern` on the raw string; `type` is a declaration, and a
+property may instead be a zod schema — the zod backend parses the raw value.
+
+```ts
+const grid = slash("/grid/{kind}/{page?}", {
+  schema: {
+    type: "object",
+    properties: {
+      kind: { type: "string", enum: ["fast", "slow"] },
+      page: { type: "integer", pattern: "^\\d+$" },
+    },
+    required: ["kind"],
+  },
+})
+
+grid.match("/grid/fast/1")  // { matched: true, values: { kind: "fast", page: "1" } }
+grid.match("/grid/turbo")   // { matched: false, reason: "schema" }
+grid.schema                 // the template rendered back as a JSON Schema object
+```
+
+A zod property composes in the same object:
+
+```ts
+slash("/grid/{count}", { schema: { properties: { count: z.coerce.number() } } })
+```
+
+---
+
 ## `route` — typed path params (zod)
 
 A route declares a path template with scalar-typed params, a zod query schema,
@@ -71,7 +102,7 @@ Changed.match("/panel/42/flagged/true?revision=7")
 // payload keys (changed, rows) are not in the URL and not in match's output
 
 Changed.match("/panel/forty-two/flagged/true?revision=7")
-// { matched: false, reason: "values" }   — "forty-two" is not a number
+// { matched: false, reason: "schema" }   — "forty-two" is not a number
 ```
 
 Helpers: `NumberPathParam(name)`, `StringPathParam(name)`, `BooleanPathParam(name)`.

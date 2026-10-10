@@ -41,7 +41,7 @@ describe("route — typed path params", () => {
   it("match fails on a non-numeric number param", () => {
     const result = Changed.match("panel/forty-two/changed?revision=7")
     assert.equal(result.matched, false)
-    assert.equal(result.reason, "values")
+    assert.equal(result.reason, "schema")
   })
 
   it("match round-trips href output back to typed url values", () => {
@@ -95,10 +95,10 @@ describe("route — full usage", () => {
     assert.deepEqual(matched, { matched: true, values: { orgId: 1, name: "x", page: 9 } })
   })
 
-  it("match reports values failure when a required query param is missing", () => {
+  it("match reports schema failure when a required query param is missing", () => {
     const result = Mixed.match("/org/1/repo/x")
     assert.equal(result.matched, false)
-    assert.equal(result.reason, "values")
+    assert.equal(result.reason, "schema")
   })
 
   it("repeated round-trips stay stable across a sequence of values", () => {

@@ -8,6 +8,7 @@ import {
   toReactRouterPattern,
   toTanStackPattern,
 } from "../dist/index.js"
+import * as z from "zod"
 
 test("prints and matches positional, query, and pointer values", () => {
   const value = slash("/users/{userIdentifier}?{tab?}#{row}")
@@ -19,27 +20,29 @@ test("prints and matches positional, query, and pointer values", () => {
 })
 
 test("validates allowed values and whole-object conversion", () => {
-  const localized = path(slash, "/{locale}", { values: { locale: ["en", "fr"] } })
-  assert.deepEqual(localized.match("/de"), { matched: false, reason: "values" })
+  const localized = path(slash, "/{locale}", {
+    schema: { type: "object", properties: { locale: { type: "string", enum: ["en", "fr"] } }, required: ["locale"] },
+  })
+  assert.deepEqual(localized.match("/de"), { matched: false, reason: "schema" })
   const numeric = path(slash, "/{id}", {
     parse(values) { return /^\d+$/.test(values.id) ? { id: Number(values.id) } : undefined },
     print(values) { return { id: String(values.id) } },
   })
   assert.deepEqual(numeric.match("/42"), { matched: true, values: { id: 42 } })
-  assert.deepEqual(numeric.match("/x"), { matched: false, reason: "values" })
+  assert.deepEqual(numeric.match("/x"), { matched: false, reason: "schema" })
   const throws = path(slash, "/{id}", {
     parse() { throw new Error("invalid id") },
     print(values) { return { id: String(values.id) } },
   })
   const failedMatch = throws.match("/x")
   assert.equal(failedMatch.matched, false)
-  assert.equal(failedMatch.reason, "values")
+  assert.equal(failedMatch.reason, "schema")
   assert.equal(failedMatch.error instanceof Error, true)
 })
 
 test("composes independently configured public paths", () => {
   const organization = path(slash, "/organizations/{organizationIdentifier}", {
-    values: { organizationIdentifier: ["acme", "openai"] },
+    schema: { type: "object", properties: { organizationIdentifier: { type: "string", enum: ["acme", "openai"] } }, required: ["organizationIdentifier"] },
   })
   const user = path(slash, "/users/{userIdentifier}?{page?}", {
     parse(values) {
@@ -55,7 +58,7 @@ test("composes independently configured public paths", () => {
     matched: true,
     values: { organizationIdentifier: "acme", userIdentifier: 42, page: 2 },
   })
-  assert.deepEqual(value.match("/organizations/other/users/42?page=2"), { matched: false, reason: "values" })
+  assert.deepEqual(value.match("/organizations/other/users/42?page=2"), { matched: false, reason: "schema" })
 })
 
 test("renders route grammar adapters and file locator pointers", () => {
@@ -71,4 +74,43 @@ test("constructs paths from callable syntax values", () => {
   const user = users.concatenate(slash("/{userIdentifier}"))
   assert.equal(user.print({ userIdentifier: "42" }), "/users/42")
   assert.equal(fileLocator("source/file.ts:{line}").print({ line: "120" }), "source/file.ts:120")
+})
+
+test("reads JSON Schema words: enum, pattern, required, and the derived view", () => {
+  const grid = path(slash, "/grid/{kind}/{page?}", {
+    schema: {
+      type: "object",
+      properties: {
+        kind: { type: "string", enum: ["fast", "slow"] },
+        page: { type: "integer", pattern: "^\\d+$" },
+      },
+      required: ["kind", "page"],
+    },
+  })
+  assert.deepEqual(grid.match("/grid/fast/1"), { matched: true, values: { kind: "fast", page: "1" } })
+  assert.deepEqual(grid.match("/grid/turbo/1"), { matched: false, reason: "schema" })
+  assert.deepEqual(grid.match("/grid/fast/x"), { matched: false, reason: "schema" })
+  assert.deepEqual(grid.match("/grid/fast"), { matched: false, reason: "schema" })
+  assert.deepEqual(grid.schema, {
+    type: "object",
+    properties: {
+      kind: { type: "string", enum: ["fast", "slow"] },
+      page: { type: "integer", pattern: "^\\d+$" },
+    },
+    required: ["kind", "page"],
+  })
+})
+
+test("composes a zod backend with a JSON Schema fragment", () => {
+  const grid = path(slash, "/grid/{kind}/{count}", {
+    schema: {
+      type: "object",
+      properties: {
+        kind: { enum: ["fast", "slow"] },
+        count: z.coerce.number(),
+      },
+    },
+  })
+  assert.deepEqual(grid.match("/grid/fast/3"), { matched: true, values: { kind: "fast", count: 3 } })
+  assert.deepEqual(grid.match("/grid/turbo/3"), { matched: false, reason: "schema" })
 })

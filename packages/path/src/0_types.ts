@@ -1,3 +1,5 @@
+import type * as z from "zod"
+
 declare const encodedPathText: unique symbol
 
 export type EncodedPathText<Representation extends string = string> = string & {
@@ -71,11 +73,50 @@ export type ValuesOf<Template extends string, Syntax extends IPathSyntax = Slash
     : ValuesWithoutPointer<EscapedTemplate, Syntax>
   : never
 
-export type ValuesWithAllowedSets<RawValues, AllowedSets> = Simplify<{
-  [PropertyName in keyof RawValues]: PropertyName extends keyof AllowedSets
-    ? AllowedSets[PropertyName] extends Array<infer AllowedValue> ? AllowedValue : RawValues[PropertyName]
+/** One path value's constraint: JSON Schema words in the core, or a zod schema as the backend. */
+export type JsonValueConstraint = {
+  type?: "string" | "integer" | "number" | "boolean"
+  enum?: readonly string[]
+  const?: string
+  pattern?: string
+}
+
+export type PathValueSchema = JsonValueConstraint | z.ZodType
+
+/** The properties of a path template, in JSON Schema words. Keys stay a subset of the value names. */
+export type PathSchemaProperties<RawValues> = {
+  [PropertyName in keyof RawValues]?: PathValueSchema
+}
+
+export interface PathSchema<RawValues> {
+  type?: "object"
+  properties?: PathSchemaProperties<RawValues>
+  required?: readonly (keyof RawValues & string)[]
+}
+
+/** The value type one property schema yields: `const` first, then `enum`, then a zod backend, then `type`. */
+type ValueOfSchema<Entry> =
+  Entry extends { const: infer Constant extends string } ? Constant
+    : Entry extends { enum: readonly (infer Member extends string)[] } ? Member
+    : Entry extends z.ZodType ? z.infer<Entry>
+    : Entry extends { type: "integer" | "number" } ? number
+    : Entry extends { type: "boolean" } ? boolean
+    : string
+
+export type ValuesWithSchema<RawValues, Schema> = Simplify<{
+  [PropertyName in keyof RawValues]: Schema extends { properties: infer Properties }
+    ? PropertyName extends keyof Properties ? ValueOfSchema<Properties[PropertyName]> : RawValues[PropertyName]
     : RawValues[PropertyName]
 }>
+
+/** One property as the derived view renders it: the constraint, or a zod schema's JSON Schema. */
+export type PathValueSchemaView = JsonValueConstraint | Record<string, unknown>
+
+export interface PathSchemaView {
+  type: "object"
+  properties: Record<string, PathValueSchemaView>
+  required: string[]
+}
 
 export type PathPart =
   | { kind: "literal"; value: string }
@@ -144,7 +185,7 @@ export type ConflictingPropertyNames<Left, Right> = {
 export type PathMatch<Values> =
   | { matched: true; values: Values }
   | { matched: false; reason: "structure" }
-  | { matched: false; reason: "values"; error?: unknown }
+  | { matched: false; reason: "schema"; error?: unknown }
 
 export type MatchedValues<Path> = Path extends { match(text: string): infer Match }
   ? Extract<Match, { matched: true }> extends { values: infer Values } ? Values : never
@@ -154,6 +195,8 @@ export interface IPath<Values, Template extends string, Syntax extends IPathSynt
   template: Template
   syntax: Syntax
   parts: PartsOf<Template, Syntax>
+  /** The template rendered back as a JSON Schema object: properties per value name, required derived. */
+  readonly schema: PathSchemaView
   print(values: Values): EncodedPathText<Template>
   match(text: string): PathMatch<Values>
   concatenate<OtherValues, OtherTemplate extends string>(
@@ -187,10 +230,6 @@ export type ValuesWithParams<RawValues, Params> = Simplify<{
     : RawValues[Key]
 }>
 
-export type PathAllowedSets<RawValues> = {
-  [PropertyName in keyof RawValues]?: string[]
-}
-
 export interface IPathFactory<Syntax extends IPathSyntax> {
   <Template extends string>(
     template: Template,
@@ -201,13 +240,13 @@ export interface IPathFactory<Syntax extends IPathSyntax> {
     configuration: PathConversion<ValuesOf<Template, Syntax>, Values>,
   ): IPath<Values, Template, Syntax>
 
-  <Template extends string, const AllowedSets extends PathAllowedSets<ValuesOf<Template, Syntax>>>(
+  <Template extends string, const Schema extends PathSchema<ValuesOf<Template, Syntax>>>(
     template: Template,
     configuration: {
-      values: AllowedSets
+      schema: Schema
     },
   ): IPath<
-    ValuesWithAllowedSets<ValuesOf<Template, Syntax>, AllowedSets>,
+    ValuesWithSchema<ValuesOf<Template, Syntax>, Schema>,
     Template,
     Syntax
   >
