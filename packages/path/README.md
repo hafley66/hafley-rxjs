@@ -70,6 +70,20 @@ A zod property composes in the same object:
 slash("/grid/{count}", { schema: { properties: { count: z.coerce.number() } } })
 ```
 
+A property the template does not name is an **extra query key**: typed
+(optional unless listed in `required`) and serialized/read as an extra query
+entry.
+
+```ts
+const search = slash("/search", {
+  schema: { type: "object", properties: { q: { type: "string" }, tag: { enum: ["a", "b"] } }, required: ["q"] },
+})
+
+search.print({ q: "cats", tag: "b" })          // "/search?q=cats&tag=b"
+search.match("/search?q=cats&tag=a")           // { matched: true, values: { q: "cats", tag: "a" } }
+search.match("/search?tag=a")                  // { matched: false, reason: "schema" }
+```
+
 ---
 
 ## `route` — typed path params (zod)

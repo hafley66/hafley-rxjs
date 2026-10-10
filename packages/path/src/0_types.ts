@@ -83,15 +83,13 @@ export type JsonValueConstraint = {
 
 export type PathValueSchema = JsonValueConstraint | z.ZodType
 
-/** The properties of a path template, in JSON Schema words. Keys stay a subset of the value names. */
-export type PathSchemaProperties<RawValues> = {
-  [PropertyName in keyof RawValues]?: PathValueSchema
-}
+/** The properties of a path schema: template value names plus any extra query names. */
+export type PathSchemaProperties = Record<string, PathValueSchema>
 
-export interface PathSchema<RawValues> {
+export interface PathSchema {
   type?: "object"
-  properties?: PathSchemaProperties<RawValues>
-  required?: readonly (keyof RawValues & string)[]
+  properties?: PathSchemaProperties
+  required?: readonly string[]
 }
 
 /** The value type one property schema yields: `const` first, then `enum`, then a zod backend, then `type`. */
@@ -103,11 +101,27 @@ type ValueOfSchema<Entry> =
     : Entry extends { type: "boolean" } ? boolean
     : string
 
-export type ValuesWithSchema<RawValues, Schema> = Simplify<{
-  [PropertyName in keyof RawValues]: Schema extends { properties: infer Properties }
-    ? PropertyName extends keyof Properties ? ValueOfSchema<Properties[PropertyName]> : RawValues[PropertyName]
-    : RawValues[PropertyName]
-}>
+type SchemaValueAt<Schema, Name extends string> =
+  Schema extends { properties: infer Properties }
+    ? Name extends keyof Properties ? ValueOfSchema<Properties[Name]> : string
+    : string
+
+/** Query names the schema declares that the template does not carry. */
+export type ExtraValueNames<RawValues, Schema> =
+  Schema extends { properties: infer Properties }
+    ? Exclude<keyof Properties & string, keyof RawValues & string>
+    : never
+
+type RequiredExtraNames<RawValues, Schema> =
+  Schema extends { required: readonly (infer Name extends string)[] }
+    ? Extract<ExtraValueNames<RawValues, Schema>, Name>
+    : never
+
+export type ValuesWithSchema<RawValues, Schema> = Simplify<
+  { [PropertyName in keyof RawValues]: SchemaValueAt<Schema, PropertyName & string> } &
+  { [PropertyName in ExtraValueNames<RawValues, Schema>]?: SchemaValueAt<Schema, PropertyName> } &
+  { [PropertyName in RequiredExtraNames<RawValues, Schema>]: SchemaValueAt<Schema, PropertyName> }
+>
 
 /** One property as the derived view renders it: the constraint, or a zod schema's JSON Schema. */
 export type PathValueSchemaView = JsonValueConstraint | Record<string, unknown>
@@ -240,7 +254,7 @@ export interface IPathFactory<Syntax extends IPathSyntax> {
     configuration: PathConversion<ValuesOf<Template, Syntax>, Values>,
   ): IPath<Values, Template, Syntax>
 
-  <Template extends string, const Schema extends PathSchema<ValuesOf<Template, Syntax>>>(
+  <Template extends string, const Schema extends PathSchema>(
     template: Template,
     configuration: {
       schema: Schema

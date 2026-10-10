@@ -202,6 +202,13 @@ function requiredNames(template: string, syntax: IPathSyntax): string[] {
   return names
 }
 
+/** Query names the schema declares that the template does not: serialized as extra query entries. */
+function extraQueryNames(runtime: RuntimePath): string[] {
+  if (!runtime.schema) return []
+  const templated = new Set(valueNames(runtime.template, runtime.syntax))
+  return Object.keys(runtime.schema.properties).filter(name => !templated.has(name))
+}
+
 function concatenateSchema(parent?: RuntimeSchema, child?: RuntimeSchema): RuntimeSchema | undefined {
   if (!parent) return child
   if (!child) return parent
@@ -308,7 +315,14 @@ function buildPath(runtime: RuntimePath): IPath<any, any, any> {
         if (values[key] !== undefined && !allowed.includes(String(values[key]))) throw new Error(`Invalid value: ${key}`)
       }
       const rawValues = runtime.configuration ? runtime.configuration.print(values) : values
-      return printPath(runtime, rawValues as Record<string, unknown>) as EncodedPathText
+      const printed = printPath(runtime, rawValues as Record<string, unknown>)
+      const extras = extraQueryNames(runtime).flatMap(name => {
+        const value = (rawValues as Record<string, unknown>)[name]
+        return value === undefined ? [] : [`${encodeURIComponent(name)}=${encodeURIComponent(String(value))}`]
+      })
+      if (extras.length === 0) return printed as EncodedPathText
+      const separator = printed.includes(runtime.syntax.queryDelimiter) ? runtime.syntax.queryEntryDelimiter : runtime.syntax.queryDelimiter
+      return (printed + separator + extras.join(runtime.syntax.queryEntryDelimiter)) as EncodedPathText
     },
     match(text: string) {
       const raw = rawMatch(runtime, text)
@@ -316,19 +330,24 @@ function buildPath(runtime: RuntimePath): IPath<any, any, any> {
       const schema = runtime.schema
       const values: Record<string, unknown> = { ...raw.values }
       if (schema) {
+        const parameters = new URLSearchParams(splitTemplate(text, runtime.syntax).query)
+        for (const name of extraQueryNames(runtime)) {
+          const value = parameters.get(name)
+          if (value !== null) values[name] = value
+        }
         for (const name of schema.required) {
-          if (raw.values[name] === undefined) return { matched: false, reason: "schema" }
+          if (values[name] === undefined) return { matched: false, reason: "schema" }
         }
         for (const [name, allowed] of Object.entries(schema.allowed)) {
-          const value = raw.values[name]
-          if (value !== undefined && !allowed.includes(value)) return { matched: false, reason: "schema" }
+          const value = values[name]
+          if (value !== undefined && !allowed.includes(String(value))) return { matched: false, reason: "schema" }
         }
         for (const [name, pattern] of Object.entries(schema.patterns)) {
-          const value = raw.values[name]
-          if (value !== undefined && !pattern.test(value)) return { matched: false, reason: "schema" }
+          const value = values[name]
+          if (value !== undefined && !pattern.test(String(value))) return { matched: false, reason: "schema" }
         }
         for (const [name, codec] of Object.entries(schema.zod)) {
-          const value = raw.values[name]
+          const value = values[name]
           if (value === undefined) continue
           const parsed = codec.safeParse(value)
           if (!parsed.success) return { matched: false, reason: "schema" }
@@ -405,7 +424,7 @@ function paramsToConversion(
 
 export function path<Syntax extends IPathSyntax, Template extends string>(syntax: Syntax, template: Template): IPath<ValuesOf<Template, Syntax>, Template, Syntax>
 export function path<Syntax extends IPathSyntax, Template extends string, ParsedValues>(syntax: Syntax, template: Template, configuration: RawConfiguration<ValuesOf<Template, Syntax>, ParsedValues>): IPath<ParsedValues, Template, Syntax>
-export function path<Syntax extends IPathSyntax, Template extends string, const Schema extends PathSchema<ValuesOf<Template, Syntax>>>(syntax: Syntax, template: Template, configuration: SchemaConfiguration<ValuesOf<Template, Syntax>, Schema>): IPath<ValuesWithSchema<ValuesOf<Template, Syntax>, Schema>, Template, Syntax>
+export function path<Syntax extends IPathSyntax, Template extends string, const Schema extends PathSchema>(syntax: Syntax, template: Template, configuration: SchemaConfiguration<ValuesOf<Template, Syntax>, Schema>): IPath<ValuesWithSchema<ValuesOf<Template, Syntax>, Schema>, Template, Syntax>
 export function path<Syntax extends IPathSyntax, Template extends string, const Params extends ParamMap<ValuesOf<Template, Syntax>>>(syntax: Syntax, template: Template, configuration: { params: Params }): IPath<ValuesWithParams<ValuesOf<Template, Syntax>, Params>, Template, Syntax>
 export function path<Values, Syntax extends IPathSyntax = SlashPathSyntax>(syntax: Syntax): IPath<Values, "", Syntax>
 export function path(syntax: IPathSyntax, template = "", configuration?: unknown): IPath<any, any, any> {

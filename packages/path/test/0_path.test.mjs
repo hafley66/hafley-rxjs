@@ -114,3 +114,12 @@ test("composes a zod backend with a JSON Schema fragment", () => {
   assert.deepEqual(grid.match("/grid/fast/3"), { matched: true, values: { kind: "fast", count: 3 } })
   assert.deepEqual(grid.match("/grid/turbo/3"), { matched: false, reason: "schema" })
 })
+
+test("serializes and reads schema query keys the template does not carry", () => {
+  const search = slash("/search", {
+    schema: { type: "object", properties: { q: { type: "string" }, tag: { enum: ["a", "b"] } }, required: ["q"] },
+  })
+  assert.deepEqual(search.match("/search?q=cats&tag=a"), { matched: true, values: { q: "cats", tag: "a" } })
+  assert.deepEqual(search.match("/search?tag=a"), { matched: false, reason: "schema" })
+  assert.equal(search.print({ q: "cats", tag: "b" }), "/search?q=cats&tag=b")
+})
