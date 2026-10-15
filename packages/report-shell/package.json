@@ -10,22 +10,27 @@
   ],
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./style.css": {
+      "source": "./src/style.css",
       "types": "./dist/style.css.d.ts",
       "default": "./dist/style.css"
     },
     "./marbler": {
+      "source": "./src/marbler.ts",
       "types": "./dist/marbler.d.ts",
       "import": "./dist/marbler.js"
     },
     "./kit.css": {
+      "source": "./src/kit.css",
       "types": "./dist/kit.css.d.ts",
       "default": "./dist/kit.css"
     },
     "./marbler.css": {
+      "source": "./src/marbler.css",
       "types": "./dist/marbler.css.d.ts",
       "default": "./dist/marbler.css"
     }

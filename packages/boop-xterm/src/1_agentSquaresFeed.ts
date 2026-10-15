@@ -6,7 +6,7 @@
 //
 // The event channel is the same one `pty-data-batch` and the activity pushes
 // ride, so the serve binary and the Tauri window deliver it the same way.
-import { filter, type Observable } from "rxjs"
+import { concatMap, defer, distinctUntilChanged, filter, finalize, from, map, type Observable } from "rxjs"
 import type { SquareKind } from "./0_agentSquareVisual.js"
 
 export type SquaresOptions = { mode: "relative" | "recent"; userKeep: number }
@@ -17,6 +17,28 @@ export type SquaresOptions = { mode: "relative" | "recent"; userKeep: number }
 /** The event the server pushes a projection on. Mirrors `SQUARES_EVENT` in
  *  `src-tauri/src/1_squares.rs` — change both. */
 export const SQUARES_EVENT = "squares-update"
+
+export type SquaresWatchInput = { pty: string; session: string; target: string; socket?: string; options: SquaresOptions }
+
+/** The pane owns its frame feed even while the sidebar is hidden. Commands
+ * are serialized so an older unwatch cannot stop a rebound session. */
+export function squaresWatchEffects(
+  pty: string,
+  inputs: Observable<SquaresWatchInput | null>,
+  send: (command: "squares_watch" | "squares_unwatch", input: SquaresWatchInput | { pty: string }) => Promise<unknown>,
+): Observable<void> {
+  return defer(() => {
+    let pending = Promise.resolve<unknown>(undefined)
+    return inputs.pipe(
+      distinctUntilChanged((before, after) => JSON.stringify(before) === JSON.stringify(after)),
+      concatMap((input) => {
+        pending = pending.then(() => input ? send("squares_watch", input) : send("squares_unwatch", { pty }))
+        return from(pending).pipe(map(() => void 0))
+      }),
+      finalize(() => { void pending.catch(() => undefined).then(() => send("squares_unwatch", { pty })).catch(() => undefined) }),
+    )
+  })
+}
 
 /** One turn as the push carries it: the matcher's span plus the turn's text.
  *  `said`'s newline count is the turn's size in the rolling window, so the

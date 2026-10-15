@@ -9,6 +9,7 @@
   },
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/types/index.d.ts",
       "import": "./dist/index.js"
     },
@@ -21,7 +22,10 @@
       "import": "./src/0_pairing.mjs"
     },
     "./dom": "./src/extension/1_dom.ts",
-    "./cli": "./dist/cli.js"
+    "./cli": {
+      "source": "./src/cli/8_main.ts",
+      "default": "./dist/cli.js"
+    }
   },
   "files": [
     "dist",

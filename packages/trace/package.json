@@ -7,10 +7,12 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./node": {
+      "source": "./src/10_processMemory.ts",
       "types": "./dist/10_processMemory.d.ts",
       "import": "./dist/10_processMemory.js"
     }

@@ -7,26 +7,32 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./plugin": {
+      "source": "./src/1_plugin.ts",
       "types": "./dist/1_plugin.d.ts",
       "import": "./dist/1_plugin.js"
     },
     "./setup": {
+      "source": "./src/setup.ts",
       "types": "./dist/setup.d.ts",
       "import": "./dist/setup.js"
     },
     "./test": {
+      "source": "./src/4_test.ts",
       "types": "./dist/4_test.d.ts",
       "import": "./dist/4_test.js"
     },
     "./global-setup": {
+      "source": "./src/2_global-setup.ts",
       "types": "./dist/2_global-setup.d.ts",
       "import": "./dist/2_global-setup.js"
     },
     "./runner": {
+      "source": "./src/9_runner.ts",
       "types": "./dist/9_runner.d.ts",
       "import": "./dist/9_runner.js"
     }

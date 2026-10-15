@@ -2,7 +2,7 @@
 // are ordinary `events` payloads, so a Subject stands in for the transport.
 import { Subject } from "rxjs"
 import { describe, expect, it } from "vitest"
-import { squaresFeed, type Strip } from "./1_agentSquaresFeed.js"
+import { squaresFeed, squaresWatchEffects, type SquaresWatchInput, type Strip } from "./1_agentSquaresFeed.js"
 
 const frame = (session: string, rows: number): Strip => ({
   session,
@@ -201,4 +201,73 @@ describe("the strip's feed", () => {
       ]
     `)
   })
+})
+
+
+const input: SquaresWatchInput = { pty: "pane", session: "chat-a", target: "%470", options: { mode: "relative", userKeep: 4 } }
+const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
+
+it("keeps the pane feed until its owner closes and serializes session changes", async () => {
+  const inputs = new Subject<SquaresWatchInput | null>()
+  const calls: unknown[] = []
+  const subscription = squaresWatchEffects("pane", inputs, async (command, args) => { calls.push([command, args]) }).subscribe()
+  inputs.next(input)
+  inputs.next({ ...input })
+  inputs.next({ ...input, session: "chat-b" })
+  await flush()
+  subscription.unsubscribe()
+  await flush()
+  expect(calls).toMatchInlineSnapshot(`
+    [
+      [
+        "squares_watch",
+        {
+          "options": {
+            "mode": "relative",
+            "userKeep": 4,
+          },
+          "pty": "pane",
+          "session": "chat-a",
+          "target": "%470",
+        },
+      ],
+      [
+        "squares_watch",
+        {
+          "options": {
+            "mode": "relative",
+            "userKeep": 4,
+          },
+          "pty": "pane",
+          "session": "chat-b",
+          "target": "%470",
+        },
+      ],
+      [
+        "squares_unwatch",
+        {
+          "pty": "pane",
+        },
+      ],
+    ]
+  `)
+})
+
+it("unwatches after an in-flight registration settles when the pane closes", async () => {
+  const inputs = new Subject<SquaresWatchInput | null>()
+  const calls: string[] = []
+  let finish!: () => void
+  const started = new Promise<void>((resolve) => { finish = resolve })
+  const subscription = squaresWatchEffects("pane", inputs, async (command) => {
+    calls.push(command)
+    if (command === "squares_watch") await started
+  }).subscribe()
+  inputs.next(input)
+  await flush()
+  inputs.next({ ...input, session: "chat-b" })
+  subscription.unsubscribe()
+  expect(calls).toEqual(["squares_watch"])
+  finish()
+  await flush()
+  expect(calls).toEqual(["squares_watch", "squares_unwatch"])
 })
