@@ -41,6 +41,8 @@ export interface Signal$<T, Base extends object = object> extends BehaviorSubjec
   path: string[]
   /** Surrogate id of the signal tree this node belongs to; children share their root's. */
   sid: number
+  /** How many memos watch this node through the tree's watch list (not RxJS subscriptions). */
+  watching: number
   /** Meta events stream for this signal */
   $: Observable<SignalEvent<T, Base>>
   /** ID getter/setter for debugging */
@@ -302,6 +304,8 @@ export type SignalCreatorOptions<T, Base extends object = object> = {
   /** The source multicasts itself and replays on subscribe: a write calls this instead of a
    * subject, and `observable` is the root stream as is. */
   publish?: (next: T) => void
+  /** A memo's own dependent list: a memo depending on this root registers here, not by subscribing. */
+  watchRoot?: (listener: { next(): void }) => unknown
   /** Factory to create Base extension for each node */
   createBase?: (root: Signal<T, Base>, path: string[]) => Base
 }

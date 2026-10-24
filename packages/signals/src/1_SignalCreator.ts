@@ -78,6 +78,31 @@ export const SELECTOR_SLOT = { project: 0, distinct: 1, track: 2, share: 3 } as 
 /** Answers whether the computation in flight sees an event's current value: an event is an edge,
  * so a memo sees each version once and reads `undefined` on later runs. */
 export type EdgeReader = (node: Signal<unknown>, version: number) => boolean
+type Listener = { next(): void }
+/** One watched path of a tree: who to tell, and the value they last saw (shallow-distinct). */
+type Watch = { path: string[]; last: unknown; listeners: Set<Listener>; drop?: (listener: Listener) => void }
+
+function notifyWatches(watched: Map<string, Watch>, next: unknown): void {
+  for (const watch of watched.values()) {
+    if (watch.path.length) {
+      const value = get(next, watch.path)
+      if (shallowEqual(value, watch.last)) continue
+      watch.last = value
+    }
+    for (const listener of [...watch.listeners]) listener.next()
+  }
+}
+
+function watchPath(watched: Map<string, Watch>, path: string[], root: unknown, listener: Listener): Watch {
+  const key = path.join(".")
+  let watch = watched.get(key)
+  if (!watch) {
+    watch = { path, last: path.length ? get(root, path) : undefined, listeners: new Set() }
+    watched.set(key, watch)
+  }
+  watch.listeners.add(listener)
+  return watch
+}
 /** One computation in flight: where its reads are collected, and its edge rule if it has one. */
 type Frame = { collect: (signal: Signal<unknown>) => void; edge?: EdgeReader }
 const frames: Frame[] = []
@@ -150,7 +175,7 @@ export function trackDependencies<T>(compute: () => T, sink: Set<Signal<unknown>
 export function SignalCreator<T, Base extends object = object>(
   options: SignalCreatorOptions<T, Base>,
 ): Signal<T, Base> {
-  const { initialState, observable, event = false, read, write, createBase, publish } = options
+  const { initialState, observable, event = false, read, write, createBase, publish, watchRoot } = options
 
   // A source that multicasts itself and publishes its own writes needs no subject of its own.
   const state$ = publish
@@ -162,6 +187,10 @@ export function SignalCreator<T, Base extends object = object>(
   // Surrogate id of this tree and the count of writes to it: every child node shares both.
   const sid = ++signalSeq
   let version = 0
+  // Paths a memo depends on, each with the listeners to tell and the value they last saw: a memo's
+  // dependency edge is a set entry here instead of an RxJS subscription. Plain state and event
+  // trees only; a tree fed by an observable keeps subscriptions.
+  let watched: Map<string, Watch> | undefined
 
   // `from` is the path of the write that caused the emit, not of the subject, which always sits
   // at the root: the whole point of the record is naming which branch moved.
@@ -177,7 +206,11 @@ export function SignalCreator<T, Base extends object = object>(
         observerCount: (state$ as Subject<T> | undefined)?.observers.length ?? 0,
       })
     }
-    inEmitTurn(() => (publish ? publish(next) : state$!.next(next)))
+    inEmitTurn(() => {
+      if (publish) publish(next)
+      else state$!.next(next)
+      if (watched) notifyWatches(watched, next)
+    })
   }
 
   // If an observable source is provided, pipe it into the state
@@ -302,6 +335,12 @@ export function SignalCreator<T, Base extends object = object>(
         if (p === "setImmer") return (recipe: (draft: Draft<T>) => ValidDraftReturn<Draft<T>>) => immerAt(path, recipe)
         if (p === "path") return path
         if (p === "sid") return sid
+        if (p === "watch") {
+          if (watchRoot && !path.length) return watchRoot
+          if (observable) return undefined
+          return (listener: Listener) => watchPath((watched ??= new Map()), path, latest, listener)
+        }
+        if (p === "watching") return watched?.get(path.join("."))?.listeners.size ?? 0
 
         // `pipe` hands back an Observable, which is right for composition and wrong for storage.
         // `pipe$` runs the same operators and wraps the result, so a piped stream keeps `.$()`,
@@ -471,9 +510,20 @@ function isStream<T>(value: ComputeResult<T>): value is Observable<T> | PromiseL
  * time: a dependency change cancels it and reruns (switch), completion after at least one emission
  * reruns (expand), completion with none settles until a dependency changes.
  */
-/** What a memo holds per dependency: its subscription, and for an event the version it last saw
- * and the run that saw it. */
-type DependencyEntry = { sub: { unsubscribe(): void } | undefined; consumed: number; consumedRun: number }
+/** What a memo holds per dependency: its watch entry or its subscription, and for an event the
+ * version it last saw and the run that saw it. */
+type DependencyEntry = {
+  sub: { unsubscribe(): void } | undefined
+  watch?: Watch
+  consumed: number
+  consumedRun: number
+}
+
+function releaseDependency(entry: DependencyEntry, listener: Listener): void {
+  entry.sub?.unsubscribe()
+  if (entry.watch?.drop) entry.watch.drop(listener)
+  else entry.watch?.listeners.delete(listener)
+}
 
 export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, options: ComputedOptions = {}): Signal<T> {
   const id = ++computedSeq
@@ -524,7 +574,7 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
   const clearDependencies = () => {
     if (!dependencySubs) return
     for (const [dependency, entry] of dependencySubs) {
-      entry.sub?.unsubscribe()
+      releaseDependency(entry, onDependency)
       if (LOG.on) LOG.emit(CAT_UNSUBSCRIBE, "unsubscribe {id} {path}", { id: `memo#${id}`, path: dependency.$.path })
     }
     dependencySubs.clear()
@@ -541,11 +591,38 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
   const emit = (next: T) => {
     emitVersion++
     if (observers) for (const observer of [...observers]) observer.next(next)
+    if (watch) for (const listener of [...watch.listeners]) listener.next()
   }
 
   // One observer for every dependency, so a dependency costs its subscription and nothing more.
   let subscribing = false
   const onDependency = { next: () => subscribing || invalidate() }
+
+  // Memos that depend on this one, held as a watch instead of RxJS subscriptions: while any is
+  // listening the memo counts as subscribed once.
+  let watch: Watch | undefined
+  const watchRoot = (listener: Listener): Watch => {
+    watch ??= {
+      path: ROOT_PATH,
+      last: undefined,
+      listeners: new Set(),
+      drop: gone => {
+        if (!watch!.listeners.delete(gone) || watch!.listeners.size) return
+        subscriberCount--
+        if (!subscriberCount && !readPinned) {
+          cancelInner()
+          clearDependencies()
+          dirty = true
+        }
+      },
+    }
+    if (!watch.listeners.size) {
+      subscriberCount++
+      readPinned = false
+    }
+    watch.listeners.add(listener)
+    return watch
+  }
 
   // Returns the diff size so a compute record can say how much of the wiring actually moved.
   const syncDependencies = (deps: Set<Signal<unknown>>) => {
@@ -553,20 +630,28 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
     let removed = 0
     if (dependencySubs) for (const [dependency, entry] of dependencySubs) {
       if (deps.has(dependency)) continue
-      entry.sub?.unsubscribe()
+      releaseDependency(entry, onDependency)
       dependencySubs.delete(dependency)
       removed++
       if (LOG.on) LOG.emit(CAT_UNSUBSCRIBE, "unsubscribe {id} {path}", { id: `memo#${id}`, path: dependency.$.path })
     }
     for (const dependency of deps) {
       const held = dependencySubs?.get(dependency)
-      if (held?.sub) continue
-      // A dependency replays its value on subscribe; that value is the one just read, not a change.
-      subscribing = true
-      const sub = dependency.$.subscribe(LOG.on ? { next: () => subscribing || invalidate(dependency) } : onDependency)
-      subscribing = false
-      if (held) held.sub = sub
-      else (dependencySubs ??= new Map()).set(dependency, { sub, consumed: -1, consumedRun: -1 })
+      if (held?.sub || held?.watch) continue
+      const watchHere = LOG.on ? undefined : (dependency.$ as unknown as { watch?: (listener: Listener) => Watch }).watch
+      let sub: { unsubscribe(): void } | undefined
+      let watch: Watch | undefined
+      if (watchHere) watch = watchHere(onDependency)
+      else {
+        // A dependency replays its value on subscribe; that value is the one just read, not a change.
+        subscribing = true
+        sub = dependency.$.subscribe(LOG.on ? { next: () => subscribing || invalidate(dependency) } : onDependency)
+        subscribing = false
+      }
+      if (held) {
+        held.sub = sub
+        held.watch = watch
+      } else (dependencySubs ??= new Map()).set(dependency, { sub, watch, consumed: -1, consumedRun: -1 })
       added++
       if (LOG.on) LOG.emit(CAT_SUBSCRIBE, "subscribe {id} {path}", { id: `memo#${id}`, path: dependency.$.path })
     }
@@ -730,5 +815,5 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
 
   // The memo multicasts itself and replays its value on subscribe, so a write publishes straight to
   // its observers instead of through a subject merged into a second shared stream.
-  return SignalCreator({ observable, read: readMemo, write, publish: emit })
+  return SignalCreator({ observable, read: readMemo, write, publish: emit, watchRoot })
 }

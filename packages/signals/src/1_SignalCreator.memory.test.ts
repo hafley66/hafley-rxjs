@@ -27,6 +27,7 @@ const CEILING = {
   memoCold: 4_400,
   memoSubscribed: 9_600,
   memoSubscribedPerDependency: 750,
+  memoOnMemoPerDependency: 750,
 }
 
 test("bytes per signal shape stay at their floor", () => {
@@ -44,11 +45,17 @@ test("bytes per signal shape stay at their floor", () => {
     const memo = Signal(() => others.reduce((sum, other) => sum + other.$(), 0))
     return [memo, memo.$.subscribe(() => {})]
   }
+  const upstream = Array.from({ length: 4 }, () => Signal(() => 1))
+  const fourMemoDeps = () => {
+    const memo = Signal(() => upstream.reduce((sum, other) => sum + other.$(), 0))
+    return [memo, memo.$.subscribe(() => {})]
+  }
   const measured = {
     stateSignal: perInstance(() => Signal(0)),
     memoCold: perInstance(() => Signal(() => 1)),
     memoSubscribed: perInstance(subscribed(0)),
     memoSubscribedPerDependency: Math.round((perInstance(fourDeps) - perInstance(subscribed(0))) / 4),
+    memoOnMemoPerDependency: Math.round((perInstance(fourMemoDeps) - perInstance(subscribed(0))) / 4),
   }
   console.log(JSON.stringify(measured))
   for (const [shape, bytes] of Object.entries(measured)) {
