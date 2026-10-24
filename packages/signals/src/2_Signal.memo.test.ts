@@ -170,7 +170,7 @@ describe("Signal(fn) — automatic computed contract", () => {
 
   it("releases a torn-down consumer from its source, reads included", () => {
     const rows = Signal([1, 2, 3])
-    const observersOnRows = () => (rows.$ as unknown as { observers: unknown[] }).observers.length
+    const observersOnRows = () => (rows.$ as unknown as { observers: unknown[] }).observers.length + rows.$.watching
     const start = observersOnRows()
     const teardowns = [1, 2, 3].map(() => {
       const sorted = Signal(() => [...rows.$()].sort())

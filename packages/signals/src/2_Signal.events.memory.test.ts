@@ -32,5 +32,5 @@ export function measure(): { bytesPerMemo: number } {
 test("edge bookkeeping retains a bounded number of bytes per memo", () => {
   const runs = [measure(), measure(), measure()].map(run => Math.round(run.bytesPerMemo))
   console.log(JSON.stringify({ bytesPerMemo: runs }))
-  expect(Math.min(...runs)).toBeLessThan(Number(process.env.EDGE_BYTES_PER_MEMO_MAX ?? 13_500))
+  expect(Math.min(...runs)).toBeLessThan(Number(process.env.EDGE_BYTES_PER_MEMO_MAX ?? 2_450))
 })

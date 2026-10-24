@@ -78,8 +78,33 @@ export const SELECTOR_SLOT = { project: 0, distinct: 1, track: 2, share: 3 } as 
 /** Answers whether the computation in flight sees an event's current value: an event is an edge,
  * so a memo sees each version once and reads `undefined` on later runs. */
 export type EdgeReader = (node: Signal<unknown>, version: number) => boolean
+type Listener = { next(): void }
+/** One watched path of a tree: who to tell, and the value they last saw (shallow-distinct). */
+type Watch = { path: string[]; last: unknown; listeners: Set<Listener>; drop?: (listener: Listener) => void }
+
+function notifyWatches(watched: Map<string, Watch>, next: unknown): void {
+  for (const watch of watched.values()) {
+    if (watch.path.length) {
+      const value = get(next, watch.path)
+      if (shallowEqual(value, watch.last)) continue
+      watch.last = value
+    }
+    for (const listener of [...watch.listeners]) listener.next()
+  }
+}
+
+function watchPath(watched: Map<string, Watch>, path: string[], root: unknown, listener: Listener): Watch {
+  const key = path.join(".")
+  let watch = watched.get(key)
+  if (!watch) {
+    watch = { path, last: path.length ? get(root, path) : undefined, listeners: new Set() }
+    watched.set(key, watch)
+  }
+  watch.listeners.add(listener)
+  return watch
+}
 /** One computation in flight: where its reads are collected, and its edge rule if it has one. */
-type Frame = { collect: (signal: Signal<unknown>) => void; edge?: EdgeReader }
+type Frame = { collect(signal: Signal<unknown>): void; edge?(node: Signal<unknown>, version: number): boolean }
 const frames: Frame[] = []
 
 let signalSeq = 0
@@ -89,7 +114,7 @@ let signalSeq = 0
 // instead of once per write. The emit turn brackets `state$.next`, so an invalidation raised
 // inside it records the memo and the drain runs each one exactly once, after the last delivery.
 let emitDepth = 0
-const pendingFlush = new Map<() => void, number>()
+const pendingFlush = new Map<{ flush(): void }, number>()
 
 export function inEmitTurn<T>(run: () => T): T {
   emitDepth++
@@ -103,7 +128,7 @@ export function inEmitTurn<T>(run: () => T): T {
       emitDepth++
       try {
         while (pendingFlush.size) {
-          let due!: () => void
+          let due!: { flush(): void }
           let lowest = Infinity
           for (const [flush, rank] of pendingFlush) {
             if (rank < lowest) {
@@ -112,7 +137,7 @@ export function inEmitTurn<T>(run: () => T): T {
             }
           }
           pendingFlush.delete(due)
-          due()
+          due.flush()
         }
       } finally {
         emitDepth--
@@ -150,296 +175,276 @@ export function trackDependencies<T>(compute: () => T, sink: Set<Signal<unknown>
 export function SignalCreator<T, Base extends object = object>(
   options: SignalCreatorOptions<T, Base>,
 ): Signal<T, Base> {
-  const { initialState, observable, event = false, read, write, createBase } = options
+  return new Tree<T, Base>(options).root
+}
 
-  const state$ =
-    event || (observable && initialState === undefined) ? new Subject<T>() : new BehaviorSubject(initialState as T)
-  let latest = initialState as T
-  // Surrogate id of this tree and the count of writes to it: every child node shares both.
-  const sid = ++signalSeq
-  let version = 0
+// Node state is reached through symbol keys on the two proxy targets, so both proxies share one
+// module-level handler and a node owns no closures.
+const TREE = Symbol("signal.tree")
+const PATH = Symbol("signal.path")
+const OWNER = Symbol("signal.owner")
+const LABEL = Symbol("signal.label")
 
-  // `from` is the path of the write that caused the emit, not of the subject, which always sits
-  // at the root: the whole point of the record is naming which branch moved.
-  const pushState = (next: T, from: string[] = ROOT_PATH) => {
-    latest = next
-    version++
-    // A writable memo mirrors the value into its own holder before the emit, so the next run of
-    // the body reads what was written as `prev`.
-    write?.(next)
-    if (LOG.on) {
-      LOG.emit(CAT_EMIT, "emit {path}", {
-        path: from,
-        observerCount: (state$ as Subject<T>).observers.length,
+type AnyTree = Tree<unknown, object>
+/** The callable `$` target: a bare function carrying its node's tree, path and outer node. */
+type AccessorTarget = ((...args: unknown[]) => unknown) & {
+  [TREE]: AnyTree
+  [PATH]: string[]
+  [OWNER]: Signal<unknown>
+  [LABEL]?: string
+} & Record<string | symbol, unknown>
+/** The outer node object: `$`, the plugin `$field`, cached children. */
+type NodeTarget = { $: unknown; [TREE]: AnyTree; [PATH]: string[] } & Record<string | symbol, unknown>
+
+const accessorTarget = (): AccessorTarget => function signal() {} as unknown as AccessorTarget
+
+const ACCESSOR_HANDLER: ProxyHandler<AccessorTarget> = {
+  apply(target, _thisArg, args) {
+    const tree = target[TREE]
+    const path = target[PATH]
+    const proxy = target[OWNER]
+    if (args.length) {
+      tree.setAt(path, args[0])
+      signalDispatch.next({ type: "set", value: { signal: proxy, path, value: args[0] } })
+      return proxy
+    }
+    signalDispatch.next({ type: "get", value: { signal: proxy, path } })
+    // An event read is tracked like any other, so a write pushes a rerun, and it is an edge:
+    // the reader in flight decides whether this version was already seen.
+    const frame = frames.at(-1)
+    frame?.collect(proxy)
+    if (tree.event && frame?.edge && !frame.edge(proxy, tree.version)) return undefined
+    return tree.getAt(path)
+  },
+  get(target, p) {
+    const tree = target[TREE]
+    const path = target[PATH]
+    if (p === "value") return tree.getAt(path)
+    if (p === "next") return (n: unknown) => tree.setAt(path, n)
+    if (p === "setImmer") return (recipe: (draft: Draft<unknown>) => ValidDraftReturn<Draft<unknown>>) => tree.immerAt(path, recipe)
+    if (p === "path") return path
+    if (p === "sid") return tree.sid
+    if (p === "watch") return tree.watcherAt(path)
+    if (p === "watching") return tree.watched?.get(path.join("."))?.listeners.size ?? 0
+    // `pipe` hands back an Observable, which is right for composition and wrong for storage.
+    // `pipe$` runs the same operators and wraps the result, so a piped stream keeps `.$()`,
+    // the proxy dots, and this node's distinction slot.
+    if (p === "pipe$") {
+      const accessor = (target[OWNER] as unknown as { $: Observable<unknown> }).$
+      return (...operators: Array<OperatorFunction<unknown, unknown>>) =>
+        SignalCreator({
+          observable: accessor.pipe(...(operators as [OperatorFunction<unknown, unknown>])),
+          distinct: tree.distinct as SignalCreatorOptions<unknown>["distinct"],
+        })
+    }
+    // Meta events stream ($.$)
+    if (p === "$") {
+      const proxy = target[OWNER]
+      return signalDispatch.pipe(filter(i => (i.value.signal as unknown) === (proxy as unknown)))
+    }
+    // Cache hit
+    if (p in target) return target[p]
+    // Lazy match BehaviorSubject/Observable methods
+    if (p in tree.root$) {
+      const source$ = tree.selectorAt(path, target[OWNER])
+      let it: unknown = source$[p as keyof Observable<unknown>]
+      if (typeof it === "function") it = (it as (...args: unknown[]) => unknown).bind(source$)
+      return (target[p] ??= it)
+    }
+    if (p === "id") {
+      return (target[p] ??= (setId?: string) => {
+        if (setId) {
+          target[LABEL] = setId
+          return target[OWNER]
+        }
+        return target[LABEL] ?? ""
       })
     }
-    inEmitTurn(() => state$.next(next))
+    // use() hook - placeholder, gets added by /react
+    if (p === "use") return target[p]
+    return undefined
+  },
+}
+
+// Main proxy for property traversal. `$`-suffixed names are a reserved namespace: the registry
+// (match$, switch$, … filled by later modules) resolves before state keys.
+const NODE_HANDLER: ProxyHandler<NodeTarget> = {
+  get(target, p, receiver) {
+    if (p in target) return target[p]
+    if (typeof p === "symbol") return target[p]
+    if (Object.hasOwn(special$, p)) return special$[p](receiver)
+    // Lazy create child signals
+    return (target[p] ??= target[TREE].node([...target[PATH], p]))
+  },
+}
+
+/** One signal tree: its value, its stream, and every node under its root. */
+class Tree<T, Base extends object> {
+  latest: T
+  // Surrogate id of this tree and the count of writes to it: every node shares both.
+  readonly sid = ++signalSeq
+  version = 0
+  readonly event: boolean
+  readonly host: MemoHost<T> | undefined
+  readonly observable: Observable<T> | undefined
+  readonly distinct: MonoTypeOperatorFunction<unknown> | null | undefined
+  readonly createBase: ((root: Signal<T, Base>, path: string[]) => Base) | undefined
+  // A source that multicasts itself and publishes its own writes needs no subject of its own.
+  readonly state$: Subject<T> | undefined
+  readonly root$: Observable<T>
+  // Paths a memo depends on, each with the listeners to tell and the value they last saw: a memo's
+  // dependency edge is a set entry here instead of an RxJS subscription. Plain state and event
+  // trees only; a tree fed by an observable keeps subscriptions.
+  watched: Map<string, Watch> | undefined = undefined
+  // Nested selectors with a live subscription, for write diagnostics. Made on the first one.
+  activeSubs: Signal<unknown>[] | undefined = undefined
+  readonly root: Signal<T, Base>
+
+  constructor(options: SignalCreatorOptions<T, Base>) {
+    const { initialState, observable, event = false, createBase, host } = options
+    this.latest = initialState as T
+    this.event = event
+    this.host = host
+    this.observable = observable
+    this.distinct = options.distinct
+    this.createBase = createBase
+    this.state$ = host
+      ? undefined
+      : event || (observable && initialState === undefined)
+        ? new Subject<T>()
+        : new BehaviorSubject(initialState as T)
+    this.root$ = host
+      ? observable!
+      : !observable
+        ? this.state$!
+        : merge(this.state$!, observable.pipe(tap({ next: next => { this.latest = next } }))).pipe(
+            shareReplay({ refCount: true, bufferSize: 1 }),
+          )
+    this.root = this.node(ROOT_PATH) as unknown as Signal<T, Base>
   }
 
-  // If an observable source is provided, pipe it into the state
-  const root$ = !observable
-    ? state$
-    : merge(
-        state$,
-        observable.pipe(
-          tap({
-            next: next => {
-              latest = next
-            },
-          }),
-        ),
-      ).pipe(shareReplay({ refCount: true, bufferSize: 1 }))
+  current(): T {
+    return this.host ? this.host.read() : this.latest
+  }
 
-  // Track active subscriptions for debugging/cleanup
-  const activeSubs: Signal<T, Base>[] = []
-
-  const createProxy = (_path: string[], base?: Base): Signal<T, Base> => {
-    // Filter out symbols that might sneak through
-    const path = _path.filter(i => typeof i === "string")
-    const depth = path.length
-
-    // Immer-based setter for complex mutations
-    const setterImmer = (recipe: (draft: Draft<T>) => ValidDraftReturn<Draft<T>>) => {
-      const curr = depth ? get(latest, path) : latest
-      if (isDraftable(curr)) {
-        const next = produce(curr as Draft<T>, recipe)
-        return setter(next as T)
-      }
-    }
-
-    // Direct setter - handles both root and nested paths
-    const applySet = (n: T) => {
-      if (!depth) {
-        return pushState(n, path)
-      }
-
-      // Deep set with lodash on an immer draft
-      const next = produce((latest || {}) as object, (draft: Draft<object>) => {
-        set(draft, path, n)
-      })
-
-      return pushState(next as T, path)
-    }
-
-    // The branch is duplicated so the unlogged path costs exactly one boolean read.
-    const setter = (n: T) => {
-      if (!LOG.on) return applySet(n)
-
-      const started = performance.now()
-      const hasSubscribers = (state$ as Subject<T>).observers.length > 0 || activeSubs.length > 0
-      const result = applySet(n)
-      LOG.emit(CAT_WRITE, "write {path}", {
-        path,
-        depth,
-        hasSubscribers,
-        durationMs: performance.now() - started,
-      })
-      return result
-    }
-
-    // Getter - handles root, nested, and function values
-    const getter = (): T => {
-      const root = read ? read() : latest
-      if (!depth) {
-        return root
-      }
-
-      const val = get(root, path)
-
-      // If value is a function (e.g. array method), bind it properly
-      if (typeof val === "function") {
-        const context = depth === 1 ? root : get(root, path.slice(0, -1))
-
-        if (Array.isArray(context)) {
-          // For array methods, wrap to auto-update state on mutation
-          return ((...args: unknown[]) => {
-            let toReturn: unknown
-            const next = produce(context, draft => {
-              const funcName = path[path.length - 1]
-              toReturn = (draft as unknown as Record<string, (...a: unknown[]) => unknown>)[funcName](...args)
-            })
-
-            if (!isEqual(next, context)) {
-              const parent: Signal<unknown, Base> = depth > 1 ? get(rootProxy, path.slice(0, -1)) : rootProxy
-              parent.$.next(next)
-            }
-
-            return toReturn
-          }) as T
-        }
-        return val.bind(context)
-      }
-      return val
-    }
-
-    // The callable function for $
-    const selfFnName = path.join("/") || "root"
-    const selfFn = {
-      [selfFnName]: (...args: unknown[]) => {
-        if (args.length) {
-          setter(args[0] as T)
-          signalDispatch.next({
-            type: "set",
-            value: { signal: proxy as unknown as Signal<unknown>, path, value: args[0] },
-          })
-          return proxy
-        }
-        signalDispatch.next({
-          type: "get",
-          value: { signal: proxy as unknown as Signal<unknown>, path },
-        })
-        // An event read is tracked like any other, so a write pushes a rerun, and it is an edge:
-        // the reader in flight decides whether this version was already seen.
-        const frame = frames.at(-1)
-        frame?.collect(proxy as unknown as Signal<unknown>)
-        if (event && frame?.edge && !frame.edge(proxy as unknown as Signal<unknown>, version)) return undefined as T
-        return getter()
-      },
-    }[selfFnName]
-
-    let ID = ""
-
-    // The $ accessor object - proxied to add BS methods lazily
-    const $proxy = new Proxy(selfFn as unknown as Signal$<T, Base>, {
-      get(target, p) {
-        // Our custom properties
-        if (p === "value") return getter()
-        if (p === "next") return setter
-        if (p === "setImmer") return setterImmer
-        if (p === "path") return path
-        if (p === "sid") return sid
-
-        // `pipe` hands back an Observable, which is right for composition and wrong for storage.
-        // `pipe$` runs the same operators and wraps the result, so a piped stream keeps `.$()`,
-        // the proxy dots, and this node's distinction slot.
-        if (p === "pipe$") {
-          return (...operators: Array<OperatorFunction<unknown, unknown>>) => {
-            const source$ = ($proxy as unknown as Observable<unknown>).pipe(
-              ...(operators as [OperatorFunction<unknown, unknown>]),
-            )
-            return SignalCreator({
-              observable: source$,
-              distinct: options.distinct as SignalCreatorOptions<unknown>["distinct"],
-            })
-          }
-        }
-
-        // Meta events stream ($.$)
-        if (p === "$") {
-          return signalDispatch.pipe(filter(i => (i.value.signal as unknown) === (proxy as unknown)))
-        }
-
-        // Cache hit
-        if (p in target) return (target as unknown as Record<string | symbol, unknown>)[p]
-
-        // Lazy match BehaviorSubject/Observable methods
-        if (p in root$) {
-          let autoSelector$ = root$ as Observable<unknown>
-
-          if (depth) {
-            // Scoped selector for nested paths
-            if (LOG.on) LOG.emit(CAT_SELECTOR, "selector {path} {reason}", { path, reason: "create" })
-            // SELECTOR_SLOT.distinct. Without it a write to any branch re-emits every other
-            // branch's selector, and a computed downstream re-runs its whole body: one colWidth
-            // write was re-sorting 50k rows through the `sort` selector.
-            const distinct = options.distinct === undefined ? distinctShallow<unknown>() : options.distinct
-            autoSelector$ = root$.pipe(
-              map(i => get(i, path)),
-              distinct === null ? identity : distinct,
-              tap({
-                subscribe: () => {
-                  if (LOG.on) {
-                    LOG.emit(CAT_SELECTOR, "selector {path} {reason}", { path, reason: "resubscribe" })
-                  }
-                  if (!activeSubs.includes(proxy)) {
-                    activeSubs.push(proxy)
-                  }
-                },
-                finalize: () => {
-                  const idx = activeSubs.indexOf(proxy)
-                  if (idx >= 0) {
-                    activeSubs.splice(idx, 1)
-                  }
-                },
-              }),
-              shareReplay({
-                refCount: true,
-                bufferSize: 1,
-              }),
-            )
-          }
-
-          let it: unknown = autoSelector$[p as keyof typeof root$]
-
-          // Bind methods to the observable
-          if (typeof it === "function") {
-            it = (it as (...args: unknown[]) => unknown).bind(autoSelector$)
-          }
-
-          // Cache and return
-          return ((target as unknown as Record<string | symbol, unknown>)[p] ??= it)
-        }
-
-        // ID getter/setter
-        if (p === "id") {
-          return ((target as unknown as Record<string | symbol, unknown>)[p] ??= (setId?: string) => {
-            if (setId) {
-              ID = setId
-              return proxy
-            }
-            return ID
-          })
-        }
-
-        // use() hook - placeholder, gets added by /react
-        if (p === "use") {
-          return (target as unknown as Record<string | symbol, unknown>)[p]
-        }
-
-        return undefined
-      },
-
-      // Make $ callable
-      apply(_target, _thisArg, args) {
-        return selfFn(...args)
-      },
-    })
-
-    // The signal node object
-    const self = {
-      $: $proxy,
-      ...(base && { $field: base }),
-    } as Signal<T, Base>
-
-    // Main proxy for property traversal. `$`-suffixed names are a reserved namespace: the
-    // registry (match$, switch$, … filled by later modules) resolves before state keys.
-    const proxy = new Proxy(self, {
-      get(target, p) {
-        // Known properties
-        if (p in target) return (target as Record<string | symbol, unknown>)[p]
-
-        // Symbols pass through
-        if (typeof p === "symbol") {
-          return (target as Record<string | symbol, unknown>)[p]
-        }
-
-        // Plugged postfix methods — node-level graph verbs.
-        if (Object.hasOwn(special$, p)) return special$[p](proxy)
-
-        // Lazy create child signals
-        return ((target as Record<string | symbol, unknown>)[p] ??= createProxy(
-          [...path, p],
-          createBase?.(rootProxy, [...path, p]),
-        ))
-      },
-    })
-
+  node(path: string[]): Signal<unknown> {
+    const target = accessorTarget()
+    const self = { $: undefined as unknown } as NodeTarget
+    const proxy = new Proxy(self, NODE_HANDLER) as unknown as Signal<unknown>
+    target[TREE] = this as unknown as AnyTree
+    target[PATH] = path
+    target[OWNER] = proxy
+    self.$ = new Proxy(target, ACCESSOR_HANDLER)
+    self[TREE] = this as unknown as AnyTree
+    self[PATH] = path
+    const base = this.createBase?.(path.length ? this.root : (undefined as unknown as Signal<T, Base>), path)
+    if (base) self.$field = base
     return proxy
   }
 
-  const rootProxy = createProxy([], createBase?.(undefined as unknown as Signal<T, Base>, []))
+  // `from` is the path of the write that caused the emit, not of the subject, which always sits
+  // at the root: the whole point of the record is naming which branch moved.
+  pushState(next: T, from: string[] = ROOT_PATH): void {
+    this.latest = next
+    this.version++
+    // A writable memo mirrors the value into its own holder before the emit, so the next run of
+    // the body reads what was written as `prev`.
+    this.host?.write(next)
+    if (LOG.on) {
+      LOG.emit(CAT_EMIT, "emit {path}", { path: from, observerCount: this.state$?.observers.length ?? 0 })
+    }
+    inEmitTurn(() => {
+      if (this.host) this.host.publish(next)
+      else this.state$!.next(next)
+      if (this.watched) notifyWatches(this.watched, next)
+    })
+  }
 
-  return rootProxy
+  setAt(path: string[], n: T): void {
+    if (!LOG.on) return this.applySetAt(path, n)
+    const started = performance.now()
+    const hasSubscribers = (this.state$?.observers.length ?? 0) > 0 || (this.activeSubs?.length ?? 0) > 0
+    this.applySetAt(path, n)
+    LOG.emit(CAT_WRITE, "write {path}", { path, depth: path.length, hasSubscribers, durationMs: performance.now() - started })
+  }
+
+  applySetAt(path: string[], n: T): void {
+    if (!path.length) return this.pushState(n, path)
+    // Deep set with lodash on an immer draft
+    const next = produce((this.current() || {}) as object, (draft: Draft<object>) => {
+      set(draft, path, n)
+    })
+    this.pushState(next as T, path)
+  }
+
+  // Immer-based setter for complex mutations
+  immerAt(path: string[], recipe: (draft: Draft<T>) => ValidDraftReturn<Draft<T>>): void {
+    const root = this.current()
+    const curr = path.length ? get(root, path) : root
+    if (isDraftable(curr)) this.setAt(path, produce(curr as Draft<T>, recipe) as T)
+  }
+
+  // Getter - handles root, nested, and function values
+  getAt(path: string[]): T {
+    const depth = path.length
+    const root = this.current()
+    if (!depth) return root
+    const val = get(root, path)
+    // If value is a function (e.g. array method), bind it properly
+    if (typeof val === "function") {
+      const context = depth === 1 ? root : get(root, path.slice(0, -1))
+      if (Array.isArray(context)) {
+        // For array methods, wrap to auto-update state on mutation
+        return ((...args: unknown[]) => {
+          let toReturn: unknown
+          const next = produce(context, draft => {
+            const funcName = path[path.length - 1]
+            toReturn = (draft as unknown as Record<string, (...a: unknown[]) => unknown>)[funcName](...args)
+          })
+          if (!isEqual(next, context)) {
+            const parent: Signal<unknown> = depth > 1 ? get(this.root, path.slice(0, -1)) : this.root
+            parent.$.next(next)
+          }
+          return toReturn
+        }) as T
+      }
+      return val.bind(context)
+    }
+    return val
+  }
+
+  watcherAt(path: string[]): ((listener: Listener) => Watch) | undefined {
+    const host = this.host
+    if (host && !path.length) return listener => host.watch(listener)
+    if (this.observable) return undefined
+    return listener => watchPath((this.watched ??= new Map()), path, this.latest, listener)
+  }
+
+  // The stream a node's RxJS methods bind to: the root stream, or a shallow-distinct selector of it.
+  selectorAt(path: string[], proxy: Signal<unknown>): Observable<unknown> {
+    if (!path.length) return this.root$
+    if (LOG.on) LOG.emit(CAT_SELECTOR, "selector {path} {reason}", { path, reason: "create" })
+    // SELECTOR_SLOT.distinct. Without it a write to any branch re-emits every other branch's
+    // selector, and a computed downstream re-runs its whole body: one colWidth write was re-sorting
+    // 50k rows through the `sort` selector.
+    const distinct = this.distinct === undefined ? distinctShallow<unknown>() : this.distinct
+    return this.root$.pipe(
+      map(i => get(i, path)),
+      distinct === null ? identity : distinct,
+      tap({
+        subscribe: () => {
+          if (LOG.on) LOG.emit(CAT_SELECTOR, "selector {path} {reason}", { path, reason: "resubscribe" })
+          const active = (this.activeSubs ??= [])
+          if (!active.includes(proxy)) active.push(proxy)
+        },
+        finalize: () => {
+          const idx = this.activeSubs?.indexOf(proxy) ?? -1
+          if (idx >= 0) this.activeSubs!.splice(idx, 1)
+        },
+      }),
+      shareReplay({ refCount: true, bufferSize: 1 }),
+    )
+  }
 }
 
 /**
@@ -477,119 +482,202 @@ function isStream<T>(value: ComputeResult<T>): value is Observable<T> | PromiseL
  * time: a dependency change cancels it and reruns (switch), completion after at least one emission
  * reruns (expand), completion with none settles until a dependency changes.
  */
-/** What a memo holds per dependency: its subscription, and for an event the version it last saw
- * and the run that saw it. */
-type DependencyEntry = { sub: { unsubscribe(): void } | undefined; consumed: number; consumedRun: number }
+/** What a memo holds per dependency: its watch entry or its subscription, and for an event the
+ * version it last saw and the run that saw it. */
+type DependencyEntry = {
+  sub: { unsubscribe(): void } | undefined
+  watch?: Watch
+  consumed: number
+  consumedRun: number
+}
 
-export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, options: ComputedOptions = {}): Signal<T> {
-  const id = `memo#${++computedSeq}`
-  let dirty = true
-  let hasValue = arguments.length >= 2
-  let value = seed as T
-  let running = false
-  // A stream that completed asks for another run, and the loop below serves it without recursing.
-  let rerun = false
-  let streamed = false
-  let lastRunFailed = false
-  let subscriberCount = 0
-  let readPinned = false
+function releaseDependency(entry: DependencyEntry, listener: Listener): void {
+  entry.sub?.unsubscribe()
+  if (entry.watch?.drop) entry.watch.drop(listener)
+  else entry.watch?.listeners.delete(listener)
+}
+
+/** What a memo is to its signal tree: its value, its writes, and the memos that depend on it. */
+export type MemoHost<T> = {
+  read(): T
+  write(next: T): void
+  publish(next: T): void
+  watch(listener: Listener): Watch
+}
+
+type Observer<T> = { next(value: T): void; error(error: unknown): void }
+
+/**
+ * One memo. A class so its behaviour lives on the prototype: an instance is its fields, and it is
+ * its own frame (`collect`, `edge`), its own dependency listener (`next`) and its own flush key.
+ */
+class Computed<T> implements MemoHost<T> {
+  readonly id = ++computedSeq
+  dirty = true
+  running = false
+  // A stream that completed asks for another run, and the loop in `recompute` serves it.
+  rerun = false
+  streamed = false
+  lastRunFailed = false
+  subscriberCount = 0
+  readPinned = false
   // `recompute("read")` clears `dirty` and notifies nobody, so a downstream pull between an
   // invalidation and its drain would otherwise starve every subscriber of this memo.
-  let pushOwed = false
-  let rank = 0
-  // Counts emissions so a flush can tell whether the run it just made already published. A stream
-  // run publishes from its inner subscription, and a second push here would double every value.
-  let emitVersion = 0
-
-  const observers = new Set<{ next(value: T): void; error(error: unknown): void }>()
+  pushOwed = false
+  rank = 0
+  // Counts emissions so a flush can tell whether the run it just made already published.
+  emitVersion = 0
   // Runs of the body, so an event read twice in one run answers the same both times.
-  let run = 0
-  // An event's edge state rides the dependency entry the memo already keeps for it: the version it
-  // last saw and the run that saw it. A first read makes the entry; `syncDependencies` subscribes it.
-  const edge: EdgeReader = (node, version) => {
-    let entry = dependencySubs.get(node)
+  run = 0
+  // Identity of the run that opened the live stream: a late `complete` from a cancelled run is quiet.
+  token = 0
+  // A dependency replays its value on subscribe; that value is the one just read, not a change.
+  subscribing = false
+  observers: Set<Observer<T>> | undefined = undefined
+  // Keyed by dependency so a recompute diffs instead of rebuilding. Made on the first dependency.
+  dependencySubs: Map<Signal<unknown>, DependencyEntry> | undefined = undefined
+  // The dependencies the run in flight has read.
+  reading: Set<Signal<unknown>> | undefined = undefined
+  inner: { unsubscribe(): void } | undefined = undefined
+  // Memos that depend on this one: while any listens, this memo counts as subscribed once.
+  dependents: Watch | undefined = undefined
+
+  constructor(
+    readonly compute: ComputeBody<T>,
+    public value: T,
+    public hasValue: boolean,
+    readonly writable: boolean,
+  ) {}
+
+  collect(dependency: Signal<unknown>): void {
+    this.reading!.add(dependency)
+  }
+
+  // An event's edge state rides the dependency entry: the version this memo last saw and the run that
+  // saw it. A first read makes the entry; `syncDependencies` subscribes it.
+  edge(node: Signal<unknown>, version: number): boolean {
+    let entry = this.dependencySubs?.get(node)
     if (!entry) {
       entry = { sub: undefined, consumed: -1, consumedRun: -1 }
-      dependencySubs.set(node, entry)
+      ;(this.dependencySubs ??= new Map()).set(node, entry)
     }
-    if (entry.consumed === version) return entry.consumedRun === run
+    if (entry.consumed === version) return entry.consumedRun === this.run
     entry.consumed = version
-    entry.consumedRun = run
+    entry.consumedRun = this.run
     return true
   }
-  // Keyed by dependency so a recompute diffs instead of rebuilding: tearing every subscription
-  // down and re-adding it re-emitted every BehaviorSubject on the way back in.
-  const dependencySubs = new Map<Signal<unknown>, DependencyEntry>()
-  // The live stream result, and the identity of the run that opened it. A late `complete` from a
-  // cancelled run compares tokens and stays quiet.
-  let inner: { unsubscribe(): void } | undefined
-  let token: object = {}
 
-  const clearDependencies = () => {
-    for (const [dependency, entry] of dependencySubs) {
-      entry.sub?.unsubscribe()
-      if (LOG.on) LOG.emit(CAT_UNSUBSCRIBE, "unsubscribe {id} {path}", { id, path: dependency.$.path })
+  /** A dependency changed. */
+  next(): void {
+    if (!this.subscribing) this.invalidate()
+  }
+
+  clearDependencies(): void {
+    if (!this.dependencySubs) return
+    for (const [dependency, entry] of this.dependencySubs) {
+      releaseDependency(entry, this)
+      if (LOG.on) LOG.emit(CAT_UNSUBSCRIBE, "unsubscribe {id} {path}", { id: `memo#${this.id}`, path: dependency.$.path })
     }
-    dependencySubs.clear()
+    this.dependencySubs.clear()
   }
 
-  const cancelInner = () => {
-    token = {}
-    inner?.unsubscribe()
-    inner = undefined
+  cancelInner(): void {
+    this.token++
+    this.inner?.unsubscribe()
+    this.inner = undefined
   }
 
-  // Downstream recomputation may unsubscribe and resubscribe while handling this emission. Iterate
-  // a snapshot so a newly added observer is not visited again in the same Set iteration.
-  const emit = (next: T) => {
-    emitVersion++
-    for (const observer of [...observers]) observer.next(next)
+  // Downstream recomputation may unsubscribe and resubscribe while handling this emission: iterate
+  // snapshots so a newly added observer is not visited again in the same pass.
+  publish(next: T): void {
+    this.emitVersion++
+    if (this.observers) for (const observer of [...this.observers]) observer.next(next)
+    if (this.dependents) for (const listener of [...this.dependents.listeners]) listener.next()
+  }
+
+  write(next: T): void {
+    if (!this.writable) return
+    this.value = next
+    this.hasValue = true
+  }
+
+  watch(listener: Listener): Watch {
+    const dependents = (this.dependents ??= {
+      path: ROOT_PATH,
+      last: undefined,
+      listeners: new Set(),
+      drop: gone => {
+        if (!dependents.listeners.delete(gone) || dependents.listeners.size) return
+        this.subscriberCount--
+        this.releaseIfUnwatched()
+      },
+    })
+    if (!dependents.listeners.size) {
+      this.subscriberCount++
+      this.readPinned = false
+    }
+    dependents.listeners.add(listener)
+    return dependents
+  }
+
+  releaseIfUnwatched(): void {
+    if (this.subscriberCount || this.readPinned) return
+    this.cancelInner()
+    this.clearDependencies()
+    this.dirty = true
   }
 
   // Returns the diff size so a compute record can say how much of the wiring actually moved.
-  const syncDependencies = (deps: Set<Signal<unknown>>) => {
+  syncDependencies(deps: Set<Signal<unknown>>): { added: number; removed: number } {
     let added = 0
     let removed = 0
-    for (const [dependency, entry] of dependencySubs) {
+    const held = this.dependencySubs
+    if (held) for (const [dependency, entry] of held) {
       if (deps.has(dependency)) continue
-      entry.sub?.unsubscribe()
-      dependencySubs.delete(dependency)
+      releaseDependency(entry, this)
+      held.delete(dependency)
       removed++
-      if (LOG.on) LOG.emit(CAT_UNSUBSCRIBE, "unsubscribe {id} {path}", { id, path: dependency.$.path })
+      if (LOG.on) LOG.emit(CAT_UNSUBSCRIBE, "unsubscribe {id} {path}", { id: `memo#${this.id}`, path: dependency.$.path })
     }
     for (const dependency of deps) {
-      const held = dependencySubs.get(dependency)
-      if (held?.sub) continue
-      let initializing = true
-      const sub = dependency.$.subscribe(() => {
-        if (!initializing) invalidate(dependency)
-      })
-      initializing = false
-      if (held) held.sub = sub
-      else dependencySubs.set(dependency, { sub, consumed: -1, consumedRun: -1 })
+      const entry = this.dependencySubs?.get(dependency)
+      if (entry?.sub || entry?.watch) continue
+      const watchHere = LOG.on ? undefined : (dependency.$ as unknown as { watch?: (listener: Listener) => Watch }).watch
+      let sub: { unsubscribe(): void } | undefined
+      let watch: Watch | undefined
+      if (watchHere) watch = watchHere(this)
+      else {
+        this.subscribing = true
+        sub = dependency.$.subscribe(LOG.on ? { next: () => this.subscribing || this.invalidate(dependency) } : this)
+        this.subscribing = false
+      }
+      if (entry) {
+        entry.sub = sub
+        entry.watch = watch
+      } else (this.dependencySubs ??= new Map()).set(dependency, { sub, watch, consumed: -1, consumedRun: -1 })
       added++
-      if (LOG.on) LOG.emit(CAT_SUBSCRIBE, "subscribe {id} {path}", { id, path: dependency.$.path })
+      if (LOG.on) LOG.emit(CAT_SUBSCRIBE, "subscribe {id} {path}", { id: `memo#${this.id}`, path: dependency.$.path })
     }
     return { added, removed }
   }
 
-  const recompute = (trigger: "read" | "invalidate"): T => {
-    if (running) return value
-    running = true
+  recompute(trigger: "read" | "invalidate"): T {
+    if (this.running) return this.value
+    this.running = true
 
     do {
-      rerun = false
-      cancelInner()
+      this.rerun = false
+      this.cancelInner()
       const started = LOG.on ? performance.now() : 0
-      const dependencies = new Set<Signal<unknown>>()
-      frames.push({ collect: dependency => dependencies.add(dependency), edge })
-      run++
+      const dependencies = (this.reading = new Set<Signal<unknown>>())
+      frames.push(this)
+      this.run++
       computingRanks.push(0)
 
       const report = (diff: { added: number; removed: number }) => {
         if (!LOG.on) return
         LOG.emit(CAT_COMPUTE, "compute {id} {durationMs}ms", {
-          id,
+          id: `memo#${this.id}`,
           durationMs: performance.now() - started,
           depCount: dependencies.size,
           depsAdded: diff.added,
@@ -600,133 +688,124 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
 
       let out: ComputeResult<T>
       try {
-        out = compute(value)
+        out = this.compute(this.value)
       } catch (error) {
         frames.pop()
-        rank = computingRanks.pop()!
-        running = false
-        dirty = true
-        lastRunFailed = true
-
+        this.rank = computingRanks.pop()!
+        this.running = false
+        this.dirty = true
+        this.lastRunFailed = true
+        this.reading = undefined
         // Preserve the dependencies read before the throw so a later change can recover the memo.
         // A failed recomputation is not an Observable error: it must not permanently terminate
         // this or any composed memo.
-        report(syncDependencies(dependencies))
-
-        if (hasValue) return value
+        report(this.syncDependencies(dependencies))
+        if (this.hasValue) return this.value
         throw error
       }
 
       frames.pop()
-      rank = computingRanks.pop()!
-      dirty = false
-      lastRunFailed = false
-      report(syncDependencies(dependencies))
+      this.rank = computingRanks.pop()!
+      this.dirty = false
+      this.lastRunFailed = false
+      this.reading = undefined
+      report(this.syncDependencies(dependencies))
 
-      streamed = isStream(out)
-      if (!streamed) {
-        value = out as T
-        hasValue = true
+      this.streamed = isStream(out)
+      if (!this.streamed) {
+        this.value = out as T
+        this.hasValue = true
         break
       }
 
-      const mine = (token = {})
+      const mine = ++this.token
       let emitted = false
       const sub = streamOf(out as Observable<T>).subscribe({
         next: next => {
           emitted = true
-          value = next
-          hasValue = true
-          emit(next)
+          this.value = next
+          this.hasValue = true
+          this.publish(next)
         },
         error: error => {
-          for (const observer of [...observers]) observer.error(error)
+          if (this.observers) for (const observer of [...this.observers]) observer.error(error)
         },
         complete: () => {
           // A run whose token moved on was cancelled, and a stream that emitted nothing settles.
-          if (token !== mine || !emitted) return
-          inner = undefined
-          if (running) rerun = true
-          else invalidate()
+          if (this.token !== mine || !emitted) return
+          this.inner = undefined
+          if (this.running) this.rerun = true
+          else this.invalidate()
         },
       })
-      if (token === mine && !sub.closed) inner = sub
-    } while (rerun)
+      if (this.token === mine && !sub.closed) this.inner = sub
+    } while (this.rerun)
 
-    running = false
-    return value
+    this.running = false
+    return this.value
   }
 
-  const invalidate = (by?: Signal<unknown>) => {
-    dirty = true
-    const eager = !!subscriberCount && !running
+  invalidate(by?: Signal<unknown>): void {
+    this.dirty = true
+    const eager = !!this.subscriberCount && !this.running
     if (LOG.on) {
-      LOG.emit(CAT_INVALIDATE, "invalidate {id} by {by}", { id, by: by ? by.$.path : null, eager })
+      LOG.emit(CAT_INVALIDATE, "invalidate {id} by {by}", { id: `memo#${this.id}`, by: by ? by.$.path : null, eager })
     }
     if (!eager) return
-    pushOwed = true
+    this.pushOwed = true
     // Inside an emit turn every sibling selector is still delivering. Recompute once at the end.
     if (emitDepth > 0) {
-      pendingFlush.set(flush, rank)
+      pendingFlush.set(this, this.rank)
       return
     }
     // An observable-backed dependency emits outside any turn, so the fan-out opens one.
-    inEmitTurn(flush)
+    inEmitTurn(() => this.flush())
   }
 
-  const flush = () => {
-    if (!dirty && !pushOwed) return
-    pushOwed = false
-    const before = emitVersion
-    const next = dirty ? recompute("invalidate") : value
+  flush(): void {
+    if (!this.dirty && !this.pushOwed) return
+    this.pushOwed = false
+    const before = this.emitVersion
+    const next = this.dirty ? this.recompute("invalidate") : this.value
     // A stream run publishes from its inner, so the seed surfaces only on first subscribe.
-    if (!lastRunFailed && !streamed && before === emitVersion) emit(next)
+    if (!this.lastRunFailed && !this.streamed && before === this.emitVersion) this.publish(next)
   }
 
-  const readMemo = () => {
+  read(): T {
     // A read pins only while nobody subscribes, so a memo used purely by `.$()` stays wired and
     // memoized. Subscribers own the lifetime once present, and the last one leaving releases it.
-    if (!subscriberCount) readPinned = true
-    const result = dirty || !hasValue ? recompute("read") : value
+    if (!this.subscriberCount) this.readPinned = true
+    const result = this.dirty || !this.hasValue ? this.recompute("read") : this.value
     const frame = computingRanks.length - 1
-    if (frame >= 0) computingRanks[frame] = Math.max(computingRanks[frame], rank + 1)
+    if (frame >= 0) computingRanks[frame] = Math.max(computingRanks[frame], this.rank + 1)
     return result
   }
 
-  const observable = new Observable<T>(subscriber => {
-    subscriberCount++
-    readPinned = false
-    observers.add(subscriber)
-
+  attach(subscriber: Observer<T>): (() => void) | undefined {
+    this.subscriberCount++
+    this.readPinned = false
+    ;(this.observers ??= new Set()).add(subscriber)
     try {
-      const before = emitVersion
-      const next = dirty || !hasValue ? recompute("read") : value
-      if (before === emitVersion) subscriber.next(next)
+      const before = this.emitVersion
+      const next = this.dirty || !this.hasValue ? this.recompute("read") : this.value
+      if (before === this.emitVersion) subscriber.next(next)
     } catch (error) {
-      observers.delete(subscriber)
-      subscriberCount--
+      this.observers.delete(subscriber)
+      this.subscriberCount--
       subscriber.error(error)
       return undefined
     }
-
     return () => {
-      observers.delete(subscriber)
-      subscriberCount--
-      if (!subscriberCount && !readPinned) {
-        cancelInner()
-        clearDependencies()
-        dirty = true
-      }
+      this.observers!.delete(subscriber)
+      this.subscriberCount--
+      this.releaseIfUnwatched()
     }
-  })
+  }
+}
 
-  const write =
-    options.writable !== false
-      ? (next: T) => {
-          value = next
-          hasValue = true
-        }
-      : undefined
-
-  return SignalCreator({ observable, read: readMemo, write })
+export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, options: ComputedOptions = {}): Signal<T> {
+  const memo = new Computed(compute, seed as T, arguments.length >= 2, options.writable !== false)
+  // The memo multicasts itself and replays its value on subscribe, so a write publishes straight to
+  // its observers instead of through a subject merged into a second shared stream.
+  return SignalCreator({ observable: new Observable<T>(subscriber => memo.attach(subscriber)), host: memo })
 }

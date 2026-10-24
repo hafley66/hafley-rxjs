@@ -41,6 +41,8 @@ export interface Signal$<T, Base extends object = object> extends BehaviorSubjec
   path: string[]
   /** Surrogate id of the signal tree this node belongs to; children share their root's. */
   sid: number
+  /** How many memos watch this node through the tree's watch list (not RxJS subscriptions). */
+  watching: number
   /** Meta events stream for this signal */
   $: Observable<SignalEvent<T, Base>>
   /** ID getter/setter for debugging */
@@ -290,15 +292,14 @@ export type SignalCreatorOptions<T, Base extends object = object> = {
   observable?: Observable<T>
   /** Subject semantics: no initial emission and no replay. */
   event?: boolean
-  /** Override synchronous reads (used by lazily evaluated memo signals). */
-  read?: () => T
   /**
    * SELECTOR_SLOT.distinct: the operator a nested-path selector dedupes with. Defaults to
    * `distinctShallow()`. `null` disables it, restoring re-emission on every root write.
    */
   distinct?: MonoTypeOperatorFunction<unknown> | null
-  /** Mirror a `.$(next)` write into an external holder (writable memos). */
-  write?: (next: T) => void
+  /** A memo standing behind this tree: reads, writes, publishing and dependents go through it, and
+   * `observable` is its own multicast stream. */
+  host?: import("./1_SignalCreator.js").MemoHost<T>
   /** Factory to create Base extension for each node */
   createBase?: (root: Signal<T, Base>, path: string[]) => Base
 }
