@@ -80,7 +80,7 @@ const dependencyCollectors: Array<(signal: Signal<unknown>) => void> = []
 /** Answers whether the computation in flight sees an event's current value: an event is an edge,
  * so a memo sees each version once and reads `undefined` on later runs. Kept parallel to
  * `dependencyCollectors`; a frame with no edge rule pushes `undefined`. */
-export type EdgeReader = (node: Signal<unknown>, sid: number, version: number) => boolean
+export type EdgeReader = (node: Signal<unknown>, version: number) => boolean
 const edgeReaders: Array<EdgeReader | undefined> = []
 
 let signalSeq = 0
@@ -296,7 +296,7 @@ export function SignalCreator<T, Base extends object = object>(
         dependencyCollectors.at(-1)?.(proxy as unknown as Signal<unknown>)
         if (event) {
           const reader = edgeReaders.at(-1)
-          if (reader && !reader(proxy as unknown as Signal<unknown>, sid, version)) return undefined as T
+          if (reader && !reader(proxy as unknown as Signal<unknown>, version)) return undefined as T
         }
         return getter()
       },
@@ -511,7 +511,7 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
   let run = 0
   // An event's edge state rides the dependency entry the memo already keeps for it: the version it
   // last saw and the run that saw it. A first read makes the entry; `syncDependencies` subscribes it.
-  const edge: EdgeReader = (node, _sid, version) => {
+  const edge: EdgeReader = (node, version) => {
     let entry = dependencySubs.get(node)
     if (!entry) {
       entry = { sub: undefined, consumed: -1, consumedRun: -1 }
