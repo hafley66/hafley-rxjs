@@ -75,7 +75,14 @@ export const SELECTOR_SLOT = { project: 0, distinct: 1, track: 2, share: 3 } as 
 // reads of its primitive dependencies; the outer memo depends on the inner memo
 // itself. A global subscription would make the outer computation accidentally
 // collect both layers and can create duplicate cascades.
-const dependencyCollectors: Array<(signal: Signal<unknown>) => void> = []
+/** Answers whether the computation in flight sees an event's current value: an event is an edge,
+ * so a memo sees each version once and reads `undefined` on later runs. */
+export type EdgeReader = (node: Signal<unknown>, version: number) => boolean
+/** One computation in flight: where its reads are collected, and its edge rule if it has one. */
+type Frame = { collect: (signal: Signal<unknown>) => void; edge?: EdgeReader }
+const frames: Frame[] = []
+
+let signalSeq = 0
 
 // One root write emits into every nested-path selector a memo subscribed to, and each delivery
 // invalidates that memo separately. Recomputing inline ran a 50k-row sort once per dependency
@@ -121,11 +128,11 @@ const computingRanks: number[] = []
 // Run `compute`, recording every `.$()` signal read into `sink`. Re-throws;
 // `sink` keeps deps observed before the throw so a caller can resubscribe.
 export function trackDependencies<T>(compute: () => T, sink: Set<Signal<unknown>>): T {
-  dependencyCollectors.push(dep => sink.add(dep))
+  frames.push({ collect: dep => sink.add(dep) })
   try {
     return compute()
   } finally {
-    dependencyCollectors.pop()
+    frames.pop()
   }
 }
 
@@ -148,11 +155,15 @@ export function SignalCreator<T, Base extends object = object>(
   const state$ =
     event || (observable && initialState === undefined) ? new Subject<T>() : new BehaviorSubject(initialState as T)
   let latest = initialState as T
+  // Surrogate id of this tree and the count of writes to it: every child node shares both.
+  const sid = ++signalSeq
+  let version = 0
 
   // `from` is the path of the write that caused the emit, not of the subject, which always sits
   // at the root: the whole point of the record is naming which branch moved.
   const pushState = (next: T, from: string[] = ROOT_PATH) => {
     latest = next
+    version++
     // A writable memo mirrors the value into its own holder before the emit, so the next run of
     // the body reads what was written as `prev`.
     write?.(next)
@@ -277,9 +288,11 @@ export function SignalCreator<T, Base extends object = object>(
           type: "get",
           value: { signal: proxy as unknown as Signal<unknown>, path },
         })
-        // Event-mode signals (stateless Subjects) are imperative event sources,
-        // not derived state: don't register them as memo dependencies.
-        if (!event) dependencyCollectors.at(-1)?.(proxy as unknown as Signal<unknown>)
+        // An event read is tracked like any other, so a write pushes a rerun, and it is an edge:
+        // the reader in flight decides whether this version was already seen.
+        const frame = frames.at(-1)
+        frame?.collect(proxy as unknown as Signal<unknown>)
+        if (event && frame?.edge && !frame.edge(proxy as unknown as Signal<unknown>, version)) return undefined as T
         return getter()
       },
     }[selfFnName]
@@ -294,6 +307,7 @@ export function SignalCreator<T, Base extends object = object>(
         if (p === "next") return setter
         if (p === "setImmer") return setterImmer
         if (p === "path") return path
+        if (p === "sid") return sid
 
         // `pipe` hands back an Observable, which is right for composition and wrong for storage.
         // `pipe$` runs the same operators and wraps the result, so a piped stream keeps `.$()`,
@@ -463,6 +477,10 @@ function isStream<T>(value: ComputeResult<T>): value is Observable<T> | PromiseL
  * time: a dependency change cancels it and reruns (switch), completion after at least one emission
  * reruns (expand), completion with none settles until a dependency changes.
  */
+/** What a memo holds per dependency: its subscription, and for an event the version it last saw
+ * and the run that saw it. */
+type DependencyEntry = { sub: { unsubscribe(): void } | undefined; consumed: number; consumedRun: number }
+
 export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, options: ComputedOptions = {}): Signal<T> {
   const id = `memo#${++computedSeq}`
   let dirty = true
@@ -484,17 +502,32 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
   let emitVersion = 0
 
   const observers = new Set<{ next(value: T): void; error(error: unknown): void }>()
+  // Runs of the body, so an event read twice in one run answers the same both times.
+  let run = 0
+  // An event's edge state rides the dependency entry the memo already keeps for it: the version it
+  // last saw and the run that saw it. A first read makes the entry; `syncDependencies` subscribes it.
+  const edge: EdgeReader = (node, version) => {
+    let entry = dependencySubs.get(node)
+    if (!entry) {
+      entry = { sub: undefined, consumed: -1, consumedRun: -1 }
+      dependencySubs.set(node, entry)
+    }
+    if (entry.consumed === version) return entry.consumedRun === run
+    entry.consumed = version
+    entry.consumedRun = run
+    return true
+  }
   // Keyed by dependency so a recompute diffs instead of rebuilding: tearing every subscription
   // down and re-adding it re-emitted every BehaviorSubject on the way back in.
-  const dependencySubs = new Map<Signal<unknown>, { unsubscribe(): void }>()
+  const dependencySubs = new Map<Signal<unknown>, DependencyEntry>()
   // The live stream result, and the identity of the run that opened it. A late `complete` from a
   // cancelled run compares tokens and stays quiet.
   let inner: { unsubscribe(): void } | undefined
   let token: object = {}
 
   const clearDependencies = () => {
-    for (const [dependency, sub] of dependencySubs) {
-      sub.unsubscribe()
+    for (const [dependency, entry] of dependencySubs) {
+      entry.sub?.unsubscribe()
       if (LOG.on) LOG.emit(CAT_UNSUBSCRIBE, "unsubscribe {id} {path}", { id, path: dependency.$.path })
     }
     dependencySubs.clear()
@@ -517,21 +550,23 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
   const syncDependencies = (deps: Set<Signal<unknown>>) => {
     let added = 0
     let removed = 0
-    for (const [dependency, sub] of dependencySubs) {
+    for (const [dependency, entry] of dependencySubs) {
       if (deps.has(dependency)) continue
-      sub.unsubscribe()
+      entry.sub?.unsubscribe()
       dependencySubs.delete(dependency)
       removed++
       if (LOG.on) LOG.emit(CAT_UNSUBSCRIBE, "unsubscribe {id} {path}", { id, path: dependency.$.path })
     }
     for (const dependency of deps) {
-      if (dependencySubs.has(dependency)) continue
+      const held = dependencySubs.get(dependency)
+      if (held?.sub) continue
       let initializing = true
       const sub = dependency.$.subscribe(() => {
         if (!initializing) invalidate(dependency)
       })
       initializing = false
-      dependencySubs.set(dependency, sub)
+      if (held) held.sub = sub
+      else dependencySubs.set(dependency, { sub, consumed: -1, consumedRun: -1 })
       added++
       if (LOG.on) LOG.emit(CAT_SUBSCRIBE, "subscribe {id} {path}", { id, path: dependency.$.path })
     }
@@ -547,7 +582,8 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
       cancelInner()
       const started = LOG.on ? performance.now() : 0
       const dependencies = new Set<Signal<unknown>>()
-      dependencyCollectors.push(dependency => dependencies.add(dependency))
+      frames.push({ collect: dependency => dependencies.add(dependency), edge })
+      run++
       computingRanks.push(0)
 
       const report = (diff: { added: number; removed: number }) => {
@@ -566,7 +602,7 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
       try {
         out = compute(value)
       } catch (error) {
-        dependencyCollectors.pop()
+        frames.pop()
         rank = computingRanks.pop()!
         running = false
         dirty = true
@@ -581,7 +617,7 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
         throw error
       }
 
-      dependencyCollectors.pop()
+      frames.pop()
       rank = computingRanks.pop()!
       dirty = false
       lastRunFailed = false

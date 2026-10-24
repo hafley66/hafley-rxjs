@@ -39,6 +39,8 @@ export interface Signal$<T, Base extends object = object> extends BehaviorSubjec
   setImmer: (recipe: (draft: Draft<T>) => void | Draft<T>) => void
   /** Path from root signal */
   path: string[]
+  /** Surrogate id of the signal tree this node belongs to; children share their root's. */
+  sid: number
   /** Meta events stream for this signal */
   $: Observable<SignalEvent<T, Base>>
   /** ID getter/setter for debugging */
