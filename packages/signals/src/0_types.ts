@@ -299,6 +299,9 @@ export type SignalCreatorOptions<T, Base extends object = object> = {
   distinct?: MonoTypeOperatorFunction<unknown> | null
   /** Mirror a `.$(next)` write into an external holder (writable memos). */
   write?: (next: T) => void
+  /** The source multicasts itself and replays on subscribe: a write calls this instead of a
+   * subject, and `observable` is the root stream as is. */
+  publish?: (next: T) => void
   /** Factory to create Base extension for each node */
   createBase?: (root: Signal<T, Base>, path: string[]) => Base
 }

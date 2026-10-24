@@ -150,10 +150,14 @@ export function trackDependencies<T>(compute: () => T, sink: Set<Signal<unknown>
 export function SignalCreator<T, Base extends object = object>(
   options: SignalCreatorOptions<T, Base>,
 ): Signal<T, Base> {
-  const { initialState, observable, event = false, read, write, createBase } = options
+  const { initialState, observable, event = false, read, write, createBase, publish } = options
 
-  const state$ =
-    event || (observable && initialState === undefined) ? new Subject<T>() : new BehaviorSubject(initialState as T)
+  // A source that multicasts itself and publishes its own writes needs no subject of its own.
+  const state$ = publish
+    ? undefined
+    : event || (observable && initialState === undefined)
+      ? new Subject<T>()
+      : new BehaviorSubject(initialState as T)
   let latest = initialState as T
   // Surrogate id of this tree and the count of writes to it: every child node shares both.
   const sid = ++signalSeq
@@ -170,25 +174,27 @@ export function SignalCreator<T, Base extends object = object>(
     if (LOG.on) {
       LOG.emit(CAT_EMIT, "emit {path}", {
         path: from,
-        observerCount: (state$ as Subject<T>).observers.length,
+        observerCount: (state$ as Subject<T> | undefined)?.observers.length ?? 0,
       })
     }
-    inEmitTurn(() => state$.next(next))
+    inEmitTurn(() => (publish ? publish(next) : state$!.next(next)))
   }
 
   // If an observable source is provided, pipe it into the state
-  const root$ = !observable
-    ? state$
-    : merge(
-        state$,
-        observable.pipe(
-          tap({
-            next: next => {
-              latest = next
-            },
-          }),
-        ),
-      ).pipe(shareReplay({ refCount: true, bufferSize: 1 }))
+  const root$: Observable<T> = publish
+    ? observable!
+    : !observable
+      ? state$!
+      : merge(
+          state$!,
+          observable.pipe(
+            tap({
+              next: next => {
+                latest = next
+              },
+            }),
+          ),
+        ).pipe(shareReplay({ refCount: true, bufferSize: 1 }))
 
   // Track active subscriptions for debugging/cleanup
   const activeSubs: Signal<T, Base>[] = []
@@ -200,7 +206,8 @@ export function SignalCreator<T, Base extends object = object>(
 
     // Immer-based setter for complex mutations
     const setterImmer = (recipe: (draft: Draft<T>) => ValidDraftReturn<Draft<T>>) => {
-      const curr = depth ? get(latest, path) : latest
+      const root = read ? read() : latest
+      const curr = depth ? get(root, path) : root
       if (isDraftable(curr)) {
         const next = produce(curr as Draft<T>, recipe)
         return setter(next as T)
@@ -214,7 +221,7 @@ export function SignalCreator<T, Base extends object = object>(
       }
 
       // Deep set with lodash on an immer draft
-      const next = produce((latest || {}) as object, (draft: Draft<object>) => {
+      const next = produce(((read ? read() : latest) || {}) as object, (draft: Draft<object>) => {
         set(draft, path, n)
       })
 
@@ -226,7 +233,7 @@ export function SignalCreator<T, Base extends object = object>(
       if (!LOG.on) return applySet(n)
 
       const started = performance.now()
-      const hasSubscribers = (state$ as Subject<T>).observers.length > 0 || activeSubs.length > 0
+      const hasSubscribers = ((state$ as Subject<T> | undefined)?.observers.length ?? 0) > 0 || activeSubs.length > 0
       const result = applySet(n)
       LOG.emit(CAT_WRITE, "write {path}", {
         path,
@@ -728,5 +735,7 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
         }
       : undefined
 
-  return SignalCreator({ observable, read: readMemo, write })
+  // The memo multicasts itself and replays its value on subscribe, so a write publishes straight to
+  // its observers instead of through a subject merged into a second shared stream.
+  return SignalCreator({ observable, read: readMemo, write, publish: emit })
 }
