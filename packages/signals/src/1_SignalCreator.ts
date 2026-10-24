@@ -489,7 +489,7 @@ function isStream<T>(value: ComputeResult<T>): value is Observable<T> | PromiseL
 type DependencyEntry = { sub: { unsubscribe(): void } | undefined; consumed: number; consumedRun: number }
 
 export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, options: ComputedOptions = {}): Signal<T> {
-  const id = `memo#${++computedSeq}`
+  const id = ++computedSeq
   let dirty = true
   let hasValue = arguments.length >= 2
   let value = seed as T
@@ -508,16 +508,17 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
   // run publishes from its inner subscription, and a second push here would double every value.
   let emitVersion = 0
 
-  const observers = new Set<{ next(value: T): void; error(error: unknown): void }>()
+  // Made on first subscribe: a memo nobody watches holds no set.
+  let observers: Set<{ next(value: T): void; error(error: unknown): void }> | undefined
   // Runs of the body, so an event read twice in one run answers the same both times.
   let run = 0
   // An event's edge state rides the dependency entry the memo already keeps for it: the version it
   // last saw and the run that saw it. A first read makes the entry; `syncDependencies` subscribes it.
   const edge: EdgeReader = (node, version) => {
-    let entry = dependencySubs.get(node)
+    let entry = dependencySubs?.get(node)
     if (!entry) {
       entry = { sub: undefined, consumed: -1, consumedRun: -1 }
-      dependencySubs.set(node, entry)
+      ;(dependencySubs ??= new Map()).set(node, entry)
     }
     if (entry.consumed === version) return entry.consumedRun === run
     entry.consumed = version
@@ -526,22 +527,24 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
   }
   // Keyed by dependency so a recompute diffs instead of rebuilding: tearing every subscription
   // down and re-adding it re-emitted every BehaviorSubject on the way back in.
-  const dependencySubs = new Map<Signal<unknown>, DependencyEntry>()
+  // Made on the first dependency: a memo that reads nothing holds no map.
+  let dependencySubs: Map<Signal<unknown>, DependencyEntry> | undefined
   // The live stream result, and the identity of the run that opened it. A late `complete` from a
   // cancelled run compares tokens and stays quiet.
   let inner: { unsubscribe(): void } | undefined
-  let token: object = {}
+  let token = 0
 
   const clearDependencies = () => {
+    if (!dependencySubs) return
     for (const [dependency, entry] of dependencySubs) {
       entry.sub?.unsubscribe()
-      if (LOG.on) LOG.emit(CAT_UNSUBSCRIBE, "unsubscribe {id} {path}", { id, path: dependency.$.path })
+      if (LOG.on) LOG.emit(CAT_UNSUBSCRIBE, "unsubscribe {id} {path}", { id: `memo#${id}`, path: dependency.$.path })
     }
     dependencySubs.clear()
   }
 
   const cancelInner = () => {
-    token = {}
+    token++
     inner?.unsubscribe()
     inner = undefined
   }
@@ -550,32 +553,35 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
   // a snapshot so a newly added observer is not visited again in the same Set iteration.
   const emit = (next: T) => {
     emitVersion++
-    for (const observer of [...observers]) observer.next(next)
+    if (observers) for (const observer of [...observers]) observer.next(next)
   }
+
+  // One observer for every dependency, so a dependency costs its subscription and nothing more.
+  let subscribing = false
+  const onDependency = { next: () => subscribing || invalidate() }
 
   // Returns the diff size so a compute record can say how much of the wiring actually moved.
   const syncDependencies = (deps: Set<Signal<unknown>>) => {
     let added = 0
     let removed = 0
-    for (const [dependency, entry] of dependencySubs) {
+    if (dependencySubs) for (const [dependency, entry] of dependencySubs) {
       if (deps.has(dependency)) continue
       entry.sub?.unsubscribe()
       dependencySubs.delete(dependency)
       removed++
-      if (LOG.on) LOG.emit(CAT_UNSUBSCRIBE, "unsubscribe {id} {path}", { id, path: dependency.$.path })
+      if (LOG.on) LOG.emit(CAT_UNSUBSCRIBE, "unsubscribe {id} {path}", { id: `memo#${id}`, path: dependency.$.path })
     }
     for (const dependency of deps) {
-      const held = dependencySubs.get(dependency)
+      const held = dependencySubs?.get(dependency)
       if (held?.sub) continue
-      let initializing = true
-      const sub = dependency.$.subscribe(() => {
-        if (!initializing) invalidate(dependency)
-      })
-      initializing = false
+      // A dependency replays its value on subscribe; that value is the one just read, not a change.
+      subscribing = true
+      const sub = dependency.$.subscribe(LOG.on ? { next: () => subscribing || invalidate(dependency) } : onDependency)
+      subscribing = false
       if (held) held.sub = sub
-      else dependencySubs.set(dependency, { sub, consumed: -1, consumedRun: -1 })
+      else (dependencySubs ??= new Map()).set(dependency, { sub, consumed: -1, consumedRun: -1 })
       added++
-      if (LOG.on) LOG.emit(CAT_SUBSCRIBE, "subscribe {id} {path}", { id, path: dependency.$.path })
+      if (LOG.on) LOG.emit(CAT_SUBSCRIBE, "subscribe {id} {path}", { id: `memo#${id}`, path: dependency.$.path })
     }
     return { added, removed }
   }
@@ -596,7 +602,7 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
       const report = (diff: { added: number; removed: number }) => {
         if (!LOG.on) return
         LOG.emit(CAT_COMPUTE, "compute {id} {durationMs}ms", {
-          id,
+          id: `memo#${id}`,
           durationMs: performance.now() - started,
           depCount: dependencies.size,
           depsAdded: diff.added,
@@ -637,7 +643,7 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
         break
       }
 
-      const mine = (token = {})
+      const mine = ++token
       let emitted = false
       const sub = streamOf(out as Observable<T>).subscribe({
         next: next => {
@@ -647,7 +653,7 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
           emit(next)
         },
         error: error => {
-          for (const observer of [...observers]) observer.error(error)
+          if (observers) for (const observer of [...observers]) observer.error(error)
         },
         complete: () => {
           // A run whose token moved on was cancelled, and a stream that emitted nothing settles.
@@ -668,7 +674,7 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
     dirty = true
     const eager = !!subscriberCount && !running
     if (LOG.on) {
-      LOG.emit(CAT_INVALIDATE, "invalidate {id} by {by}", { id, by: by ? by.$.path : null, eager })
+      LOG.emit(CAT_INVALIDATE, "invalidate {id} by {by}", { id: `memo#${id}`, by: by ? by.$.path : null, eager })
     }
     if (!eager) return
     pushOwed = true
@@ -703,21 +709,21 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
   const observable = new Observable<T>(subscriber => {
     subscriberCount++
     readPinned = false
-    observers.add(subscriber)
+    ;(observers ??= new Set()).add(subscriber)
 
     try {
       const before = emitVersion
       const next = dirty || !hasValue ? recompute("read") : value
       if (before === emitVersion) subscriber.next(next)
     } catch (error) {
-      observers.delete(subscriber)
+      observers!.delete(subscriber)
       subscriberCount--
       subscriber.error(error)
       return undefined
     }
 
     return () => {
-      observers.delete(subscriber)
+      observers!.delete(subscriber)
       subscriberCount--
       if (!subscriberCount && !readPinned) {
         cancelInner()
