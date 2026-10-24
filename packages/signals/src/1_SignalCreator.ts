@@ -199,110 +199,97 @@ export function SignalCreator<T, Base extends object = object>(
   // Track active subscriptions for debugging/cleanup
   const activeSubs: Signal<T, Base>[] = []
 
-  const createProxy = (_path: string[], base?: Base): Signal<T, Base> => {
-    // Filter out symbols that might sneak through
-    const path = _path.filter(i => typeof i === "string")
-    const depth = path.length
+  // Reads and writes are per tree and take the node's path, so a node holds no closures of its own
+  // beyond its accessor.
+  const setAt = (path: string[], n: T) => {
+    if (!LOG.on) return applySetAt(path, n)
+    const started = performance.now()
+    const hasSubscribers = ((state$ as Subject<T> | undefined)?.observers.length ?? 0) > 0 || activeSubs.length > 0
+    const result = applySetAt(path, n)
+    LOG.emit(CAT_WRITE, "write {path}", {
+      path,
+      depth: path.length,
+      hasSubscribers,
+      durationMs: performance.now() - started,
+    })
+    return result
+  }
 
-    // Immer-based setter for complex mutations
-    const setterImmer = (recipe: (draft: Draft<T>) => ValidDraftReturn<Draft<T>>) => {
-      const root = read ? read() : latest
-      const curr = depth ? get(root, path) : root
-      if (isDraftable(curr)) {
-        const next = produce(curr as Draft<T>, recipe)
-        return setter(next as T)
-      }
-    }
+  const applySetAt = (path: string[], n: T) => {
+    if (!path.length) return pushState(n, path)
+    // Deep set with lodash on an immer draft
+    const next = produce(((read ? read() : latest) || {}) as object, (draft: Draft<object>) => {
+      set(draft, path, n)
+    })
+    return pushState(next as T, path)
+  }
 
-    // Direct setter - handles both root and nested paths
-    const applySet = (n: T) => {
-      if (!depth) {
-        return pushState(n, path)
-      }
-
-      // Deep set with lodash on an immer draft
-      const next = produce(((read ? read() : latest) || {}) as object, (draft: Draft<object>) => {
-        set(draft, path, n)
-      })
-
-      return pushState(next as T, path)
-    }
-
-    // The branch is duplicated so the unlogged path costs exactly one boolean read.
-    const setter = (n: T) => {
-      if (!LOG.on) return applySet(n)
-
-      const started = performance.now()
-      const hasSubscribers = ((state$ as Subject<T> | undefined)?.observers.length ?? 0) > 0 || activeSubs.length > 0
-      const result = applySet(n)
-      LOG.emit(CAT_WRITE, "write {path}", {
-        path,
-        depth,
-        hasSubscribers,
-        durationMs: performance.now() - started,
-      })
-      return result
-    }
+  // Immer-based setter for complex mutations
+  const immerAt = (path: string[], recipe: (draft: Draft<T>) => ValidDraftReturn<Draft<T>>) => {
+    const root = read ? read() : latest
+    const curr = path.length ? get(root, path) : root
+    if (isDraftable(curr)) return setAt(path, produce(curr as Draft<T>, recipe) as T)
+  }
 
     // Getter - handles root, nested, and function values
-    const getter = (): T => {
-      const root = read ? read() : latest
-      if (!depth) {
-        return root
-      }
-
-      const val = get(root, path)
-
-      // If value is a function (e.g. array method), bind it properly
-      if (typeof val === "function") {
-        const context = depth === 1 ? root : get(root, path.slice(0, -1))
-
-        if (Array.isArray(context)) {
-          // For array methods, wrap to auto-update state on mutation
-          return ((...args: unknown[]) => {
-            let toReturn: unknown
-            const next = produce(context, draft => {
-              const funcName = path[path.length - 1]
-              toReturn = (draft as unknown as Record<string, (...a: unknown[]) => unknown>)[funcName](...args)
-            })
-
-            if (!isEqual(next, context)) {
-              const parent: Signal<unknown, Base> = depth > 1 ? get(rootProxy, path.slice(0, -1)) : rootProxy
-              parent.$.next(next)
-            }
-
-            return toReturn
-          }) as T
-        }
-        return val.bind(context)
-      }
-      return val
+  const getAt = (path: string[]): T => {
+    const depth = path.length
+    const root = read ? read() : latest
+    if (!depth) {
+      return root
     }
 
-    // The callable function for $
-    const selfFnName = path.join("/") || "root"
-    const selfFn = {
-      [selfFnName]: (...args: unknown[]) => {
-        if (args.length) {
-          setter(args[0] as T)
-          signalDispatch.next({
-            type: "set",
-            value: { signal: proxy as unknown as Signal<unknown>, path, value: args[0] },
+    const val = get(root, path)
+
+    // If value is a function (e.g. array method), bind it properly
+    if (typeof val === "function") {
+      const context = depth === 1 ? root : get(root, path.slice(0, -1))
+
+      if (Array.isArray(context)) {
+        // For array methods, wrap to auto-update state on mutation
+        return ((...args: unknown[]) => {
+          let toReturn: unknown
+          const next = produce(context, draft => {
+            const funcName = path[path.length - 1]
+            toReturn = (draft as unknown as Record<string, (...a: unknown[]) => unknown>)[funcName](...args)
           })
-          return proxy
-        }
+
+          if (!isEqual(next, context)) {
+            const parent: Signal<unknown, Base> = depth > 1 ? get(rootProxy, path.slice(0, -1)) : rootProxy
+            parent.$.next(next)
+          }
+
+          return toReturn
+        }) as T
+      }
+      return val.bind(context)
+    }
+    return val
+  }
+
+  const createProxy = (path: string[], base?: Base): Signal<T, Base> => {
+    // The callable accessor: a read with no argument, a write with one.
+    const selfFn = (...args: unknown[]) => {
+      if (args.length) {
+        setAt(path, args[0] as T)
         signalDispatch.next({
-          type: "get",
-          value: { signal: proxy as unknown as Signal<unknown>, path },
+          type: "set",
+          value: { signal: proxy as unknown as Signal<unknown>, path, value: args[0] },
         })
-        // An event read is tracked like any other, so a write pushes a rerun, and it is an edge:
-        // the reader in flight decides whether this version was already seen.
-        const frame = frames.at(-1)
-        frame?.collect(proxy as unknown as Signal<unknown>)
-        if (event && frame?.edge && !frame.edge(proxy as unknown as Signal<unknown>, version)) return undefined as T
-        return getter()
-      },
-    }[selfFnName]
+        return proxy
+      }
+      signalDispatch.next({
+        type: "get",
+        value: { signal: proxy as unknown as Signal<unknown>, path },
+      })
+      // An event read is tracked like any other, so a write pushes a rerun, and it is an edge:
+      // the reader in flight decides whether this version was already seen.
+      const frame = frames.at(-1)
+      frame?.collect(proxy as unknown as Signal<unknown>)
+      if (event && frame?.edge && !frame.edge(proxy as unknown as Signal<unknown>, version)) return undefined as T
+      return getAt(path)
+    }
+    const depth = path.length
 
     let ID = ""
 
@@ -310,9 +297,9 @@ export function SignalCreator<T, Base extends object = object>(
     const $proxy = new Proxy(selfFn as unknown as Signal$<T, Base>, {
       get(target, p) {
         // Our custom properties
-        if (p === "value") return getter()
-        if (p === "next") return setter
-        if (p === "setImmer") return setterImmer
+        if (p === "value") return getAt(path)
+        if (p === "next") return (n: T) => setAt(path, n)
+        if (p === "setImmer") return (recipe: (draft: Draft<T>) => ValidDraftReturn<Draft<T>>) => immerAt(path, recipe)
         if (p === "path") return path
         if (p === "sid") return sid
 
