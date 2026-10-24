@@ -292,20 +292,14 @@ export type SignalCreatorOptions<T, Base extends object = object> = {
   observable?: Observable<T>
   /** Subject semantics: no initial emission and no replay. */
   event?: boolean
-  /** Override synchronous reads (used by lazily evaluated memo signals). */
-  read?: () => T
   /**
    * SELECTOR_SLOT.distinct: the operator a nested-path selector dedupes with. Defaults to
    * `distinctShallow()`. `null` disables it, restoring re-emission on every root write.
    */
   distinct?: MonoTypeOperatorFunction<unknown> | null
-  /** Mirror a `.$(next)` write into an external holder (writable memos). */
-  write?: (next: T) => void
-  /** The source multicasts itself and replays on subscribe: a write calls this instead of a
-   * subject, and `observable` is the root stream as is. */
-  publish?: (next: T) => void
-  /** A memo's own dependent list: a memo depending on this root registers here, not by subscribing. */
-  watchRoot?: (listener: { next(): void }) => unknown
+  /** A memo standing behind this tree: reads, writes, publishing and dependents go through it, and
+   * `observable` is its own multicast stream. */
+  host?: import("./1_SignalCreator.js").MemoHost<T>
   /** Factory to create Base extension for each node */
   createBase?: (root: Signal<T, Base>, path: string[]) => Base
 }
