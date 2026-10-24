@@ -77,6 +77,14 @@ export const SELECTOR_SLOT = { project: 0, distinct: 1, track: 2, share: 3 } as 
 // collect both layers and can create duplicate cascades.
 const dependencyCollectors: Array<(signal: Signal<unknown>) => void> = []
 
+/** Answers whether the computation in flight sees an event's current value: an event is an edge,
+ * so a memo sees each version once and reads `undefined` on later runs. Kept parallel to
+ * `dependencyCollectors`; a frame with no edge rule pushes `undefined`. */
+export type EdgeReader = (node: Signal<unknown>, sid: number, version: number) => boolean
+const edgeReaders: Array<EdgeReader | undefined> = []
+
+let signalSeq = 0
+
 // One root write emits into every nested-path selector a memo subscribed to, and each delivery
 // invalidates that memo separately. Recomputing inline ran a 50k-row sort once per dependency
 // instead of once per write. The emit turn brackets `state$.next`, so an invalidation raised
@@ -122,10 +130,12 @@ const computingRanks: number[] = []
 // `sink` keeps deps observed before the throw so a caller can resubscribe.
 export function trackDependencies<T>(compute: () => T, sink: Set<Signal<unknown>>): T {
   dependencyCollectors.push(dep => sink.add(dep))
+  edgeReaders.push(undefined)
   try {
     return compute()
   } finally {
     dependencyCollectors.pop()
+    edgeReaders.pop()
   }
 }
 
@@ -148,11 +158,15 @@ export function SignalCreator<T, Base extends object = object>(
   const state$ =
     event || (observable && initialState === undefined) ? new Subject<T>() : new BehaviorSubject(initialState as T)
   let latest = initialState as T
+  // Surrogate id of this tree and the count of writes to it: every child node shares both.
+  const sid = ++signalSeq
+  let version = 0
 
   // `from` is the path of the write that caused the emit, not of the subject, which always sits
   // at the root: the whole point of the record is naming which branch moved.
   const pushState = (next: T, from: string[] = ROOT_PATH) => {
     latest = next
+    version++
     // A writable memo mirrors the value into its own holder before the emit, so the next run of
     // the body reads what was written as `prev`.
     write?.(next)
@@ -277,9 +291,13 @@ export function SignalCreator<T, Base extends object = object>(
           type: "get",
           value: { signal: proxy as unknown as Signal<unknown>, path },
         })
-        // Event-mode signals (stateless Subjects) are imperative event sources,
-        // not derived state: don't register them as memo dependencies.
-        if (!event) dependencyCollectors.at(-1)?.(proxy as unknown as Signal<unknown>)
+        // An event read is tracked like any other, so a write pushes a rerun, and it is an edge:
+        // the reader in flight decides whether this version was already seen.
+        dependencyCollectors.at(-1)?.(proxy as unknown as Signal<unknown>)
+        if (event) {
+          const reader = edgeReaders.at(-1)
+          if (reader && !reader(proxy as unknown as Signal<unknown>, sid, version)) return undefined as T
+        }
         return getter()
       },
     }[selfFnName]
@@ -294,6 +312,7 @@ export function SignalCreator<T, Base extends object = object>(
         if (p === "next") return setter
         if (p === "setImmer") return setterImmer
         if (p === "path") return path
+        if (p === "sid") return sid
 
         // `pipe` hands back an Observable, which is right for composition and wrong for storage.
         // `pipe$` runs the same operators and wraps the result, so a piped stream keeps `.$()`,
@@ -484,6 +503,17 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
   let emitVersion = 0
 
   const observers = new Set<{ next(value: T): void; error(error: unknown): void }>()
+  // Runs of the body, so an event read twice in one run answers the same both times.
+  let run = 0
+  // EDGE_VARIANT_A: the version of each event tree this memo last saw, and the run that saw it.
+  const consumed = new Map<number, number>()
+  const consumedRun = new Map<number, number>()
+  const edge: EdgeReader = (_node, sid, version) => {
+    if (consumed.get(sid) === version) return consumedRun.get(sid) === run
+    consumed.set(sid, version)
+    consumedRun.set(sid, run)
+    return true
+  }
   // Keyed by dependency so a recompute diffs instead of rebuilding: tearing every subscription
   // down and re-adding it re-emitted every BehaviorSubject on the way back in.
   const dependencySubs = new Map<Signal<unknown>, { unsubscribe(): void }>()
@@ -548,6 +578,8 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
       const started = LOG.on ? performance.now() : 0
       const dependencies = new Set<Signal<unknown>>()
       dependencyCollectors.push(dependency => dependencies.add(dependency))
+      edgeReaders.push(edge)
+      run++
       computingRanks.push(0)
 
       const report = (diff: { added: number; removed: number }) => {
@@ -567,6 +599,7 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
         out = compute(value)
       } catch (error) {
         dependencyCollectors.pop()
+        edgeReaders.pop()
         rank = computingRanks.pop()!
         running = false
         dirty = true
@@ -582,6 +615,7 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
       }
 
       dependencyCollectors.pop()
+      edgeReaders.pop()
       rank = computingRanks.pop()!
       dirty = false
       lastRunFailed = false
