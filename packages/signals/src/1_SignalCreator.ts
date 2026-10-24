@@ -75,13 +75,12 @@ export const SELECTOR_SLOT = { project: 0, distinct: 1, track: 2, share: 3 } as 
 // reads of its primitive dependencies; the outer memo depends on the inner memo
 // itself. A global subscription would make the outer computation accidentally
 // collect both layers and can create duplicate cascades.
-const dependencyCollectors: Array<(signal: Signal<unknown>) => void> = []
-
 /** Answers whether the computation in flight sees an event's current value: an event is an edge,
- * so a memo sees each version once and reads `undefined` on later runs. Kept parallel to
- * `dependencyCollectors`; a frame with no edge rule pushes `undefined`. */
+ * so a memo sees each version once and reads `undefined` on later runs. */
 export type EdgeReader = (node: Signal<unknown>, version: number) => boolean
-const edgeReaders: Array<EdgeReader | undefined> = []
+/** One computation in flight: where its reads are collected, and its edge rule if it has one. */
+type Frame = { collect: (signal: Signal<unknown>) => void; edge?: EdgeReader }
+const frames: Frame[] = []
 
 let signalSeq = 0
 
@@ -129,13 +128,11 @@ const computingRanks: number[] = []
 // Run `compute`, recording every `.$()` signal read into `sink`. Re-throws;
 // `sink` keeps deps observed before the throw so a caller can resubscribe.
 export function trackDependencies<T>(compute: () => T, sink: Set<Signal<unknown>>): T {
-  dependencyCollectors.push(dep => sink.add(dep))
-  edgeReaders.push(undefined)
+  frames.push({ collect: dep => sink.add(dep) })
   try {
     return compute()
   } finally {
-    dependencyCollectors.pop()
-    edgeReaders.pop()
+    frames.pop()
   }
 }
 
@@ -293,11 +290,9 @@ export function SignalCreator<T, Base extends object = object>(
         })
         // An event read is tracked like any other, so a write pushes a rerun, and it is an edge:
         // the reader in flight decides whether this version was already seen.
-        dependencyCollectors.at(-1)?.(proxy as unknown as Signal<unknown>)
-        if (event) {
-          const reader = edgeReaders.at(-1)
-          if (reader && !reader(proxy as unknown as Signal<unknown>, version)) return undefined as T
-        }
+        const frame = frames.at(-1)
+        frame?.collect(proxy as unknown as Signal<unknown>)
+        if (event && frame?.edge && !frame.edge(proxy as unknown as Signal<unknown>, version)) return undefined as T
         return getter()
       },
     }[selfFnName]
@@ -587,8 +582,7 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
       cancelInner()
       const started = LOG.on ? performance.now() : 0
       const dependencies = new Set<Signal<unknown>>()
-      dependencyCollectors.push(dependency => dependencies.add(dependency))
-      edgeReaders.push(edge)
+      frames.push({ collect: dependency => dependencies.add(dependency), edge })
       run++
       computingRanks.push(0)
 
@@ -608,8 +602,7 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
       try {
         out = compute(value)
       } catch (error) {
-        dependencyCollectors.pop()
-        edgeReaders.pop()
+        frames.pop()
         rank = computingRanks.pop()!
         running = false
         dirty = true
@@ -624,8 +617,7 @@ export function createComputedSignal<T>(compute: ComputeBody<T>, seed?: T, optio
         throw error
       }
 
-      dependencyCollectors.pop()
-      edgeReaders.pop()
+      frames.pop()
       rank = computingRanks.pop()!
       dirty = false
       lastRunFailed = false
