@@ -20,14 +20,14 @@ const perInstance = (build: () => unknown): number => {
   return Math.round(bytes)
 }
 
-// The floor each shape has reached; a change that raises one fails here. Lower these when a change
-// lowers the measurement.
+// About 3% above the floor each shape has reached (2026-10-24, Node 24); a change that raises one fails
+// here. Lower these when a change lowers the measurement.
 const CEILING = {
-  stateSignal: 1_300,
-  memoCold: 4_400,
-  memoSubscribed: 9_600,
-  memoSubscribedPerDependency: 750,
-  memoOnMemoPerDependency: 750,
+  stateSignal: 510,
+  memoCold: 800,
+  memoSubscribed: 1_625,
+  memoSubscribedPerDependency: 145,
+  memoOnMemoPerDependency: 145,
 }
 
 test("bytes per signal shape stay at their floor", () => {
